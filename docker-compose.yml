@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-openh2o}
+      POSTGRES_USER: ${POSTGRES_USER:-openh2o}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openh2o}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-openh2o}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.local}
+      DATABASE_URL: postgis://${POSTGRES_USER:-openh2o}:${POSTGRES_PASSWORD:-openh2o}@db:5432/${POSTGRES_DB:-openh2o}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - static_files:/app/staticfiles
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - static_files:/srv/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  db_data:
+  static_files:
+  caddy_data:
+  caddy_config:

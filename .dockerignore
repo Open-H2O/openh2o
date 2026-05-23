@@ -1,0 +1,12 @@
+.git
+.planning
+__pycache__
+.env
+*.pyc
+node_modules
+db_data
+caddy_data
+caddy_config
+staticfiles
+.gitignore
+.dockerignore

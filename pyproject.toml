@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "openh2o"
+version = "0.1.0"
+description = "Open Water Accounting Platform for California water agencies"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.1,<6.0",
+    "psycopg[binary]>=3.1",
+    "django-environ>=0.11",
+    "gunicorn>=22.0",
+    "whitenoise>=6.7",
+    "django-allauth[socialaccount]>=65.0",
+    "django-extensions>=3.2",
+    "django-htmx>=1.19",
+]
