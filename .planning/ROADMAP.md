@@ -10,7 +10,7 @@ None (no matching skills installed)
 
 ## Phases
 
-- [ ] **Phase 1: Infrastructure Scaffold** - Docker Compose stack boots Django through Caddy with PostGIS
+- [x] **Phase 1: Infrastructure Scaffold** - Docker Compose stack boots Django through Caddy with PostGIS
 - [ ] **Phase 2: Core Domain Models** - All 48 models, migrations, admin, seed data commands
 - [ ] **Phase 3: Parcel and Well CRUD with Maps** - Import, view, and manage parcels/wells on MapLibre map
 - [ ] **Phase 4: Water Accounting Engine** - ParcelLedger double-entry, accounts, allocations, dashboards
@@ -25,7 +25,8 @@ None (no matching skills installed)
 **Goal**: Docker Compose stack boots, Django serves a styled page through Caddy, PostGIS is ready
 **Depends on**: Nothing (first phase)
 **Research**: Unlikely (established Docker/Django/Caddy patterns)
-**Plans**: TBD
+**Plans**: 1/1 complete
+**Completed**: 2026-05-23
 
 Deliverables:
 - docker-compose.yml (db, web, caddy)
@@ -191,7 +192,7 @@ Phase 8 is the final integration phase.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Infrastructure Scaffold | 0/TBD | Not started | - |
+| 1. Infrastructure Scaffold | 1/1 | Complete | 2026-05-23 |
 | 2. Core Domain Models | 0/TBD | Not started | - |
 | 3. Parcel and Well CRUD with Maps | 0/TBD | Not started | - |
 | 4. Water Accounting Engine | 0/TBD | Not started | - |
