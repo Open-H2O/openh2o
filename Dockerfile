@@ -13,8 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # GeoDjango library paths (Debian bookworm)
-ENV GDAL_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgdal.so
-ENV GEOS_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libgeos_c.so
+# GDAL/GEOS libraries are in standard Debian paths; Django finds them automatically
 
 WORKDIR /app
 
