@@ -1,0 +1,84 @@
+/*
+ * VanderDev Design Tokens
+ * Ported from VanderDev-Website DESIGN.md and DESIGN.json
+ */
+
+:root {
+    /* -- Surface colors -------------------------------------------------- */
+    --color-base: #040608;
+    --color-card: #080b10;
+    --color-inset: #050709;
+    --color-elevated: #0e1219;
+    --color-hover: #141a22;
+
+    /* -- Accent colors --------------------------------------------------- */
+    --color-gold: #E4A317;
+    --color-gold-hover: #D4952A;
+    --color-gold-muted: rgba(212, 149, 42, 0.06);
+    --color-blue: #1B7FAF;
+    --color-blue-bright: #3DB4E0;
+
+    /* -- Text colors ----------------------------------------------------- */
+    --color-text-primary: #e8edf4;
+    --color-text-secondary: #8899aa;
+    --color-text-tertiary: #4d5e6f;
+
+    /* -- Border colors --------------------------------------------------- */
+    --color-border: rgba(100, 140, 180, 0.07);
+    --color-border-hover: rgba(100, 140, 180, 0.13);
+
+    /* -- OKLCH data viz ramps (from DESIGN.json) ------------------------- */
+
+    /* Furnace Orange */
+    --furnace-100: oklch(0.15 0.03 50);
+    --furnace-200: oklch(0.26 0.06 50);
+    --furnace-300: oklch(0.37 0.10 50);
+    --furnace-400: oklch(0.49 0.14 50);
+    --furnace-500: oklch(0.60 0.17 50);
+    --furnace-600: oklch(0.71 0.18 50);
+    --furnace-700: oklch(0.83 0.14 50);
+    --furnace-800: oklch(0.95 0.05 50);
+
+    /* Reservoir Blue */
+    --reservoir-100: oklch(0.15 0.02 200);
+    --reservoir-200: oklch(0.26 0.05 200);
+    --reservoir-300: oklch(0.37 0.08 200);
+    --reservoir-400: oklch(0.49 0.11 200);
+    --reservoir-500: oklch(0.60 0.13 200);
+    --reservoir-600: oklch(0.71 0.14 200);
+    --reservoir-700: oklch(0.83 0.10 200);
+    --reservoir-800: oklch(0.95 0.04 200);
+
+    /* Forest Teal */
+    --forest-100: oklch(0.15 0.03 145);
+    --forest-200: oklch(0.26 0.05 145);
+    --forest-300: oklch(0.37 0.08 145);
+    --forest-400: oklch(0.49 0.11 145);
+    --forest-500: oklch(0.60 0.15 145);
+    --forest-600: oklch(0.71 0.13 145);
+    --forest-700: oklch(0.83 0.09 145);
+    --forest-800: oklch(0.95 0.04 145);
+
+    /* -- Typography ------------------------------------------------------ */
+    --font-display: 'Public Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* -- Spacing --------------------------------------------------------- */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+    --space-3xl: 64px;
+
+    /* -- Shadows --------------------------------------------------------- */
+    --shadow-pop-sm: 2px 2px 4px rgba(4, 3, 2, 0.70), -2px -2px 4px rgba(42, 32, 24, 0.50);
+    --shadow-pop-lg: 6px 6px 12px rgba(4, 3, 2, 0.80), -6px -6px 12px rgba(42, 32, 24, 0.60);
+    --shadow-inset: inset 2px 2px 4px rgba(4, 3, 2, 0.70), inset -2px -2px 4px rgba(42, 32, 24, 0.50);
+
+    /* -- Border radius --------------------------------------------------- */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+}
