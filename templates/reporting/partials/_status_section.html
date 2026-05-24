@@ -1,0 +1,63 @@
+<div class="card-raised" style="padding: var(--space-lg);">
+  <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md);">Status</h3>
+
+  <div style="display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-md);">
+    {% if submission.status == "submitted" or submission.status == "accepted" %}
+    <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; background: rgba(34, 197, 94, 0.15); color: #22c55e;">{{ submission.get_status_display }}</span>
+    {% elif submission.status == "reviewed" %}
+    <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; background: rgba(234, 179, 8, 0.15); color: #eab308;">{{ submission.get_status_display }}</span>
+    {% elif submission.status == "rejected" %}
+    <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; background: rgba(239, 68, 68, 0.15); color: #ef4444;">{{ submission.get_status_display }}</span>
+    {% else %}
+    <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">{{ submission.get_status_display }}</span>
+    {% endif %}
+
+    {% if submission.submitted_at %}
+    <span style="font-size: 0.8125rem; color: var(--color-text-tertiary);">
+      Submitted {{ submission.submitted_at|date:"M j, Y H:i" }}
+    </span>
+    {% endif %}
+  </div>
+
+  {% if submission.reviewer_notes %}
+  <div style="margin-bottom: var(--space-md);">
+    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-xs);">Reviewer Notes</div>
+    <div style="font-size: 0.8125rem; color: var(--color-text-secondary); background: var(--color-elevated); padding: var(--space-sm); border-radius: var(--radius-sm);">
+      {{ submission.reviewer_notes }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if submission.status == "draft" %}
+  <form hx-post="{% url 'reporting:report_transition' pk=submission.pk %}"
+        hx-target="#status-section"
+        hx-swap="innerHTML"
+        style="display: flex; flex-direction: column; gap: var(--space-sm);">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="review">
+    <div>
+      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs);">Reviewer Notes (optional)</label>
+      <textarea name="reviewer_notes" rows="2"
+                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm); color: var(--color-text-primary); width: 100%; font-family: var(--font-display); font-size: 0.8125rem; resize: vertical;"
+                placeholder="Any notes about this report..."></textarea>
+    </div>
+    <div>
+      <button type="submit"
+              style="padding: var(--space-sm) var(--space-lg); background: var(--color-gold); color: var(--color-base); border: none; border-radius: var(--radius-md); font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
+        Mark as Reviewed
+      </button>
+    </div>
+  </form>
+  {% elif submission.status == "reviewed" %}
+  <form hx-post="{% url 'reporting:report_transition' pk=submission.pk %}"
+        hx-target="#status-section"
+        hx-swap="innerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="submit">
+    <button type="submit"
+            style="padding: var(--space-sm) var(--space-lg); background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); border-radius: var(--radius-md); font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
+      Mark as Submitted
+    </button>
+  </form>
+  {% endif %}
+</div>

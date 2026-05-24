@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Report - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Generate Report{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg); max-width: 600px;">
+
+  <p style="color: var(--color-text-secondary); font-size: 0.8125rem; margin: 0;">
+    Select a report type and period. The system validates data quality before generating.
+  </p>
+
+  {% if warnings %}
+  <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
+    {% for w in warnings %}
+    {% if w.level == "error" %}
+    <div style="padding: var(--space-sm) var(--space-md); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); font-size: 0.8125rem; color: #ef4444;">
+      <strong>Error:</strong> {{ w.message }}
+    </div>
+    {% else %}
+    <div style="padding: var(--space-sm) var(--space-md); background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: var(--radius-md); font-size: 0.8125rem; color: #eab308;">
+      <strong>Warning:</strong> {{ w.message }}
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {% if has_errors %}
+    <form method="post" style="margin-top: var(--space-sm);">
+      {% csrf_token %}
+      <input type="hidden" name="report_template" value="{{ form.report_template.value }}">
+      <input type="hidden" name="reporting_period" value="{{ form.reporting_period.value }}">
+      <input type="hidden" name="force" value="1">
+      <div style="display: flex; gap: var(--space-sm);">
+        <button type="submit"
+                style="padding: var(--space-xs) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: 0.8125rem; cursor: pointer;">
+          Generate anyway (with errors)
+        </button>
+        <a href="{% url 'reporting:report_generate' %}"
+           style="padding: var(--space-xs) var(--space-md); background: transparent; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-tertiary); font-size: 0.8125rem; text-decoration: none; display: inline-flex; align-items: center;">
+          Cancel
+        </a>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if not has_errors %}
+  <div class="card-raised" style="padding: var(--space-lg);">
+    <form method="post">
+      {% csrf_token %}
+      <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">Report Type</label>
+          {{ form.report_template }}
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">Reporting Period</label>
+          {{ form.reporting_period }}
+        </div>
+        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm);">
+          <button type="submit"
+                  style="padding: var(--space-sm) var(--space-lg); background: var(--color-gold); color: var(--color-base); border: none; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600; cursor: pointer;">
+            Validate &amp; Generate
+          </button>
+          <a href="{% url 'reporting:report_list' %}"
+             style="padding: var(--space-sm) var(--space-lg); background: transparent; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); font-size: 0.875rem; text-decoration: none; display: inline-flex; align-items: center;">
+            Cancel
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

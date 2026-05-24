@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
@@ -13,5 +14,10 @@ urlpatterns = [
     path("recharge/", include("recharge.urls")),
     path("map/", include("geography.urls")),
     path("datasync/", include("datasync.urls")),
+    path("reporting/", include("reporting.urls")),
     path("", index, name="index"),
 ]
+
+if settings.DEBUG:
+    from django.conf.urls.static import static
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

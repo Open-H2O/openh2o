@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);">
+    <p style="color: var(--color-text-secondary); font-size: 0.8125rem; margin: 0;">
+      State report submissions: GEARS CSV, CalWATRS CSV, and Email JSON. Generate, review, and track submission status.
+    </p>
+    <a href="{% url 'reporting:report_generate' %}"
+       style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-md); background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-md); font-size: 0.8125rem; font-weight: 600; text-decoration: none; white-space: nowrap;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Generate Report
+    </a>
+  </div>
+
+  <div class="card-raised" style="padding: var(--space-lg);">
+    <div style="display: flex; gap: var(--space-sm); margin-bottom: var(--space-md);">
+      <input type="search"
+             name="q"
+             value="{{ q }}"
+             placeholder="Search reports..."
+             hx-get="{% url 'reporting:report_list' %}"
+             hx-target="#list-results"
+             hx-trigger="keyup changed delay:300ms"
+             hx-include="[name='status']"
+             style="flex: 1; padding: var(--space-xs) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.8125rem;">
+      <select name="status"
+              hx-get="{% url 'reporting:report_list' %}"
+              hx-target="#list-results"
+              hx-trigger="change"
+              hx-include="[name='q']"
+              style="padding: var(--space-xs) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.8125rem; cursor: pointer;">
+        <option value="">All statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div id="list-results">
+      {% include "reporting/partials/_list_results.html" %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

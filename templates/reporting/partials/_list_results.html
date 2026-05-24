@@ -1,0 +1,71 @@
+<div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-bottom: var(--space-sm);">
+  {{ total_count }} report{{ total_count|pluralize }}
+</div>
+
+{% if page_obj.object_list %}
+<table style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr style="border-bottom: 1px solid var(--color-border);">
+      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Type</th>
+      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Period</th>
+      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Generated</th>
+      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Submitted</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for sub in page_obj %}
+    <tr style="border-bottom: 1px solid var(--color-border); cursor: pointer;"
+        onclick="window.location='{% url 'reporting:report_detail' pk=sub.pk %}'"
+        onmouseover="this.style.background='var(--color-elevated)'"
+        onmouseout="this.style.background='transparent'">
+      <td style="padding: var(--space-sm); font-size: 0.8125rem; color: var(--color-text-primary);">
+        {{ sub.report_template.name }}
+      </td>
+      <td style="padding: var(--space-sm); font-size: 0.8125rem; color: var(--color-text-secondary);">
+        {{ sub.reporting_period.name }}
+      </td>
+      <td style="padding: var(--space-sm);">
+        {% if sub.status == "submitted" or sub.status == "accepted" %}
+        <span style="display: inline-block; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600; background: rgba(34, 197, 94, 0.15); color: #22c55e;">{{ sub.get_status_display }}</span>
+        {% elif sub.status == "reviewed" %}
+        <span style="display: inline-block; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600; background: rgba(234, 179, 8, 0.15); color: #eab308;">{{ sub.get_status_display }}</span>
+        {% elif sub.status == "rejected" %}
+        <span style="display: inline-block; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600; background: rgba(239, 68, 68, 0.15); color: #ef4444;">{{ sub.get_status_display }}</span>
+        {% else %}
+        <span style="display: inline-block; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 0.6875rem; font-weight: 600; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">{{ sub.get_status_display }}</span>
+        {% endif %}
+      </td>
+      <td style="padding: var(--space-sm); font-size: 0.8125rem; color: var(--color-text-tertiary);">
+        {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
+      </td>
+      <td style="padding: var(--space-sm); font-size: 0.8125rem; color: var(--color-text-tertiary);">
+        {% if sub.submitted_at %}{{ sub.submitted_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if page_obj.has_other_pages %}
+<div style="display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-md);">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
+     style="padding: var(--space-xs) var(--space-sm); background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-secondary); text-decoration: none; font-size: 0.8125rem;">Previous</a>
+  {% endif %}
+  <span style="padding: var(--space-xs) var(--space-sm); font-size: 0.8125rem; color: var(--color-text-tertiary);">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
+     style="padding: var(--space-xs) var(--space-sm); background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-secondary); text-decoration: none; font-size: 0.8125rem;">Next</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div style="text-align: center; padding: var(--space-xl); color: var(--color-text-tertiary);">
+  <p style="font-size: 0.875rem; margin-bottom: var(--space-sm);">No reports generated yet.</p>
+  <a href="{% url 'reporting:report_generate' %}" style="color: var(--color-gold); text-decoration: none; font-size: 0.8125rem; font-weight: 600;">Generate your first report</a>
+</div>
+{% endif %}
