@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Map - Open Water Accounting Platform{% endblock %}
+
+{% block page_title %}Map{% endblock %}
+
+{% block map_styles %}
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+{% endblock %}
+
+{% block content %}
+<div id="map-container" style="width: 100%; height: calc(100vh - 96px); border-radius: var(--radius-md); overflow: hidden;">
+</div>
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(function() {
+    var map = new maplibregl.Map({
+        container: 'map-container',
+        style: {
+            version: 8,
+            sources: {
+                'carto-dark': {
+                    type: 'raster',
+                    tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
+                    tileSize: 256,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
+                }
+            },
+            layers: [{
+                id: 'carto-dark-layer',
+                type: 'raster',
+                source: 'carto-dark',
+                minzoom: 0,
+                maxzoom: 19
+            }]
+        },
+        center: [-119.5, 37.5],
+        zoom: 6
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+})();
+</script>
+{% endblock %}
