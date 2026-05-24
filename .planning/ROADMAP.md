@@ -15,7 +15,7 @@ None (no matching skills installed)
 - [x] **Phase 3: Parcel and Well CRUD with Maps** - Import, view, and manage parcels/wells on MapLibre map
 - [x] **Phase 4: Water Accounting Engine** - ParcelLedger double-entry, accounts, allocations, dashboards
 - [x] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
-- [ ] **Phase 6: State Reporting** - GEARS CSV, CalWATRS CSV, email+JSON with prepare-review-send workflow
+- [x] **Phase 6: State Reporting** - GEARS CSV, CalWATRS CSV, email+JSON with prepare-review-send workflow
 - [ ] **Phase 7: Health Check and Maintenance** - 8-category health system, /health endpoint, maintenance commands
 - [ ] **Phase 8: UI/UX Overhaul** - Consistent styling, empty states, responsive layout, form polish
 - [ ] **Phase 9: DEPLOY.md, Polish, and Handoff** - AI-consumable deployment guide, demo fixtures, security hardening
@@ -224,7 +224,7 @@ Phase 8 is the final integration phase.
 | 3. Parcel and Well CRUD with Maps | 4/4 | Complete | 2026-05-24 |
 | 4. Water Accounting Engine | 3/3 | Complete | 2026-05-24 |
 | 5. External Data Aggregator | 2/2 | Complete | 2026-05-24 |
-| 6. State Reporting | 0/TBD | Not started | - |
+| 6. State Reporting | 1/1 | Complete | 2026-05-24 |
 | 7. Health Check and Maintenance | 0/TBD | Not started | - |
 | 8. UI/UX Overhaul | 0/TBD | Not started | - |
 | 9. DEPLOY.md, Polish, and Handoff | 0/TBD | Not started | - |
