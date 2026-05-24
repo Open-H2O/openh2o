@@ -20,8 +20,99 @@ from accounting.models import (
     WaterAccountParcel,
     WaterType,
 )
-from accounting.services import account_balance, parcel_balance
+from accounting.services import account_balance, parcel_balance, zone_balance
+from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
+
+
+# ---------------------------------------------------------------------------
+# Dashboard
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def dashboard(request):
+    """Water budget overview dashboard with period selector."""
+    periods = ReportingPeriod.objects.order_by("-start_date")
+
+    # Resolve selected period: from query param or default to most recent
+    period_id = request.GET.get("period", "").strip()
+    selected_period = None
+    if period_id:
+        try:
+            selected_period = ReportingPeriod.objects.get(pk=period_id)
+        except ReportingPeriod.DoesNotExist:
+            pass
+    if selected_period is None and periods.exists():
+        selected_period = periods.first()
+
+    account_summaries = []
+    zone_summaries = []
+    grand_supply = Decimal("0")
+    grand_usage = Decimal("0")
+
+    if selected_period is not None:
+        # Account summaries
+        active_accounts = WaterAccount.objects.filter(status="active").order_by("account_number")
+        for account in active_accounts:
+            bal = account_balance(account, reporting_period=selected_period)
+            # Allocation: parcels → zones → AllocationPlan sum
+            parcel_ids = WaterAccountParcel.objects.filter(
+                water_account=account,
+                removed_date__isnull=True,
+            ).values_list("parcel_id", flat=True)
+            zone_ids = ParcelZone.objects.filter(
+                parcel_id__in=parcel_ids
+            ).values_list("zone_id", flat=True)
+            allocation = AllocationPlan.objects.filter(
+                zone_id__in=zone_ids,
+                reporting_period=selected_period,
+            ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
+            remaining = allocation - bal["usage"]
+            account_summaries.append({
+                "account": account,
+                "supply": bal["supply"],
+                "usage": bal["usage"],
+                "net": bal["net"],
+                "allocation": allocation,
+                "remaining": remaining,
+            })
+            grand_supply += bal["supply"]
+            grand_usage += bal["usage"]
+
+        # Zone summaries
+        for zone in Zone.objects.order_by("name"):
+            zbal = zone_balance(zone, reporting_period=selected_period)
+            zone_allocation = AllocationPlan.objects.filter(
+                zone=zone,
+                reporting_period=selected_period,
+            ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
+            zone_remaining = zone_allocation - zbal["usage"]
+            zone_summaries.append({
+                "zone": zone,
+                "supply": zbal["supply"],
+                "usage": zbal["usage"],
+                "net": zbal["net"],
+                "allocation": zone_allocation,
+                "remaining": zone_remaining,
+            })
+
+    grand_net = grand_supply - grand_usage
+
+    context = {
+        "periods": periods,
+        "selected_period": selected_period,
+        "account_summaries": account_summaries,
+        "zone_summaries": zone_summaries,
+        "grand_supply": grand_supply,
+        "grand_usage": grand_usage,
+        "grand_net": grand_net,
+    }
+
+    if request.headers.get("HX-Request"):
+        return render(request, "accounting/partials/_dashboard_content.html", context)
+
+    return render(request, "accounting/dashboard.html", context)
 
 
 # ---------------------------------------------------------------------------

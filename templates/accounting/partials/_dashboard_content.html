@@ -1,0 +1,145 @@
+{% load static %}
+{% if not selected_period %}
+<!-- No reporting periods exist yet -->
+<div style="text-align: center; padding: var(--space-xl) var(--space-lg);">
+  <p style="color: var(--color-text-secondary); margin-bottom: var(--space-md);">No reporting periods found. Create your first period to see budget data.</p>
+  <a href="{% url 'accounting:period_create' %}"
+     style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.8125rem;">
+    + Create Reporting Period
+  </a>
+</div>
+{% else %}
+
+<!-- Stat cards: Total Supply / Total Usage / Net Balance -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); margin-bottom: var(--space-xl);">
+
+  <!-- Total Supply -->
+  <div class="card-raised" style="text-align: center; box-shadow: var(--shadow-pop-sm);">
+    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-sm);">Total Supply</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--forest-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums; line-height: 1.1;">
+      {{ grand_supply|floatformat:2 }}
+    </div>
+    <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 4px;">acre-feet</div>
+  </div>
+
+  <!-- Total Usage -->
+  <div class="card-raised" style="text-align: center; box-shadow: var(--shadow-pop-sm);">
+    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-sm);">Total Usage</div>
+    <div style="font-size: 2rem; font-weight: 800; color: var(--furnace-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums; line-height: 1.1;">
+      {{ grand_usage|floatformat:2 }}
+    </div>
+    <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 4px;">acre-feet</div>
+  </div>
+
+  <!-- Net Balance -->
+  <div class="card-raised" style="text-align: center; box-shadow: var(--shadow-pop-sm);">
+    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-sm);">Net Balance</div>
+    <div style="font-size: 2rem; font-weight: 800; font-family: var(--font-mono); font-variant-numeric: tabular-nums; line-height: 1.1; {% if grand_net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+      {{ grand_net|floatformat:2 }}
+    </div>
+    <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 4px;">acre-feet</div>
+  </div>
+
+</div>
+
+<!-- Account Summaries -->
+<div class="card-raised" style="margin-bottom: var(--space-lg); box-shadow: var(--shadow-pop-sm);">
+  <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    Water Accounts
+  </h2>
+  {% if account_summaries %}
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--color-border);">
+        <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Account</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Supply (AF)</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Usage (AF)</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Net (AF)</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Allocation (AF)</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Remaining (AF)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in account_summaries %}
+      <tr style="border-bottom: 1px solid var(--color-border);">
+        <td style="padding: var(--space-xs) var(--space-sm);">
+          <a href="{% url 'accounting:account_detail' row.account.pk %}"
+             style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+            {{ row.account.account_number }}
+          </a>
+          {% if row.account.name %}
+          <span style="color: var(--color-text-secondary); margin-left: var(--space-xs);">{{ row.account.name }}</span>
+          {% endif %}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--forest-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums;">
+          {{ row.supply|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--furnace-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums;">
+          {{ row.usage|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; font-weight: 600; font-family: var(--font-mono); font-variant-numeric: tabular-nums; {% if row.net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+          {{ row.net|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--color-text-primary); font-family: var(--font-mono); font-variant-numeric: tabular-nums;">
+          {{ row.allocation|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; font-weight: 600; font-family: var(--font-mono); font-variant-numeric: tabular-nums; {% if row.remaining >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+          {{ row.remaining|floatformat:2 }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">No active accounts found.</p>
+  {% endif %}
+</div>
+
+<!-- Zone Summaries -->
+<div class="card-raised" style="box-shadow: var(--shadow-pop-sm);">
+  <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    Zones
+  </h2>
+  {% if zone_summaries %}
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--color-border);">
+        <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Zone</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Supply (AF)</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Usage (AF)</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Net (AF)</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Allocation (AF)</th>
+        <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Remaining (AF)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in zone_summaries %}
+      <tr style="border-bottom: 1px solid var(--color-border);">
+        <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); font-weight: 600;">
+          {{ row.zone.name }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--forest-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums;">
+          {{ row.supply|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--furnace-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums;">
+          {{ row.usage|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; font-weight: 600; font-family: var(--font-mono); font-variant-numeric: tabular-nums; {% if row.net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+          {{ row.net|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--color-text-primary); font-family: var(--font-mono); font-variant-numeric: tabular-nums;">
+          {{ row.allocation|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-xs) var(--space-sm); text-align: right; font-weight: 600; font-family: var(--font-mono); font-variant-numeric: tabular-nums; {% if row.remaining >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+          {{ row.remaining|floatformat:2 }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">No zones configured yet.</p>
+  {% endif %}
+</div>
+
+{% endif %}
