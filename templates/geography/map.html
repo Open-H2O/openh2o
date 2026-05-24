@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Map - Open Water Accounting Platform{% endblock %}
 
@@ -6,42 +7,142 @@
 
 {% block map_styles %}
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+<style>
+    /* Let the map fill the entire content area */
+    .app-content { padding: 0 !important; overflow: hidden; }
+    #map-wrapper { position: relative; width: 100%; height: calc(100vh - 56px); }
+</style>
 {% endblock %}
 
 {% block content %}
-<div id="map-container" style="width: 100%; height: calc(100vh - 96px); border-radius: var(--radius-md); overflow: hidden;">
+<div id="map-wrapper">
+    <div id="map"></div>
+
+    <div id="toolbar">
+        <div class="tb-group">
+            <button id="btn-dark" class="tb-btn active" onclick="switchBase('dark')">
+                <i class="fas fa-map"></i> Dark
+            </button>
+            <button id="btn-aerial" class="tb-btn" onclick="switchBase('aerial')">
+                <i class="fas fa-satellite"></i> Aerial
+            </button>
+        </div>
+        <div class="tb-group">
+            <button class="tb-btn" onclick="resetView()">
+                <i class="fas fa-home"></i> Reset
+            </button>
+            <button class="tb-btn" onclick="planimetricView()">
+                <i class="fas fa-compass"></i> North
+            </button>
+            <button id="btn-measure" class="tb-btn" onclick="toggleMeasure()">
+                <i class="fas fa-ruler"></i> Measure
+            </button>
+        </div>
+    </div>
+
+    <div id="controls">
+        <h3>Layers</h3>
+    </div>
+
+    <div id="legend"></div>
+
+    <div id="coords" onclick="copyCoords()">
+        <span id="coord-text" class="coord-text"></span>
+        <a id="coord-link" class="coord-link" href="#" target="_blank" onclick="event.stopPropagation();" title="Open in Google Maps">&#x1f30d;</a>
+    </div>
+
+    <div id="coord-toast">Copied!</div>
 </div>
 {% endblock %}
 
 {% block map_scripts %}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
-(function() {
-    var map = new maplibregl.Map({
-        container: 'map-container',
-        style: {
-            version: 8,
-            sources: {
-                'carto-dark': {
-                    type: 'raster',
-                    tiles: ['https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
-                    tileSize: 256,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
-                }
-            },
-            layers: [{
-                id: 'carto-dark-layer',
-                type: 'raster',
-                source: 'carto-dark',
-                minzoom: 0,
-                maxzoom: 19
-            }]
+var MAP_CONFIG = {
+    title: 'Open Water Accounting Platform',
+    center: [{{ center_lng }}, {{ center_lat }}],
+    zoom: {{ zoom }},
+    maxZoom: 18,
+    fitToData: true,
+    geojsonSources: [
+        { id: 'parcels', url: '{% url "parcels:geojson" %}' },
+        { id: 'wells', url: '{% url "wells:geojson" %}' },
+        { id: 'pods', url: '{% url "surface:pods_geojson" %}' },
+        { id: 'recharge', url: '{% url "recharge:sites_geojson" %}' }
+    ],
+    layers: [
+        {
+            id: 'parcels-fill', type: 'fill', source: 'parcels',
+            label: 'Parcels', group: 'parcels',
+            paint: { 'fill-color': '#1B7FAF', 'fill-opacity': 0.3 },
+            swatch: 'fill', swatchColor: '#1B7FAF'
         },
-        center: [-119.5, 37.5],
-        zoom: 6
-    });
-
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
-})();
+        {
+            id: 'parcels-outline', type: 'line', source: 'parcels',
+            group: 'parcels', groupHidden: true,
+            paint: { 'line-color': '#1B7FAF', 'line-width': 1.5 }
+        },
+        {
+            id: 'wells-points', type: 'circle', source: 'wells',
+            label: 'Wells',
+            paint: { 'circle-radius': 5, 'circle-color': '#E4A317', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
+            glow: { width: 12, opacity: 0.15 },
+            swatch: 'dot', swatchColor: '#E4A317'
+        },
+        {
+            id: 'pods-points', type: 'circle', source: 'pods',
+            label: 'Points of Diversion',
+            paint: { 'circle-radius': 5, 'circle-color': '#4ECDC4', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
+            glow: { width: 12, opacity: 0.15 },
+            swatch: 'dot', swatchColor: '#4ECDC4'
+        },
+        {
+            id: 'recharge-points', type: 'circle', source: 'recharge',
+            label: 'Recharge Sites',
+            paint: { 'circle-radius': 6, 'circle-color': '#7B68EE', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
+            glow: { width: 14, opacity: 0.15 },
+            swatch: 'dot', swatchColor: '#7B68EE'
+        }
+    ],
+    popups: {
+        'parcels-fill': function(p) {
+            return '<strong>' + (p.parcel_number || 'Unknown') + '</strong><br>' +
+                   'Owner: ' + (p.owner_name || '—') + '<br>' +
+                   'Area: ' + (p.area_acres ? p.area_acres + ' ac' : '—') + '<br>' +
+                   'Status: ' + (p.status || '—') + '<br>' +
+                   '<a href="/parcels/' + p.pk + '/" style="color:#E4A317">View details →</a>';
+        },
+        'wells-points': function(p) {
+            return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
+                   'Reg ID: ' + (p.well_registration_id || '—') + '<br>' +
+                   'Depth: ' + (p.depth_ft ? p.depth_ft + ' ft' : '—') + '<br>' +
+                   'Status: ' + (p.status || '—') + '<br>' +
+                   '<a href="/wells/' + p.pk + '/" style="color:#E4A317">View details →</a>';
+        },
+        'pods-points': function(p) {
+            return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
+                   'Stream: ' + (p.stream_name || '—') + '<br>' +
+                   'Max rate: ' + (p.max_rate_cfs ? p.max_rate_cfs + ' cfs' : '—');
+        },
+        'recharge-points': function(p) {
+            return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
+                   'Type: ' + (p.site_type || '—') + '<br>' +
+                   'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—');
+        }
+    },
+    legend: [
+        {
+            title: 'Features',
+            items: [
+                { label: 'Parcels', swatch: 'fill', color: '#1B7FAF' },
+                { label: 'Wells', swatch: 'dot', color: '#E4A317' },
+                { label: 'Points of Diversion', swatch: 'dot', color: '#4ECDC4' },
+                { label: 'Recharge Sites', swatch: 'dot', color: '#7B68EE' }
+            ]
+        }
+    ]
+};
 </script>
+<script src="{% static 'js/map-engine.js' %}"></script>
 {% endblock %}
