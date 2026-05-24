@@ -194,7 +194,7 @@ Phase 8 is the final integration phase.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Infrastructure Scaffold | 1/1 | Complete | 2026-05-23 |
-| 2. Core Domain Models | 1/7 | In progress | - |
+| 2. Core Domain Models | 2/7 | In progress | - |
 | 3. Parcel and Well CRUD with Maps | 0/TBD | Not started | - |
 | 4. Water Accounting Engine | 0/TBD | Not started | - |
 | 5. External Data Aggregator | 0/TBD | Not started | - |
