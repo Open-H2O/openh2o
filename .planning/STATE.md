@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 ## Current Position
 
 Phase: 3 of 8 (Parcel and Well CRUD with Maps)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-05-24 -- Completed 03-01-PLAN.md
+Last activity: 2026-05-24 -- Completed 03-02-PLAN.md
 
-Progress: ███████░░░ 50%
+Progress: ████████░░ 56%
 
 ## Performance Metrics
 
@@ -56,6 +56,9 @@ Recent decisions affecting current work:
 - CARTO dark basemap for map page (matches VanderDev dark-mode aesthetic)
 - GeoJSON endpoints use HttpResponse (not JsonResponse) since GeoDjango serialize returns string
 - Sidebar collapse state persisted in localStorage
+- Default basemap is CARTO dark (not aerial) for dark-mode consistency
+- GeoJSON fetch gracefully falls back to empty FeatureCollection on failure
+- parcels-fill and parcels-outline share group: 'parcels' for unified toggle
 
 ### Deferred Issues
 
@@ -68,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-24
-Stopped at: Completed 03-01-PLAN.md (1 of 4 plans in Phase 3)
+Stopped at: Completed 03-02-PLAN.md (2 of 4 plans in Phase 3)
 Resume file: None
