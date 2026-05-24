@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
+    "django.contrib.sites",
     # Third-party
     "django_extensions",
     "django_htmx",
@@ -55,6 +56,8 @@ INSTALLED_APPS = [
     "reporting",
     "health",
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -82,6 +85,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.context_processors.site_config",
             ],
         },
     },
@@ -139,10 +143,39 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # -- django-allauth ----------------------------------------------------------
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 SOCIALACCOUNT_PROVIDERS = {}
+
+# -- Email -------------------------------------------------------------------
+
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
+)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@openh2o.com")
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+
+# -- Google OAuth (optional) -------------------------------------------------
+
+_google_client_id = env("GOOGLE_OAUTH_CLIENT_ID", default="")
+_google_client_secret = env("GOOGLE_OAUTH_CLIENT_SECRET", default="")
+
+if _google_client_id and _google_client_secret:
+    SOCIALACCOUNT_PROVIDERS = {
+        "google": {
+            "APP": {
+                "client_id": _google_client_id,
+                "secret": _google_client_secret,
+            },
+            "SCOPE": ["profile", "email"],
+            "AUTH_PARAMS": {"access_type": "online"},
+        }
+    }
