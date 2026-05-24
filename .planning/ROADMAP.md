@@ -45,7 +45,8 @@ Verification: `docker compose up -d` succeeds. `curl localhost` returns styled p
 **Goal**: All 48 models exist with migrations, admin registered, seed data and auth working
 **Depends on**: Phase 1
 **Research**: Unlikely (Django ORM, django-allauth are well-documented)
-**Plans**: TBD
+**Plans**: 1/7 complete
+**Status**: In progress
 
 Deliverables:
 - All Django models across 11 apps with initial migrations
@@ -193,7 +194,7 @@ Phase 8 is the final integration phase.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Infrastructure Scaffold | 1/1 | Complete | 2026-05-23 |
-| 2. Core Domain Models | 0/TBD | Not started | - |
+| 2. Core Domain Models | 1/7 | In progress | - |
 | 3. Parcel and Well CRUD with Maps | 0/TBD | Not started | - |
 | 4. Water Accounting Engine | 0/TBD | Not started | - |
 | 5. External Data Aggregator | 0/TBD | Not started | - |
