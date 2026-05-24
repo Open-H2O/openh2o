@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 ## Current Position
 
 Phase: 4 of 8 (Water Accounting Engine)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-05-24 -- Completed 04-01-PLAN.md
+Last activity: 2026-05-24 -- Completed 04-02-PLAN.md
 
-Progress: ██████████░░ 78%
+Progress: ██████████░░ 82%
 
 ## Performance Metrics
 
@@ -68,10 +68,13 @@ Recent decisions affecting current work:
 - Surface water and recharge views are read-only (no inline editing, data from external sources)
 - Soft delete for WaterAccountParcel removal (removed_date) preserves historical assignment data
 - All accounting ModelForms in single forms.py with shared dark-mode style constants
+- Diversion/recharge integration functions accept explicit parcel/zone params (missing model FKs)
+- Balance engine uses Django ORM aggregate(Sum); period selector defaults to most recent non-finalized period
 
 ### Deferred Issues
 
-None.
+- ISSUE-001: RechargeSite missing zone FK (Phase 04-02)
+- ISSUE-002: WaterRight missing parcel FK (Phase 04-02)
 
 ### Blockers/Concerns
 
@@ -80,5 +83,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-24
-Stopped at: Completed 04-01-PLAN.md (Plan 1 of 3 for Phase 4)
+Stopped at: Completed 04-02-PLAN.md (Plan 2 of 3 for Phase 4)
 Resume file: None
