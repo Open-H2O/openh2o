@@ -1,16 +1,56 @@
 {% extends "base.html" %}
 
 {% block title %}Wells - Open Water Accounting Platform{% endblock %}
-
 {% block page_title %}Wells{% endblock %}
 
 {% block content %}
-<div class="card-raised">
-    <h2 class="text-lg font-semibold mb-sm" style="color: var(--color-text-primary);">
-        Well List
-    </h2>
-    <p class="text-sm" style="color: var(--color-text-secondary);">
-        Well management will be available in a future update.
-    </p>
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Toolbar -->
+  <div class="card-raised" style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
+    <!-- Search -->
+    <div style="flex: 1; min-width: 200px;">
+      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+        Search
+      </label>
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Well name or registration ID..."
+        hx-get="{% url 'wells:list' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='status']"
+        style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none;"
+      >
+    </div>
+
+    <!-- Status filter -->
+    <div>
+      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+        Status
+      </label>
+      <select
+        name="status"
+        hx-get="{% url 'wells:list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q']"
+        style="padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; cursor: pointer;"
+      >
+        <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+        {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    {% include "wells/partials/_list_results.html" %}
+  </div>
+
 </div>
 {% endblock %}
