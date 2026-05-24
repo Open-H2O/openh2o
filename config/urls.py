@@ -12,5 +12,6 @@ urlpatterns = [
     path("surface/", include("surface.urls")),
     path("recharge/", include("recharge.urls")),
     path("map/", include("geography.urls")),
+    path("datasync/", include("datasync.urls")),
     path("", index, name="index"),
 ]

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Add Station - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Add Monitoring Station{% endblock %}
+
+{% block content %}
+<div style="max-width: 640px;">
+
+  <!-- Back link -->
+  <div style="margin-bottom: var(--space-lg);">
+    <a href="{% url 'datasync:station_list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+      &larr; Back to Stations
+    </a>
+  </div>
+
+  <!-- Error messages -->
+  {% if errors %}
+  <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius-sm); padding: var(--space-md); margin-bottom: var(--space-lg);">
+    {% for error in errors %}
+      <div style="color: #ef4444; font-size: 0.875rem;">{{ error }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="card-raised">
+    <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+      Station Details
+    </h2>
+
+    <form method="post" style="display: flex; flex-direction: column; gap: var(--space-lg);">
+      {% csrf_token %}
+
+      <!-- Data Source -->
+      <div>
+        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+          Data Source <span style="color: #ef4444;">*</span>
+        </label>
+        <select
+          name="data_source"
+          required
+          style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; cursor: pointer;"
+        >
+          <option value="">Select a data source...</option>
+          {% for ds in data_sources %}
+            <option value="{{ ds.pk }}" {% if form_data.data_source == ds.pk|stringformat:'s' %}selected{% endif %}>
+              {{ ds.code }} — {{ ds.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- External Station ID -->
+      <div>
+        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+          External Station ID <span style="color: #ef4444;">*</span>
+        </label>
+        <input
+          type="text"
+          name="external_station_id"
+          value="{{ form_data.external_station_id|default:'' }}"
+          placeholder="e.g. 11303000"
+          required
+          style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; font-family: var(--font-mono);"
+        >
+        <p style="margin-top: 4px; font-size: 0.75rem; color: var(--color-text-tertiary);">The station identifier used by the external data provider.</p>
+      </div>
+
+      <!-- Station Name -->
+      <div>
+        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+          Station Name <span style="color: #ef4444;">*</span>
+        </label>
+        <input
+          type="text"
+          name="station_name"
+          value="{{ form_data.station_name|default:'' }}"
+          placeholder="e.g. Sacramento River at Keswick"
+          required
+          style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none;"
+        >
+      </div>
+
+      <!-- Latitude / Longitude -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+            Latitude <span style="color: #ef4444;">*</span>
+          </label>
+          <input
+            type="number"
+            name="lat"
+            value="{{ form_data.lat|default:'' }}"
+            placeholder="37.5000"
+            step="0.000001"
+            min="-90"
+            max="90"
+            required
+            style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; font-family: var(--font-mono);"
+          >
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+            Longitude <span style="color: #ef4444;">*</span>
+          </label>
+          <input
+            type="number"
+            name="lng"
+            value="{{ form_data.lng|default:'' }}"
+            placeholder="-119.5000"
+            step="0.000001"
+            min="-180"
+            max="180"
+            required
+            style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; font-family: var(--font-mono);"
+          >
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div style="display: flex; gap: var(--space-md); align-items: center; padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
+        <button
+          type="submit"
+          style="padding: var(--space-sm) var(--space-xl); background: var(--color-gold); color: var(--color-base); border: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.875rem; cursor: pointer;"
+        >
+          Add Station
+        </button>
+        <a href="{% url 'datasync:station_list' %}"
+           style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
