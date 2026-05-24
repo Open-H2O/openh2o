@@ -13,10 +13,16 @@
         {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
       </span>
     </div>
-    <a href="{% url 'accounting:ledger_create' %}"
-       style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.8125rem;">
-      + New Entry
-    </a>
+    <div style="display: flex; gap: var(--space-sm);">
+      <a href="{% url 'accounting:csv_upload' %}"
+         style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); color: var(--color-text-secondary); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.8125rem;">
+        Upload CSV
+      </a>
+      <a href="{% url 'accounting:ledger_create' %}"
+         style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.8125rem;">
+        + New Entry
+      </a>
+    </div>
   </div>
 
   <!-- Filters card -->

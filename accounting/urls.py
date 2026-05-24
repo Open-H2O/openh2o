@@ -41,4 +41,6 @@ urlpatterns = [
     # Ledger
     path("ledger/", views.ledger_list, name="ledger_list"),
     path("ledger/create/", views.ledger_create, name="ledger_create"),
+    path("ledger/upload/", views.csv_upload, name="csv_upload"),
+    path("ledger/template/", views.csv_template, name="csv_template"),
 ]
