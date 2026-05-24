@@ -171,10 +171,7 @@ def check_orphans():
         id__in=assigned_parcel_ids
     ).count()
 
-    station_well_ids = MonitoredStation.objects.values_list("id", flat=True)
-    # Wells without any associated monitored station (by location proximity is complex;
-    # simple check: wells that have no MonitoredStation with matching external_station_id)
-    orphan_wells = Well.objects.filter(is_active=True).count()
+    orphan_wells = Well.objects.filter(status="active").count()
     monitored_count = MonitoredStation.objects.count()
 
     details = {
