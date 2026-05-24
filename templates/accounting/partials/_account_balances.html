@@ -1,38 +1,38 @@
 <!-- Summary row: Supply / Usage / Net -->
 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-lg);">
-  <div style="text-align: center; padding: var(--space-md); background: var(--color-inset); border-radius: var(--radius-md);">
-    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Supply</div>
-    <div style="font-size: 1.25rem; font-weight: 800; color: var(--forest-500); font-variant-numeric: tabular-nums;">
+  <div class="inset-card">
+    <div class="stat-card-label">Supply</div>
+    <div class="stat-card-value-sm" style="color: var(--forest-500);">
       {{ balance.supply|floatformat:2 }}
     </div>
-    <div style="font-size: 0.6875rem; color: var(--color-text-tertiary);">AF</div>
+    <div class="stat-card-unit">AF</div>
   </div>
-  <div style="text-align: center; padding: var(--space-md); background: var(--color-inset); border-radius: var(--radius-md);">
-    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Usage</div>
-    <div style="font-size: 1.25rem; font-weight: 800; color: var(--furnace-500); font-variant-numeric: tabular-nums;">
+  <div class="inset-card">
+    <div class="stat-card-label">Usage</div>
+    <div class="stat-card-value-sm" style="color: var(--furnace-500);">
       {{ balance.usage|floatformat:2 }}
     </div>
-    <div style="font-size: 0.6875rem; color: var(--color-text-tertiary);">AF</div>
+    <div class="stat-card-unit">AF</div>
   </div>
-  <div style="text-align: center; padding: var(--space-md); background: var(--color-inset); border-radius: var(--radius-md);">
-    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Net</div>
-    <div style="font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; {% if balance.net >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">
+  <div class="inset-card">
+    <div class="stat-card-label">Net</div>
+    <div class="stat-card-value-sm" style="{% if balance.net >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">
       {{ balance.net|floatformat:2 }}
     </div>
-    <div style="font-size: 0.6875rem; color: var(--color-text-tertiary);">AF</div>
+    <div class="stat-card-unit">AF</div>
   </div>
 </div>
 
 <!-- Per-parcel breakdown -->
 {% if parcel_balances %}
-<h3 class="section-header" style="font-size: 0.8125rem; margin-bottom: var(--space-sm);">Per-Parcel Breakdown</h3>
+<h3 class="section-header-sm">Per-Parcel Breakdown</h3>
 <table class="data-table">
   <thead>
     <tr>
       <th>Parcel</th>
-      <th style="text-align: right;">Supply</th>
-      <th style="text-align: right;">Usage</th>
-      <th style="text-align: right;">Net</th>
+      <th class="th-right">Supply</th>
+      <th class="th-right">Usage</th>
+      <th class="th-right">Net</th>
     </tr>
   </thead>
   <tbody>
@@ -43,13 +43,13 @@
           {{ pb.parcel.parcel_number }}
         </a>
       </td>
-      <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--forest-500);">
+      <td class="td-num" style="color: var(--forest-500);">
         {{ pb.supply|floatformat:2 }}
       </td>
-      <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--furnace-500);">
+      <td class="td-num" style="color: var(--furnace-500);">
         {{ pb.usage|floatformat:2 }}
       </td>
-      <td style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; {% if pb.net >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">
+      <td class="td-num-bold" style="{% if pb.net >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">
         {{ pb.net|floatformat:2 }}
       </td>
     </tr>
@@ -57,5 +57,5 @@
   </tbody>
 </table>
 {% else %}
-<p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">No parcels assigned to this account.</p>
+<p class="text-tertiary text-sm">No parcels assigned to this account.</p>
 {% endif %}

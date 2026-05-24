@@ -68,7 +68,7 @@
 
         <!-- Timestamps -->
         <div class="border-separator">
-          <div class="text-tertiary" style="font-size: 0.75rem;">
+          <div class="text-tertiary text-xs">
             Created {{ account.created_at|date:"M d, Y" }} &middot; Updated {{ account.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -80,10 +80,8 @@
 
       <!-- Balance card with period selector -->
       <div class="card-raised">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header" style="margin: 0; border: none; padding: 0;">
-            Account Balance
-          </h2>
+        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 class="section-header-flush">Account Balance</h2>
           <select name="period"
                   hx-get="{% url 'accounting:account_detail' account.pk %}"
                   hx-target="#balance-section"
@@ -103,9 +101,7 @@
 
       <!-- Parcel Assignment card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Assigned Parcels
-        </h2>
+        <h2 class="section-header mb-md">Assigned Parcels</h2>
 
         <div id="parcel-assignments">
           {% include "accounting/partials/_parcel_assignment.html" %}
@@ -114,9 +110,7 @@
 
       <!-- Assign Parcel search card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Assign Parcel
-        </h2>
+        <h2 class="section-header mb-md">Assign Parcel</h2>
 
         <div class="field-group">
           <input
@@ -131,7 +125,7 @@
         </div>
 
         <div id="parcel-search-results">
-          <p class="text-tertiary" style="font-size: 0.8125rem;">Type a parcel number or owner name to search.</p>
+          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
         </div>
       </div>
 

@@ -44,7 +44,7 @@
           <div class="field-value">
             {% if period.is_finalized %}
               <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25);">Finalized</span>
-              <span class="text-tertiary" style="font-size: 0.8125rem; margin-left: var(--space-sm);">
+              <span class="text-tertiary text-sm" style="margin-left: var(--space-sm);">
                 {{ period.finalized_at|date:"M d, Y H:i" }}{% if period.finalized_by %} by {{ period.finalized_by }}{% endif %}
               </span>
             {% else %}
@@ -74,7 +74,7 @@
 
         <!-- Timestamps -->
         <div class="border-separator">
-          <div class="text-tertiary" style="font-size: 0.75rem;">
+          <div class="text-tertiary text-xs">
             Created {{ period.created_at|date:"M d, Y" }} &middot; Updated {{ period.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -82,15 +82,13 @@
 
       <!-- Stats card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Summary
-        </h2>
+        <h2 class="section-header mb-md">Summary</h2>
         <div style="display: flex; gap: var(--space-lg);">
-          <div class="field-group" style="margin-bottom: 0;">
+          <div class="field-group mb-0">
             <div class="field-label">Allocation Plans</div>
             <div style="font-size: 1.25rem; font-weight: 800; color: var(--color-text-primary);">{{ allocations|length }}</div>
           </div>
-          <div class="field-group" style="margin-bottom: 0;">
+          <div class="field-group mb-0">
             <div class="field-label">Ledger Entries</div>
             <div style="font-size: 1.25rem; font-weight: 800; color: var(--color-text-primary);">{{ ledger_count }}</div>
           </div>
@@ -102,17 +100,15 @@
     <div class="page-stack">
 
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Allocation Plans
-        </h2>
+        <h2 class="section-header mb-md">Allocation Plans</h2>
         {% if allocations %}
-        <table class="data-table" style="font-size: 0.8125rem;">
+        <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Name</th>
               <th>Zone</th>
               <th>Water Type</th>
-              <th style="text-align: right;">Allocation (AF)</th>
+              <th class="th-right">Allocation (AF)</th>
             </tr>
           </thead>
           <tbody>
@@ -121,13 +117,13 @@
               <td style="font-weight: 600;">{{ alloc.name }}</td>
               <td class="text-secondary">{{ alloc.zone.name }}</td>
               <td class="text-secondary">{{ alloc.water_type.name }}</td>
-              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ alloc.allocation_acre_feet|floatformat:2 }}</td>
+              <td class="td-num">{{ alloc.allocation_acre_feet|floatformat:2 }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No allocation plans for this period.</p>
+          <p class="text-tertiary text-base">No allocation plans for this period.</p>
         {% endif %}
       </div>
 

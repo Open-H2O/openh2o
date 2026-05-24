@@ -62,7 +62,7 @@
 
         <!-- Static timestamps -->
         <div class="border-separator">
-          <div class="text-tertiary" style="font-size: 0.75rem;">
+          <div class="text-tertiary text-xs">
             Created {{ parcel.created_at|date:"M d, Y" }} &middot; Updated {{ parcel.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -70,39 +70,35 @@
 
       <!-- Zone Memberships card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Zone Memberships
-        </h2>
+        <h2 class="section-header mb-md">Zone Memberships</h2>
         {% if zone_memberships %}
           {% for pz in zone_memberships %}
-          <div class="item-row" style="display: flex; align-items: center; gap: var(--space-sm);">
-            <span class="field-value" style="font-size: 0.875rem;">{{ pz.zone.name }}</span>
+          <div class="item-row row-start">
+            <span class="field-value-sm">{{ pz.zone.name }}</span>
             {% if pz.zone.zone_type %}
-            <span class="text-tertiary" style="font-size: 0.75rem; background: var(--color-elevated); padding: 1px 6px; border-radius: 4px;">{{ pz.zone.get_zone_type_display }}</span>
+            <span class="pill-tag">{{ pz.zone.get_zone_type_display }}</span>
             {% endif %}
           </div>
           {% endfor %}
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No zone memberships.</p>
+          <p class="text-tertiary text-base">No zone memberships.</p>
         {% endif %}
       </div>
 
       <!-- Related Wells card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Related Wells
-        </h2>
+        <h2 class="section-header mb-md">Related Wells</h2>
         {% if related_wells %}
           {% for wip in related_wells %}
-          <div class="item-row" style="display: flex; align-items: center; justify-content: space-between;">
-            <a href="{% url 'wells:detail' wip.well.pk %}" class="data-table-link" style="font-size: 0.875rem;">
+          <div class="item-row row-between">
+            <a href="{% url 'wells:detail' wip.well.pk %}" class="data-table-link text-base">
               {{ wip.well.name }}
             </a>
-            <span class="text-tertiary" style="font-size: 0.75rem;">{{ wip.fraction|floatformat:2 }} fraction</span>
+            <span class="text-tertiary text-xs">{{ wip.fraction|floatformat:2 }} fraction</span>
           </div>
           {% endfor %}
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No wells linked to this parcel.</p>
+          <p class="text-tertiary text-base">No wells linked to this parcel.</p>
         {% endif %}
       </div>
 
@@ -114,19 +110,17 @@
       <!-- Map card -->
       {% if geojson %}
       <div class="card-raised" style="padding: 0; overflow: hidden;">
-        <div id="parcel-map" style="height: 300px; width: 100%; border-radius: var(--radius-md);"></div>
+        <div id="parcel-map" class="map-embed"></div>
       </div>
       {% endif %}
 
       <!-- Recent Ledger card -->
       <div class="card-raised">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header" style="margin: 0; border: none; padding: 0;">
-            Recent Ledger Entries
-          </h2>
-          <div style="display: flex; gap: var(--space-sm); align-items: center;">
+        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 class="section-header-flush">Recent Ledger Entries</h2>
+          <div class="row-start">
             <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
-               class="text-tertiary back-link" style="font-size: 0.75rem;">
+               class="text-tertiary back-link text-xs">
               View All
             </a>
             <a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
@@ -136,11 +130,11 @@
           </div>
         </div>
         {% if recent_ledger %}
-        <table class="data-table" style="font-size: 0.8125rem;">
+        <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Date</th>
-              <th style="text-align: right;">Amount (AF)</th>
+              <th class="th-right">Amount (AF)</th>
               <th>Source</th>
             </tr>
           </thead>
@@ -148,14 +142,14 @@
             {% for entry in recent_ledger %}
             <tr>
               <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
-              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ entry.amount_acre_feet|floatformat:2 }}</td>
+              <td class="td-num">{{ entry.amount_acre_feet|floatformat:2 }}</td>
               <td class="text-tertiary">{{ entry.get_source_type_display }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No ledger entries yet.</p>
+          <p class="text-tertiary text-base">No ledger entries yet.</p>
         {% endif %}
       </div>
 
