@@ -4,17 +4,13 @@
 {% block page_title %}New Allocation Plan{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: var(--space-lg); max-width: 600px;">
+<div class="page-stack" style="max-width: 600px;">
 
   <!-- Back link -->
-  <div>
-    <a href="{% url 'accounting:allocations_list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
-      &larr; Back to Allocation Plans
-    </a>
-  </div>
+  <a href="{% url 'accounting:allocations_list' %}" class="back-link">&larr; Back to Allocation Plans</a>
 
   <div class="card-raised">
-    <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="section-header" style="margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
       Create Allocation Plan
     </h2>
 
@@ -31,10 +27,8 @@
     <form method="post">
       {% csrf_token %}
       {% for field in form %}
-      <div style="margin-bottom: var(--space-md);">
-        <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
-          {{ field.label }}
-        </label>
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
         {{ field }}
       </div>
       {% endfor %}

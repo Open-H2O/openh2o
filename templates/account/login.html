@@ -12,14 +12,12 @@
     <form method="post" action="{% url 'account_login' %}">
         {% csrf_token %}
         <div class="mb-md">
-            <label class="block text-sm mb-xs" style="color: var(--color-text-secondary);">Email</label>
-            <input type="email" name="login" required autofocus
-                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); width: 100%; font-family: var(--font-display);">
+            <label class="block text-sm mb-xs text-secondary">Email</label>
+            <input type="email" name="login" required autofocus class="form-input">
         </div>
         <div class="mb-md">
-            <label class="block text-sm mb-xs" style="color: var(--color-text-secondary);">Password</label>
-            <input type="password" name="password" required
-                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); width: 100%; font-family: var(--font-display);">
+            <label class="block text-sm mb-xs text-secondary">Password</label>
+            <input type="password" name="password" required class="form-input">
         </div>
         <div class="flex items-center justify-between mb-lg">
             <label class="flex items-center gap-2 text-sm" style="color: var(--color-text-secondary);">
