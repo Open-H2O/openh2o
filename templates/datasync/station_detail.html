@@ -8,24 +8,24 @@
 {% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+<div class="page-stack">
 
   <!-- Back link -->
   <div>
-    <a href="{% url 'datasync:station_list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+    <a href="{% url 'datasync:station_list' %}" class="back-link">
       &larr; Back to Stations
     </a>
   </div>
 
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+  <div class="page-grid-2col">
 
     <!-- Left column -->
-    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+    <div class="page-stack">
 
       <!-- Station Info card -->
       <div class="card-raised">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">
+          <h2 class="section-header" style="margin: 0; border: none; padding: 0;">
             Station Information
           </h2>
           <div id="toggle-cell">
@@ -33,8 +33,8 @@
           </div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Data Source</div>
+        <div class="field-group">
+          <div class="field-label">Data Source</div>
           <div style="display: flex; align-items: center; gap: var(--space-sm);">
             <span style="
               display: inline-flex; align-items: center;
@@ -47,55 +47,55 @@
               color: #FF6B6B;
               font-family: var(--font-mono);
             ">{{ station.data_source.code }}</span>
-            <span style="color: var(--color-text-secondary); font-size: 0.875rem;">{{ station.data_source.name }}</span>
+            <span class="text-secondary" style="font-size: 0.875rem;">{{ station.data_source.name }}</span>
           </div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">External Station ID</div>
-          <div style="color: var(--color-text-primary); font-family: var(--font-mono); font-size: 0.9375rem;">{{ station.external_station_id }}</div>
+        <div class="field-group">
+          <div class="field-label">External Station ID</div>
+          <div class="field-value-mono">{{ station.external_station_id }}</div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Location</div>
+        <div class="field-group">
+          <div class="field-label">Location</div>
           {% if station.location %}
-            <div style="color: var(--color-text-secondary); font-family: var(--font-mono); font-size: 0.8125rem;">
+            <div class="text-secondary field-value-mono" style="font-size: 0.8125rem;">
               {{ lat|floatformat:5 }}, {{ lng|floatformat:5 }}
             </div>
           {% else %}
-            <div style="color: var(--color-text-tertiary);">—</div>
+            <div class="text-tertiary">—</div>
           {% endif %}
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Parameters</div>
+        <div class="field-group">
+          <div class="field-label">Parameters</div>
           {% if station.parameters %}
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
               {% for param in station.parameters %}
-                <span style="background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; color: var(--color-text-secondary); font-family: var(--font-mono);">{{ param }}</span>
+                <span class="text-secondary text-mono" style="background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem;">{{ param }}</span>
               {% endfor %}
             </div>
           {% else %}
-            <div style="color: var(--color-text-tertiary);">—</div>
+            <div class="text-tertiary">—</div>
           {% endif %}
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Last Data</div>
-          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">
-            {% if station.last_data_at %}{{ station.last_data_at|date:"M d, Y H:i" }}{% else %}<span style="color: var(--color-text-tertiary);">No data yet</span>{% endif %}
+        <div class="field-group">
+          <div class="field-label">Last Data</div>
+          <div class="field-value">
+            {% if station.last_data_at %}{{ station.last_data_at|date:"M d, Y H:i" }}{% else %}<span class="text-tertiary">No data yet</span>{% endif %}
           </div>
         </div>
 
         {% if station.notes %}
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Notes</div>
-          <div style="color: var(--color-text-secondary); font-size: 0.875rem; line-height: 1.5;">{{ station.notes }}</div>
+        <div class="field-group">
+          <div class="field-label">Notes</div>
+          <div class="text-secondary" style="font-size: 0.875rem; line-height: 1.5;">{{ station.notes }}</div>
         </div>
         {% endif %}
 
-        <div style="margin-top: var(--space-lg); padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
-          <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+        <div class="border-separator">
+          <div class="text-tertiary" style="font-size: 0.75rem;">
             Created {{ station.created_at|date:"M d, Y" }} &middot; Updated {{ station.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -103,24 +103,24 @@
 
       <!-- Recent Sync Logs card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header" style="margin-bottom: var(--space-md);">
           Recent Sync Logs
         </h2>
         {% if recent_logs %}
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+        <table class="data-table" style="font-size: 0.8125rem;">
           <thead>
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Started</th>
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
-              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Staged</th>
-              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Published</th>
+            <tr>
+              <th>Started</th>
+              <th>Status</th>
+              <th style="text-align: right;">Staged</th>
+              <th style="text-align: right;">Published</th>
             </tr>
           </thead>
           <tbody>
             {% for log in recent_logs %}
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">{{ log.started_at|date:"M d, H:i" }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm);">
+            <tr>
+              <td class="text-secondary">{{ log.started_at|date:"M d, H:i" }}</td>
+              <td>
                 <span style="
                   display: inline-flex; align-items: center;
                   border-radius: 4px;
@@ -133,21 +133,21 @@
                   {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
                 ">{{ log.get_status_display }}</span>
               </td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">{{ log.records_staged }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">{{ log.records_published }}</td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ log.records_staged }}</td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ log.records_published }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No sync logs yet.</p>
+          <p class="text-tertiary" style="font-size: 0.875rem;">No sync logs yet.</p>
         {% endif %}
       </div>
 
     </div>
 
     <!-- Right column -->
-    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+    <div class="page-stack">
 
       <!-- Map card -->
       {% if station_geojson %}
@@ -158,28 +158,28 @@
 
       <!-- Recent Data Records card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header" style="margin-bottom: var(--space-md);">
           Recent Data Records
         </h2>
         {% if recent_records %}
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+        <table class="data-table" style="font-size: 0.8125rem;">
           <thead>
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Date</th>
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Parameter</th>
-              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Value</th>
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+            <tr>
+              <th>Date</th>
+              <th>Parameter</th>
+              <th style="text-align: right;">Value</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {% for record in recent_records %}
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">{{ record.observation_date|date:"M d, Y" }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary); font-family: var(--font-mono); font-size: 0.75rem;">{{ record.parameter_code }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">
-                {% if record.value is not None %}{{ record.value|floatformat:4 }} {% if record.unit %}<span style="color: var(--color-text-tertiary); font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span style="color: var(--color-text-tertiary);">—</span>{% endif %}
+            <tr>
+              <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
+              <td class="text-secondary text-mono" style="font-size: 0.75rem;">{{ record.parameter_code }}</td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums;">
+                {% if record.value is not None %}{{ record.value|floatformat:4 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
               </td>
-              <td style="padding: var(--space-xs) var(--space-sm);">
+              <td>
                 <span style="
                   display: inline-flex; align-items: center;
                   border-radius: 4px; padding: 1px 6px; font-size: 0.7rem; font-weight: 600;
@@ -194,7 +194,7 @@
           </tbody>
         </table>
         {% else %}
-          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No data records yet.</p>
+          <p class="text-tertiary" style="font-size: 0.875rem;">No data records yet.</p>
         {% endif %}
       </div>
 

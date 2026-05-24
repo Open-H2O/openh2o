@@ -8,40 +8,40 @@
 {% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+<div class="page-stack">
 
   <!-- Back link -->
   <div>
-    <a href="{% url 'parcels:list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+    <a href="{% url 'parcels:list' %}" class="back-link">
       &larr; Back to Parcels
     </a>
   </div>
 
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+  <div class="page-grid-2col">
 
     <!-- Left column: Parcel Info -->
-    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+    <div class="page-stack">
 
       <!-- Parcel Info card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header">
           Parcel Information
         </h2>
 
         <!-- Static field: parcel_number -->
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Parcel Number</div>
-          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ parcel.parcel_number }}</div>
+        <div class="field-group">
+          <div class="field-label">Parcel Number</div>
+          <div class="field-value">{{ parcel.parcel_number }}</div>
         </div>
 
         <!-- Editable fields -->
         {% for ef in editable_fields_with_values %}
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">
+        <div class="field-group">
+          <div class="field-label">
             {{ ef.label }}
           </div>
-          <div id="field-{{ ef.name }}" style="display: flex; align-items: flex-start; gap: var(--space-xs);">
-            <span style="color: var(--color-text-primary); font-size: 0.9375rem; flex: 1;">
+          <div id="field-{{ ef.name }}" class="field-row">
+            <span class="field-value" style="flex: 1;">
               {% if ef.name == "status" %}
                 {% include "parcels/partials/_status_badge.html" with status=ef.value %}
               {% else %}
@@ -52,10 +52,8 @@
               hx-get="{% url 'parcels:edit_field' parcel.pk %}?field={{ ef.name }}"
               hx-target="#field-{{ ef.name }}"
               hx-swap="innerHTML"
-              style="background: none; border: none; cursor: pointer; color: var(--color-text-tertiary); padding: 2px 4px; border-radius: var(--radius-sm); transition: color 0.15s;"
-              title="Edit {{ ef.label }}"
-              onmouseover="this.style.color='var(--color-gold)'"
-              onmouseout="this.style.color='var(--color-text-tertiary)'">
+              class="edit-btn"
+              title="Edit {{ ef.label }}">
               &#9998;
             </button>
           </div>
@@ -63,8 +61,8 @@
         {% endfor %}
 
         <!-- Static timestamps -->
-        <div style="margin-top: var(--space-lg); padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
-          <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+        <div class="border-separator">
+          <div class="text-tertiary" style="font-size: 0.75rem;">
             Created {{ parcel.created_at|date:"M d, Y" }} &middot; Updated {{ parcel.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -72,46 +70,46 @@
 
       <!-- Zone Memberships card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header" style="margin-bottom: var(--space-md);">
           Zone Memberships
         </h2>
         {% if zone_memberships %}
           {% for pz in zone_memberships %}
-          <div style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
-            <span style="color: var(--color-text-primary); font-size: 0.875rem;">{{ pz.zone.name }}</span>
+          <div class="item-row" style="display: flex; align-items: center; gap: var(--space-sm);">
+            <span class="field-value" style="font-size: 0.875rem;">{{ pz.zone.name }}</span>
             {% if pz.zone.zone_type %}
-            <span style="font-size: 0.75rem; color: var(--color-text-tertiary); background: var(--color-elevated); padding: 1px 6px; border-radius: 4px;">{{ pz.zone.get_zone_type_display }}</span>
+            <span class="text-tertiary" style="font-size: 0.75rem; background: var(--color-elevated); padding: 1px 6px; border-radius: 4px;">{{ pz.zone.get_zone_type_display }}</span>
             {% endif %}
           </div>
           {% endfor %}
         {% else %}
-          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No zone memberships.</p>
+          <p class="text-tertiary" style="font-size: 0.875rem;">No zone memberships.</p>
         {% endif %}
       </div>
 
       <!-- Related Wells card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header" style="margin-bottom: var(--space-md);">
           Related Wells
         </h2>
         {% if related_wells %}
           {% for wip in related_wells %}
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
-            <a href="{% url 'wells:detail' wip.well.pk %}" style="color: var(--color-blue); text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+          <div class="item-row" style="display: flex; align-items: center; justify-content: space-between;">
+            <a href="{% url 'wells:detail' wip.well.pk %}" class="data-table-link" style="font-size: 0.875rem;">
               {{ wip.well.name }}
             </a>
-            <span style="font-size: 0.75rem; color: var(--color-text-tertiary);">{{ wip.fraction|floatformat:2 }} fraction</span>
+            <span class="text-tertiary" style="font-size: 0.75rem;">{{ wip.fraction|floatformat:2 }} fraction</span>
           </div>
           {% endfor %}
         {% else %}
-          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No wells linked to this parcel.</p>
+          <p class="text-tertiary" style="font-size: 0.875rem;">No wells linked to this parcel.</p>
         {% endif %}
       </div>
 
     </div>
 
     <!-- Right column: Map + Ledger -->
-    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+    <div class="page-stack">
 
       <!-- Map card -->
       {% if geojson %}
@@ -123,43 +121,41 @@
       <!-- Recent Ledger card -->
       <div class="card-raised">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">
+          <h2 class="section-header" style="margin: 0; border: none; padding: 0;">
             Recent Ledger Entries
           </h2>
           <div style="display: flex; gap: var(--space-sm); align-items: center;">
             <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
-               style="color: var(--color-text-tertiary); text-decoration: none; font-size: 0.75rem;"
-               onmouseover="this.style.color='var(--color-blue)'"
-               onmouseout="this.style.color='var(--color-text-tertiary)'">
+               class="text-tertiary back-link" style="font-size: 0.75rem;">
               View All
             </a>
             <a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
-               style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.75rem;">
+               class="btn-primary btn-sm">
               + Add Entry
             </a>
           </div>
         </div>
         {% if recent_ledger %}
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+        <table class="data-table" style="font-size: 0.8125rem;">
           <thead>
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Date</th>
-              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Amount (AF)</th>
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Source</th>
+            <tr>
+              <th>Date</th>
+              <th style="text-align: right;">Amount (AF)</th>
+              <th>Source</th>
             </tr>
           </thead>
           <tbody>
             {% for entry in recent_ledger %}
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">{{ entry.effective_date|date:"M d, Y" }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">{{ entry.amount_acre_feet|floatformat:2 }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">{{ entry.get_source_type_display }}</td>
+            <tr>
+              <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ entry.amount_acre_feet|floatformat:2 }}</td>
+              <td class="text-tertiary">{{ entry.get_source_type_display }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No ledger entries yet.</p>
+          <p class="text-tertiary" style="font-size: 0.875rem;">No ledger entries yet.</p>
         {% endif %}
       </div>
 

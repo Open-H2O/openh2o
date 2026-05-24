@@ -8,74 +8,74 @@
 {% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+<div class="page-stack">
 
   <!-- Back link -->
   <div>
-    <a href="{% url 'surface:water_rights_list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+    <a href="{% url 'surface:water_rights_list' %}" class="back-link">
       &larr; Back to Water Rights
     </a>
   </div>
 
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+  <div class="page-grid-2col">
 
     <!-- Left column: Right Info + PODs -->
-    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+    <div class="page-stack">
 
       <!-- Right Info card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header">
           Right Information
         </h2>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Right ID</div>
-          <div style="color: var(--color-text-primary); font-size: 0.9375rem; font-family: 'JetBrains Mono', monospace;">{{ water_right.right_id }}</div>
+        <div class="field-group">
+          <div class="field-label">Right ID</div>
+          <div class="field-value-mono">{{ water_right.right_id }}</div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Right Type</div>
-          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ water_right.right_type }}</div>
+        <div class="field-group">
+          <div class="field-label">Right Type</div>
+          <div class="field-value">{{ water_right.right_type }}</div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Holder</div>
-          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ water_right.holder_name|default:"—" }}</div>
+        <div class="field-group">
+          <div class="field-label">Holder</div>
+          <div class="field-value">{{ water_right.holder_name|default:"—" }}</div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Priority Date</div>
-          <div style="color: var(--color-text-primary); font-size: 0.9375rem; font-variant-numeric: tabular-nums;">
+        <div class="field-group">
+          <div class="field-label">Priority Date</div>
+          <div class="field-value" style="font-variant-numeric: tabular-nums;">
             {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
           </div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Face Value (AF)</div>
-          <div style="color: var(--color-text-primary); font-size: 0.9375rem; font-variant-numeric: tabular-nums;">
+        <div class="field-group">
+          <div class="field-label">Face Value (AF)</div>
+          <div class="field-value" style="font-variant-numeric: tabular-nums;">
             {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
           </div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Source</div>
-          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ water_right.source_name|default:"—" }}</div>
+        <div class="field-group">
+          <div class="field-label">Source</div>
+          <div class="field-value">{{ water_right.source_name|default:"—" }}</div>
         </div>
 
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Status</div>
+        <div class="field-group">
+          <div class="field-label">Status</div>
           <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
         </div>
 
         {% if water_right.notes %}
-        <div style="margin-bottom: var(--space-md);">
-          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Notes</div>
-          <div style="color: var(--color-text-secondary); font-size: 0.875rem;">{{ water_right.notes }}</div>
+        <div class="field-group">
+          <div class="field-label">Notes</div>
+          <div class="text-secondary" style="font-size: 0.875rem;">{{ water_right.notes }}</div>
         </div>
         {% endif %}
 
-        <div style="margin-top: var(--space-lg); padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
-          <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+        <div class="border-separator">
+          <div class="text-tertiary" style="font-size: 0.75rem;">
             Created {{ water_right.created_at|date:"M d, Y" }} &middot; Updated {{ water_right.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -83,39 +83,39 @@
 
       <!-- Points of Diversion card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header" style="margin-bottom: var(--space-md);">
           Points of Diversion
         </h2>
         {% if pods %}
           {% for pod in pods %}
-          <div style="padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
+          <div class="item-row">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-              <span style="color: var(--color-text-primary); font-size: 0.875rem; font-weight: 600;">{{ pod.name }}</span>
+              <span class="field-value" style="font-size: 0.875rem; font-weight: 600;">{{ pod.name }}</span>
               {% include "surface/partials/_status_badge.html" with status=pod.status %}
             </div>
             {% if pod.stream_name %}
-              <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">{{ pod.stream_name }}</div>
+              <div class="text-tertiary" style="font-size: 0.75rem;">{{ pod.stream_name }}</div>
             {% endif %}
             {% if pod.max_rate_cfs %}
-              <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">Max rate: {{ pod.max_rate_cfs }} cfs</div>
+              <div class="text-tertiary" style="font-size: 0.75rem;">Max rate: {{ pod.max_rate_cfs }} cfs</div>
             {% endif %}
           </div>
           {% endfor %}
         {% else %}
-          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No points of diversion recorded.</p>
+          <p class="text-tertiary" style="font-size: 0.875rem;">No points of diversion recorded.</p>
         {% endif %}
       </div>
 
       <!-- Curtailment Status card -->
       {% if active_curtailments %}
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-gold); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header" style="color: var(--color-gold); margin-bottom: var(--space-md);">
           Active Curtailments Affecting This Right
         </h2>
         {% for curtailment in active_curtailments %}
-        <div style="padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-border);">
-          <div style="font-size: 0.875rem; font-weight: 600; color: var(--color-text-primary);">{{ curtailment.title }}</div>
-          <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 2px;">
+        <div class="item-row" style="padding: var(--space-sm) 0;">
+          <div class="field-value" style="font-size: 0.875rem; font-weight: 600;">{{ curtailment.title }}</div>
+          <div class="text-tertiary" style="font-size: 0.75rem; margin-top: 2px;">
             Order {{ curtailment.order_id }} &middot; Effective {{ curtailment.effective_date|date:"M d, Y" }}
             {% if curtailment.watershed %}&middot; {{ curtailment.watershed }}{% endif %}
           </div>
@@ -132,7 +132,7 @@
     </div>
 
     <!-- Right column: Map + Diversion Records -->
-    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+    <div class="page-stack">
 
       <!-- Map card -->
       <div class="card-raised" style="padding: 0; overflow: hidden;">
@@ -141,32 +141,32 @@
 
       <!-- Recent Diversion Records card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header" style="margin-bottom: var(--space-md);">
           Recent Diversion Records
         </h2>
         {% if recent_diversions %}
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+        <table class="data-table" style="font-size: 0.8125rem;">
           <thead>
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Month</th>
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">POD</th>
-              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Volume (AF)</th>
-              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Type</th>
+            <tr>
+              <th>Month</th>
+              <th>POD</th>
+              <th style="text-align: right;">Volume (AF)</th>
+              <th>Type</th>
             </tr>
           </thead>
           <tbody>
             {% for record in recent_diversions %}
-            <tr style="border-bottom: 1px solid var(--color-border);">
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary); font-variant-numeric: tabular-nums;">{{ record.month|date:"M Y" }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">{{ record.point_of_diversion.name }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">{{ record.volume_acre_feet|floatformat:2 }}</td>
-              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">{{ record.get_diversion_type_display }}</td>
+            <tr>
+              <td class="text-secondary" style="font-variant-numeric: tabular-nums;">{{ record.month|date:"M Y" }}</td>
+              <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
+              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ record.volume_acre_feet|floatformat:2 }}</td>
+              <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No diversion records yet.</p>
+          <p class="text-tertiary" style="font-size: 0.875rem;">No diversion records yet.</p>
         {% endif %}
       </div>
 
