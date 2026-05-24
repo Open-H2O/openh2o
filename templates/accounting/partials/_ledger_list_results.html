@@ -21,7 +21,7 @@
             {{ entry.parcel.parcel_number }}
           </a>
         </td>
-        <td class="td-num-bold" style="color: {% if entry.amount_acre_feet >= 0 %}var(--forest-500){% else %}var(--furnace-500){% endif %};">
+        <td class="td-num-bold {% if entry.amount_acre_feet >= 0 %}text-supply{% else %}text-usage{% endif %}">
           {{ entry.amount_acre_feet|floatformat:2 }}
         </td>
         <td class="text-tertiary">{{ entry.get_source_type_display }}</td>

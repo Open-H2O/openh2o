@@ -817,6 +817,28 @@ a { color: inherit; }
     color: var(--forest-500);
 }
 
+/* -- Semantic water accounting colors ------------------------------------ */
+
+.text-supply {
+    color: var(--forest-400);
+}
+
+.text-usage {
+    color: oklch(0.65 0.20 25);
+}
+
+.text-surplus {
+    color: var(--forest-400);
+}
+
+.text-deficit {
+    color: oklch(0.65 0.20 25);
+}
+
+.text-neutral {
+    color: var(--color-text-secondary);
+}
+
 /* -- Form error box ------------------------------------------------------ */
 
 .form-error-box {
