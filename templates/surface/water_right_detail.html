@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Water Right {{ water_right.right_id }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water Right {{ water_right.right_id }}{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'surface:water_rights_list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+      &larr; Back to Water Rights
+    </a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+
+    <!-- Left column: Right Info + PODs -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Right Info card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Right Information
+        </h2>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Right ID</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem; font-family: 'JetBrains Mono', monospace;">{{ water_right.right_id }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Right Type</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ water_right.right_type }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Holder</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ water_right.holder_name|default:"—" }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Priority Date</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem; font-variant-numeric: tabular-nums;">
+            {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
+          </div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Face Value (AF)</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem; font-variant-numeric: tabular-nums;">
+            {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
+          </div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Source</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ water_right.source_name|default:"—" }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Status</div>
+          <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
+        </div>
+
+        {% if water_right.notes %}
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Notes</div>
+          <div style="color: var(--color-text-secondary); font-size: 0.875rem;">{{ water_right.notes }}</div>
+        </div>
+        {% endif %}
+
+        <div style="margin-top: var(--space-lg); padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
+          <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+            Created {{ water_right.created_at|date:"M d, Y" }} &middot; Updated {{ water_right.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Points of Diversion card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Points of Diversion
+        </h2>
+        {% if pods %}
+          {% for pod in pods %}
+          <div style="padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+              <span style="color: var(--color-text-primary); font-size: 0.875rem; font-weight: 600;">{{ pod.name }}</span>
+              {% include "surface/partials/_status_badge.html" with status=pod.status %}
+            </div>
+            {% if pod.stream_name %}
+              <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">{{ pod.stream_name }}</div>
+            {% endif %}
+            {% if pod.max_rate_cfs %}
+              <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">Max rate: {{ pod.max_rate_cfs }} cfs</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No points of diversion recorded.</p>
+        {% endif %}
+      </div>
+
+      <!-- Curtailment Status card -->
+      {% if active_curtailments %}
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-gold); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Active Curtailments Affecting This Right
+        </h2>
+        {% for curtailment in active_curtailments %}
+        <div style="padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-border);">
+          <div style="font-size: 0.875rem; font-weight: 600; color: var(--color-text-primary);">{{ curtailment.title }}</div>
+          <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 2px;">
+            Order {{ curtailment.order_id }} &middot; Effective {{ curtailment.effective_date|date:"M d, Y" }}
+            {% if curtailment.watershed %}&middot; {{ curtailment.watershed }}{% endif %}
+          </div>
+          {% if curtailment.priority_date_cutoff %}
+            <div style="font-size: 0.75rem; color: var(--color-gold); margin-top: 2px;">
+              Priority cutoff: {{ curtailment.priority_date_cutoff|date:"M d, Y" }}
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right column: Map + Diversion Records -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Map card -->
+      <div class="card-raised" style="padding: 0; overflow: hidden;">
+        <div id="wr-map" style="height: 320px; width: 100%; border-radius: var(--radius-md);"></div>
+      </div>
+
+      <!-- Recent Diversion Records card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Recent Diversion Records
+        </h2>
+        {% if recent_diversions %}
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Month</th>
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">POD</th>
+              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Volume (AF)</th>
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in recent_diversions %}
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary); font-variant-numeric: tabular-nums;">{{ record.month|date:"M Y" }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">{{ record.point_of_diversion.name }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">{{ record.volume_acre_feet|floatformat:2 }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">{{ record.get_diversion_type_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No diversion records yet.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(function() {
+  var geojson = {% if pods_geojson %}{{ pods_geojson|safe }}{% else %}null{% endif %};
+
+  var defaultCenter = [-120.5, 37.5];
+  if (geojson && geojson.features && geojson.features.length > 0) {
+    var f = geojson.features[0];
+    defaultCenter = f.geometry.coordinates;
+  }
+
+  var map = new maplibregl.Map({
+    container: 'wr-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    center: defaultCenter,
+    zoom: 11
+  });
+
+  map.on('load', function() {
+    if (geojson && geojson.features && geojson.features.length > 0) {
+      map.addSource('pods', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'pods-point',
+        type: 'circle',
+        source: 'pods',
+        paint: {
+          'circle-radius': 9,
+          'circle-color': '#E4A317',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+
+      // Fit to all POD bounds
+      var coords = geojson.features.map(function(f) { return f.geometry.coordinates; });
+      if (coords.length === 1) {
+        map.flyTo({ center: coords[0], zoom: 13 });
+      } else {
+        var lons = coords.map(function(c) { return c[0]; });
+        var lats = coords.map(function(c) { return c[1]; });
+        map.fitBounds(
+          [[Math.min.apply(null, lons), Math.min.apply(null, lats)],
+           [Math.max.apply(null, lons), Math.max.apply(null, lats)]],
+          { padding: 48, maxZoom: 14 }
+        );
+      }
+    } else {
+      var el = document.createElement('div');
+      el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d5e6f;font-size:0.875rem;pointer-events:none;';
+      el.textContent = 'No points of diversion with location';
+      document.getElementById('wr-map').appendChild(el);
+    }
+  });
+})();
+</script>
+{% endblock %}
