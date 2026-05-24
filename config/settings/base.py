@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "core",
     "geography",
     "parcels",
+    "wells",
 ]
 
 MIDDLEWARE = [
