@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 ## Current Position
 
 Phase: 3 of 8 (Parcel and Well CRUD with Maps)
-Plan: 0 of 4 in current phase
-Status: Plans created, ready for execution
-Last activity: 2026-05-23 -- Created 4 plans for Phase 3
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-05-24 -- Completed 03-01-PLAN.md
 
 Progress: ███████░░░ 50%
 
@@ -53,6 +53,9 @@ Recent decisions affecting current work:
 - django-allauth deprecation warnings fixed in 02-06 (ACCOUNT_LOGIN_METHODS/ACCOUNT_SIGNUP_FIELDS)
 - django.contrib.sites added; django_site table created manually to fix migration ordering
 - SiteConfig exposed to templates via context processor (not template tag)
+- CARTO dark basemap for map page (matches VanderDev dark-mode aesthetic)
+- GeoJSON endpoints use HttpResponse (not JsonResponse) since GeoDjango serialize returns string
+- Sidebar collapse state persisted in localStorage
 
 ### Deferred Issues
 
@@ -64,6 +67,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-23
-Stopped at: Completed 02-07-PLAN.md (Phase 2 complete)
+Last session: 2026-05-24
+Stopped at: Completed 03-01-PLAN.md (1 of 4 plans in Phase 3)
 Resume file: None
