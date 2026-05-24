@@ -58,8 +58,9 @@
 {% endif %}
 
 {% else %}
-<div style="text-align: center; padding: var(--space-xl); color: var(--color-text-tertiary);">
-  <p style="font-size: 0.875rem; margin-bottom: var(--space-sm);">No reports generated yet.</p>
+<div class="empty-state">
+  <div class="empty-state-icon">&#x1F4C4;</div>
+  <p class="empty-state-text">No reports generated yet.</p>
   <a href="{% url 'reporting:report_generate' %}" style="color: var(--color-gold); text-decoration: none; font-size: 0.8125rem; font-weight: 600;">Generate your first report</a>
 </div>
 {% endif %}
