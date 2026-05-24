@@ -1,4 +1,4 @@
-<div class="text-tertiary" style="font-size: 0.75rem; margin-bottom: var(--space-sm);">
+<div class="text-tertiary text-xs mb-sm">
   {{ total_count }} report{{ total_count|pluralize }}
 </div>
 
@@ -30,10 +30,10 @@
         <span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8;">{{ sub.get_status_display }}</span>
         {% endif %}
       </td>
-      <td class="text-tertiary" style="font-size: 0.8125rem;">
+      <td class="text-tertiary text-sm">
         {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
       </td>
-      <td class="text-tertiary" style="font-size: 0.8125rem;">
+      <td class="text-tertiary text-sm">
         {% if sub.submitted_at %}{{ sub.submitted_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
       </td>
     </tr>
@@ -42,12 +42,12 @@
 </table>
 
 {% if page_obj.has_other_pages %}
-<div style="display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-md);">
+<div class="pagination-row">
   {% if page_obj.has_previous %}
   <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
      class="btn-secondary btn-sm">Previous</a>
   {% endif %}
-  <span class="text-tertiary" style="padding: var(--space-xs) var(--space-sm); font-size: 0.8125rem;">
+  <span class="pagination-label text-tertiary text-sm">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
@@ -61,6 +61,6 @@
 <div class="empty-state">
   <div class="empty-state-icon">&#x1F4C4;</div>
   <p class="empty-state-text">No reports generated yet.</p>
-  <a href="{% url 'reporting:report_generate' %}" style="color: var(--color-gold); text-decoration: none; font-size: 0.8125rem; font-weight: 600;">Generate your first report</a>
+  <a href="{% url 'reporting:report_generate' %}" class="text-sm" style="color: var(--color-gold); text-decoration: none; font-weight: 600;">Generate your first report</a>
 </div>
 {% endif %}

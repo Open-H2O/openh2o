@@ -4,7 +4,7 @@
       <tr>
         <th>Date</th>
         <th>Parcel</th>
-        <th style="text-align: right;">Amount (AF)</th>
+        <th class="th-right">Amount (AF)</th>
         <th>Source</th>
         <th>Water Type</th>
         <th>Description</th>
@@ -21,7 +21,7 @@
             {{ entry.parcel.parcel_number }}
           </a>
         </td>
-        <td style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: {% if entry.amount_acre_feet >= 0 %}var(--forest-500){% else %}var(--furnace-500){% endif %};">
+        <td class="td-num-bold" style="color: {% if entry.amount_acre_feet >= 0 %}var(--forest-500){% else %}var(--furnace-500){% endif %};">
           {{ entry.amount_acre_feet|floatformat:2 }}
         </td>
         <td class="text-tertiary">{{ entry.get_source_type_display }}</td>
@@ -34,7 +34,7 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="6" style="padding: var(--space-lg) var(--space-md); text-align: center; color: var(--color-text-tertiary);">
+        <td colspan="6" class="text-tertiary" style="padding: var(--space-lg) var(--space-md); text-align: center;">
           No ledger entries found.
         </td>
       </tr>
@@ -44,14 +44,14 @@
 </div>
 
 {% if page_obj.has_other_pages %}
-<div style="display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-md);">
+<div class="pagination-row">
   {% if page_obj.has_previous %}
   <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}"
      class="btn-secondary btn-sm">
     &larr; Previous
   </a>
   {% endif %}
-  <span class="text-tertiary" style="padding: var(--space-xs) var(--space-md); font-size: 0.8125rem;">
+  <span class="pagination-label text-tertiary text-sm">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}

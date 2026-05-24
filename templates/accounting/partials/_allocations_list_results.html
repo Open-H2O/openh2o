@@ -1,17 +1,7 @@
 <!-- Count badge -->
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md);">
-  <span class="text-secondary" style="font-size: 0.8125rem;">
-    <span style="
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--color-elevated);
-      border: 1px solid var(--color-border-hover);
-      border-radius: 999px;
-      padding: 1px 10px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--color-text-primary);
-      margin-right: var(--space-xs);
-    ">{{ total_count }}</span>
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
     allocation{{ total_count|pluralize }} found
   </span>
 </div>
@@ -25,7 +15,7 @@
         <th>Zone</th>
         <th>Water Type</th>
         <th>Period</th>
-        <th style="text-align: right;">Allocation (AF)</th>
+        <th class="th-right">Allocation (AF)</th>
       </tr>
     </thead>
     <tbody>
@@ -39,7 +29,7 @@
             {{ alloc.reporting_period.name }}
           </a>
         </td>
-        <td style="text-align: right; font-variant-numeric: tabular-nums;">
+        <td class="td-num">
           {{ alloc.allocation_acre_feet|floatformat:2 }}
         </td>
       </tr>
@@ -50,7 +40,7 @@
 
 <!-- Pagination -->
 {% if page_obj.has_other_pages %}
-<div style="display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-lg);">
+<div class="pagination-row">
   {% if page_obj.has_previous %}
     <button
       hx-get="{% url 'accounting:allocations_list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&period={{ period_id }}"
@@ -59,7 +49,7 @@
       Previous
     </button>
   {% endif %}
-  <span class="text-secondary" style="display: flex; align-items: center; font-size: 0.875rem;">
+  <span class="pagination-label">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
