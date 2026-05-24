@@ -65,7 +65,7 @@ Verification: `manage.py migrate` succeeds. Seed commands populate reference dat
 **Goal**: Import parcels and wells, see them on a map, view details, manage surface water and recharge
 **Depends on**: Phase 2
 **Research**: Unlikely (MapLibre GL JS and HTMX patterns established from VanderDev)
-**Plans**: 2/4 complete
+**Plans**: 3/4 complete
 
 Deliverables:
 - Parcel list/detail views with HTMX search/filter
@@ -195,7 +195,7 @@ Phase 8 is the final integration phase.
 |-------|----------------|--------|-----------|
 | 1. Infrastructure Scaffold | 1/1 | Complete | 2026-05-23 |
 | 2. Core Domain Models | 7/7 | Complete | 2026-05-23 |
-| 3. Parcel and Well CRUD with Maps | 2/4 | In progress | - |
+| 3. Parcel and Well CRUD with Maps | 3/4 | In progress | - |
 | 4. Water Accounting Engine | 0/TBD | Not started | - |
 | 5. External Data Aggregator | 0/TBD | Not started | - |
 | 6. State Reporting | 0/TBD | Not started | - |
