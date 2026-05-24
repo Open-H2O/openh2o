@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Parcel {{ parcel.parcel_number }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Parcel {{ parcel.parcel_number }}{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'parcels:list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+      &larr; Back to Parcels
+    </a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+
+    <!-- Left column: Parcel Info -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Parcel Info card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Parcel Information
+        </h2>
+
+        <!-- Static field: parcel_number -->
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Parcel Number</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ parcel.parcel_number }}</div>
+        </div>
+
+        <!-- Editable fields -->
+        {% for ef in editable_fields_with_values %}
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">
+            {{ ef.label }}
+          </div>
+          <div id="field-{{ ef.name }}" style="display: flex; align-items: flex-start; gap: var(--space-xs);">
+            <span style="color: var(--color-text-primary); font-size: 0.9375rem; flex: 1;">
+              {% if ef.name == "status" %}
+                {% include "parcels/partials/_status_badge.html" with status=ef.value %}
+              {% else %}
+                {{ ef.value|default:"—" }}
+              {% endif %}
+            </span>
+            <button
+              hx-get="{% url 'parcels:edit_field' parcel.pk %}?field={{ ef.name }}"
+              hx-target="#field-{{ ef.name }}"
+              hx-swap="innerHTML"
+              style="background: none; border: none; cursor: pointer; color: var(--color-text-tertiary); padding: 2px 4px; border-radius: var(--radius-sm); transition: color 0.15s;"
+              title="Edit {{ ef.label }}"
+              onmouseover="this.style.color='var(--color-gold)'"
+              onmouseout="this.style.color='var(--color-text-tertiary)'">
+              &#9998;
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Static timestamps -->
+        <div style="margin-top: var(--space-lg); padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
+          <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+            Created {{ parcel.created_at|date:"M d, Y" }} &middot; Updated {{ parcel.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone Memberships card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Zone Memberships
+        </h2>
+        {% if zone_memberships %}
+          {% for pz in zone_memberships %}
+          <div style="display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
+            <span style="color: var(--color-text-primary); font-size: 0.875rem;">{{ pz.zone.name }}</span>
+            {% if pz.zone.zone_type %}
+            <span style="font-size: 0.75rem; color: var(--color-text-tertiary); background: var(--color-elevated); padding: 1px 6px; border-radius: 4px;">{{ pz.zone.get_zone_type_display }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No zone memberships.</p>
+        {% endif %}
+      </div>
+
+      <!-- Related Wells card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Related Wells
+        </h2>
+        {% if related_wells %}
+          {% for wip in related_wells %}
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
+            <a href="{% url 'wells:detail' wip.well.pk %}" style="color: var(--color-blue); text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+              {{ wip.well.name }}
+            </a>
+            <span style="font-size: 0.75rem; color: var(--color-text-tertiary);">{{ wip.fraction|floatformat:2 }} fraction</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No wells linked to this parcel.</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right column: Map + Ledger -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Map card -->
+      {% if geojson %}
+      <div class="card-raised" style="padding: 0; overflow: hidden;">
+        <div id="parcel-map" style="height: 300px; width: 100%; border-radius: var(--radius-md);"></div>
+      </div>
+      {% endif %}
+
+      <!-- Recent Ledger card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Recent Ledger Entries
+        </h2>
+        {% if recent_ledger %}
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Date</th>
+              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Amount (AF)</th>
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in recent_ledger %}
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">{{ entry.effective_date|date:"M d, Y" }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">{{ entry.amount_acre_feet|floatformat:2 }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">{{ entry.get_source_type_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No ledger entries yet.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block map_scripts %}
+{% if geojson %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(function() {
+  var geojson = {{ geojson|safe }};
+  var map = new maplibregl.Map({
+    container: 'parcel-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    center: [0, 0],
+    zoom: 10
+  });
+
+  map.on('load', function() {
+    map.addSource('parcel', { type: 'geojson', data: geojson });
+    map.addLayer({
+      id: 'parcel-fill',
+      type: 'fill',
+      source: 'parcel',
+      paint: {
+        'fill-color': '#1B7FAF',
+        'fill-opacity': 0.35
+      }
+    });
+    map.addLayer({
+      id: 'parcel-outline',
+      type: 'line',
+      source: 'parcel',
+      paint: {
+        'line-color': '#1B7FAF',
+        'line-width': 2
+      }
+    });
+
+    // Fit to parcel bounds
+    var coords = [];
+    geojson.features.forEach(function(f) {
+      if (f.geometry && f.geometry.coordinates) {
+        f.geometry.coordinates.forEach(function(poly) {
+          poly.forEach(function(ring) {
+            ring.forEach(function(pt) { coords.push(pt); });
+          });
+        });
+      }
+    });
+
+    if (coords.length) {
+      var lons = coords.map(function(c) { return c[0]; });
+      var lats = coords.map(function(c) { return c[1]; });
+      map.fitBounds(
+        [[Math.min.apply(null, lons), Math.min.apply(null, lats)],
+         [Math.max.apply(null, lons), Math.max.apply(null, lats)]],
+        { padding: 32, maxZoom: 16 }
+      );
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
