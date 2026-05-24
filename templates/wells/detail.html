@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Well {{ well.name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{{ well.name }}{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'wells:list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+      &larr; Back to Wells
+    </a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+
+    <!-- Left column: Well Info -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Well Info card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Well Information
+        </h2>
+
+        <!-- Static field: well_registration_id -->
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Registration ID</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem; font-family: 'JetBrains Mono', monospace;">{{ well.well_registration_id|default:"—" }}</div>
+        </div>
+
+        <!-- Static field: well_type -->
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Well Type</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ well.well_type|default:"—" }}</div>
+        </div>
+
+        <!-- Editable fields -->
+        {% for ef in editable_fields_with_values %}
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">
+            {{ ef.label }}
+          </div>
+          <div id="field-{{ ef.name }}" style="display: flex; align-items: flex-start; gap: var(--space-xs);">
+            <span style="color: var(--color-text-primary); font-size: 0.9375rem; flex: 1;">
+              {% if ef.name == "status" %}
+                {% include "wells/partials/_status_badge.html" with status=ef.value %}
+              {% else %}
+                {{ ef.value|default:"—" }}
+              {% endif %}
+            </span>
+            <button
+              hx-get="{% url 'wells:edit_field' well.pk %}?field={{ ef.name }}"
+              hx-target="#field-{{ ef.name }}"
+              hx-swap="innerHTML"
+              style="background: none; border: none; cursor: pointer; color: var(--color-text-tertiary); padding: 2px 4px; border-radius: var(--radius-sm); transition: color 0.15s;"
+              title="Edit {{ ef.label }}"
+              onmouseover="this.style.color='var(--color-gold)'"
+              onmouseout="this.style.color='var(--color-text-tertiary)'">
+              &#9998;
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Static timestamps -->
+        <div style="margin-top: var(--space-lg); padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
+          <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+            Created {{ well.created_at|date:"M d, Y" }} &middot; Updated {{ well.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Meters card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Current Meters
+        </h2>
+        {% if current_meters %}
+          {% for wm in current_meters %}
+          <div style="padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
+            <span style="color: var(--color-text-primary); font-size: 0.875rem;">{{ wm.meter }}</span>
+            {% if wm.installed_date %}
+              <span style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-left: var(--space-sm);">Installed {{ wm.installed_date|date:"M d, Y" }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No active meters on this well.</p>
+        {% endif %}
+      </div>
+
+      <!-- Irrigated Parcels card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Irrigated Parcels
+        </h2>
+        {% if irrigated_parcels %}
+          {% for wip in irrigated_parcels %}
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
+            <a href="{% url 'parcels:detail' wip.parcel.pk %}" style="color: var(--color-blue); text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+              {{ wip.parcel.parcel_number }}
+            </a>
+            <div style="text-align: right;">
+              <span style="font-size: 0.8125rem; color: var(--color-text-secondary);">{{ wip.fraction|floatformat:4 }} fraction</span>
+              {% if wip.parcel.owner_name %}
+                <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">{{ wip.parcel.owner_name }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No parcels linked to this well.</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right column: Map + Monitoring -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Map card -->
+      <div class="card-raised" style="padding: 0; overflow: hidden;">
+        <div id="well-map" style="height: 300px; width: 100%; border-radius: var(--radius-md);"></div>
+      </div>
+
+      <!-- Monitoring Data card -->
+      {% if monitoring %}
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Monitoring Data
+        </h2>
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
+          {% if monitoring.monitoring_agency %}
+          <div>
+            <span style="font-size: 0.75rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Agency</span>
+            <div style="color: var(--color-text-primary); font-size: 0.875rem;">{{ monitoring.monitoring_agency }}</div>
+          </div>
+          {% endif %}
+          {% if monitoring.measurement_frequency %}
+          <div>
+            <span style="font-size: 0.75rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Frequency</span>
+            <div style="color: var(--color-text-primary); font-size: 0.875rem;">{{ monitoring.measurement_frequency }}</div>
+          </div>
+          {% endif %}
+          {% if monitoring.reference_elevation_ft %}
+          <div>
+            <span style="font-size: 0.75rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Reference Elevation</span>
+            <div style="color: var(--color-text-primary); font-size: 0.875rem;">{{ monitoring.reference_elevation_ft }} ft</div>
+          </div>
+          {% endif %}
+          {% if monitoring.notes %}
+          <div>
+            <span style="font-size: 0.75rem; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Notes</span>
+            <div style="color: var(--color-text-secondary); font-size: 0.875rem;">{{ monitoring.notes }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(function() {
+  var geojson = {% if geojson %}{{ geojson|safe }}{% else %}null{% endif %};
+  var defaultLon = geojson && geojson.features && geojson.features[0]
+    ? geojson.features[0].geometry.coordinates[0] : -120.5;
+  var defaultLat = geojson && geojson.features && geojson.features[0]
+    ? geojson.features[0].geometry.coordinates[1] : 37.5;
+
+  var map = new maplibregl.Map({
+    container: 'well-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    center: [defaultLon, defaultLat],
+    zoom: 13
+  });
+
+  map.on('load', function() {
+    if (geojson) {
+      map.addSource('well', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'well-point',
+        type: 'circle',
+        source: 'well',
+        paint: {
+          'circle-radius': 10,
+          'circle-color': '#E4A317',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+    } else {
+      // No location: show a placeholder message
+      var el = document.createElement('div');
+      el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d5e6f;font-size:0.875rem;pointer-events:none;';
+      el.textContent = 'No location recorded';
+      document.getElementById('well-map').appendChild(el);
+    }
+  });
+})();
+</script>
+{% endblock %}
