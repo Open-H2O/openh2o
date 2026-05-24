@@ -1,7 +1,7 @@
 <button
   hx-post="{% url 'datasync:station_toggle' station.pk %}"
-  hx-target="closest td"
-  hx-swap="innerHTML"
+  hx-target="this"
+  hx-swap="outerHTML"
   title="{% if station.is_active %}Deactivate{% else %}Activate{% endif %} station"
   style="
     display: inline-flex; align-items: center; justify-content: center;
