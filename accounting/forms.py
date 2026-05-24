@@ -84,6 +84,19 @@ class WaterAccountForm(forms.ModelForm):
         }
 
 
+class CsvUploadForm(forms.Form):
+    file = forms.FileField(
+        widget=forms.ClearableFileInput(attrs={"accept": ".csv", "style": FORM_INPUT_STYLE})
+    )
+    reporting_period = forms.ModelChoiceField(
+        queryset=ReportingPeriod.objects.order_by("-start_date"),
+        required=False,
+        empty_label="No period (unassigned)",
+        widget=forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+    )
+    dry_run = forms.BooleanField(required=False, initial=False)
+
+
 class ParcelLedgerForm(forms.ModelForm):
     class Meta:
         model = ParcelLedger

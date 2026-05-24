@@ -1,14 +1,19 @@
 from decimal import Decimal
 
+import csv as csv_module
+import io
+
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounting.forms import (
     AllocationPlanForm,
+    CsvUploadForm,
     ParcelLedgerForm,
     ReportingPeriodForm,
     WaterAccountForm,
@@ -20,7 +25,7 @@ from accounting.models import (
     WaterAccountParcel,
     WaterType,
 )
-from accounting.services import account_balance, parcel_balance, zone_balance
+from accounting.services import account_balance, parse_ledger_csv, parcel_balance, zone_balance
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
 
@@ -544,3 +549,42 @@ def ledger_create(request):
                 pass
 
     return render(request, "accounting/ledger_create.html", {"form": form})
+
+
+@login_required
+def csv_upload(request):
+    """Upload a CSV file to bulk-import ledger entries."""
+    if request.method == "POST":
+        form = CsvUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            csv_file = request.FILES["file"]
+            period = form.cleaned_data.get("reporting_period")
+            dry_run = form.cleaned_data.get("dry_run", False)
+            results = parse_ledger_csv(csv_file, reporting_period=period, dry_run=dry_run)
+            context = {"form": form, "results": results, "dry_run": dry_run}
+            if request.headers.get("HX-Request"):
+                return render(request, "accounting/partials/_csv_upload_results.html", context)
+            return render(request, "accounting/csv_upload.html", context)
+        else:
+            context = {"form": form}
+            return render(request, "accounting/csv_upload.html", context)
+
+    form = CsvUploadForm()
+    return render(request, "accounting/csv_upload.html", {"form": form})
+
+
+@login_required
+def csv_template(request):
+    """Download a blank CSV template with the required column headers."""
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="ledger_import_template.csv"'
+    writer = csv_module.writer(response)
+    writer.writerow([
+        "parcel_number",
+        "effective_date",
+        "amount_acre_feet",
+        "source_type",
+        "water_type_code",
+        "description",
+    ])
+    return response

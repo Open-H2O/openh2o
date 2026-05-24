@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Ledger CSV - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Upload Ledger CSV{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg); max-width: 800px;">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'accounting:ledger_list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+      &larr; Back to Ledger
+    </a>
+  </div>
+
+  <!-- Upload card -->
+  <div class="card-raised">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+      <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">Import Entries from CSV</h2>
+      <a href="{% url 'accounting:csv_template' %}"
+         style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: 4px var(--space-sm); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-secondary); text-decoration: none; font-size: 0.8125rem;">
+        Download CSV Template
+      </a>
+    </div>
+
+    <form id="csv-upload-form"
+          method="post"
+          enctype="multipart/form-data"
+          hx-post="{% url 'accounting:csv_upload' %}"
+          hx-target="#upload-results"
+          hx-encoding="multipart/form-data"
+          hx-indicator="#upload-spinner"
+          style="display: flex; flex-direction: column; gap: var(--space-md);">
+      {% csrf_token %}
+
+      <!-- File input -->
+      <div>
+        <label style="display: block; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">CSV File <span style="color: var(--furnace-500);">*</span></label>
+        {{ form.file }}
+        {% if form.file.errors %}
+        <div style="color: var(--furnace-400); font-size: 0.8125rem; margin-top: 4px;">{{ form.file.errors|join:", " }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Reporting Period -->
+      <div>
+        <label style="display: block; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Reporting Period</label>
+        {{ form.reporting_period }}
+        {% if form.reporting_period.errors %}
+        <div style="color: var(--furnace-400); font-size: 0.8125rem; margin-top: 4px;">{{ form.reporting_period.errors|join:", " }}</div>
+        {% endif %}
+        <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 4px;">All imported entries will be assigned to this period.</div>
+      </div>
+
+      <!-- Dry Run -->
+      <div style="display: flex; align-items: center; gap: var(--space-sm);">
+        {{ form.dry_run }}
+        <label for="{{ form.dry_run.id_for_label }}" style="font-size: 0.875rem; color: var(--color-text-secondary); cursor: pointer;">
+          Dry run (validate only, do not create records)
+        </label>
+      </div>
+
+      <!-- Submit -->
+      <div style="display: flex; align-items: center; gap: var(--space-md); padding-top: var(--space-sm);">
+        <button type="submit"
+                style="padding: var(--space-sm) var(--space-lg); background: var(--color-gold); color: var(--color-base); border: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.875rem; cursor: pointer;">
+          Upload &amp; Import
+        </button>
+        <span id="upload-spinner"
+              class="htmx-indicator"
+              style="color: var(--color-text-tertiary); font-size: 0.8125rem;">
+          Processing...
+        </span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Required columns reference -->
+  <div class="card-raised">
+    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-sm);">Required CSV Columns</h3>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--color-border);">
+          <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Column</th>
+          <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Required</th>
+          <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid var(--color-border);">
+          <td style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-mono); color: var(--color-text-primary);">parcel_number</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--forest-500); font-weight: 600;">Yes</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">Must match an existing parcel record</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--color-border);">
+          <td style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-mono); color: var(--color-text-primary);">effective_date</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--forest-500); font-weight: 600;">Yes</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">YYYY-MM-DD or MM/DD/YYYY</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--color-border);">
+          <td style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-mono); color: var(--color-text-primary);">amount_acre_feet</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--forest-500); font-weight: 600;">Yes</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">Positive = supply, negative = usage</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--color-border);">
+          <td style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-mono); color: var(--color-text-primary);">source_type</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--forest-500); font-weight: 600;">Yes</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">Must match a valid source type choice</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--color-border);">
+          <td style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-mono); color: var(--color-text-primary);">water_type_code</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">No</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">Must match an existing water type code if provided</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--color-border);">
+          <td style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-mono); color: var(--color-text-primary);">description</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">No</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">Free text description</td>
+        </tr>
+        <tr>
+          <td style="padding: var(--space-xs) var(--space-sm); font-family: var(--font-mono); color: var(--color-text-primary);">transaction_date</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">No</td>
+          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">Defaults to effective_date if omitted</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Results area (populated by HTMX) -->
+  <div id="upload-results">
+    {% if results %}
+      {% include "accounting/partials/_csv_upload_results.html" %}
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
