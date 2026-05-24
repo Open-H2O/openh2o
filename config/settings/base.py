@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "wells",
     "measurements",
     "accounting",
+    "surface",
 ]
 
 MIDDLEWARE = [
