@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 ## Current Position
 
 Phase: 3 of 8 (Parcel and Well CRUD with Maps)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-05-24 -- Completed 03-03-PLAN.md
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-05-24 -- Completed 03-04-PLAN.md
 
-Progress: █████████░ 63%
+Progress: ██████████ 75%
 
 ## Performance Metrics
 
@@ -63,6 +63,9 @@ Recent decisions affecting current work:
 - PATCH body parsed via parse_qs (Django doesn't populate request.POST for PATCH)
 - ParcelZone is the zone membership model (not ZoneMembership)
 - _field_value.html partial completes the HTMX edit round-trip cycle
+- import_parcels uses ParcelStaging for staged import with duplicate detection before promotion
+- import_wells creates Well records directly (no staging table for simpler point data)
+- Surface water and recharge views are read-only (no inline editing, data from external sources)
 
 ### Deferred Issues
 
@@ -75,5 +78,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-24
-Stopped at: Completed 03-03-PLAN.md (3 of 4 plans in Phase 3)
+Stopped at: Completed 03-04-PLAN.md (Phase 3 complete, 4 of 4 plans)
 Resume file: None
