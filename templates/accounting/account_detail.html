@@ -3,6 +3,18 @@
 {% block title %}{{ account.account_number }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ account.account_number }}{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:accounts_list' %}">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'accounting:accounts_list' %}">Accounts</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ account.account_number }}</span>
+  </nav>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack">
 

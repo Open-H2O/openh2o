@@ -31,6 +31,8 @@
         <div class="app-main">
             {% include "partials/_header.html" %}
 
+            {% block breadcrumbs %}{% endblock %}
+
             <main class="app-content">
                 {% block content %}{% endblock %}
             </main>

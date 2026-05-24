@@ -3,6 +3,17 @@
 {% block title %}Water Rights - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Water Rights{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'surface:water_rights_list' %}">Surface Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Water Rights</span>
+  </nav>
+  <p class="page-description">Surface water rights and diversions.</p>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack">
 

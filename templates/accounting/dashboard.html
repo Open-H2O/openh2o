@@ -3,6 +3,17 @@
 {% block title %}Water Budget - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Water Budget{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:dashboard' %}">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Dashboard</span>
+  </nav>
+  <p class="page-description">Water budget overview with supply vs usage.</p>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack">
 

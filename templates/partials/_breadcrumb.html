@@ -1,0 +1,11 @@
+{% comment %}
+Breadcrumb navigation partial.
+Usage in page templates:
+  {% block breadcrumbs %}
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'some:list' %}">Section</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Current Page</span>
+  </nav>
+  {% endblock %}
+{% endcomment %}
