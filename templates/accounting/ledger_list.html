@@ -7,17 +7,17 @@
 <div class="page-stack">
 
   <!-- Header row -->
-  <div style="display: flex; justify-content: space-between; align-items: center;">
+  <div class="row-between">
     <div>
-      <span class="text-secondary" style="font-size: 0.875rem;">
+      <span class="text-secondary text-base">
         {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
       </span>
     </div>
-    <div style="display: flex; gap: var(--space-sm);">
-      <a href="{% url 'accounting:csv_upload' %}" class="btn-secondary" style="text-decoration: none; font-size: 0.8125rem;">
+    <div class="row-start">
+      <a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">
         Upload CSV
       </a>
-      <a href="{% url 'accounting:ledger_create' %}" class="btn-primary" style="text-decoration: none; font-size: 0.8125rem;">
+      <a href="{% url 'accounting:ledger_create' %}" class="btn-primary btn-sm">
         + New Entry
       </a>
     </div>
@@ -48,8 +48,7 @@
                 hx-target="#ledger-results"
                 hx-trigger="change"
                 hx-include="[name='q'],[name='source_type'],[name='water_type'],[name='start_date'],[name='end_date']"
-                class="form-select"
-                style="width: 100%;">
+                class="form-select">
           <option value="">All Periods</option>
           {% for p in periods %}
           <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
@@ -65,8 +64,7 @@
                 hx-target="#ledger-results"
                 hx-trigger="change"
                 hx-include="[name='q'],[name='period'],[name='water_type'],[name='start_date'],[name='end_date']"
-                class="form-select"
-                style="width: 100%;">
+                class="form-select">
           <option value="">All Sources</option>
           {% for val, label in source_type_choices %}
           <option value="{{ val }}" {% if source_type == val %}selected{% endif %}>{{ label }}</option>
@@ -82,8 +80,7 @@
                 hx-target="#ledger-results"
                 hx-trigger="change"
                 hx-include="[name='q'],[name='period'],[name='source_type'],[name='start_date'],[name='end_date']"
-                class="form-select"
-                style="width: 100%;">
+                class="form-select">
           <option value="">All Types</option>
           {% for wt in water_types %}
           <option value="{{ wt.pk }}" {% if water_type_id == wt.pk|stringformat:"d" %}selected{% endif %}>{{ wt.name }}</option>
@@ -101,8 +98,7 @@
                hx-target="#ledger-results"
                hx-trigger="change"
                hx-include="[name='q'],[name='period'],[name='source_type'],[name='water_type'],[name='end_date']"
-               class="form-input"
-               style="width: 100%;">
+               class="form-input">
       </div>
       <div style="min-width: 130px;">
         <label class="form-label">End Date</label>
@@ -113,8 +109,7 @@
                hx-target="#ledger-results"
                hx-trigger="change"
                hx-include="[name='q'],[name='period'],[name='source_type'],[name='water_type'],[name='start_date']"
-               class="form-input"
-               style="width: 100%;">
+               class="form-input">
       </div>
     </div>
   </div>
