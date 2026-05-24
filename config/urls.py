@@ -15,6 +15,7 @@ urlpatterns = [
     path("map/", include("geography.urls")),
     path("datasync/", include("datasync.urls")),
     path("reporting/", include("reporting.urls")),
+    path("health/", include("health.urls")),
     path("", index, name="index"),
 ]
 
