@@ -1,0 +1,38 @@
+{% if assignments %}
+<table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+  <thead>
+    <tr style="border-bottom: 1px solid var(--color-border);">
+      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Parcel</th>
+      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Added</th>
+      <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for wap in assignments %}
+    <tr style="border-bottom: 1px solid var(--color-border);">
+      <td style="padding: var(--space-xs) var(--space-sm);">
+        <a href="{% url 'parcels:detail' wap.parcel.pk %}"
+           style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+          {{ wap.parcel.parcel_number }}
+        </a>
+      </td>
+      <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">
+        {{ wap.added_date|date:"M d, Y" }}
+      </td>
+      <td style="padding: var(--space-xs) var(--space-sm); text-align: right;">
+        <button
+          hx-post="{% url 'accounting:remove_parcel' account.pk wap.pk %}"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel {{ wap.parcel.parcel_number }} from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: #f87171; border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No parcels assigned to this account.</p>
+{% endif %}
