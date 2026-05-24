@@ -1,0 +1,169 @@
+/* map-engine.css — Dark-mode styles for openh2o interactive map
+   Adapted from VanderDev shared map engine styles.
+   Uses openh2o design tokens from tokens.css. */
+
+/* ── Map container ── */
+#map { width: 100%; height: 100%; }
+
+/* ── Top bar: basemap toggle + tools ── */
+#toolbar {
+    position:absolute; top:12px; left:12px; z-index:10;
+    display:flex; gap:8px; align-items:center;
+}
+.tb-group {
+    display:flex;
+    background:var(--color-card, #080b10);
+    border:1px solid var(--color-border, rgba(100,140,180,0.07));
+    border-radius:var(--radius-md, 10px);
+    overflow:hidden;
+    backdrop-filter:blur(12px);
+    box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
+.tb-btn {
+    padding:9px 16px;
+    color:var(--color-text-secondary, #8899aa);
+    font-family:'Public Sans',sans-serif;
+    font-size:12px;
+    font-weight:400;
+    cursor:pointer;
+    border:none;
+    background:transparent;
+    transition:all 0.2s;
+    display:flex; align-items:center; gap:6px;
+    border-right:1px solid var(--color-border, rgba(100,140,180,0.07));
+    white-space:nowrap;
+}
+.tb-btn:last-child { border-right:none; }
+.tb-btn:hover { color:var(--color-text-primary, #e8edf4); background:var(--color-elevated, #0e1219); }
+.tb-btn.active { color:var(--color-base, #040608); background:var(--color-gold, #E4A317); font-weight:700; }
+.tb-btn i { font-size:13px; }
+
+/* ── Layer control panel (right side) ── */
+#controls {
+    position:absolute; top:12px; right:12px; z-index:10;
+    background:var(--color-card, #080b10);
+    border:1px solid var(--color-border, rgba(100,140,180,0.07));
+    border-radius:12px;
+    padding:14px 16px;
+    min-width:220px;
+    backdrop-filter:blur(12px);
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+#controls h3 {
+    font-size:11px; font-weight:700; color:var(--color-gold, #E4A317);
+    margin-bottom:10px; letter-spacing:1px; text-transform:uppercase;
+}
+
+.layer-toggle {
+    display:flex; align-items:center; gap:8px;
+    padding:4px 0; cursor:pointer;
+    font-size:12px; color:var(--color-text-secondary, #8899aa);
+    transition:color 0.2s;
+}
+.layer-toggle:hover { color:var(--color-text-primary, #e8edf4); }
+.layer-toggle input[type="checkbox"] {
+    appearance:none; width:14px; height:14px;
+    border:1.5px solid var(--color-text-tertiary, #4d5e6f);
+    border-radius:3px; cursor:pointer;
+    position:relative; transition:all 0.2s; flex-shrink:0;
+}
+.layer-toggle input[type="checkbox"]:checked {
+    background:var(--color-gold, #E4A317); border-color:var(--color-gold, #E4A317);
+}
+.layer-toggle input[type="checkbox"]:checked::after {
+    content:'\2713'; position:absolute; top:-1px; left:2px;
+    font-size:11px; color:var(--color-base, #040608); font-weight:bold;
+}
+.swatch { width:12px; height:4px; border-radius:2px; flex-shrink:0; }
+.swatch-line { width:18px; height:0; flex-shrink:0; border-top:2.5px solid; }
+.swatch-line-dash { border-top-style:dashed; }
+.swatch-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.swatch-square { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+.swatch-letter { width:12px; height:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:var(--color-text-secondary, #8899aa); border:1.5px solid var(--color-text-tertiary, #4d5e6f); border-radius:2px; line-height:1; }
+.swatch-triangle { flex-shrink:0; font-size:14px; line-height:1; }
+.swatch-diamond { flex-shrink:0; font-size:14px; line-height:1; }
+.swatch-fill { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
+
+/* ── Legend (bottom left) ── */
+#legend {
+    position:absolute; bottom:30px; left:12px; z-index:10;
+    background:var(--color-card, #080b10);
+    border:1px solid var(--color-border, rgba(100,140,180,0.07));
+    border-radius:var(--radius-md, 10px);
+    padding:12px 16px;
+    min-width:190px;
+    backdrop-filter:blur(12px);
+    box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
+#legend h4 {
+    font-size:11px; font-weight:700; color:var(--color-gold, #E4A317);
+    letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;
+}
+.legend-row {
+    display:flex; align-items:center; gap:8px;
+    padding:3px 0; font-size:11px; color:var(--color-text-secondary, #8899aa);
+}
+
+/* ── MapLibre overrides ── */
+.maplibregl-popup-content {
+    background:var(--color-card, #080b10) !important;
+    color:var(--color-text-primary, #e8edf4) !important;
+    border:1px solid var(--color-border, rgba(100,140,180,0.07)) !important;
+    border-radius:var(--radius-md, 10px) !important;
+    font-family:'Public Sans',sans-serif;
+    font-size:12px; line-height:1.6;
+    padding:12px 16px !important;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5) !important;
+}
+.maplibregl-popup-tip { border-top-color:var(--color-card, #080b10) !important; }
+.maplibregl-popup-close-button { color:var(--color-text-tertiary, #4d5e6f) !important; font-size:18px; }
+.maplibregl-popup-close-button:hover { color:var(--color-gold, #E4A317) !important; }
+.maplibregl-ctrl-group { background:var(--color-card, #080b10) !important; border:1px solid var(--color-border, rgba(100,140,180,0.07)) !important; border-radius:8px !important; }
+.maplibregl-ctrl-group button { background:transparent !important; }
+.maplibregl-ctrl-group button span { filter:invert(0.7); }
+.maplibregl-ctrl-attrib { background:rgba(8,11,16,0.85) !important; color:var(--color-text-tertiary, #4d5e6f) !important; font-size:10px !important; }
+.maplibregl-ctrl-attrib a { color:#78b8ff !important; }
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-scale { position:fixed !important; bottom:12px !important; left:50% !important; transform:translateX(-50%) !important; }
+.maplibregl-ctrl-scale { background:rgba(8,11,16,0.85) !important; color:var(--color-text-secondary, #8899aa) !important; border:none !important; border-bottom:2px solid var(--color-text-tertiary, #4d5e6f) !important; font-family:'Public Sans',sans-serif; font-size:10px !important; padding:4px 10px !important; border-radius:0 !important; }
+
+/* ── Coordinate display ── */
+#coords {
+    position:absolute; top:50px; left:12px; z-index:10;
+    background:var(--color-card, #080b10);
+    border:1px solid var(--color-border, rgba(100,140,180,0.07));
+    border-radius:8px;
+    padding:5px 12px;
+    font-family:'Public Sans',sans-serif;
+    font-size:11px;
+    color:var(--color-text-secondary, #8899aa);
+    backdrop-filter:blur(12px);
+    box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    display:flex; align-items:center; gap:8px;
+    user-select:all;
+    cursor:pointer;
+}
+#coords:hover { border-color:var(--color-gold, #E4A317); color:var(--color-text-primary, #e8edf4); }
+#coords .coord-text { letter-spacing:0.3px; }
+#coords .coord-link {
+    color:var(--color-text-tertiary, #4d5e6f);
+    font-size:13px;
+    text-decoration:none;
+    transition:color 0.2s;
+}
+#coords .coord-link:hover { color:#78b8ff; }
+#coord-toast {
+    position:fixed; bottom:50px; left:50%; transform:translateX(-50%);
+    background:var(--color-gold, #E4A317); color:var(--color-base, #040608);
+    padding:6px 16px; border-radius:6px; font-size:12px; font-weight:700;
+    font-family:'Public Sans',sans-serif;
+    opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:100;
+}
+
+/* ── Measure tooltip ── */
+.measure-popup .maplibregl-popup-content {
+    background:var(--color-base, #040608) !important;
+    border-color:var(--color-gold, #E4A317) !important;
+    padding:6px 12px !important;
+    font-size:12px; font-weight:700;
+    color:var(--color-gold, #E4A317) !important;
+}
