@@ -1,0 +1,68 @@
+<div class="card-raised" style="padding: 0; overflow: hidden;">
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--color-border);">
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Date</th>
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Parcel</th>
+        <th style="text-align: right; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Amount (AF)</th>
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Source</th>
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Water Type</th>
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in page_obj %}
+      <tr style="border-bottom: 1px solid var(--color-border); transition: background 0.1s;"
+          onmouseover="this.style.background='var(--color-hover)'"
+          onmouseout="this.style.background='transparent'">
+        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary); white-space: nowrap;">
+          {{ entry.effective_date|date:"M d, Y" }}
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md);">
+          <a href="{% url 'parcels:detail' entry.parcel.pk %}" style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+            {{ entry.parcel.parcel_number }}
+          </a>
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md); text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: {% if entry.amount_acre_feet >= 0 %}var(--forest-500){% else %}var(--furnace-500){% endif %};">
+          {{ entry.amount_acre_feet|floatformat:2 }}
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary);">
+          {{ entry.get_source_type_display }}
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary);">
+          {% if entry.water_type %}{{ entry.water_type.name }}{% else %}&mdash;{% endif %}
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {{ entry.description|truncatechars:60 }}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="padding: var(--space-lg) var(--space-md); text-align: center; color: var(--color-text-tertiary);">
+          No ledger entries found.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div style="display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-md);">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}"
+     style="padding: var(--space-xs) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-secondary); text-decoration: none; font-size: 0.8125rem;">
+    &larr; Previous
+  </a>
+  {% endif %}
+  <span style="padding: var(--space-xs) var(--space-md); color: var(--color-text-tertiary); font-size: 0.8125rem;">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}"
+     style="padding: var(--space-xs) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-sm); color: var(--color-text-secondary); text-decoration: none; font-size: 0.8125rem;">
+    Next &rarr;
+  </a>
+  {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Ledger - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Ledger{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Header row -->
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <span style="font-size: 0.875rem; color: var(--color-text-secondary);">
+        {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
+      </span>
+    </div>
+    <a href="{% url 'accounting:ledger_create' %}"
+       style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.8125rem;">
+      + New Entry
+    </a>
+  </div>
+
+  <!-- Filters card -->
+  <div class="card-raised">
+    <div style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
+      <!-- Search -->
+      <div style="flex: 1; min-width: 200px;">
+        <label style="display: block; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Search</label>
+        <input type="text"
+               name="q"
+               value="{{ q }}"
+               placeholder="Parcel number or description..."
+               hx-get="{% url 'accounting:ledger_list' %}"
+               hx-target="#ledger-results"
+               hx-trigger="keyup changed delay:300ms"
+               hx-include="[name='period'],[name='source_type'],[name='water_type'],[name='start_date'],[name='end_date']"
+               style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none;">
+      </div>
+
+      <!-- Reporting Period -->
+      <div style="min-width: 160px;">
+        <label style="display: block; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Period</label>
+        <select name="period"
+                hx-get="{% url 'accounting:ledger_list' %}"
+                hx-target="#ledger-results"
+                hx-trigger="change"
+                hx-include="[name='q'],[name='source_type'],[name='water_type'],[name='start_date'],[name='end_date']"
+                style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; cursor: pointer;">
+          <option value="">All Periods</option>
+          {% for p in periods %}
+          <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Source Type -->
+      <div style="min-width: 140px;">
+        <label style="display: block; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Source</label>
+        <select name="source_type"
+                hx-get="{% url 'accounting:ledger_list' %}"
+                hx-target="#ledger-results"
+                hx-trigger="change"
+                hx-include="[name='q'],[name='period'],[name='water_type'],[name='start_date'],[name='end_date']"
+                style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; cursor: pointer;">
+          <option value="">All Sources</option>
+          {% for val, label in source_type_choices %}
+          <option value="{{ val }}" {% if source_type == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Water Type -->
+      <div style="min-width: 140px;">
+        <label style="display: block; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Water Type</label>
+        <select name="water_type"
+                hx-get="{% url 'accounting:ledger_list' %}"
+                hx-target="#ledger-results"
+                hx-trigger="change"
+                hx-include="[name='q'],[name='period'],[name='source_type'],[name='start_date'],[name='end_date']"
+                style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; cursor: pointer;">
+          <option value="">All Types</option>
+          {% for wt in water_types %}
+          <option value="{{ wt.pk }}" {% if water_type_id == wt.pk|stringformat:"d" %}selected{% endif %}>{{ wt.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Date Range -->
+      <div style="min-width: 130px;">
+        <label style="display: block; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Start Date</label>
+        <input type="date"
+               name="start_date"
+               value="{{ start_date }}"
+               hx-get="{% url 'accounting:ledger_list' %}"
+               hx-target="#ledger-results"
+               hx-trigger="change"
+               hx-include="[name='q'],[name='period'],[name='source_type'],[name='water_type'],[name='end_date']"
+               style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem;">
+      </div>
+      <div style="min-width: 130px;">
+        <label style="display: block; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">End Date</label>
+        <input type="date"
+               name="end_date"
+               value="{{ end_date }}"
+               hx-get="{% url 'accounting:ledger_list' %}"
+               hx-target="#ledger-results"
+               hx-trigger="change"
+               hx-include="[name='q'],[name='period'],[name='source_type'],[name='water_type'],[name='start_date']"
+               style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="ledger-results">
+    {% include "accounting/partials/_ledger_list_results.html" %}
+  </div>
+
+</div>
+{% endblock %}

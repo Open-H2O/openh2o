@@ -122,9 +122,23 @@
 
       <!-- Recent Ledger card -->
       <div class="card-raised">
-        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          Recent Ledger Entries
-        </h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">
+            Recent Ledger Entries
+          </h2>
+          <div style="display: flex; gap: var(--space-sm); align-items: center;">
+            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
+               style="color: var(--color-text-tertiary); text-decoration: none; font-size: 0.75rem;"
+               onmouseover="this.style.color='var(--color-blue)'"
+               onmouseout="this.style.color='var(--color-text-tertiary)'">
+              View All
+            </a>
+            <a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
+               style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.75rem;">
+              + Add Entry
+            </a>
+          </div>
+        </div>
         {% if recent_ledger %}
         <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
           <thead>
