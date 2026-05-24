@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Create Account — Open Water{% endblock %}
+{% block content %}
+<div class="card-raised w-full" style="max-width: 420px;">
+    <h1 class="text-xl font-extrabold mb-sm" style="color: var(--color-gold);">Create Account</h1>
+    <p class="text-sm mb-lg" style="color: var(--color-text-secondary);">Set up your water accounting access.</p>
+    {% if form.errors %}
+    <div class="mb-md p-sm" style="background: var(--color-elevated); border: 1px solid var(--furnace-400); border-radius: var(--radius-md);">
+        {% for field in form %}
+            {% for error in field.errors %}
+            <p class="text-sm" style="color: var(--furnace-500);">{{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+        <p class="text-sm" style="color: var(--furnace-500);">{{ error }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <form method="post" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+        <div class="mb-md">
+            <label class="block text-sm mb-xs" style="color: var(--color-text-secondary);">Email</label>
+            <input type="email" name="email" required autofocus
+                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); width: 100%; font-family: var(--font-display);">
+        </div>
+        <div class="mb-md">
+            <label class="block text-sm mb-xs" style="color: var(--color-text-secondary);">Password</label>
+            <input type="password" name="password1" required
+                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); width: 100%; font-family: var(--font-display);">
+        </div>
+        <div class="mb-lg">
+            <label class="block text-sm mb-xs" style="color: var(--color-text-secondary);">Confirm Password</label>
+            <input type="password" name="password2" required
+                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); width: 100%; font-family: var(--font-display);">
+        </div>
+        <button type="submit" class="btn-primary w-full mb-md">Create Account</button>
+    </form>
+    <p class="text-sm text-center" style="color: var(--color-text-secondary);">
+        Already have an account? <a href="{% url 'account_login' %}" style="color: var(--color-blue);">Log in</a>
+    </p>
+</div>
+{% endblock %}

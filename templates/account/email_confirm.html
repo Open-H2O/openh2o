@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Confirm Email — Open Water{% endblock %}
+{% block content %}
+<div class="card-raised w-full text-center" style="max-width: 420px;">
+    <h1 class="text-xl font-extrabold mb-sm" style="color: var(--color-gold);">Confirm Email</h1>
+    {% if confirmation %}
+    <p class="text-sm mb-lg" style="color: var(--color-text-secondary);">
+        Please confirm that <strong style="color: var(--color-text-primary);">{{ confirmation.email_address.email }}</strong> is your email address.
+    </p>
+    <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-primary w-full">Confirm Email</button>
+    </form>
+    {% else %}
+    <p class="text-sm mb-lg" style="color: var(--furnace-500);">This confirmation link is invalid or has expired.</p>
+    <a href="{% url 'account_login' %}" class="btn-secondary">Back to Login</a>
+    {% endif %}
+</div>
+{% endblock %}
