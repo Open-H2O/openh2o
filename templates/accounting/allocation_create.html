@@ -10,15 +10,15 @@
   <a href="{% url 'accounting:allocations_list' %}" class="back-link">&larr; Back to Allocation Plans</a>
 
   <div class="card-raised">
-    <h2 class="section-header" style="margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="card-header-ruled">
       Create Allocation Plan
     </h2>
 
     {% if form.errors %}
-    <div style="margin-bottom: var(--space-md); padding: var(--space-sm); background: var(--color-elevated); border: 1px solid var(--furnace-400); border-radius: var(--radius-md);">
+    <div class="form-error-box">
       {% for field, errors in form.errors.items %}
         {% for error in errors %}
-          <p style="color: var(--furnace-500); font-size: 0.8125rem; margin-bottom: 2px;">{{ field|capfirst }}: {{ error }}</p>
+          <p class="form-error-text">{{ field|capfirst }}: {{ error }}</p>
         {% endfor %}
       {% endfor %}
     </div>
@@ -32,9 +32,9 @@
         {{ field }}
       </div>
       {% endfor %}
-      <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+      <div class="form-footer">
         <button type="submit" class="btn-primary">Create Allocation</button>
-        <a href="{% url 'accounting:allocations_list' %}" class="btn-secondary" style="text-decoration: none;">Cancel</a>
+        <a href="{% url 'accounting:allocations_list' %}" class="btn-secondary">Cancel</a>
       </div>
     </form>
   </div>

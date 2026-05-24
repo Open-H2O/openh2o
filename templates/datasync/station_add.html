@@ -11,15 +11,15 @@
 
   <!-- Error messages -->
   {% if errors %}
-  <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius-sm); padding: var(--space-md);">
+  <div class="alert-error">
     {% for error in errors %}
-      <div style="color: #ef4444; font-size: 0.875rem;">{{ error }}</div>
+      <div>{{ error }}</div>
     {% endfor %}
   </div>
   {% endif %}
 
   <div class="card-raised">
-    <h2 class="section-header" style="margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="card-header-ruled">
       Station Details
     </h2>
 
@@ -28,8 +28,8 @@
 
       <!-- Data Source -->
       <div class="form-group">
-        <label class="form-label">Data Source <span style="color: #ef4444;">*</span></label>
-        <select name="data_source" required class="form-select" style="width: 100%;">
+        <label class="form-label">Data Source <span class="required-mark">*</span></label>
+        <select name="data_source" required class="form-select">
           <option value="">Select a data source...</option>
           {% for ds in data_sources %}
             <option value="{{ ds.pk }}" {% if form_data.data_source == ds.pk|stringformat:'s' %}selected{% endif %}>
@@ -41,7 +41,7 @@
 
       <!-- External Station ID -->
       <div class="form-group">
-        <label class="form-label">External Station ID <span style="color: #ef4444;">*</span></label>
+        <label class="form-label">External Station ID <span class="required-mark">*</span></label>
         <input
           type="text"
           name="external_station_id"
@@ -55,7 +55,7 @@
 
       <!-- Station Name -->
       <div class="form-group">
-        <label class="form-label">Station Name <span style="color: #ef4444;">*</span></label>
+        <label class="form-label">Station Name <span class="required-mark">*</span></label>
         <input
           type="text"
           name="station_name"
@@ -67,9 +67,9 @@
       </div>
 
       <!-- Latitude / Longitude -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+      <div class="form-grid-2col">
         <div class="form-group">
-          <label class="form-label">Latitude <span style="color: #ef4444;">*</span></label>
+          <label class="form-label">Latitude <span class="required-mark">*</span></label>
           <input
             type="number"
             name="lat"
@@ -83,7 +83,7 @@
           >
         </div>
         <div class="form-group">
-          <label class="form-label">Longitude <span style="color: #ef4444;">*</span></label>
+          <label class="form-label">Longitude <span class="required-mark">*</span></label>
           <input
             type="number"
             name="lng"
@@ -99,7 +99,7 @@
       </div>
 
       <!-- Submit -->
-      <div style="display: flex; gap: var(--space-md); align-items: center; padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
+      <div class="form-footer-ruled">
         <button type="submit" class="btn-primary">Add Station</button>
         <a href="{% url 'datasync:station_list' %}" class="back-link" style="margin: 0;">Cancel</a>
       </div>
