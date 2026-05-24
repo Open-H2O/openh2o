@@ -1,0 +1,120 @@
+"""
+Sync all active stations for a single data source.
+
+Usage:
+    python manage.py sync_source cdec
+    python manage.py sync_source cdec --start 2024-01-01 --end 2024-01-31
+    python manage.py sync_source cdec --mock
+"""
+
+from datetime import date, timedelta
+
+from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
+
+from datasync.adapters import get_adapter
+from datasync.models import DataSource, DataSyncLog, MonitoredStation
+
+
+class Command(BaseCommand):
+    help = "Sync all active stations for a single data source"
+
+    def add_arguments(self, parser):
+        parser.add_argument("code", type=str, help="Data source code (e.g. cdec, usgs)")
+        parser.add_argument(
+            "--start", type=str, default=None,
+            help="Start date (YYYY-MM-DD). Defaults to 7 days ago.",
+        )
+        parser.add_argument(
+            "--end", type=str, default=None,
+            help="End date (YYYY-MM-DD). Defaults to today.",
+        )
+        parser.add_argument(
+            "--mock", action="store_true",
+            help="Force mock mode (use fixture data instead of live API)",
+        )
+
+    def handle(self, *args, **options):
+        code = options["code"]
+
+        try:
+            data_source = DataSource.objects.get(code=code)
+        except DataSource.DoesNotExist:
+            raise CommandError(f"Data source '{code}' not found. Run seed_data_sources first.")
+
+        adapter = get_adapter(code)
+        if adapter is None:
+            raise CommandError(f"No adapter registered for source code '{code}'.")
+
+        # Parse dates
+        end_date = date.today()
+        start_date = end_date - timedelta(days=7)
+        if options["start"]:
+            start_date = date.fromisoformat(options["start"])
+        if options["end"]:
+            end_date = date.fromisoformat(options["end"])
+
+        # If --mock, temporarily force mock mode on the source
+        original_active = data_source.is_active
+        if options["mock"]:
+            data_source.is_active = False
+
+        stations = MonitoredStation.objects.filter(
+            data_source=data_source, is_active=True
+        )
+
+        if not stations.exists():
+            self.stdout.write(
+                self.style.WARNING(
+                    f"No active stations for {data_source.name}. "
+                    "Run discover_stations first."
+                )
+            )
+            return
+
+        self.stdout.write(
+            f"Syncing {stations.count()} station(s) for {data_source.name} "
+            f"({start_date} to {end_date})"
+        )
+
+        # Create a shared sync log for all stations in this run
+        sync_log = DataSyncLog.objects.create(
+            data_source=data_source, status="running"
+        )
+
+        failures = 0
+        for station in stations:
+            self.stdout.write(f"  {station.external_station_id}: {station.station_name}")
+            result = adapter.sync(station, start_date, end_date, sync_log=sync_log)
+            if result.error_message:
+                failures += 1
+                self.stdout.write(self.style.ERROR(f"    Error: {result.error_message}"))
+
+        # Finalize the shared sync log
+        sync_log.completed_at = timezone.now()
+        sync_log.duration_seconds = (
+            sync_log.completed_at - sync_log.started_at
+        ).total_seconds()
+
+        if failures == stations.count():
+            sync_log.status = "failed"
+        elif failures > 0:
+            sync_log.status = "partial"
+        else:
+            sync_log.status = "success"
+
+        sync_log.save()
+
+        # Update source timestamp
+        data_source.is_active = original_active
+        data_source.last_sync_at = timezone.now()
+        data_source.save()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Done: {sync_log.records_fetched} fetched, "
+                f"{sync_log.records_staged} staged, "
+                f"{sync_log.records_published} published "
+                f"({sync_log.duration_seconds:.1f}s)"
+            )
+        )
