@@ -208,4 +208,4 @@ Phase 8 is the final phase (merged UI/UX + Deploy/Handoff).
 | 5. External Data Aggregator | 2/2 | Complete | 2026-05-24 |
 | 6. State Reporting | 1/1 | Complete | 2026-05-24 |
 | 7. Health Check and Maintenance | 1/1 | Complete | 2026-05-24 |
-| 8. Deploy, Polish, and Handoff | 1/3 | In progress | - |
+| 8. Deploy, Polish, and Handoff | 2/3 | In progress | - |
