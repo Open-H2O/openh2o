@@ -69,7 +69,8 @@ var MAP_CONFIG = {
         { id: 'parcels', url: '{% url "parcels:geojson" %}' },
         { id: 'wells', url: '{% url "wells:geojson" %}' },
         { id: 'pods', url: '{% url "surface:pods_geojson" %}' },
-        { id: 'recharge', url: '{% url "recharge:sites_geojson" %}' }
+        { id: 'recharge', url: '{% url "recharge:sites_geojson" %}' },
+        { id: 'stations', url: '{% url "datasync:stations_geojson" %}' }
     ],
     layers: [
         {
@@ -103,6 +104,13 @@ var MAP_CONFIG = {
             paint: { 'circle-radius': 6, 'circle-color': '#7B68EE', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
             glow: { width: 14, opacity: 0.15 },
             swatch: 'dot', swatchColor: '#7B68EE'
+        },
+        {
+            id: 'stations-points', type: 'circle', source: 'stations',
+            label: 'Monitoring Stations',
+            paint: { 'circle-radius': 5, 'circle-color': '#FF6B6B', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
+            glow: { width: 12, opacity: 0.15 },
+            swatch: 'dot', swatchColor: '#FF6B6B'
         }
     ],
     popups: {
@@ -129,6 +137,13 @@ var MAP_CONFIG = {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
                    'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—');
+        },
+        'stations-points': function(p) {
+            return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +
+                   'Source: ' + (p.data_source_code || '—') + '<br>' +
+                   'ID: ' + (p.external_station_id || '—') + '<br>' +
+                   'Last data: ' + (p.last_data_at ? p.last_data_at.slice(0,10) : '—') + '<br>' +
+                   '<a href="/datasync/stations/' + p.pk + '/" style="color:#E4A317">View details →</a>';
         }
     },
     legend: [
@@ -138,7 +153,8 @@ var MAP_CONFIG = {
                 { label: 'Parcels', swatch: 'fill', color: '#1B7FAF' },
                 { label: 'Wells', swatch: 'dot', color: '#E4A317' },
                 { label: 'Points of Diversion', swatch: 'dot', color: '#4ECDC4' },
-                { label: 'Recharge Sites', swatch: 'dot', color: '#7B68EE' }
+                { label: 'Recharge Sites', swatch: 'dot', color: '#7B68EE' },
+                { label: 'Monitoring Stations', swatch: 'dot', color: '#FF6B6B' }
             ]
         }
     ]
