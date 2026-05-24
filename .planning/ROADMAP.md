@@ -14,7 +14,7 @@ None (no matching skills installed)
 - [x] **Phase 2: Core Domain Models** - All 48 models, migrations, admin, seed data commands
 - [x] **Phase 3: Parcel and Well CRUD with Maps** - Import, view, and manage parcels/wells on MapLibre map
 - [x] **Phase 4: Water Accounting Engine** - ParcelLedger double-entry, accounts, allocations, dashboards
-- [ ] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
+- [x] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
 - [ ] **Phase 6: State Reporting** - GEARS CSV, CalWATRS CSV, email+JSON with prepare-review-send workflow
 - [ ] **Phase 7: Health Check and Maintenance** - 8-category health system, /health endpoint, maintenance commands
 - [ ] **Phase 8: UI/UX Overhaul** - Consistent styling, empty states, responsive layout, form polish
@@ -110,7 +110,8 @@ Verification: Create account, assign parcels, add +100 AF supply and -75 AF usag
 **Depends on**: Phase 3
 **Research**: Likely (8 external APIs with varying auth, formats, and quirks)
 **Research topics**: Current USGS OGC API endpoints (legacy NWIS shutting down), OpenET API key acquisition process, CNRFC file format, DWR SGMA Portal REST endpoints, CIMIS AppKey registration
-**Plans**: 1/2 complete
+**Plans**: 2/2 complete
+**Completed**: 2026-05-24
 
 Deliverables:
 - BaseAdapter abstract class: fetch/parse/validate/stage/publish pipeline
@@ -222,7 +223,7 @@ Phase 8 is the final integration phase.
 | 2. Core Domain Models | 7/7 | Complete | 2026-05-23 |
 | 3. Parcel and Well CRUD with Maps | 4/4 | Complete | 2026-05-24 |
 | 4. Water Accounting Engine | 3/3 | Complete | 2026-05-24 |
-| 5. External Data Aggregator | 1/2 | In progress | - |
+| 5. External Data Aggregator | 2/2 | Complete | 2026-05-24 |
 | 6. State Reporting | 0/TBD | Not started | - |
 | 7. Health Check and Maintenance | 0/TBD | Not started | - |
 | 8. UI/UX Overhaul | 0/TBD | Not started | - |

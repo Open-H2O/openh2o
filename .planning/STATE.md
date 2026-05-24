@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 ## Current Position
 
 Phase: 5 of 9 (External Data Aggregator)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-05-24 -- Completed 05-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-05-24 -- Completed 05-02-PLAN.md
 
-Progress: ██████████████░ 94%
+Progress: ███████████████ 100% (of planned phases 1-5)
 
 ## Performance Metrics
 
@@ -45,6 +45,9 @@ Recent decisions affecting current work:
 - OpenET uses station.location point (not parcel polygon) for initial sync
 - Mock mode: DATASYNC_MOCK_MODE setting OR DataSource.is_active=False
 - Shared DataSyncLog per sync_source run (not per station)
+- GeoJSON for stations built manually (PointField + custom properties, not Django serialize)
+- discover_stations creates stations inactive by default (curation workflow)
+- Toggle partial uses hx-target="this" outerHTML for list/detail portability
 - Removed hardcoded GDAL/GEOS paths from Dockerfile; Django finds them automatically
 - Created minimal User model stub; AUTH_USER_MODEL requires resolvable model at boot
 - Butler deploy key added to GitHub for SSH clone access
@@ -87,5 +90,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-05-24
-Stopped at: Completed 05-01-PLAN.md (Phase 5, 1/2 plans)
+Stopped at: Completed 05-02-PLAN.md (Phase 5 complete, 2/2 plans)
 Resume file: None
