@@ -3,6 +3,18 @@
 {% block title %}Generate Report - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Generate Report{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'reporting:report_list' %}">Reporting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'reporting:report_list' %}">Reports</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Generate</span>
+  </nav>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack" style="max-width: 600px;">
 

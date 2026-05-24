@@ -3,6 +3,17 @@
 {% block title %}Ledger - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Ledger{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:ledger_list' %}">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Ledger</span>
+  </nav>
+  <p class="page-description">Double-entry water supply and usage records.</p>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack">
 

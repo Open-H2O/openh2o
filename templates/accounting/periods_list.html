@@ -3,6 +3,17 @@
 {% block title %}Reporting Periods - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Reporting Periods{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:periods_list' %}">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Periods</span>
+  </nav>
+  <p class="page-description">Reporting periods for water year tracking.</p>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack">
 

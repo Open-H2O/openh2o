@@ -3,6 +3,18 @@
 {% block title %}New Allocation Plan - Open Water Accounting Platform{% endblock %}
 {% block page_title %}New Allocation Plan{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:allocations_list' %}">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'accounting:allocations_list' %}">Allocations</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">New Allocation</span>
+  </nav>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack" style="max-width: 600px;">
 

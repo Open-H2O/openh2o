@@ -3,6 +3,18 @@
 {% block title %}Water Right {{ water_right.right_id }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Water Right {{ water_right.right_id }}{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'surface:water_rights_list' %}">Surface Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'surface:water_rights_list' %}">Water Rights</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ water_right.right_id }}</span>
+  </nav>
+</div>
+{% endblock %}
+
 {% block map_styles %}
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 {% endblock %}

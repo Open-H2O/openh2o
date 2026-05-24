@@ -3,6 +3,18 @@
 {% block title %}Parcel {{ parcel.parcel_number }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Parcel {{ parcel.parcel_number }}{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'parcels:list' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'parcels:list' %}">Parcels</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ parcel.parcel_number }}</span>
+  </nav>
+</div>
+{% endblock %}
+
 {% block map_styles %}
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 {% endblock %}

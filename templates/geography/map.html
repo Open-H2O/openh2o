@@ -5,6 +5,17 @@
 
 {% block page_title %}Map{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'geography:map' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Map</span>
+  </nav>
+  <p class="page-description">Spatial view of parcels, wells, rights, and stations.</p>
+</div>
+{% endblock %}
+
 {% block map_styles %}
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="stylesheet" href="{% static 'css/map-engine.css' %}">

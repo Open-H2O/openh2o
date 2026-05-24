@@ -3,6 +3,18 @@
 {% block title %}{{ period.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ period.name }}{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:periods_list' %}">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'accounting:periods_list' %}">Periods</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ period.name }}</span>
+  </nav>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack">
 

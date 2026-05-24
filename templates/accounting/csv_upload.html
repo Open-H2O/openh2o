@@ -3,6 +3,18 @@
 {% block title %}Upload Ledger CSV - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Upload Ledger CSV{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:ledger_list' %}">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'accounting:ledger_list' %}">Ledger</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">CSV Upload</span>
+  </nav>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack" style="max-width: 800px;">
 

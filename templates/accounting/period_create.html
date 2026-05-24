@@ -3,6 +3,18 @@
 {% block title %}New Reporting Period - Open Water Accounting Platform{% endblock %}
 {% block page_title %}New Reporting Period{% endblock %}
 
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:periods_list' %}">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'accounting:periods_list' %}">Periods</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">New Period</span>
+  </nav>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack" style="max-width: 600px;">
 
