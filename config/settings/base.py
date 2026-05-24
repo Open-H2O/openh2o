@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "parcels",
     "wells",
     "measurements",
+    "accounting",
 ]
 
 MIDDLEWARE = [
