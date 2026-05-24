@@ -1,0 +1,28 @@
+{% if results %}
+<div style="display: flex; flex-direction: column; gap: 2px;">
+  {% for parcel in results %}
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-xs) var(--space-sm); border-bottom: 1px solid var(--color-border); transition: background 0.1s;"
+       onmouseover="this.style.background='var(--color-hover)'"
+       onmouseout="this.style.background='transparent'">
+    <div>
+      <span style="color: var(--color-text-primary); font-size: 0.875rem; font-weight: 600;">{{ parcel.parcel_number }}</span>
+      {% if parcel.owner_name %}
+        <span style="color: var(--color-text-tertiary); font-size: 0.8125rem; margin-left: var(--space-sm);">{{ parcel.owner_name }}</span>
+      {% endif %}
+    </div>
+    <button
+      hx-post="{% url 'accounting:assign_parcel' account.pk %}"
+      hx-vals='{"parcel_id": "{{ parcel.pk }}"}'
+      hx-target="#parcel-assignments"
+      class="btn-primary btn-sm"
+      style="font-size: 0.75rem; padding: 1px 10px;">
+      Assign
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% elif q %}
+<p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">No matching parcels found for "{{ q }}".</p>
+{% else %}
+<p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">Type a parcel number or owner name to search.</p>
+{% endif %}
