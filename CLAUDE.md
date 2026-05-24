@@ -33,7 +33,11 @@ openh2o/
 │   ├── views.py             # Root views
 │   ├── wsgi.py
 │   └── asgi.py
-├── core/                    # Core app (User model)
+├── core/                    # Core app (User model, seed commands)
+│   ├── management/commands/
+│   │   ├── seed_data.py     # Runs all seed commands
+│   │   ├── seed_demo_data.py # Comprehensive demo dataset
+│   │   └── seed_roles.py
 │   ├── apps.py
 │   └── models.py
 ├── static/
@@ -51,7 +55,9 @@ openh2o/
 ├── pyproject.toml
 ├── tailwind.config.js
 ├── manage.py
-├── DEPLOY.md                # Deployment guide
+├── Makefile                 # Development shortcuts (make help)
+├── README.md                # Project overview and quick start
+├── DEPLOY.md                # Deployment guide (13 sections)
 └── CLAUDE.md                # This file
 ```
 
@@ -59,27 +65,28 @@ openh2o/
 
 All commands run on the server where Docker is running (Butler: 192.168.0.114).
 
+A `Makefile` provides shortcuts for common operations. Run `make help` to see all targets.
+
 ```bash
-# Start the stack
+# Makefile shortcuts
+make up                # Start services (build + detach)
+make down              # Stop services
+make logs              # Follow web container logs
+make shell             # Django shell_plus
+make dbshell           # PostgreSQL shell
+make migrate           # Run migrations
+make seed              # Load all reference data
+make demo              # Load demo dataset (fictional GSA)
+make fresh             # Full reset: destroy, rebuild, migrate, seed, demo
+make health            # Run health checks
+make check             # Django deployment checks
+
+# Direct Docker Compose commands
 docker compose up -d --build
-
-# Stop the stack
-docker compose down
-
-# View logs
-docker compose logs web
-docker compose logs -f web  # Follow
-
-# Django management commands
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py createsuperuser
 docker compose exec web python manage.py collectstatic --noinput
-
-# Database access
 docker compose exec db psql -U openh2o -d openh2o
-
-# Rebuild after code changes
-docker compose up -d --build
 ```
 
 ## Design System
