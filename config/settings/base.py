@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     "surface",
     "recharge",
     "datasync",
+    "reporting",
+    "health",
 ]
 
 MIDDLEWARE = [
