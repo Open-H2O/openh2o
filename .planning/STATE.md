@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 ## Current Position
 
 Phase: 2 of 8 (Core Domain Models)
-Plan: 4 of 7 in current phase
+Plan: 6 of 7 in current phase
 Status: In progress
-Last activity: 2026-05-23 -- Completed 02-03 and 02-04 (batched)
+Last activity: 2026-05-23 -- Completed 02-05 and 02-06 (batched)
 
-Progress: █████░░░░░ 38%
+Progress: ███████░░░ 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 14 min
-- Total execution time: 1.1 hours
+- Total plans completed: 7
+- Average duration: 11 min
+- Total execution time: 1.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 Infrastructure Scaffold | 1 | 50 min | 50 min |
-| 02 Core Domain Models | 4 | 14 min | 3.5 min |
+| 02 Core Domain Models | 6 | 25 min | 4.2 min |
 
 **Recent Trend:**
-- Last 5 plans: 50 min, 2 min, 3 min, 4 min, 5 min
-- Trend: Phase 2 plans averaging 3.5 min (mechanical model creation)
+- Last 5 plans: 3 min, 4 min, 5 min, 5 min, 6 min
+- Trend: Phase 2 averaging 4.2 min/plan (mechanical Django work)
 
 ## Accumulated Context
 
@@ -50,7 +50,9 @@ Recent decisions affecting current work:
 - All migrations generated in single pass (no circular FK issues)
 - Pillow added to pyproject.toml for ImageField support
 - Butler deploy key is read-only; migrations generated on Butler, committed locally
-- django-allauth deprecation warnings noted (non-blocking, address in 02-06)
+- django-allauth deprecation warnings fixed in 02-06 (ACCOUNT_LOGIN_METHODS/ACCOUNT_SIGNUP_FIELDS)
+- django.contrib.sites added; django_site table created manually to fix migration ordering
+- SiteConfig exposed to templates via context processor (not template tag)
 
 ### Deferred Issues
 
@@ -63,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-23
-Stopped at: Completed 02-04-PLAN.md (4 of 7 plans in Phase 2)
+Stopped at: Completed 02-06-PLAN.md (6 of 7 plans in Phase 2)
 Resume file: None
