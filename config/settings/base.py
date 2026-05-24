@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "measurements",
     "accounting",
     "surface",
+    "recharge",
 ]
 
 MIDDLEWARE = [
