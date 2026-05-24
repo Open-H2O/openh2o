@@ -39,9 +39,12 @@ def check_database():
 
 
 def check_disk():
+    import os
     paths_to_check = {"base_dir": str(settings.BASE_DIR)}
     if hasattr(settings, "MEDIA_ROOT") and settings.MEDIA_ROOT:
-        paths_to_check["media_root"] = str(settings.MEDIA_ROOT)
+        media_path = str(settings.MEDIA_ROOT)
+        if os.path.exists(media_path):
+            paths_to_check["media_root"] = media_path
 
     details = {}
     worst_status = "green"
