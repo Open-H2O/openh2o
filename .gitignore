@@ -29,3 +29,6 @@ Thumbs.db
 
 # Tailwind binary
 tailwindcss-*
+
+# Media (user-uploaded / generated reports)
+media/
