@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-23)
 
 **Core value:** Access is the product, not features. A $15/mo VPS replaces a $35K-$75K consulting engagement.
-**Current focus:** Phase 7 -- Health Check and Maintenance
+**Current focus:** Phase 8 -- Deploy, Polish, and Handoff
 
 ## Current Position
 
-Phase: 7 of 9 (Health Check and Maintenance)
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-05-24 -- Completed 07-01-PLAN.md
+Phase: 8 of 8 (Deploy, Polish, and Handoff)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-05-24 -- Completed 08-01-PLAN.md
 
-Progress: █████████████████████ 100% (of planned phases 1-7)
+Progress: ████████████████████░░ 90% (19/21 plans complete)
 
 ## Performance Metrics
 
@@ -79,6 +79,9 @@ Recent decisions affecting current work:
 - Balance engine uses Django ORM aggregate(Sum); period selector defaults to most recent non-finalized period
 - OKLCH inline colors for health badges (no --color-error token; used oklch(0.65 0.20 25))
 - Health dashboard and API are public (no login_required) for monitoring tool access
+- Phases 8+9 merged into single Phase 8 (Deploy, Polish, and Handoff)
+- Template-logic conditional colors (Django if/else inside style attr) kept inline -- irreducible
+- CSS component system: 40+ reusable classes in app.css (page-stack, section-header, field-group, data-table, form-input, badge, empty-state)
 
 ### Deferred Issues
 
@@ -92,5 +95,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-05-24
-Stopped at: Completed 07-01-PLAN.md (Phase 7 complete, 1/1 plans)
+Stopped at: Completed 08-01-PLAN.md (CSS extraction, 1/3 plans in Phase 8)
 Resume file: None
