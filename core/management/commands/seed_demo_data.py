@@ -176,8 +176,13 @@ class Command(BaseCommand):
             )
             demo_accounts.delete()
 
+            # Report submissions referencing demo periods (PROTECT FK)
+            from reporting.models import ReportSubmission
+            demo_periods = ReportingPeriod.objects.filter(name__startswith="WY ")
+            ReportSubmission.objects.filter(reporting_period__in=demo_periods).delete()
+
             # Reporting periods
-            ReportingPeriod.objects.filter(name__startswith="WY ").delete()
+            demo_periods.delete()
 
             # Water rights
             WaterRight.objects.filter(right_id__startswith="DEMO-").delete()
