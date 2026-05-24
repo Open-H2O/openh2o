@@ -1,0 +1,61 @@
+<!-- Summary row: Supply / Usage / Net -->
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-lg);">
+  <div style="text-align: center; padding: var(--space-md); background: var(--color-inset); border-radius: var(--radius-md);">
+    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Supply</div>
+    <div style="font-size: 1.25rem; font-weight: 800; color: var(--forest-500); font-variant-numeric: tabular-nums;">
+      {{ balance.supply|floatformat:2 }}
+    </div>
+    <div style="font-size: 0.6875rem; color: var(--color-text-tertiary);">AF</div>
+  </div>
+  <div style="text-align: center; padding: var(--space-md); background: var(--color-inset); border-radius: var(--radius-md);">
+    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Usage</div>
+    <div style="font-size: 1.25rem; font-weight: 800; color: var(--furnace-500); font-variant-numeric: tabular-nums;">
+      {{ balance.usage|floatformat:2 }}
+    </div>
+    <div style="font-size: 0.6875rem; color: var(--color-text-tertiary);">AF</div>
+  </div>
+  <div style="text-align: center; padding: var(--space-md); background: var(--color-inset); border-radius: var(--radius-md);">
+    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Net</div>
+    <div style="font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; {% if balance.net >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">
+      {{ balance.net|floatformat:2 }}
+    </div>
+    <div style="font-size: 0.6875rem; color: var(--color-text-tertiary);">AF</div>
+  </div>
+</div>
+
+<!-- Per-parcel breakdown -->
+{% if parcel_balances %}
+<h3 style="font-size: 0.8125rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-sm);">Per-Parcel Breakdown</h3>
+<table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+  <thead>
+    <tr style="border-bottom: 1px solid var(--color-border);">
+      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Parcel</th>
+      <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Supply</th>
+      <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Usage</th>
+      <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Net</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for pb in parcel_balances %}
+    <tr style="border-bottom: 1px solid var(--color-border);">
+      <td style="padding: var(--space-xs) var(--space-sm);">
+        <a href="{% url 'parcels:detail' pb.parcel.pk %}" style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+          {{ pb.parcel.parcel_number }}
+        </a>
+      </td>
+      <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--forest-500); font-variant-numeric: tabular-nums;">
+        {{ pb.supply|floatformat:2 }}
+      </td>
+      <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--furnace-500); font-variant-numeric: tabular-nums;">
+        {{ pb.usage|floatformat:2 }}
+      </td>
+      <td style="padding: var(--space-xs) var(--space-sm); text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; {% if pb.net >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">
+        {{ pb.net|floatformat:2 }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">No parcels assigned to this account.</p>
+{% endif %}

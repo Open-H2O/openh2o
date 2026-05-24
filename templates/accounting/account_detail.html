@@ -75,8 +75,31 @@
       </div>
     </div>
 
-    <!-- Right column: Assigned Parcels -->
+    <!-- Right column: Balances + Parcels -->
     <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Balance card with period selector -->
+      <div class="card-raised">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">
+            Account Balance
+          </h2>
+          <select name="period"
+                  hx-get="{% url 'accounting:account_detail' account.pk %}"
+                  hx-target="#balance-section"
+                  hx-trigger="change"
+                  style="padding: 4px var(--space-sm); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.8125rem; cursor: pointer;">
+            <option value="">All Time</option>
+            {% for p in periods %}
+            <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div id="balance-section">
+          {% include "accounting/partials/_account_balances.html" %}
+        </div>
+      </div>
 
       <!-- Parcel Assignment card -->
       <div class="card-raised">

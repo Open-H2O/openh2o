@@ -92,3 +92,98 @@ def create_recharge_ledger_entries(recharge_event, zone):
         )
 
     return ParcelLedger.objects.bulk_create(entries)
+
+
+# ---------------------------------------------------------------------------
+# Balance calculations
+# ---------------------------------------------------------------------------
+
+
+def parcel_balance(parcel, reporting_period=None):
+    """Sum of all ledger entries for a parcel.
+
+    Args:
+        parcel: A Parcel instance.
+        reporting_period: Optional ReportingPeriod to filter by.
+
+    Returns:
+        Decimal total (positive = net supply, negative = net usage).
+    """
+    qs = ParcelLedger.objects.filter(parcel=parcel)
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+    result = qs.aggregate(total=Sum("amount_acre_feet"))
+    return result["total"] or Decimal("0")
+
+
+def _balance_dict(queryset):
+    """Compute supply/usage/net from a ParcelLedger queryset.
+
+    Returns:
+        dict with keys: total (alias for net), supply, usage, net.
+    """
+    agg = queryset.aggregate(
+        supply=Sum(
+            "amount_acre_feet",
+            filter=Q(amount_acre_feet__gt=0),
+        ),
+        usage=Sum(
+            "amount_acre_feet",
+            filter=Q(amount_acre_feet__lt=0),
+        ),
+    )
+    supply = agg["supply"] or Decimal("0")
+    usage_raw = agg["usage"] or Decimal("0")
+    usage = abs(usage_raw)
+    net = supply - usage
+    return {
+        "total": net,
+        "supply": supply,
+        "usage": usage,
+        "net": net,
+    }
+
+
+def account_balance(water_account, reporting_period=None):
+    """Aggregate balance across all parcels assigned to a water account.
+
+    Uses active assignments only (removed_date is null).
+
+    Args:
+        water_account: A WaterAccount instance.
+        reporting_period: Optional ReportingPeriod to filter by.
+
+    Returns:
+        dict with keys: total, supply, usage, net (all Decimal).
+    """
+    parcel_ids = WaterAccountParcel.objects.filter(
+        water_account=water_account,
+        removed_date__isnull=True,
+    ).values_list("parcel_id", flat=True)
+
+    qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+
+    return _balance_dict(qs)
+
+
+def zone_balance(zone, reporting_period=None):
+    """Aggregate balance across all parcels in a zone.
+
+    Args:
+        zone: A geography.models.Zone instance.
+        reporting_period: Optional ReportingPeriod to filter by.
+
+    Returns:
+        dict with keys: total, supply, usage, net (all Decimal).
+    """
+    parcel_ids = ParcelZone.objects.filter(zone=zone).values_list(
+        "parcel_id", flat=True
+    )
+
+    qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+
+    return _balance_dict(qs)
