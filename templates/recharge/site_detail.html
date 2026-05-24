@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site.name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{{ site.name }}{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'recharge:list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+      &larr; Back to Recharge Sites
+    </a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+
+    <!-- Left column: Site Info + Event History -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Site Info card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Site Information
+        </h2>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Name</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ site.name }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Site Type</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ site.get_site_type_display }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Capacity (AF)</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem; font-variant-numeric: tabular-nums;">
+            {% if site.capacity_acre_feet %}{{ site.capacity_acre_feet|floatformat:2 }}{% else %}—{% endif %}
+          </div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Status</div>
+          <div style="margin-top: 2px;">{% include "recharge/partials/_status_badge.html" with status=site.status %}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Operator</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ site.operator|default:"—" }}</div>
+        </div>
+
+        {% if site.notes %}
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Notes</div>
+          <div style="color: var(--color-text-secondary); font-size: 0.875rem;">{{ site.notes }}</div>
+        </div>
+        {% endif %}
+
+        <div style="margin-top: var(--space-lg); padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
+          <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+            Created {{ site.created_at|date:"M d, Y" }} &middot; Updated {{ site.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Recharge Event History card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Event History
+        </h2>
+        {% if events %}
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Start</th>
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">End</th>
+              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Volume (AF)</th>
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Water Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for event in events %}
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary); font-variant-numeric: tabular-nums;">{{ event.start_date|date:"M d, Y" }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary); font-variant-numeric: tabular-nums;">
+                {% if event.end_date %}{{ event.end_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}
+              </td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">{{ event.volume_acre_feet|floatformat:2 }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">
+                {% if event.water_type %}{{ event.water_type }}{% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No recharge events recorded.</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right column: Map + Measurements -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Map card -->
+      <div class="card-raised" style="padding: 0; overflow: hidden;">
+        <div id="site-map" style="height: 300px; width: 100%; border-radius: var(--radius-md);"></div>
+      </div>
+
+      <!-- Recent Measurements card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Recent Measurements
+        </h2>
+        {% if recent_measurements %}
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Date</th>
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Type</th>
+              <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Value</th>
+              <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in recent_measurements %}
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary); font-variant-numeric: tabular-nums;">{{ m.measurement_date|date:"M d, Y H:i" }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">{{ m.get_measurement_type_display }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">{{ m.value|floatformat:2 }}</td>
+              <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary);">{{ m.unit }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p style="color: var(--color-text-tertiary); font-size: 0.875rem;">No measurements recorded.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(function() {
+  var geojson = {% if geojson %}{{ geojson|safe }}{% else %}null{% endif %};
+  var defaultLon = geojson && geojson.features && geojson.features[0]
+    ? geojson.features[0].geometry.coordinates[0] : -120.5;
+  var defaultLat = geojson && geojson.features && geojson.features[0]
+    ? geojson.features[0].geometry.coordinates[1] : 37.5;
+
+  var map = new maplibregl.Map({
+    container: 'site-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    center: [defaultLon, defaultLat],
+    zoom: 13
+  });
+
+  map.on('load', function() {
+    if (geojson) {
+      map.addSource('site', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'site-point',
+        type: 'circle',
+        source: 'site',
+        paint: {
+          'circle-radius': 10,
+          'circle-color': '#E4A317',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+    } else {
+      var el = document.createElement('div');
+      el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d5e6f;font-size:0.875rem;pointer-events:none;';
+      el.textContent = 'No location recorded';
+      document.getElementById('site-map').appendChild(el);
+    }
+  });
+})();
+</script>
+{% endblock %}

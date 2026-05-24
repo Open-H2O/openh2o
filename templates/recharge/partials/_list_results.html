@@ -1,0 +1,89 @@
+<!-- Count badge -->
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md);">
+  <span style="font-size: 0.8125rem; color: var(--color-text-secondary);">
+    <span style="
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--color-elevated);
+      border: 1px solid var(--color-border-hover);
+      border-radius: 999px;
+      padding: 1px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin-right: var(--space-xs);
+    ">{{ total_count }}</span>
+    recharge site{{ total_count|pluralize }} found
+  </span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="card-raised" style="overflow-x: auto;">
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--color-border-hover);">
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Name</th>
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Type</th>
+        <th style="text-align: right; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Capacity (AF)</th>
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Operator</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for site in page_obj %}
+      <tr style="border-bottom: 1px solid var(--color-border); transition: background 0.1s;"
+          onmouseover="this.style.background='var(--color-hover)'"
+          onmouseout="this.style.background='transparent'">
+        <td style="padding: var(--space-sm) var(--space-md);">
+          <a href="{% url 'recharge:detail' site.pk %}"
+             style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+            {{ site.name }}
+          </a>
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary);">
+          {{ site.get_site_type_display }}
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary); text-align: right; font-variant-numeric: tabular-nums;">
+          {% if site.capacity_acre_feet %}{{ site.capacity_acre_feet|floatformat:2 }}{% else %}—{% endif %}
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md);">
+          {% include "recharge/partials/_status_badge.html" with status=site.status %}
+        </td>
+        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary);">
+          {{ site.operator|default:"—" }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div style="display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-lg);">
+  {% if page_obj.has_previous %}
+    <button
+      hx-get="{% url 'recharge:list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&site_type={{ site_type }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Previous
+    </button>
+  {% endif %}
+  <span style="display: flex; align-items: center; color: var(--color-text-secondary); font-size: 0.875rem;">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+    <button
+      hx-get="{% url 'recharge:list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&site_type={{ site_type }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Next
+    </button>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
+  <p style="color: var(--color-text-secondary); font-size: 0.875rem;">No recharge sites found{% if q %} matching "{{ q }}"{% endif %}{% if site_type %} with type "{{ site_type }}"{% endif %}.</p>
+</div>
+{% endif %}
