@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}{{ account.account_number }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{{ account.account_number }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'accounting:accounts_list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+      &larr; Back to Water Accounts
+    </a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+
+    <!-- Left column: Account Info -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Account Info card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Account Information
+        </h2>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Account Number</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ account.account_number }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Name</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ account.name }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Status</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">
+            {% if account.status == "active" %}
+              <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25);">Active</span>
+            {% elif account.status == "inactive" %}
+              <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgba(148,163,184,0.12); color: var(--color-text-secondary); border: 1px solid rgba(148,163,184,0.2);">Inactive</span>
+            {% elif account.status == "suspended" %}
+              <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25);">Suspended</span>
+            {% else %}
+              <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: var(--color-elevated); color: var(--color-text-secondary); border: 1px solid var(--color-border-hover);">{{ account.get_status_display }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Contact Name</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ account.contact_name|default:"—" }}</div>
+        </div>
+
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Contact Email</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ account.contact_email|default:"—" }}</div>
+        </div>
+
+        {% if account.notes %}
+        <div style="margin-bottom: var(--space-md);">
+          <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Notes</div>
+          <div style="color: var(--color-text-primary); font-size: 0.9375rem;">{{ account.notes }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Timestamps -->
+        <div style="margin-top: var(--space-lg); padding-top: var(--space-sm); border-top: 1px solid var(--color-border);">
+          <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+            Created {{ account.created_at|date:"M d, Y" }} &middot; Updated {{ account.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Assigned Parcels -->
+    <div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+      <!-- Parcel Assignment card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Assigned Parcels
+        </h2>
+
+        <div id="parcel-assignments">
+          {% include "accounting/partials/_parcel_assignment.html" %}
+        </div>
+      </div>
+
+      <!-- Assign Parcel search card -->
+      <div class="card-raised">
+        <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          Assign Parcel
+        </h2>
+
+        <div style="margin-bottom: var(--space-md);">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by parcel number or owner..."
+            hx-get="{% url 'accounting:parcel_search_for_assignment' account.pk %}"
+            hx-target="#parcel-search-results"
+            hx-trigger="keyup changed delay:300ms"
+            style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none;"
+          >
+        </div>
+
+        <div id="parcel-search-results">
+          <p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">Type a parcel number or owner name to search.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
