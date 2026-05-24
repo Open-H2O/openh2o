@@ -110,7 +110,7 @@ Verification: Create account, assign parcels, add +100 AF supply and -75 AF usag
 **Depends on**: Phase 3
 **Research**: Likely (8 external APIs with varying auth, formats, and quirks)
 **Research topics**: Current USGS OGC API endpoints (legacy NWIS shutting down), OpenET API key acquisition process, CNRFC file format, DWR SGMA Portal REST endpoints, CIMIS AppKey registration
-**Plans**: TBD
+**Plans**: 1/2 complete
 
 Deliverables:
 - BaseAdapter abstract class: fetch/parse/validate/stage/publish pipeline
@@ -222,7 +222,7 @@ Phase 8 is the final integration phase.
 | 2. Core Domain Models | 7/7 | Complete | 2026-05-23 |
 | 3. Parcel and Well CRUD with Maps | 4/4 | Complete | 2026-05-24 |
 | 4. Water Accounting Engine | 3/3 | Complete | 2026-05-24 |
-| 5. External Data Aggregator | 0/TBD | Not started | - |
+| 5. External Data Aggregator | 1/2 | In progress | - |
 | 6. State Reporting | 0/TBD | Not started | - |
 | 7. Health Check and Maintenance | 0/TBD | Not started | - |
 | 8. UI/UX Overhaul | 0/TBD | Not started | - |

@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-05-23)
 
 **Core value:** Access is the product, not features. A $15/mo VPS replaces a $35K-$75K consulting engagement.
-**Current focus:** Phase 4 -- Water Accounting Engine
+**Current focus:** Phase 5 -- External Data Aggregator
 
 ## Current Position
 
-Phase: 4 of 8 (Water Accounting Engine)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-05-24 -- Completed 04-03-PLAN.md
+Phase: 5 of 9 (External Data Aggregator)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-05-24 -- Completed 05-01-PLAN.md
 
-Progress: ████████████░░ 88%
+Progress: ██████████████░ 94%
 
 ## Performance Metrics
 
@@ -41,6 +41,10 @@ Progress: ████████████░░ 88%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- register_adapter() at module level for auto-registration on import
+- OpenET uses station.location point (not parcel polygon) for initial sync
+- Mock mode: DATASYNC_MOCK_MODE setting OR DataSource.is_active=False
+- Shared DataSyncLog per sync_source run (not per station)
 - Removed hardcoded GDAL/GEOS paths from Dockerfile; Django finds them automatically
 - Created minimal User model stub; AUTH_USER_MODEL requires resolvable model at boot
 - Butler deploy key added to GitHub for SSH clone access
@@ -83,5 +87,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-05-24
-Stopped at: Completed 04-03-PLAN.md (Phase 4 complete, 3/3 plans)
+Stopped at: Completed 05-01-PLAN.md (Phase 5, 1/2 plans)
 Resume file: None
