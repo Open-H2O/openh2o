@@ -1,0 +1,20 @@
+{
+  "stations": [
+    {"station_id": "FOLC1", "name": "Folsom Lake Inflow", "latitude": 38.6836, "longitude": -121.1558, "parameters": ["streamflow"]},
+    {"station_id": "NBBC1", "name": "North Fork American at North Fork Dam", "latitude": 38.9372, "longitude": -121.0178, "parameters": ["streamflow"]},
+    {"station_id": "MFAC1", "name": "Middle Fork American at Foresthill", "latitude": 39.0125, "longitude": -120.8142, "parameters": ["streamflow", "precip"]}
+  ],
+  "records": [
+    {"station_id": "FOLC1", "observation_date": "2024-06-01T06:00:00", "parameter_code": "streamflow", "value": 2850.0, "unit": "cfs"},
+    {"station_id": "FOLC1", "observation_date": "2024-06-02T06:00:00", "parameter_code": "streamflow", "value": 2720.0, "unit": "cfs"},
+    {"station_id": "FOLC1", "observation_date": "2024-06-03T06:00:00", "parameter_code": "streamflow", "value": 2680.0, "unit": "cfs"},
+    {"station_id": "FOLC1", "observation_date": "2024-06-04T06:00:00", "parameter_code": "streamflow", "value": 2590.0, "unit": "cfs"},
+    {"station_id": "NBBC1", "observation_date": "2024-06-01T06:00:00", "parameter_code": "streamflow", "value": 1420.0, "unit": "cfs"},
+    {"station_id": "NBBC1", "observation_date": "2024-06-02T06:00:00", "parameter_code": "streamflow", "value": 1380.0, "unit": "cfs"},
+    {"station_id": "NBBC1", "observation_date": "2024-06-03T06:00:00", "parameter_code": "streamflow", "value": 1350.0, "unit": "cfs"},
+    {"station_id": "MFAC1", "observation_date": "2024-06-01T06:00:00", "parameter_code": "streamflow", "value": 980.0, "unit": "cfs"},
+    {"station_id": "MFAC1", "observation_date": "2024-06-02T06:00:00", "parameter_code": "streamflow", "value": 950.0, "unit": "cfs"},
+    {"station_id": "MFAC1", "observation_date": "2024-06-01T06:00:00", "parameter_code": "precip", "value": 0.0, "unit": "in"},
+    {"station_id": "MFAC1", "observation_date": "2024-06-02T06:00:00", "parameter_code": "precip", "value": 0.0, "unit": "in"}
+  ]
+}

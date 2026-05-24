@@ -1,0 +1,21 @@
+{
+  "stations": [
+    {"station_id": "364505N1195530W001", "name": "State Well 15S/22E-16R1", "latitude": 36.7514, "longitude": -119.9250, "parameters": ["gw_level"]},
+    {"station_id": "365142N1195207W001", "name": "State Well 14S/22E-03N1", "latitude": 36.8617, "longitude": -119.8686, "parameters": ["gw_level"]},
+    {"station_id": "363823N1200115W001", "name": "State Well 16S/21E-14A1", "latitude": 36.6397, "longitude": -120.0208, "parameters": ["gw_level"]}
+  ],
+  "records": [
+    {"station_id": "364505N1195530W001", "observation_date": "2024-03-15T12:00:00", "parameter_code": "gw_level", "value": 142.3, "unit": "ft bgs"},
+    {"station_id": "364505N1195530W001", "observation_date": "2024-06-15T12:00:00", "parameter_code": "gw_level", "value": 148.7, "unit": "ft bgs"},
+    {"station_id": "364505N1195530W001", "observation_date": "2024-09-15T12:00:00", "parameter_code": "gw_level", "value": 155.2, "unit": "ft bgs"},
+    {"station_id": "364505N1195530W001", "observation_date": "2024-12-15T12:00:00", "parameter_code": "gw_level", "value": 150.8, "unit": "ft bgs"},
+    {"station_id": "365142N1195207W001", "observation_date": "2024-03-15T12:00:00", "parameter_code": "gw_level", "value": 98.4, "unit": "ft bgs"},
+    {"station_id": "365142N1195207W001", "observation_date": "2024-06-15T12:00:00", "parameter_code": "gw_level", "value": 105.1, "unit": "ft bgs"},
+    {"station_id": "365142N1195207W001", "observation_date": "2024-09-15T12:00:00", "parameter_code": "gw_level", "value": 112.6, "unit": "ft bgs"},
+    {"station_id": "365142N1195207W001", "observation_date": "2024-12-15T12:00:00", "parameter_code": "gw_level", "value": 107.3, "unit": "ft bgs"},
+    {"station_id": "363823N1200115W001", "observation_date": "2024-03-15T12:00:00", "parameter_code": "gw_level", "value": 210.5, "unit": "ft bgs"},
+    {"station_id": "363823N1200115W001", "observation_date": "2024-06-15T12:00:00", "parameter_code": "gw_level", "value": 218.9, "unit": "ft bgs"},
+    {"station_id": "363823N1200115W001", "observation_date": "2024-09-15T12:00:00", "parameter_code": "gw_level", "value": 225.4, "unit": "ft bgs"},
+    {"station_id": "363823N1200115W001", "observation_date": "2024-12-15T12:00:00", "parameter_code": "gw_level", "value": 219.7, "unit": "ft bgs"}
+  ]
+}

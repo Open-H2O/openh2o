@@ -1,0 +1,25 @@
+{
+  "stations": [
+    {"station_id": "USW00023232", "name": "Fresno Yosemite International Airport", "latitude": 36.7761, "longitude": -119.7181, "parameters": ["PRCP", "TMAX", "TMIN"]},
+    {"station_id": "USW00023155", "name": "Sacramento Executive Airport", "latitude": 38.5069, "longitude": -121.4928, "parameters": ["PRCP", "TMAX", "TMIN"]},
+    {"station_id": "USC00040983", "name": "Blue Canyon", "latitude": 39.2725, "longitude": -120.7094, "parameters": ["PRCP", "TMAX", "TMIN", "SNOW"]}
+  ],
+  "records": [
+    {"station_id": "USW00023232", "observation_date": "2024-06-01T00:00:00", "parameter_code": "PRCP", "value": 0.0, "unit": "mm"},
+    {"station_id": "USW00023232", "observation_date": "2024-06-02T00:00:00", "parameter_code": "PRCP", "value": 0.0, "unit": "mm"},
+    {"station_id": "USW00023232", "observation_date": "2024-06-01T00:00:00", "parameter_code": "TMAX", "value": 38.3, "unit": "deg C"},
+    {"station_id": "USW00023232", "observation_date": "2024-06-02T00:00:00", "parameter_code": "TMAX", "value": 39.4, "unit": "deg C"},
+    {"station_id": "USW00023232", "observation_date": "2024-06-01T00:00:00", "parameter_code": "TMIN", "value": 18.9, "unit": "deg C"},
+    {"station_id": "USW00023232", "observation_date": "2024-06-02T00:00:00", "parameter_code": "TMIN", "value": 20.0, "unit": "deg C"},
+    {"station_id": "USW00023155", "observation_date": "2024-06-01T00:00:00", "parameter_code": "PRCP", "value": 0.0, "unit": "mm"},
+    {"station_id": "USW00023155", "observation_date": "2024-06-01T00:00:00", "parameter_code": "TMAX", "value": 35.0, "unit": "deg C"},
+    {"station_id": "USW00023155", "observation_date": "2024-06-01T00:00:00", "parameter_code": "TMIN", "value": 16.1, "unit": "deg C"},
+    {"station_id": "USW00023155", "observation_date": "2024-06-02T00:00:00", "parameter_code": "TMAX", "value": 36.7, "unit": "deg C"},
+    {"station_id": "USW00023155", "observation_date": "2024-06-02T00:00:00", "parameter_code": "TMIN", "value": 17.2, "unit": "deg C"},
+    {"station_id": "USC00040983", "observation_date": "2024-06-01T00:00:00", "parameter_code": "PRCP", "value": 0.0, "unit": "mm"},
+    {"station_id": "USC00040983", "observation_date": "2024-06-01T00:00:00", "parameter_code": "TMAX", "value": 26.1, "unit": "deg C"},
+    {"station_id": "USC00040983", "observation_date": "2024-06-01T00:00:00", "parameter_code": "TMIN", "value": 10.6, "unit": "deg C"},
+    {"station_id": "USC00040983", "observation_date": "2024-06-01T00:00:00", "parameter_code": "SNOW", "value": 0.0, "unit": "mm"},
+    {"station_id": "USC00040983", "observation_date": "2024-01-15T00:00:00", "parameter_code": "SNOW", "value": 152.4, "unit": "mm"}
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "stations": [
+    {"station_id": "SHA", "name": "Shasta Dam", "latitude": 40.7184, "longitude": -122.4189, "parameters": ["15", "20"]},
+    {"station_id": "ORO", "name": "Oroville Dam", "latitude": 39.5378, "longitude": -121.4847, "parameters": ["15", "20"]},
+    {"station_id": "FOL", "name": "Folsom Dam", "latitude": 38.6836, "longitude": -121.1558, "parameters": ["15", "20"]},
+    {"station_id": "MIL", "name": "Millerton Lake", "latitude": 37.0003, "longitude": -119.7072, "parameters": ["15", "1"]}
+  ],
+  "records": [
+    {"stationId": "SHA", "sensorNumber": 15, "date": "2024-06-01T00:00:00", "value": 3284500},
+    {"stationId": "SHA", "sensorNumber": 15, "date": "2024-06-02T00:00:00", "value": 3291200},
+    {"stationId": "SHA", "sensorNumber": 20, "date": "2024-06-01T00:00:00", "value": 8540},
+    {"stationId": "SHA", "sensorNumber": 20, "date": "2024-06-02T00:00:00", "value": 9120},
+    {"stationId": "ORO", "sensorNumber": 15, "date": "2024-06-01T00:00:00", "value": 2450000},
+    {"stationId": "ORO", "sensorNumber": 15, "date": "2024-06-02T00:00:00", "value": 2445800},
+    {"stationId": "ORO", "sensorNumber": 20, "date": "2024-06-01T00:00:00", "value": 5200},
+    {"stationId": "ORO", "sensorNumber": 20, "date": "2024-06-02T00:00:00", "value": 5350},
+    {"stationId": "FOL", "sensorNumber": 15, "date": "2024-06-01T00:00:00", "value": 652400},
+    {"stationId": "FOL", "sensorNumber": 15, "date": "2024-06-02T00:00:00", "value": 648900},
+    {"stationId": "FOL", "sensorNumber": 20, "date": "2024-06-01T00:00:00", "value": 3800},
+    {"stationId": "FOL", "sensorNumber": 20, "date": "2024-06-02T00:00:00", "value": 3950},
+    {"stationId": "MIL", "sensorNumber": 15, "date": "2024-06-01T00:00:00", "value": 310500},
+    {"stationId": "MIL", "sensorNumber": 15, "date": "2024-06-02T00:00:00", "value": 308200},
+    {"stationId": "MIL", "sensorNumber": 1, "date": "2024-06-01T00:00:00", "value": 12.4},
+    {"stationId": "MIL", "sensorNumber": 1, "date": "2024-06-02T00:00:00", "value": 12.1}
+  ]
+}
