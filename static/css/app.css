@@ -284,6 +284,284 @@ a { color: inherit; }
     color: var(--color-text-secondary);
 }
 
+/* -- Page layout --------------------------------------------------------- */
+
+.page-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.page-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+}
+
+.page-grid-2col-wide {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-lg);
+}
+
+/* -- Section and field --------------------------------------------------- */
+
+.section-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-lg) 0;
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.field-group {
+    margin-bottom: var(--space-md);
+}
+
+.field-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.field-value {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+}
+
+.field-value-mono {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    font-family: var(--font-mono);
+}
+
+.field-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+}
+
+/* -- Tables -------------------------------------------------------------- */
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.data-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    border-bottom: 2px solid var(--color-border-hover);
+}
+
+.data-table td {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+}
+
+.data-table tr:hover td {
+    background-color: var(--color-hover);
+}
+
+.data-table-link {
+    color: var(--color-blue);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* -- Forms --------------------------------------------------------------- */
+
+.form-group {
+    margin-bottom: var(--space-lg);
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+
+.form-input {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--font-display);
+}
+
+.form-input:focus {
+    border-color: var(--color-gold);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-gold-muted);
+}
+
+.form-select {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--font-display);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238899aa' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-md) center;
+    padding-right: calc(var(--space-md) * 2 + 12px);
+}
+
+.form-select:focus {
+    border-color: var(--color-gold);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-gold-muted);
+}
+
+.form-textarea {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--font-display);
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-textarea:focus {
+    border-color: var(--color-gold);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-gold-muted);
+}
+
+.form-help {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-xs);
+}
+
+/* -- Navigation ---------------------------------------------------------- */
+
+.back-link {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+
+.back-link:hover {
+    color: var(--color-text-primary);
+}
+
+/* -- Badges -------------------------------------------------------------- */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-green {
+    background-color: oklch(0.45 0.12 155 / 0.2);
+    color: var(--forest-400);
+}
+
+.badge-orange {
+    background-color: oklch(0.45 0.12 55 / 0.2);
+    color: var(--furnace-400);
+}
+
+.badge-red {
+    background-color: oklch(0.45 0.12 25 / 0.2);
+    color: oklch(0.65 0.20 25);
+}
+
+.badge-blue {
+    background-color: oklch(0.45 0.12 240 / 0.2);
+    color: var(--color-blue);
+}
+
+/* -- Empty state --------------------------------------------------------- */
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--color-text-tertiary);
+}
+
+.empty-state-icon {
+    font-size: 2rem;
+    margin-bottom: var(--space-md);
+    opacity: 0.5;
+}
+
+.empty-state-text {
+    font-size: 0.9375rem;
+    margin-bottom: var(--space-md);
+}
+
+/* -- Inline edit --------------------------------------------------------- */
+
+.edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s;
+}
+
+.edit-btn:hover {
+    color: var(--color-gold);
+}
+
+/* -- Misc utilities ------------------------------------------------------ */
+
+.text-secondary {
+    color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+    color: var(--color-text-tertiary);
+}
+
+.text-mono {
+    font-family: var(--font-mono);
+}
+
+.border-separator {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+}
+
+.item-row {
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
 /* -- Responsive ---------------------------------------------------------- */
 
 @media (max-width: 767px) {
