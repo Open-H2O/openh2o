@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "geography",
     "parcels",
     "wells",
+    "measurements",
 ]
 
 MIDDLEWARE = [
