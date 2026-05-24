@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-05-23)
 ## Current Position
 
 Phase: 2 of 8 (Core Domain Models)
-Plan: 2 of 7 in current phase
+Plan: 4 of 7 in current phase
 Status: In progress
-Last activity: 2026-05-23 -- Completed 02-02-PLAN.md
+Last activity: 2026-05-23 -- Completed 02-03 and 02-04 (batched)
 
-Progress: ███░░░░░░░ 20%
+Progress: █████░░░░░ 38%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 18 min
-- Total execution time: 0.9 hours
+- Total plans completed: 5
+- Average duration: 14 min
+- Total execution time: 1.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 Infrastructure Scaffold | 1 | 50 min | 50 min |
-| 02 Core Domain Models | 2 | 5 min | 2.5 min |
+| 02 Core Domain Models | 4 | 14 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 50 min, 2 min, 3 min
-- Trend: --
+- Last 5 plans: 50 min, 2 min, 3 min, 4 min, 5 min
+- Trend: Phase 2 plans averaging 3.5 min (mechanical model creation)
 
 ## Accumulated Context
 
@@ -47,6 +47,10 @@ Recent decisions affecting current work:
 - SiteConfig singleton via save() ValidationError, not metaclass
 - Cross-app FKs use string references for deferred migration resolution
 - Zone zone_type: CharField with choices, not separate lookup table
+- All migrations generated in single pass (no circular FK issues)
+- Pillow added to pyproject.toml for ImageField support
+- Butler deploy key is read-only; migrations generated on Butler, committed locally
+- django-allauth deprecation warnings noted (non-blocking, address in 02-06)
 
 ### Deferred Issues
 
@@ -59,5 +63,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-23
-Stopped at: Completed 02-02-PLAN.md (2 of 7 plans in Phase 2)
+Stopped at: Completed 02-04-PLAN.md (4 of 7 plans in Phase 2)
 Resume file: None
