@@ -11,7 +11,7 @@ None (no matching skills installed)
 ## Phases
 
 - [x] **Phase 1: Infrastructure Scaffold** - Docker Compose stack boots Django through Caddy with PostGIS
-- [ ] **Phase 2: Core Domain Models** - All 48 models, migrations, admin, seed data commands
+- [x] **Phase 2: Core Domain Models** - All 48 models, migrations, admin, seed data commands
 - [ ] **Phase 3: Parcel and Well CRUD with Maps** - Import, view, and manage parcels/wells on MapLibre map
 - [ ] **Phase 4: Water Accounting Engine** - ParcelLedger double-entry, accounts, allocations, dashboards
 - [ ] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
@@ -45,8 +45,8 @@ Verification: `docker compose up -d` succeeds. `curl localhost` returns styled p
 **Goal**: All 48 models exist with migrations, admin registered, seed data and auth working
 **Depends on**: Phase 1
 **Research**: Unlikely (Django ORM, django-allauth are well-documented)
-**Plans**: 1/7 complete
-**Status**: In progress
+**Plans**: 7/7 complete
+**Completed**: 2026-05-23
 
 Deliverables:
 - All Django models across 11 apps with initial migrations
@@ -194,7 +194,7 @@ Phase 8 is the final integration phase.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Infrastructure Scaffold | 1/1 | Complete | 2026-05-23 |
-| 2. Core Domain Models | 6/7 | In progress | - |
+| 2. Core Domain Models | 7/7 | Complete | 2026-05-23 |
 | 3. Parcel and Well CRUD with Maps | 0/TBD | Not started | - |
 | 4. Water Accounting Engine | 0/TBD | Not started | - |
 | 5. External Data Aggregator | 0/TBD | Not started | - |
