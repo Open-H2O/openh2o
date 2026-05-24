@@ -44,9 +44,10 @@
 
 <!-- Account Summaries -->
 <div class="card-raised" style="margin-bottom: var(--space-lg); box-shadow: var(--shadow-pop-sm);">
-  <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-    Water Accounts
-  </h2>
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">Water Accounts</h2>
+    <span style="font-size: 0.75rem; color: var(--color-text-tertiary);">Each account groups parcels under one water user</span>
+  </div>
   {% if account_summaries %}
   <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
     <thead>
@@ -91,15 +92,17 @@
     </tbody>
   </table>
   {% else %}
-  <p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">No active accounts found.</p>
+  <p style="color: var(--color-text-tertiary); font-size: 0.8125rem; margin-bottom: var(--space-sm);">No active accounts yet.</p>
+  <a href="{% url 'accounting:account_create' %}" style="color: var(--color-gold); text-decoration: none; font-size: 0.8125rem; font-weight: 600;">+ Create a water account</a>
   {% endif %}
 </div>
 
 <!-- Zone Summaries -->
 <div class="card-raised" style="box-shadow: var(--shadow-pop-sm);">
-  <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-    Zones
-  </h2>
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">Zones</h2>
+    <span style="font-size: 0.75rem; color: var(--color-text-tertiary);">Geographic management areas with allocation budgets</span>
+  </div>
   {% if zone_summaries %}
   <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
     <thead>
