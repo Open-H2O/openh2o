@@ -45,14 +45,14 @@
 
         <div class="field-group">
           <div class="field-label">Priority Date</div>
-          <div class="field-value" style="font-variant-numeric: tabular-nums;">
+          <div class="field-value text-mono">
             {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
           </div>
         </div>
 
         <div class="field-group">
           <div class="field-label">Face Value (AF)</div>
-          <div class="field-value" style="font-variant-numeric: tabular-nums;">
+          <div class="field-value text-mono">
             {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
           </div>
         </div>
@@ -70,12 +70,12 @@
         {% if water_right.notes %}
         <div class="field-group">
           <div class="field-label">Notes</div>
-          <div class="text-secondary" style="font-size: 0.875rem;">{{ water_right.notes }}</div>
+          <div class="text-secondary text-base">{{ water_right.notes }}</div>
         </div>
         {% endif %}
 
         <div class="border-separator">
-          <div class="text-tertiary" style="font-size: 0.75rem;">
+          <div class="text-tertiary text-xs">
             Created {{ water_right.created_at|date:"M d, Y" }} &middot; Updated {{ water_right.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -83,44 +83,42 @@
 
       <!-- Points of Diversion card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Points of Diversion
-        </h2>
+        <h2 class="section-header mb-md">Points of Diversion</h2>
         {% if pods %}
           {% for pod in pods %}
           <div class="item-row">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-              <span class="field-value" style="font-size: 0.875rem; font-weight: 600;">{{ pod.name }}</span>
+            <div class="row-between" style="margin-bottom: 2px;">
+              <span class="field-value-sm" style="font-weight: 600;">{{ pod.name }}</span>
               {% include "surface/partials/_status_badge.html" with status=pod.status %}
             </div>
             {% if pod.stream_name %}
-              <div class="text-tertiary" style="font-size: 0.75rem;">{{ pod.stream_name }}</div>
+              <div class="text-tertiary text-xs">{{ pod.stream_name }}</div>
             {% endif %}
             {% if pod.max_rate_cfs %}
-              <div class="text-tertiary" style="font-size: 0.75rem;">Max rate: {{ pod.max_rate_cfs }} cfs</div>
+              <div class="text-tertiary text-xs">Max rate: {{ pod.max_rate_cfs }} cfs</div>
             {% endif %}
           </div>
           {% endfor %}
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No points of diversion recorded.</p>
+          <p class="text-tertiary text-base">No points of diversion recorded.</p>
         {% endif %}
       </div>
 
       <!-- Curtailment Status card -->
       {% if active_curtailments %}
       <div class="card-raised">
-        <h2 class="section-header" style="color: var(--color-gold); margin-bottom: var(--space-md);">
+        <h2 class="section-header mb-md" style="color: var(--color-gold);">
           Active Curtailments Affecting This Right
         </h2>
         {% for curtailment in active_curtailments %}
         <div class="item-row" style="padding: var(--space-sm) 0;">
-          <div class="field-value" style="font-size: 0.875rem; font-weight: 600;">{{ curtailment.title }}</div>
-          <div class="text-tertiary" style="font-size: 0.75rem; margin-top: 2px;">
+          <div class="field-value-sm" style="font-weight: 600;">{{ curtailment.title }}</div>
+          <div class="text-tertiary text-xs" style="margin-top: 2px;">
             Order {{ curtailment.order_id }} &middot; Effective {{ curtailment.effective_date|date:"M d, Y" }}
             {% if curtailment.watershed %}&middot; {{ curtailment.watershed }}{% endif %}
           </div>
           {% if curtailment.priority_date_cutoff %}
-            <div style="font-size: 0.75rem; color: var(--color-gold); margin-top: 2px;">
+            <div class="text-xs" style="color: var(--color-gold); margin-top: 2px;">
               Priority cutoff: {{ curtailment.priority_date_cutoff|date:"M d, Y" }}
             </div>
           {% endif %}
@@ -136,37 +134,35 @@
 
       <!-- Map card -->
       <div class="card-raised" style="padding: 0; overflow: hidden;">
-        <div id="wr-map" style="height: 320px; width: 100%; border-radius: var(--radius-md);"></div>
+        <div id="wr-map" class="map-embed" style="height: 320px;"></div>
       </div>
 
       <!-- Recent Diversion Records card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Recent Diversion Records
-        </h2>
+        <h2 class="section-header mb-md">Recent Diversion Records</h2>
         {% if recent_diversions %}
-        <table class="data-table" style="font-size: 0.8125rem;">
+        <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Month</th>
               <th>POD</th>
-              <th style="text-align: right;">Volume (AF)</th>
+              <th class="th-right">Volume (AF)</th>
               <th>Type</th>
             </tr>
           </thead>
           <tbody>
             {% for record in recent_diversions %}
             <tr>
-              <td class="text-secondary" style="font-variant-numeric: tabular-nums;">{{ record.month|date:"M Y" }}</td>
+              <td class="text-secondary text-mono">{{ record.month|date:"M Y" }}</td>
               <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
-              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ record.volume_acre_feet|floatformat:2 }}</td>
+              <td class="td-num">{{ record.volume_acre_feet|floatformat:2 }}</td>
               <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No diversion records yet.</p>
+          <p class="text-tertiary text-base">No diversion records yet.</p>
         {% endif %}
       </div>
 

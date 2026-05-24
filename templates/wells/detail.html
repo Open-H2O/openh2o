@@ -68,7 +68,7 @@
 
         <!-- Static timestamps -->
         <div class="border-separator">
-          <div class="text-tertiary" style="font-size: 0.75rem;">
+          <div class="text-tertiary text-xs">
             Created {{ well.created_at|date:"M d, Y" }} &middot; Updated {{ well.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -76,44 +76,40 @@
 
       <!-- Current Meters card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Current Meters
-        </h2>
+        <h2 class="section-header mb-md">Current Meters</h2>
         {% if current_meters %}
           {% for wm in current_meters %}
           <div class="item-row">
-            <span class="field-value" style="font-size: 0.875rem;">{{ wm.meter }}</span>
+            <span class="field-value-sm">{{ wm.meter }}</span>
             {% if wm.installed_date %}
-              <span class="text-tertiary" style="font-size: 0.75rem; margin-left: var(--space-sm);">Installed {{ wm.installed_date|date:"M d, Y" }}</span>
+              <span class="text-tertiary text-xs" style="margin-left: var(--space-sm);">Installed {{ wm.installed_date|date:"M d, Y" }}</span>
             {% endif %}
           </div>
           {% endfor %}
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No active meters on this well.</p>
+          <p class="text-tertiary text-base">No active meters on this well.</p>
         {% endif %}
       </div>
 
       <!-- Irrigated Parcels card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Irrigated Parcels
-        </h2>
+        <h2 class="section-header mb-md">Irrigated Parcels</h2>
         {% if irrigated_parcels %}
           {% for wip in irrigated_parcels %}
-          <div class="item-row" style="display: flex; align-items: center; justify-content: space-between;">
-            <a href="{% url 'parcels:detail' wip.parcel.pk %}" class="data-table-link" style="font-size: 0.875rem;">
+          <div class="item-row row-between">
+            <a href="{% url 'parcels:detail' wip.parcel.pk %}" class="data-table-link text-base">
               {{ wip.parcel.parcel_number }}
             </a>
             <div style="text-align: right;">
-              <span class="text-secondary" style="font-size: 0.8125rem;">{{ wip.fraction|floatformat:4 }} fraction</span>
+              <span class="text-secondary text-sm">{{ wip.fraction|floatformat:4 }} fraction</span>
               {% if wip.parcel.owner_name %}
-                <div class="text-tertiary" style="font-size: 0.75rem;">{{ wip.parcel.owner_name }}</div>
+                <div class="text-tertiary text-xs">{{ wip.parcel.owner_name }}</div>
               {% endif %}
             </div>
           </div>
           {% endfor %}
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No parcels linked to this well.</p>
+          <p class="text-tertiary text-base">No parcels linked to this well.</p>
         {% endif %}
       </div>
 
@@ -124,38 +120,36 @@
 
       <!-- Map card -->
       <div class="card-raised" style="padding: 0; overflow: hidden;">
-        <div id="well-map" style="height: 300px; width: 100%; border-radius: var(--radius-md);"></div>
+        <div id="well-map" class="map-embed"></div>
       </div>
 
       <!-- Monitoring Data card -->
       {% if monitoring %}
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Monitoring Data
-        </h2>
+        <h2 class="section-header mb-md">Monitoring Data</h2>
         <div class="page-stack" style="gap: var(--space-sm);">
           {% if monitoring.monitoring_agency %}
-          <div class="field-group" style="margin-bottom: 0;">
+          <div class="field-group mb-0">
             <span class="field-label">Agency</span>
-            <div class="field-value" style="font-size: 0.875rem;">{{ monitoring.monitoring_agency }}</div>
+            <div class="field-value-sm">{{ monitoring.monitoring_agency }}</div>
           </div>
           {% endif %}
           {% if monitoring.measurement_frequency %}
-          <div class="field-group" style="margin-bottom: 0;">
+          <div class="field-group mb-0">
             <span class="field-label">Frequency</span>
-            <div class="field-value" style="font-size: 0.875rem;">{{ monitoring.measurement_frequency }}</div>
+            <div class="field-value-sm">{{ monitoring.measurement_frequency }}</div>
           </div>
           {% endif %}
           {% if monitoring.reference_elevation_ft %}
-          <div class="field-group" style="margin-bottom: 0;">
+          <div class="field-group mb-0">
             <span class="field-label">Reference Elevation</span>
-            <div class="field-value" style="font-size: 0.875rem;">{{ monitoring.reference_elevation_ft }} ft</div>
+            <div class="field-value-sm">{{ monitoring.reference_elevation_ft }} ft</div>
           </div>
           {% endif %}
           {% if monitoring.notes %}
-          <div class="field-group" style="margin-bottom: 0;">
+          <div class="field-group mb-0">
             <span class="field-label">Notes</span>
-            <div class="text-secondary" style="font-size: 0.875rem;">{{ monitoring.notes }}</div>
+            <div class="text-secondary text-base">{{ monitoring.notes }}</div>
           </div>
           {% endif %}
         </div>

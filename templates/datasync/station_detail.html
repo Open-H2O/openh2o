@@ -24,10 +24,8 @@
 
       <!-- Station Info card -->
       <div class="card-raised">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header" style="margin: 0; border: none; padding: 0;">
-            Station Information
-          </h2>
+        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 class="section-header-flush">Station Information</h2>
           <div id="toggle-cell">
             {% include "datasync/partials/_station_toggle.html" %}
           </div>
@@ -35,19 +33,9 @@
 
         <div class="field-group">
           <div class="field-label">Data Source</div>
-          <div style="display: flex; align-items: center; gap: var(--space-sm);">
-            <span style="
-              display: inline-flex; align-items: center;
-              background: var(--color-elevated);
-              border: 1px solid var(--color-border-hover);
-              border-radius: 4px;
-              padding: 2px 8px;
-              font-size: 0.8125rem;
-              font-weight: 600;
-              color: #FF6B6B;
-              font-family: var(--font-mono);
-            ">{{ station.data_source.code }}</span>
-            <span class="text-secondary" style="font-size: 0.875rem;">{{ station.data_source.name }}</span>
+          <div class="row-start">
+            <span class="pill-tag" style="color: #FF6B6B;">{{ station.data_source.code }}</span>
+            <span class="text-secondary text-base">{{ station.data_source.name }}</span>
           </div>
         </div>
 
@@ -59,7 +47,7 @@
         <div class="field-group">
           <div class="field-label">Location</div>
           {% if station.location %}
-            <div class="text-secondary field-value-mono" style="font-size: 0.8125rem;">
+            <div class="text-secondary field-value-mono text-sm">
               {{ lat|floatformat:5 }}, {{ lng|floatformat:5 }}
             </div>
           {% else %}
@@ -72,7 +60,7 @@
           {% if station.parameters %}
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
               {% for param in station.parameters %}
-                <span class="text-secondary text-mono" style="background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem;">{{ param }}</span>
+                <span class="pill-tag">{{ param }}</span>
               {% endfor %}
             </div>
           {% else %}
@@ -90,12 +78,12 @@
         {% if station.notes %}
         <div class="field-group">
           <div class="field-label">Notes</div>
-          <div class="text-secondary" style="font-size: 0.875rem; line-height: 1.5;">{{ station.notes }}</div>
+          <div class="text-secondary text-base" style="line-height: 1.5;">{{ station.notes }}</div>
         </div>
         {% endif %}
 
         <div class="border-separator">
-          <div class="text-tertiary" style="font-size: 0.75rem;">
+          <div class="text-tertiary text-xs">
             Created {{ station.created_at|date:"M d, Y" }} &middot; Updated {{ station.updated_at|date:"M d, Y" }}
           </div>
         </div>
@@ -103,17 +91,15 @@
 
       <!-- Recent Sync Logs card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Recent Sync Logs
-        </h2>
+        <h2 class="section-header mb-md">Recent Sync Logs</h2>
         {% if recent_logs %}
-        <table class="data-table" style="font-size: 0.8125rem;">
+        <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Started</th>
               <th>Status</th>
-              <th style="text-align: right;">Staged</th>
-              <th style="text-align: right;">Published</th>
+              <th class="th-right">Staged</th>
+              <th class="th-right">Published</th>
             </tr>
           </thead>
           <tbody>
@@ -133,14 +119,14 @@
                   {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
                 ">{{ log.get_status_display }}</span>
               </td>
-              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ log.records_staged }}</td>
-              <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ log.records_published }}</td>
+              <td class="td-num">{{ log.records_staged }}</td>
+              <td class="td-num">{{ log.records_published }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No sync logs yet.</p>
+          <p class="text-tertiary text-base">No sync logs yet.</p>
         {% endif %}
       </div>
 
@@ -152,22 +138,20 @@
       <!-- Map card -->
       {% if station_geojson %}
       <div class="card-raised" style="padding: 0; overflow: hidden;">
-        <div id="station-map" style="height: 280px; width: 100%; border-radius: var(--radius-md);"></div>
+        <div id="station-map" class="map-embed" style="height: 280px;"></div>
       </div>
       {% endif %}
 
       <!-- Recent Data Records card -->
       <div class="card-raised">
-        <h2 class="section-header" style="margin-bottom: var(--space-md);">
-          Recent Data Records
-        </h2>
+        <h2 class="section-header mb-md">Recent Data Records</h2>
         {% if recent_records %}
-        <table class="data-table" style="font-size: 0.8125rem;">
+        <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Date</th>
               <th>Parameter</th>
-              <th style="text-align: right;">Value</th>
+              <th class="th-right">Value</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -175,8 +159,8 @@
             {% for record in recent_records %}
             <tr>
               <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
-              <td class="text-secondary text-mono" style="font-size: 0.75rem;">{{ record.parameter_code }}</td>
-              <td style="text-align: right; font-variant-numeric: tabular-nums;">
+              <td class="text-secondary text-mono text-xs">{{ record.parameter_code }}</td>
+              <td class="td-num">
                 {% if record.value is not None %}{{ record.value|floatformat:4 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
               </td>
               <td>
@@ -194,7 +178,7 @@
           </tbody>
         </table>
         {% else %}
-          <p class="text-tertiary" style="font-size: 0.875rem;">No data records yet.</p>
+          <p class="text-tertiary text-base">No data records yet.</p>
         {% endif %}
       </div>
 

@@ -1,63 +1,58 @@
 {% load static %}
 {% if not selected_period %}
 <!-- No reporting periods exist yet -->
-<div style="text-align: center; padding: var(--space-xl) var(--space-lg);">
-  <p style="color: var(--color-text-secondary); margin-bottom: var(--space-md);">No reporting periods found. Create your first period to see budget data.</p>
-  <a href="{% url 'accounting:period_create' %}"
-     style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.8125rem;">
+<div class="empty-state">
+  <p class="empty-state-text text-secondary">No reporting periods found. Create your first period to see budget data.</p>
+  <a href="{% url 'accounting:period_create' %}" class="btn-primary">
     + Create Reporting Period
   </a>
 </div>
 {% else %}
 
 <!-- Stat cards: Total Supply / Total Usage / Net Balance -->
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); margin-bottom: var(--space-xl);">
+<div class="stat-grid-3col">
 
   <!-- Total Supply -->
-  <div class="card-raised" style="text-align: center; box-shadow: var(--shadow-pop-sm);">
-    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-sm);">Total Supply</div>
-    <div style="font-size: 2rem; font-weight: 800; color: var(--forest-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums; line-height: 1.1;">
-      {{ grand_supply|floatformat:2 }}
-    </div>
-    <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 4px;">acre-feet</div>
+  <div class="card-raised stat-card">
+    <div class="stat-card-label">Total Supply</div>
+    <div class="stat-card-value text-forest">{{ grand_supply|floatformat:2 }}</div>
+    <div class="stat-card-unit">acre-feet</div>
   </div>
 
   <!-- Total Usage -->
-  <div class="card-raised" style="text-align: center; box-shadow: var(--shadow-pop-sm);">
-    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-sm);">Total Usage</div>
-    <div style="font-size: 2rem; font-weight: 800; color: var(--furnace-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums; line-height: 1.1;">
-      {{ grand_usage|floatformat:2 }}
-    </div>
-    <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 4px;">acre-feet</div>
+  <div class="card-raised stat-card">
+    <div class="stat-card-label">Total Usage</div>
+    <div class="stat-card-value text-furnace">{{ grand_usage|floatformat:2 }}</div>
+    <div class="stat-card-unit">acre-feet</div>
   </div>
 
   <!-- Net Balance -->
-  <div class="card-raised" style="text-align: center; box-shadow: var(--shadow-pop-sm);">
-    <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-sm);">Net Balance</div>
-    <div style="font-size: 2rem; font-weight: 800; font-family: var(--font-mono); font-variant-numeric: tabular-nums; line-height: 1.1; {% if grand_net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+  <div class="card-raised stat-card">
+    <div class="stat-card-label">Net Balance</div>
+    <div class="stat-card-value" style="{% if grand_net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
       {{ grand_net|floatformat:2 }}
     </div>
-    <div style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 4px;">acre-feet</div>
+    <div class="stat-card-unit">acre-feet</div>
   </div>
 
 </div>
 
 <!-- Account Summaries -->
-<div class="card-raised" style="margin-bottom: var(--space-lg); box-shadow: var(--shadow-pop-sm);">
-  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-    <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">Water Accounts</h2>
-    <span style="font-size: 0.75rem; color: var(--color-text-tertiary);">Each account groups parcels under one water user</span>
+<div class="card-raised mb-md">
+  <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="section-header-flush">Water Accounts</h2>
+    <span class="text-tertiary text-xs">Each account groups parcels under one water user</span>
   </div>
   {% if account_summaries %}
   <table class="data-table">
     <thead>
       <tr>
         <th>Account</th>
-        <th style="text-align: right;">Supply (AF)</th>
-        <th style="text-align: right;">Usage (AF)</th>
-        <th style="text-align: right;">Net (AF)</th>
-        <th style="text-align: right;">Allocation (AF)</th>
-        <th style="text-align: right;">Remaining (AF)</th>
+        <th class="th-right">Supply (AF)</th>
+        <th class="th-right">Usage (AF)</th>
+        <th class="th-right">Net (AF)</th>
+        <th class="th-right">Allocation (AF)</th>
+        <th class="th-right">Remaining (AF)</th>
       </tr>
     </thead>
     <tbody>
@@ -68,22 +63,22 @@
             {{ row.account.account_number }}
           </a>
           {% if row.account.name %}
-          <span class="text-secondary" style="margin-left: var(--space-xs);">{{ row.account.name }}</span>
+          <span class="text-secondary ml-xs">{{ row.account.name }}</span>
           {% endif %}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums; color: var(--forest-500);">
+        <td class="td-num text-forest">
           {{ row.supply|floatformat:2 }}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums; color: var(--furnace-500);">
+        <td class="td-num text-furnace">
           {{ row.usage|floatformat:2 }}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; {% if row.net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+        <td class="td-num-bold" style="{% if row.net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
           {{ row.net|floatformat:2 }}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums;">
+        <td class="td-num">
           {{ row.allocation|floatformat:2 }}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; {% if row.remaining >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+        <td class="td-num-bold" style="{% if row.remaining >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
           {{ row.remaining|floatformat:2 }}
         </td>
       </tr>
@@ -91,46 +86,46 @@
     </tbody>
   </table>
   {% else %}
-  <p style="color: var(--color-text-tertiary); font-size: 0.8125rem; margin-bottom: var(--space-sm);">No active accounts yet.</p>
-  <a href="{% url 'accounting:account_create' %}" style="color: var(--color-gold); text-decoration: none; font-size: 0.8125rem; font-weight: 600;">+ Create a water account</a>
+  <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
+  <a href="{% url 'accounting:account_create' %}" class="text-gold text-sm font-semibold" style="text-decoration: none;">+ Create a water account</a>
   {% endif %}
 </div>
 
 <!-- Zone Summaries -->
-<div class="card-raised" style="box-shadow: var(--shadow-pop-sm);">
-  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-md); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-    <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin: 0;">Zones</h2>
-    <span style="font-size: 0.75rem; color: var(--color-text-tertiary);">Geographic management areas with allocation budgets</span>
+<div class="card-raised">
+  <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="section-header-flush">Zones</h2>
+    <span class="text-tertiary text-xs">Geographic management areas with allocation budgets</span>
   </div>
   {% if zone_summaries %}
   <table class="data-table">
     <thead>
       <tr>
         <th>Zone</th>
-        <th style="text-align: right;">Supply (AF)</th>
-        <th style="text-align: right;">Usage (AF)</th>
-        <th style="text-align: right;">Net (AF)</th>
-        <th style="text-align: right;">Allocation (AF)</th>
-        <th style="text-align: right;">Remaining (AF)</th>
+        <th class="th-right">Supply (AF)</th>
+        <th class="th-right">Usage (AF)</th>
+        <th class="th-right">Net (AF)</th>
+        <th class="th-right">Allocation (AF)</th>
+        <th class="th-right">Remaining (AF)</th>
       </tr>
     </thead>
     <tbody>
       {% for row in zone_summaries %}
       <tr>
-        <td style="font-weight: 600;">{{ row.zone.name }}</td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums; color: var(--forest-500);">
+        <td class="font-semibold">{{ row.zone.name }}</td>
+        <td class="td-num text-forest">
           {{ row.supply|floatformat:2 }}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums; color: var(--furnace-500);">
+        <td class="td-num text-furnace">
           {{ row.usage|floatformat:2 }}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; {% if row.net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+        <td class="td-num-bold" style="{% if row.net >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
           {{ row.net|floatformat:2 }}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums;">
+        <td class="td-num">
           {{ row.allocation|floatformat:2 }}
         </td>
-        <td class="text-mono" style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; {% if row.remaining >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
+        <td class="td-num-bold" style="{% if row.remaining >= 0 %}color: var(--forest-400);{% else %}color: var(--furnace-400);{% endif %}">
           {{ row.remaining|floatformat:2 }}
         </td>
       </tr>
@@ -138,7 +133,7 @@
     </tbody>
   </table>
   {% else %}
-  <p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">No zones configured yet.</p>
+  <p class="text-tertiary text-sm">No zones configured yet.</p>
   {% endif %}
 </div>
 
