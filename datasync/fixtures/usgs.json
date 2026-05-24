@@ -1,0 +1,22 @@
+{
+  "stations": [
+    {"station_id": "11303500", "name": "San Joaquin River near Vernalis", "latitude": 37.6758, "longitude": -121.2653, "parameters": ["00060", "00065"]},
+    {"station_id": "11251000", "name": "San Joaquin River below Friant Dam", "latitude": 36.9869, "longitude": -119.7208, "parameters": ["00060", "00065"]},
+    {"station_id": "11447650", "name": "Sacramento River at Freeport", "latitude": 38.4558, "longitude": -121.5017, "parameters": ["00060", "00065", "00010"]}
+  ],
+  "records": [
+    {"station_id": "11303500", "observation_date": "2024-06-01T00:00:00", "parameter_code": "00060", "value": 4520.0, "unit": "cfs"},
+    {"station_id": "11303500", "observation_date": "2024-06-02T00:00:00", "parameter_code": "00060", "value": 4380.0, "unit": "cfs"},
+    {"station_id": "11303500", "observation_date": "2024-06-01T00:00:00", "parameter_code": "00065", "value": 8.42, "unit": "ft"},
+    {"station_id": "11303500", "observation_date": "2024-06-02T00:00:00", "parameter_code": "00065", "value": 8.35, "unit": "ft"},
+    {"station_id": "11251000", "observation_date": "2024-06-01T00:00:00", "parameter_code": "00060", "value": 1850.0, "unit": "cfs"},
+    {"station_id": "11251000", "observation_date": "2024-06-02T00:00:00", "parameter_code": "00060", "value": 1920.0, "unit": "cfs"},
+    {"station_id": "11251000", "observation_date": "2024-06-01T00:00:00", "parameter_code": "00065", "value": 5.21, "unit": "ft"},
+    {"station_id": "11447650", "observation_date": "2024-06-01T00:00:00", "parameter_code": "00060", "value": 22400.0, "unit": "cfs"},
+    {"station_id": "11447650", "observation_date": "2024-06-02T00:00:00", "parameter_code": "00060", "value": 23100.0, "unit": "cfs"},
+    {"station_id": "11447650", "observation_date": "2024-06-01T00:00:00", "parameter_code": "00065", "value": 14.83, "unit": "ft"},
+    {"station_id": "11447650", "observation_date": "2024-06-02T00:00:00", "parameter_code": "00065", "value": 15.02, "unit": "ft"},
+    {"station_id": "11447650", "observation_date": "2024-06-01T00:00:00", "parameter_code": "00010", "value": 18.5, "unit": "deg C"},
+    {"station_id": "11447650", "observation_date": "2024-06-02T00:00:00", "parameter_code": "00010", "value": 19.1, "unit": "deg C"}
+  ]
+}

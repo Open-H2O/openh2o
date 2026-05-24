@@ -1,0 +1,17 @@
+{
+  "stations": [],
+  "records": [
+    {"station_id": "field_001", "date": "2024-06-01", "parameter_code": "ET", "value": 5.2, "unit": "mm"},
+    {"station_id": "field_001", "date": "2024-06-02", "parameter_code": "ET", "value": 5.8, "unit": "mm"},
+    {"station_id": "field_001", "date": "2024-06-03", "parameter_code": "ET", "value": 6.1, "unit": "mm"},
+    {"station_id": "field_001", "date": "2024-06-04", "parameter_code": "ET", "value": 5.5, "unit": "mm"},
+    {"station_id": "field_001", "date": "2024-06-05", "parameter_code": "ET", "value": 4.9, "unit": "mm"},
+    {"station_id": "field_001", "date": "2024-06-06", "parameter_code": "ET", "value": 6.3, "unit": "mm"},
+    {"station_id": "field_001", "date": "2024-06-07", "parameter_code": "ET", "value": 6.7, "unit": "mm"},
+    {"station_id": "field_002", "date": "2024-06-01", "parameter_code": "ET", "value": 4.1, "unit": "mm"},
+    {"station_id": "field_002", "date": "2024-06-02", "parameter_code": "ET", "value": 4.5, "unit": "mm"},
+    {"station_id": "field_002", "date": "2024-06-03", "parameter_code": "ET", "value": 4.8, "unit": "mm"},
+    {"station_id": "field_002", "date": "2024-06-04", "parameter_code": "ET", "value": 3.9, "unit": "mm"},
+    {"station_id": "field_002", "date": "2024-06-05", "parameter_code": "ET", "value": 4.2, "unit": "mm"}
+  ]
+}

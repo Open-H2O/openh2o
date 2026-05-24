@@ -168,6 +168,10 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 _google_client_id = env("GOOGLE_OAUTH_CLIENT_ID", default="")
 _google_client_secret = env("GOOGLE_OAUTH_CLIENT_SECRET", default="")
 
+# -- Datasync ----------------------------------------------------------------
+
+DATASYNC_MOCK_MODE = env.bool("DATASYNC_MOCK_MODE", default=True)
+
 if _google_client_id and _google_client_secret:
     SOCIALACCOUNT_PROVIDERS = {
         "google": {
