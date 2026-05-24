@@ -17,8 +17,7 @@ None (no matching skills installed)
 - [x] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
 - [x] **Phase 6: State Reporting** - GEARS CSV, CalWATRS CSV, email+JSON with prepare-review-send workflow
 - [x] **Phase 7: Health Check and Maintenance** - 8-category health system, /health endpoint, maintenance commands
-- [ ] **Phase 8: UI/UX Overhaul** - Consistent styling, empty states, responsive layout, form polish
-- [ ] **Phase 9: DEPLOY.md, Polish, and Handoff** - AI-consumable deployment guide, demo fixtures, security hardening
+- [ ] **Phase 8: Deploy, Polish, and Handoff** - CSS extraction, page polish, empty states, DEPLOY.md, demo fixtures, security hardening
 
 ## Phase Details
 
@@ -162,57 +161,41 @@ Deliverables:
 
 Verification: Run health checks, see results on dashboard. Break a data source, re-run, see it flagged red.
 
-### Phase 8: UI/UX Overhaul
-**Goal**: Every page is usable, self-explanatory, and visually consistent with VanderDev design system
-**Depends on**: Phases 4 and 5 (all data screens exist)
-**Research**: Unlikely (design system already established)
-**Plans**: TBD
+### Phase 8: Deploy, Polish, and Handoff
+**Goal**: CSS extraction, page polish, empty states, complete DEPLOY.md, demo fixtures, security hardening, ready for pilot
+**Depends on**: All prior phases complete
+**Research**: Unlikely (design system established, documentation and fixture generation)
+**Plans**: 0/3 complete
+**Status**: In progress
 
 Deliverables:
-- Consistent page headers with breadcrumbs and contextual description on every page
-- Empty states with guided next-action on all list pages
-- Form styling standardized (dark-mode inputs, validation feedback, loading states)
-- Table styling standardized (sortable headers, zebra rows, responsive overflow)
-- Dashboard stat cards with sparkline trends (not just current numbers)
-- Mobile-responsive layout for all pages (sidebar overlay already works)
-- Page-level loading indicators for HTMX transitions
-- Consistent color-coding for supply/usage/net across all views
 - CSS class extraction (replace inline styles with reusable classes in app.css)
-- Toast notifications for create/update/delete actions
-- Seed data improvements (realistic names, diverse scenarios)
-
-Verification: Walk through every page on desktop and mobile. Each page should explain what it does. No unstyled form inputs, no broken layouts, no dead-end empty states.
-
-### Phase 9: DEPLOY.md, Polish, and Handoff
-**Goal**: AI-consumable deployment guide is complete, demo data loaded, ready for pilot
-**Depends on**: All phases complete
-**Research**: Unlikely (documentation and fixture generation)
-**Plans**: TBD
-
-Deliverables:
+- Consistent page headers with breadcrumbs and contextual descriptions
+- Empty states with guided next-action on all list pages
+- Form and table styling standardized (dark-mode inputs, zebra rows)
+- HTMX loading indicators and toast notifications
+- Consistent supply/usage/net color coding across all views
 - DEPLOY.md: every step copy-pasteable with verification and failure modes
-- DEPLOY.md section: "Set up Google OAuth (optional)" with Google Cloud Console walkthrough
-- DEPLOY.md section: "Configure email for password reset" with SMTP setup
+- DEPLOY.md sections: Google OAuth setup, email/SMTP setup
 - CLAUDE.md: full project context for AI assistants
 - Demo fixture: 1 GSA boundary, 3 zones, 50 parcels, 20 wells, 6 months ledger, 3 accounts
 - Makefile shortcuts: make up, make migrate, make seed, make test, make health
-- Security hardening: CSRF, SECURE_* settings, rate limiting
-- GitHub Actions test workflow
+- Security hardening: CSRF, SECURE_* settings
 - README.md with quick start
 
-Verification: Clone to fresh VPS. Follow DEPLOY.md exactly. Platform boots with demo data. Health checks pass. Generate sample GEARS report.
+Verification: Walk through every page. No inline styles, no dead-end empty states. Clone to fresh VPS, follow DEPLOY.md, platform boots with demo data, health checks pass.
 
 ## Critical Path
 
 ```
-Phase 1 → Phase 2 → Phase 3 → Phase 4 (parallel) → Phase 6 → Phase 8 (UI) → Phase 9
+Phase 1 → Phase 2 → Phase 3 → Phase 4 (parallel) → Phase 6 → Phase 8
                                 Phase 5 (parallel) /         /
                                 Phase 7 (parallel) ----------
 ```
 
 Phases 4+5 can run in parallel after Phase 3.
 Phases 6+7 can run in parallel, but Phase 6 needs 4+5 complete.
-Phase 8 is the final integration phase.
+Phase 8 is the final phase (merged UI/UX + Deploy/Handoff).
 
 ## Progress
 
@@ -225,5 +208,4 @@ Phase 8 is the final integration phase.
 | 5. External Data Aggregator | 2/2 | Complete | 2026-05-24 |
 | 6. State Reporting | 1/1 | Complete | 2026-05-24 |
 | 7. Health Check and Maintenance | 1/1 | Complete | 2026-05-24 |
-| 8. UI/UX Overhaul | 0/TBD | Not started | - |
-| 9. DEPLOY.md, Polish, and Handoff | 0/TBD | Not started | - |
+| 8. Deploy, Polish, and Handoff | 0/3 | In progress | - |
