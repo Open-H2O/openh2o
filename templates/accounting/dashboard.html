@@ -4,7 +4,7 @@
 {% block page_title %}Water Budget{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+<div class="page-stack">
 
   {% if not periods.exists %}
   <!-- Empty state: guide the user -->
@@ -44,7 +44,8 @@
             hx-get="{% url 'accounting:dashboard' %}"
             hx-target="#dashboard-content"
             hx-trigger="change"
-            style="padding: var(--space-xs) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; cursor: pointer; min-width: 200px; flex-shrink: 0;">
+            class="form-select"
+            style="min-width: 200px; flex-shrink: 0;">
       {% for p in periods %}
       <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
       {% endfor %}

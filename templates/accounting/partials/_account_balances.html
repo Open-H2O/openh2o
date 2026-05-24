@@ -25,31 +25,31 @@
 
 <!-- Per-parcel breakdown -->
 {% if parcel_balances %}
-<h3 style="font-size: 0.8125rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-sm);">Per-Parcel Breakdown</h3>
-<table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+<h3 class="section-header" style="font-size: 0.8125rem; margin-bottom: var(--space-sm);">Per-Parcel Breakdown</h3>
+<table class="data-table">
   <thead>
-    <tr style="border-bottom: 1px solid var(--color-border);">
-      <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Parcel</th>
-      <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Supply</th>
-      <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Usage</th>
-      <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Net</th>
+    <tr>
+      <th>Parcel</th>
+      <th style="text-align: right;">Supply</th>
+      <th style="text-align: right;">Usage</th>
+      <th style="text-align: right;">Net</th>
     </tr>
   </thead>
   <tbody>
     {% for pb in parcel_balances %}
-    <tr style="border-bottom: 1px solid var(--color-border);">
-      <td style="padding: var(--space-xs) var(--space-sm);">
-        <a href="{% url 'parcels:detail' pb.parcel.pk %}" style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+    <tr>
+      <td>
+        <a href="{% url 'parcels:detail' pb.parcel.pk %}" class="data-table-link">
           {{ pb.parcel.parcel_number }}
         </a>
       </td>
-      <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--forest-500); font-variant-numeric: tabular-nums;">
+      <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--forest-500);">
         {{ pb.supply|floatformat:2 }}
       </td>
-      <td style="padding: var(--space-xs) var(--space-sm); text-align: right; color: var(--furnace-500); font-variant-numeric: tabular-nums;">
+      <td style="text-align: right; font-variant-numeric: tabular-nums; color: var(--furnace-500);">
         {{ pb.usage|floatformat:2 }}
       </td>
-      <td style="padding: var(--space-xs) var(--space-sm); text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; {% if pb.net >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">
+      <td style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; {% if pb.net >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">
         {{ pb.net|floatformat:2 }}
       </td>
     </tr>

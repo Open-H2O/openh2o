@@ -1,6 +1,6 @@
 <!-- Count badge -->
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md);">
-  <span style="font-size: 0.8125rem; color: var(--color-text-secondary);">
+  <span class="text-secondary" style="font-size: 0.8125rem;">
     <span style="
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--color-elevated);
@@ -18,33 +18,26 @@
 
 {% if page_obj.object_list %}
 <div class="card-raised" style="overflow-x: auto;">
-  <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+  <table class="data-table">
     <thead>
-      <tr style="border-bottom: 1px solid var(--color-border-hover);">
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Name</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Start Date</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">End Date</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+      <tr>
+        <th>Name</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody>
       {% for period in page_obj %}
-      <tr style="border-bottom: 1px solid var(--color-border); transition: background 0.1s;"
-          onmouseover="this.style.background='var(--color-hover)'"
-          onmouseout="this.style.background='transparent'">
-        <td style="padding: var(--space-sm) var(--space-md);">
-          <a href="{% url 'accounting:period_detail' period.pk %}"
-             style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+      <tr>
+        <td>
+          <a href="{% url 'accounting:period_detail' period.pk %}" class="data-table-link">
             {{ period.name }}
           </a>
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary);">
-          {{ period.start_date|date:"M d, Y" }}
-        </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary);">
-          {{ period.end_date|date:"M d, Y" }}
-        </td>
-        <td style="padding: var(--space-sm) var(--space-md);">
+        <td class="text-secondary">{{ period.start_date|date:"M d, Y" }}</td>
+        <td class="text-secondary">{{ period.end_date|date:"M d, Y" }}</td>
+        <td>
           {% if period.is_finalized %}
             <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25);">Finalized</span>
           {% else %}
@@ -68,7 +61,7 @@
       Previous
     </button>
   {% endif %}
-  <span style="display: flex; align-items: center; color: var(--color-text-secondary); font-size: 0.875rem;">
+  <span class="text-secondary" style="display: flex; align-items: center; font-size: 0.875rem;">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
@@ -84,6 +77,6 @@
 
 {% else %}
 <div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
-  <p style="color: var(--color-text-secondary); font-size: 0.875rem;">No reporting periods found{% if q %} matching "{{ q }}"{% endif %}.</p>
+  <p class="text-secondary" style="font-size: 0.875rem;">No reporting periods found{% if q %} matching "{{ q }}"{% endif %}.</p>
 </div>
 {% endif %}
