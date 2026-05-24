@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Allocation Plans - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Allocation Plans{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Toolbar -->
+  <div class="card-raised" style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
+    <!-- Search -->
+    <div style="flex: 1; min-width: 200px;">
+      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+        Search
+      </label>
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Plan name, zone, or water type..."
+        hx-get="{% url 'accounting:allocations_list' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='period']"
+        style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none;"
+      >
+    </div>
+
+    <!-- Period filter -->
+    <div>
+      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+        Period
+      </label>
+      <select
+        name="period"
+        hx-get="{% url 'accounting:allocations_list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q']"
+        style="padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; cursor: pointer;"
+      >
+        <option value="" {% if not period_id %}selected{% endif %}>All Periods</option>
+        {% for p in periods %}
+          <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Create button -->
+    <div>
+      <a href="{% url 'accounting:allocation_create' %}" class="btn-primary" style="text-decoration: none;">+ New Allocation</a>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    {% include "accounting/partials/_allocations_list_results.html" %}
+  </div>
+
+</div>
+{% endblock %}
