@@ -74,7 +74,8 @@
 {% endif %}
 
 {% else %}
-<div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
-  <p class="text-secondary" style="font-size: 0.875rem;">No allocation plans found{% if q %} matching "{{ q }}"{% endif %}{% if period_id %} for this period{% endif %}.</p>
+<div class="card-raised empty-state">
+  <div class="empty-state-icon">&#x1F4CA;</div>
+  <p class="empty-state-text">No allocation plans found{% if q %} matching "{{ q }}"{% endif %}{% if period_id %} for this period{% endif %}.</p>
 </div>
 {% endif %}

@@ -76,7 +76,8 @@
 {% endif %}
 
 {% else %}
-<div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
-  <p class="text-secondary" style="font-size: 0.875rem;">No recharge sites found{% if q %} matching "{{ q }}"{% endif %}{% if site_type %} with type "{{ site_type }}"{% endif %}.</p>
+<div class="card-raised empty-state">
+  <div class="empty-state-icon">&#x1F30A;</div>
+  <p class="empty-state-text">No recharge sites found{% if q %} matching "{{ q }}"{% endif %}{% if site_type %} with type "{{ site_type }}"{% endif %}.</p>
 </div>
 {% endif %}

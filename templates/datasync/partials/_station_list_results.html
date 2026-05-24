@@ -94,9 +94,8 @@
 {% endif %}
 
 {% else %}
-<div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
-  <p class="text-secondary" style="font-size: 0.875rem;">
-    No stations found{% if q %} matching "{{ q }}"{% endif %}{% if source %} for source "{{ source }}"{% endif %}.
-  </p>
+<div class="card-raised empty-state">
+  <div class="empty-state-icon">&#x1F4E1;</div>
+  <p class="empty-state-text">No stations found{% if q %} matching "{{ q }}"{% endif %}{% if source %} for source "{{ source }}"{% endif %}.</p>
 </div>
 {% endif %}
