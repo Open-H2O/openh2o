@@ -16,4 +16,5 @@ dependencies = [
     "django-allauth[socialaccount]>=65.0",
     "django-extensions>=3.2",
     "django-htmx>=1.19",
+    "Pillow>=10.0",
 ]
