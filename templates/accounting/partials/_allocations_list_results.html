@@ -1,6 +1,6 @@
 <!-- Count badge -->
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md);">
-  <span style="font-size: 0.8125rem; color: var(--color-text-secondary);">
+  <span class="text-secondary" style="font-size: 0.8125rem;">
     <span style="
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--color-elevated);
@@ -18,37 +18,28 @@
 
 {% if page_obj.object_list %}
 <div class="card-raised" style="overflow-x: auto;">
-  <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+  <table class="data-table">
     <thead>
-      <tr style="border-bottom: 1px solid var(--color-border-hover);">
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Name</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Zone</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Water Type</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Period</th>
-        <th style="text-align: right; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Allocation (AF)</th>
+      <tr>
+        <th>Name</th>
+        <th>Zone</th>
+        <th>Water Type</th>
+        <th>Period</th>
+        <th style="text-align: right;">Allocation (AF)</th>
       </tr>
     </thead>
     <tbody>
       {% for alloc in page_obj %}
-      <tr style="border-bottom: 1px solid var(--color-border); transition: background 0.1s;"
-          onmouseover="this.style.background='var(--color-hover)'"
-          onmouseout="this.style.background='transparent'">
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); font-weight: 600;">
-          {{ alloc.name }}
-        </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary);">
-          {{ alloc.zone.name }}
-        </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary);">
-          {{ alloc.water_type.name }}
-        </td>
-        <td style="padding: var(--space-sm) var(--space-md);">
-          <a href="{% url 'accounting:period_detail' alloc.reporting_period.pk %}"
-             style="color: var(--color-blue); text-decoration: none; font-size: 0.8125rem;">
+      <tr>
+        <td>{{ alloc.name }}</td>
+        <td class="text-secondary">{{ alloc.zone.name }}</td>
+        <td class="text-secondary">{{ alloc.water_type.name }}</td>
+        <td>
+          <a href="{% url 'accounting:period_detail' alloc.reporting_period.pk %}" class="data-table-link">
             {{ alloc.reporting_period.name }}
           </a>
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); text-align: right; font-variant-numeric: tabular-nums;">
+        <td style="text-align: right; font-variant-numeric: tabular-nums;">
           {{ alloc.allocation_acre_feet|floatformat:2 }}
         </td>
       </tr>
@@ -68,7 +59,7 @@
       Previous
     </button>
   {% endif %}
-  <span style="display: flex; align-items: center; color: var(--color-text-secondary); font-size: 0.875rem;">
+  <span class="text-secondary" style="display: flex; align-items: center; font-size: 0.875rem;">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
@@ -84,6 +75,6 @@
 
 {% else %}
 <div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
-  <p style="color: var(--color-text-secondary); font-size: 0.875rem;">No allocation plans found{% if q %} matching "{{ q }}"{% endif %}{% if period_id %} for this period{% endif %}.</p>
+  <p class="text-secondary" style="font-size: 0.875rem;">No allocation plans found{% if q %} matching "{{ q }}"{% endif %}{% if period_id %} for this period{% endif %}.</p>
 </div>
 {% endif %}

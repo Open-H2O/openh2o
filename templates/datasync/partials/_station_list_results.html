@@ -1,6 +1,6 @@
 <!-- Count badge -->
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md);">
-  <span style="font-size: 0.8125rem; color: var(--color-text-secondary);">
+  <span class="text-secondary" style="font-size: 0.8125rem;">
     <span style="
       display: inline-flex; align-items: center; justify-content: center;
       background: var(--color-elevated);
@@ -18,28 +18,25 @@
 
 {% if page_obj.object_list %}
 <div class="card-raised" style="overflow-x: auto;">
-  <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+  <table class="data-table">
     <thead>
-      <tr style="border-bottom: 1px solid var(--color-border-hover);">
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Station</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Source</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">External ID</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Last Data</th>
-        <th style="text-align: center; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Active</th>
+      <tr>
+        <th>Station</th>
+        <th>Source</th>
+        <th>External ID</th>
+        <th>Last Data</th>
+        <th style="text-align: center;">Active</th>
       </tr>
     </thead>
     <tbody>
       {% for station in page_obj %}
-      <tr style="border-bottom: 1px solid var(--color-border); transition: background 0.1s;"
-          onmouseover="this.style.background='var(--color-hover)'"
-          onmouseout="this.style.background='transparent'">
-        <td style="padding: var(--space-sm) var(--space-md);">
-          <a href="{% url 'datasync:station_detail' station.pk %}"
-             style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+      <tr>
+        <td>
+          <a href="{% url 'datasync:station_detail' station.pk %}" class="data-table-link">
             {{ station.station_name }}
           </a>
         </td>
-        <td style="padding: var(--space-sm) var(--space-md);">
+        <td>
           <span style="
             display: inline-flex; align-items: center;
             background: var(--color-elevated);
@@ -52,17 +49,17 @@
             font-family: var(--font-mono);
           ">{{ station.data_source.code }}</span>
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary); font-family: var(--font-mono); font-size: 0.8125rem;">
+        <td class="text-secondary text-mono" style="font-size: 0.8125rem;">
           {{ station.external_station_id }}
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary); font-size: 0.8125rem;">
+        <td class="text-secondary" style="font-size: 0.8125rem;">
           {% if station.last_data_at %}
             {{ station.last_data_at|date:"M d, Y" }}
           {% else %}
-            <span style="color: var(--color-text-tertiary);">—</span>
+            <span class="text-tertiary">—</span>
           {% endif %}
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); text-align: center;">
+        <td style="text-align: center;">
           {% include "datasync/partials/_station_toggle.html" %}
         </td>
       </tr>
@@ -82,7 +79,7 @@
       Previous
     </button>
   {% endif %}
-  <span style="display: flex; align-items: center; color: var(--color-text-secondary); font-size: 0.875rem;">
+  <span class="text-secondary" style="display: flex; align-items: center; font-size: 0.875rem;">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
@@ -98,7 +95,7 @@
 
 {% else %}
 <div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
-  <p style="color: var(--color-text-secondary); font-size: 0.875rem;">
+  <p class="text-secondary" style="font-size: 0.875rem;">
     No stations found{% if q %} matching "{{ q }}"{% endif %}{% if source %} for source "{{ source }}"{% endif %}.
   </p>
 </div>
