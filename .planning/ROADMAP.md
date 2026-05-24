@@ -13,7 +13,7 @@ None (no matching skills installed)
 - [x] **Phase 1: Infrastructure Scaffold** - Docker Compose stack boots Django through Caddy with PostGIS
 - [x] **Phase 2: Core Domain Models** - All 48 models, migrations, admin, seed data commands
 - [x] **Phase 3: Parcel and Well CRUD with Maps** - Import, view, and manage parcels/wells on MapLibre map
-- [ ] **Phase 4: Water Accounting Engine** - ParcelLedger double-entry, accounts, allocations, dashboards
+- [x] **Phase 4: Water Accounting Engine** - ParcelLedger double-entry, accounts, allocations, dashboards
 - [ ] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
 - [ ] **Phase 6: State Reporting** - GEARS CSV, CalWATRS CSV, email+JSON with prepare-review-send workflow
 - [ ] **Phase 7: Health Check and Maintenance** - 8-category health system, /health endpoint, maintenance commands
@@ -85,8 +85,9 @@ Verification: Import test GeoJSON. See parcels on map. Click parcel, see detail.
 **Goal**: ParcelLedger double-entry system works with account balances, allocations, and budget dashboards
 **Depends on**: Phase 3
 **Research**: Unlikely (double-entry pattern documented from Rio repo analysis)
-**Plans**: 2/3 complete
-**Status**: In progress
+**Plans**: 3/3 complete
+**Status**: Complete
+**Completed**: 2026-05-24
 
 Deliverables:
 - ParcelLedger entry creation (manual and CSV bulk upload)
@@ -198,7 +199,7 @@ Phase 8 is the final integration phase.
 | 1. Infrastructure Scaffold | 1/1 | Complete | 2026-05-23 |
 | 2. Core Domain Models | 7/7 | Complete | 2026-05-23 |
 | 3. Parcel and Well CRUD with Maps | 4/4 | Complete | 2026-05-24 |
-| 4. Water Accounting Engine | 2/3 | In progress | - |
+| 4. Water Accounting Engine | 3/3 | Complete | 2026-05-24 |
 | 5. External Data Aggregator | 0/TBD | Not started | - |
 | 6. State Reporting | 0/TBD | Not started | - |
 | 7. Health Check and Maintenance | 0/TBD | Not started | - |
