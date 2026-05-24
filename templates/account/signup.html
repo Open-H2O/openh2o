@@ -2,17 +2,17 @@
 {% block title %}Create Account — Open Water{% endblock %}
 {% block content %}
 <div class="card-raised w-full" style="max-width: 420px;">
-    <h1 class="text-xl font-extrabold mb-sm" style="color: var(--color-gold);">Create Account</h1>
-    <p class="text-sm mb-lg" style="color: var(--color-text-secondary);">Set up your water accounting access.</p>
+    <h1 class="text-xl font-extrabold mb-sm text-gold">Create Account</h1>
+    <p class="text-sm mb-lg text-secondary">Set up your water accounting access.</p>
     {% if form.errors %}
-    <div class="mb-md p-sm" style="background: var(--color-elevated); border: 1px solid var(--furnace-400); border-radius: var(--radius-md);">
+    <div class="form-error-box">
         {% for field in form %}
             {% for error in field.errors %}
-            <p class="text-sm" style="color: var(--furnace-500);">{{ error }}</p>
+            <p class="text-sm text-furnace">{{ error }}</p>
             {% endfor %}
         {% endfor %}
         {% for error in form.non_field_errors %}
-        <p class="text-sm" style="color: var(--furnace-500);">{{ error }}</p>
+        <p class="text-sm text-furnace">{{ error }}</p>
         {% endfor %}
     </div>
     {% endif %}
@@ -32,8 +32,8 @@
         </div>
         <button type="submit" class="btn-primary w-full mb-md">Create Account</button>
     </form>
-    <p class="text-sm text-center" style="color: var(--color-text-secondary);">
-        Already have an account? <a href="{% url 'account_login' %}" style="color: var(--color-blue);">Log in</a>
+    <p class="text-sm text-center text-secondary">
+        Already have an account? <a href="{% url 'account_login' %}" class="text-blue">Log in</a>
     </p>
 </div>
 {% endblock %}

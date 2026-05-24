@@ -8,35 +8,35 @@
 
   {% if not periods.exists %}
   <!-- Empty state: guide the user -->
-  <div class="card-raised" style="text-align: center; padding: var(--space-2xl) var(--space-lg);">
-    <h2 style="font-size: 1.25rem; color: var(--color-text-primary); margin-bottom: var(--space-sm);">Welcome to OpenH2O</h2>
-    <p style="color: var(--color-text-secondary); margin-bottom: var(--space-lg); max-width: 500px; margin-left: auto; margin-right: auto;">
+  <div class="card-raised empty-state">
+    <h2 class="section-header-flush mb-sm">Welcome to OpenH2O</h2>
+    <p class="text-secondary text-sm mb-lg" style="max-width: 500px; margin-left: auto; margin-right: auto;">
       This is your water budget dashboard. It shows how much water is being pumped, consumed, and what's left in your allocation. To get started:
     </p>
-    <div style="display: flex; flex-direction: column; gap: var(--space-md); align-items: center; text-align: left; max-width: 400px; margin: 0 auto;">
-      <div style="display: flex; align-items: flex-start; gap: var(--space-sm);">
-        <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--color-gold); color: var(--color-base); font-size: 0.75rem; font-weight: 700; flex-shrink: 0;">1</span>
-        <span style="color: var(--color-text-primary); font-size: 0.875rem;"><a href="{% url 'accounting:period_create' %}" style="color: var(--color-gold); text-decoration: none; font-weight: 600;">Create a reporting period</a> (e.g., Water Year 2024-2025)</span>
+    <div class="onboarding-steps">
+      <div class="onboarding-step">
+        <span class="step-badge step-badge-active">1</span>
+        <span class="text-sm"><a href="{% url 'accounting:period_create' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Create a reporting period</a> (e.g., Water Year 2024-2025)</span>
       </div>
-      <div style="display: flex; align-items: flex-start; gap: var(--space-sm);">
-        <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--color-elevated); color: var(--color-text-secondary); font-size: 0.75rem; font-weight: 700; flex-shrink: 0; border: 1px solid var(--color-border);">2</span>
-        <span style="color: var(--color-text-secondary); font-size: 0.875rem;">Create water accounts and assign parcels to them</span>
+      <div class="onboarding-step">
+        <span class="step-badge">2</span>
+        <span class="text-secondary text-sm">Create water accounts and assign parcels to them</span>
       </div>
-      <div style="display: flex; align-items: flex-start; gap: var(--space-sm);">
-        <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--color-elevated); color: var(--color-text-secondary); font-size: 0.75rem; font-weight: 700; flex-shrink: 0; border: 1px solid var(--color-border);">3</span>
-        <span style="color: var(--color-text-secondary); font-size: 0.875rem;">Add ledger entries (pumping, ET estimates) or upload CSV</span>
+      <div class="onboarding-step">
+        <span class="step-badge">3</span>
+        <span class="text-secondary text-sm">Add ledger entries (pumping, ET estimates) or upload CSV</span>
       </div>
-      <div style="display: flex; align-items: flex-start; gap: var(--space-sm);">
-        <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--color-elevated); color: var(--color-text-secondary); font-size: 0.75rem; font-weight: 700; flex-shrink: 0; border: 1px solid var(--color-border);">4</span>
-        <span style="color: var(--color-text-secondary); font-size: 0.875rem;">Dashboard shows your water position: supply vs. usage vs. allocation</span>
+      <div class="onboarding-step">
+        <span class="step-badge">4</span>
+        <span class="text-secondary text-sm">Dashboard shows your water position: supply vs. usage vs. allocation</span>
       </div>
     </div>
   </div>
   {% else %}
 
   <!-- Context: what this page shows -->
-  <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);">
-    <p style="color: var(--color-text-secondary); font-size: 0.8125rem; margin: 0;">
+  <div class="row-between">
+    <p class="text-secondary text-sm mb-0">
       Water supply, usage, and remaining allocation across all accounts for the selected period.
     </p>
     <!-- Period selector -->

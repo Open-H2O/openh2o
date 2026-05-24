@@ -10,7 +10,7 @@
   <a href="{% url 'accounting:ledger_list' %}" class="back-link">&larr; Back to Ledger</a>
 
   <div class="card-raised">
-    <h2 class="section-header" style="margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="card-header-ruled">
       Create Ledger Entry
     </h2>
 
@@ -22,7 +22,7 @@
         <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
         {{ field }}
         {% if field.errors %}
-        <div class="form-help" style="color: var(--furnace-500);">
+        <div class="form-help text-furnace">
           {% for error in field.errors %}{{ error }}{% endfor %}
         </div>
         {% endif %}
@@ -32,15 +32,15 @@
       </div>
       {% endfor %}
 
-      <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+      <div class="form-footer">
         <button type="submit" class="btn-primary">Create Entry</button>
-        <a href="{% url 'accounting:ledger_list' %}" class="btn-secondary" style="text-decoration: none;">Cancel</a>
+        <a href="{% url 'accounting:ledger_list' %}" class="btn-secondary">Cancel</a>
       </div>
     </form>
   </div>
 
-  <div class="card-raised" style="background: var(--color-inset);">
-    <p class="text-tertiary" style="font-size: 0.8125rem; margin: 0;">
+  <div class="card-raised card-inset">
+    <p class="text-tertiary text-sm" style="margin: 0;">
       <strong class="text-secondary">Sign convention:</strong>
       Positive amounts represent supply (recharge, allocation). Negative amounts represent usage (diversions, extractions).
     </p>
