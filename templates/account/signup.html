@@ -19,19 +19,16 @@
     <form method="post" action="{% url 'account_signup' %}">
         {% csrf_token %}
         <div class="mb-md">
-            <label class="block text-sm mb-xs" style="color: var(--color-text-secondary);">Email</label>
-            <input type="email" name="email" required autofocus
-                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); width: 100%; font-family: var(--font-display);">
+            <label class="block text-sm mb-xs text-secondary">Email</label>
+            <input type="email" name="email" required autofocus class="form-input">
         </div>
         <div class="mb-md">
-            <label class="block text-sm mb-xs" style="color: var(--color-text-secondary);">Password</label>
-            <input type="password" name="password1" required
-                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); width: 100%; font-family: var(--font-display);">
+            <label class="block text-sm mb-xs text-secondary">Password</label>
+            <input type="password" name="password1" required class="form-input">
         </div>
         <div class="mb-lg">
-            <label class="block text-sm mb-xs" style="color: var(--color-text-secondary);">Confirm Password</label>
-            <input type="password" name="password2" required
-                style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); color: var(--color-text-primary); width: 100%; font-family: var(--font-display);">
+            <label class="block text-sm mb-xs text-secondary">Confirm Password</label>
+            <input type="password" name="password2" required class="form-input">
         </div>
         <button type="submit" class="btn-primary w-full mb-md">Create Account</button>
     </form>
