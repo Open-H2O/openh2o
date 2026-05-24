@@ -1,0 +1,31 @@
+<header class="app-header">
+    <!-- Sidebar toggle (hamburger) -->
+    <button id="sidebar-toggle"
+            class="sidebar-toggle"
+            type="button"
+            aria-label="Toggle sidebar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+    </button>
+
+    <!-- Page title -->
+    <h1 class="app-header-title">
+        {% block page_title %}Open Water Accounting Platform{% endblock %}
+    </h1>
+
+    <!-- Spacer -->
+    <div style="flex: 1;"></div>
+
+    <!-- User menu -->
+    <div class="app-header-user">
+        {% if user.is_authenticated %}
+            <span class="app-header-email">{{ user.email }}</span>
+            <a href="{% url 'account_logout' %}" class="btn-secondary btn-sm">Sign Out</a>
+        {% else %}
+            <a href="{% url 'account_login' %}" class="btn-primary btn-sm">Log In</a>
+        {% endif %}
+    </div>
+</header>

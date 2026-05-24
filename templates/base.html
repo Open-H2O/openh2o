@@ -14,12 +14,59 @@
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
+    <!-- MapLibre GL JS (available in map pages via block) -->
+    {% block map_styles %}{% endblock %}
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+
+    {% block extra_head %}{% endblock %}
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    <main class="min-h-screen flex items-center justify-center p-md">
-        {% block content %}{% endblock %}
-    </main>
+    <div class="app-shell">
+        {% include "partials/_sidebar.html" %}
+
+        <div class="app-main">
+            {% include "partials/_header.html" %}
+
+            <main class="app-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% block map_scripts %}{% endblock %}
+
+    <script>
+    (function() {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var COLLAPSED_KEY = 'sidebar-collapsed';
+
+        // Restore saved state
+        if (localStorage.getItem(COLLAPSED_KEY) === 'true') {
+            sidebar.setAttribute('data-collapsed', 'true');
+        }
+
+        toggle.addEventListener('click', function() {
+            var isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
+            sidebar.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+            localStorage.setItem(COLLAPSED_KEY, isCollapsed ? 'false' : 'true');
+        });
+
+        // Close sidebar on mobile when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth < 768 &&
+                sidebar.getAttribute('data-collapsed') === 'false' &&
+                !sidebar.contains(e.target) &&
+                !toggle.contains(e.target)) {
+                sidebar.setAttribute('data-collapsed', 'true');
+                localStorage.setItem(COLLAPSED_KEY, 'true');
+            }
+        });
+    })();
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>
