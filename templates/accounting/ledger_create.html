@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}New Ledger Entry - Open Water Accounting Platform{% endblock %}
+{% block page_title %}New Ledger Entry{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg); max-width: 640px;">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'accounting:ledger_list' %}" style="color: var(--color-text-secondary); text-decoration: none; font-size: 0.875rem;">
+      &larr; Back to Ledger
+    </a>
+  </div>
+
+  <div class="card-raised">
+    <h2 style="font-size: 1rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-lg); padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+      Create Ledger Entry
+    </h2>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% for field in form %}
+      <div style="margin-bottom: var(--space-md);">
+        <label for="{{ field.id_for_label }}"
+               style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+          {{ field.label }}
+        </label>
+        {{ field }}
+        {% if field.errors %}
+        <div style="color: var(--furnace-500); font-size: 0.75rem; margin-top: 2px;">
+          {% for error in field.errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+        {% if field.help_text %}
+        <div style="color: var(--color-text-tertiary); font-size: 0.75rem; margin-top: 2px;">{{ field.help_text }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg);">
+        <button type="submit"
+                style="padding: var(--space-sm) var(--space-lg); background: var(--color-gold); color: var(--color-base); border: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.875rem; cursor: pointer;">
+          Create Entry
+        </button>
+        <a href="{% url 'accounting:ledger_list' %}"
+           style="padding: var(--space-sm) var(--space-lg); background: var(--color-elevated); color: var(--color-text-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-sm); text-decoration: none; font-size: 0.875rem; display: inline-flex; align-items: center;">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-raised" style="background: var(--color-inset);">
+    <p style="color: var(--color-text-tertiary); font-size: 0.8125rem; margin: 0;">
+      <strong style="color: var(--color-text-secondary);">Sign convention:</strong>
+      Positive amounts represent supply (recharge, allocation). Negative amounts represent usage (diversions, extractions).
+    </p>
+  </div>
+
+</div>
+{% endblock %}

@@ -5,12 +5,18 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounting.forms import AllocationPlanForm, ReportingPeriodForm, WaterAccountForm
+from accounting.forms import (
+    AllocationPlanForm,
+    ParcelLedgerForm,
+    ReportingPeriodForm,
+    WaterAccountForm,
+)
 from accounting.models import (
     AllocationPlan,
     ReportingPeriod,
     WaterAccount,
     WaterAccountParcel,
+    WaterType,
 )
 from parcels.models import Parcel, ParcelLedger
 
@@ -306,3 +312,90 @@ def parcel_search_for_assignment(request, pk):
         "accounting/partials/_parcel_search_results.html",
         {"account": account, "results": results, "q": q},
     )
+
+
+# ---------------------------------------------------------------------------
+# Ledger
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def ledger_list(request):
+    """Paginated list of ledger entries with HTMX search and filters."""
+    q = request.GET.get("q", "").strip()
+    period_id = request.GET.get("period", "").strip()
+    source_type = request.GET.get("source_type", "").strip()
+    water_type_id = request.GET.get("water_type", "").strip()
+    start_date = request.GET.get("start_date", "").strip()
+    end_date = request.GET.get("end_date", "").strip()
+
+    queryset = ParcelLedger.objects.select_related(
+        "parcel", "water_type", "reporting_period"
+    ).order_by("-effective_date", "-created_at")
+
+    if q:
+        queryset = queryset.filter(
+            Q(parcel__parcel_number__icontains=q) | Q(description__icontains=q)
+        )
+    if period_id:
+        queryset = queryset.filter(reporting_period_id=period_id)
+    if source_type:
+        queryset = queryset.filter(source_type=source_type)
+    if water_type_id:
+        queryset = queryset.filter(water_type_id=water_type_id)
+    if start_date:
+        queryset = queryset.filter(effective_date__gte=start_date)
+    if end_date:
+        queryset = queryset.filter(effective_date__lte=end_date)
+
+    paginator = Paginator(queryset, 50)
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
+
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    water_types = WaterType.objects.order_by("name")
+
+    context = {
+        "page_obj": page_obj,
+        "total_count": paginator.count,
+        "q": q,
+        "period_id": period_id,
+        "source_type": source_type,
+        "water_type_id": water_type_id,
+        "start_date": start_date,
+        "end_date": end_date,
+        "periods": periods,
+        "water_types": water_types,
+        "source_type_choices": ParcelLedger.SOURCE_TYPE_CHOICES,
+    }
+
+    if request.headers.get("HX-Request"):
+        return render(
+            request, "accounting/partials/_ledger_list_results.html", context
+        )
+
+    return render(request, "accounting/ledger_list.html", context)
+
+
+@login_required
+def ledger_create(request):
+    """Create a single ParcelLedger entry."""
+    if request.method == "POST":
+        form = ParcelLedgerForm(request.POST)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.created_by = request.user
+            entry.save()
+            return redirect("accounting:ledger_list")
+    else:
+        form = ParcelLedgerForm()
+        # Pre-fill parcel if provided via query string
+        parcel_pk = request.GET.get("parcel", "").strip()
+        if parcel_pk:
+            try:
+                parcel = Parcel.objects.get(pk=parcel_pk)
+                form.initial["parcel"] = parcel.pk
+            except Parcel.DoesNotExist:
+                pass
+
+    return render(request, "accounting/ledger_create.html", {"form": form})

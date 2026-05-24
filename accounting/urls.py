@@ -36,4 +36,7 @@ urlpatterns = [
     # Allocation Plans
     path("allocations/", views.allocations_list, name="allocations_list"),
     path("allocations/create/", views.allocation_create, name="allocation_create"),
+    # Ledger
+    path("ledger/", views.ledger_list, name="ledger_list"),
+    path("ledger/create/", views.ledger_create, name="ledger_create"),
 ]

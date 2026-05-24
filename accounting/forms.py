@@ -1,6 +1,7 @@
 from django import forms
 
-from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount
+from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount, WaterType
+from parcels.models import ParcelLedger
 
 
 FORM_INPUT_STYLE = (
@@ -80,4 +81,37 @@ class WaterAccountForm(forms.ModelForm):
             "notes": forms.Textarea(
                 attrs={"rows": 3, "style": FORM_INPUT_STYLE + " resize: vertical;"}
             ),
+        }
+
+
+class ParcelLedgerForm(forms.ModelForm):
+    class Meta:
+        model = ParcelLedger
+        fields = [
+            "parcel",
+            "transaction_date",
+            "effective_date",
+            "amount_acre_feet",
+            "water_type",
+            "source_type",
+            "description",
+            "reporting_period",
+        ]
+        widgets = {
+            "parcel": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+            "transaction_date": forms.DateInput(
+                attrs={"type": "date", "style": FORM_INPUT_STYLE}
+            ),
+            "effective_date": forms.DateInput(
+                attrs={"type": "date", "style": FORM_INPUT_STYLE}
+            ),
+            "amount_acre_feet": forms.NumberInput(
+                attrs={"step": "0.0001", "style": FORM_INPUT_STYLE}
+            ),
+            "water_type": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+            "source_type": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+            "description": forms.Textarea(
+                attrs={"rows": 3, "style": FORM_INPUT_STYLE + " resize: vertical;"}
+            ),
+            "reporting_period": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
         }
