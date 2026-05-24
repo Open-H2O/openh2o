@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoring Stations - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Monitoring Stations{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  <!-- Toolbar -->
+  <div class="card-raised" style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
+
+    <!-- Search -->
+    <div style="flex: 1; min-width: 200px;">
+      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+        Search
+      </label>
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Station name or ID..."
+        hx-get="{% url 'datasync:station_list' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='source'],[name='active']"
+        style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none;"
+      >
+    </div>
+
+    <!-- Data Source filter -->
+    <div>
+      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+        Source
+      </label>
+      <select
+        name="source"
+        hx-get="{% url 'datasync:station_list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q'],[name='active']"
+        style="padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; cursor: pointer;"
+      >
+        <option value="" {% if not source %}selected{% endif %}>All Sources</option>
+        {% for ds in data_sources %}
+          <option value="{{ ds.code }}" {% if source == ds.code %}selected{% endif %}>{{ ds.code }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Active filter -->
+    <div>
+      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
+        Status
+      </label>
+      <select
+        name="active"
+        hx-get="{% url 'datasync:station_list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q'],[name='source']"
+        style="padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; cursor: pointer;"
+      >
+        <option value="" {% if not active %}selected{% endif %}>All Statuses</option>
+        <option value="1" {% if active == "1" %}selected{% endif %}>Active</option>
+        <option value="0" {% if active == "0" %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+
+    <!-- Add Station button -->
+    <div style="margin-left: auto;">
+      <a href="{% url 'datasync:station_add' %}"
+         style="display: inline-flex; align-items: center; gap: 6px; padding: var(--space-sm) var(--space-md); background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.875rem;">
+        + Add Station
+      </a>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    {% include "datasync/partials/_station_list_results.html" %}
+  </div>
+
+</div>
+{% endblock %}

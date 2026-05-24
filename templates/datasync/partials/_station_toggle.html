@@ -1,0 +1,25 @@
+<button
+  hx-post="{% url 'datasync:station_toggle' station.pk %}"
+  hx-target="closest td"
+  hx-swap="innerHTML"
+  title="{% if station.is_active %}Deactivate{% else %}Activate{% endif %} station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: {% if station.is_active %}#22c55e{% else %}var(--color-elevated){% endif %};
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: {% if station.is_active %}19px{% else %}3px{% endif %};
+  "></span>
+</button>
