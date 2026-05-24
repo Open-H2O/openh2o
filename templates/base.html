@@ -25,6 +25,8 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <div id="loading-bar" class="loading-bar"></div>
+    <div id="toast-container" class="toast-container"></div>
     <div class="app-shell">
         {% include "partials/_sidebar.html" %}
 
@@ -69,6 +71,53 @@
             }
         });
     })();
+    </script>
+
+    <script>
+    // HTMX loading bar
+    (function() {
+        var bar = document.getElementById('loading-bar');
+        document.body.addEventListener('htmx:beforeRequest', function() {
+            bar.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            bar.style.transform = 'scaleX(0.7)';
+        });
+        document.body.addEventListener('htmx:afterRequest', function() {
+            bar.style.transform = 'scaleX(1)';
+            setTimeout(function() {
+                bar.style.transition = 'none';
+                bar.style.transform = 'scaleX(0)';
+                setTimeout(function() {
+                    bar.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                }, 50);
+            }, 300);
+        });
+    })();
+
+    // Toast notification system
+    window.showToast = function(message, type, duration) {
+        type = type || 'success';
+        duration = duration || 3000;
+        var container = document.getElementById('toast-container');
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        // Trigger show animation
+        requestAnimationFrame(function() {
+            toast.classList.add('show');
+        });
+        // Auto-dismiss
+        setTimeout(function() {
+            toast.classList.remove('show');
+            setTimeout(function() { toast.remove(); }, 200);
+        }, duration);
+    };
+
+    // Listen for server-driven toasts via HX-Trigger
+    document.body.addEventListener('showToast', function(e) {
+        var detail = e.detail || {};
+        window.showToast(detail.message || 'Done', detail.type || 'success', detail.duration || 3000);
+    });
     </script>
 
     {% block extra_scripts %}{% endblock %}

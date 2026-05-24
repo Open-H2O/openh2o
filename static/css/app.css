@@ -1034,6 +1034,60 @@ a { color: inherit; }
     border-color: var(--color-gold);
 }
 
+/* -- Loading bar --------------------------------------------------------- */
+
+.loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--color-gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    z-index: 9999;
+}
+
+/* -- Toast notifications ------------------------------------------------- */
+
+.toast-container {
+    position: fixed;
+    bottom: var(--space-lg);
+    right: var(--space-lg);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm) var(--space-lg);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    box-shadow: var(--shadow-pop-sm);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: auto;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-success {
+    border-left: 3px solid var(--forest-400);
+}
+
+.toast-error {
+    border-left: 3px solid oklch(0.65 0.20 25);
+}
+
 /* -- Responsive ---------------------------------------------------------- */
 
 @media (max-width: 767px) {
