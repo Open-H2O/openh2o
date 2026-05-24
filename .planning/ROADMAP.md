@@ -16,7 +16,7 @@ None (no matching skills installed)
 - [x] **Phase 4: Water Accounting Engine** - ParcelLedger double-entry, accounts, allocations, dashboards
 - [x] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
 - [x] **Phase 6: State Reporting** - GEARS CSV, CalWATRS CSV, email+JSON with prepare-review-send workflow
-- [ ] **Phase 7: Health Check and Maintenance** - 8-category health system, /health endpoint, maintenance commands
+- [x] **Phase 7: Health Check and Maintenance** - 8-category health system, /health endpoint, maintenance commands
 - [ ] **Phase 8: UI/UX Overhaul** - Consistent styling, empty states, responsive layout, form polish
 - [ ] **Phase 9: DEPLOY.md, Polish, and Handoff** - AI-consumable deployment guide, demo fixtures, security hardening
 
@@ -150,18 +150,17 @@ Verification: Generate GEARS CSV. Validate column headers match spec. Generate C
 **Goal**: Management commands for ongoing monitoring, health dashboard with green/yellow/red indicators
 **Depends on**: Phase 3 (needs models and views in place)
 **Research**: Unlikely (Django management commands, standard system checks)
-**Plans**: TBD
+**Plans**: 1/1 complete
+**Completed**: 2026-05-24
 
 Deliverables:
 - run_health_checks command (8 categories: DB, disk, sync freshness, ledger integrity, orphans, SSL, Docker, migrations)
-- Health dashboard page with color-coded indicators
-- prune_old_data command (staging >90 days, health >365 days)
-- /health JSON endpoint for external monitoring
-- Cron-ready design for docker exec
+- Health dashboard page with color-coded indicators (OKLCH green/orange/red)
+- prune_old_data command (staging >90 days, health >365 days, sync >365 days)
+- /health/api/ JSON endpoint for external monitoring (Uptime Kuma compatible)
+- Sidebar SYSTEM section with Health link
 
 Verification: Run health checks, see results on dashboard. Break a data source, re-run, see it flagged red.
-
-**Can run in parallel with Phase 6.**
 
 ### Phase 8: UI/UX Overhaul
 **Goal**: Every page is usable, self-explanatory, and visually consistent with VanderDev design system
@@ -225,6 +224,6 @@ Phase 8 is the final integration phase.
 | 4. Water Accounting Engine | 3/3 | Complete | 2026-05-24 |
 | 5. External Data Aggregator | 2/2 | Complete | 2026-05-24 |
 | 6. State Reporting | 1/1 | Complete | 2026-05-24 |
-| 7. Health Check and Maintenance | 0/TBD | Not started | - |
+| 7. Health Check and Maintenance | 1/1 | Complete | 2026-05-24 |
 | 8. UI/UX Overhaul | 0/TBD | Not started | - |
 | 9. DEPLOY.md, Polish, and Handoff | 0/TBD | Not started | - |
