@@ -356,22 +356,27 @@ a { color: inherit; }
 .data-table th {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--color-text-tertiary);
+    color: var(--color-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: var(--space-sm) var(--space-md);
+    padding: 10px var(--space-md);
     text-align: left;
-    border-bottom: 2px solid var(--color-border-hover);
+    border-bottom: 2px solid rgba(100, 140, 180, 0.25);
+    background-color: var(--color-card);
 }
 
 .data-table td {
-    padding: var(--space-sm) var(--space-md);
-    border-bottom: 1px solid var(--color-border);
+    padding: 10px var(--space-md);
+    border-bottom: 1px solid rgba(100, 140, 180, 0.12);
     font-size: 0.875rem;
     color: var(--color-text-primary);
 }
 
-.data-table tr:hover td {
+.data-table tbody tr:nth-child(even) td {
+    background-color: rgba(100, 140, 180, 0.03);
+}
+
+.data-table tbody tr:hover td {
     background-color: var(--color-hover);
 }
 
