@@ -5,6 +5,8 @@ from accounting import views
 app_name = "accounting"
 
 urlpatterns = [
+    # Dashboard
+    path("dashboard/", views.dashboard, name="dashboard"),
     # Reporting Periods
     path("reporting-periods/", views.periods_list, name="periods_list"),
     path("reporting-periods/create/", views.period_create, name="period_create"),

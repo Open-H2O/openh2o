@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+
+  {% if not periods.exists %}
+  <!-- Empty state: no reporting periods at all -->
+  <div style="text-align: center; padding: var(--space-xl) var(--space-lg);">
+    <p style="color: var(--color-text-secondary); margin-bottom: var(--space-md);">No reporting periods found. Create your first period to see budget data.</p>
+    <a href="{% url 'accounting:period_create' %}"
+       style="display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); background: var(--color-gold); color: var(--color-base); border-radius: var(--radius-sm); text-decoration: none; font-weight: 600; font-size: 0.8125rem;">
+      + Create Reporting Period
+    </a>
+  </div>
+  {% else %}
+
+  <!-- Period selector -->
+  <div style="display: flex; align-items: center; gap: var(--space-md);">
+    <label style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;">Reporting Period</label>
+    <select name="period"
+            hx-get="{% url 'accounting:dashboard' %}"
+            hx-target="#dashboard-content"
+            hx-trigger="change"
+            style="padding: var(--space-xs) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; cursor: pointer; min-width: 200px;">
+      {% for p in periods %}
+      <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- HTMX-swappable content area -->
+  <div id="dashboard-content">
+    {% include "accounting/partials/_dashboard_content.html" %}
+  </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}
