@@ -1,56 +1,41 @@
 <!-- Count badge -->
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md);">
-  <span style="font-size: 0.8125rem; color: var(--color-text-secondary);">
-    <span style="
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--color-elevated);
-      border: 1px solid var(--color-border-hover);
-      border-radius: 999px;
-      padding: 1px 10px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--color-text-primary);
-      margin-right: var(--space-xs);
-    ">{{ total_count }}</span>
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
     parcel{{ total_count|pluralize }} found
   </span>
 </div>
 
 {% if page_obj.object_list %}
 <div class="card-raised" style="overflow-x: auto;">
-  <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+  <table class="data-table">
     <thead>
-      <tr style="border-bottom: 1px solid var(--color-border-hover);">
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Parcel Number</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Owner</th>
-        <th style="text-align: right; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Acres</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Zones</th>
+      <tr>
+        <th>Parcel Number</th>
+        <th>Owner</th>
+        <th class="th-right">Acres</th>
+        <th>Status</th>
+        <th>Zones</th>
       </tr>
     </thead>
     <tbody>
       {% for parcel in page_obj %}
-      <tr style="border-bottom: 1px solid var(--color-border); transition: background 0.1s;"
-          onmouseover="this.style.background='var(--color-hover)'"
-          onmouseout="this.style.background='transparent'">
-        <td style="padding: var(--space-sm) var(--space-md);">
-          <a href="{% url 'parcels:detail' parcel.pk %}"
-             style="color: var(--color-blue); text-decoration: none; font-weight: 600;">
+      <tr>
+        <td>
+          <a href="{% url 'parcels:detail' parcel.pk %}" class="data-table-link">
             {{ parcel.parcel_number }}
           </a>
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-primary);">
-          {{ parcel.owner_name|default:"—" }}
-        </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary); text-align: right; font-variant-numeric: tabular-nums;">
+        <td>{{ parcel.owner_name|default:"—" }}</td>
+        <td class="text-secondary td-num">
           {% if parcel.area_acres %}{{ parcel.area_acres }}{% else %}—{% endif %}
         </td>
-        <td style="padding: var(--space-sm) var(--space-md);">
+        <td>
           {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary);">
+        <td class="text-secondary">
           {% for pz in parcel.parcel_zones.all %}
-            <span style="display: inline-block; background: var(--color-elevated); border-radius: 4px; padding: 1px 6px; font-size: 0.75rem; margin-right: 2px;">{{ pz.zone.name }}</span>
+            <span class="pill-tag" style="margin-right: 2px;">{{ pz.zone.name }}</span>
           {% empty %}
             —
           {% endfor %}
@@ -63,7 +48,7 @@
 
 <!-- Pagination -->
 {% if page_obj.has_other_pages %}
-<div style="display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-lg);">
+<div class="pagination-row">
   {% if page_obj.has_previous %}
     <button
       hx-get="{% url 'parcels:list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
@@ -72,7 +57,7 @@
       Previous
     </button>
   {% endif %}
-  <span style="display: flex; align-items: center; color: var(--color-text-secondary); font-size: 0.875rem;">
+  <span class="pagination-label">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
@@ -87,7 +72,8 @@
 {% endif %}
 
 {% else %}
-<div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
-  <p style="color: var(--color-text-secondary); font-size: 0.875rem;">No parcels found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+<div class="card-raised empty-state">
+  <div class="empty-state-icon">&#x1F4CD;</div>
+  <p class="empty-state-text">No parcels found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
 </div>
 {% endif %}

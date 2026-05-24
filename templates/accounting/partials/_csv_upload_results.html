@@ -1,42 +1,42 @@
 {% if results %}
-<div style="display: flex; flex-direction: column; gap: var(--space-md);">
+<div class="page-stack">
 
   <!-- Summary row -->
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
-    <div style="padding: var(--space-md); background: var(--color-inset); border-radius: var(--radius-md); text-align: center;">
-      <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+    <div class="inset-card">
+      <div class="stat-card-label">
         {% if dry_run %}Would Create{% else %}Created{% endif %}
       </div>
-      <div style="font-size: 1.75rem; font-weight: 800; color: var(--forest-500); font-family: var(--font-mono); font-variant-numeric: tabular-nums;">
+      <div class="stat-card-value-lg" style="color: var(--forest-500);">
         {{ results.created_count }}
       </div>
-      <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">entries</div>
+      <div class="stat-card-unit">entries</div>
     </div>
-    <div style="padding: var(--space-md); background: var(--color-inset); border-radius: var(--radius-md); text-align: center;">
-      <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Errors</div>
-      <div style="font-size: 1.75rem; font-weight: 800; font-family: var(--font-mono); font-variant-numeric: tabular-nums; {% if results.error_count > 0 %}color: var(--furnace-500);{% else %}color: var(--forest-500);{% endif %}">
+    <div class="inset-card">
+      <div class="stat-card-label">Errors</div>
+      <div class="stat-card-value-lg" style="{% if results.error_count > 0 %}color: var(--furnace-500);{% else %}color: var(--forest-500);{% endif %}">
         {{ results.error_count }}
       </div>
-      <div style="font-size: 0.75rem; color: var(--color-text-tertiary);">rows skipped</div>
+      <div class="stat-card-unit">rows skipped</div>
     </div>
   </div>
 
   <!-- Errors table -->
   {% if results.errors %}
   <div class="card-raised">
-    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--furnace-500); margin-bottom: var(--space-sm);">Validation Errors</h3>
-    <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+    <h3 class="section-header-sm" style="color: var(--furnace-500);">Validation Errors</h3>
+    <table class="data-table">
       <thead>
-        <tr style="border-bottom: 1px solid var(--color-border);">
-          <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; width: 60px;">Line</th>
-          <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Issues</th>
+        <tr>
+          <th style="width: 60px;">Line</th>
+          <th>Issues</th>
         </tr>
       </thead>
       <tbody>
         {% for err in results.errors %}
-        <tr style="border-bottom: 1px solid var(--color-border);">
-          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary); font-family: var(--font-mono);">{{ err.line }}</td>
-          <td style="padding: var(--space-xs) var(--space-sm); color: var(--furnace-400);">{{ err.messages|join:", " }}</td>
+        <tr>
+          <td class="text-secondary text-mono">{{ err.line }}</td>
+          <td style="color: var(--furnace-400);">{{ err.messages|join:", " }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -47,25 +47,25 @@
   <!-- Preview of first 5 entries -->
   {% if results.preview %}
   <div class="card-raised">
-    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-sm);">
+    <h3 class="section-header-sm">
       Preview (first {{ results.preview|length }} {% if dry_run %}validated{% else %}created{% endif %} entries)
     </h3>
-    <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+    <table class="data-table">
       <thead>
-        <tr style="border-bottom: 1px solid var(--color-border);">
-          <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Parcel</th>
-          <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Effective Date</th>
-          <th style="text-align: right; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Amount (AF)</th>
-          <th style="text-align: left; padding: var(--space-xs) var(--space-sm); color: var(--color-text-tertiary); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em;">Source Type</th>
+        <tr>
+          <th>Parcel</th>
+          <th>Effective Date</th>
+          <th class="th-right">Amount (AF)</th>
+          <th>Source Type</th>
         </tr>
       </thead>
       <tbody>
         {% for entry in results.preview %}
-        <tr style="border-bottom: 1px solid var(--color-border);">
-          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary); font-family: var(--font-mono);">{{ entry.parcel_number }}</td>
-          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-primary);">{{ entry.effective_date }}</td>
-          <td style="padding: var(--space-xs) var(--space-sm); text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; {% if entry.amount >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">{{ entry.amount }}</td>
-          <td style="padding: var(--space-xs) var(--space-sm); color: var(--color-text-secondary);">{{ entry.source_type }}</td>
+        <tr>
+          <td class="text-mono">{{ entry.parcel_number }}</td>
+          <td>{{ entry.effective_date }}</td>
+          <td class="td-num text-mono" style="{% if entry.amount >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">{{ entry.amount }}</td>
+          <td class="text-secondary">{{ entry.source_type }}</td>
         </tr>
         {% endfor %}
       </tbody>

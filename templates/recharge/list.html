@@ -4,15 +4,13 @@
 {% block page_title %}Recharge Sites{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: var(--space-lg);">
+<div class="page-stack">
 
   <!-- Toolbar -->
   <div class="card-raised" style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
     <!-- Search -->
     <div style="flex: 1; min-width: 200px;">
-      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
-        Search
-      </label>
+      <label class="form-label">Search</label>
       <input
         type="text"
         name="q"
@@ -22,22 +20,20 @@
         hx-target="#results"
         hx-trigger="keyup changed delay:300ms"
         hx-include="[name='site_type']"
-        style="width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none;"
+        class="form-input"
       >
     </div>
 
     <!-- Site type filter -->
     <div>
-      <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: var(--space-xs); text-transform: uppercase; letter-spacing: 0.05em;">
-        Type
-      </label>
+      <label class="form-label">Type</label>
       <select
         name="site_type"
         hx-get="{% url 'recharge:list' %}"
         hx-target="#results"
         hx-trigger="change"
         hx-include="[name='q']"
-        style="padding: var(--space-sm) var(--space-md); background: var(--color-elevated); border: 1px solid var(--color-border-hover); border-radius: var(--radius-sm); color: var(--color-text-primary); font-size: 0.875rem; outline: none; cursor: pointer;"
+        class="form-select"
       >
         <option value="" {% if not site_type %}selected{% endif %}>All Types</option>
         {% for val, label in site_type_choices %}

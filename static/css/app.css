@@ -284,6 +284,712 @@ a { color: inherit; }
     color: var(--color-text-secondary);
 }
 
+/* -- Page layout --------------------------------------------------------- */
+
+.page-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.page-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+}
+
+.page-grid-2col-wide {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-lg);
+}
+
+/* -- Section and field --------------------------------------------------- */
+
+.section-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-lg) 0;
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.field-group {
+    margin-bottom: var(--space-md);
+}
+
+.field-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.field-value {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+}
+
+.field-value-mono {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    font-family: var(--font-mono);
+}
+
+.field-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+}
+
+/* -- Tables -------------------------------------------------------------- */
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.data-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    border-bottom: 2px solid var(--color-border-hover);
+}
+
+.data-table td {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+}
+
+.data-table tr:hover td {
+    background-color: var(--color-hover);
+}
+
+.data-table-link {
+    color: var(--color-blue);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* -- Forms --------------------------------------------------------------- */
+
+.form-group {
+    margin-bottom: var(--space-lg);
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-xs);
+}
+
+.form-input {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--font-display);
+}
+
+.form-input:focus {
+    border-color: var(--color-gold);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-gold-muted);
+}
+
+.form-select {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--font-display);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238899aa' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-md) center;
+    padding-right: calc(var(--space-md) * 2 + 12px);
+}
+
+.form-select:focus {
+    border-color: var(--color-gold);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-gold-muted);
+}
+
+.form-textarea {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--font-display);
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-textarea:focus {
+    border-color: var(--color-gold);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-gold-muted);
+}
+
+.form-help {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-xs);
+}
+
+/* -- Navigation ---------------------------------------------------------- */
+
+.back-link {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+
+.back-link:hover {
+    color: var(--color-text-primary);
+}
+
+/* -- Badges -------------------------------------------------------------- */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-green {
+    background-color: oklch(0.45 0.12 155 / 0.2);
+    color: var(--forest-400);
+}
+
+.badge-orange {
+    background-color: oklch(0.45 0.12 55 / 0.2);
+    color: var(--furnace-400);
+}
+
+.badge-red {
+    background-color: oklch(0.45 0.12 25 / 0.2);
+    color: oklch(0.65 0.20 25);
+}
+
+.badge-blue {
+    background-color: oklch(0.45 0.12 240 / 0.2);
+    color: var(--color-blue);
+}
+
+/* -- Empty state --------------------------------------------------------- */
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--color-text-tertiary);
+}
+
+.empty-state-icon {
+    font-size: 2rem;
+    margin-bottom: var(--space-md);
+    opacity: 0.5;
+}
+
+.empty-state-text {
+    font-size: 0.9375rem;
+    margin-bottom: var(--space-md);
+}
+
+/* -- Inline edit --------------------------------------------------------- */
+
+.edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s;
+}
+
+.edit-btn:hover {
+    color: var(--color-gold);
+}
+
+/* -- Stat cards ---------------------------------------------------------- */
+
+.stat-card {
+    text-align: center;
+    box-shadow: var(--shadow-pop-sm);
+}
+
+.stat-card-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: var(--space-sm);
+}
+
+.stat-card-value {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.stat-card-value-sm {
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-card-unit {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 4px;
+}
+
+.inset-card {
+    text-align: center;
+    padding: var(--space-md);
+    background: var(--color-inset);
+    border-radius: var(--radius-md);
+}
+
+/* -- Layout row ---------------------------------------------------------- */
+
+.row-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+}
+
+/* -- Misc utilities ------------------------------------------------------ */
+
+.text-secondary {
+    color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+    color: var(--color-text-tertiary);
+}
+
+.text-mono {
+    font-family: var(--font-mono);
+}
+
+.border-separator {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+}
+
+.item-row {
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.mb-md {
+    margin-bottom: var(--space-md);
+}
+
+.mb-0 {
+    margin-bottom: 0;
+}
+
+.mb-sm {
+    margin-bottom: var(--space-sm);
+}
+
+/* -- Text size utilities -------------------------------------------------- */
+
+.text-xs {
+    font-size: 0.75rem;
+}
+
+.text-sm {
+    font-size: 0.8125rem;
+}
+
+.text-base {
+    font-size: 0.875rem;
+}
+
+/* -- Section header variants --------------------------------------------- */
+
+.section-header-flush {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+    border: none;
+    padding: 0;
+}
+
+.section-header-sm {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-sm) 0;
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* -- Alert boxes --------------------------------------------------------- */
+
+.alert-error {
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    color: #ef4444;
+}
+
+.alert-warning {
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(234, 179, 8, 0.1);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    color: #eab308;
+}
+
+/* -- Map embed ----------------------------------------------------------- */
+
+.map-embed {
+    height: 300px;
+    width: 100%;
+    border-radius: var(--radius-md);
+}
+
+/* -- Row start (left-aligned flex row) ----------------------------------- */
+
+.row-start {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+/* -- Filter group (flex filter bar item) --------------------------------- */
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+/* -- Field value size variants ------------------------------------------- */
+
+.field-value-sm {
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+}
+
+/* -- Stat value large (for CSV upload summary, etc.) --------------------- */
+
+.stat-card-value-lg {
+    font-size: 1.75rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+/* -- Pill tag (parameter chips, etc.) ------------------------------------ */
+
+.pill-tag {
+    display: inline-block;
+    background: var(--color-elevated);
+    border: 1px solid var(--color-border-hover);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--color-text-secondary);
+}
+
+/* -- Table header alignment ---------------------------------------------- */
+
+.th-right {
+    text-align: right;
+}
+
+/* -- Numeric table cells ------------------------------------------------- */
+
+.td-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+}
+
+.td-num-bold {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+
+/* -- Color utilities ----------------------------------------------------- */
+
+.text-gold {
+    color: var(--color-gold);
+}
+
+.text-blue {
+    color: var(--color-blue);
+}
+
+.text-furnace {
+    color: var(--furnace-500);
+}
+
+.text-forest {
+    color: var(--forest-500);
+}
+
+/* -- Form error box ------------------------------------------------------ */
+
+.form-error-box {
+    background: var(--color-elevated);
+    border: 1px solid var(--furnace-400);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+/* -- Sidebar section divider --------------------------------------------- */
+
+.sidebar-section {
+    margin-top: var(--space-md);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+}
+
+.sidebar-section-label {
+    display: block;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* -- Result count bar (list result partials header) ---------------------- */
+
+.result-count-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+}
+
+.count-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-elevated);
+    border: 1px solid var(--color-border-hover);
+    border-radius: 999px;
+    padding: 1px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-right: var(--space-xs);
+}
+
+/* -- Pagination row ------------------------------------------------------ */
+
+.pagination-row {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+.pagination-label {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+/* -- Stat grid ----------------------------------------------------------- */
+
+.stat-grid-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.stat-grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+}
+
+/* -- Form footer (button row at bottom of forms) ------------------------- */
+
+.form-footer {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+/* -- Card section header with ruled bottom border ----------------------- */
+
+.card-header-ruled {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    border-top: none;
+}
+
+/* -- Large stat value ---------------------------------------------------- */
+
+.stat-value-lg {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--color-text-primary);
+}
+
+/* -- Required field asterisk -------------------------------------------- */
+
+.required-mark {
+    color: var(--furnace-500);
+}
+
+/* -- Inset info card ----------------------------------------------------- */
+
+.card-inset {
+    background: var(--color-inset);
+}
+
+/* -- Form error text ----------------------------------------------------- */
+
+.form-error-text {
+    color: var(--furnace-500);
+    font-size: 0.8125rem;
+    margin-bottom: 2px;
+}
+
+/* -- Label with pointer cursor ------------------------------------------ */
+
+.label-pointer { cursor: pointer; }
+
+/* -- 2-column form grid -------------------------------------------------- */
+
+.form-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+/* -- Form footer with ruled top border ----------------------------------- */
+
+.form-footer-ruled {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+}
+
+/* -- Padding utilities --------------------------------------------------- */
+
+.pt-sm { padding-top: var(--space-sm); }
+.pt-md { padding-top: var(--space-md); }
+
+/* -- Margin utilities ---------------------------------------------------- */
+
+.ml-xs { margin-left: var(--space-xs); }
+.ml-sm { margin-left: var(--space-sm); }
+.mr-xs { margin-right: var(--space-xs); }
+
+/* -- Extra small button variant ------------------------------------------ */
+
+.btn-xs {
+    font-size: 0.75rem;
+    padding: 1px 10px;
+}
+
+/* -- Search result list -------------------------------------------------- */
+
+.search-result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* -- Onboarding steps ---------------------------------------------------- */
+
+.onboarding-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    align-items: center;
+    text-align: left;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.onboarding-step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+}
+
+.step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-elevated);
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border);
+}
+
+.step-badge-active {
+    background: var(--color-gold);
+    color: var(--color-base);
+    border-color: var(--color-gold);
+}
+
 /* -- Responsive ---------------------------------------------------------- */
 
 @media (max-width: 767px) {

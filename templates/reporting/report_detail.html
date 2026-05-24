@@ -4,35 +4,34 @@
 {% block page_title %}{{ submission.report_template.name }} - {{ submission.reporting_period.name }}{% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; gap: var(--space-lg); max-width: 800px;">
+<div class="page-stack" style="max-width: 800px;">
 
-  <div style="display: flex; align-items: center; gap: var(--space-sm);">
-    <a href="{% url 'reporting:report_list' %}"
-       style="color: var(--color-text-tertiary); text-decoration: none; font-size: 0.8125rem;">Reports</a>
-    <span style="color: var(--color-text-tertiary);">/</span>
-    <span style="color: var(--color-text-secondary); font-size: 0.8125rem;">{{ submission.report_template.name }}</span>
+  <div class="row-start">
+    <a href="{% url 'reporting:report_list' %}" class="back-link text-sm">Reports</a>
+    <span class="text-tertiary">/</span>
+    <span class="text-secondary text-sm">{{ submission.report_template.name }}</span>
   </div>
 
   <!-- Metadata -->
-  <div class="card-raised" style="padding: var(--space-lg);">
+  <div class="card-raised">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-md);">
-      <div>
-        <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-xs);">Report Type</div>
-        <div style="font-size: 0.875rem; color: var(--color-text-primary);">{{ submission.report_template.name }}</div>
+      <div class="field-group mb-0">
+        <div class="field-label">Report Type</div>
+        <div class="field-value-sm">{{ submission.report_template.name }}</div>
       </div>
-      <div>
-        <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-xs);">Period</div>
-        <div style="font-size: 0.875rem; color: var(--color-text-primary);">{{ submission.reporting_period.name }}</div>
+      <div class="field-group mb-0">
+        <div class="field-label">Period</div>
+        <div class="field-value-sm">{{ submission.reporting_period.name }}</div>
       </div>
-      <div>
-        <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-xs);">Generated</div>
-        <div style="font-size: 0.875rem; color: var(--color-text-primary);">
+      <div class="field-group mb-0">
+        <div class="field-label">Generated</div>
+        <div class="field-value-sm">
           {% if submission.generated_at %}{{ submission.generated_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
         </div>
       </div>
-      <div>
-        <div style="font-size: 0.6875rem; font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: var(--space-xs);">File</div>
-        <div style="font-size: 0.875rem;">
+      <div class="field-group mb-0">
+        <div class="field-label">File</div>
+        <div class="field-value-sm">
           {% if submission.generated_file %}
           <a href="{% url 'reporting:report_download' pk=submission.pk %}"
              style="color: var(--color-gold); text-decoration: none; font-weight: 600;">
@@ -47,18 +46,14 @@
 
   <!-- Validation Warnings -->
   {% if submission.validation_warnings %}
-  <div class="card-raised" style="padding: var(--space-lg);">
-    <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-md);">Validation Warnings</h3>
-    <div style="display: flex; flex-direction: column; gap: var(--space-xs);">
+  <div class="card-raised">
+    <h3 class="section-header-sm">Validation Warnings</h3>
+    <div class="page-stack" style="gap: var(--space-xs);">
       {% for w in submission.validation_warnings %}
       {% if w.level == "error" %}
-      <div style="padding: var(--space-xs) var(--space-md); background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-sm); font-size: 0.8125rem; color: #ef4444;">
-        {{ w.message }}
-      </div>
+      <div class="alert-error" style="border: none;">{{ w.message }}</div>
       {% else %}
-      <div style="padding: var(--space-xs) var(--space-md); background: rgba(234, 179, 8, 0.1); border-radius: var(--radius-sm); font-size: 0.8125rem; color: #eab308;">
-        {{ w.message }}
-      </div>
+      <div class="alert-warning" style="border: none;">{{ w.message }}</div>
       {% endif %}
       {% endfor %}
     </div>

@@ -2,12 +2,12 @@
 {% block title %}Sign Out — Open Water{% endblock %}
 {% block content %}
 <div class="card-raised w-full text-center" style="max-width: 420px;">
-    <h1 class="text-xl font-extrabold mb-sm" style="color: var(--color-gold);">Sign Out</h1>
-    <p class="text-sm mb-lg" style="color: var(--color-text-secondary);">Are you sure you want to sign out?</p>
+    <h1 class="text-xl font-extrabold mb-sm text-gold">Sign Out</h1>
+    <p class="text-sm mb-lg text-secondary">Are you sure you want to sign out?</p>
     <form method="post" action="{% url 'account_logout' %}">
         {% csrf_token %}
         <button type="submit" class="btn-primary w-full mb-md">Sign Out</button>
     </form>
-    <a href="/" class="text-sm" style="color: var(--color-blue);">Cancel</a>
+    <a href="/" class="text-sm text-blue">Cancel</a>
 </div>
 {% endblock %}

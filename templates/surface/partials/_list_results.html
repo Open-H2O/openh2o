@@ -1,58 +1,41 @@
 <!-- Count badge -->
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md);">
-  <span style="font-size: 0.8125rem; color: var(--color-text-secondary);">
-    <span style="
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--color-elevated);
-      border: 1px solid var(--color-border-hover);
-      border-radius: 999px;
-      padding: 1px 10px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--color-text-primary);
-      margin-right: var(--space-xs);
-    ">{{ total_count }}</span>
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
     water right{{ total_count|pluralize }} found
   </span>
 </div>
 
 {% if page_obj.object_list %}
 <div class="card-raised" style="overflow-x: auto;">
-  <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+  <table class="data-table">
     <thead>
-      <tr style="border-bottom: 1px solid var(--color-border-hover);">
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Right ID</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Type</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Holder</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Priority Date</th>
-        <th style="text-align: right; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Face Value (AF)</th>
-        <th style="text-align: left; padding: var(--space-sm) var(--space-md); color: var(--color-text-tertiary); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+      <tr>
+        <th>Right ID</th>
+        <th>Type</th>
+        <th>Holder</th>
+        <th>Priority Date</th>
+        <th class="th-right">Face Value (AF)</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody>
       {% for right in page_obj %}
-      <tr style="border-bottom: 1px solid var(--color-border); transition: background 0.1s;"
-          onmouseover="this.style.background='var(--color-hover)'"
-          onmouseout="this.style.background='transparent'">
-        <td style="padding: var(--space-sm) var(--space-md);">
-          <a href="{% url 'surface:detail' right.pk %}"
-             style="color: var(--color-blue); text-decoration: none; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">
+      <tr>
+        <td>
+          <a href="{% url 'surface:detail' right.pk %}" class="data-table-link text-mono" style="font-size: 0.8125rem;">
             {{ right.right_id }}
           </a>
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary);">
-          {{ right.right_type|default:"—" }}
-        </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-primary);">
-          {{ right.holder_name|default:"—" }}
-        </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary); font-variant-numeric: tabular-nums;">
+        <td class="text-secondary">{{ right.right_type|default:"—" }}</td>
+        <td>{{ right.holder_name|default:"—" }}</td>
+        <td class="text-secondary text-mono">
           {% if right.priority_date %}{{ right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
         </td>
-        <td style="padding: var(--space-sm) var(--space-md); color: var(--color-text-secondary); text-align: right; font-variant-numeric: tabular-nums;">
+        <td class="text-secondary td-num">
           {% if right.face_value_acre_feet %}{{ right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
         </td>
-        <td style="padding: var(--space-sm) var(--space-md);">
+        <td>
           {% include "surface/partials/_status_badge.html" with status=right.status %}
         </td>
       </tr>
@@ -63,7 +46,7 @@
 
 <!-- Pagination -->
 {% if page_obj.has_other_pages %}
-<div style="display: flex; justify-content: center; gap: var(--space-sm); margin-top: var(--space-lg);">
+<div class="pagination-row">
   {% if page_obj.has_previous %}
     <button
       hx-get="{% url 'surface:water_rights_list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
@@ -72,7 +55,7 @@
       Previous
     </button>
   {% endif %}
-  <span style="display: flex; align-items: center; color: var(--color-text-secondary); font-size: 0.875rem;">
+  <span class="pagination-label">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
@@ -87,7 +70,8 @@
 {% endif %}
 
 {% else %}
-<div class="card-raised" style="text-align: center; padding: var(--space-2xl);">
-  <p style="color: var(--color-text-secondary); font-size: 0.875rem;">No water rights found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+<div class="card-raised empty-state">
+  <div class="empty-state-icon">&#x1F4DC;</div>
+  <p class="empty-state-text">No water rights found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
 </div>
 {% endif %}
