@@ -1,6 +1,8 @@
+from decimal import Decimal
+
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -18,6 +20,7 @@ from accounting.models import (
     WaterAccountParcel,
     WaterType,
 )
+from accounting.services import account_balance, parcel_balance
 from parcels.models import Parcel, ParcelLedger
 
 
@@ -209,7 +212,7 @@ def accounts_list(request):
 
 @login_required
 def account_detail(request, pk):
-    """Detail view for a single water account with assigned parcels."""
+    """Detail view for a single water account with assigned parcels and balances."""
     account = get_object_or_404(WaterAccount, pk=pk)
     assignments = (
         WaterAccountParcel.objects.filter(water_account=account, removed_date__isnull=True)
@@ -217,10 +220,61 @@ def account_detail(request, pk):
         .order_by("-added_date")
     )
 
+    # Period selector: default to most recent non-finalized, or all-time
+    period_id = request.GET.get("period", "").strip()
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    selected_period = None
+
+    if period_id:
+        try:
+            selected_period = ReportingPeriod.objects.get(pk=period_id)
+        except ReportingPeriod.DoesNotExist:
+            pass
+    elif not request.GET:
+        # Auto-select most recent non-finalized period if available
+        default_period = periods.filter(is_finalized=False).first()
+        if default_period:
+            selected_period = default_period
+
+    # Account-level balance
+    balance = account_balance(account, reporting_period=selected_period)
+
+    # Per-parcel breakdown
+    parcel_balances = []
+    for assignment in assignments:
+        p = assignment.parcel
+        pb = parcel_balance(p, reporting_period=selected_period)
+        # Compute supply/usage per parcel
+        qs = ParcelLedger.objects.filter(parcel=p)
+        if selected_period:
+            qs = qs.filter(reporting_period=selected_period)
+        agg = qs.aggregate(
+            supply=Sum("amount_acre_feet", filter=Q(amount_acre_feet__gt=0)),
+            usage=Sum("amount_acre_feet", filter=Q(amount_acre_feet__lt=0)),
+        )
+        supply = agg["supply"] or Decimal("0")
+        usage = abs(agg["usage"] or Decimal("0"))
+        parcel_balances.append({
+            "parcel": p,
+            "supply": supply,
+            "usage": usage,
+            "net": supply - usage,
+        })
+
     context = {
         "account": account,
         "assignments": assignments,
+        "balance": balance,
+        "parcel_balances": parcel_balances,
+        "periods": periods,
+        "selected_period": selected_period,
     }
+
+    if request.headers.get("HX-Request") and "period" in request.GET:
+        return render(
+            request, "accounting/partials/_account_balances.html", context
+        )
+
     return render(request, "accounting/account_detail.html", context)
 
 
