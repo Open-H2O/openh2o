@@ -45,22 +45,21 @@
   </div>
   {% else %}
 
-  <!-- Context: what this page shows -->
-  <div class="row-between">
-    <p class="text-secondary text-sm mb-0" style="flex: 1; min-width: 0;">
-      Water supply, usage, and remaining allocation across all accounts for the selected period.
-    </p>
-    <!-- Period selector -->
-    <select name="period"
-            hx-get="{% url 'accounting:dashboard' %}"
-            hx-target="#dashboard-content"
-            hx-trigger="change"
-            class="form-select"
-            style="min-width: 200px; flex-shrink: 0;">
-      {% for p in periods %}
-      <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
-      {% endfor %}
-    </select>
+  <!-- Period selector -->
+  <div style="display: flex; justify-content: flex-end;">
+    <label class="text-secondary text-sm" style="display: flex; align-items: center; gap: var(--space-sm);">
+      Period
+      <select name="period"
+              hx-get="{% url 'accounting:dashboard' %}"
+              hx-target="#dashboard-content"
+              hx-trigger="change"
+              class="form-select"
+              style="min-width: 200px;">
+        {% for p in periods %}
+        <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
   </div>
 
   <!-- HTMX-swappable content area -->
