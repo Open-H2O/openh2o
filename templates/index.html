@@ -10,10 +10,24 @@
     <p class="text-text-secondary text-sm mb-lg font-mono">
         v0.1.0
     </p>
-    <div class="inline-flex items-center gap-2 px-lg py-sm rounded-md"
+    {% if user.is_authenticated %}
+    <p class="text-sm mb-md" style="color: var(--color-text-secondary);">
+        Signed in as <strong style="color: var(--color-text-primary);">{{ user.email }}</strong>
+    </p>
+    <div class="flex flex-col gap-2">
+        <a href="{% url 'admin:index' %}" class="btn-primary">Admin Dashboard</a>
+        <a href="{% url 'account_logout' %}" class="btn-secondary">Sign Out</a>
+    </div>
+    {% else %}
+    <div class="inline-flex items-center gap-2 px-lg py-sm rounded-md mb-lg"
          style="background: var(--color-gold-muted); border: 1px solid var(--color-border);">
         <span class="inline-block w-2 h-2 rounded-full" style="background: var(--color-gold);"></span>
         <span class="text-sm font-semibold" style="color: var(--color-gold);">Stack is running</span>
     </div>
+    <div class="flex flex-col gap-2">
+        <a href="{% url 'account_login' %}" class="btn-primary">Log In</a>
+        <a href="{% url 'account_signup' %}" class="btn-secondary">Create Account</a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
