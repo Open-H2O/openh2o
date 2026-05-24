@@ -1,6 +1,6 @@
 import csv
 import os
-from datetime import date
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.core.management.base import BaseCommand, CommandError
@@ -227,8 +227,6 @@ class Command(BaseCommand):
         """Parse a date string in YYYY-MM-DD or MM/DD/YYYY format."""
         for fmt in ("%Y-%m-%d", "%m/%d/%Y"):
             try:
-                from datetime import datetime
-
                 return datetime.strptime(date_str, fmt).date()
             except ValueError:
                 continue
