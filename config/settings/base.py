@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "accounting",
     "surface",
     "recharge",
+    "datasync",
 ]
 
 MIDDLEWARE = [
