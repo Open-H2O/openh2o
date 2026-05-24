@@ -21,5 +21,13 @@ def get_adapter(source_code):
     return adapter_class()
 
 
-# Concrete adapters are imported in Task 2. Until then the registry is empty
-# but the framework is functional (commands will report "no adapter").
+# Import all concrete adapters to auto-populate the registry.
+# Each module calls register_adapter() at import time.
+from datasync.adapters.cdec import CDECAdapter  # noqa: F401
+from datasync.adapters.cimis import CIMISAdapter  # noqa: F401
+from datasync.adapters.cnrfc import CNRFCAdapter  # noqa: F401
+from datasync.adapters.dwr_sgma import DWRSGMAAdapter  # noqa: F401
+from datasync.adapters.dwr_wdl import DWRWDLAdapter  # noqa: F401
+from datasync.adapters.noaa import NOAAAdapter  # noqa: F401
+from datasync.adapters.openet import OpenETAdapter  # noqa: F401
+from datasync.adapters.usgs import USGSAdapter  # noqa: F401

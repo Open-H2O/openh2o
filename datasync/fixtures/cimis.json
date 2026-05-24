@@ -1,0 +1,23 @@
+{
+  "stations": [
+    {"station_id": "80", "name": "Fresno State", "latitude": 36.8206, "longitude": -119.7453, "parameters": ["day-eto", "day-precip", "day-air-tmp-avg"]},
+    {"station_id": "39", "name": "Parlier", "latitude": 36.5972, "longitude": -119.5042, "parameters": ["day-eto", "day-precip", "day-air-tmp-avg"]},
+    {"station_id": "131", "name": "Kettleman City", "latitude": 35.9894, "longitude": -119.9653, "parameters": ["day-eto", "day-precip"]}
+  ],
+  "records": [
+    {"station_id": "80", "observation_date": "2024-06-01", "parameter_code": "day-eto", "value": 0.31, "unit": "in"},
+    {"station_id": "80", "observation_date": "2024-06-02", "parameter_code": "day-eto", "value": 0.33, "unit": "in"},
+    {"station_id": "80", "observation_date": "2024-06-01", "parameter_code": "day-precip", "value": 0.0, "unit": "in"},
+    {"station_id": "80", "observation_date": "2024-06-02", "parameter_code": "day-precip", "value": 0.0, "unit": "in"},
+    {"station_id": "80", "observation_date": "2024-06-01", "parameter_code": "day-air-tmp-avg", "value": 82.4, "unit": "F"},
+    {"station_id": "80", "observation_date": "2024-06-02", "parameter_code": "day-air-tmp-avg", "value": 85.1, "unit": "F"},
+    {"station_id": "39", "observation_date": "2024-06-01", "parameter_code": "day-eto", "value": 0.29, "unit": "in"},
+    {"station_id": "39", "observation_date": "2024-06-02", "parameter_code": "day-eto", "value": 0.32, "unit": "in"},
+    {"station_id": "39", "observation_date": "2024-06-01", "parameter_code": "day-precip", "value": 0.0, "unit": "in"},
+    {"station_id": "39", "observation_date": "2024-06-01", "parameter_code": "day-air-tmp-avg", "value": 80.7, "unit": "F"},
+    {"station_id": "131", "observation_date": "2024-06-01", "parameter_code": "day-eto", "value": 0.34, "unit": "in"},
+    {"station_id": "131", "observation_date": "2024-06-02", "parameter_code": "day-eto", "value": 0.35, "unit": "in"},
+    {"station_id": "131", "observation_date": "2024-06-01", "parameter_code": "day-precip", "value": 0.0, "unit": "in"},
+    {"station_id": "131", "observation_date": "2024-06-02", "parameter_code": "day-precip", "value": 0.0, "unit": "in"}
+  ]
+}
