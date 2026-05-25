@@ -21,10 +21,10 @@
   <div class="card-raised toolbar-row">
     <!-- Search -->
     <div style="flex: 1; min-width: 200px;">
-      <label class="form-label">Search</label>
+      <label class="form-label" for="filter-search">Search</label>
       <input
         type="text"
-        name="q"
+        id="filter-search" name="q"
         value="{{ q }}"
         placeholder="Period name..."
         hx-get="{% url 'accounting:periods_list' %}"

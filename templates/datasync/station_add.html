@@ -40,8 +40,8 @@
 
       <!-- Data Source -->
       <div class="form-group">
-        <label class="form-label">Data Source <span class="required-mark">*</span></label>
-        <select name="data_source" required class="form-select">
+        <label class="form-label" for="id_data_source">Data Source <span class="required-mark">*</span></label>
+        <select id="id_data_source" name="data_source" required class="form-select">
           <option value="">Select a data source...</option>
           {% for ds in data_sources %}
             <option value="{{ ds.pk }}" {% if form_data.data_source == ds.pk|stringformat:'s' %}selected{% endif %}>
@@ -53,10 +53,10 @@
 
       <!-- External Station ID -->
       <div class="form-group">
-        <label class="form-label">External Station ID <span class="required-mark">*</span></label>
+        <label class="form-label" for="id_external_station_id">External Station ID <span class="required-mark">*</span></label>
         <input
           type="text"
-          name="external_station_id"
+          id="id_external_station_id" name="external_station_id"
           value="{{ form_data.external_station_id|default:'' }}"
           placeholder="e.g. 11303000"
           required
@@ -67,10 +67,10 @@
 
       <!-- Station Name -->
       <div class="form-group">
-        <label class="form-label">Station Name <span class="required-mark">*</span></label>
+        <label class="form-label" for="id_station_name">Station Name <span class="required-mark">*</span></label>
         <input
           type="text"
-          name="station_name"
+          id="id_station_name" name="station_name"
           value="{{ form_data.station_name|default:'' }}"
           placeholder="e.g. Sacramento River at Keswick"
           required
@@ -81,10 +81,10 @@
       <!-- Latitude / Longitude -->
       <div class="form-grid-2col">
         <div class="form-group">
-          <label class="form-label">Latitude <span class="required-mark">*</span></label>
+          <label class="form-label" for="id_lat">Latitude <span class="required-mark">*</span></label>
           <input
             type="number"
-            name="lat"
+            id="id_lat" name="lat"
             value="{{ form_data.lat|default:'' }}"
             placeholder="37.5000"
             step="0.000001"
@@ -95,10 +95,10 @@
           >
         </div>
         <div class="form-group">
-          <label class="form-label">Longitude <span class="required-mark">*</span></label>
+          <label class="form-label" for="id_lng">Longitude <span class="required-mark">*</span></label>
           <input
             type="number"
-            name="lng"
+            id="id_lng" name="lng"
             value="{{ form_data.lng|default:'' }}"
             placeholder="-119.5000"
             step="0.000001"

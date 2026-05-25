@@ -52,11 +52,11 @@
     <form method="post" class="page-stack">
       {% csrf_token %}
       <div class="form-group">
-        <label class="form-label">Report Type</label>
+        <label class="form-label" for="id_report_type">Report Type</label>
         {{ form.report_template }}
       </div>
       <div class="form-group">
-        <label class="form-label">Reporting Period</label>
+        <label class="form-label" for="id_reporting_period">Reporting Period</label>
         {{ form.reporting_period }}
       </div>
       <div class="row-start">

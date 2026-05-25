@@ -57,6 +57,11 @@ a { color: inherit; }
     background-color: var(--color-gold-hover);
 }
 
+.btn-primary:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+}
+
 .btn-secondary {
     display: inline-flex;
     align-items: center;
@@ -77,6 +82,11 @@ a { color: inherit; }
 .btn-secondary:hover {
     color: var(--color-text-primary);
     border-color: var(--color-border-hover);
+}
+
+.btn-secondary:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
 }
 
 .btn-sm {
@@ -179,6 +189,11 @@ a { color: inherit; }
     background-color: var(--color-gold-muted);
 }
 
+.sidebar-link:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: -2px;
+}
+
 .sidebar-link svg {
     flex-shrink: 0;
 }
@@ -216,6 +231,11 @@ a { color: inherit; }
 .sidebar-toggle:hover {
     color: var(--color-text-primary);
     border-color: var(--color-border-hover);
+}
+
+.sidebar-toggle:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
 }
 
 .app-header-title {
@@ -386,6 +406,19 @@ a { color: inherit; }
     font-weight: 600;
 }
 
+.data-table-link:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 1px;
+    border-radius: 2px;
+}
+
+.back-link:focus-visible,
+.breadcrumb a:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
 /* -- Forms --------------------------------------------------------------- */
 
 .form-group {
@@ -551,6 +584,40 @@ a { color: inherit; }
     color: var(--color-blue);
 }
 
+.badge-grey {
+    background-color: rgba(148, 163, 184, 0.12);
+    color: var(--color-text-secondary);
+}
+
+.badge-pill {
+    border-radius: 999px;
+    padding: 2px 10px;
+    border: 1px solid currentColor;
+    border-color: currentColor;
+    border-opacity: 0.25;
+}
+
+.badge-pill.badge-green {
+    border-color: oklch(0.45 0.12 155 / 0.35);
+}
+
+.badge-pill.badge-orange {
+    border-color: oklch(0.45 0.12 55 / 0.35);
+}
+
+.badge-pill.badge-grey {
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+.badge-pill.badge-gold {
+    border-color: rgba(228, 163, 23, 0.3);
+}
+
+.badge-gold {
+    background-color: rgba(228, 163, 23, 0.15);
+    color: var(--color-gold);
+}
+
 /* -- Empty state --------------------------------------------------------- */
 
 .empty-state {
@@ -584,6 +651,11 @@ a { color: inherit; }
 
 .edit-btn:hover {
     color: var(--color-gold);
+}
+
+.edit-btn:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
 }
 
 /* -- Stat cards ---------------------------------------------------------- */

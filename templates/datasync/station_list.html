@@ -22,10 +22,10 @@
 
     <!-- Search -->
     <div style="flex: 1; min-width: 200px;">
-      <label class="form-label">Search</label>
+      <label class="form-label" for="filter-search">Search</label>
       <input
         type="text"
-        name="q"
+        id="filter-search" name="q"
         value="{{ q }}"
         placeholder="Station name or ID..."
         hx-get="{% url 'datasync:station_list' %}"
@@ -38,9 +38,9 @@
 
     <!-- Data Source filter -->
     <div>
-      <label class="form-label">Source</label>
+      <label class="form-label" for="filter-source">Source</label>
       <select
-        name="source"
+        id="filter-source" name="source"
         hx-get="{% url 'datasync:station_list' %}"
         hx-target="#results"
         hx-trigger="change"
@@ -56,9 +56,9 @@
 
     <!-- Active filter -->
     <div>
-      <label class="form-label">Status</label>
+      <label class="form-label" for="filter-active">Status</label>
       <select
-        name="active"
+        id="filter-active" name="active"
         hx-get="{% url 'datasync:station_list' %}"
         hx-target="#results"
         hx-trigger="change"
