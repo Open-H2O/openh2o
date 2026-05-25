@@ -6,10 +6,10 @@
 :root {
     /* -- Surface colors -------------------------------------------------- */
     --color-base: #040608;
-    --color-card: #080b10;
-    --color-inset: #050709;
-    --color-elevated: #0e1219;
-    --color-hover: #141a22;
+    --color-card: oklch(0.17 0.012 260); /* ~#1a1e27 */
+    --color-inset: oklch(0.12 0.010 260); /* ~#12151b */
+    --color-elevated: oklch(0.21 0.012 260); /* ~#242a33 */
+    --color-hover: oklch(0.24 0.012 260); /* ~#2c333d */
 
     /* -- Accent colors --------------------------------------------------- */
     --color-gold: #E4A317;
