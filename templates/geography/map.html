@@ -20,9 +20,17 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
 <style>
-    /* Let the map fill the entire content area */
-    .app-content { padding: 0 !important; overflow: hidden; }
-    #map-wrapper { position: relative; width: 100%; height: calc(100vh - 56px); }
+    .app-main { overflow: hidden; }
+    .app-content { padding: 0 !important; overflow: hidden; display: flex; }
+    #map-wrapper {
+        position: relative;
+        flex: 1;
+        height: 100%;
+        margin: 4px 6px 4px 4px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        overflow: hidden;
+    }
 </style>
 {% endblock %}
 
