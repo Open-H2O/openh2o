@@ -20,6 +20,8 @@ body {
 
 a { color: inherit; }
 
+[hidden] { display: none !important; }
+
 /* -- Card ---------------------------------------------------------------- */
 
 .card-raised {
