@@ -17,7 +17,7 @@ None (no matching skills installed)
 - [x] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
 - [x] **Phase 6: State Reporting** - GEARS CSV, CalWATRS CSV, email+JSON with prepare-review-send workflow
 - [x] **Phase 7: Health Check and Maintenance** - 8-category health system, /health endpoint, maintenance commands
-- [ ] **Phase 8: Deploy, Polish, and Handoff** - CSS extraction, page polish, empty states, DEPLOY.md, demo fixtures, security hardening
+- [x] **Phase 8: Deploy, Polish, and Handoff** - CSS extraction, page polish, empty states, DEPLOY.md, demo fixtures, security hardening
 
 ## Phase Details
 
@@ -165,8 +165,9 @@ Verification: Run health checks, see results on dashboard. Break a data source, 
 **Goal**: CSS extraction, page polish, empty states, complete DEPLOY.md, demo fixtures, security hardening, ready for pilot
 **Depends on**: All prior phases complete
 **Research**: Unlikely (design system established, documentation and fixture generation)
-**Plans**: 0/3 complete
-**Status**: In progress
+**Plans**: 3/3 complete
+**Status**: Complete
+**Completed**: 2026-05-24
 
 Deliverables:
 - CSS class extraction (replace inline styles with reusable classes in app.css)
@@ -208,4 +209,4 @@ Phase 8 is the final phase (merged UI/UX + Deploy/Handoff).
 | 5. External Data Aggregator | 2/2 | Complete | 2026-05-24 |
 | 6. State Reporting | 1/1 | Complete | 2026-05-24 |
 | 7. Health Check and Maintenance | 1/1 | Complete | 2026-05-24 |
-| 8. Deploy, Polish, and Handoff | 2/3 | In progress | - |
+| 8. Deploy, Polish, and Handoff | 3/3 | Complete | 2026-05-24 |

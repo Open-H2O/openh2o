@@ -29,8 +29,8 @@
       "plan": "03",
       "segment": 1,
       "timestamp": "2026-05-24T20:31:00Z",
-      "status": "spawned",
-      "completion_timestamp": null
+      "status": "completed",
+      "completion_timestamp": "2026-05-25T00:23:35Z"
     }
   ]
 }
