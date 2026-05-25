@@ -171,8 +171,8 @@ Plans: 3
 **Research topics**: OpenET API polygon query format, GEE account linking for higher quotas, CIMIS AppKey registration, USGS api.waterdata.usgs.gov OGC endpoints
 **Plans**: TBD
 
-Plans:
-- [ ] 18-01: TBD (run /gsd:plan-phase 18 to break down)
+Plans: 1
+- [x] 18-01: Station auto-discovery + OpenET cache adapter + USGS groundwater
 
 #### Phase 19: Streaming Dashboard & Setup Wizard
 
@@ -229,7 +229,7 @@ Plans:
 | 15. Branding & About Page | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 16. Tie Lines & Source Fractions | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 17. Static GIS & Auto-Populate Engine | v1.2 | 3/3 | Complete | 2026-05-25 |
-| 18. Telemetry Discovery & OpenET | v1.2 | 0/? | Not started | - |
+| 18. Telemetry Discovery & OpenET | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 0/? | Not started | - |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
