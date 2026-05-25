@@ -36,10 +36,10 @@ Stand up an AI-deployable water accounting platform from scratch. Start with Doc
 **Goal**: Fix deferred FK issues (RechargeSite zone, WaterRight parcel) and stand up pytest with factory_boy for baseline test coverage
 **Depends on**: v1.0 complete
 **Research**: Unlikely (internal patterns)
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
-- [ ] 09-01: TBD (run /gsd:plan-phase 9 to break down)
+- [ ] 09-01: Schema FK fixes + pytest infrastructure + baseline tests
 
 #### Phase 10: Kaweah Subbasin Demo Data
 
@@ -105,7 +105,7 @@ Plans:
 | 6. State Reporting | v1.0 | 1/1 | Complete | 2026-05-24 |
 | 7. Health Check and Maintenance | v1.0 | 1/1 | Complete | 2026-05-24 |
 | 8. Deploy, Polish, and Handoff | v1.0 | 3/3 | Complete | 2026-05-24 |
-| 9. Schema Fixes & Test Infrastructure | v1.1 | 0/? | Not started | - |
+| 9. Schema Fixes & Test Infrastructure | v1.1 | 0/1 | Planned | - |
 | 10. Kaweah Subbasin Demo Data | v1.1 | 0/? | Not started | - |
 | 11. Merced Subbasin Demo Data | v1.1 | 0/? | Not started | - |
 | 12. UI Quality Sweep | v1.1 | 0/? | Not started | - |
