@@ -8,6 +8,7 @@ Stand up an AI-deployable water accounting platform from scratch. Start with Doc
 
 - ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-05-24)
 - 🚧 **v1.1 Production Polish** — Phases 9-14 (in progress)
+- 📋 **v1.2 Enhancement Suite** — Phases 15-19 (planned)
 
 ## Completed Milestones
 
@@ -125,6 +126,62 @@ Plans:
 Plans:
 - [ ] 14-01: Merced Subbasin seed data with real DWR boundaries and Merced County parcels
 
+### 📋 v1.2 Enhancement Suite (Planned)
+
+**Milestone Goal:** Major platform enhancements across branding, map visualization, content, telemetry, and automated GIS data population. No new infrastructure required; fits existing Docker Compose stack on Butler.
+
+#### Phase 15: Branding & About Page
+
+**Goal**: Generate professional water-themed logo and favicon via LLM Gateway, build About page with purpose statement, policy backstory timeline (AB1755/SGMA/GEARS/CalWATRS/OpenET/Newsom EOs), how-to guides, and organizational credits
+**Depends on**: v1.1 complete
+**Research**: Unlikely (content sources identified, LLM Gateway image gen available)
+**Plans**: 1
+
+Plans:
+- [ ] 15-01: TBD (run /gsd:plan-phase 15 to break down)
+
+#### Phase 16: Tie Lines & Source Fractions
+
+**Goal**: Add GW/SW source-to-POU tie lines on map (yellow for surface water PODs, orange for groundwater wells to parcel centroids), source fraction labels, and combined-use fraction in reporting exports
+**Depends on**: Phase 15
+**Research**: Unlikely (data model exists: PointOfDiversionParcel, WellIrrigatedParcel; MapLibre line rendering established)
+**Plans**: 1
+
+Plans:
+- [ ] 16-01: TBD (run /gsd:plan-phase 16 to break down)
+
+#### Phase 17: Static GIS & Auto-Populate Engine
+
+**Goal**: Bundle county boundaries and Township/Range/Section as static fixtures, build auto_populate management command that queries DWR LightBox statewide parcel FeatureServer, DWR Bulletin 118 groundwater basins, and USGS NLDI for NHD flowlines by boundary polygon
+**Depends on**: Phase 16
+**Research**: Likely (external API pagination patterns, ArcGIS REST query limits)
+**Research topics**: DWR LightBox FeatureServer pagination (1K-2K record limits), USGS NLDI basin delineation API, NHDPlus HR clipping strategies, CNRA PLSS data size/format
+**Plans**: TBD
+
+Plans:
+- [ ] 17-01: TBD (run /gsd:plan-phase 17 to break down)
+
+#### Phase 18: Telemetry Discovery & OpenET
+
+**Goal**: Auto-discover monitoring stations from CDEC, USGS (new OGC API), and CIMIS by boundary bounding box; build OpenET API adapter with aggressive PostGIS caching to stay within 100-400 queries/month limit
+**Depends on**: Phase 17
+**Research**: Likely (OpenET API auth and rate limits, USGS OGC API migration from legacy NWIS, CDEC servlet parsing patterns)
+**Research topics**: OpenET API polygon query format, GEE account linking for higher quotas, CIMIS AppKey registration, USGS api.waterdata.usgs.gov OGC endpoints
+**Plans**: TBD
+
+Plans:
+- [ ] 18-01: TBD (run /gsd:plan-phase 18 to break down)
+
+#### Phase 19: Streaming Dashboard & Setup Wizard
+
+**Goal**: Build VanderDev-quality monitoring dashboard with station cards, sparkline charts, and freshness-colored map markers; add interactive setup wizard at /setup/ for boundary selection and automated data population
+**Depends on**: Phase 18
+**Research**: Unlikely (HTMX polling patterns established, VanderDev design tokens available, auto_populate engine built in Phase 17)
+**Plans**: TBD
+
+Plans:
+- [ ] 19-01: TBD (run /gsd:plan-phase 19 to break down)
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -146,3 +203,8 @@ Plans:
 | 13. Cron, Health, & Final Polish | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 13.1 AI Operator Guide & Onboarding | v1.1 | 0/? | Not started | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |
+| 15. Branding & About Page | v1.2 | 0/1 | Not started | - |
+| 16. Tie Lines & Source Fractions | v1.2 | 0/1 | Not started | - |
+| 17. Static GIS & Auto-Populate Engine | v1.2 | 0/? | Not started | - |
+| 18. Telemetry Discovery & OpenET | v1.2 | 0/? | Not started | - |
+| 19. Streaming Dashboard & Setup Wizard | v1.2 | 0/? | Not started | - |

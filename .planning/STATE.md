@@ -49,6 +49,7 @@ None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 - Phase 11.1 inserted after Phase 11: Impeccable UI Audit (critique + audit before docs)
 - Phase 11.1-01: fix-all decision (21 issues: 7 P1, 8 P2, 6 P3)
 - Phase 12.1 inserted after Phase 12: VanderDev Design Alignment (CSS + template polish)
+- Milestone v1.2 created: Enhancement Suite, 5 phases (Phase 15-19) — branding, map tie lines, GIS auto-populate, telemetry/OpenET, streaming dashboard
 
 ## Session Continuity
 
