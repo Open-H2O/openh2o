@@ -369,7 +369,13 @@ map.on('load', function() {
         });
 
         // ── Fit to data bounds ──
-        if (MAP_CONFIG.fitToData) {
+        if (MAP_CONFIG.fitBounds) {
+            map.fitBounds(MAP_CONFIG.fitBounds, {
+                padding: MAP_CONFIG.fitBoundsPadding || 60,
+                maxZoom: 14,
+                duration: 1000
+            });
+        } else if (MAP_CONFIG.fitToData) {
             var bounds = null;
             results.forEach(function(result) {
                 if (!result.data || !result.data.features || result.data.features.length === 0) return;
