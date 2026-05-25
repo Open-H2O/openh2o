@@ -81,7 +81,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 12-01: TBD (run /gsd:plan-phase 12 to break down)
+- [x] 12-01: Help infrastructure, Getting Started, Glossary, page descriptions, field tooltips
 
 #### Phase 13: Cron, Health, & Final Polish
 
@@ -120,6 +120,6 @@ Plans:
 | 10. Kaweah Subbasin Demo Data | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 11. UI Quality Sweep | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 11.1 Impeccable UI Audit | v1.1 | 2/2 | Complete | 2026-05-25 |
-| 12. In-App Documentation | v1.1 | 0/? | Not started | - |
+| 12. In-App Documentation | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 13. Cron, Health, & Final Polish | v1.1 | 0/? | Not started | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |
