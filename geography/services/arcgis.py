@@ -10,7 +10,7 @@ import logging
 import time
 
 import requests
-from django.contrib.gis.geos import MultiPolygon, Polygon
+from django.contrib.gis.geos import LineString, MultiLineString, MultiPolygon, Polygon
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +179,32 @@ def esri_polygon_to_geos(esri_geometry):
 
     mp = MultiPolygon(polygons, srid=4326)
     return mp
+
+
+def esri_polyline_to_geos(esri_geometry):
+    """Convert an ArcGIS JSON polyline to a Django GEOSGeometry MultiLineString.
+
+    Input format: {'paths': [[[x, y], ...], ...]}
+    Returns a MultiLineString with SRID 4326, or None for empty/null input.
+    """
+    if not esri_geometry or not esri_geometry.get("paths"):
+        return None
+
+    paths = esri_geometry["paths"]
+    if not paths:
+        return None
+
+    lines = []
+    for path in paths:
+        coords = [tuple(pt[:2]) for pt in path]
+        if len(coords) < 2:
+            continue
+        lines.append(LineString(coords))
+
+    if not lines:
+        return None
+
+    return MultiLineString(lines, srid=4326)
 
 
 def geos_to_esri_geometry(geos_geometry):
