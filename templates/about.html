@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}About - Open Water Accounting Platform{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+    <!-- Hero -->
+    <section class="about-hero">
+        {% if logo_exists %}
+        <img src="{% static 'img/logo.png' %}" alt="OpenH2O logo" class="about-logo">
+        {% endif %}
+        <h1 class="about-title">OpenH2O</h1>
+        <p class="about-tagline">Open-source water accounting for California</p>
+        <p class="about-purpose">
+            A poorly-funded agency buys a frontier AI subscription, points it at this repo and a $15/mo VPS,
+            and the AI stands the platform up. Access is the product, not features. OpenH2O replaces
+            $35K-$75K consulting engagements with open-source infrastructure any Groundwater Sustainability
+            Agency can deploy.
+        </p>
+    </section>
+
+    <!-- Policy Timeline -->
+    <section>
+        <h2 class="content-section-label">Policy Timeline</h2>
+        <div class="timeline">
+            <div class="timeline-entry">
+                <span class="timeline-year">2014</span>
+                <div class="timeline-content">
+                    <strong>SGMA signed</strong>
+                    <p>Sustainable Groundwater Management Act requires ~200 GSAs to manage 94 critically over-drafted basins</p>
+                </div>
+            </div>
+            <div class="timeline-entry">
+                <span class="timeline-year">2016</span>
+                <div class="timeline-content">
+                    <strong>AB 1755</strong>
+                    <p>Open and Transparent Water Data Act mandates public data integration</p>
+                </div>
+            </div>
+            <div class="timeline-entry">
+                <span class="timeline-year">2019</span>
+                <div class="timeline-content">
+                    <strong>First GSPs due</strong>
+                    <p>Groundwater Sustainability Plans filed, exposing data infrastructure gaps in small agencies</p>
+                </div>
+            </div>
+            <div class="timeline-entry">
+                <span class="timeline-year">2022</span>
+                <div class="timeline-content">
+                    <strong>GEARS modernized</strong>
+                    <p>DWR updates Groundwater Extraction Annual Reporting to digital CSV format</p>
+                </div>
+            </div>
+            <div class="timeline-entry">
+                <span class="timeline-year">2023</span>
+                <div class="timeline-content">
+                    <strong>CalWATRS launched</strong>
+                    <p>Water Board opens California Water Transfer Reporting System for surface diversions</p>
+                </div>
+            </div>
+            <div class="timeline-entry">
+                <span class="timeline-year">2024</span>
+                <div class="timeline-content">
+                    <strong>OpenET operational</strong>
+                    <p>Satellite ET data becomes production-ready for water budgets</p>
+                </div>
+            </div>
+            <div class="timeline-entry">
+                <span class="timeline-year">2025</span>
+                <div class="timeline-content">
+                    <strong>Newsom EOs</strong>
+                    <p>Executive orders accelerate water infrastructure modernization and data sharing</p>
+                </div>
+            </div>
+            <div class="timeline-entry">
+                <span class="timeline-year">2026</span>
+                <div class="timeline-content">
+                    <strong>OpenH2O</strong>
+                    <p>Open-source platform built so any agency can deploy with AI assistance on a $15/mo server</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Access (authenticated only) -->
+    {% if user.is_authenticated %}
+    <section>
+        <h2 class="content-section-label">Quick Access</h2>
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">
+            <a href="{% url 'getting_started' %}" class="dashboard-card">
+                <div class="dashboard-card-label">Guide</div>
+                <div class="dashboard-card-value" style="font-size: 1.125rem;">Getting Started</div>
+                <div class="dashboard-card-sublabel">Step-by-step setup for new GSA administrators</div>
+            </a>
+            <a href="{% url 'glossary' %}" class="dashboard-card">
+                <div class="dashboard-card-label">Reference</div>
+                <div class="dashboard-card-value" style="font-size: 1.125rem;">Glossary</div>
+                <div class="dashboard-card-sublabel">Water accounting terms and abbreviations</div>
+            </a>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Credits -->
+    <section class="about-credits">
+        <h2 class="content-section-label">Credits</h2>
+        <p>Built by Brent Vanderburgh. Open source.</p>
+        <p>Powered by Django, PostGIS, HTMX, and MapLibre. Designed with the VanderDev design system.</p>
+    </section>
+
+</div>
+{% endblock %}

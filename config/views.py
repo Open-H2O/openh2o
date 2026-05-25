@@ -1,3 +1,6 @@
+import os
+
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -23,6 +26,12 @@ def index(request):
         "station_count": MonitoredStation.objects.count(),
     }
     return render(request, "index.html", context)
+
+
+def about(request):
+    """Public About page with policy timeline and platform purpose."""
+    logo_path = os.path.join(settings.BASE_DIR, "static", "img", "logo.png")
+    return render(request, "about.html", {"logo_exists": os.path.isfile(logo_path)})
 
 
 @login_required
