@@ -57,7 +57,7 @@ class PointOfDiversion(models.Model):
         ("inactive", "Inactive"),
     ]
 
-    water_right = models.ForeignKey(WaterRight, on_delete=models.CASCADE)
+    water_right = models.ForeignKey(WaterRight, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=200)
     location = models.PointField(srid=4326)
     stream_name = models.CharField(max_length=200, blank=True)

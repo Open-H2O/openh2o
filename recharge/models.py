@@ -7,6 +7,8 @@ class RechargeSite(models.Model):
         ("injection_well", "Injection Well"),
         ("streambed", "Streambed"),
         ("asr_well", "ASR Well"),
+        ("storage_pond", "Storage Pond"),
+        ("storage_tank", "Storage Tank"),
     ]
     STATUS_CHOICES = [
         ("active", "Active"),
