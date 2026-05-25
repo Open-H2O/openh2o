@@ -153,10 +153,13 @@ def well_edit_field(request, pk):
 @login_required
 def wells_geojson(request):
     """Return all wells as a GeoJSON FeatureCollection."""
-    data = serialize(
+    raw = serialize(
         "geojson",
         Well.objects.all(),
         geometry_field="location",
         fields=["name", "well_registration_id", "status", "depth_ft", "capacity_gpm"],
     )
-    return HttpResponse(data, content_type="application/json")
+    data = json.loads(raw)
+    for f in data["features"]:
+        f["properties"]["pk"] = f.get("pk")
+    return HttpResponse(json.dumps(data), content_type="application/json")
