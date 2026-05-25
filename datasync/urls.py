@@ -5,7 +5,6 @@ from datasync import views
 app_name = "datasync"
 
 urlpatterns = [
-    path("dashboard/", views.monitoring_dashboard, name="monitoring_dashboard"),
     path("stations/", views.station_list, name="station_list"),
     path("stations/add/", views.station_add, name="station_add"),
     path("stations/<int:pk>/", views.station_detail, name="station_detail"),

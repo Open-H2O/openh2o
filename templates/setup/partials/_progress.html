@@ -25,13 +25,12 @@
         <p class="section-header-flush mb-sm">Setup complete!</p>
         <p class="text-secondary text-sm" style="margin: 0;">
           Geographic data has been populated for {{ boundary.name }}.
-          Head to the monitoring dashboard to review station freshness and activate stations.
+          Head to Stations to review freshness and activate monitoring.
         </p>
       </div>
     </div>
     <div class="form-footer" style="margin-top: var(--space-md);">
-      <a href="{% url 'datasync:monitoring_dashboard' %}" class="btn-primary">Go to Dashboard →</a>
-      <a href="{% url 'datasync:station_list' %}" class="btn-secondary">View Stations</a>
+      <a href="{% url 'datasync:station_list' %}" class="btn-primary">Go to Stations →</a>
     </div>
   </div>
 </div>
