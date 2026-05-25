@@ -83,8 +83,12 @@ var MAP_CONFIG = {
     center: [{{ center_lng }}, {{ center_lat }}],
     zoom: {{ zoom }},
     maxZoom: 18,
-    fitToData: true,
+    fitToData: false,
+    fitBounds: {{ bounds|safe }},
+    fitBoundsPadding: 40,
     geojsonSources: [
+        { id: 'boundaries', url: '{% url "geography:boundaries_geojson" %}' },
+        { id: 'zones', url: '{% url "geography:zones_geojson" %}' },
         { id: 'parcels', url: '{% url "parcels:geojson" %}' },
         { id: 'wells', url: '{% url "wells:geojson" %}' },
         { id: 'pods', url: '{% url "surface:pods_geojson" %}' },
@@ -92,6 +96,28 @@ var MAP_CONFIG = {
         { id: 'stations', url: '{% url "datasync:stations_geojson" %}' }
     ],
     layers: [
+        {
+            id: 'boundary-outline', type: 'line', source: 'boundaries',
+            label: 'Boundary', group: 'boundary',
+            paint: { 'line-color': '#E4A317', 'line-width': 2.5, 'line-opacity': 0.8 },
+            swatch: 'line', swatchColor: '#E4A317'
+        },
+        {
+            id: 'zones-fill', type: 'fill', source: 'zones',
+            label: 'GSA Zones', group: 'zones',
+            paint: { 'fill-color': ['match', ['get', 'name'],
+                'East Kaweah GSA', '#2d6a4f',
+                'Mid-Kaweah GSA', '#40916c',
+                'Greater Kaweah GSA', '#52b788',
+                '#3a7d5c'
+            ], 'fill-opacity': 0.15 },
+            swatch: 'fill', swatchColor: '#40916c'
+        },
+        {
+            id: 'zones-outline', type: 'line', source: 'zones',
+            group: 'zones', groupHidden: true,
+            paint: { 'line-color': '#52b788', 'line-width': 1.5, 'line-dasharray': [4, 3] }
+        },
         {
             id: 'parcels-fill', type: 'fill', source: 'parcels',
             label: 'Parcels', group: 'parcels',
@@ -133,6 +159,14 @@ var MAP_CONFIG = {
         }
     ],
     popups: {
+        'boundary-outline': function(p) {
+            return '<strong>' + (p.name || 'Boundary') + '</strong><br>' +
+                   (p.area_sq_miles ? p.area_sq_miles + ' sq mi' : '');
+        },
+        'zones-fill': function(p) {
+            return '<strong>' + (p.name || 'Zone') + '</strong><br>' +
+                   'Type: ' + (p.zone_type || '—');
+        },
         'parcels-fill': function(p) {
             return '<strong>' + (p.parcel_number || 'Unknown') + '</strong><br>' +
                    'Owner: ' + (p.owner_name || '—') + '<br>' +
@@ -169,6 +203,8 @@ var MAP_CONFIG = {
         {
             title: 'Features',
             items: [
+                { label: 'Boundary', swatch: 'line', color: '#E4A317' },
+                { label: 'GSA Zones', swatch: 'fill', color: '#40916c' },
                 { label: 'Parcels', swatch: 'fill', color: '#1B7FAF' },
                 { label: 'Wells', swatch: 'dot', color: '#E4A317' },
                 { label: 'Points of Diversion', swatch: 'dot', color: '#4ECDC4' },
