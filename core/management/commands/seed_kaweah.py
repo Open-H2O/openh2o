@@ -8,11 +8,14 @@ fictional Demo Valley GSA dataset.
 Idempotent: skips creation if "Kaweah Subbasin" boundary already exists.
 All Kaweah-specific records use the "KAW-" prefix for targeted cleanup.
 """
+import json
+import math
+import os
 import random
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
-from django.contrib.gis.geos import MultiPolygon, Point, Polygon
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -56,6 +59,64 @@ def make_box(cx, cy, size=0.005):
         (cx - half, cy - half),
     ]
     return MultiPolygon(Polygon(ring))
+
+
+def make_field_parcel(cx, cy, size=0.005, seed_val=0):
+    """Create a realistic agricultural parcel polygon.
+
+    Uses PLSS-style grid with random irregularity to mimic
+    real assessor parcels in the San Joaquin Valley.
+    """
+    rng = random.Random(seed_val)
+    half = size / 2
+
+    # Aspect ratio: most ag fields are wider than tall (E-W oriented)
+    aspect = rng.uniform(0.6, 1.4)
+    hw = half * max(aspect, 1.0)
+    hh = half / max(aspect, 1.0)
+
+    # Slight rotation (fields aren't always perfectly N-S aligned)
+    angle = rng.uniform(-0.08, 0.08)  # radians, ~5 degrees max
+
+    # Base corners with irregularity
+    jitter = size * 0.08  # 8% edge jitter
+    corners = [
+        (cx - hw + rng.uniform(-jitter, jitter),
+         cy - hh + rng.uniform(-jitter, jitter)),
+        (cx + hw + rng.uniform(-jitter, jitter),
+         cy - hh + rng.uniform(-jitter, jitter)),
+        (cx + hw + rng.uniform(-jitter, jitter),
+         cy + hh + rng.uniform(-jitter, jitter)),
+        (cx - hw + rng.uniform(-jitter, jitter),
+         cy + hh + rng.uniform(-jitter, jitter)),
+    ]
+
+    # Sometimes add a 5th or 6th point (canal cut, road jog)
+    if rng.random() < 0.3:
+        edge = rng.randint(0, 3)
+        next_edge = (edge + 1) % 4
+        mid_x = (corners[edge][0] + corners[next_edge][0]) / 2
+        mid_y = (corners[edge][1] + corners[next_edge][1]) / 2
+        inward_x = (cx - mid_x) * 0.15
+        inward_y = (cy - mid_y) * 0.15
+        corners.insert(edge + 1, (mid_x + inward_x, mid_y + inward_y))
+
+    # Apply rotation around center
+    if abs(angle) > 0.01:
+        cos_a, sin_a = math.cos(angle), math.sin(angle)
+        rotated = []
+        for px, py in corners:
+            dx, dy = px - cx, py - cy
+            rotated.append(
+                (cx + dx * cos_a - dy * sin_a,
+                 cy + dx * sin_a + dy * cos_a)
+            )
+        corners = rotated
+
+    # Close the ring
+    corners.append(corners[0])
+
+    return MultiPolygon(Polygon(corners))
 
 
 class Command(BaseCommand):
@@ -229,25 +290,20 @@ class Command(BaseCommand):
         )
 
         # ----------------------------------------------------------------
-        # 4. Kaweah Subbasin Boundary (~10 vertex polygon)
+        # 4. Kaweah Subbasin Boundary (real DWR Basin 5-022.11)
         # ----------------------------------------------------------------
         self.stdout.write("Creating Kaweah Subbasin boundary...")
-        # Approximate DWR Basin 5-022.11 boundary
-        # North: ~36.45 (Woodlake/Ivanhoe), South: ~36.15 (south of Tulare)
-        # West: ~-119.50 (Goshen), East: ~-119.05 (foothills/Three Rivers)
-        boundary_ring = [
-            (-119.50, 36.25),   # SW corner (Goshen area)
-            (-119.48, 36.15),   # South (south of Tulare)
-            (-119.30, 36.15),   # South-central
-            (-119.10, 36.18),   # SE corner (foothills)
-            (-119.05, 36.28),   # East (near foothills)
-            (-119.05, 36.40),   # NE (approaching Three Rivers)
-            (-119.10, 36.45),   # North-east
-            (-119.25, 36.45),   # North-central
-            (-119.45, 36.43),   # NW (Ivanhoe area)
-            (-119.50, 36.35),   # West
-            (-119.50, 36.25),   # Close ring
-        ]
+        data_dir = os.path.join(
+            os.path.dirname(__file__), '..', '..', '..', 'data', 'kaweah',
+        )
+        geojson_path = os.path.join(data_dir, 'subbasin_boundary.geojson')
+        with open(geojson_path) as f:
+            subbasin_data = json.load(f)
+        feature = subbasin_data['features'][0]
+        boundary_geom = GEOSGeometry(json.dumps(feature['geometry']))
+        if boundary_geom.geom_type == 'Polygon':
+            boundary_geom = MultiPolygon(boundary_geom)
+
         boundary = Boundary.objects.create(
             name="Kaweah Subbasin",
             description=(
@@ -255,44 +311,35 @@ class Command(BaseCommand):
                 "San Joaquin Valley Groundwater Basin. Critically "
                 "overdrafted under SGMA."
             ),
-            geometry=MultiPolygon(Polygon(boundary_ring)),
-            area_sq_miles=Decimal("700.0"),
+            geometry=boundary_geom,
+            area_sq_miles=Decimal("706.0"),
         )
 
         # ----------------------------------------------------------------
-        # 5. Management Zones (2, split at -119.25 longitude)
+        # 5. Management Zones (3 real GSA boundaries)
         # ----------------------------------------------------------------
-        self.stdout.write("Creating 2 management zones...")
-        west_zone_ring = [
-            (-119.50, 36.15),
-            (-119.25, 36.15),
-            (-119.25, 36.45),
-            (-119.50, 36.45),
-            (-119.50, 36.15),
-        ]
-        east_zone_ring = [
-            (-119.25, 36.15),
-            (-119.05, 36.15),
-            (-119.05, 36.45),
-            (-119.25, 36.45),
-            (-119.25, 36.15),
-        ]
+        self.stdout.write("Creating 3 GSA management zones...")
+        gsa_path = os.path.join(data_dir, 'gsa_boundaries.geojson')
+        with open(gsa_path) as f:
+            gsa_data = json.load(f)
 
-        west_zone = Zone.objects.create(
-            name="Mid-Kaweah Management Area",
-            boundary=boundary,
-            geometry=MultiPolygon(Polygon(west_zone_ring)),
-            zone_type="management_area",
-            description="Western portion of Kaweah Subbasin (~60% of area)",
-        )
-        east_zone = Zone.objects.create(
-            name="Eastern Kaweah Management Area",
-            boundary=boundary,
-            geometry=MultiPolygon(Polygon(east_zone_ring)),
-            zone_type="management_area",
-            description="Eastern portion of Kaweah Subbasin (~40% of area)",
-        )
-        zones = [west_zone, east_zone]
+        zones = []
+        for gsa_feature in gsa_data['features']:
+            gsa_name = gsa_feature['properties'].get('GSA_Name', 'Unknown GSA')
+            zone_geom = GEOSGeometry(json.dumps(gsa_feature['geometry']))
+            if zone_geom.geom_type == 'Polygon':
+                zone_geom = MultiPolygon(zone_geom)
+            z = Zone.objects.create(
+                name=gsa_name,
+                boundary=boundary,
+                geometry=zone_geom,
+                zone_type="management_area",
+                description=(
+                    f"Groundwater Sustainability Agency boundary "
+                    f"for {gsa_name}"
+                ),
+            )
+            zones.append(z)
 
         # ----------------------------------------------------------------
         # 6. Wells (25 total)
@@ -355,7 +402,7 @@ class Command(BaseCommand):
             )
 
         # ----------------------------------------------------------------
-        # 7. Parcels (40 total)
+        # 7. Parcels (40 total, scattered within real boundary)
         # ----------------------------------------------------------------
         self.stdout.write("Creating 40 parcels...")
         all_parcels = []
@@ -372,21 +419,40 @@ class Command(BaseCommand):
             "Packwood Ag Corp", "Yokohl Valley Ranch",
         ]
 
+        # Generate 40 parcel centers within the real subbasin boundary
+        bbox = boundary_geom.extent  # (xmin, ymin, xmax, ymax)
+        parcel_centers = []
+        attempts = 0
+        while len(parcel_centers) < 40 and attempts < 500:
+            lon = random.uniform(bbox[0], bbox[2])
+            lat = random.uniform(bbox[1], bbox[3])
+            pt = Point(lon, lat)
+            if boundary_geom.contains(pt):
+                parcel_centers.append((lon, lat))
+            attempts += 1
+
+        def assign_zone(pt_geom):
+            """Return the zone whose geometry contains the point, or
+            fall back to the first zone."""
+            for zone in zones:
+                if zone.geometry.contains(pt_geom):
+                    return zone
+            return zones[0]
+
         # 20 large parcels
         for i in range(20):
             size = random.uniform(0.015, 0.04)
-            lon = random.uniform(-119.48, -119.07)
-            lat = random.uniform(36.16, 36.44)
-            zone = west_zone if lon < -119.25 else east_zone
+            lon, lat = parcel_centers[i]
             area = Decimal(str(random.randint(160, 640)))
 
             p = Parcel.objects.create(
                 parcel_number=f"KAW-APN-{i + 1:03d}",
                 owner_name=kaweah_owners[i % len(kaweah_owners)],
                 area_acres=area,
-                geometry=make_box(lon, lat, size),
+                geometry=make_field_parcel(lon, lat, size, seed_val=i),
                 status="active",
             )
+            zone = assign_zone(p.geometry.centroid)
             ParcelZone.objects.create(parcel=p, zone=zone)
             all_parcels.append(p)
             parcels_by_zone[zone.pk].append(p)
@@ -394,18 +460,17 @@ class Command(BaseCommand):
         # 15 medium parcels
         for i in range(15):
             size = random.uniform(0.005, 0.015)
-            lon = random.uniform(-119.48, -119.07)
-            lat = random.uniform(36.16, 36.44)
-            zone = west_zone if lon < -119.25 else east_zone
+            lon, lat = parcel_centers[20 + i]
             area = Decimal(str(random.randint(40, 160)))
 
             p = Parcel.objects.create(
                 parcel_number=f"KAW-APN-{i + 21:03d}",
                 owner_name=kaweah_owners[(i + 5) % len(kaweah_owners)],
                 area_acres=area,
-                geometry=make_box(lon, lat, size),
+                geometry=make_field_parcel(lon, lat, size, seed_val=20 + i),
                 status="active",
             )
+            zone = assign_zone(p.geometry.centroid)
             ParcelZone.objects.create(parcel=p, zone=zone)
             all_parcels.append(p)
             parcels_by_zone[zone.pk].append(p)
@@ -413,18 +478,17 @@ class Command(BaseCommand):
         # 5 small parcels
         for i in range(5):
             size = random.uniform(0.002, 0.005)
-            lon = random.uniform(-119.48, -119.07)
-            lat = random.uniform(36.16, 36.44)
-            zone = west_zone if lon < -119.25 else east_zone
+            lon, lat = parcel_centers[35 + i]
             area = Decimal(str(random.randint(5, 40)))
 
             p = Parcel.objects.create(
                 parcel_number=f"KAW-APN-{i + 36:03d}",
                 owner_name=kaweah_owners[(i + 10) % len(kaweah_owners)],
                 area_acres=area,
-                geometry=make_box(lon, lat, size),
+                geometry=make_field_parcel(lon, lat, size, seed_val=35 + i),
                 status="active",
             )
+            zone = assign_zone(p.geometry.centroid)
             ParcelZone.objects.create(parcel=p, zone=zone)
             all_parcels.append(p)
             parcels_by_zone[zone.pk].append(p)
@@ -437,8 +501,7 @@ class Command(BaseCommand):
         wip_count = 0
         for i, well in enumerate(ag_wells):
             # Link to 1-3 parcels, picking from the same zone
-            well_lon = well.location.x
-            zone = west_zone if well_lon < -119.25 else east_zone
+            zone = assign_zone(well.location)
             zone_parcels = parcels_by_zone[zone.pk]
             if not zone_parcels:
                 continue
@@ -760,18 +823,20 @@ class Command(BaseCommand):
         # ----------------------------------------------------------------
         self.stdout.write("Creating 4 recharge sites...")
         recharge_configs = [
+            # (name, type, lon, lat, capacity, operator)
             ("Kaweah Delta Spreading Grounds", "spreading_basin",
-             -119.2800, 36.3100, Decimal("2000.0"), west_zone, "Kaweah Delta WCD"),
+             -119.2800, 36.3100, Decimal("2000.0"), "Kaweah Delta WCD"),
             ("Rocky Ford Ditch Recharge", "streambed",
-             -119.1500, 36.3600, Decimal("500.0"), east_zone, "Kaweah Delta WCD"),
+             -119.1500, 36.3600, Decimal("500.0"), "Kaweah Delta WCD"),
             ("Exeter Recharge Basin", "spreading_basin",
-             -119.1410, 36.2960, Decimal("800.0"), east_zone, "Exeter ID"),
+             -119.1410, 36.2960, Decimal("800.0"), "Exeter ID"),
             ("Terminus Dam ASR Well", "asr_well",
-             -118.9900, 36.4100, Decimal("300.0"), east_zone, "USACE / Kaweah Delta WCD"),
+             -118.9900, 36.4100, Decimal("300.0"), "USACE / Kaweah Delta WCD"),
         ]
 
         recharge_sites = []
-        for sname, stype, lon, lat, capacity, site_zone, operator in recharge_configs:
+        for sname, stype, lon, lat, capacity, operator in recharge_configs:
+            site_zone = assign_zone(Point(lon, lat))
             site = RechargeSite.objects.create(
                 name=sname,
                 site_type=stype,
