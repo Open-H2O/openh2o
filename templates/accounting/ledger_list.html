@@ -25,6 +25,9 @@
       </span>
     </div>
     <div class="row-start">
+      <a href="{% url 'accounting:ledger_export' %}?period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}" class="btn-secondary btn-sm">
+        Download CSV
+      </a>
       <a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">
         Upload CSV
       </a>
@@ -37,7 +40,7 @@
   <!-- Filters card -->
   <div class="card-raised">
     <div class="toolbar-row">
-      <!-- Search -->
+      <!-- Search (always visible) -->
       <div style="flex: 1; min-width: 200px;">
         <label class="form-label" for="filter-search">Search</label>
         <input type="text"
@@ -51,7 +54,7 @@
                class="form-input">
       </div>
 
-      <!-- Reporting Period -->
+      <!-- Reporting Period (always visible) -->
       <div style="min-width: 160px;">
         <label class="form-label" for="filter-period">Period</label>
         <select id="filter-period" name="period"
@@ -67,6 +70,17 @@
         </select>
       </div>
 
+      <!-- Toggle advanced filters -->
+      <div>
+        <button type="button" class="btn-secondary btn-sm" id="toggle-filters"
+                onclick="document.getElementById('advanced-filters').toggleAttribute('hidden'); this.textContent = document.getElementById('advanced-filters').hidden ? 'More Filters' : 'Fewer Filters';">
+          More Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Advanced filters (collapsed by default) -->
+    <div id="advanced-filters" class="toolbar-row pt-md" hidden>
       <!-- Source Type -->
       <div style="min-width: 140px;">
         <label class="form-label" for="filter-source-type">Source</label>
@@ -131,4 +145,16 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+  var hasAdvanced = {{ source_type|yesno:"true,false" }} || {{ water_type_id|yesno:"true,false" }} || {{ start_date|yesno:"true,false" }} || {{ end_date|yesno:"true,false" }};
+  if (hasAdvanced) {
+    document.getElementById('advanced-filters').removeAttribute('hidden');
+    document.getElementById('toggle-filters').textContent = 'Fewer Filters';
+  }
+})();
+</script>
 {% endblock %}

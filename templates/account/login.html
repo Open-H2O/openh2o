@@ -1,39 +1,40 @@
-{% extends "base.html" %}
+{% extends "base_auth.html" %}
 {% block title %}Log In — Open Water{% endblock %}
 {% block content %}
-<div class="card-raised w-full" style="max-width: 420px;">
-    <h1 class="text-xl font-extrabold mb-sm text-gold">Log In</h1>
-    <p class="text-sm mb-lg text-secondary">Sign in to your water accounting dashboard.</p>
+<div class="card-raised" style="width: 100%; max-width: 420px;">
+    <h1 class="section-header" style="border: none; color: var(--color-gold);">Log In</h1>
+    <p class="text-sm mb-md text-secondary">Sign in to your water accounting dashboard.</p>
     {% if form.errors %}
-    <div class="form-error-box">
+    <div class="form-error-box mb-md">
         <p class="text-sm text-furnace">Invalid email or password. Please try again.</p>
     </div>
     {% endif %}
     <form method="post" action="{% url 'account_login' %}">
         {% csrf_token %}
-        <div class="mb-md">
-            <label class="block text-sm mb-xs text-secondary">Email</label>
-            <input type="email" name="login" required autofocus class="form-input">
+        <div class="form-group">
+            <label class="form-label" for="id_login">Email</label>
+            <input type="email" id="id_login" name="login" required autofocus class="form-input">
         </div>
-        <div class="mb-md">
-            <label class="block text-sm mb-xs text-secondary">Password</label>
-            <input type="password" name="password" required class="form-input">
+        <div class="form-group">
+            <label class="form-label" for="id_password">Password</label>
+            <input type="password" id="id_password" name="password" required class="form-input">
         </div>
-        <div class="flex items-center justify-between mb-lg">
-            <label class="flex items-center gap-2 text-sm text-secondary">
-                <input type="checkbox" name="remember"> Remember me
+        <div class="row-between mb-md">
+            <label class="row-start text-sm text-secondary" for="id_remember">
+                <input type="checkbox" id="id_remember" name="remember"> Remember me
             </label>
             <a href="{% url 'account_reset_password' %}" class="text-sm text-blue">Forgot password?</a>
         </div>
-        <button type="submit" class="btn-primary w-full mb-md">Log In</button>
+        <button type="submit" class="btn-primary" style="width: 100%;">Log In</button>
     </form>
-    <p class="text-sm text-center text-secondary">
+    <p class="text-sm text-secondary pt-md" style="text-align: center;">
         No account yet? <a href="{% url 'account_signup' %}" class="text-blue">Create one</a>
     </p>
     {% if site_config and site_config.allow_google_oauth %}
-    <hr class="my-md" style="border-color: var(--color-border);">
+    <div class="border-separator pt-sm">
     {% load socialaccount %}
-    <a href="{% provider_login_url 'google' %}" class="btn-secondary w-full">Continue with Google</a>
+    <a href="{% provider_login_url 'google' %}" class="btn-secondary" style="width: 100%;">Continue with Google</a>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

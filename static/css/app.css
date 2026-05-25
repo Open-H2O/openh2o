@@ -1231,6 +1231,10 @@ a { color: inherit; }
 }
 
 @media (max-width: 767px) {
+    .stat-grid-2col {
+        grid-template-columns: 1fr;
+    }
+
     .sidebar {
         position: fixed;
         top: 0;
