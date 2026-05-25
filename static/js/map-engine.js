@@ -163,8 +163,10 @@ var map = new maplibregl.Map({
             { id: 'aerial-labels', type: 'raster', source: 'esri-labels', layout: { visibility: 'none' }, paint: { 'raster-opacity': 0.7 } }
         ]
     },
-    center: MAP_CONFIG.center,
-    zoom: MAP_CONFIG.zoom,
+    center: MAP_CONFIG.fitBounds ? undefined : MAP_CONFIG.center,
+    zoom: MAP_CONFIG.fitBounds ? undefined : MAP_CONFIG.zoom,
+    bounds: MAP_CONFIG.fitBounds || undefined,
+    fitBoundsOptions: MAP_CONFIG.fitBounds ? { padding: MAP_CONFIG.fitBoundsPadding || 40 } : undefined,
     maxZoom: MAP_CONFIG.maxZoom || 18,
     attributionControl: true
 });
