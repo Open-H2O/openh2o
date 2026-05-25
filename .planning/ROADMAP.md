@@ -70,7 +70,7 @@ Plans:
 **Plans**: 0
 
 Plans:
-- [ ] 11.1-01: Critique & audit discovery (run /impeccable critique + audit, compile prioritized fix list)
+- [x] 11.1-01: Critique & audit discovery (run /impeccable critique + audit, compile prioritized fix list)
 - [ ] 11.1-02: Fix prioritized issues (apply fixes, re-verify scores, visual sign-off)
 
 #### Phase 12: In-App Documentation
