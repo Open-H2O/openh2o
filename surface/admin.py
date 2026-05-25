@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CurtailmentOrder, DiversionRecord, PointOfDiversion, WaterRight, WaterRightType
+from .models import CurtailmentOrder, DiversionRecord, PointOfDiversion, PointOfDiversionParcel, WaterRight, WaterRightType
 
 
 @admin.register(WaterRightType)
@@ -21,6 +21,12 @@ class PointOfDiversionAdmin(admin.ModelAdmin):
     list_filter = ["status"]
     search_fields = ["name", "stream_name"]
     raw_id_fields = ["water_right"]
+
+
+@admin.register(PointOfDiversionParcel)
+class PointOfDiversionParcelAdmin(admin.ModelAdmin):
+    list_display = ["point_of_diversion", "parcel", "fraction"]
+    raw_id_fields = ["point_of_diversion", "parcel"]
 
 
 @admin.register(DiversionRecord)
