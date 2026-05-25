@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "reporting",
     "health",
     "setup",
+    "infrastructure",
 ]
 
 SITE_ID = 1

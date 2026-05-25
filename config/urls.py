@@ -17,6 +17,7 @@ urlpatterns = [
     path("reporting/", include("reporting.urls")),
     path("health/", include("health.urls")),
     path("setup/", include("setup.urls")),
+    path("infrastructure/", include("infrastructure.urls")),
     path("about/", about, name="about"),
     path("help/getting-started/", getting_started, name="getting_started"),
     path("help/glossary/", glossary, name="glossary"),
