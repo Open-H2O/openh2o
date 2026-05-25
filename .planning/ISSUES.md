@@ -4,12 +4,14 @@ Deferred items and nice-to-haves discovered during execution.
 
 ## Open
 
+No open issues.
+
+## Closed
+
 ### ISSUE-001: RechargeSite missing zone FK
-- **Phase:** 04-02
-- **Rule:** 5 (nice-to-have)
-- **Description:** The plan's `create_recharge_ledger_entries` assumes `recharge_site.zone` exists, but `RechargeSite` has no zone foreign key. The function was implemented to accept a `zone` parameter explicitly instead. Consider adding an optional `zone` FK to `RechargeSite` in a future migration.
+- **Phase:** 04-02 (deferred), 09-01 (resolved)
+- **Resolution:** Added optional `zone` FK to `RechargeSite` with `SET_NULL` on delete. `create_recharge_ledger_entries` now falls back to `recharge_event.recharge_site.zone` when no zone param supplied. Migration: `recharge/migrations/0002_rechargesite_zone.py`.
 
 ### ISSUE-002: WaterRight missing parcel FK
-- **Phase:** 04-02
-- **Rule:** 5 (nice-to-have)
-- **Description:** The plan's `create_diversion_ledger_entry` references "the first parcel linked to the water right's holder," but `WaterRight.holder_name` is a CharField with no FK to `Parcel`. The function accepts a `parcel` parameter explicitly. Consider adding a `WaterRightParcel` junction table or a FK from `WaterRight` to `Parcel` in a future phase.
+- **Phase:** 04-02 (deferred), 09-01 (resolved)
+- **Resolution:** Added `WaterRightParcel` junction table (many-to-many via explicit model) with `unique_together` constraint. `create_diversion_ledger_entry` now looks up parcel via `WaterRightParcel` when no parcel param supplied. Migration: `surface/migrations/0002_waterrightparcel.py`.
