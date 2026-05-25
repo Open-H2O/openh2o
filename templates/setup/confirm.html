@@ -3,6 +3,10 @@
 {% block title %}Confirm Boundary - OpenH2O Setup{% endblock %}
 {% block page_title %}Confirm Boundary{% endblock %}
 
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -74,11 +78,12 @@
   </div>
 
 </div>
+{% endblock %}
 
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 (function() {
-  if (!window.maplibregl) return;
-
   const map = new maplibregl.Map({
     container: 'boundary-map',
     style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
