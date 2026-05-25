@@ -96,3 +96,50 @@ class DataRecordStaging(models.Model):
 
     def __str__(self):
         return f"{self.station} {self.observation_date}: {self.parameter_code}={self.value}"
+
+
+class OpenETCache(models.Model):
+    parcel = models.ForeignKey(
+        "parcels.Parcel", null=True, blank=True, on_delete=models.CASCADE
+    )
+    geometry = models.MultiPolygonField(srid=4326, help_text="Queried geometry")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    variable = models.CharField(max_length=20, default="ET")
+    model_name = models.CharField(max_length=50, default="Ensemble")
+    et_data = models.JSONField(help_text="Monthly ET values from API response")
+    queried_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["parcel", "start_date", "end_date"]),
+            models.Index(fields=["queried_at"]),
+        ]
+
+    def __str__(self):
+        label = self.parcel or "no-parcel"
+        return f"OpenET {label} {self.start_date}–{self.end_date}"
+
+    def is_stale(self, max_age_days=None):
+        from django.conf import settings as django_settings
+        from django.utils import timezone
+
+        max_days = max_age_days or getattr(django_settings, "OPENET_CACHE_DAYS", 30)
+        return (timezone.now() - self.queried_at).days > max_days
+
+    @classmethod
+    def monthly_query_count(cls):
+        from django.utils import timezone
+
+        month_start = timezone.now().replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        return cls.objects.filter(queried_at__gte=month_start).count()
+
+    @classmethod
+    def check_budget(cls, budget=None):
+        from django.conf import settings as django_settings
+
+        limit = budget or getattr(django_settings, "OPENET_MONTHLY_BUDGET", 400)
+        used = cls.monthly_query_count()
+        return used < limit, used, limit
