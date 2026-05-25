@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 15 of 21 (Branding & About Page)
+Phase: 16 of 21 (Tie Lines & Source Fractions)
 Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-05-25 - Completed 15-01-PLAN.md
+Last activity: 2026-05-25 - Completed 16-01-PLAN.md
 
-Progress: ████████░░ 65%
+Progress: █████████░ 70%
 
 ## Performance Metrics
 
@@ -54,5 +54,5 @@ None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Completed 15-01-PLAN.md (Phase 15 complete, branding + About page shipped)
+Stopped at: Completed 16-01-PLAN.md (Phase 16 complete, tie lines + fraction weighting shipped)
 Resume file: None

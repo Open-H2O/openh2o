@@ -148,7 +148,7 @@ Plans:
 **Plans**: 1
 
 Plans:
-- [ ] 16-01: TBD (run /gsd:plan-phase 16 to break down)
+- [x] 16-01: Tie-lines GeoJSON endpoint, map layers, fraction-weighted reporting exports
 
 #### Phase 17: Static GIS & Auto-Populate Engine
 
