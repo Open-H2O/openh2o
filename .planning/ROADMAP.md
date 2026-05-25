@@ -101,7 +101,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 13-01: TBD (run /gsd:plan-phase 13 to break down)
+- [x] 13-01: Crontab, test expansion (28→121), DEPLOY.md consolidation, Butler deploy verified
 
 #### Phase 13.1: AI Operator Guide & District Onboarding (INSERTED)
 
@@ -143,6 +143,6 @@ Plans:
 | 11.1 Impeccable UI Audit | v1.1 | 2/2 | Complete | 2026-05-25 |
 | 12. In-App Documentation | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 12.1 VanderDev Design Alignment | v1.1 | 1/1 | Complete | 2026-05-25 |
-| 13. Cron, Health, & Final Polish | v1.1 | 0/? | Not started | - |
+| 13. Cron, Health, & Final Polish | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 13.1 AI Operator Guide & Onboarding | v1.1 | 0/? | Not started | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |

@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 12.1 of 14 (VanderDev Design Alignment)
+Phase: 13 of 14 (Cron, Health, & Final Polish)
 Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-05-25 - Completed 12.1-01-PLAN.md
+Last activity: 2026-05-25 - Completed 13-01-PLAN.md
 
-Progress: ██████░░░░ 55%
+Progress: ███████░░░ 60%
 
 ## Performance Metrics
 
@@ -40,7 +40,8 @@ None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 
 - OpenET API key not yet requested (needed for live adapter testing)
 - Automated test suite established (28 tests, pytest + factory_boy)
-- Cron scheduling for sync_all and run_health_checks not configured
+- Cron scheduling configured: sync_all (daily 2AM mock), run_health_checks (6-hourly), prune_old_data (monthly)
+- Test suite expanded to 121 tests (from 28)
 
 ### Roadmap Evolution
 
@@ -52,5 +53,5 @@ None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Completed 12.1-01-PLAN.md (Phase 12.1 complete, VanderDev design alignment shipped)
+Stopped at: Completed 13-01-PLAN.md (Phase 13 complete, cron + tests + deploy docs shipped)
 Resume file: None
