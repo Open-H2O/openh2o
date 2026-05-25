@@ -592,9 +592,7 @@ a { color: inherit; }
 .badge-pill {
     border-radius: 999px;
     padding: 2px 10px;
-    border: 1px solid currentColor;
-    border-color: currentColor;
-    border-opacity: 0.25;
+    border: 1px solid transparent;
 }
 
 .badge-pill.badge-green {
@@ -603,6 +601,14 @@ a { color: inherit; }
 
 .badge-pill.badge-orange {
     border-color: oklch(0.45 0.12 55 / 0.35);
+}
+
+.badge-pill.badge-red {
+    border-color: oklch(0.45 0.12 25 / 0.35);
+}
+
+.badge-pill.badge-blue {
+    border-color: rgba(32, 137, 187, 0.35);
 }
 
 .badge-pill.badge-grey {
@@ -789,7 +795,7 @@ a { color: inherit; }
     border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: var(--radius-md);
     font-size: 0.8125rem;
-    color: #ef4444;
+    color: var(--color-error);
 }
 
 .alert-warning {
@@ -798,7 +804,7 @@ a { color: inherit; }
     border: 1px solid rgba(234, 179, 8, 0.3);
     border-radius: var(--radius-md);
     font-size: 0.8125rem;
-    color: #eab308;
+    color: var(--color-warning);
 }
 
 /* -- Map embed ----------------------------------------------------------- */

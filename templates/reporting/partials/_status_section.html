@@ -5,11 +5,11 @@
     {% if submission.status == "submitted" or submission.status == "accepted" %}
     <span class="badge badge-green">{{ submission.get_status_display }}</span>
     {% elif submission.status == "reviewed" %}
-    <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; background: rgba(234, 179, 8, 0.15); color: #eab308;">{{ submission.get_status_display }}</span>
+    <span class="badge badge-orange">{{ submission.get_status_display }}</span>
     {% elif submission.status == "rejected" %}
     <span class="badge badge-red">{{ submission.get_status_display }}</span>
     {% else %}
-    <span style="display: inline-block; padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.8125rem; font-weight: 600; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">{{ submission.get_status_display }}</span>
+    <span class="badge badge-grey">{{ submission.get_status_display }}</span>
     {% endif %}
 
     {% if submission.submitted_at %}
@@ -50,8 +50,7 @@
         hx-swap="innerHTML">
     {% csrf_token %}
     <input type="hidden" name="action" value="submit">
-    <button type="submit"
-            style="padding: var(--space-sm) var(--space-lg); background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); border-radius: var(--radius-md); font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
+    <button type="submit" class="btn-primary btn-sm" style="background-color: var(--forest-400); color: var(--color-base);">
       Mark as Submitted
     </button>
   </form>
