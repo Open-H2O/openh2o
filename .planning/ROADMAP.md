@@ -181,8 +181,8 @@ Plans: 1
 **Research**: Unlikely (HTMX polling patterns established, VanderDev design tokens available, auto_populate engine built in Phase 17)
 **Plans**: TBD
 
-Plans:
-- [ ] 19-01: TBD (run /gsd:plan-phase 19 to break down)
+Plans: 1
+- [x] 19-01: Monitoring dashboard, freshness map, setup wizard, sidebar navigation
 
 #### Phase 20: AI Operator Guide (DEFERRED from v1.1 Phase 13.1)
 
@@ -230,6 +230,6 @@ Plans:
 | 16. Tie Lines & Source Fractions | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 17. Static GIS & Auto-Populate Engine | v1.2 | 3/3 | Complete | 2026-05-25 |
 | 18. Telemetry Discovery & OpenET | v1.2 | 1/1 | Complete | 2026-05-25 |
-| 19. Streaming Dashboard & Setup Wizard | v1.2 | 0/? | Not started | - |
+| 19. Streaming Dashboard & Setup Wizard | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
