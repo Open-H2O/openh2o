@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
@@ -22,3 +23,47 @@ def index(request):
         "station_count": MonitoredStation.objects.count(),
     }
     return render(request, "index.html", context)
+
+
+@login_required
+def getting_started(request):
+    """Getting Started walkthrough for new GSA administrators."""
+    return render(request, "help/getting_started.html")
+
+
+@login_required
+def glossary(request):
+    """Glossary of water accounting terms used throughout the platform."""
+    terms = {
+        "Allocation Plan": "Sets water budgets per zone and water type for a reporting period.",
+        "CalWATRS": "California Water Transfer Reporting System, the Water Board format for surface diversions.",
+        "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
+        "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
+        "Data Source": "An external agency or API that provides hydrologic measurements.",
+        "GEARS": "Groundwater Extraction Annual Report System, the DWR reporting format for per-well extraction.",
+        "GSA": "Groundwater Sustainability Agency, the local agency responsible for managing groundwater under SGMA.",
+        "GSP": "Groundwater Sustainability Plan, the 20-year plan each GSA must adopt.",
+        "Health Check": "Automated system diagnostic covering data freshness, connectivity, and configuration.",
+        "Ledger Entry": "A double-entry record: supply amounts are positive, usage amounts are negative.",
+        "Managed Aquifer Recharge (MAR)": "Intentionally adding water to an aquifer through spreading basins or injection wells.",
+        "Monitoring Station": "A curated external sensor (stream gauge, weather station, groundwater well) linked to a data source.",
+        "OpenET": "Satellite-based evapotranspiration estimates, used to calculate crop water use.",
+        "Parcel": "A plot of land identified by an Assessor Parcel Number (APN), the basic unit of water accounting.",
+        "Point of Diversion (POD)": "The physical location where water is diverted from a stream or river.",
+        "Reporting Period": "A time window (usually water year Oct 1 - Sep 30) for accounting.",
+        "SGMA": "Sustainable Groundwater Management Act (2014), the California law requiring groundwater management.",
+        "USGS": "United States Geological Survey, provides stream gauge and groundwater level data.",
+        "Water Account": "Groups parcels for accounting purposes, tracks supply and usage.",
+        "Water Right": "A legal entitlement to divert surface water, issued by the State Water Board.",
+        "Well": "A borehole used to extract groundwater, identified by state well number or local ID.",
+    }
+    sorted_terms = sorted(terms.items())
+    # Build list of unique first letters for the jump nav
+    seen = set()
+    letters = []
+    for term, _ in sorted_terms:
+        first = term[0].upper()
+        if first not in seen:
+            seen.add(first)
+            letters.append(first)
+    return render(request, "help/glossary.html", {"terms": sorted_terms, "letters": letters})

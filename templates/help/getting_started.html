@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Getting Started - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Getting Started{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'getting_started' %}">Help</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Getting Started</span>
+  </nav>
+  <p class="page-description">A step-by-step guide to setting up your water accounting system.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <div class="card-raised">
+    <h2 class="section-header">Step 1: Import Your Parcels</h2>
+    <p class="text-secondary text-base">Upload parcel boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Parcels and use the import command. Each parcel needs an Assessor Parcel Number (APN).</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Step 2: Import Your Wells</h2>
+    <p class="text-secondary text-base">Upload well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to parcels.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Step 3: Set Up Water Accounts</h2>
+    <p class="text-secondary text-base">Create water accounts to group parcels for tracking. Go to Setup &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Step 4: Create a Reporting Period</h2>
+    <p class="text-secondary text-base">Define the time window for accounting. Go to Setup &gt; Periods. Most agencies use the water year (October 1 through September 30).</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Step 5: Enter Ledger Data</h2>
+    <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each parcel. Enter manually or import via CSV. The ledger is the core of water accounting.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Step 6: Connect Monitoring Stations</h2>
+    <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS wells, CIMIS weather stations) to automatically pull measurements. Go to Stations &gt; Add Station.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Step 7: Add Water Rights and Recharge Sites</h2>
+    <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection wells.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Step 8: Generate State Reports</h2>
+    <p class="text-secondary text-base">When your reporting period is complete, generate GEARS CSV (per-well extraction) and CalWATRS CSV (surface diversions) for submission to the Water Board. Go to Reports &gt; Generate.</p>
+  </div>
+
+</div>
+{% endblock %}
