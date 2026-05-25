@@ -13,7 +13,7 @@ from django.utils import timezone
 from accounting.models import ReportingPeriod
 from geography.models import Boundary
 from parcels.models import Parcel, ParcelLedger
-from surface.models import DiversionRecord, PointOfDiversion
+from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
 from wells.models import Well, WellIrrigatedParcel
 
 
@@ -46,13 +46,13 @@ def generate_gears_csv(reporting_period, method="by_well"):
 
         well_parcel_map = {}
         for wip in WellIrrigatedParcel.objects.select_related("well").all():
-            well_parcel_map.setdefault(wip.parcel_id, []).append(wip.well)
+            well_parcel_map.setdefault(wip.parcel_id, []).append((wip.well, wip.fraction))
 
         rows = {}
         for entry in entries:
-            wells = well_parcel_map.get(entry.parcel_id, [])
+            well_fractions = well_parcel_map.get(entry.parcel_id, [])
             month_str = entry.effective_date.strftime("%Y-%m")
-            for well in wells:
+            for well, fraction in well_fractions:
                 key = (well.pk, month_str)
                 if key not in rows:
                     rows[key] = {
@@ -64,7 +64,7 @@ def generate_gears_csv(reporting_period, method="by_well"):
                         "volume": Decimal("0"),
                         "method": "meter_reading",
                     }
-                rows[key]["volume"] += abs(entry.amount_acre_feet)
+                rows[key]["volume"] += abs(entry.amount_acre_feet) * fraction
 
         for row in sorted(rows.values(), key=lambda r: (r["reg_id"], r["month"])):
             writer.writerow([
@@ -116,8 +116,9 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
 
     writer.writerow([
-        "Water Right ID", "Holder Name", "POD Name", "Latitude", "Longitude",
-        "Month", "Volume (AF)", "Max Flow Rate (CFS)", "Diversion Type",
+        "Water Right ID", "Holder Name", "POD Name", "Source Fraction",
+        "Latitude", "Longitude", "Month", "Volume (AF)",
+        "Max Flow Rate (CFS)", "Diversion Type", "Combined Use",
     ])
 
     diversion_type = "direct_use" if template_type == "a1" else "to_storage"
@@ -131,32 +132,74 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         .order_by("point_of_diversion__water_right__right_id", "month")
     )
 
-    rows = {}
+    # Build pod→[(parcel_id, fraction)] map from PointOfDiversionParcel
+    pod_parcel_map = {}
+    for podp in PointOfDiversionParcel.objects.all():
+        pod_parcel_map.setdefault(podp.point_of_diversion_id, []).append(
+            (podp.parcel_id, podp.fraction)
+        )
+
+    # Determine combined-use status per parcel: has both GW and SW sources
+    gw_parcel_ids = set(
+        WellIrrigatedParcel.objects.values_list("parcel_id", flat=True)
+    )
+    sw_parcel_ids = set(
+        PointOfDiversionParcel.objects.values_list("parcel_id", flat=True)
+    )
+    combined_parcel_ids = gw_parcel_ids & sw_parcel_ids
+
+    # Aggregate raw volumes per (pod, month), then expand per parcel fraction
+    raw = {}
     for rec in records:
         pod = rec.point_of_diversion
         wr = pod.water_right
         month_str = rec.month.strftime("%Y-%m")
         key = (pod.pk, month_str)
-        if key not in rows:
-            rows[key] = {
+        if key not in raw:
+            raw[key] = {
                 "right_id": wr.right_id,
                 "holder": wr.holder_name,
-                "pod_name": pod.name,
-                "lat": pod.location.y,
-                "lon": pod.location.x,
+                "pod": pod,
                 "month": month_str,
                 "volume": Decimal("0"),
                 "max_flow": rec.max_flow_rate_cfs or Decimal("0"),
                 "type": rec.get_diversion_type_display(),
             }
-        rows[key]["volume"] += rec.volume_acre_feet
+        raw[key]["volume"] += rec.volume_acre_feet
 
-    for row in sorted(rows.values(), key=lambda r: (r["right_id"], r["month"])):
-        writer.writerow([
-            row["right_id"], row["holder"], row["pod_name"],
-            row["lat"], row["lon"], row["month"],
-            row["volume"], row["max_flow"], row["type"],
-        ])
+    rows = []
+    for key in sorted(raw, key=lambda k: (raw[k]["right_id"], raw[k]["month"])):
+        entry = raw[key]
+        pod = entry["pod"]
+        parcel_fractions = pod_parcel_map.get(pod.pk, [])
+
+        if parcel_fractions:
+            for parcel_id, fraction in parcel_fractions:
+                if parcel_id in combined_parcel_ids:
+                    combined_use = "Combined"
+                elif parcel_id in gw_parcel_ids:
+                    combined_use = "GW Only"
+                else:
+                    combined_use = "SW Only"
+                rows.append([
+                    entry["right_id"], entry["holder"], pod.name,
+                    float(fraction),
+                    pod.location.y, pod.location.x, entry["month"],
+                    entry["volume"] * fraction,
+                    entry["max_flow"], entry["type"], combined_use,
+                ])
+        else:
+            # POD not linked to any parcel — emit row with fraction 1.0, SW Only
+            rows.append([
+                entry["right_id"], entry["holder"], pod.name,
+                1.0,
+                pod.location.y, pod.location.x, entry["month"],
+                entry["volume"],
+                entry["max_flow"], entry["type"], "SW Only",
+            ])
+
+    for row in rows:
+        writer.writerow(row)
 
     output.seek(0)
     return output
