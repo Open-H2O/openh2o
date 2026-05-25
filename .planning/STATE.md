@@ -45,6 +45,7 @@ None. ISSUE-001 and ISSUE-002 resolved in Phase 09-01.
 ### Roadmap Evolution
 
 - Milestone v1.1 created: Production Polish, 6 phases (Phase 9-14)
+- Phase 11.1 inserted after Phase 11: Impeccable UI Audit (critique + audit before docs)
 
 ## Session Continuity
 

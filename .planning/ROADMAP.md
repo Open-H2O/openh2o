@@ -62,6 +62,16 @@ Plans:
 Plans:
 - [x] 11-01: Responsive CSS, form class cleanup, landing page counts, favicon, visual consistency
 
+#### Phase 11.1: Impeccable UI Audit (INSERTED)
+
+**Goal**: Run `/impeccable critique` (heuristic UX scoring) and `/impeccable audit` (accessibility, responsive, performance) against the deployed OpenH2O UI. Fix any issues found before documentation phase.
+**Depends on**: Phase 11
+**Research**: Unlikely (evaluation of existing UI)
+**Plans**: 0
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 11.1 to break down)
+
 #### Phase 12: In-App Documentation
 
 **Goal**: Add contextual help text and tooltips on every page, a Getting Started walkthrough for new GSA admins, and a field glossary for water accounting terms
