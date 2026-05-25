@@ -13,6 +13,7 @@ from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
+from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, Flowline, Zone
 from geography.services.arcgis import (
     esri_polygon_to_geos,
@@ -646,3 +647,138 @@ class TestLoadCounties:
         mock_get.return_value = _make_mock_response(_county_features())
         call_command("load_counties", stdout=StringIO())
         assert Boundary.objects.filter(name__endswith="County").count() == 2
+
+
+# ---------------------------------------------------------------------------
+# Station discovery test helpers
+# ---------------------------------------------------------------------------
+
+def _mock_station_list(source_code):
+    """Return mock station dicts for a given source."""
+    return [
+        {
+            "station_id": f"{source_code.upper()}-001",
+            "name": f"Test {source_code} station 1",
+            "latitude": 36.3,
+            "longitude": -119.3,
+            "parameters": ["param1"],
+        },
+        {
+            "station_id": f"{source_code.upper()}-002",
+            "name": f"Test {source_code} station 2",
+            "latitude": 36.4,
+            "longitude": -119.2,
+            "parameters": ["param2"],
+        },
+    ]
+
+
+@pytest.fixture
+def data_sources():
+    """Create DataSource records for CDEC, USGS, and CIMIS."""
+    sources = {}
+    for code in ("cdec", "usgs", "cimis"):
+        sources[code] = DataSource.objects.create(
+            name=code.upper(),
+            code=code,
+            url=f"https://{code}.example.com",
+        )
+    return sources
+
+
+# ---------------------------------------------------------------------------
+# Station step tests
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+class TestStationsStep:
+    @patch("datasync.adapters.cdec.CDECAdapter.discover_stations")
+    @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
+    @patch("datasync.adapters.cimis.CIMISAdapter.discover_stations")
+    def test_creates_inactive_stations(
+        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources
+    ):
+        """Stations step creates inactive MonitoredStation records."""
+        mock_cdec.return_value = _mock_station_list("cdec")
+        mock_usgs.return_value = _mock_station_list("usgs")
+        mock_cimis.return_value = _mock_station_list("cimis")
+
+        out = StringIO()
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            stdout=out,
+        )
+
+        stations = MonitoredStation.objects.all()
+        assert stations.count() == 6
+        assert stations.filter(is_active=False).count() == 6
+
+    @patch("datasync.adapters.cdec.CDECAdapter.discover_stations")
+    @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
+    @patch("datasync.adapters.cimis.CIMISAdapter.discover_stations")
+    def test_idempotent(
+        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources
+    ):
+        """Running stations step twice creates stations only once."""
+        mock_cdec.return_value = _mock_station_list("cdec")
+        mock_usgs.return_value = _mock_station_list("usgs")
+        mock_cimis.return_value = _mock_station_list("cimis")
+
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            stdout=StringIO(),
+        )
+        assert MonitoredStation.objects.count() == 6
+
+        mock_cdec.return_value = _mock_station_list("cdec")
+        mock_usgs.return_value = _mock_station_list("usgs")
+        mock_cimis.return_value = _mock_station_list("cimis")
+
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            stdout=StringIO(),
+        )
+        assert MonitoredStation.objects.count() == 6
+
+    def test_handles_missing_datasource(self, boundary):
+        """Stations step warns but doesn't crash when DataSource is missing."""
+        out = StringIO()
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            stdout=out,
+        )
+        output = out.getvalue()
+        assert "not found" in output.lower()
+        assert MonitoredStation.objects.count() == 0
+
+    @patch("datasync.adapters.cdec.CDECAdapter.discover_stations")
+    @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
+    @patch("datasync.adapters.cimis.CIMISAdapter.discover_stations")
+    def test_dry_run(
+        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources
+    ):
+        """Dry run reports counts without creating any records."""
+        mock_cdec.return_value = _mock_station_list("cdec")
+        mock_usgs.return_value = _mock_station_list("usgs")
+        mock_cimis.return_value = _mock_station_list("cimis")
+
+        out = StringIO()
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            dry_run=True,
+            stdout=out,
+        )
+
+        assert MonitoredStation.objects.count() == 0
+        output = out.getvalue()
+        assert "would create" in output.lower()
