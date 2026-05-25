@@ -4,7 +4,7 @@ Auto-populate geographic data for a boundary from public APIs.
 Steps:
   basins    — DWR Bulletin 118 groundwater basins (Zone records)
   parcels   — DWR LightBox statewide parcel boundaries (Parcel records)
-  flowlines — NLDI flowlines (not yet implemented)
+  flowlines — USGS 3DHP flowlines (Flowline records)
 
 Usage:
   python manage.py auto_populate --boundary "Kaweah Subbasin"
@@ -16,9 +16,10 @@ from collections import OrderedDict
 
 from django.core.management.base import BaseCommand, CommandError
 
-from geography.models import Boundary, Zone
+from geography.models import Boundary, Flowline, Zone
 from geography.services.arcgis import (
     esri_polygon_to_geos,
+    esri_polyline_to_geos,
     geos_to_esri_geometry,
     query_by_boundary,
     query_feature_server,
@@ -35,6 +36,11 @@ B118_BASINS_URL = (
 LIGHTBOX_PARCELS_URL = (
     "https://gis.water.ca.gov/arcgis/rest/services/Planning/"
     "i15_Parcels_Assessor_Lightbox/MapServer/0/query"
+)
+
+THREEDHP_FLOWLINES_URL = (
+    "https://hydro.nationalmap.gov/arcgis/rest/services/"
+    "3DHP_all/MapServer/50/query"
 )
 
 
@@ -310,6 +316,102 @@ class Command(BaseCommand):
         return created_total
 
     def _step_flowlines(self, boundary, dry_run):
-        """Fetch NLDI flowlines. (stub)"""
-        self.stdout.write(self.style.WARNING("  flowlines: not yet implemented"))
-        return 0
+        """Fetch USGS 3DHP flowlines that intersect the boundary.
+
+        Queries the 3D Hydrography Program MapServer (layer 50)
+        page-by-page, creates Flowline records. Idempotent via
+        source_id+boundary uniqueness check.
+        """
+        self.stdout.write("  Querying USGS 3DHP Flowlines MapServer...")
+        esri_geom = geos_to_esri_geometry(boundary.geometry)
+
+        out_fields = "id3dhp,gnisidlabel,featuretypelabel,lengthkm,streamorder"
+        created_total = 0
+        page_num = 0
+
+        try:
+            pages = query_feature_server(
+                THREEDHP_FLOWLINES_URL,
+                geometry=esri_geom,
+                geometry_type="esriGeometryPolygon",
+                spatial_rel="esriSpatialRelIntersects",
+                out_fields=out_fields,
+                return_geometry=True,
+                out_sr=4326,
+                max_record_count=2500,
+            )
+
+            for features in pages:
+                page_num += 1
+                sid_map = {}
+                for feat in features:
+                    attrs = feat.get("attributes") or {}
+                    sid = str(attrs.get("id3dhp") or "").strip()
+                    if not sid:
+                        continue
+                    if sid not in sid_map:
+                        sid_map[sid] = feat
+
+                if not sid_map:
+                    self.stdout.write(f"  Page {page_num}: 0 valid flowlines, skipping.")
+                    continue
+
+                existing_sids = set(
+                    Flowline.objects.filter(
+                        source_id__in=list(sid_map.keys()),
+                        boundary=boundary,
+                    ).values_list("source_id", flat=True)
+                )
+
+                new_flowlines = []
+                for sid, feat in sid_map.items():
+                    if sid in existing_sids:
+                        continue
+
+                    attrs = feat.get("attributes") or {}
+                    geom = None
+                    esri_feat_geom = feat.get("geometry")
+                    if esri_feat_geom:
+                        try:
+                            geom = esri_polyline_to_geos(esri_feat_geom)
+                        except Exception as exc:
+                            logger.warning("Bad geometry for %s: %s", sid, exc)
+
+                    if geom is None:
+                        self.stdout.write(
+                            self.style.WARNING(f"  Skipping (no geometry): {sid}")
+                        )
+                        continue
+
+                    new_flowlines.append(
+                        Flowline(
+                            name=str(attrs.get("gnisidlabel") or "").strip(),
+                            boundary=boundary,
+                            feature_type=str(attrs.get("featuretypelabel") or "").strip(),
+                            length_km=attrs.get("lengthkm"),
+                            stream_order=attrs.get("streamorder"),
+                            source_id=sid,
+                            geometry=geom,
+                        )
+                    )
+
+                if dry_run:
+                    self.stdout.write(
+                        f"  Page {page_num}: would create {len(new_flowlines)} flowline(s)"
+                    )
+                    created_total += len(new_flowlines)
+                else:
+                    created = Flowline.objects.bulk_create(
+                        new_flowlines, ignore_conflicts=True
+                    )
+                    created_total += len(created)
+                    self.stdout.write(
+                        f"  Page {page_num}: {len(created)} flowline(s) created "
+                        f"({len(existing_sids)} existing skipped)"
+                    )
+
+        except Exception as exc:
+            self.stdout.write(self.style.ERROR(f"  API query failed: {exc}"))
+            logger.exception("3DHP flowlines API query failed")
+
+        return created_total
