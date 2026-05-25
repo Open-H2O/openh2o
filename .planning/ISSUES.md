@@ -4,7 +4,16 @@ Deferred items and nice-to-haves discovered during execution.
 
 ## Open
 
-(No open issues)
+### ISSUE-005: Open-source licensing and trademark protection
+- **Phase:** None (non-code, do before public release)
+- **Context:** Domain openh2o owned. Code intended to be open source, but must prevent corporations from forking and selling as a proprietary product. Need to select a license that allows free use by water districts/GSAs while blocking commercial appropriation.
+- **Options to evaluate:**
+  - AGPL-3.0 (strongest copyleft — any network use must share source, deters SaaS wrappers)
+  - Server Side Public License (SSPL — MongoDB-style, explicitly blocks offering as a service without open-sourcing the full stack)
+  - Business Source License (BSL — source-available with time-delayed open-source conversion)
+  - Plain GPL-3.0 + Commons Clause (open source with explicit "no selling" rider)
+- **Also needed:** LICENSE file in repo root, copyright header convention, README badge, and potentially a trademark notice for the "OpenH2O" name (state trademark filing is ~$70)
+- **Decision required:** Which license best fits "free for public agencies, hostile to commercial capture"
 
 ## Closed
 
