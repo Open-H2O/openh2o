@@ -1,0 +1,26 @@
+{% if items %}
+<div class="card-grid">
+  {% for item in items %}
+  <div class="card-raised" style="padding: var(--space-md);">
+    <div class="row-start" style="gap: var(--space-sm); margin-bottom: var(--space-xs);">
+      {% if item.type == "well" %}
+      <span class="badge badge-blue">Well</span>
+      {% elif item.type == "diversion" %}
+      <span class="badge badge-teal">Diversion</span>
+      {% elif item.type == "recharge" %}
+      <span class="badge badge-green">Recharge</span>
+      {% endif %}
+      <span class="text-sm text-tertiary">
+        {% if item.created_at %}{{ item.created_at|date:"M j, Y" }}{% endif %}
+      </span>
+    </div>
+    <h3 class="text-base" style="margin: 0; font-weight: 600;">{{ item.name }}</h3>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <p class="text-secondary">No infrastructure found{% if query %} matching "{{ query }}"{% endif %}.</p>
+  <a href="{% url 'infrastructure:add' %}" class="btn-secondary" style="margin-top: var(--space-md);">+ Add your first infrastructure</a>
+</div>
+{% endif %}

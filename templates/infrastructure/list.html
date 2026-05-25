@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Infrastructure - OpenH2O{% endblock %}
+{% block page_title %}Infrastructure{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span class="breadcrumb-current">Infrastructure</span>
+  </nav>
+  <p class="page-description">All wells, diversions, recharge sites, and storage across your service area.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+
+  <div class="row-between">
+    <div class="search-bar" style="flex: 1; max-width: 400px;">
+      <input type="search" name="q" value="{{ query }}"
+             placeholder="Search by name..."
+             hx-get="{% url 'infrastructure:list' %}"
+             hx-trigger="input changed delay:300ms, search"
+             hx-target="#infra-results"
+             hx-push-url="true"
+             class="input-field">
+    </div>
+    <a href="{% url 'infrastructure:add' %}" class="btn-primary">+ Add Infrastructure</a>
+  </div>
+
+  <div id="infra-results">
+    {% include "infrastructure/partials/_list_results.html" %}
+  </div>
+
+</div>
+{% endblock %}

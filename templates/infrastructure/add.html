@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}Add Infrastructure - OpenH2O{% endblock %}
+{% block page_title %}Add Infrastructure{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'infrastructure:list' %}">Infrastructure</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Add</span>
+  </nav>
+  <p class="page-description">Add a well, diversion, storage, or recharge site with map placement or file upload.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<form method="post" action="{% url 'infrastructure:add' %}" id="infra-form">
+  {% csrf_token %}
+
+  {% if error %}
+  <div class="card-raised" style="border-left: 3px solid var(--furnace-400); padding: var(--space-md); margin-bottom: var(--space-lg);">
+    <p class="text-base" style="margin: 0; color: var(--furnace-400);">{{ error }}</p>
+  </div>
+  {% endif %}
+
+  <div class="map-form-layout">
+
+    <!-- LEFT: Form fields -->
+    <div class="page-stack">
+
+      <!-- Type selector -->
+      <div class="card-raised">
+        <h2 class="card-header-ruled">Infrastructure Type</h2>
+        <div class="infra-type-grid">
+          <label class="infra-type-card" data-type="well">
+            <input type="radio" name="infra_type" value="well" checked>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 2v4"/><path d="M12 18v4"/>
+              <path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/>
+              <path d="M2 12h4"/><path d="M18 12h4"/>
+            </svg>
+            <span class="infra-type-label">Groundwater Well</span>
+            <span class="infra-type-desc">Production, monitoring, or domestic well</span>
+          </label>
+          <label class="infra-type-card" data-type="diversion">
+            <input type="radio" name="infra_type" value="diversion">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <span class="infra-type-label">Surface Water Diversion</span>
+            <span class="infra-type-desc">Point of diversion from stream or canal</span>
+          </label>
+          <label class="infra-type-card" data-type="storage">
+            <input type="radio" name="infra_type" value="storage">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="6" width="20" height="12" rx="2"/>
+              <path d="M12 6v12"/><path d="M2 12h20"/>
+            </svg>
+            <span class="infra-type-label">Storage Pond / Tank</span>
+            <span class="infra-type-desc">Surface water storage facility</span>
+          </label>
+          <label class="infra-type-card" data-type="recharge_site">
+            <input type="radio" name="infra_type" value="recharge_site">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+            <span class="infra-type-label">Recharge Site</span>
+            <span class="infra-type-desc">Spreading basin, injection, or ASR well</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Common fields -->
+      <div class="card-raised">
+        <h2 class="card-header-ruled">Details</h2>
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="field-label" for="name">Name</label>
+            <input type="text" id="name" name="name" required class="input-field" placeholder="e.g. Johnson Ranch Well #3">
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="status">Status</label>
+            <select id="status" name="status" class="input-field">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="proposed">Proposed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="notes">Notes</label>
+            <textarea id="notes" name="notes" class="input-field" rows="3" placeholder="Optional notes..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Type-specific fields -->
+      <div class="card-raised" id="fields-well">
+        <h2 class="card-header-ruled">Well Details</h2>
+        <div class="form-stack">
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="depth_ft">Depth (ft)</label>
+              <input type="number" id="depth_ft" name="depth_ft" step="0.01" class="input-field" placeholder="e.g. 350">
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="capacity_gpm">Capacity (gpm)</label>
+              <input type="number" id="capacity_gpm" name="capacity_gpm" step="0.01" class="input-field" placeholder="e.g. 500">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="owner_name">Owner Name</label>
+            <input type="text" id="owner_name" name="owner_name" class="input-field" placeholder="Property or well owner">
+          </div>
+        </div>
+      </div>
+
+      <div class="card-raised" id="fields-diversion" style="display: none;">
+        <h2 class="card-header-ruled">Diversion Details</h2>
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="field-label" for="stream_name">Stream Name</label>
+            <input type="text" id="stream_name" name="stream_name" class="input-field" placeholder="e.g. Merced River">
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="max_rate_cfs">Max Rate (cfs)</label>
+            <input type="number" id="max_rate_cfs" name="max_rate_cfs" step="0.0001" class="input-field" placeholder="e.g. 2.5">
+          </div>
+        </div>
+      </div>
+
+      <div class="card-raised" id="fields-storage" style="display: none;">
+        <h2 class="card-header-ruled">Storage Details</h2>
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="field-label" for="storage_type">Storage Type</label>
+            <select id="storage_type" name="storage_type" class="input-field">
+              <option value="storage_pond">Storage Pond</option>
+              <option value="storage_tank">Storage Tank</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="capacity_af_storage">Capacity (acre-feet)</label>
+            <input type="number" id="capacity_af_storage" name="capacity_acre_feet" step="0.0001" class="input-field" placeholder="e.g. 120">
+          </div>
+        </div>
+      </div>
+
+      <div class="card-raised" id="fields-recharge_site" style="display: none;">
+        <h2 class="card-header-ruled">Recharge Site Details</h2>
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="field-label" for="site_type">Site Type</label>
+            <select id="site_type" name="site_type" class="input-field">
+              <option value="spreading_basin">Spreading Basin</option>
+              <option value="injection_well">Injection Well</option>
+              <option value="streambed">Streambed</option>
+              <option value="asr_well">ASR Well</option>
+            </select>
+          </div>
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="capacity_af_recharge">Capacity (acre-feet)</label>
+              <input type="number" id="capacity_af_recharge" name="capacity_acre_feet" step="0.0001" class="input-field" placeholder="e.g. 500">
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="operator">Operator</label>
+              <input type="text" id="operator" name="operator" class="input-field" placeholder="Operating entity">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parcel linkage -->
+      <div class="card-raised">
+        <details class="parcel-link-section">
+          <summary class="card-header-ruled" style="cursor: pointer; list-style: none;">
+            <span>Link to Parcel</span>
+            <span class="text-sm text-tertiary" id="parcel-status">(optional)</span>
+          </summary>
+          <div class="form-stack" style="margin-top: var(--space-md);">
+            <div class="form-group">
+              <label class="field-label">Search existing parcel</label>
+              <input type="search" placeholder="Parcel number or owner name..."
+                     hx-get="{% url 'infrastructure:parcel_search' %}"
+                     hx-trigger="input changed delay:300ms"
+                     hx-target="#parcel-results"
+                     name="q"
+                     class="input-field">
+              <div id="parcel-results"></div>
+            </div>
+            <div class="row-start" style="gap: var(--space-sm);">
+              <button type="button" id="btn-parcel-map" class="btn-secondary btn-sm">Select on map</button>
+              <button type="button" id="btn-parcel-draw" class="btn-secondary btn-sm">Draw new parcel</button>
+            </div>
+            <input type="hidden" name="parcel_id" id="parcel_id" value="">
+            <div id="parcel-selected"></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Submit -->
+      <div class="form-footer-ruled">
+        <a href="{% url 'infrastructure:list' %}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary" id="submit-btn">Create Well</button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Map -->
+    <div class="page-stack">
+      <div class="card-raised" style="padding: 0; overflow: hidden; position: sticky; top: var(--space-lg);">
+        <!-- Draw toolbar -->
+        <div class="draw-toolbar">
+          <button type="button" class="draw-btn active" id="draw-point" title="Place point">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>
+            Point
+          </button>
+          <button type="button" class="draw-btn" id="draw-polygon" title="Draw polygon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 18 21 6 21 2 8.5"/></svg>
+            Polygon
+          </button>
+          <button type="button" class="draw-btn" id="draw-clear" title="Clear drawing">
+            Clear
+          </button>
+          <button type="button" class="draw-btn" id="draw-finish" title="Finish polygon" style="display: none;">
+            Finish
+          </button>
+        </div>
+        <!-- Map container -->
+        <div id="infra-map" style="height: 480px; width: 100%;"></div>
+        <!-- Coordinate display -->
+        <div class="coord-display" id="coord-display">
+          <span class="text-xs text-tertiary">Click map to place geometry</span>
+        </div>
+      </div>
+
+      <!-- Upload tab -->
+      <div class="card-raised">
+        <h2 class="card-header-ruled">Or Upload File</h2>
+        <div class="upload-zone" id="upload-zone"
+             hx-post="{% url 'infrastructure:upload' %}"
+             hx-encoding="multipart/form-data"
+             hx-target="#upload-results"
+             hx-trigger="change from:#upload-file">
+          {% csrf_token %}
+          <input type="file" id="upload-file" name="file" accept=".geojson,.json,.zip,.kml" style="display: none;">
+          <div class="upload-zone-content" onclick="document.getElementById('upload-file').click()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="text-sm text-secondary">Drop .geojson, .zip (shapefile), or .kml</span>
+            <span class="text-xs text-tertiary">or click to browse</span>
+          </div>
+        </div>
+        <div id="upload-results"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hidden geometry inputs -->
+  <input type="hidden" name="geometry_json" id="geometry_json" value="">
+</form>
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(function() {
+  var currentType = 'well';
+  var drawMode = 'point';
+  var marker = null;
+  var vertices = [];
+
+  // Type field visibility
+  var typeFields = {
+    well: document.getElementById('fields-well'),
+    diversion: document.getElementById('fields-diversion'),
+    storage: document.getElementById('fields-storage'),
+    recharge_site: document.getElementById('fields-recharge_site'),
+  };
+
+  var typeRadios = document.querySelectorAll('input[name="infra_type"]');
+  typeRadios.forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      currentType = this.value;
+      Object.keys(typeFields).forEach(function(k) {
+        typeFields[k].style.display = k === currentType ? '' : 'none';
+      });
+      if (currentType === 'well' || currentType === 'diversion') {
+        setDrawMode('point');
+      } else {
+        setDrawMode('polygon');
+      }
+      var names = { well: 'Well', diversion: 'Diversion', storage: 'Storage', recharge_site: 'Recharge Site' };
+      document.getElementById('submit-btn').textContent = 'Create ' + names[currentType];
+      document.querySelectorAll('.infra-type-card').forEach(function(card) {
+        card.classList.toggle('active', card.dataset.type === currentType);
+      });
+    });
+  });
+  document.querySelector('.infra-type-card[data-type="well"]').classList.add('active');
+
+  // Initialize map
+  var map = new maplibregl.Map({
+    container: 'infra-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    zoom: 8,
+    center: [-119.5, 37.3],
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+  map.on('load', function() {
+    map.addSource('drawing', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'drawing-line', type: 'line', source: 'drawing',
+      paint: { 'line-color': '#E4A317', 'line-width': 2, 'line-dasharray': [4, 2] }
+    });
+    map.addLayer({
+      id: 'drawing-vertices', type: 'circle', source: 'drawing',
+      filter: ['==', '$type', 'Point'],
+      paint: { 'circle-radius': 5, 'circle-color': '#E4A317', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+    });
+
+    map.addSource('finished', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'finished-fill', type: 'fill', source: 'finished',
+      paint: { 'fill-color': '#1B7FAF', 'fill-opacity': 0.25 }
+    });
+    map.addLayer({
+      id: 'finished-line', type: 'line', source: 'finished',
+      paint: { 'line-color': '#3DB4E0', 'line-width': 2 }
+    });
+
+    map.addSource('upload-preview', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'upload-fill', type: 'fill', source: 'upload-preview',
+      filter: ['==', '$type', 'Polygon'],
+      paint: { 'fill-color': '#E4A317', 'fill-opacity': 0.15 }
+    });
+    map.addLayer({
+      id: 'upload-line', type: 'line', source: 'upload-preview',
+      paint: { 'line-color': '#E4A317', 'line-width': 2, 'line-dasharray': [3, 2] }
+    });
+    map.addLayer({
+      id: 'upload-point', type: 'circle', source: 'upload-preview',
+      filter: ['==', '$type', 'Point'],
+      paint: { 'circle-radius': 6, 'circle-color': '#E4A317', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+    });
+  });
+
+  // Map click handler
+  map.on('click', function(e) {
+    if (drawMode === 'point') {
+      placePoint(e.lngLat);
+    } else if (drawMode === 'polygon') {
+      addVertex(e.lngLat);
+    }
+  });
+
+  function placePoint(lngLat) {
+    if (marker) marker.remove();
+    marker = new maplibregl.Marker({ color: '#E4A317', draggable: true })
+      .setLngLat(lngLat)
+      .addTo(map);
+    marker.on('dragend', function() {
+      var pos = marker.getLngLat();
+      updateGeometry({ type: 'Point', coordinates: [pos.lng, pos.lat] });
+      updateCoordDisplay(pos.lng, pos.lat);
+    });
+    updateGeometry({ type: 'Point', coordinates: [lngLat.lng, lngLat.lat] });
+    updateCoordDisplay(lngLat.lng, lngLat.lat);
+  }
+
+  function addVertex(lngLat) {
+    vertices.push([lngLat.lng, lngLat.lat]);
+    updateDrawing();
+    updateCoordDisplay(lngLat.lng, lngLat.lat, vertices.length + ' vertices');
+    document.getElementById('draw-finish').style.display = vertices.length >= 3 ? '' : 'none';
+  }
+
+  function updateDrawing() {
+    var features = [];
+    vertices.forEach(function(v) {
+      features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: v }, properties: {} });
+    });
+    if (vertices.length >= 2) {
+      features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: vertices }, properties: {} });
+    }
+    map.getSource('drawing').setData({ type: 'FeatureCollection', features: features });
+  }
+
+  function finishPolygon() {
+    if (vertices.length < 3) return;
+    var ring = vertices.concat([vertices[0]]);
+    var geojson = { type: 'Polygon', coordinates: [ring] };
+    map.getSource('finished').setData({ type: 'Feature', geometry: geojson, properties: {} });
+    map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
+    updateGeometry(geojson);
+    document.getElementById('draw-finish').style.display = 'none';
+    var coordEl = document.getElementById('coord-display');
+    coordEl.textContent = vertices.length + ' vertices, polygon complete';
+    vertices = [];
+  }
+
+  function clearDrawing() {
+    if (marker) { marker.remove(); marker = null; }
+    vertices = [];
+    map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
+    map.getSource('finished').setData({ type: 'FeatureCollection', features: [] });
+    map.getSource('upload-preview').setData({ type: 'FeatureCollection', features: [] });
+    document.getElementById('geometry_json').value = '';
+    document.getElementById('draw-finish').style.display = 'none';
+    document.getElementById('coord-display').textContent = 'Click map to place geometry';
+  }
+
+  function setDrawMode(mode) {
+    drawMode = mode;
+    document.getElementById('draw-point').classList.toggle('active', mode === 'point');
+    document.getElementById('draw-polygon').classList.toggle('active', mode === 'polygon');
+    map.getCanvas().style.cursor = 'crosshair';
+  }
+
+  function updateGeometry(geojson) {
+    document.getElementById('geometry_json').value = JSON.stringify(geojson);
+  }
+
+  function updateCoordDisplay(lng, lat, extra) {
+    var text = lng.toFixed(6) + ', ' + lat.toFixed(6);
+    if (extra) text += ' (' + extra + ')';
+    document.getElementById('coord-display').textContent = text;
+  }
+
+  // Toolbar buttons
+  document.getElementById('draw-point').addEventListener('click', function() { setDrawMode('point'); });
+  document.getElementById('draw-polygon').addEventListener('click', function() { setDrawMode('polygon'); });
+  document.getElementById('draw-clear').addEventListener('click', clearDrawing);
+  document.getElementById('draw-finish').addEventListener('click', finishPolygon);
+
+  // Double-click finishes polygon
+  map.on('dblclick', function(e) {
+    if (drawMode === 'polygon' && vertices.length >= 3) {
+      e.preventDefault();
+      finishPolygon();
+    }
+  });
+
+  // Upload results handler
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.target && evt.detail.target.id === 'upload-results') {
+      try {
+        var resp = JSON.parse(evt.detail.xhr.responseText);
+        if (resp.features && resp.features.length > 0) {
+          var fc = { type: 'FeatureCollection', features: resp.features.map(function(f) {
+            return { type: 'Feature', geometry: f.geometry, properties: f.properties || {} };
+          })};
+          map.getSource('upload-preview').setData(fc);
+          var first = resp.features[0].geometry;
+          updateGeometry(first);
+          var msgEl = document.getElementById('upload-results');
+          msgEl.textContent = resp.features.length + ' feature(s) loaded. Using first feature as geometry.';
+          // Fit to uploaded features
+          var bounds = new maplibregl.LngLatBounds();
+          fc.features.forEach(function(f) {
+            if (f.geometry.type === 'Point') {
+              bounds.extend(f.geometry.coordinates);
+            } else if (f.geometry.coordinates) {
+              var flat = JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*/g);
+              if (flat) {
+                for (var i = 0; i < flat.length - 1; i += 2) {
+                  bounds.extend([parseFloat(flat[i]), parseFloat(flat[i+1])]);
+                }
+              }
+            }
+          });
+          if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, maxZoom: 14 });
+        } else if (resp.error) {
+          document.getElementById('upload-results').textContent = resp.error;
+        }
+      } catch(ex) {}
+    }
+  });
+
+  // Drag and drop on upload zone
+  var zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', function() { zone.classList.remove('drag-over'); });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    var files = e.dataTransfer.files;
+    if (files.length > 0) {
+      document.getElementById('upload-file').files = files;
+      document.getElementById('upload-file').dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+})();
+</script>
+{% endblock %}
