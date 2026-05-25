@@ -148,8 +148,14 @@ class Command(BaseCommand):
             RechargeSite.objects.filter(name__startswith="Terminus ").delete()
 
             # Monitored stations (Kaweah-specific)
+            kaweah_station_ids = [
+                "TRM", "KWR", "VIS",  # CDEC
+                "11210100", "11208730",  # USGS
+                "54",  # CIMIS
+                "KAW-GWL-01", "KAW-GWL-02",  # DWR WDL
+            ]
             MonitoredStation.objects.filter(
-                external_station_id__startswith="KAW-GWL-"
+                external_station_id__in=kaweah_station_ids
             ).delete()
 
             # Parcels and zones (cascade handles ParcelZone)
