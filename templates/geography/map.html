@@ -199,20 +199,7 @@ var MAP_CONFIG = {
                    '<a href="/datasync/stations/' + p.pk + '/" style="color:#E4A317">View details →</a>';
         }
     },
-    legend: [
-        {
-            title: 'Features',
-            items: [
-                { label: 'Boundary', swatch: 'line', color: '#E4A317' },
-                { label: 'GSA Zones', swatch: 'fill', color: '#40916c' },
-                { label: 'Parcels', swatch: 'fill', color: '#1B7FAF' },
-                { label: 'Wells', swatch: 'dot', color: '#E4A317' },
-                { label: 'Points of Diversion', swatch: 'dot', color: '#4ECDC4' },
-                { label: 'Recharge Sites', swatch: 'dot', color: '#7B68EE' },
-                { label: 'Monitoring Stations', swatch: 'dot', color: '#FF6B6B' }
-            ]
-        }
-    ]
+    legend: []
 };
 </script>
 <script src="{% static 'js/map-engine.js' %}"></script>
