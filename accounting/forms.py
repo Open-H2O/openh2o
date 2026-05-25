@@ -4,34 +4,20 @@ from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount, Wat
 from parcels.models import ParcelLedger
 
 
-FORM_INPUT_STYLE = (
-    "background: var(--color-elevated); border: 1px solid var(--color-border);"
-    " border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md);"
-    " color: var(--color-text-primary); width: 100%; font-family: var(--font-display);"
-)
-
-FORM_SELECT_STYLE = (
-    "background: var(--color-elevated); border: 1px solid var(--color-border);"
-    " border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md);"
-    " color: var(--color-text-primary); width: 100%; font-family: var(--font-display);"
-    " cursor: pointer;"
-)
-
-
 class ReportingPeriodForm(forms.ModelForm):
     class Meta:
         model = ReportingPeriod
         fields = ["name", "start_date", "end_date", "notes"]
         widgets = {
-            "name": forms.TextInput(attrs={"style": FORM_INPUT_STYLE}),
+            "name": forms.TextInput(attrs={"class": "form-input"}),
             "start_date": forms.DateInput(
-                attrs={"type": "date", "style": FORM_INPUT_STYLE}
+                attrs={"class": "form-input", "type": "date"}
             ),
             "end_date": forms.DateInput(
-                attrs={"type": "date", "style": FORM_INPUT_STYLE}
+                attrs={"class": "form-input", "type": "date"}
             ),
             "notes": forms.Textarea(
-                attrs={"rows": 3, "style": FORM_INPUT_STYLE + " resize: vertical;"}
+                attrs={"rows": 3, "class": "form-textarea"}
             ),
         }
 
@@ -48,15 +34,15 @@ class AllocationPlanForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "name": forms.TextInput(attrs={"style": FORM_INPUT_STYLE}),
-            "zone": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
-            "water_type": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
-            "reporting_period": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+            "name": forms.TextInput(attrs={"class": "form-input"}),
+            "zone": forms.Select(attrs={"class": "form-select"}),
+            "water_type": forms.Select(attrs={"class": "form-select"}),
+            "reporting_period": forms.Select(attrs={"class": "form-select"}),
             "allocation_acre_feet": forms.NumberInput(
-                attrs={"step": "0.0001", "style": FORM_INPUT_STYLE}
+                attrs={"step": "0.0001", "class": "form-input"}
             ),
             "notes": forms.Textarea(
-                attrs={"rows": 3, "style": FORM_INPUT_STYLE + " resize: vertical;"}
+                attrs={"rows": 3, "class": "form-textarea"}
             ),
         }
 
@@ -73,26 +59,26 @@ class WaterAccountForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "account_number": forms.TextInput(attrs={"style": FORM_INPUT_STYLE}),
-            "name": forms.TextInput(attrs={"style": FORM_INPUT_STYLE}),
-            "status": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
-            "contact_name": forms.TextInput(attrs={"style": FORM_INPUT_STYLE}),
-            "contact_email": forms.EmailInput(attrs={"style": FORM_INPUT_STYLE}),
+            "account_number": forms.TextInput(attrs={"class": "form-input"}),
+            "name": forms.TextInput(attrs={"class": "form-input"}),
+            "status": forms.Select(attrs={"class": "form-select"}),
+            "contact_name": forms.TextInput(attrs={"class": "form-input"}),
+            "contact_email": forms.EmailInput(attrs={"class": "form-input"}),
             "notes": forms.Textarea(
-                attrs={"rows": 3, "style": FORM_INPUT_STYLE + " resize: vertical;"}
+                attrs={"rows": 3, "class": "form-textarea"}
             ),
         }
 
 
 class CsvUploadForm(forms.Form):
     file = forms.FileField(
-        widget=forms.ClearableFileInput(attrs={"accept": ".csv", "style": FORM_INPUT_STYLE})
+        widget=forms.ClearableFileInput(attrs={"accept": ".csv", "class": "form-input"})
     )
     reporting_period = forms.ModelChoiceField(
         queryset=ReportingPeriod.objects.order_by("-start_date"),
         required=False,
         empty_label="No period (unassigned)",
-        widget=forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
     dry_run = forms.BooleanField(required=False, initial=False)
 
@@ -111,20 +97,20 @@ class ParcelLedgerForm(forms.ModelForm):
             "reporting_period",
         ]
         widgets = {
-            "parcel": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+            "parcel": forms.Select(attrs={"class": "form-select"}),
             "transaction_date": forms.DateInput(
-                attrs={"type": "date", "style": FORM_INPUT_STYLE}
+                attrs={"class": "form-input", "type": "date"}
             ),
             "effective_date": forms.DateInput(
-                attrs={"type": "date", "style": FORM_INPUT_STYLE}
+                attrs={"class": "form-input", "type": "date"}
             ),
             "amount_acre_feet": forms.NumberInput(
-                attrs={"step": "0.0001", "style": FORM_INPUT_STYLE}
+                attrs={"step": "0.0001", "class": "form-input"}
             ),
-            "water_type": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
-            "source_type": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+            "water_type": forms.Select(attrs={"class": "form-select"}),
+            "source_type": forms.Select(attrs={"class": "form-select"}),
             "description": forms.Textarea(
-                attrs={"rows": 3, "style": FORM_INPUT_STYLE + " resize: vertical;"}
+                attrs={"rows": 3, "class": "form-textarea"}
             ),
-            "reporting_period": forms.Select(attrs={"style": FORM_SELECT_STYLE}),
+            "reporting_period": forms.Select(attrs={"class": "form-select"}),
         }
