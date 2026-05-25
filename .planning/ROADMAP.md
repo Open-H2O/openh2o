@@ -158,8 +158,10 @@ Plans:
 **Research topics**: DWR LightBox FeatureServer pagination (1K-2K record limits), USGS NLDI basin delineation API, NHDPlus HR clipping strategies, CNRA PLSS data size/format
 **Plans**: TBD
 
-Plans:
-- [ ] 17-01: TBD (run /gsd:plan-phase 17 to break down)
+Plans: 3
+- [x] 17-01: Auto-populate skeleton + ArcGIS REST client + Bulletin 118 basin step
+- [ ] 17-02: DWR LightBox parcel auto-population with pagination
+- [ ] 17-03: USGS NLDI flowlines + static county boundary fixtures
 
 #### Phase 18: Telemetry Discovery & OpenET
 
@@ -225,8 +227,8 @@ Plans:
 | 13.1 AI Operator Guide & Onboarding | v1.1 | 0/? | Deferred → Phase 20 | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Deferred → Phase 21 | - |
 | 15. Branding & About Page | v1.2 | 1/1 | Complete | 2026-05-25 |
-| 16. Tie Lines & Source Fractions | v1.2 | 0/1 | Not started | - |
-| 17. Static GIS & Auto-Populate Engine | v1.2 | 0/? | Not started | - |
+| 16. Tie Lines & Source Fractions | v1.2 | 1/1 | Complete | 2026-05-25 |
+| 17. Static GIS & Auto-Populate Engine | v1.2 | 1/3 | In progress | - |
 | 18. Telemetry Discovery & OpenET | v1.2 | 0/? | Not started | - |
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 0/? | Not started | - |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |

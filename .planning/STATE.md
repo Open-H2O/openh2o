@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 16 of 21 (Tie Lines & Source Fractions)
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-05-25 - Completed 16-01-PLAN.md
+Phase: 17 of 21 (Static GIS & Auto-Populate Engine)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-05-25 - Completed 17-01-PLAN.md
 
-Progress: █████████░ 70%
+Progress: █████████░ 73%
 
 ## Performance Metrics
 
@@ -54,5 +54,5 @@ None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Completed 16-01-PLAN.md (Phase 16 complete, tie lines + fraction weighting shipped)
+Stopped at: Completed 17-01-PLAN.md (auto_populate skeleton + ArcGIS client + B118 basins)
 Resume file: None
