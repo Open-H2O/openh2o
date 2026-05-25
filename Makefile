@@ -9,7 +9,7 @@ EXEC    = $(COMPOSE) exec web python manage.py
 .PHONY: help up down build logs shell dbshell migrate makemigrations \
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
-        seed-well-types demo flush-demo check test fresh
+        seed-well-types demo flush-demo kaweah flush-kaweah check test fresh
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -90,6 +90,12 @@ demo: ## Load demo data (fictional Demo Valley GSA)
 flush-demo: ## Delete and reload demo data
 	$(EXEC) seed_demo_data --flush
 
+kaweah: ## Load Kaweah Subbasin demo data (real basin data)
+	$(EXEC) seed_kaweah
+
+flush-kaweah: ## Delete and reload Kaweah data
+	$(EXEC) seed_kaweah --flush
+
 # ---------------------------------------------------------------------------
 # Health & Maintenance
 # ---------------------------------------------------------------------------
@@ -112,5 +118,6 @@ fresh: down ## Full reset: destroy volumes, rebuild, migrate, seed, demo
 	$(EXEC) migrate
 	$(EXEC) seed_data
 	$(EXEC) seed_demo_data
+	$(EXEC) seed_kaweah
 	@echo ""
 	@echo "Fresh environment ready. Run 'make createsuperuser' to create an admin."
