@@ -50,7 +50,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 10-01: TBD (run /gsd:plan-phase 10 to break down)
+- [x] 10-01: Kaweah Subbasin seed data with real DWR boundaries and Tulare County parcels
 
 #### Phase 11: Merced Subbasin Demo Data
 
@@ -106,7 +106,7 @@ Plans:
 | 7. Health Check and Maintenance | v1.0 | 1/1 | Complete | 2026-05-24 |
 | 8. Deploy, Polish, and Handoff | v1.0 | 3/3 | Complete | 2026-05-24 |
 | 9. Schema Fixes & Test Infrastructure | v1.1 | 1/1 | Complete | 2026-05-24 |
-| 10. Kaweah Subbasin Demo Data | v1.1 | 0/? | Not started | - |
+| 10. Kaweah Subbasin Demo Data | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 11. Merced Subbasin Demo Data | v1.1 | 0/? | Not started | - |
 | 12. UI Quality Sweep | v1.1 | 0/? | Not started | - |
 | 13. In-App Documentation | v1.1 | 0/? | Not started | - |
