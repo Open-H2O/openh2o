@@ -1580,6 +1580,172 @@ a { color: inherit; }
 
 /* -- Responsive ---------------------------------------------------------- */
 
+/* -- Stat grid 4-col ---------------------------------------------------- */
+
+.stat-grid-4col {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+/* -- Sparklines ---------------------------------------------------------- */
+
+.sparkline-container {
+    display: inline-block;
+    width: 80px;
+    height: 24px;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* -- Station card grid --------------------------------------------------- */
+
+.station-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-md);
+}
+
+.station-card-link {
+    transition: border-color 150ms, box-shadow 150ms;
+}
+
+.station-card-link:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-pop-sm);
+}
+
+/* -- Freshness dots ------------------------------------------------------ */
+
+.freshness-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.freshness-dot--fresh  { background: #22c55e; }
+.freshness-dot--stale  { background: #f59e0b; }
+.freshness-dot--dead   { background: #ef4444; }
+
+/* -- Wizard step list ---------------------------------------------------- */
+
+.wizard-step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    padding-left: var(--space-xl);
+}
+
+.wizard-step-list::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: var(--color-border);
+}
+
+.wizard-step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: var(--space-sm) 0;
+    position: relative;
+}
+
+.wizard-step-icon {
+    position: absolute;
+    left: calc(-1 * var(--space-xl) + 2px);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.wizard-step--complete .wizard-step-icon {
+    background: var(--forest-400);
+    color: var(--color-base);
+}
+
+.wizard-step--active .wizard-step-icon {
+    background: var(--color-gold);
+    color: var(--color-base);
+}
+
+.wizard-step--pending .wizard-step-icon {
+    background: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-tertiary);
+}
+
+.wizard-step-body {
+    flex: 1;
+}
+
+.wizard-step-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.wizard-step--pending .wizard-step-name {
+    color: var(--color-text-tertiary);
+}
+
+.wizard-step-count {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 1px;
+}
+
+/* -- CSS spinner --------------------------------------------------------- */
+
+.spinner-sm {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* -- Upload zone --------------------------------------------------------- */
+
+.upload-zone {
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-xl);
+    text-align: center;
+    color: var(--color-text-tertiary);
+    transition: border-color 150ms, background 150ms;
+    cursor: pointer;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+    border-color: var(--color-gold);
+    background: var(--color-gold-muted);
+    color: var(--color-text-secondary);
+}
+
+/* -- Responsive: stat-grid-4col ----------------------------------------- */
+
 @media (max-width: 1023px) {
     .page-grid-2col {
         grid-template-columns: 1fr;
@@ -1592,10 +1758,22 @@ a { color: inherit; }
     .stat-grid-3col {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    .stat-grid-4col {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 767px) {
     .stat-grid-2col {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-grid-4col {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .station-card-grid {
         grid-template-columns: 1fr;
     }
 

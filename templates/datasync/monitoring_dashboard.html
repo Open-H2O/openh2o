@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoring Dashboard - OpenH2O{% endblock %}
+{% block page_title %}Monitoring Dashboard{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'datasync:station_list' %}">Data Sync</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Monitoring Dashboard</span>
+  </nav>
+  <p class="page-description">Station health, data freshness, and sync status across all active data sources. Refreshes every 60 seconds.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div
+  id="monitoring-content"
+  hx-get="{% url 'datasync:monitoring_dashboard' %}"
+  hx-trigger="every 60s"
+  hx-target="#monitoring-content"
+  hx-swap="innerHTML"
+>
+  {% include "datasync/partials/_monitoring_content.html" %}
+</div>
+{% endblock %}
