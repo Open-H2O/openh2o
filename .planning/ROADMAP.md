@@ -8,7 +8,7 @@ Stand up an AI-deployable water accounting platform from scratch. Start with Doc
 
 - ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-05-24)
 - 🚧 **v1.1 Production Polish** — Phases 9-14 (in progress)
-- 📋 **v1.2 Enhancement Suite** — Phases 15-19 (planned)
+- 📋 **v1.2 Enhancement Suite** — Phases 15-21 (planned)
 
 ## Completed Milestones
 
@@ -113,7 +113,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 13.1-01: TBD (run /gsd:plan-phase 13.1 to break down)
+- [ ] 13.1-01: DEFERRED → Phase 20 in v1.2 (AI Operator Guide executes after auto-populate engine is built)
 
 #### Phase 14: Merced Subbasin Demo Data
 
@@ -124,7 +124,7 @@ Plans:
 **Plans**: 1
 
 Plans:
-- [ ] 14-01: Merced Subbasin seed data with real DWR boundaries and Merced County parcels
+- [ ] 14-01: DEFERRED → Phase 21 in v1.2 (Merced becomes automated deployment test case using auto-populate engine)
 
 ### 📋 v1.2 Enhancement Suite (Planned)
 
@@ -182,6 +182,27 @@ Plans:
 Plans:
 - [ ] 19-01: TBD (run /gsd:plan-phase 19 to break down)
 
+#### Phase 20: AI Operator Guide (DEFERRED from v1.1 Phase 13.1)
+
+**Goal**: Rewrite CLAUDE.md so a fresh Claude Code instance can deploy the platform and run the auto-populate setup wizard autonomously. Document the full onboarding flow that the setup wizard (Phase 19) enables.
+**Depends on**: Phase 19
+**Research**: Unlikely (auto-populate engine and setup wizard already built by this point)
+**Plans**: 1
+
+Plans:
+- [ ] 20-01: TBD (run /gsd:plan-phase 20 to break down)
+
+#### Phase 21: Merced Automated Deployment Test (DEFERRED from v1.1 Phase 14)
+
+**Goal**: Use Merced Subbasin as the end-to-end test case for automated deployment. Run the setup wizard with a Merced GSA boundary, verify auto-populated parcels/basins/stations/NHD, validate OpenET integration, and confirm the full platform works with real data pulled entirely through the auto-populate engine.
+**Depends on**: Phase 20
+**Research**: Likely (Merced-specific boundary IDs, station coverage verification)
+**Research topics**: Merced GSA boundary ID in DWR SGMA portal, expected parcel/station counts for validation
+**Plans**: 1
+
+Plans:
+- [ ] 21-01: TBD (run /gsd:plan-phase 21 to break down)
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -201,10 +222,12 @@ Plans:
 | 12. In-App Documentation | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 12.1 VanderDev Design Alignment | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 13. Cron, Health, & Final Polish | v1.1 | 1/1 | Complete | 2026-05-25 |
-| 13.1 AI Operator Guide & Onboarding | v1.1 | 0/? | Not started | - |
-| 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |
+| 13.1 AI Operator Guide & Onboarding | v1.1 | 0/? | Deferred → Phase 20 | - |
+| 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Deferred → Phase 21 | - |
 | 15. Branding & About Page | v1.2 | 0/1 | Not started | - |
 | 16. Tie Lines & Source Fractions | v1.2 | 0/1 | Not started | - |
 | 17. Static GIS & Auto-Populate Engine | v1.2 | 0/? | Not started | - |
 | 18. Telemetry Discovery & OpenET | v1.2 | 0/? | Not started | - |
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 0/? | Not started | - |
+| 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
+| 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
