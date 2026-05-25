@@ -9,50 +9,33 @@
     <!-- Quick stats row -->
     <a href="{% url 'parcels:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Parcels</div>
-        <div class="dashboard-card-value" style="color: var(--color-gold);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="3" y1="9" x2="21" y2="9"/>
-                <line x1="9" y1="3" x2="9" y2="21"/>
-            </svg>
-        </div>
+        <div class="dashboard-card-value text-gold">{{ parcel_count }}</div>
         <div class="dashboard-card-sublabel">View all parcels</div>
     </a>
     <a href="{% url 'wells:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Wells</div>
-        <div class="dashboard-card-value" style="color: var(--color-blue-bright);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 2v4"/>
-                <path d="M12 18v4"/>
-                <path d="M4.93 4.93l2.83 2.83"/>
-                <path d="M16.24 16.24l2.83 2.83"/>
-                <path d="M2 12h4"/>
-                <path d="M18 12h4"/>
-            </svg>
-        </div>
+        <div class="dashboard-card-value text-blue">{{ well_count }}</div>
         <div class="dashboard-card-sublabel">View all wells</div>
     </a>
     <a href="{% url 'surface:water_rights_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Water Rights</div>
-        <div class="dashboard-card-value" style="color: var(--forest-500);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-        </div>
+        <div class="dashboard-card-value text-forest">{{ water_right_count }}</div>
         <div class="dashboard-card-sublabel">View water rights</div>
     </a>
     <a href="{% url 'recharge:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Recharge Sites</div>
-        <div class="dashboard-card-value" style="color: var(--reservoir-500);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-            </svg>
-        </div>
+        <div class="dashboard-card-value" style="color: var(--reservoir-500);">{{ recharge_site_count }}</div>
         <div class="dashboard-card-sublabel">View recharge sites</div>
+    </a>
+    <a href="{% url 'accounting:accounts_list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Water Accounts</div>
+        <div class="dashboard-card-value text-gold">{{ water_account_count }}</div>
+        <div class="dashboard-card-sublabel">View accounts</div>
+    </a>
+    <a href="{% url 'datasync:station_list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Monitoring Stations</div>
+        <div class="dashboard-card-value text-blue">{{ station_count }}</div>
+        <div class="dashboard-card-sublabel">View stations</div>
     </a>
 
     <!-- Welcome / status -->
@@ -61,7 +44,7 @@
         <div class="flex items-center gap-2 mt-sm">
             <span class="inline-block w-2 h-2 rounded-full" style="background: var(--color-gold);"></span>
             <span class="text-sm" style="color: var(--color-text-secondary);">
-                Stack is running &mdash; v0.1.0
+                System running
             </span>
         </div>
         {% if user.is_authenticated %}
