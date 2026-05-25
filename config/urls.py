@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
-from config.views import index
+from config.views import index, getting_started, glossary
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -16,6 +16,8 @@ urlpatterns = [
     path("datasync/", include("datasync.urls")),
     path("reporting/", include("reporting.urls")),
     path("health/", include("health.urls")),
+    path("help/getting-started/", getting_started, name="getting_started"),
+    path("help/glossary/", glossary, name="glossary"),
     path("", index, name="index"),
 ]
 
