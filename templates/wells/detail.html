@@ -12,6 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ well.name }}</span>
   </nav>
+  <p class="page-description">Well details, linked meters, and measurement history. Click editable fields to update.</p>
 </div>
 {% endblock %}
 
@@ -42,7 +43,10 @@
 
         <!-- Static field: well_registration_id -->
         <div class="field-group">
-          <div class="field-label">Registration ID</div>
+          <div class="field-label field-row">
+            Registration ID
+            {% include "partials/_help_tooltip.html" with label="State Well Number" text="The unique identifier assigned by DWR. Format: TxxN/RxxE-xxAxx (Township/Range/Section)." %}
+          </div>
           <div class="field-value-mono">{{ well.well_registration_id|default:"—" }}</div>
         </div>
 
@@ -55,8 +59,13 @@
         <!-- Editable fields -->
         {% for ef in editable_fields_with_values %}
         <div class="field-group">
-          <div class="field-label">
+          <div class="field-label field-row">
             {{ ef.label }}
+            {% if ef.name == "status" %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active wells are included in extraction reporting. Inactive wells are excluded." %}
+            {% elif ef.name == "total_depth_ft" or ef.name == "depth_ft" %}
+              {% include "partials/_help_tooltip.html" with label="Total Depth" text="Depth of the well bore in feet below ground surface." %}
+            {% endif %}
           </div>
           <div id="field-{{ ef.name }}" class="field-row">
             <span class="field-value" style="flex: 1;">

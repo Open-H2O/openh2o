@@ -12,6 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ parcel.parcel_number }}</span>
   </nav>
+  <p class="page-description">Parcel details and related data. Click any editable field to update it.</p>
 </div>
 {% endblock %}
 
@@ -49,8 +50,13 @@
         <!-- Editable fields -->
         {% for ef in editable_fields_with_values %}
         <div class="field-group">
-          <div class="field-label">
+          <div class="field-label field-row">
             {{ ef.label }}
+            {% if ef.name == "status" %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active parcels are included in water accounting. Inactive parcels are excluded from reports." %}
+            {% elif ef.name == "area_acres" %}
+              {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel geometry. Used for per-acre water budget calculations." %}
+            {% endif %}
           </div>
           <div id="field-{{ ef.name }}" class="field-row">
             <span class="field-value" style="flex: 1;">
