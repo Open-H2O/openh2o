@@ -3,7 +3,7 @@ Auto-populate geographic data for a boundary from public APIs.
 
 Steps:
   basins    — DWR Bulletin 118 groundwater basins (Zone records)
-  parcels   — LightBox parcel boundaries (not yet implemented)
+  parcels   — DWR LightBox statewide parcel boundaries (Parcel records)
   flowlines — NLDI flowlines (not yet implemented)
 
 Usage:
