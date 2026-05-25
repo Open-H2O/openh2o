@@ -9,7 +9,7 @@ Idempotent: skips creation if "Kaweah Subbasin" boundary already exists.
 All Kaweah-specific records use the "KAW-" prefix for targeted cleanup.
 """
 import random
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from django.contrib.gis.geos import MultiPolygon, Point, Polygon
@@ -471,7 +471,8 @@ class Command(BaseCommand):
             for month_offset in range(12):
                 month_num = ((10 + month_offset - 1) % 12) + 1  # Oct=10..Sep=9
                 year = 2024 if month_num >= 10 else 2025
-                reading_dt = datetime(year, month_num, 15, 12, 0, 0)
+                reading_dt = datetime(year, month_num, 15, 12, 0, 0,
+                                     tzinfo=timezone.utc)
 
                 # Seasonal pattern: higher May-Sep, lower Nov-Mar
                 if month_num in (5, 6, 7, 8, 9):
@@ -837,7 +838,10 @@ class Command(BaseCommand):
         random.shuffle(remaining_parcels)
         wap_count = 0
         for acct in accounts:
-            num_links = random.randint(3, min(5, len(remaining_parcels)))
+            if not remaining_parcels:
+                remaining_parcels = list(all_parcels)
+                random.shuffle(remaining_parcels)
+            num_links = random.randint(3, max(3, min(5, len(remaining_parcels))))
             for _ in range(num_links):
                 if not remaining_parcels:
                     remaining_parcels = list(all_parcels)
