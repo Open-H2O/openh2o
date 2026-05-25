@@ -16,9 +16,18 @@ from collections import OrderedDict
 
 from django.core.management.base import BaseCommand, CommandError
 
-from geography.models import Boundary
+from geography.models import Boundary, Zone
+from geography.services.arcgis import (
+    esri_polygon_to_geos,
+    query_by_boundary,
+)
 
 logger = logging.getLogger(__name__)
+
+B118_BASINS_URL = (
+    "https://gis.water.ca.gov/arcgis/rest/services/Geoscientific/"
+    "i08_B118_CA_GroundwaterBasins/FeatureServer/0/query"
+)
 
 
 class Command(BaseCommand):
@@ -118,9 +127,74 @@ class Command(BaseCommand):
         return matches.first()
 
     def _step_basins(self, boundary, dry_run):
-        """Fetch DWR Bulletin 118 basins. (stub)"""
-        self.stdout.write(self.style.WARNING("  basins: not yet implemented"))
-        return 0
+        """Fetch DWR Bulletin 118 groundwater basins that intersect the boundary.
+
+        Creates Zone records with zone_type='subbasin' for each basin.
+        Idempotent: skips basins that already exist for this boundary.
+        """
+        self.stdout.write("  Querying B118 FeatureServer...")
+        try:
+            features = query_by_boundary(B118_BASINS_URL, boundary.geometry)
+        except Exception as exc:
+            self.stdout.write(self.style.ERROR(f"  API query failed: {exc}"))
+            logger.exception("B118 API query failed")
+            return 0
+
+        self.stdout.write(f"  Found {len(features)} basin(s) intersecting boundary.")
+
+        created_count = 0
+        for feature in features:
+            attrs = feature.get("attributes", {})
+            name = (
+                attrs.get("Basin_Subbasin_Name")
+                or attrs.get("Basin_Name")
+                or "Unknown Basin"
+            )
+            number = attrs.get("Basin_Subbasin_Number", "")
+
+            # Check for existing zone (idempotent)
+            if Zone.objects.filter(name=name, boundary=boundary).exists():
+                self.stdout.write(f"  Skipping (exists): {name}")
+                continue
+
+            # Convert geometry
+            esri_geom = feature.get("geometry")
+            if not esri_geom:
+                self.stdout.write(
+                    self.style.WARNING(f"  Skipping (no geometry): {name}")
+                )
+                continue
+
+            try:
+                geom = esri_polygon_to_geos(esri_geom)
+            except Exception as exc:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Skipping (bad geometry): {name}: {exc}"
+                    )
+                )
+                continue
+
+            if geom is None:
+                self.stdout.write(
+                    self.style.WARNING(f"  Skipping (empty geometry): {name}")
+                )
+                continue
+
+            if dry_run:
+                self.stdout.write(f"  Would create: {name} ({number})")
+            else:
+                Zone.objects.create(
+                    name=name,
+                    boundary=boundary,
+                    description=f"DWR Bulletin 118 Basin {number}",
+                    geometry=geom,
+                    zone_type="subbasin",
+                )
+                self.stdout.write(f"  Created: {name} ({number})")
+                created_count += 1
+
+        return created_count
 
     def _step_parcels(self, boundary, dry_run):
         """Fetch parcel boundaries. (stub)"""
