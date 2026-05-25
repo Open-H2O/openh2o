@@ -25,7 +25,13 @@ PARAMETER_MAP = {
     "00060": {"name": "Discharge", "unit": "cfs"},
     "00065": {"name": "Gage Height", "unit": "ft"},
     "00010": {"name": "Water Temperature", "unit": "deg C"},
+    "72019": {"name": "Depth to Water Level", "unit": "ft below surface"},
+    "72020": {"name": "Water Level Elevation", "unit": "ft NAVD88"},
+    "62610": {"name": "Groundwater Level", "unit": "ft below datum"},
 }
+
+STREAM_PARAMS = ["00060", "00065", "00010"]
+GW_PARAMS = ["72019", "72020", "62610"]
 
 
 class USGSAdapter(BaseAdapter):
@@ -96,41 +102,53 @@ class USGSAdapter(BaseAdapter):
         return valid, rejected
 
     def discover_stations(self, boundary_geometry, radius_km=50):
-        """Discover USGS sites within a bounding box."""
+        """Discover USGS stream sites, groundwater wells, and springs."""
         bbox = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
-        params = {
-            "format": "rdb",
-            "bBox": f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}",
-            "siteType": "ST",  # Stream sites
-            "siteStatus": "active",
-            "hasDataTypeCd": "dv",
-        }
-        try:
-            # Use JSON site service
-            params["format"] = "mapper"
-            resp = self._request("GET", SITE_URL, params=params)
-            # The mapper format returns a simple JSON
-            data = resp.json()
-        except Exception as exc:
-            logger.warning("USGS station discovery failed: %s", exc)
-            return []
+        bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
+
+        site_type_configs = [
+            {"siteType": "ST", "params": STREAM_PARAMS, "label": "stream"},
+            {"siteType": "GW,SP", "params": GW_PARAMS, "label": "groundwater/spring"},
+        ]
 
         stations = []
-        sites = data.get("sites", data.get("value", {}).get("timeSeries", []))
-        if isinstance(sites, list):
+        for config in site_type_configs:
+            params = {
+                "format": "mapper",
+                "bBox": bbox_str,
+                "siteType": config["siteType"],
+                "siteStatus": "active",
+                "hasDataTypeCd": "dv",
+            }
+            try:
+                resp = self._request("GET", SITE_URL, params=params)
+                data = resp.json()
+            except Exception as exc:
+                logger.warning(
+                    "USGS %s discovery failed: %s", config["label"], exc
+                )
+                continue
+
+            sites = data.get("sites", data.get("value", {}).get("timeSeries", []))
+            if not isinstance(sites, list):
+                continue
+
             for site in sites:
                 lat = site.get("latitude") or site.get("lat")
                 lon = site.get("longitude") or site.get("lng")
                 sid = site.get("site_no") or site.get("siteNumber", "")
                 name = site.get("station_nm") or site.get("siteName", "")
+                site_type = site.get("site_tp_cd", config["siteType"].split(",")[0])
                 if lat and lon and sid:
                     stations.append({
                         "station_id": sid,
                         "name": name,
                         "latitude": float(lat),
                         "longitude": float(lon),
-                        "parameters": list(PARAMETER_MAP.keys()),
+                        "parameters": config["params"],
+                        "site_type": site_type,
                     })
+
         return stations
 
 
