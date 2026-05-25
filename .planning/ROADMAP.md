@@ -60,7 +60,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 11-01: TBD (run /gsd:plan-phase 11 to break down)
+- [x] 11-01: Responsive CSS, form class cleanup, landing page counts, favicon, visual consistency
 
 #### Phase 12: In-App Documentation
 
@@ -107,7 +107,7 @@ Plans:
 | 8. Deploy, Polish, and Handoff | v1.0 | 3/3 | Complete | 2026-05-24 |
 | 9. Schema Fixes & Test Infrastructure | v1.1 | 1/1 | Complete | 2026-05-24 |
 | 10. Kaweah Subbasin Demo Data | v1.1 | 1/1 | Complete | 2026-05-25 |
-| 11. UI Quality Sweep | v1.1 | 0/? | Not started | - |
+| 11. UI Quality Sweep | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 12. In-App Documentation | v1.1 | 0/? | Not started | - |
 | 13. Cron, Health, & Final Polish | v1.1 | 0/? | Not started | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |
