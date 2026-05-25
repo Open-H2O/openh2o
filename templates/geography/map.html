@@ -144,11 +144,24 @@ var MAP_CONFIG = {
             swatch: 'dot', swatchColor: '#4ECDC4'
         },
         {
+            id: 'recharge-fill', type: 'fill', source: 'recharge',
+            label: 'Recharge Sites', group: 'recharge',
+            filter: ['!=', '$type', 'Point'],
+            paint: { 'fill-color': '#7B68EE', 'fill-opacity': 0.25 },
+            swatch: 'fill', swatchColor: '#7B68EE'
+        },
+        {
+            id: 'recharge-outline', type: 'line', source: 'recharge',
+            group: 'recharge', groupHidden: true,
+            filter: ['!=', '$type', 'Point'],
+            paint: { 'line-color': '#7B68EE', 'line-width': 1.5 }
+        },
+        {
             id: 'recharge-points', type: 'circle', source: 'recharge',
-            label: 'Recharge Sites',
+            group: 'recharge', groupHidden: true,
+            filter: ['==', '$type', 'Point'],
             paint: { 'circle-radius': 6, 'circle-color': '#7B68EE', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
-            glow: { width: 14, opacity: 0.15 },
-            swatch: 'dot', swatchColor: '#7B68EE'
+            glow: { width: 14, opacity: 0.15 }
         },
         {
             id: 'stations-points', type: 'circle', source: 'stations',
@@ -186,10 +199,17 @@ var MAP_CONFIG = {
                    'Stream: ' + (p.stream_name || '—') + '<br>' +
                    'Max rate: ' + (p.max_rate_cfs ? p.max_rate_cfs + ' cfs' : '—');
         },
+        'recharge-fill': function(p) {
+            return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
+                   'Type: ' + (p.site_type || '—') + '<br>' +
+                   'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—') + '<br>' +
+                   '<a href="/recharge/sites/' + p.pk + '/" style="color:#E4A317">View details →</a>';
+        },
         'recharge-points': function(p) {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
-                   'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—');
+                   'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—') + '<br>' +
+                   '<a href="/recharge/sites/' + p.pk + '/" style="color:#E4A317">View details →</a>';
         },
         'stations-points': function(p) {
             return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +

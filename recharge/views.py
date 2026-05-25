@@ -55,14 +55,16 @@ def recharge_site_detail(request, pk):
         recharge_site=site
     ).order_by("-measurement_date")[:10]
 
-    # GeoJSON for site location point
     geojson = None
-    if site.location:
+    geo_field = "geometry" if site.geometry else "location"
+    if geo_field == "location" and not site.location:
+        geo_field = None
+    if geo_field:
         geojson = json.loads(
             serialize(
                 "geojson",
                 [site],
-                geometry_field="location",
+                geometry_field=geo_field,
                 fields=["name", "site_type", "status"],
             )
         )
@@ -78,11 +80,22 @@ def recharge_site_detail(request, pk):
 
 @login_required
 def recharge_sites_geojson(request):
-    """Return all recharge sites as a GeoJSON FeatureCollection."""
-    data = serialize(
-        "geojson",
-        RechargeSite.objects.all(),
-        geometry_field="location",
-        fields=["name", "site_type", "capacity_acre_feet", "status"],
-    )
-    return HttpResponse(data, content_type="application/json")
+    """Return all recharge sites as GeoJSON, preferring polygon geometry."""
+    features = []
+    for site in RechargeSite.objects.all():
+        geom = site.geometry or site.location
+        if not geom:
+            continue
+        features.append({
+            "type": "Feature",
+            "geometry": json.loads(geom.geojson),
+            "properties": {
+                "pk": site.pk,
+                "name": site.name,
+                "site_type": site.site_type,
+                "capacity_acre_feet": str(site.capacity_acre_feet) if site.capacity_acre_feet else None,
+                "status": site.status,
+            },
+        })
+    collection = {"type": "FeatureCollection", "features": features}
+    return HttpResponse(json.dumps(collection), content_type="application/json")

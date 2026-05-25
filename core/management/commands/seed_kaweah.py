@@ -788,10 +788,12 @@ class Command(BaseCommand):
         recharge_sites = []
         for sname, stype, lon, lat, capacity, operator in recharge_configs:
             site_zone = assign_zone(Point(lon, lat))
+            geom_size = 0.008 if stype == "spreading_basin" else 0.003
             site = RechargeSite.objects.create(
                 name=sname,
                 site_type=stype,
                 location=Point(lon, lat),
+                geometry=make_box(lon, lat, size=geom_size),
                 capacity_acre_feet=capacity,
                 status="active",
                 operator=operator,

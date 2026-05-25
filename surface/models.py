@@ -71,6 +71,23 @@ class PointOfDiversion(models.Model):
         return self.name
 
 
+class PointOfDiversionParcel(models.Model):
+    point_of_diversion = models.ForeignKey(
+        PointOfDiversion, on_delete=models.CASCADE, related_name="pod_parcels"
+    )
+    parcel = models.ForeignKey(
+        "parcels.Parcel", on_delete=models.CASCADE, related_name="pod_parcels"
+    )
+    fraction = models.DecimalField(max_digits=5, decimal_places=4, default=1.0)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = [("point_of_diversion", "parcel")]
+
+    def __str__(self):
+        return f"{self.point_of_diversion} → {self.parcel} ({self.fraction})"
+
+
 class DiversionRecord(models.Model):
     DIVERSION_TYPE_CHOICES = [
         ("direct_use", "Direct Use"),
