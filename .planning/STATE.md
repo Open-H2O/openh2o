@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 ## Current Position
 
 Phase: 17 of 21 (Static GIS & Auto-Populate Engine)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-05-25 - Completed 17-01-PLAN.md
+Last activity: 2026-05-25 - Completed 17-02-PLAN.md
 
-Progress: █████████░ 73%
+Progress: █████████░ 76%
 
 ## Performance Metrics
 
@@ -54,5 +54,5 @@ None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Completed 17-01-PLAN.md (auto_populate skeleton + ArcGIS client + B118 basins)
+Stopped at: Completed 17-02-PLAN.md (LightBox parcel auto-population step)
 Resume file: None
