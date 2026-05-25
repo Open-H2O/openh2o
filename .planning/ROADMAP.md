@@ -83,6 +83,16 @@ Plans:
 Plans:
 - [x] 12-01: Help infrastructure, Getting Started, Glossary, page descriptions, field tooltips
 
+#### Phase 12.1: VanderDev Design Alignment (INSERTED)
+
+**Goal**: Bring OpenH2O's visual polish up to VanderDev standard. Wrap bare tables in card containers, add section headers, punch up dashboard stat cards, tune border visibility and spacing, polish health cards and search bars. CSS + template HTML only, no Python changes.
+**Depends on**: Phase 12
+**Research**: Unlikely (internal CSS/HTML patterns, existing VanderDev reference)
+**Plans**: TBD
+
+Plans:
+- [ ] 12.1-01: TBD (run /gsd:plan-phase 12.1 to break down)
+
 #### Phase 13: Cron, Health, & Final Polish
 
 **Goal**: Configure scheduled sync and health check jobs, expand test coverage, verify full deploy cycle on clean VPS
@@ -121,5 +131,6 @@ Plans:
 | 11. UI Quality Sweep | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 11.1 Impeccable UI Audit | v1.1 | 2/2 | Complete | 2026-05-25 |
 | 12. In-App Documentation | v1.1 | 1/1 | Complete | 2026-05-25 |
+| 12.1 VanderDev Design Alignment | v1.1 | 0/? | Not started | - |
 | 13. Cron, Health, & Final Polish | v1.1 | 0/? | Not started | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |
