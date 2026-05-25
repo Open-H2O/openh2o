@@ -11,6 +11,7 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from parcels.models import Parcel
@@ -26,13 +27,14 @@ def infrastructure_list(request):
     pods = PointOfDiversion.objects.filter(water_right__isnull=True)
     recharge_sites = RechargeSite.objects.all()
 
+    epoch = timezone.make_aware(timezone.datetime(2000, 1, 1))
     items = sorted(
         chain(
             [{"type": "well", "obj": w, "name": w.name, "created_at": w.created_at} for w in wells],
-            [{"type": "diversion", "obj": p, "name": p.name, "created_at": None} for p in pods],
+            [{"type": "diversion", "obj": p, "name": p.name, "created_at": epoch} for p in pods],
             [{"type": "recharge", "obj": r, "name": r.name, "created_at": r.created_at} for r in recharge_sites],
         ),
-        key=lambda x: x["created_at"] or x["obj"].pk,
+        key=lambda x: x["created_at"],
         reverse=True,
     )
 
