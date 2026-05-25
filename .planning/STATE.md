@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 ## Current Position
 
 Phase: 17 of 21 (Static GIS & Auto-Populate Engine)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-05-25 - Completed 17-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-05-25 - Completed 17-03-PLAN.md
 
-Progress: █████████░ 76%
+Progress: █████████░ 79%
 
 ## Performance Metrics
 
@@ -54,5 +54,5 @@ None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Completed 17-02-PLAN.md (LightBox parcel auto-population step)
+Stopped at: Completed 17-03-PLAN.md (3DHP flowlines + county boundaries) — Phase 17 complete
 Resume file: None

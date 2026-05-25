@@ -161,7 +161,7 @@ Plans:
 Plans: 3
 - [x] 17-01: Auto-populate skeleton + ArcGIS REST client + Bulletin 118 basin step
 - [x] 17-02: DWR LightBox parcel auto-population with pagination
-- [ ] 17-03: USGS NLDI flowlines + static county boundary fixtures
+- [x] 17-03: USGS 3DHP flowlines + county boundary loading from Census TIGERweb
 
 #### Phase 18: Telemetry Discovery & OpenET
 
@@ -228,7 +228,7 @@ Plans:
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Deferred → Phase 21 | - |
 | 15. Branding & About Page | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 16. Tie Lines & Source Fractions | v1.2 | 1/1 | Complete | 2026-05-25 |
-| 17. Static GIS & Auto-Populate Engine | v1.2 | 2/3 | In progress | - |
+| 17. Static GIS & Auto-Populate Engine | v1.2 | 3/3 | Complete | 2026-05-25 |
 | 18. Telemetry Discovery & OpenET | v1.2 | 0/? | Not started | - |
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 0/? | Not started | - |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
