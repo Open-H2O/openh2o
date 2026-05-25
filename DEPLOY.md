@@ -242,36 +242,81 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py collectstatic --noinput
 ```
 
+### Scheduled Jobs
+
+Three jobs are included in `crontab.txt`:
+
+| Job | Schedule | Purpose |
+|-----|----------|---------|
+| `sync_all --mock` | Daily 2:00 AM | Sync external data sources (CDEC, USGS, CIMIS, etc.) |
+| `run_health_checks` | Every 6 hours | Check database, disk, SSL, migrations, sync freshness |
+| `prune_old_data --confirm` | 1st of month 3:00 AM | Delete old staging records and sync logs |
+
+Install the crontab (appends to existing entries, preserves any other cron jobs):
+
+```bash
+make install-cron
+# or manually:
+(crontab -l 2>/dev/null; cat crontab.txt) | crontab -
+```
+
+Verify the entries were added:
+
+```bash
+make show-cron
+# or: crontab -l | grep openh2o
+```
+
+Edit `crontab.txt` to adjust the deployment path (default: `/opt/openh2o`) before installing.
+Remove `--mock` from the `sync_all` entry once real API keys are configured in `.env`.
+
 ### Health Checks
 
-Run the health check suite manually:
+Run manually at any time:
 
 ```bash
 docker compose exec web python manage.py run_health_checks
+# Or: make health
 ```
 
-Set up a cron job for automated checks (runs every 6 hours):
+For JSON output (useful for monitoring integrations):
 
 ```bash
-crontab -e
-# Add this line:
-0 */6 * * * cd /path/to/openh2o && docker compose exec -T web python manage.py run_health_checks
+docker compose exec web python manage.py run_health_checks --json
 ```
 
 ### Data Pruning
 
-Remove old staging data and sync logs older than 90 days:
+Run a dry-run to see what would be deleted (default, no action taken):
 
 ```bash
 docker compose exec web python manage.py prune_old_data
+# Or: make prune
 ```
 
-Set up monthly pruning:
+Actually delete old records (requires `--confirm`):
 
 ```bash
-crontab -e
-# Add this line:
-0 3 1 * * cd /path/to/openh2o && docker compose exec -T web python manage.py prune_old_data
+docker compose exec web python manage.py prune_old_data --confirm
+```
+
+### Data Sync
+
+Sync external data (CDEC, USGS, CIMIS, etc.) manually:
+
+```bash
+docker compose exec web python manage.py sync_all
+# Or: make sync
+```
+
+Note: `sync_all` runs in mock mode in `crontab.txt` until real API keys are configured.
+Remove `--mock` from `crontab.txt` when ready.
+
+### Running Tests
+
+```bash
+docker compose exec web python -m pytest tests/ -v
+# Or: make test
 ```
 
 ### Database Backup

@@ -31,11 +31,11 @@ Access is the product, not features. A $15/mo VPS replaces a $35K-$75K consultin
 
 ### Active
 
-- [ ] Automated test suite (unit + integration)
+- ✓ Automated test suite (unit + integration) — 121 tests across 5 modules, Phase 13
+- ✓ Cron scheduling for sync_all and run_health_checks — crontab.txt + make install-cron, Phase 13
 - [ ] OpenET API key acquisition and live adapter testing
 - [ ] Pilot deployment with a real GSA (Merced or similar)
 - [ ] RechargeSite zone FK and WaterRight parcel FK (deferred from v1.0)
-- [ ] Cron scheduling for sync_all and run_health_checks
 
 ### Out of Scope
 
