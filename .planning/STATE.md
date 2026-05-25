@@ -34,8 +34,7 @@ All marked ✓ Good after v1.0 validation.
 
 ### Deferred Issues
 
-- ISSUE-003: Recharge sites should be polygons, not points (P1, data model)
-- ISSUE-004: Wells/PODs need association with Place of Use parcels (P1, domain model)
+None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 
 ### Open Items for Next Milestone
 
