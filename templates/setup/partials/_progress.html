@@ -1,0 +1,90 @@
+{% if all_done %}
+<!-- All steps complete -->
+<div id="progress-area">
+  <div class="wizard-step-list" style="margin-bottom: var(--space-lg);">
+    {% for result in results %}
+    <div class="wizard-step wizard-step--complete">
+      <div class="wizard-step-icon">✓</div>
+      <div class="wizard-step-body">
+        <div class="wizard-step-name">{{ result.label }}</div>
+        <div class="wizard-step-count">
+          {% if result.success %}
+            {{ result.count }} record{{ result.count|pluralize }} created
+          {% else %}
+            {% for err in result.errors %}<span style="color: var(--furnace-400);">{{ err }}</span>{% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card-raised" style="background: oklch(0.49 0.11 145 / 0.08); border-color: var(--forest-400);">
+    <div class="row-between">
+      <div>
+        <p class="section-header-flush mb-sm">Setup complete!</p>
+        <p class="text-secondary text-sm" style="margin: 0;">
+          Geographic data has been populated for {{ boundary.name }}.
+          Head to the monitoring dashboard to review station freshness and activate stations.
+        </p>
+      </div>
+    </div>
+    <div class="form-footer" style="margin-top: var(--space-md);">
+      <a href="{% url 'datasync:monitoring_dashboard' %}" class="btn-primary">Go to Dashboard →</a>
+      <a href="{% url 'datasync:station_list' %}" class="btn-secondary">View Stations</a>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- Steps in progress -->
+<div
+  id="progress-area"
+  hx-post="{% url 'setup:progress' %}"
+  hx-trigger="load"
+  hx-target="#progress-area"
+  hx-swap="outerHTML"
+>
+  <div class="wizard-step-list">
+    {% for step_name, step_label, step_desc in steps %}
+    {% with forloop.counter0 as idx %}
+    {% if idx < step_index %}
+      {# Completed step — find result #}
+      {% for result in results %}
+      {% if result.step == step_name %}
+      <div class="wizard-step wizard-step--complete">
+        <div class="wizard-step-icon">✓</div>
+        <div class="wizard-step-body">
+          <div class="wizard-step-name">{{ step_label }}</div>
+          <div class="wizard-step-count">
+            {% if result.success %}{{ result.count }} record{{ result.count|pluralize }} created
+            {% else %}{% for err in result.errors %}{{ err }}{% endfor %}{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    {% elif idx == step_index %}
+      {# Active step — currently running #}
+      <div class="wizard-step wizard-step--active">
+        <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
+        <div class="wizard-step-body">
+          <div class="wizard-step-name">{{ step_label }}</div>
+          <div class="wizard-step-count" style="color: var(--color-gold);">{{ step_desc }}</div>
+        </div>
+      </div>
+    {% else %}
+      {# Pending step #}
+      <div class="wizard-step wizard-step--pending">
+        <div class="wizard-step-icon">·</div>
+        <div class="wizard-step-body">
+          <div class="wizard-step-name">{{ step_label }}</div>
+          <div class="wizard-step-count">Waiting</div>
+        </div>
+      </div>
+    {% endif %}
+    {% endwith %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
