@@ -5,17 +5,24 @@ Steps:
   basins    — DWR Bulletin 118 groundwater basins (Zone records)
   parcels   — DWR LightBox statewide parcel boundaries (Parcel records)
   flowlines — USGS 3DHP flowlines (Flowline records)
+  stations  — CDEC/USGS/CIMIS monitoring stations (MonitoredStation records)
 
 Usage:
   python manage.py auto_populate --boundary "Kaweah Subbasin"
   python manage.py auto_populate --boundary 1 --steps basins --dry-run
 """
 
+import json
 import logging
 from collections import OrderedDict
+from pathlib import Path
 
+from django.conf import settings
+from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand, CommandError
 
+from datasync.adapters import get_adapter
+from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, Flowline, Zone
 from geography.services.arcgis import (
     esri_polygon_to_geos,
@@ -46,7 +53,7 @@ THREEDHP_FLOWLINES_URL = (
 
 class Command(BaseCommand):
     help = (
-        "Auto-populate geographic data (basins, parcels, flowlines) "
+        "Auto-populate geographic data (basins, parcels, flowlines, stations) "
         "for a boundary from public APIs."
     )
 
@@ -61,7 +68,7 @@ class Command(BaseCommand):
             default=None,
             help=(
                 "Comma-separated list of steps to run. "
-                "Valid: basins, parcels, flowlines. Default: all."
+                "Valid: basins, parcels, flowlines, stations. Default: all."
             ),
         )
         parser.add_argument(
@@ -81,6 +88,7 @@ class Command(BaseCommand):
             ("basins", self._step_basins),
             ("parcels", self._step_parcels),
             ("flowlines", self._step_flowlines),
+            ("stations", self._step_stations),
         ])
 
         # Filter to requested steps
@@ -415,3 +423,111 @@ class Command(BaseCommand):
             logger.exception("3DHP flowlines API query failed")
 
         return created_total
+
+    def _step_stations(self, boundary, dry_run):
+        """Discover monitoring stations from CDEC, USGS, and CIMIS.
+
+        Creates inactive MonitoredStation records for user curation.
+        Idempotent: skips stations that already exist (data_source + external_station_id).
+        """
+        source_codes = ["cdec", "usgs", "cimis"]
+        use_mock = getattr(settings, "DATASYNC_MOCK_MODE", False)
+        total_created = 0
+
+        for code in source_codes:
+            try:
+                ds = DataSource.objects.filter(code=code).first()
+                if ds is None:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  DataSource '{code}' not found, skipping."
+                        )
+                    )
+                    continue
+
+                adapter = get_adapter(code)
+                if adapter is None:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  No adapter registered for '{code}', skipping."
+                        )
+                    )
+                    continue
+
+                if use_mock:
+                    station_list = self._load_mock_stations(code)
+                else:
+                    station_list = adapter.discover_stations(boundary.geometry)
+
+                self.stdout.write(
+                    f"  {code.upper()}: found {len(station_list)} station(s)."
+                )
+
+                created_count = 0
+                for stn in station_list:
+                    ext_id = str(stn.get("station_id", "")).strip()
+                    if not ext_id:
+                        continue
+
+                    lat = stn.get("latitude")
+                    lon = stn.get("longitude")
+                    if lat is None or lon is None:
+                        continue
+
+                    if dry_run:
+                        exists = MonitoredStation.objects.filter(
+                            data_source=ds, external_station_id=ext_id
+                        ).exists()
+                        if not exists:
+                            created_count += 1
+                        continue
+
+                    _, created = MonitoredStation.objects.get_or_create(
+                        data_source=ds,
+                        external_station_id=ext_id,
+                        defaults={
+                            "station_name": stn.get("name", ""),
+                            "location": Point(
+                                float(lon), float(lat), srid=4326
+                            ),
+                            "parameters": stn.get("parameters", []),
+                            "is_active": False,
+                        },
+                    )
+                    if created:
+                        created_count += 1
+
+                if dry_run:
+                    self.stdout.write(
+                        f"  {code.upper()}: would create {created_count} station(s)."
+                    )
+                else:
+                    self.stdout.write(
+                        f"  {code.upper()}: {created_count} station(s) created."
+                    )
+                total_created += created_count
+
+            except Exception as exc:
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"  {code.upper()} station discovery failed: {exc}"
+                    )
+                )
+                logger.exception("Station discovery failed for %s", code)
+
+        return total_created
+
+    def _load_mock_stations(self, source_code):
+        """Load station list from fixture file for mock mode."""
+        fixture_path = (
+            Path(__file__).resolve().parent.parent.parent.parent
+            / "datasync"
+            / "fixtures"
+            / f"{source_code}.json"
+        )
+        if not fixture_path.exists():
+            logger.warning("Mock fixture not found: %s", fixture_path)
+            return []
+        with open(fixture_path) as f:
+            data = json.load(f)
+        return data.get("stations", [])
