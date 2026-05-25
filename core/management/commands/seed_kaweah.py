@@ -408,29 +408,6 @@ class Command(BaseCommand):
         all_parcels = []
         parcels_by_zone = {z.pk: [] for z in zones}
 
-        # Parcel owner names for the Kaweah area
-        kaweah_owners = [
-            "Bravo Lake Ranch", "Valley Citrus Growers", "Kaweah Delta Farms",
-            "Sequoia Ag Partners", "Tulare Basin Dairy", "Three Rivers Ranch",
-            "Ivanhoe Farming Co", "Exeter Orchards LLC", "Woodlake Vineyards",
-            "Sierra View Ranch", "Cutler-Orosi Ag", "Goshen Land Trust",
-            "Visalia Farm Bureau", "Lindsay Olive Growers", "Lemon Cove Citrus",
-            "Farmersville Dairy", "Mineral King Ranch", "St Johns River Farms",
-            "Packwood Ag Corp", "Yokohl Valley Ranch",
-        ]
-
-        # Generate 40 parcel centers within the real subbasin boundary
-        bbox = boundary_geom.extent  # (xmin, ymin, xmax, ymax)
-        parcel_centers = []
-        attempts = 0
-        while len(parcel_centers) < 40 and attempts < 500:
-            lon = random.uniform(bbox[0], bbox[2])
-            lat = random.uniform(bbox[1], bbox[3])
-            pt = Point(lon, lat)
-            if boundary_geom.contains(pt):
-                parcel_centers.append((lon, lat))
-            attempts += 1
-
         def assign_zone(pt_geom):
             """Return the zone whose geometry contains the point, or
             fall back to the first zone."""
@@ -439,53 +416,27 @@ class Command(BaseCommand):
                     return zone
             return zones[0]
 
-        # 20 large parcels
-        for i in range(20):
-            size = random.uniform(0.015, 0.04)
-            lon, lat = parcel_centers[i]
-            area = Decimal(str(random.randint(160, 640)))
+        # Load real Tulare County parcel geometries
+        parcel_path = os.path.join(data_dir, 'tulare_parcels_sample.geojson')
+        with open(parcel_path) as f:
+            parcel_data = json.load(f)
+
+        for i, pfeat in enumerate(parcel_data['features']):
+            props = pfeat['properties']
+            parcel_geom = GEOSGeometry(json.dumps(pfeat['geometry']))
+            if parcel_geom.geom_type == 'Polygon':
+                parcel_geom = MultiPolygon(parcel_geom)
+
+            apn_raw = props.get('APN_TXT', f'{i+1:09d}')
+            acres_raw = props.get('GROW_AC') or props.get('TOT_ACRES')
+            area = Decimal(str(round(float(acres_raw), 2))) if acres_raw else Decimal("40.0")
+            use_desc = props.get('USEDSCRP', '')
 
             p = Parcel.objects.create(
                 parcel_number=f"KAW-APN-{i + 1:03d}",
-                owner_name=kaweah_owners[i % len(kaweah_owners)],
+                owner_name=use_desc or "Agricultural",
                 area_acres=area,
-                geometry=make_field_parcel(lon, lat, size, seed_val=i),
-                status="active",
-            )
-            zone = assign_zone(p.geometry.centroid)
-            ParcelZone.objects.create(parcel=p, zone=zone)
-            all_parcels.append(p)
-            parcels_by_zone[zone.pk].append(p)
-
-        # 15 medium parcels
-        for i in range(15):
-            size = random.uniform(0.005, 0.015)
-            lon, lat = parcel_centers[20 + i]
-            area = Decimal(str(random.randint(40, 160)))
-
-            p = Parcel.objects.create(
-                parcel_number=f"KAW-APN-{i + 21:03d}",
-                owner_name=kaweah_owners[(i + 5) % len(kaweah_owners)],
-                area_acres=area,
-                geometry=make_field_parcel(lon, lat, size, seed_val=20 + i),
-                status="active",
-            )
-            zone = assign_zone(p.geometry.centroid)
-            ParcelZone.objects.create(parcel=p, zone=zone)
-            all_parcels.append(p)
-            parcels_by_zone[zone.pk].append(p)
-
-        # 5 small parcels
-        for i in range(5):
-            size = random.uniform(0.002, 0.005)
-            lon, lat = parcel_centers[35 + i]
-            area = Decimal(str(random.randint(5, 40)))
-
-            p = Parcel.objects.create(
-                parcel_number=f"KAW-APN-{i + 36:03d}",
-                owner_name=kaweah_owners[(i + 10) % len(kaweah_owners)],
-                area_acres=area,
-                geometry=make_field_parcel(lon, lat, size, seed_val=35 + i),
+                geometry=parcel_geom,
                 status="active",
             )
             zone = assign_zone(p.geometry.centroid)
