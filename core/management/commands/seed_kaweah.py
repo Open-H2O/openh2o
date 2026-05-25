@@ -289,6 +289,295 @@ class Command(BaseCommand):
         zones = [west_zone, east_zone]
 
         # ----------------------------------------------------------------
+        # 6. Wells (25 total)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating 25 wells...")
+
+        well_configs = [
+            # (name, type, depth_ft, capacity_gpm, status, lon, lat)
+            # 15 Agricultural
+            ("Avenue 196 Well", ag_well_type, 450, 1800, "active", -119.42, 36.30),
+            ("Road 148 Well", ag_well_type, 380, 1500, "active", -119.38, 36.35),
+            ("Avenue 232 Well", ag_well_type, 520, 2200, "active", -119.35, 36.25),
+            ("Road 168 Well", ag_well_type, 400, 1600, "active", -119.44, 36.38),
+            ("Avenue 216 Well", ag_well_type, 350, 2000, "active", -119.32, 36.32),
+            ("Road 132 Well", ag_well_type, 480, 1900, "active", -119.40, 36.20),
+            ("Goshen Avenue Well", ag_well_type, 300, 1400, "active", -119.48, 36.28),
+            ("Caldwell Avenue Well", ag_well_type, 550, 2500, "active", -119.30, 36.22),
+            ("Lovers Lane Well", ag_well_type, 420, 1700, "active", -119.36, 36.40),
+            ("Noble Avenue Well", ag_well_type, 360, 1300, "active", -119.46, 36.33),
+            ("Houston Avenue Well", ag_well_type, 500, 2100, "active", -119.28, 36.26),
+            ("Packwood Creek Well", ag_well_type, 280, 1200, "inactive", -119.34, 36.18),
+            ("Ben Maddox Well", ag_well_type, 440, 1850, "active", -119.29, 36.36),
+            ("Whitendale Avenue Well", ag_well_type, 390, 1550, "active", -119.43, 36.42),
+            ("St Johns Well", ag_well_type, 470, 2300, "inactive", -119.37, 36.16),
+            # 5 Monitoring
+            ("Mineral King Mon-1", mon_well_type, 250, 50, "active", -119.15, 36.38),
+            ("Woodlake Mon-2", mon_well_type, 300, 80, "active", -119.10, 36.42),
+            ("Ivanhoe Mon-3", mon_well_type, 220, 60, "active", -119.22, 36.40),
+            ("Tulare Mon-4", mon_well_type, 350, 100, "active", -119.35, 36.17),
+            ("Farmersville Mon-5", mon_well_type, 280, 75, "active", -119.20, 36.30),
+            # 3 Domestic
+            ("Lemon Cove Domestic", dom_well_type, 200, 150, "active", -119.08, 36.38),
+            ("Cutler Domestic", dom_well_type, 250, 200, "active", -119.28, 36.32),
+            ("Orosi Domestic", dom_well_type, 230, 180, "inactive", -119.12, 36.44),
+            # 2 Municipal
+            ("Visalia Municipal #1", muni_well_type, 600, 500, "active", -119.30, 36.33),
+            ("Exeter Municipal #1", muni_well_type, 550, 450, "active", -119.14, 36.30),
+        ]
+
+        wells = []
+        for i, (wname, wtype, depth, cap, status, lon, lat) in enumerate(well_configs):
+            well = Well.objects.create(
+                well_registration_id=f"KAW-W-{i + 1:03d}",
+                name=wname,
+                well_type=wtype,
+                location=Point(lon, lat),
+                depth_ft=Decimal(str(depth)),
+                capacity_gpm=Decimal(str(cap)),
+                status=status,
+                owner_name=f"Kaweah Well Owner {i + 1}",
+            )
+            wells.append(well)
+
+        # Create MonitoringWell records for the 5 monitoring wells (index 15-19)
+        for i in range(15, 20):
+            MonitoringWell.objects.create(
+                well=wells[i],
+                monitoring_agency="Kaweah Delta WCD",
+                measurement_frequency="monthly",
+            )
+
+        # ----------------------------------------------------------------
+        # 7. Parcels (40 total)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating 40 parcels...")
+        all_parcels = []
+        parcels_by_zone = {z.pk: [] for z in zones}
+
+        # Parcel owner names for the Kaweah area
+        kaweah_owners = [
+            "Bravo Lake Ranch", "Valley Citrus Growers", "Kaweah Delta Farms",
+            "Sequoia Ag Partners", "Tulare Basin Dairy", "Three Rivers Ranch",
+            "Ivanhoe Farming Co", "Exeter Orchards LLC", "Woodlake Vineyards",
+            "Sierra View Ranch", "Cutler-Orosi Ag", "Goshen Land Trust",
+            "Visalia Farm Bureau", "Lindsay Olive Growers", "Lemon Cove Citrus",
+            "Farmersville Dairy", "Mineral King Ranch", "St Johns River Farms",
+            "Packwood Ag Corp", "Yokohl Valley Ranch",
+        ]
+
+        # 20 large parcels
+        for i in range(20):
+            size = random.uniform(0.015, 0.04)
+            lon = random.uniform(-119.48, -119.07)
+            lat = random.uniform(36.16, 36.44)
+            zone = west_zone if lon < -119.25 else east_zone
+            area = Decimal(str(random.randint(160, 640)))
+
+            p = Parcel.objects.create(
+                parcel_number=f"KAW-APN-{i + 1:03d}",
+                owner_name=kaweah_owners[i % len(kaweah_owners)],
+                area_acres=area,
+                geometry=make_box(lon, lat, size),
+                status="active",
+            )
+            ParcelZone.objects.create(parcel=p, zone=zone)
+            all_parcels.append(p)
+            parcels_by_zone[zone.pk].append(p)
+
+        # 15 medium parcels
+        for i in range(15):
+            size = random.uniform(0.005, 0.015)
+            lon = random.uniform(-119.48, -119.07)
+            lat = random.uniform(36.16, 36.44)
+            zone = west_zone if lon < -119.25 else east_zone
+            area = Decimal(str(random.randint(40, 160)))
+
+            p = Parcel.objects.create(
+                parcel_number=f"KAW-APN-{i + 21:03d}",
+                owner_name=kaweah_owners[(i + 5) % len(kaweah_owners)],
+                area_acres=area,
+                geometry=make_box(lon, lat, size),
+                status="active",
+            )
+            ParcelZone.objects.create(parcel=p, zone=zone)
+            all_parcels.append(p)
+            parcels_by_zone[zone.pk].append(p)
+
+        # 5 small parcels
+        for i in range(5):
+            size = random.uniform(0.002, 0.005)
+            lon = random.uniform(-119.48, -119.07)
+            lat = random.uniform(36.16, 36.44)
+            zone = west_zone if lon < -119.25 else east_zone
+            area = Decimal(str(random.randint(5, 40)))
+
+            p = Parcel.objects.create(
+                parcel_number=f"KAW-APN-{i + 36:03d}",
+                owner_name=kaweah_owners[(i + 10) % len(kaweah_owners)],
+                area_acres=area,
+                geometry=make_box(lon, lat, size),
+                status="active",
+            )
+            ParcelZone.objects.create(parcel=p, zone=zone)
+            all_parcels.append(p)
+            parcels_by_zone[zone.pk].append(p)
+
+        # ----------------------------------------------------------------
+        # 8. WellIrrigatedParcel links (ag wells to nearby parcels)
+        # ----------------------------------------------------------------
+        self.stdout.write("Linking agricultural wells to parcels...")
+        ag_wells = wells[:15]
+        wip_count = 0
+        for i, well in enumerate(ag_wells):
+            # Link to 1-3 parcels, picking from the same zone
+            well_lon = well.location.x
+            zone = west_zone if well_lon < -119.25 else east_zone
+            zone_parcels = parcels_by_zone[zone.pk]
+            if not zone_parcels:
+                continue
+            num_links = random.randint(1, min(3, len(zone_parcels)))
+            linked = random.sample(zone_parcels, num_links)
+            fraction = Decimal(str(round(1.0 / num_links, 4)))
+            for parcel in linked:
+                WellIrrigatedParcel.objects.create(
+                    well=well, parcel=parcel, fraction=fraction,
+                )
+                wip_count += 1
+
+        # ----------------------------------------------------------------
+        # 9. Meters and readings (15 production wells)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating meters and readings for 15 production wells...")
+        production_wells = wells[:15]
+        reading_count = 0
+        for i, well in enumerate(production_wells):
+            meter = Meter.objects.create(
+                serial_number=f"KAW-MTR-{i + 1:03d}",
+                meter_type="totalizer",
+                unit="acre_feet",
+                manufacturer="McCrometer" if i % 2 == 0 else "Badger",
+                status="active",
+            )
+            WellMeter.objects.create(
+                well=well,
+                meter=meter,
+                installed_date=date(2023, 1, 1),
+                is_current=True,
+            )
+
+            # Monthly readings for 12 months (Oct 2024 - Sep 2025)
+            cumulative = Decimal("0.0")
+            for month_offset in range(12):
+                month_num = ((10 + month_offset - 1) % 12) + 1  # Oct=10..Sep=9
+                year = 2024 if month_num >= 10 else 2025
+                reading_dt = datetime(year, month_num, 15, 12, 0, 0)
+
+                # Seasonal pattern: higher May-Sep, lower Nov-Mar
+                if month_num in (5, 6, 7, 8, 9):
+                    volume = Decimal(str(round(random.uniform(100, 500), 2)))
+                else:
+                    volume = Decimal(str(round(random.uniform(10, 50), 2)))
+
+                prev_val = cumulative
+                cumulative += volume
+
+                MeterReading.objects.create(
+                    meter=meter,
+                    reading_date=reading_dt,
+                    previous_value=prev_val,
+                    current_value=cumulative,
+                    calculated_volume=volume,
+                )
+                reading_count += 1
+
+        # ----------------------------------------------------------------
+        # 10. Monitored Stations (10 total)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating monitored stations...")
+        station_count = 0
+
+        # CDEC stations
+        cdec = DataSource.objects.filter(code="CDEC").first()
+        if cdec:
+            cdec_stations = [
+                ("TRM", "Terminus Dam", 36.4167, -118.9833, ["15", "20"]),
+                ("KWR", "Kaweah River below Terminus", 36.4050, -119.0167, ["20", "1"]),
+                ("VIS", "Visalia", 36.3333, -119.2917, ["2"]),
+            ]
+            for ext_id, sname, lat, lon, params in cdec_stations:
+                _, created = MonitoredStation.objects.get_or_create(
+                    data_source=cdec,
+                    external_station_id=ext_id,
+                    defaults={
+                        "station_name": sname,
+                        "location": Point(lon, lat),
+                        "parameters": params,
+                        "is_active": True,
+                    },
+                )
+                if created:
+                    station_count += 1
+
+        # USGS stations
+        usgs = DataSource.objects.filter(code="USGS").first()
+        if usgs:
+            usgs_stations = [
+                ("11210100", "Kaweah River at Three Rivers", 36.4367, -118.9044, ["00060"]),
+                ("11208730", "Kaweah Terminus Dam outflow", 36.4150, -118.9900, ["00060"]),
+            ]
+            for ext_id, sname, lat, lon, params in usgs_stations:
+                _, created = MonitoredStation.objects.get_or_create(
+                    data_source=usgs,
+                    external_station_id=ext_id,
+                    defaults={
+                        "station_name": sname,
+                        "location": Point(lon, lat),
+                        "parameters": params,
+                        "is_active": True,
+                    },
+                )
+                if created:
+                    station_count += 1
+
+        # CIMIS station
+        cimis = DataSource.objects.filter(code="CIMIS").first()
+        if cimis:
+            _, created = MonitoredStation.objects.get_or_create(
+                data_source=cimis,
+                external_station_id="54",
+                defaults={
+                    "station_name": "Visalia",
+                    "location": Point(-119.2903, 36.3322),
+                    "parameters": ["ETo", "precip"],
+                    "is_active": True,
+                },
+            )
+            if created:
+                station_count += 1
+
+        # DWR/WDL groundwater stations
+        dwr_wdl = DataSource.objects.filter(code="DWR_WDL").first()
+        if dwr_wdl:
+            wdl_stations = [
+                ("KAW-GWL-01", "Kaweah Delta monitoring well 1", 36.3000, -119.3000),
+                ("KAW-GWL-02", "Kaweah Delta monitoring well 2", 36.2500, -119.2000),
+            ]
+            for ext_id, sname, lat, lon in wdl_stations:
+                _, created = MonitoredStation.objects.get_or_create(
+                    data_source=dwr_wdl,
+                    external_station_id=ext_id,
+                    defaults={
+                        "station_name": sname,
+                        "location": Point(lon, lat),
+                        "parameters": ["gwl"],
+                        "is_active": True,
+                    },
+                )
+                if created:
+                    station_count += 1
+
+        # ----------------------------------------------------------------
         # Summary
         # ----------------------------------------------------------------
         self.stdout.write(
@@ -296,5 +585,9 @@ class Command(BaseCommand):
                 f"\nKaweah Subbasin data seeded successfully:\n"
                 f"  1 subbasin boundary\n"
                 f"  {len(zones)} management zones\n"
+                f"  {len(all_parcels)} parcels\n"
+                f"  {len(wells)} wells ({wip_count} well-parcel links)\n"
+                f"  {reading_count} meter readings\n"
+                f"  {station_count} monitored stations\n"
             )
         )
