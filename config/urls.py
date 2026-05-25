@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
-from config.views import about, index, getting_started, glossary, logo_compare
+from config.views import about, index, getting_started, glossary
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -16,7 +16,6 @@ urlpatterns = [
     path("datasync/", include("datasync.urls")),
     path("reporting/", include("reporting.urls")),
     path("health/", include("health.urls")),
-    path("logo-compare/", logo_compare, name="logo_compare"),
     path("about/", about, name="about"),
     path("help/getting-started/", getting_started, name="getting_started"),
     path("help/glossary/", glossary, name="glossary"),
