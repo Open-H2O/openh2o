@@ -6,25 +6,30 @@
   </span>
 </div>
 
-{% if page_obj.object_list %}
+{% if enriched_stations %}
 <div class="card-raised table-scroll">
   <table class="data-table">
     <thead>
       <tr>
+        <th style="width: 28px;"></th>
         <th>Station</th>
         <th>Source</th>
-        <th>External ID</th>
         <th>Last Data</th>
+        <th>Trend</th>
         <th style="text-align: center;">Active</th>
       </tr>
     </thead>
     <tbody>
-      {% for station in page_obj %}
+      {% for item in enriched_stations %}
       <tr>
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--{{ item.freshness }}" title="{{ item.freshness }}"></span>
+        </td>
         <td>
-          <a href="{% url 'datasync:station_detail' station.pk %}" class="data-table-link">
-            {{ station.station_name }}
+          <a href="{% url 'datasync:station_detail' item.station.pk %}" class="data-table-link">
+            {{ item.station.station_name }}
           </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">{{ item.station.external_station_id }}</div>
         </td>
         <td>
           <span style="
@@ -35,22 +40,37 @@
             padding: 2px 8px;
             font-size: 0.75rem;
             font-weight: 600;
-            color: var(--color-error);
+            color: var(--color-text-secondary);
             font-family: var(--font-mono);
-          ">{{ station.data_source.code }}</span>
-        </td>
-        <td class="text-secondary text-mono text-sm">
-          {{ station.external_station_id }}
+          ">{{ item.station.data_source.code }}</span>
         </td>
         <td class="text-secondary text-sm">
-          {% if station.last_data_at %}
-            {{ station.last_data_at|date:"M d, Y" }}
+          {% if item.station.last_data_at %}
+            {{ item.station.last_data_at|timesince }} ago
           {% else %}
-            <span class="text-tertiary">—</span>
+            <span class="text-tertiary">never</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if item.sparkline_points %}
+          <div class="sparkline-container">
+            <svg viewBox="0 0 80 24" width="80" height="24" fill="none" preserveAspectRatio="none">
+              <polyline
+                points="{{ item.sparkline_points }}"
+                stroke="{% if item.freshness == 'fresh' %}var(--forest-400){% elif item.freshness == 'stale' %}var(--furnace-400){% else %}var(--color-text-tertiary){% endif %}"
+                stroke-width="1.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          {% else %}
+          <span class="text-tertiary text-xs">--</span>
           {% endif %}
         </td>
         <td style="text-align: center;">
-          {% include "datasync/partials/_station_toggle.html" %}
+          {% include "datasync/partials/_station_toggle.html" with station=item.station %}
         </td>
       </tr>
       {% endfor %}

@@ -23,7 +23,11 @@ from datasync.models import (
 
 @login_required
 def station_list(request):
-    """Paginated list of monitored stations with HTMX search and filter."""
+    """Unified station list with monitoring stats, freshness map, and enriched table."""
+    now = timezone.now()
+    threshold_24h = now - timedelta(hours=24)
+    threshold_7d = now - timedelta(days=7)
+
     q = request.GET.get("q", "").strip()
     source = request.GET.get("source", "").strip()
     active = request.GET.get("active", "").strip()
@@ -47,8 +51,59 @@ def station_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Freshness classification for current page stations
+    station_freshness = {}
+    for s in page_obj:
+        if s.last_data_at and s.last_data_at >= threshold_24h:
+            station_freshness[s.pk] = "fresh"
+        elif s.last_data_at and s.last_data_at >= threshold_7d:
+            station_freshness[s.pk] = "stale"
+        else:
+            station_freshness[s.pk] = "dead"
+
+    # Sparkline data for current page stations
+    page_station_ids = [s.pk for s in page_obj]
+    staging_qs = (
+        DataRecordStaging.objects
+        .filter(station__in=page_station_ids)
+        .order_by("station_id", "-observation_date")
+        .values("station_id", "value")
+    )
+    raw_records: dict = {}
+    for row in staging_qs:
+        sid = row["station_id"]
+        if sid not in raw_records:
+            raw_records[sid] = []
+        if len(raw_records[sid]) < 10:
+            raw_records[sid].append(row["value"])
+
+    station_sparklines = {}
+    for sid, values in raw_records.items():
+        vals = list(reversed(values))
+        numeric = [float(v) for v in vals if v is not None]
+        if len(numeric) < 2:
+            continue
+        min_v, max_v = min(numeric), max(numeric)
+        span = max_v - min_v if max_v != min_v else 1.0
+        points = []
+        for i, v in enumerate(numeric):
+            x = round(i * 79 / (len(numeric) - 1), 2)
+            y = round(24 - ((v - min_v) / span) * 20 - 2, 2)
+            points.append(f"{x},{y}")
+        station_sparklines[sid] = " ".join(points)
+
+    # Enrich page objects with freshness and sparkline
+    enriched_stations = []
+    for s in page_obj:
+        enriched_stations.append({
+            "station": s,
+            "freshness": station_freshness.get(s.pk, "dead"),
+            "sparkline_points": station_sparklines.get(s.pk),
+        })
+
     context = {
         "page_obj": page_obj,
+        "enriched_stations": enriched_stations,
         "total_count": paginator.count,
         "q": q,
         "source": source,
@@ -58,6 +113,36 @@ def station_list(request):
 
     if request.headers.get("HX-Request"):
         return render(request, "datasync/partials/_station_list_results.html", context)
+
+    # Full page: add summary stats and source status
+    all_active = MonitoredStation.objects.filter(is_active=True)
+    total_active = all_active.count()
+    fresh_count = sum(1 for s in all_active if s.last_data_at and s.last_data_at >= threshold_24h)
+    stale_count = total_active - fresh_count
+
+    sources = DataSource.objects.filter(is_active=True).order_by("code")
+    source_status_list = []
+    for src in sources:
+        log = DataSyncLog.objects.filter(data_source=src).order_by("-started_at").first()
+        total = MonitoredStation.objects.filter(data_source=src).count()
+        src_active = MonitoredStation.objects.filter(data_source=src, is_active=True).count()
+        source_status_list.append({
+            "source": src,
+            "log": log,
+            "total": total,
+            "active": src_active,
+        })
+
+    _, openet_used, openet_limit = OpenETCache.check_budget()
+
+    context.update({
+        "total_active": total_active,
+        "fresh_count": fresh_count,
+        "stale_count": stale_count,
+        "source_status_list": source_status_list,
+        "openet_used": openet_used,
+        "openet_limit": openet_limit,
+    })
 
     return render(request, "datasync/station_list.html", context)
 

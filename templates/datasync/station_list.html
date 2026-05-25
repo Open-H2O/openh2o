@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Monitoring Stations - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Monitoring Stations{% endblock %}
+{% block title %}Stations - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Stations{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,17 +10,75 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Stations</span>
   </nav>
-  <p class="page-description">External monitoring stations linked to data sources (CDEC, USGS, CIMIS, etc.). Active stations sync measurements automatically.</p>
+  <p class="page-description">Monitoring stations linked to external data sources. Freshness shows how recently each station reported data.</p>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="page-stack">
+<div class="page-stack" style="max-width: 1400px;">
+
+  <!-- Summary row: stat cards + freshness map side by side -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); align-items: start;">
+
+    <!-- Left: stat cards 2x2 -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm);">
+      <div class="card-raised stat-card stat-card-accent-supply" style="margin: 0;">
+        <div class="stat-card-label">Active</div>
+        <div class="stat-card-value text-supply">{{ total_active }}</div>
+        <div class="stat-card-unit">stations</div>
+      </div>
+      <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--forest-400);">
+        <div class="stat-card-label">Fresh</div>
+        <div class="stat-card-value" style="color: var(--forest-400);">{{ fresh_count }}</div>
+        <div class="stat-card-unit">last 24h</div>
+      </div>
+      <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--furnace-400);">
+        <div class="stat-card-label">Stale</div>
+        <div class="stat-card-value" style="color: var(--furnace-400);">{{ stale_count }}</div>
+        <div class="stat-card-unit">no recent data</div>
+      </div>
+      <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--reservoir-400);">
+        <div class="stat-card-label">OpenET</div>
+        <div class="stat-card-value" style="color: var(--reservoir-400);">{{ openet_used }}</div>
+        <div class="stat-card-unit">of {{ openet_limit }} queries/mo</div>
+      </div>
+    </div>
+
+    <!-- Right: freshness map -->
+    <div class="card-raised" style="padding: 0; overflow: hidden; min-height: 200px;">
+      <div id="freshness-map" style="height: 200px; width: 100%;"></div>
+    </div>
+
+  </div>
+
+  <!-- Source status compact row -->
+  {% if source_status_list %}
+  <div class="card-raised" style="padding: var(--space-sm) var(--space-md);">
+    <div style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: center;">
+      <span class="text-secondary text-xs" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Sources</span>
+      {% for info in source_status_list %}
+      <span style="display: inline-flex; align-items: center; gap: var(--space-xs); font-size: 0.8rem;">
+        <span class="text-primary" style="font-weight: 600;">{{ info.source.code }}</span>
+        <span class="text-tertiary">{{ info.active }}/{{ info.total }}</span>
+        {% if info.log %}
+          {% if info.log.status == "success" %}
+          <span class="health-status-badge-green" style="font-size: 0.65rem; padding: 1px 6px;">OK</span>
+          {% elif info.log.status == "running" %}
+          <span class="health-status-badge-yellow" style="font-size: 0.65rem; padding: 1px 6px;">Running</span>
+          {% else %}
+          <span class="health-status-badge-red" style="font-size: 0.65rem; padding: 1px 6px;">Fail</span>
+          {% endif %}
+        {% else %}
+          <span class="text-tertiary text-xs">no syncs</span>
+        {% endif %}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Toolbar -->
   <div class="card-raised toolbar-row">
-
-    <!-- Search -->
     <div style="flex: 1; min-width: 200px;">
       <label class="form-label" for="filter-search">Search</label>
       <input
@@ -35,8 +93,6 @@
         class="form-input search-input-icon"
       >
     </div>
-
-    <!-- Data Source filter -->
     <div>
       <label class="form-label" for="filter-source">Source</label>
       <select
@@ -53,8 +109,6 @@
         {% endfor %}
       </select>
     </div>
-
-    <!-- Active filter -->
     <div>
       <label class="form-label" for="filter-active">Status</label>
       <select
@@ -65,24 +119,73 @@
         hx-include="[name='q'],[name='source']"
         class="form-select"
       >
-        <option value="" {% if not active %}selected{% endif %}>All Statuses</option>
+        <option value="" {% if not active %}selected{% endif %}>All</option>
         <option value="1" {% if active == "1" %}selected{% endif %}>Active</option>
         <option value="0" {% if active == "0" %}selected{% endif %}>Inactive</option>
       </select>
     </div>
-
-    <!-- Add Station button -->
     <div style="margin-left: auto;">
-      <a href="{% url 'datasync:station_add' %}" class="btn-primary">
-        + Add Station
-      </a>
+      <a href="{% url 'datasync:station_add' %}" class="btn-primary">+ Add Station</a>
     </div>
   </div>
 
-  <!-- Results -->
+  <!-- Results (HTMX target) -->
   <div id="results">
     {% include "datasync/partials/_station_list_results.html" %}
   </div>
 
 </div>
+
+<!-- Freshness map script -->
+<script>
+(function() {
+  if (!window.maplibregl) return;
+  var el = document.getElementById('freshness-map');
+  if (!el || el._mapInit) return;
+  el._mapInit = true;
+
+  var map = new maplibregl.Map({
+    container: 'freshness-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    zoom: 7, center: [-119.5, 37.3],
+    attributionControl: false,
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+  map.on('load', function() {
+    fetch('{% url "datasync:stations_freshness_geojson" %}')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.features || !data.features.length) return;
+        var coords = data.features.map(function(f) { return f.geometry.coordinates; });
+        if (coords.length > 1) {
+          var lngs = coords.map(function(c) { return c[0]; });
+          var lats = coords.map(function(c) { return c[1]; });
+          map.fitBounds([[Math.min.apply(null,lngs), Math.min.apply(null,lats)], [Math.max.apply(null,lngs), Math.max.apply(null,lats)]], { padding: 40, maxZoom: 13 });
+        } else { map.setCenter(coords[0]); map.setZoom(11); }
+
+        map.addSource('freshness', { type: 'geojson', data: data });
+        map.addLayer({ id: 'f-glow', type: 'circle', source: 'freshness', paint: {
+          'circle-radius': 14, 'circle-opacity': 0.15, 'circle-blur': 1,
+          'circle-color': ['match', ['get','freshness'], 'fresh','#22c55e', 'stale','#f59e0b', '#ef4444']
+        }});
+        map.addLayer({ id: 'f-dots', type: 'circle', source: 'freshness', paint: {
+          'circle-radius': 6,
+          'circle-color': ['match', ['get','freshness'], 'fresh','#22c55e', 'stale','#f59e0b', '#ef4444'],
+          'circle-stroke-width': 1, 'circle-stroke-color': 'rgba(255,255,255,0.25)'
+        }});
+        map.on('click', 'f-dots', function(e) {
+          var p = e.features[0].properties;
+          var hrs = p.hours_since_data ? Math.round(p.hours_since_data) + 'h ago' : 'no data';
+          new maplibregl.Popup({ closeButton: false })
+            .setLngLat(e.lngLat)
+            .setHTML('<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:6px 10px;border-radius:5px;font-size:12px;"><strong>' + p.station_name + '</strong><br><span style="color:#8899aa;">' + p.data_source_code + ' · ' + p.freshness + ' · ' + hrs + '</span></div>')
+            .addTo(map);
+        });
+        map.on('mouseenter', 'f-dots', function() { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', 'f-dots', function() { map.getCanvas().style.cursor = ''; });
+      });
+  });
+})();
+</script>
 {% endblock %}
