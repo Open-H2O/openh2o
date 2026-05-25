@@ -103,6 +103,17 @@ Plans:
 Plans:
 - [ ] 13-01: TBD (run /gsd:plan-phase 13 to break down)
 
+#### Phase 13.1: AI Operator Guide & District Onboarding (INSERTED)
+
+**Goal**: Rewrite CLAUDE.md so a fresh Claude Code instance can deploy the platform autonomously on a stranger's server. Add an interactive onboarding workflow that collects district boundary, parcels, wells, water rights, stations, periods, allocations, and users by asking questions and orchestrating existing import commands.
+**Depends on**: Phase 13
+**Research**: Likely (county GIS portal patterns, eWRIMS query automation, CDEC station discovery by boundary)
+**Research topics**: Common CA county ArcGIS Hub parcel download formats, eWRIMS API or scrape patterns for boundary-based water rights lookup, best practices for AI-facing CLAUDE.md files
+**Plans**: TBD
+
+Plans:
+- [ ] 13.1-01: TBD (run /gsd:plan-phase 13.1 to break down)
+
 #### Phase 14: Merced Subbasin Demo Data
 
 **Goal**: Replicate ETL pipeline for one Merced irrigation district area; prove platform portability across basins using real data
@@ -133,4 +144,5 @@ Plans:
 | 12. In-App Documentation | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 12.1 VanderDev Design Alignment | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 13. Cron, Health, & Final Polish | v1.1 | 0/? | Not started | - |
+| 13.1 AI Operator Guide & Onboarding | v1.1 | 0/? | Not started | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |
