@@ -12,6 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ water_right.right_id }}</span>
   </nav>
+  <p class="page-description">Water right details, points of diversion, and diversion records.</p>
 </div>
 {% endblock %}
 
@@ -56,14 +57,20 @@
         </div>
 
         <div class="field-group">
-          <div class="field-label">Priority Date</div>
+          <div class="field-label field-row">
+            Priority Date
+            {% include "partials/_help_tooltip.html" with label="Priority Date" text="The date establishing seniority. Earlier dates have higher priority during shortages." %}
+          </div>
           <div class="field-value text-mono">
             {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
           </div>
         </div>
 
         <div class="field-group">
-          <div class="field-label">Face Value (AF)</div>
+          <div class="field-label field-row">
+            Face Value (AF)
+            {% include "partials/_help_tooltip.html" with label="Face Value" text="The maximum amount of water authorized by the right, in acre-feet per year." %}
+          </div>
           <div class="field-value text-mono">
             {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
           </div>
@@ -75,7 +82,10 @@
         </div>
 
         <div class="field-group">
-          <div class="field-label">Status</div>
+          <div class="field-label field-row">
+            Status
+            {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable. Curtailed rights are temporarily restricted." %}
+          </div>
           <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
         </div>
 

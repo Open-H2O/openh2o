@@ -12,6 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ station.station_name }}</span>
   </nav>
+  <p class="page-description">Station details, data source, and recent measurements.</p>
 </div>
 {% endblock %}
 
@@ -38,13 +39,17 @@
       <div class="card-raised">
         <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
           <h2 class="section-header-flush">Station Information</h2>
-          <div id="toggle-cell">
+          <div id="toggle-cell" class="row-start">
+            <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);">Active{% include "partials/_help_tooltip.html" with label="Active" text="Active stations sync measurements during scheduled data pulls. Inactive stations are skipped." %}</span>
             {% include "datasync/partials/_station_toggle.html" %}
           </div>
         </div>
 
         <div class="field-group">
-          <div class="field-label">Data Source</div>
+          <div class="field-label field-row">
+            Data Source
+            {% include "partials/_help_tooltip.html" with label="Source" text="The external data provider (CDEC, USGS, CIMIS, etc.) this station syncs from." %}
+          </div>
           <div class="row-start">
             <span class="pill-tag" style="color: var(--color-error);">{{ station.data_source.code }}</span>
             <span class="text-secondary text-base">{{ station.data_source.name }}</span>
@@ -52,7 +57,10 @@
         </div>
 
         <div class="field-group">
-          <div class="field-label">External Station ID</div>
+          <div class="field-label field-row">
+            External Station ID
+            {% include "partials/_help_tooltip.html" with label="Station ID" text="The identifier used by the external data source to reference this station." %}
+          </div>
           <div class="field-value-mono">{{ station.external_station_id }}</div>
         </div>
 
