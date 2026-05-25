@@ -1,0 +1,11 @@
+{% if parcels %}
+<div class="parcel-results-list">
+  {% for parcel in parcels %}
+  <button type="button" class="parcel-result-item"
+          onclick="document.getElementById('parcel_id').value='{{ parcel.pk }}'; document.getElementById('parcel-status').textContent='({{ parcel.parcel_number }})'; this.parentElement.parentElement.style.display='none';">
+    <span class="text-sm">{{ parcel.parcel_number }}</span>
+    <span class="text-xs text-tertiary">{{ parcel.owner_name|default:"No owner" }}</span>
+  </button>
+  {% endfor %}
+</div>
+{% endif %}
