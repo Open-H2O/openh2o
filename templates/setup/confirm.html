@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Boundary - OpenH2O Setup{% endblock %}
+{% block page_title %}Confirm Boundary{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'setup:wizard' %}">Setup</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Confirm Boundary</span>
+  </nav>
+  <p class="page-description">Review your boundary on the map, then begin auto-population of geographic data.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <!-- Step indicator -->
+  <div class="row-start" style="gap: var(--space-lg);">
+    <div class="row-start">
+      <span class="step-badge" style="background: var(--forest-400); color: var(--color-base); border-color: var(--forest-400);">✓</span>
+      <span class="text-base text-secondary" style="text-decoration: line-through; opacity: 0.5;">Boundary</span>
+    </div>
+    <span class="text-tertiary">›</span>
+    <div class="row-start">
+      <span class="step-badge step-badge-active">2</span>
+      <span class="text-base" style="font-weight: 600; color: var(--color-gold);">Confirm</span>
+    </div>
+    <span class="text-tertiary">›</span>
+    <div class="row-start">
+      <span class="step-badge">3</span>
+      <span class="text-base text-tertiary">Populate</span>
+    </div>
+  </div>
+
+  <!-- Map preview -->
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="boundary-map" style="height: 360px; width: 100%;"></div>
+  </div>
+
+  <!-- Stats card -->
+  <div class="card-raised">
+    <h2 class="card-header-ruled">{{ boundary.name }}</h2>
+    <div class="stat-grid-2col" style="margin-bottom: var(--space-lg);">
+      <div class="inset-card">
+        <div class="stat-card-label">Area</div>
+        <div class="stat-card-value-sm">{% if area_sq_miles %}{{ area_sq_miles|floatformat:1 }}{% else %}—{% endif %}</div>
+        <div class="stat-card-unit">square miles</div>
+      </div>
+      <div class="inset-card">
+        <div class="stat-card-label">Existing Data</div>
+        <div class="stat-card-value-sm">{{ existing_basins|add:existing_flowlines }}</div>
+        <div class="stat-card-unit">basins + flowlines found</div>
+      </div>
+    </div>
+
+    <div class="card-raised card-inset" style="margin-bottom: var(--space-lg);">
+      <p class="text-secondary text-sm" style="margin: 0;">
+        Auto-population will fetch from public APIs:
+        DWR Bulletin 118 basins, LightBox parcels, USGS 3DHP flowlines, and
+        CDEC/USGS/CIMIS monitoring stations. Existing records are skipped (idempotent).
+      </p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-footer-ruled">
+        <a href="{% url 'setup:wizard' %}" class="btn-secondary">← Back</a>
+        <button type="submit" class="btn-primary">Begin Population →</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  if (!window.maplibregl) return;
+
+  const map = new maplibregl.Map({
+    container: 'boundary-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    zoom: 8,
+    center: [-119.5, 37.3],
+  });
+
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+  const boundaryGeojson = {{ boundary_geojson|safe }};
+
+  map.on('load', function() {
+    if (!boundaryGeojson) return;
+
+    map.addSource('boundary', {
+      type: 'geojson',
+      data: { type: 'Feature', geometry: boundaryGeojson, properties: {} },
+    });
+
+    map.addLayer({
+      id: 'boundary-fill',
+      type: 'fill',
+      source: 'boundary',
+      paint: {
+        'fill-color': '#1B7FAF',
+        'fill-opacity': 0.18,
+      },
+    });
+
+    map.addLayer({
+      id: 'boundary-line',
+      type: 'line',
+      source: 'boundary',
+      paint: {
+        'line-color': '#3DB4E0',
+        'line-width': 2,
+        'line-opacity': 0.8,
+      },
+    });
+
+    // Fit to boundary bounds
+    try {
+      const coords = [];
+      function extractCoords(c) {
+        if (Array.isArray(c[0])) { c.forEach(extractCoords); }
+        else { coords.push(c); }
+      }
+      if (boundaryGeojson.type === 'Polygon') {
+        boundaryGeojson.coordinates.forEach(extractCoords);
+      } else if (boundaryGeojson.type === 'MultiPolygon') {
+        boundaryGeojson.coordinates.forEach(p => p.forEach(extractCoords));
+      }
+      if (coords.length > 0) {
+        const lngs = coords.map(c => c[0]);
+        const lats = coords.map(c => c[1]);
+        map.fitBounds(
+          [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+          { padding: 40, maxZoom: 13 }
+        );
+      }
+    } catch(e) {
+      console.warn('Boundary fit failed:', e);
+    }
+  });
+})();
+</script>
+{% endblock %}

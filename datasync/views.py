@@ -1,15 +1,24 @@
 import json
+from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from datasync.models import DataRecordStaging, DataSource, DataSyncLog, MonitoredStation
+from datasync.models import (
+    DataRecordStaging,
+    DataSource,
+    DataSyncLog,
+    MonitoredStation,
+    OpenETCache,
+)
 
 
 @login_required
@@ -160,6 +169,162 @@ def station_add(request):
         "data_sources": DataSource.objects.filter(is_active=True).order_by("code"),
     }
     return render(request, "datasync/station_add.html", context)
+
+
+@login_required
+def monitoring_dashboard(request):
+    """Monitoring dashboard with station health stats, sparklines, and freshness map."""
+    now = timezone.now()
+    threshold_24h = now - timedelta(hours=24)
+    threshold_7d = now - timedelta(days=7)
+
+    active_stations = MonitoredStation.objects.filter(
+        is_active=True
+    ).select_related("data_source").order_by("data_source__code", "station_name")
+
+    fresh_count = sum(
+        1 for s in active_stations
+        if s.last_data_at and s.last_data_at >= threshold_24h
+    )
+    stale_count = sum(
+        1 for s in active_stations
+        if not s.last_data_at or s.last_data_at < threshold_24h
+    )
+    total_active = active_stations.count()
+
+    # Source stats with most recent log per source
+    sources = DataSource.objects.filter(is_active=True).order_by("code")
+    source_status_list = []
+    for source in sources:
+        log = DataSyncLog.objects.filter(data_source=source).order_by("-started_at").first()
+        total = MonitoredStation.objects.filter(data_source=source).count()
+        active = MonitoredStation.objects.filter(data_source=source, is_active=True).count()
+        source_status_list.append({
+            "source": source,
+            "log": log,
+            "total": total,
+            "active": active,
+        })
+
+    # Sparkline data: last 10 DataRecordStaging per active station
+    station_ids = list(active_stations.values_list("pk", flat=True))
+    staging_qs = (
+        DataRecordStaging.objects
+        .filter(station__in=station_ids)
+        .order_by("station_id", "-observation_date")
+        .values("station_id", "value", "observation_date")
+    )
+
+    # Group by station, keep latest 10 per station
+    raw_records: dict = {}
+    for row in staging_qs:
+        sid = row["station_id"]
+        if sid not in raw_records:
+            raw_records[sid] = []
+        if len(raw_records[sid]) < 10:
+            raw_records[sid].append(row["value"])
+
+    # Build sparkline SVG path strings per station
+    station_sparklines = {}
+    for sid, values in raw_records.items():
+        # Reverse so oldest is on left
+        vals = list(reversed(values))
+        numeric = [float(v) for v in vals if v is not None]
+        if len(numeric) < 2:
+            station_sparklines[sid] = None
+            continue
+        min_v = min(numeric)
+        max_v = max(numeric)
+        span = max_v - min_v if max_v != min_v else 1.0
+        width = 80
+        height = 24
+        n = len(numeric)
+        points = []
+        for i, v in enumerate(numeric):
+            x = round(i * (width - 1) / (n - 1), 2)
+            y = round(height - ((v - min_v) / span) * (height - 4) - 2, 2)
+            points.append(f"{x},{y}")
+        station_sparklines[sid] = " ".join(points)
+
+    # Determine freshness class for each active station
+    station_list = []
+    for s in active_stations:
+        if s.last_data_at and s.last_data_at >= threshold_24h:
+            freshness = "fresh"
+        elif s.last_data_at and s.last_data_at >= threshold_7d:
+            freshness = "stale"
+        else:
+            freshness = "dead"
+        station_list.append({
+            "station": s,
+            "freshness": freshness,
+            "sparkline_points": station_sparklines.get(s.pk),
+        })
+
+    # OpenET budget
+    _, openet_used, openet_limit = OpenETCache.check_budget()
+
+    context = {
+        "source_status_list": source_status_list,
+        "stale_count": stale_count,
+        "fresh_count": fresh_count,
+        "total_active": total_active,
+        "station_list": station_list,
+        "openet_used": openet_used,
+        "openet_limit": openet_limit,
+    }
+
+    if request.headers.get("HX-Request"):
+        return render(request, "datasync/partials/_monitoring_content.html", context)
+
+    return render(request, "datasync/monitoring_dashboard.html", context)
+
+
+@login_required
+def stations_freshness_geojson(request):
+    """Return active stations as GeoJSON with freshness metadata."""
+    now = timezone.now()
+    threshold_24h = now - timedelta(hours=24)
+    threshold_7d = now - timedelta(days=7)
+
+    stations = MonitoredStation.objects.filter(
+        is_active=True, location__isnull=False
+    ).select_related("data_source")
+
+    features = []
+    for s in stations:
+        if s.last_data_at and s.last_data_at >= threshold_24h:
+            freshness = "fresh"
+            hours_since = (now - s.last_data_at).total_seconds() / 3600
+        elif s.last_data_at and s.last_data_at >= threshold_7d:
+            freshness = "stale"
+            hours_since = (now - s.last_data_at).total_seconds() / 3600
+        else:
+            freshness = "dead"
+            hours_since = (
+                (now - s.last_data_at).total_seconds() / 3600
+                if s.last_data_at else None
+            )
+
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [s.location.x, s.location.y],
+            },
+            "properties": {
+                "pk": s.pk,
+                "station_name": s.station_name,
+                "external_station_id": s.external_station_id,
+                "data_source_code": s.data_source.code,
+                "freshness": freshness,
+                "hours_since_data": round(hours_since, 1) if hours_since is not None else None,
+                "last_data_at": s.last_data_at.isoformat() if s.last_data_at else None,
+            },
+        })
+
+    data = {"type": "FeatureCollection", "features": features}
+    return HttpResponse(json.dumps(data), content_type="application/json")
 
 
 @login_required
