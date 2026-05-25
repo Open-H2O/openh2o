@@ -93,7 +93,8 @@ var MAP_CONFIG = {
         { id: 'wells', url: '{% url "wells:geojson" %}' },
         { id: 'pods', url: '{% url "surface:pods_geojson" %}' },
         { id: 'recharge', url: '{% url "recharge:sites_geojson" %}' },
-        { id: 'stations', url: '{% url "datasync:stations_geojson" %}' }
+        { id: 'stations', url: '{% url "datasync:stations_geojson" %}' },
+        { id: 'tie-lines', url: '{% url "geography:tie_lines_geojson" %}' }
     ],
     layers: [
         {
@@ -128,6 +129,32 @@ var MAP_CONFIG = {
             id: 'parcels-outline', type: 'line', source: 'parcels',
             group: 'parcels', groupHidden: true,
             paint: { 'line-color': '#1B7FAF', 'line-width': 1.5 }
+        },
+        {
+            id: 'gw-tie-lines', type: 'line', source: 'tie-lines',
+            label: 'GW Tie Lines', group: 'tie-lines',
+            filter: ['==', ['get', 'source_type'], 'gw'],
+            paint: { 'line-color': '#E4A317', 'line-width': 1.5, 'line-opacity': 0.6, 'line-dasharray': [6, 3] },
+            swatch: 'line-dash', swatchColor: '#E4A317'
+        },
+        {
+            id: 'sw-tie-lines', type: 'line', source: 'tie-lines',
+            label: 'SW Tie Lines', group: 'tie-lines', groupHidden: true,
+            filter: ['==', ['get', 'source_type'], 'sw'],
+            paint: { 'line-color': '#4ECDC4', 'line-width': 1.5, 'line-opacity': 0.6, 'line-dasharray': [6, 3] },
+            swatch: 'line-dash', swatchColor: '#4ECDC4'
+        },
+        {
+            id: 'tie-line-labels', type: 'symbol', source: 'tie-lines',
+            group: 'tie-lines', groupHidden: true,
+            minzoom: 13,
+            layout: {
+                'text-field': ['concat', ['to-string', ['*', ['get', 'fraction'], 100]], '%'],
+                'text-size': 11,
+                'text-offset': [0, -0.8],
+                'symbol-placement': 'line-center'
+            },
+            paint: { 'text-color': '#e8edf4', 'text-halo-color': '#040608', 'text-halo-width': 1.5 }
         },
         {
             id: 'wells-points', type: 'circle', source: 'wells',
@@ -217,6 +244,16 @@ var MAP_CONFIG = {
                    'ID: ' + (p.external_station_id || '—') + '<br>' +
                    'Last data: ' + (p.last_data_at ? p.last_data_at.slice(0,10) : '—') + '<br>' +
                    '<a href="/datasync/stations/' + p.pk + '/" style="color:#E4A317">View details →</a>';
+        },
+        'gw-tie-lines': function(p) {
+            var pct = Math.round((p.fraction || 0) * 100);
+            return '<strong>Well ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
+                   'Fraction: ' + pct + '%';
+        },
+        'sw-tie-lines': function(p) {
+            var pct = Math.round((p.fraction || 0) * 100);
+            return '<strong>POD ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
+                   'Fraction: ' + pct + '%';
         }
     },
     legend: []
