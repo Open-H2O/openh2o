@@ -138,7 +138,7 @@ Plans:
 **Plans**: 1
 
 Plans:
-- [ ] 15-01: TBD (run /gsd:plan-phase 15 to break down)
+- [x] 15-01: Contour Basin v2 logo, blue favicon, public About page with policy timeline
 
 #### Phase 16: Tie Lines & Source Fractions
 
@@ -224,7 +224,7 @@ Plans:
 | 13. Cron, Health, & Final Polish | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 13.1 AI Operator Guide & Onboarding | v1.1 | 0/? | Deferred → Phase 20 | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Deferred → Phase 21 | - |
-| 15. Branding & About Page | v1.2 | 0/1 | Not started | - |
+| 15. Branding & About Page | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 16. Tie Lines & Source Fractions | v1.2 | 0/1 | Not started | - |
 | 17. Static GIS & Auto-Populate Engine | v1.2 | 0/? | Not started | - |
 | 18. Telemetry Discovery & OpenET | v1.2 | 0/? | Not started | - |
