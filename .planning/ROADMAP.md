@@ -4,209 +4,37 @@
 
 Stand up an AI-deployable water accounting platform from scratch. Start with Docker infrastructure, build the 48-table domain model, add spatial CRUD and maps, wire up the accounting engine and external data feeds in parallel, layer on state reporting, add health monitoring, then polish the DEPLOY.md until an AI can stand the whole thing up on a fresh VPS unassisted.
 
-## Domain Expertise
+## Milestones
 
-None (no matching skills installed)
+- ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-05-24)
 
-## Phases
+## Completed Milestones
 
-- [x] **Phase 1: Infrastructure Scaffold** - Docker Compose stack boots Django through Caddy with PostGIS
-- [x] **Phase 2: Core Domain Models** - All 48 models, migrations, admin, seed data commands
-- [x] **Phase 3: Parcel and Well CRUD with Maps** - Import, view, and manage parcels/wells on MapLibre map
-- [x] **Phase 4: Water Accounting Engine** - ParcelLedger double-entry, accounts, allocations, dashboards
-- [x] **Phase 5: External Data Aggregator** - 8 API adapters with station discovery and geographic filtering
-- [x] **Phase 6: State Reporting** - GEARS CSV, CalWATRS CSV, email+JSON with prepare-review-send workflow
-- [x] **Phase 7: Health Check and Maintenance** - 8-category health system, /health endpoint, maintenance commands
-- [x] **Phase 8: Deploy, Polish, and Handoff** - CSS extraction, page polish, empty states, DEPLOY.md, demo fixtures, security hardening
+- ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) (Phases 1-8) — SHIPPED 2026-05-24
 
-## Phase Details
+<details>
+<summary>v1.0 MVP phase list</summary>
 
-### Phase 1: Infrastructure Scaffold
-**Goal**: Docker Compose stack boots, Django serves a styled page through Caddy, PostGIS is ready
-**Depends on**: Nothing (first phase)
-**Research**: Unlikely (established Docker/Django/Caddy patterns)
-**Plans**: 1/1 complete
-**Completed**: 2026-05-23
+- [x] Phase 1: Infrastructure Scaffold (1/1 plans) — completed 2026-05-23
+- [x] Phase 2: Core Domain Models (7/7 plans) — completed 2026-05-23
+- [x] Phase 3: Parcel and Well CRUD with Maps (4/4 plans) — completed 2026-05-24
+- [x] Phase 4: Water Accounting Engine (3/3 plans) — completed 2026-05-24
+- [x] Phase 5: External Data Aggregator (2/2 plans) — completed 2026-05-24
+- [x] Phase 6: State Reporting (1/1 plan) — completed 2026-05-24
+- [x] Phase 7: Health Check and Maintenance (1/1 plan) — completed 2026-05-24
+- [x] Phase 8: Deploy, Polish, and Handoff (3/3 plans) — completed 2026-05-24
 
-Deliverables:
-- docker-compose.yml (db, web, caddy)
-- Dockerfile with GDAL/GEOS/PROJ for GeoDjango
-- Caddyfile with auto-HTTPS and reverse proxy
-- Django project skeleton with split settings (base/local/production)
-- pyproject.toml with all dependencies including django-allauth
-- VanderDev OKLCH design tokens ported to CSS custom properties
-- Base template with HTMX, Tailwind, Public Sans + JetBrains Mono
-- Tailwind standalone binary in Docker build
-- DEPLOY.md skeleton, CLAUDE.md project context
-
-Verification: `docker compose up -d` succeeds. `curl localhost` returns styled page. `psql` confirms PostGIS loaded.
-
-### Phase 2: Core Domain Models
-**Goal**: All 48 models exist with migrations, admin registered, seed data and auth working
-**Depends on**: Phase 1
-**Research**: Unlikely (Django ORM, django-allauth are well-documented)
-**Plans**: 7/7 complete
-**Completed**: 2026-05-23
-
-Deliverables:
-- All Django models across 11 apps with initial migrations
-- Django admin registered for every model
-- Management commands: seed_roles, seed_water_types, seed_data_sources
-- Custom User model (extends AbstractUser)
-- SiteConfig singleton with allow_google_oauth toggle
-- django-allauth: email/password login, email verification, password reset
-- Google OAuth provider (disabled by default, per-agency toggle)
-- Styled login/logout/register/password-reset templates
-- GeoDjango spatial fields on all geographic models
-
-Verification: `manage.py migrate` succeeds. Seed commands populate reference data. Admin shows all 48 models. Password reset sends email. Google OAuth button appears only when enabled.
-
-### Phase 3: Parcel and Well CRUD with Maps
-**Goal**: Import parcels and wells, see them on a map, view details, manage surface water and recharge
-**Depends on**: Phase 2
-**Research**: Unlikely (MapLibre GL JS and HTMX patterns established from VanderDev)
-**Plans**: 4/4 complete
-**Completed**: 2026-05-24
-
-Deliverables:
-- Parcel list/detail views with HTMX search/filter
-- Well list/detail views with HTMX search/filter
-- MapLibre GL JS map: parcels as polygons, wells as points, water rights, recharge sites
-- map-engine.js adapted from VanderDev (MAP_CONFIG pattern)
-- Layer controls, popups, legend, basemap toggle
-- Management commands: import_parcels (GeoJSON/Shapefile), import_wells (CSV/Shapefile)
-- HTMX inline editing for parcel and well attributes
-- Surface water views: water rights list, points of diversion on map
-- Recharge sites on map with event history
-
-Verification: Import test GeoJSON. See parcels on map. Click parcel, see detail. Wells render as points. HTMX filters work without full page reload.
-
-### Phase 4: Water Accounting Engine
-**Goal**: ParcelLedger double-entry system works with account balances, allocations, and budget dashboards
-**Depends on**: Phase 3
-**Research**: Unlikely (double-entry pattern documented from Rio repo analysis)
-**Plans**: 3/3 complete
-**Status**: Complete
-**Completed**: 2026-05-24
-
-Deliverables:
-- ParcelLedger entry creation (manual and CSV bulk upload)
-- Water account management (create, assign parcels, view balance)
-- Allocation plan configuration per zone and water type
-- Reporting period management (water years, finalization)
-- Dashboard: account-level water budget (supply vs usage, surplus/deficit)
-- import_ledger_csv management command
-- Balance calculation: per-parcel, per-account, per-zone aggregations
-- Surface water diversion records linked to water rights
-- Recharge events creating positive ledger entries
-
-Verification: Create account, assign parcels, add +100 AF supply and -75 AF usage. Dashboard shows 25 AF surplus. CSV upload adds entries in batch.
-
-**Can run in parallel with Phase 5.**
-
-### Phase 5: External Data Aggregator
-**Goal**: 8 adapters fetch, stage, and publish external water data filtered to the agency's geographic area
-**Depends on**: Phase 3
-**Research**: Likely (8 external APIs with varying auth, formats, and quirks)
-**Research topics**: Current USGS OGC API endpoints (legacy NWIS shutting down), OpenET API key acquisition process, CNRFC file format, DWR SGMA Portal REST endpoints, CIMIS AppKey registration
-**Plans**: 2/2 complete
-**Completed**: 2026-05-24
-
-Deliverables:
-- BaseAdapter abstract class: fetch/parse/validate/stage/publish pipeline
-- 8 concrete adapters: CDEC, USGS (OGC API), OpenET (3-stage async), CIMIS, CNRFC, DWR WDL, DWR SGMA, NOAA
-- OpenET 3-stage pipeline: trigger, poll, retrieve
-- DataSyncLog and DataRecordStaging tables
-- monitored_station model with discovery and curation workflow
-- Management commands: sync_source, sync_all, check_source_health, discover_stations
-- Station management UI: list on map, toggle active/inactive, add custom
-- Rate limiting and retry logic per adapter
-- Mock mode for development (fixture data, no network calls)
-
-Verification: Set boundary. `discover_stations cdec --radius 50`. See stations on map. Activate 3. `sync_source cdec`. Data appears in staging and publishes. `check_source_health` reports all 8.
-
-**Can run in parallel with Phase 4.**
-
-### Phase 6: State Reporting
-**Goal**: Generate GEARS CSV, CalWATRS CSV, and email+JSON reports with prepare-review-send workflow
-**Depends on**: Phases 4 and 5 (needs ledger data and external data)
-**Research**: Likely (GEARS CSV template format, CalWATRS A1/A2 specifications, Power Automate JSON schema)
-**Research topics**: Current GEARS upload template columns, CalWATRS CSV specifications (5 templates), Power Automate shared mailbox trigger patterns, HMAC signature implementation
-**Plans**: TBD
-
-Deliverables:
-- GEARS CSV generator (per-well and per-parcel ET methods)
-- CalWATRS CSV generator (A1 and A2 templates)
-- Email+JSON generator with Power Automate-compatible schema
-- ReportingCrosswalk configuration UI
-- Prepare-review-send workflow with validation warnings
-- Report history view (all submissions with dates, periods, status)
-- Management commands: generate_report, validate_report, submit_report
-
-Verification: Generate GEARS CSV. Validate column headers match spec. Generate CalWATRS A1. Create email+JSON draft, inspect JSON structure and HMAC signature.
-
-### Phase 7: Health Check and Maintenance
-**Goal**: Management commands for ongoing monitoring, health dashboard with green/yellow/red indicators
-**Depends on**: Phase 3 (needs models and views in place)
-**Research**: Unlikely (Django management commands, standard system checks)
-**Plans**: 1/1 complete
-**Completed**: 2026-05-24
-
-Deliverables:
-- run_health_checks command (8 categories: DB, disk, sync freshness, ledger integrity, orphans, SSL, Docker, migrations)
-- Health dashboard page with color-coded indicators (OKLCH green/orange/red)
-- prune_old_data command (staging >90 days, health >365 days, sync >365 days)
-- /health/api/ JSON endpoint for external monitoring (Uptime Kuma compatible)
-- Sidebar SYSTEM section with Health link
-
-Verification: Run health checks, see results on dashboard. Break a data source, re-run, see it flagged red.
-
-### Phase 8: Deploy, Polish, and Handoff
-**Goal**: CSS extraction, page polish, empty states, complete DEPLOY.md, demo fixtures, security hardening, ready for pilot
-**Depends on**: All prior phases complete
-**Research**: Unlikely (design system established, documentation and fixture generation)
-**Plans**: 3/3 complete
-**Status**: Complete
-**Completed**: 2026-05-24
-
-Deliverables:
-- CSS class extraction (replace inline styles with reusable classes in app.css)
-- Consistent page headers with breadcrumbs and contextual descriptions
-- Empty states with guided next-action on all list pages
-- Form and table styling standardized (dark-mode inputs, zebra rows)
-- HTMX loading indicators and toast notifications
-- Consistent supply/usage/net color coding across all views
-- DEPLOY.md: every step copy-pasteable with verification and failure modes
-- DEPLOY.md sections: Google OAuth setup, email/SMTP setup
-- CLAUDE.md: full project context for AI assistants
-- Demo fixture: 1 GSA boundary, 3 zones, 50 parcels, 20 wells, 6 months ledger, 3 accounts
-- Makefile shortcuts: make up, make migrate, make seed, make test, make health
-- Security hardening: CSRF, SECURE_* settings
-- README.md with quick start
-
-Verification: Walk through every page. No inline styles, no dead-end empty states. Clone to fresh VPS, follow DEPLOY.md, platform boots with demo data, health checks pass.
-
-## Critical Path
-
-```
-Phase 1 → Phase 2 → Phase 3 → Phase 4 (parallel) → Phase 6 → Phase 8
-                                Phase 5 (parallel) /         /
-                                Phase 7 (parallel) ----------
-```
-
-Phases 4+5 can run in parallel after Phase 3.
-Phases 6+7 can run in parallel, but Phase 6 needs 4+5 complete.
-Phase 8 is the final phase (merged UI/UX + Deploy/Handoff).
+</details>
 
 ## Progress
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Infrastructure Scaffold | 1/1 | Complete | 2026-05-23 |
-| 2. Core Domain Models | 7/7 | Complete | 2026-05-23 |
-| 3. Parcel and Well CRUD with Maps | 4/4 | Complete | 2026-05-24 |
-| 4. Water Accounting Engine | 3/3 | Complete | 2026-05-24 |
-| 5. External Data Aggregator | 2/2 | Complete | 2026-05-24 |
-| 6. State Reporting | 1/1 | Complete | 2026-05-24 |
-| 7. Health Check and Maintenance | 1/1 | Complete | 2026-05-24 |
-| 8. Deploy, Polish, and Handoff | 3/3 | Complete | 2026-05-24 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Infrastructure Scaffold | v1.0 | 1/1 | Complete | 2026-05-23 |
+| 2. Core Domain Models | v1.0 | 7/7 | Complete | 2026-05-23 |
+| 3. Parcel and Well CRUD with Maps | v1.0 | 4/4 | Complete | 2026-05-24 |
+| 4. Water Accounting Engine | v1.0 | 3/3 | Complete | 2026-05-24 |
+| 5. External Data Aggregator | v1.0 | 2/2 | Complete | 2026-05-24 |
+| 6. State Reporting | v1.0 | 1/1 | Complete | 2026-05-24 |
+| 7. Health Check and Maintenance | v1.0 | 1/1 | Complete | 2026-05-24 |
+| 8. Deploy, Polish, and Handoff | v1.0 | 3/3 | Complete | 2026-05-24 |

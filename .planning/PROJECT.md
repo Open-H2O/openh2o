@@ -2,7 +2,7 @@
 
 ## What This Is
 
-An AI-deployable water accounting platform for California Groundwater Sustainability Agencies (GSAs) and water districts. A poorly-funded agency buys a frontier AI subscription, points it at this GitHub repo and a $15/mo VPS, and the AI stands the platform up. Handles groundwater extraction, surface water diversions, mixed-use accounting, and groundwater recharge tracking with optional state reporting to the Water Board.
+An AI-deployable water accounting platform for California Groundwater Sustainability Agencies (GSAs) and water districts. A poorly-funded agency buys a frontier AI subscription, points it at this GitHub repo and a $15/mo VPS, and the AI stands the platform up. Handles groundwater extraction, surface water diversions, mixed-use accounting, and groundwater recharge tracking with state reporting to the Water Board. Shipped v1.0 with full CRUD, interactive maps, double-entry accounting, 8 external data feeds, and automated report generation.
 
 ## Core Value
 
@@ -12,26 +12,30 @@ Access is the product, not features. A $15/mo VPS replaces a $35K-$75K consultin
 
 ### Validated
 
-(None yet -- ship to validate)
+- ✓ Docker Compose stack boots Django/PostGIS/Caddy with auto-HTTPS — v1.0
+- ✓ 48-table schema across 11 Django apps covering all 4 water domains — v1.0
+- ✓ Parcel and well CRUD with MapLibre GL JS map (import via GeoJSON/Shapefile) — v1.0
+- ✓ ParcelLedger double-entry water accounting (supply positive, usage negative) — v1.0
+- ✓ Water account management with allocation tracking and budget dashboards — v1.0
+- ✓ Surface water rights, points of diversion, diversion records, curtailment orders — v1.0
+- ✓ Managed aquifer recharge sites with event tracking — v1.0
+- ✓ 8 external data adapters (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR WDL, DWR SGMA, NOAA) — v1.0
+- ✓ Geographic station discovery and curation workflow — v1.0
+- ✓ GEARS CSV generation (per-well and per-parcel ET methods) — v1.0
+- ✓ CalWATRS CSV generation (A1 and A2 templates) — v1.0
+- ✓ Email+JSON alternative reporting pathway via Power Automate — v1.0
+- ✓ Health check system (8 categories, green/yellow/red, /health JSON endpoint) — v1.0
+- ✓ django-allauth authentication: email/password login, password reset, optional Google OAuth — v1.0
+- ✓ AI-consumable DEPLOY.md with copy-paste commands and verification at every step — v1.0
+- ✓ Demo fixture data for pilot testing — v1.0
 
 ### Active
 
-- [ ] Docker Compose stack boots Django/PostGIS/Caddy with auto-HTTPS
-- [ ] 48-table schema across 11 Django apps covering all 4 water domains
-- [ ] Parcel and well CRUD with MapLibre GL JS map (import via GeoJSON/Shapefile)
-- [ ] ParcelLedger double-entry water accounting (supply positive, usage negative)
-- [ ] Water account management with allocation tracking and budget dashboards
-- [ ] Surface water rights, points of diversion, diversion records, curtailment orders
-- [ ] Managed aquifer recharge sites with event tracking
-- [ ] 8 external data adapters (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR WDL, DWR SGMA, NOAA)
-- [ ] Geographic station discovery and curation workflow
-- [ ] GEARS CSV generation (per-well and per-parcel ET methods)
-- [ ] CalWATRS CSV generation (A1 and A2 templates)
-- [ ] Email+JSON alternative reporting pathway via Power Automate
-- [ ] Health check system (8 categories, green/yellow/red, /health JSON endpoint)
-- [ ] django-allauth authentication: email/password login, password reset, optional Google OAuth
-- [ ] AI-consumable DEPLOY.md with copy-paste commands and verification at every step
-- [ ] Demo fixture data for pilot testing
+- [ ] Automated test suite (unit + integration)
+- [ ] OpenET API key acquisition and live adapter testing
+- [ ] Pilot deployment with a real GSA (Merced or similar)
+- [ ] RechargeSite zone FK and WaterRight parcel FK (deferred from v1.0)
+- [ ] Cron scheduling for sync_all and run_health_checks
 
 ### Out of Scope
 
@@ -80,14 +84,27 @@ DWR has a 5yr/$10M MSA with CA Water Data Consortium. ~$500K available for Merce
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Single-tenant over multi-tenant | Simplest security, simplest deployment, each agency owns their data | -- Pending |
-| Django templates + HTMX over SPA | Zero Node.js, one build system, AI deploys in one pass | -- Pending |
-| Management commands + cron over Celery | 2-4GB VPS constraint, simpler stack | -- Pending |
-| Staging-then-publish for external data | Never write directly to production from external sources (Zybach pattern) | -- Pending |
-| Email+JSON over portal API for state reporting | GEARS/CalWATRS have no APIs; Power Automate on state side is FedRAMP-authorized | -- Pending |
-| django-allauth for auth | Password reset built-in, Google OAuth for agencies on Google Workspace, per-agency toggle | -- Pending |
-| Caddy over Nginx | Auto-renewing HTTPS, smaller memory footprint | -- Pending |
-| openh2o.com domain | Short, memorable, matches repo name | -- Pending |
+| Single-tenant over multi-tenant | Simplest security, simplest deployment, each agency owns their data | ✓ Good |
+| Django templates + HTMX over SPA | Zero Node.js, one build system, AI deploys in one pass | ✓ Good |
+| Management commands + cron over Celery | 2-4GB VPS constraint, simpler stack | ✓ Good |
+| Staging-then-publish for external data | Never write directly to production from external sources (Zybach pattern) | ✓ Good |
+| Email+JSON over portal API for state reporting | GEARS/CalWATRS have no APIs; Power Automate on state side is FedRAMP-authorized | ✓ Good |
+| django-allauth for auth | Password reset built-in, Google OAuth for agencies on Google Workspace, per-agency toggle | ✓ Good |
+| Caddy over Nginx | Auto-renewing HTTPS, smaller memory footprint | ✓ Good |
+| openh2o.com domain | Short, memorable, matches repo name | ✓ Good |
+| Tailwind standalone binary | No Node.js required, compiles during Docker build | ✓ Good |
+| ParcelLedger double-entry (from Rio) | Supply positive / usage negative, simple balance calculation | ✓ Good |
+| BaseAdapter registry pattern | Extensible without modifying core; mock mode for dev | ✓ Good |
+| Public health endpoint | Monitoring tools (Uptime Kuma) need unauthenticated access | ✓ Good |
+| Merge Phases 8+9 into single Phase 8 | UI polish and deploy docs too thin to justify separate phases | ✓ Good |
+
+## Current State
+
+Shipped v1.0 with ~48,000 lines of Python across 292 files.
+Tech stack: Django 5, PostGIS 3.4, Caddy, Docker Compose, HTMX, Tailwind Standalone, MapLibre GL JS.
+Deployed on Butler (192.168.0.114) via Cloudflare Tunnel.
+Health checks: 6/8 green (SSL and sync freshness expected yellow for demo environment).
+No automated tests yet.
 
 ---
-*Last updated: 2026-05-23 after initialization*
+*Last updated: 2026-05-24 after v1.0 milestone*
