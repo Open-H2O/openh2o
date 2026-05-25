@@ -816,6 +816,18 @@ a { color: inherit; }
     outline-offset: 2px;
 }
 
+/* -- Content section labels ----------------------------------------------- */
+
+.content-section-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin: 0 0 var(--space-md) 0;
+    padding: 0;
+}
+
 /* -- Stat cards ---------------------------------------------------------- */
 
 .stat-card {
@@ -833,11 +845,23 @@ a { color: inherit; }
 }
 
 .stat-card-value {
-    font-size: 2rem;
+    font-size: 2.25rem;
     font-weight: 800;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     line-height: 1.1;
+}
+
+.stat-card-accent-supply {
+    border-top: 3px solid var(--forest-400);
+}
+
+.stat-card-accent-usage {
+    border-top: 3px solid oklch(0.65 0.20 25);
+}
+
+.stat-card-accent-balance {
+    border-top: 3px solid var(--color-gold);
 }
 
 .stat-card-value-sm {

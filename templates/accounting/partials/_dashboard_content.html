@@ -9,25 +9,25 @@
 </div>
 {% else %}
 
-<!-- Stat cards: Total Supply / Total Usage / Net Balance -->
+<h2 class="content-section-label">Budget Summary</h2>
 <div class="stat-grid-3col">
 
   <!-- Total Supply -->
-  <div class="card-raised stat-card">
+  <div class="card-raised stat-card stat-card-accent-supply">
     <div class="stat-card-label">Total Supply</div>
     <div class="stat-card-value text-supply">{{ grand_supply|floatformat:2 }}</div>
     <div class="stat-card-unit">acre-feet</div>
   </div>
 
   <!-- Total Usage -->
-  <div class="card-raised stat-card">
+  <div class="card-raised stat-card stat-card-accent-usage">
     <div class="stat-card-label">Total Usage</div>
     <div class="stat-card-value text-usage">{{ grand_usage|floatformat:2 }}</div>
     <div class="stat-card-unit">acre-feet</div>
   </div>
 
   <!-- Net Balance -->
-  <div class="card-raised stat-card">
+  <div class="card-raised stat-card stat-card-accent-balance">
     <div class="stat-card-label">Net Balance</div>
     <div class="stat-card-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
       {{ grand_net|floatformat:2 }}
@@ -37,7 +37,7 @@
 
 </div>
 
-<!-- Account Summaries -->
+<h2 class="content-section-label">Account Details</h2>
 <div class="card-raised mb-md">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Water Accounts</h2>
@@ -91,7 +91,7 @@
   {% endif %}
 </div>
 
-<!-- Zone Summaries -->
+<h2 class="content-section-label">Zone Details</h2>
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Zones</h2>
