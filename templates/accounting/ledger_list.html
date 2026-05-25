@@ -39,9 +39,9 @@
     <div class="toolbar-row">
       <!-- Search -->
       <div style="flex: 1; min-width: 200px;">
-        <label class="form-label">Search</label>
+        <label class="form-label" for="filter-search">Search</label>
         <input type="text"
-               name="q"
+               id="filter-search" name="q"
                value="{{ q }}"
                placeholder="Parcel number or description..."
                hx-get="{% url 'accounting:ledger_list' %}"
@@ -53,8 +53,8 @@
 
       <!-- Reporting Period -->
       <div style="min-width: 160px;">
-        <label class="form-label">Period</label>
-        <select name="period"
+        <label class="form-label" for="filter-period">Period</label>
+        <select id="filter-period" name="period"
                 hx-get="{% url 'accounting:ledger_list' %}"
                 hx-target="#ledger-results"
                 hx-trigger="change"
@@ -69,8 +69,8 @@
 
       <!-- Source Type -->
       <div style="min-width: 140px;">
-        <label class="form-label">Source</label>
-        <select name="source_type"
+        <label class="form-label" for="filter-source-type">Source</label>
+        <select id="filter-source-type" name="source_type"
                 hx-get="{% url 'accounting:ledger_list' %}"
                 hx-target="#ledger-results"
                 hx-trigger="change"
@@ -85,8 +85,8 @@
 
       <!-- Water Type -->
       <div style="min-width: 140px;">
-        <label class="form-label">Water Type</label>
-        <select name="water_type"
+        <label class="form-label" for="filter-water-type">Water Type</label>
+        <select id="filter-water-type" name="water_type"
                 hx-get="{% url 'accounting:ledger_list' %}"
                 hx-target="#ledger-results"
                 hx-trigger="change"
@@ -101,9 +101,9 @@
 
       <!-- Date Range -->
       <div style="min-width: 130px;">
-        <label class="form-label">Start Date</label>
+        <label class="form-label" for="filter-start-date">Start Date</label>
         <input type="date"
-               name="start_date"
+               id="filter-start-date" name="start_date"
                value="{{ start_date }}"
                hx-get="{% url 'accounting:ledger_list' %}"
                hx-target="#ledger-results"
@@ -112,9 +112,9 @@
                class="form-input">
       </div>
       <div style="min-width: 130px;">
-        <label class="form-label">End Date</label>
+        <label class="form-label" for="filter-end-date">End Date</label>
         <input type="date"
-               name="end_date"
+               id="filter-end-date" name="end_date"
                value="{{ end_date }}"
                hx-get="{% url 'accounting:ledger_list' %}"
                hx-target="#ledger-results"

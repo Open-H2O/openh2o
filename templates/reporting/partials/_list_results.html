@@ -15,9 +15,8 @@
   </thead>
   <tbody>
     {% for sub in page_obj %}
-    <tr style="cursor: pointer;"
-        onclick="window.location='{% url 'reporting:report_detail' pk=sub.pk %}'">
-      <td>{{ sub.report_template.name }}</td>
+    <tr>
+      <td><a href="{% url 'reporting:report_detail' pk=sub.pk %}" class="data-table-link">{{ sub.report_template.name }}</a></td>
       <td class="text-secondary">{{ sub.reporting_period.name }}</td>
       <td>
         {% if sub.status == "submitted" or sub.status == "accepted" %}
@@ -27,7 +26,7 @@
         {% elif sub.status == "rejected" %}
         <span class="badge badge-red">{{ sub.get_status_display }}</span>
         {% else %}
-        <span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8;">{{ sub.get_status_display }}</span>
+        <span class="badge badge-grey">{{ sub.get_status_display }}</span>
         {% endif %}
       </td>
       <td class="text-tertiary text-sm">
@@ -60,7 +59,7 @@
 {% else %}
 <div class="empty-state">
   <div class="empty-state-icon">
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
     </svg>

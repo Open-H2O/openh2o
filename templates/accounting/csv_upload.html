@@ -42,7 +42,7 @@
 
       <!-- File input -->
       <div class="form-group">
-        <label class="form-label">CSV File <span class="required-mark">*</span></label>
+        <label class="form-label" for="{{ form.file.id_for_label }}">CSV File <span class="required-mark">*</span></label>
         {{ form.file }}
         {% if form.file.errors %}
         <div class="form-help text-furnace">{{ form.file.errors|join:", " }}</div>
@@ -51,7 +51,7 @@
 
       <!-- Reporting Period -->
       <div class="form-group">
-        <label class="form-label">Reporting Period</label>
+        <label class="form-label" for="{{ form.reporting_period.id_for_label }}">Reporting Period</label>
         {{ form.reporting_period }}
         {% if form.reporting_period.errors %}
         <div class="form-help text-furnace">{{ form.reporting_period.errors|join:", " }}</div>

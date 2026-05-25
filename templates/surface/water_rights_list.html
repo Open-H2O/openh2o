@@ -21,10 +21,10 @@
   <div class="card-raised toolbar-row">
     <!-- Search -->
     <div style="flex: 1; min-width: 200px;">
-      <label class="form-label">Search</label>
+      <label class="form-label" for="filter-search">Search</label>
       <input
         type="text"
-        name="q"
+        id="filter-search" name="q"
         value="{{ q }}"
         placeholder="Right ID or holder name..."
         hx-get="{% url 'surface:water_rights_list' %}"
@@ -37,9 +37,9 @@
 
     <!-- Status filter -->
     <div>
-      <label class="form-label">Status</label>
+      <label class="form-label" for="filter-status">Status</label>
       <select
-        name="status"
+        id="filter-status" name="status"
         hx-get="{% url 'surface:water_rights_list' %}"
         hx-target="#results"
         hx-trigger="change"
