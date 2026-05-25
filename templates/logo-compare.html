@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpenH2O Logo Options</title>
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { background: #040608; color: #e8edf4; font-family: 'Public Sans', sans-serif; margin: 0; padding: 40px; }
+        h1 { color: #E4A317; text-align: center; margin-bottom: 8px; }
+        .subtitle { text-align: center; color: #8899aa; margin-bottom: 48px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 1200px; margin: 0 auto; }
+        .option { background: oklch(0.17 0.012 260); border: 1px solid rgba(100,140,180,0.07); border-radius: 16px; padding: 24px; text-align: center; }
+        .option:hover { border-color: rgba(100,140,180,0.13); }
+        .option img { width: 100%; max-width: 400px; height: auto; border-radius: 10px; margin-bottom: 16px; }
+        .option h2 { color: #E4A317; font-size: 1.25rem; margin: 0 0 8px 0; }
+        .option p { color: #8899aa; font-size: 0.875rem; margin: 0; line-height: 1.5; }
+        .label { display: inline-block; background: #E4A317; color: #040608; font-weight: 700; font-size: 0.75rem; padding: 2px 10px; border-radius: 6px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <h1>OpenH2O Logo Options</h1>
+    <p class="subtitle">Pick the direction you like, or describe what to change</p>
+    <div class="grid">
+        <div class="option">
+            <span class="label">A</span>
+            <h2>Contour Basin</h2>
+            <img src="{% static 'img/logo-option-A.png' %}" alt="Option A: Contour Basin">
+            <p>Water drop as topographic contour rings. Gold outer edges to blue center. Evokes basin mapping and GIS data layers.</p>
+        </div>
+        <div class="option">
+            <span class="label">B</span>
+            <h2>H2O Wordmark</h2>
+            <img src="{% static 'img/logo-option-B.png' %}" alt="Option B: H2O Wordmark">
+            <p>Gold "H2O" in flowing script with material gradient. Direct and clean. May lose detail at small sizes.</p>
+        </div>
+        <div class="option">
+            <span class="label">C</span>
+            <h2>Shield & Waves</h2>
+            <img src="{% static 'img/logo-option-C.png' %}" alt="Option C: Shield & Waves">
+            <p>Gold shield with blue water flow lines. Engineering authority aesthetic. Clean at any size.</p>
+        </div>
+        <div class="option">
+            <span class="label">D</span>
+            <h2>Drop & Ripple</h2>
+            <img src="{% static 'img/logo-option-D.png' %}" alt="Option D: Drop & Ripple">
+            <p>Gold metallic drop with blue ripple in gold ring. Closest to VanderDev material feel. Strong at any size.</p>
+        </div>
+    </div>
+</body>
+</html>

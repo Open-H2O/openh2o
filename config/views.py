@@ -28,6 +28,11 @@ def index(request):
     return render(request, "index.html", context)
 
 
+def logo_compare(request):
+    """Temporary logo comparison page."""
+    return render(request, "logo-compare.html")
+
+
 def about(request):
     """Public About page with policy timeline and platform purpose."""
     logo_path = os.path.join(settings.BASE_DIR, "static", "img", "logo.png")
