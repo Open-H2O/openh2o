@@ -539,8 +539,69 @@ a { color: inherit; }
 .page-description {
     font-size: 0.875rem;
     color: var(--color-text-secondary);
-    max-width: 600px;
+    max-width: 48rem;
     margin-top: var(--space-xs);
+    margin-bottom: var(--space-md);
+}
+
+/* -- Help tooltip -------------------------------------------------------- */
+
+.help-tooltip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: none;
+    color: var(--color-text-tertiary);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    cursor: help;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: border-color 150ms, color 150ms;
+}
+
+.help-icon:hover {
+    border-color: var(--color-border-hover);
+    color: var(--color-text-secondary);
+}
+
+.help-text {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-surface-elevated, var(--color-elevated));
+    border: 1px solid var(--color-border);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    white-space: normal;
+    width: max-content;
+    max-width: 280px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 50;
+    margin-bottom: var(--space-xs);
+    box-shadow: var(--shadow-pop-sm);
+}
+
+.help-tooltip:hover .help-text,
+.help-tooltip:focus-within .help-text {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 /* -- Navigation ---------------------------------------------------------- */
