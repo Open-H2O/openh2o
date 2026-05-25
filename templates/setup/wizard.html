@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Wizard - OpenH2O{% endblock %}
+{% block page_title %}Setup Wizard{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'index' %}">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Setup Wizard</span>
+  </nav>
+  <p class="page-description">Upload your district boundary or select an existing one to auto-populate wells, parcels, basins, and monitoring stations.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <!-- Step indicator -->
+  <div class="row-start" style="gap: var(--space-lg);">
+    <div class="row-start">
+      <span class="step-badge step-badge-active">1</span>
+      <span class="text-base" style="font-weight: 600; color: var(--color-gold);">Boundary</span>
+    </div>
+    <span class="text-tertiary">›</span>
+    <div class="row-start">
+      <span class="step-badge">2</span>
+      <span class="text-base text-tertiary">Confirm</span>
+    </div>
+    <span class="text-tertiary">›</span>
+    <div class="row-start">
+      <span class="step-badge">3</span>
+      <span class="text-base text-tertiary">Populate</span>
+    </div>
+  </div>
+
+  {% if errors %}
+  <div class="alert-error">
+    {% for error in errors %}
+    <p style="margin: 0 0 var(--space-xs) 0;">{{ error }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Select Existing Boundary -->
+  {% if boundaries %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Select Existing Boundary</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="select">
+      <div class="form-group">
+        <label class="form-label" for="boundary_id">District Boundary</label>
+        <select name="boundary_id" id="boundary_id" class="form-select">
+          <option value="">— Choose a boundary —</option>
+          {% for b in boundaries %}
+          <option value="{{ b.pk }}">{{ b.name }}{% if b.area_sq_miles %} ({{ b.area_sq_miles|floatformat:1 }} sq mi){% endif %}</option>
+          {% endfor %}
+        </select>
+        <p class="form-help">Select the boundary that defines your district or agency service area.</p>
+      </div>
+      <div class="form-footer">
+        <button type="submit" class="btn-primary" id="btn-select">
+          Use This Boundary →
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="row-between" style="color: var(--color-text-tertiary); font-size: 0.8125rem;">
+    <hr style="flex: 1; border: none; border-top: 1px solid var(--color-border);">
+    <span style="padding: 0 var(--space-md);">or upload a new one</span>
+    <hr style="flex: 1; border: none; border-top: 1px solid var(--color-border);">
+  </div>
+  {% endif %}
+
+  <!-- Upload GeoJSON -->
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Upload GeoJSON Boundary</h2>
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="upload">
+
+      <div class="form-group">
+        <label class="form-label" for="geojson_file">GeoJSON File</label>
+        <div
+          class="upload-zone"
+          id="upload-zone"
+          onclick="document.getElementById('geojson_file').click()"
+          ondragover="event.preventDefault(); this.classList.add('dragover');"
+          ondragleave="this.classList.remove('dragover');"
+          ondrop="event.preventDefault(); this.classList.remove('dragover'); document.getElementById('geojson_file').files = event.dataTransfer.files; updateZoneLabel(event.dataTransfer.files[0]);"
+        >
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto var(--space-sm); display: block; opacity: 0.5;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <p id="zone-label" style="margin: 0; font-size: 0.875rem;">
+            Drag and drop a <strong>.geojson</strong> or <strong>.json</strong> file here, or click to browse
+          </p>
+        </div>
+        <input
+          type="file"
+          name="geojson_file"
+          id="geojson_file"
+          accept=".geojson,.json"
+          style="display: none;"
+          onchange="updateZoneLabel(this.files[0])"
+        >
+        <p class="form-help">Accepts GeoJSON Feature or FeatureCollection with Polygon or MultiPolygon geometry in WGS84 (EPSG:4326).</p>
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn-primary" id="btn-upload">
+          Upload &amp; Continue →
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+function updateZoneLabel(file) {
+  if (file) {
+    document.getElementById('zone-label').textContent = 'Selected: ' + file.name;
+  }
+}
+</script>
+{% endblock %}
