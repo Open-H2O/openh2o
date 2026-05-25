@@ -1,0 +1,25 @@
+# Open Water Accounting Platform - Scheduled Jobs
+#
+# Install:   make install-cron
+# Verify:    make show-cron
+# Location:  /opt/openh2o (adjust OPENH2O_DIR if deployed elsewhere)
+#
+# Jobs:
+#   sync_all       - Sync external data sources (CDEC, USGS, CIMIS, etc.)
+#                    Runs in --mock mode until real API keys are configured.
+#                    Remove --mock from the entry below after adding API keys.
+#   run_health_checks - Check database, disk, SSL, migrations, and sync freshness
+#   prune_old_data    - Delete staging records and logs older than retention thresholds
+#
+# Adjust OPENH2O_DIR to match your deployment path if different from /opt/openh2o.
+
+OPENH2O_DIR=/opt/openh2o
+
+# Daily data sync at 2:00 AM (mock mode - remove --mock once API keys are configured)
+0 2 * * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py sync_all --mock > /dev/null 2>> /var/log/openh2o-sync.log
+
+# Health checks every 6 hours
+0 */6 * * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py run_health_checks > /dev/null 2>> /var/log/openh2o-health.log
+
+# Monthly data pruning on the 1st at 3:00 AM (--confirm required; default is dry-run)
+0 3 1 * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py prune_old_data --confirm > /dev/null 2>> /var/log/openh2o-prune.log
