@@ -588,3 +588,52 @@ def csv_template(request):
         "description",
     ])
     return response
+
+
+@login_required
+def ledger_export(request):
+    """Export filtered ledger entries as CSV."""
+    q = request.GET.get("q", "").strip()
+    period_id = request.GET.get("period", "").strip()
+    source_type = request.GET.get("source_type", "").strip()
+    water_type_id = request.GET.get("water_type", "").strip()
+    start_date = request.GET.get("start_date", "").strip()
+    end_date = request.GET.get("end_date", "").strip()
+
+    queryset = ParcelLedger.objects.select_related(
+        "parcel", "water_type", "reporting_period"
+    ).order_by("-effective_date", "-created_at")
+
+    if q:
+        queryset = queryset.filter(
+            Q(parcel__parcel_number__icontains=q) | Q(description__icontains=q)
+        )
+    if period_id:
+        queryset = queryset.filter(reporting_period_id=period_id)
+    if source_type:
+        queryset = queryset.filter(source_type=source_type)
+    if water_type_id:
+        queryset = queryset.filter(water_type_id=water_type_id)
+    if start_date:
+        queryset = queryset.filter(effective_date__gte=start_date)
+    if end_date:
+        queryset = queryset.filter(effective_date__lte=end_date)
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="ledger_export.csv"'
+    writer = csv_module.writer(response)
+    writer.writerow([
+        "parcel_number", "effective_date", "amount_acre_feet",
+        "source_type", "water_type", "reporting_period", "description",
+    ])
+    for entry in queryset.iterator():
+        writer.writerow([
+            entry.parcel.parcel_number,
+            entry.effective_date,
+            entry.amount_acre_feet,
+            entry.source_type,
+            entry.water_type.name if entry.water_type else "",
+            entry.reporting_period.name if entry.reporting_period else "",
+            entry.description,
+        ])
+    return response
