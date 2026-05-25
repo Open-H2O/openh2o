@@ -36,8 +36,8 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="review">
     <div class="form-group mb-0">
-      <label class="form-label">Reviewer Notes (optional)</label>
-      <textarea name="reviewer_notes" rows="2" class="form-textarea" style="min-height: 0;"
+      <label class="form-label" for="id_reviewer_notes">Reviewer Notes (optional)</label>
+      <textarea id="id_reviewer_notes" name="reviewer_notes" rows="2" class="form-textarea" style="min-height: 0;"
                 placeholder="Any notes about this report..."></textarea>
     </div>
     <div>

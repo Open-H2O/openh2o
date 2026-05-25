@@ -37,9 +37,9 @@
 
     <!-- Site type filter -->
     <div>
-      <label class="form-label">Type</label>
+      <label class="form-label" for="filter-site-type">Type</label>
       <select
-        name="site_type"
+        id="filter-site-type" name="site_type"
         hx-get="{% url 'recharge:list' %}"
         hx-target="#results"
         hx-trigger="change"
