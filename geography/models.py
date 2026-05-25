@@ -36,6 +36,20 @@ class Zone(models.Model):
         return self.name
 
 
+class Flowline(models.Model):
+    name = models.CharField(max_length=200, blank=True)
+    boundary = models.ForeignKey(Boundary, on_delete=models.CASCADE, related_name="flowlines")
+    feature_type = models.CharField(max_length=100, blank=True)
+    length_km = models.FloatField(null=True, blank=True)
+    stream_order = models.IntegerField(null=True, blank=True)
+    source_id = models.CharField(max_length=20, blank=True)
+    geometry = gis_models.MultiLineStringField(srid=4326)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name or self.source_id or f"Flowline {self.pk}"
+
+
 class ZoneGroup(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
