@@ -12,7 +12,6 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import override_settings
 
 from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, Flowline, Zone
@@ -692,15 +691,15 @@ def data_sources():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.django_db
-@override_settings(DATASYNC_MOCK_MODE=False)
 class TestStationsStep:
     @patch("datasync.adapters.cdec.CDECAdapter.discover_stations")
     @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
     @patch("datasync.adapters.cimis.CIMISAdapter.discover_stations")
     def test_creates_inactive_stations(
-        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources
+        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources, settings
     ):
         """Stations step creates inactive MonitoredStation records."""
+        settings.DATASYNC_MOCK_MODE = False
         mock_cdec.return_value = _mock_station_list("cdec")
         mock_usgs.return_value = _mock_station_list("usgs")
         mock_cimis.return_value = _mock_station_list("cimis")
@@ -721,9 +720,10 @@ class TestStationsStep:
     @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
     @patch("datasync.adapters.cimis.CIMISAdapter.discover_stations")
     def test_idempotent(
-        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources
+        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources, settings
     ):
         """Running stations step twice creates stations only once."""
+        settings.DATASYNC_MOCK_MODE = False
         mock_cdec.return_value = _mock_station_list("cdec")
         mock_usgs.return_value = _mock_station_list("usgs")
         mock_cimis.return_value = _mock_station_list("cimis")
