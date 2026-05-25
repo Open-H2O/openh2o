@@ -52,46 +52,46 @@ Plans:
 Plans:
 - [x] 10-01: Kaweah Subbasin seed data with real DWR boundaries and Tulare County parcels
 
-#### Phase 11: Merced Subbasin Demo Data
+#### Phase 11: UI Quality Sweep
 
-**Goal**: Replicate ETL pipeline for one Merced irrigation district area; prove platform portability across basins using real data
+**Goal**: Polish navigation flow, visual consistency, responsive behavior, and data entry UX with real data visible in the system
 **Depends on**: Phase 10
-**Research**: Likely (different basin data sources)
-**Research topics**: Merced SGMA DMS data access (mercedsgma.org), Merced County GIS portal (ArcGIS Hub), Merced-area CDEC/USGS/CIMIS station networks, 2025 GSP monitoring well lists
+**Research**: Unlikely (internal CSS/HTML patterns)
 **Plans**: TBD
 
 Plans:
 - [ ] 11-01: TBD (run /gsd:plan-phase 11 to break down)
 
-#### Phase 12: UI Quality Sweep
+#### Phase 12: In-App Documentation
 
-**Goal**: Polish navigation flow, visual consistency, responsive behavior, and data entry UX with real data visible in the system
+**Goal**: Add contextual help text and tooltips on every page, a Getting Started walkthrough for new GSA admins, and a field glossary for water accounting terms
 **Depends on**: Phase 11
-**Research**: Unlikely (internal CSS/HTML patterns)
+**Research**: Unlikely (internal content)
 **Plans**: TBD
 
 Plans:
 - [ ] 12-01: TBD (run /gsd:plan-phase 12 to break down)
 
-#### Phase 13: In-App Documentation
+#### Phase 13: Cron, Health, & Final Polish
 
-**Goal**: Add contextual help text and tooltips on every page, a Getting Started walkthrough for new GSA admins, and a field glossary for water accounting terms
+**Goal**: Configure scheduled sync and health check jobs, expand test coverage, verify full deploy cycle on clean VPS
 **Depends on**: Phase 12
-**Research**: Unlikely (internal content)
+**Research**: Unlikely (Django management commands, existing health framework)
 **Plans**: TBD
 
 Plans:
 - [ ] 13-01: TBD (run /gsd:plan-phase 13 to break down)
 
-#### Phase 14: Cron, Health, & Final Polish
+#### Phase 14: Merced Subbasin Demo Data
 
-**Goal**: Configure scheduled sync and health check jobs, expand test coverage, verify full deploy cycle on clean VPS
-**Depends on**: Phase 13
-**Research**: Unlikely (Django management commands, existing health framework)
-**Plans**: TBD
+**Goal**: Replicate ETL pipeline for one Merced irrigation district area; prove platform portability across basins using real data
+**Depends on**: Phase 10
+**Research**: Likely (different basin data sources)
+**Research topics**: Merced SGMA DMS data access (mercedsgma.org), Merced County GIS portal (ArcGIS Hub), Merced-area CDEC/USGS/CIMIS station networks, 2025 GSP monitoring well lists
+**Plans**: 1
 
 Plans:
-- [ ] 14-01: TBD (run /gsd:plan-phase 14 to break down)
+- [ ] 14-01: Merced Subbasin seed data with real DWR boundaries and Merced County parcels
 
 ## Progress
 
@@ -107,7 +107,7 @@ Plans:
 | 8. Deploy, Polish, and Handoff | v1.0 | 3/3 | Complete | 2026-05-24 |
 | 9. Schema Fixes & Test Infrastructure | v1.1 | 1/1 | Complete | 2026-05-24 |
 | 10. Kaweah Subbasin Demo Data | v1.1 | 1/1 | Complete | 2026-05-25 |
-| 11. Merced Subbasin Demo Data | v1.1 | 0/? | Not started | - |
-| 12. UI Quality Sweep | v1.1 | 0/? | Not started | - |
-| 13. In-App Documentation | v1.1 | 0/? | Not started | - |
-| 14. Cron, Health, & Final Polish | v1.1 | 0/? | Not started | - |
+| 11. UI Quality Sweep | v1.1 | 0/? | Not started | - |
+| 12. In-App Documentation | v1.1 | 0/? | Not started | - |
+| 13. Cron, Health, & Final Polish | v1.1 | 0/? | Not started | - |
+| 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |

@@ -13,6 +13,7 @@ Phase: 10 of 14 (Kaweah Subbasin Demo Data)
 Plan: 1 of 1 in current phase
 Status: Phase complete
 Last activity: 2026-05-25 - Completed 10-01-PLAN.md
+Next phase: 11 (UI Quality Sweep) - reordered: Merced moved to Phase 14
 
 Progress: ██░░░░░░░░ 17%
 
