@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "datasync",
     "reporting",
     "health",
+    "setup",
 ]
 
 SITE_ID = 1
