@@ -12,6 +12,7 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.test import override_settings
 
 from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, Flowline, Zone
@@ -691,6 +692,7 @@ def data_sources():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.django_db
+@override_settings(DATASYNC_MOCK_MODE=False)
 class TestStationsStep:
     @patch("datasync.adapters.cdec.CDECAdapter.discover_stations")
     @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
