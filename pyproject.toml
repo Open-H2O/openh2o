@@ -17,6 +17,7 @@ dependencies = [
     "django-extensions>=3.2",
     "django-htmx>=1.19",
     "Pillow>=10.0",
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]
