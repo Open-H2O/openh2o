@@ -216,7 +216,7 @@
 
     <!-- RIGHT: Map -->
     <div class="page-stack">
-      <div class="card-raised" style="padding: 0; overflow: hidden; position: sticky; top: var(--space-lg);">
+      <div class="card-raised" style="padding: 0; overflow: hidden;">
         <!-- Draw toolbar -->
         <div class="draw-toolbar">
           <button type="button" class="draw-btn active" id="draw-point" title="Place point">
@@ -316,13 +316,27 @@
   }
 
   function updateDrawModeForType() {
+    var pointBtn = document.getElementById('draw-point');
+    var polyBtn = document.getElementById('draw-polygon');
     if (currentType === 'well' || currentType === 'diversion') {
       setDrawMode('point');
+      pointBtn.disabled = false;
+      polyBtn.disabled = true;
     } else if (currentType === 'storage') {
       var st = document.getElementById('storage_type').value;
-      setDrawMode(st === 'storage_tank' ? 'point' : 'polygon');
+      if (st === 'storage_tank') {
+        setDrawMode('point');
+        pointBtn.disabled = false;
+        polyBtn.disabled = true;
+      } else {
+        setDrawMode('polygon');
+        pointBtn.disabled = true;
+        polyBtn.disabled = false;
+      }
     } else {
       setDrawMode('polygon');
+      pointBtn.disabled = true;
+      polyBtn.disabled = false;
     }
   }
 
