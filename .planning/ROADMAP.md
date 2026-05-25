@@ -70,7 +70,8 @@ Plans:
 **Plans**: 0
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 11.1 to break down)
+- [ ] 11.1-01: Critique & audit discovery (run /impeccable critique + audit, compile prioritized fix list)
+- [ ] 11.1-02: Fix prioritized issues (apply fixes, re-verify scores, visual sign-off)
 
 #### Phase 12: In-App Documentation
 
