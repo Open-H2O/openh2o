@@ -297,11 +297,7 @@
       Object.keys(typeFields).forEach(function(k) {
         typeFields[k].style.display = k === currentType ? '' : 'none';
       });
-      if (currentType === 'well' || currentType === 'diversion') {
-        setDrawMode('point');
-      } else {
-        setDrawMode('polygon');
-      }
+      updateDrawModeForType();
       var names = { well: 'Well', diversion: 'Diversion', storage: 'Storage', recharge_site: 'Recharge Site' };
       document.getElementById('submit-btn').textContent = 'Create ' + names[currentType];
       document.querySelectorAll('.infra-type-card').forEach(function(card) {
@@ -310,6 +306,25 @@
     });
   });
   document.querySelector('.infra-type-card[data-type="well"]').classList.add('active');
+
+  // Storage type sub-selector also affects draw mode
+  var storageTypeSelect = document.getElementById('storage_type');
+  if (storageTypeSelect) {
+    storageTypeSelect.addEventListener('change', function() {
+      if (currentType === 'storage') updateDrawModeForType();
+    });
+  }
+
+  function updateDrawModeForType() {
+    if (currentType === 'well' || currentType === 'diversion') {
+      setDrawMode('point');
+    } else if (currentType === 'storage') {
+      var st = document.getElementById('storage_type').value;
+      setDrawMode(st === 'storage_tank' ? 'point' : 'polygon');
+    } else {
+      setDrawMode('polygon');
+    }
+  }
 
   // Initialize map
   var map = new maplibregl.Map({
