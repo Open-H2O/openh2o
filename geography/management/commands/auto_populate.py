@@ -19,14 +19,22 @@ from django.core.management.base import BaseCommand, CommandError
 from geography.models import Boundary, Zone
 from geography.services.arcgis import (
     esri_polygon_to_geos,
+    geos_to_esri_geometry,
     query_by_boundary,
+    query_feature_server,
 )
+from parcels.models import Parcel
 
 logger = logging.getLogger(__name__)
 
 B118_BASINS_URL = (
     "https://gis.water.ca.gov/arcgis/rest/services/Geoscientific/"
     "i08_B118_CA_GroundwaterBasins/FeatureServer/0/query"
+)
+
+LIGHTBOX_PARCELS_URL = (
+    "https://gis.water.ca.gov/arcgis/rest/services/Planning/"
+    "i15_Parcels_Assessor_Lightbox/MapServer/0/query"
 )
 
 
@@ -197,9 +205,109 @@ class Command(BaseCommand):
         return created_count
 
     def _step_parcels(self, boundary, dry_run):
-        """Fetch parcel boundaries. (stub)"""
-        self.stdout.write(self.style.WARNING("  parcels: not yet implemented"))
-        return 0
+        """Fetch LightBox parcel boundaries that intersect the boundary.
+
+        Queries DWR's statewide LightBox parcel MapServer page-by-page,
+        creates Parcel records with APN and geometry. Idempotent: skips
+        parcels whose APN already exists.
+        """
+        self.stdout.write("  Querying LightBox Parcels MapServer...")
+        esri_geom = geos_to_esri_geometry(boundary.geometry)
+
+        out_fields = "PARCEL_APN,SITE_ADDR,SITE_CITY,SITE_STATE,SITE_ZIP"
+        created_total = 0
+        page_num = 0
+
+        try:
+            pages = query_feature_server(
+                LIGHTBOX_PARCELS_URL,
+                geometry=esri_geom,
+                geometry_type="esriGeometryPolygon",
+                spatial_rel="esriSpatialRelIntersects",
+                out_fields=out_fields,
+                return_geometry=True,
+                out_sr=4326,
+                max_record_count=1500,
+            )
+
+            for features in pages:
+                page_num += 1
+                apn_map = {}
+                for feat in features:
+                    apn = (feat.get("attributes") or {}).get("PARCEL_APN")
+                    if not apn or not str(apn).strip():
+                        continue
+                    apn = str(apn).strip()
+                    if apn not in apn_map:
+                        apn_map[apn] = feat
+
+                if not apn_map:
+                    self.stdout.write(f"  Page {page_num}: 0 valid parcels, skipping.")
+                    continue
+
+                existing_apns = set(
+                    Parcel.objects.filter(
+                        parcel_number__in=list(apn_map.keys())
+                    ).values_list("parcel_number", flat=True)
+                )
+
+                new_parcels = []
+                for apn, feat in apn_map.items():
+                    if apn in existing_apns:
+                        continue
+
+                    attrs = feat.get("attributes") or {}
+                    addr_parts = [
+                        str(attrs.get("SITE_ADDR") or "").strip(),
+                        str(attrs.get("SITE_CITY") or "").strip(),
+                        str(attrs.get("SITE_STATE") or "").strip(),
+                        str(attrs.get("SITE_ZIP") or "").strip(),
+                    ]
+                    address = ", ".join(p for p in addr_parts if p)
+
+                    geom = None
+                    esri_feat_geom = feat.get("geometry")
+                    if esri_feat_geom:
+                        try:
+                            geom = esri_polygon_to_geos(esri_feat_geom)
+                        except Exception as exc:
+                            logger.warning("Bad geometry for %s: %s", apn, exc)
+
+                    if geom is None:
+                        self.stdout.write(
+                            self.style.WARNING(f"  Skipping (no geometry): {apn}")
+                        )
+                        continue
+
+                    new_parcels.append(
+                        Parcel(
+                            parcel_number=apn,
+                            geometry=geom,
+                            address=address,
+                            status="active",
+                        )
+                    )
+
+                if dry_run:
+                    self.stdout.write(
+                        f"  Page {page_num}: would create {len(new_parcels)} parcel(s)"
+                    )
+                    created_total += len(new_parcels)
+                else:
+                    created = Parcel.objects.bulk_create(
+                        new_parcels, ignore_conflicts=True
+                    )
+                    created_total += len(created)
+                    self.stdout.write(
+                        f"  Page {page_num}: {len(created)} parcel(s) created "
+                        f"({len(existing_apns)} existing skipped)"
+                    )
+
+        except Exception as exc:
+            self.stdout.write(self.style.ERROR(f"  API query failed: {exc}"))
+            logger.exception("LightBox parcels API query failed")
+
+        return created_total
 
     def _step_flowlines(self, boundary, dry_run):
         """Fetch NLDI flowlines. (stub)"""
