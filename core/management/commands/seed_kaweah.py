@@ -198,7 +198,7 @@ class Command(BaseCommand):
             code="RW", defaults={"name": "Recycled Water"}
         )
         storm, _ = WaterType.objects.get_or_create(
-            code="STORMWATER", defaults={"name": "Stormwater"}
+            code="ST", defaults={"name": "Stormwater"}
         )
 
         # ----------------------------------------------------------------
@@ -498,7 +498,7 @@ class Command(BaseCommand):
         station_count = 0
 
         # CDEC stations
-        cdec = DataSource.objects.filter(code="CDEC").first()
+        cdec = DataSource.objects.filter(code="cdec").first()
         if cdec:
             cdec_stations = [
                 ("TRM", "Terminus Dam", 36.4167, -118.9833, ["15", "20"]),
@@ -520,7 +520,7 @@ class Command(BaseCommand):
                     station_count += 1
 
         # USGS stations
-        usgs = DataSource.objects.filter(code="USGS").first()
+        usgs = DataSource.objects.filter(code="usgs").first()
         if usgs:
             usgs_stations = [
                 ("11210100", "Kaweah River at Three Rivers", 36.4367, -118.9044, ["00060"]),
@@ -541,7 +541,7 @@ class Command(BaseCommand):
                     station_count += 1
 
         # CIMIS station
-        cimis = DataSource.objects.filter(code="CIMIS").first()
+        cimis = DataSource.objects.filter(code="cimis").first()
         if cimis:
             _, created = MonitoredStation.objects.get_or_create(
                 data_source=cimis,
@@ -557,7 +557,7 @@ class Command(BaseCommand):
                 station_count += 1
 
         # DWR/WDL groundwater stations
-        dwr_wdl = DataSource.objects.filter(code="DWR_WDL").first()
+        dwr_wdl = DataSource.objects.filter(code="dwr_wdl").first()
         if dwr_wdl:
             wdl_stations = [
                 ("KAW-GWL-01", "Kaweah Delta monitoring well 1", 36.3000, -119.3000),
@@ -589,14 +589,14 @@ class Command(BaseCommand):
             },
         )
         approp_type, _ = WaterRightType.objects.get_or_create(
-            code="APPROP",
+            code="POST14",
             defaults={
                 "name": "Post-1914 Appropriative",
                 "description": "Post-1914 appropriative water right",
             },
         )
         riparian_type, _ = WaterRightType.objects.get_or_create(
-            code="RIPARIAN",
+            code="RIP",
             defaults={
                 "name": "Riparian",
                 "description": "Riparian water right",
