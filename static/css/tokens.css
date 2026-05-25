@@ -15,13 +15,17 @@
     --color-gold: #E4A317;
     --color-gold-hover: #D4952A;
     --color-gold-muted: rgba(212, 149, 42, 0.06);
-    --color-blue: #1B7FAF;
+    --color-blue: #2089BB;
     --color-blue-bright: #3DB4E0;
 
     /* -- Text colors ----------------------------------------------------- */
     --color-text-primary: #e8edf4;
     --color-text-secondary: #8899aa;
-    --color-text-tertiary: #4d5e6f;
+    --color-text-tertiary: #6b7f94;
+
+    /* -- Semantic status colors ------------------------------------------- */
+    --color-error: #f87171;
+    --color-warning: #fbbf24;
 
     /* -- Border colors --------------------------------------------------- */
     --color-border: rgba(100, 140, 180, 0.07);

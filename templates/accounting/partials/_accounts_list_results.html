@@ -29,13 +29,13 @@
         <td>{{ account.name }}</td>
         <td>
           {% if account.status == "active" %}
-            <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25);">Active</span>
+            <span class="badge badge-pill badge-green">Active</span>
           {% elif account.status == "inactive" %}
-            <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgba(148,163,184,0.12); color: var(--color-text-secondary); border: 1px solid rgba(148,163,184,0.2);">Inactive</span>
+            <span class="badge badge-pill badge-grey">Inactive</span>
           {% elif account.status == "suspended" %}
-            <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25);">Suspended</span>
+            <span class="badge badge-pill badge-red">Suspended</span>
           {% else %}
-            <span style="display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: var(--color-elevated); color: var(--color-text-secondary); border: 1px solid var(--color-border-hover);">{{ account.get_status_display }}</span>
+            <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
           {% endif %}
         </td>
         <td class="text-secondary">{{ account.contact_name|default:"—" }}</td>
