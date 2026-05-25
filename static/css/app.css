@@ -1437,12 +1437,12 @@ a { color: inherit; }
 }
 
 .health-status-badge-yellow {
-    background: oklch(0.49 0.14 50 / 0.15);
-    color: var(--furnace-400);
+    background: oklch(0.49 0.12 85 / 0.15);
+    color: var(--color-warning);
 }
 
 .health-status-badge-yellow::before {
-    background: var(--furnace-400);
+    background: var(--color-warning);
 }
 
 .health-status-badge-red {
