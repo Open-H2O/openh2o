@@ -192,24 +192,19 @@ def monitoring_dashboard(request):
     )
     total_active = active_stations.count()
 
-    # Most recent DataSyncLog per source
+    # Source stats with most recent log per source
     sources = DataSource.objects.filter(is_active=True).order_by("code")
-    recent_logs_by_source = {}
+    source_status_list = []
     for source in sources:
         log = DataSyncLog.objects.filter(data_source=source).order_by("-started_at").first()
-        recent_logs_by_source[source.code] = {
+        total = MonitoredStation.objects.filter(data_source=source).count()
+        active = MonitoredStation.objects.filter(data_source=source, is_active=True).count()
+        source_status_list.append({
             "source": source,
             "log": log,
-        }
-
-    # Station counts by source
-    source_stats = {}
-    for source in sources:
-        source_stats[source.code] = {
-            "source": source,
-            "total": MonitoredStation.objects.filter(data_source=source).count(),
-            "active": MonitoredStation.objects.filter(data_source=source, is_active=True).count(),
-        }
+            "total": total,
+            "active": active,
+        })
 
     # Sparkline data: last 10 DataRecordStaging per active station
     station_ids = list(active_stations.values_list("pk", flat=True))
@@ -270,11 +265,10 @@ def monitoring_dashboard(request):
     _, openet_used, openet_limit = OpenETCache.check_budget()
 
     context = {
-        "source_stats": source_stats,
+        "source_status_list": source_status_list,
         "stale_count": stale_count,
         "fresh_count": fresh_count,
         "total_active": total_active,
-        "recent_logs_by_source": recent_logs_by_source,
         "station_list": station_list,
         "openet_used": openet_used,
         "openet_limit": openet_limit,
