@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 ## Current Position
 
 Phase: 11.1 of 14 (Impeccable UI Audit)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-05-25 - Completed 11.1-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-05-25 - Completed 11.1-02-PLAN.md
 
-Progress: ███░░░░░░░ 27%
+Progress: ████░░░░░░ 30%
 
 ## Performance Metrics
 
@@ -34,7 +34,8 @@ All marked ✓ Good after v1.0 validation.
 
 ### Deferred Issues
 
-None. ISSUE-001 and ISSUE-002 resolved in Phase 09-01.
+- ISSUE-003: Recharge sites should be polygons, not points (P1, data model)
+- ISSUE-004: Wells/PODs need association with Place of Use parcels (P1, domain model)
 
 ### Open Items for Next Milestone
 
@@ -51,5 +52,5 @@ None. ISSUE-001 and ISSUE-002 resolved in Phase 09-01.
 ## Session Continuity
 
 Last session: 2026-05-25
-Stopped at: Completed 11.1-01-PLAN.md (critique + audit discovery, fix-all decided)
+Stopped at: Completed 11.1-02-PLAN.md (Phase 11.1 complete, all 21 issues fixed)
 Resume file: None

@@ -67,11 +67,11 @@ Plans:
 **Goal**: Run `/impeccable critique` (heuristic UX scoring) and `/impeccable audit` (accessibility, responsive, performance) against the deployed OpenH2O UI. Fix any issues found before documentation phase.
 **Depends on**: Phase 11
 **Research**: Unlikely (evaluation of existing UI)
-**Plans**: 0
+**Plans**: 2
 
 Plans:
 - [x] 11.1-01: Critique & audit discovery (run /impeccable critique + audit, compile prioritized fix list)
-- [ ] 11.1-02: Fix prioritized issues (apply fixes, re-verify scores, visual sign-off)
+- [x] 11.1-02: Fix prioritized issues (apply fixes, re-verify scores, visual sign-off)
 
 #### Phase 12: In-App Documentation
 
@@ -119,6 +119,7 @@ Plans:
 | 9. Schema Fixes & Test Infrastructure | v1.1 | 1/1 | Complete | 2026-05-24 |
 | 10. Kaweah Subbasin Demo Data | v1.1 | 1/1 | Complete | 2026-05-25 |
 | 11. UI Quality Sweep | v1.1 | 1/1 | Complete | 2026-05-25 |
+| 11.1 Impeccable UI Audit | v1.1 | 2/2 | Complete | 2026-05-25 |
 | 12. In-App Documentation | v1.1 | 0/? | Not started | - |
 | 13. Cron, Health, & Final Polish | v1.1 | 0/? | Not started | - |
 | 14. Merced Subbasin Demo Data | v1.1 | 0/1 | Planned | - |
