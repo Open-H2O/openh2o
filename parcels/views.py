@@ -168,5 +168,5 @@ def parcels_geojson(request):
     )
     data = json.loads(raw)
     for f in data["features"]:
-        f["properties"]["pk"] = f.get("pk")
+        f["properties"]["pk"] = f.get("id")
     return HttpResponse(json.dumps(data), content_type="application/json")
