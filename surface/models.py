@@ -35,6 +35,22 @@ class WaterRight(models.Model):
         return self.right_id
 
 
+class WaterRightParcel(models.Model):
+    water_right = models.ForeignKey(
+        WaterRight, on_delete=models.CASCADE, related_name="water_right_parcels"
+    )
+    parcel = models.ForeignKey(
+        "parcels.Parcel", on_delete=models.CASCADE, related_name="water_right_parcels"
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = [("water_right", "parcel")]
+
+    def __str__(self):
+        return f"{self.water_right} → {self.parcel}"
+
+
 class PointOfDiversion(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
