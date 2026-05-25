@@ -8,4 +8,5 @@ urlpatterns = [
     path("", views.map_view, name="map"),
     path("boundaries/geojson/", views.boundaries_geojson, name="boundaries_geojson"),
     path("zones/geojson/", views.zones_geojson, name="zones_geojson"),
+    path("tie-lines/geojson/", views.tie_lines_geojson, name="tie_lines_geojson"),
 ]
