@@ -19,7 +19,7 @@ WORKDIR /app
 
 # Install Python dependencies
 COPY pyproject.toml .
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir ".[dev]"
 
 # Download Tailwind standalone binary
 RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \

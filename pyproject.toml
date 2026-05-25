@@ -18,3 +18,15 @@ dependencies = [
     "django-htmx>=1.19",
     "Pillow>=10.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.8",
+    "factory-boy>=3.3",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.local"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+pythonpath = ["."]
