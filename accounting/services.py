@@ -19,20 +19,32 @@ from parcels.models import Parcel, ParcelLedger
 from accounting.models import ReportingPeriod, WaterAccountParcel, WaterType
 
 
-def create_diversion_ledger_entry(diversion_record, parcel):
+def create_diversion_ledger_entry(diversion_record, parcel=None):
     """Create a negative ledger entry for a surface water diversion.
-
-    The plan references "the first parcel linked to the water right's holder,"
-    but WaterRight.holder_name is a CharField with no FK to Parcel. The caller
-    must supply the target parcel explicitly.
 
     Args:
         diversion_record: A surface.models.DiversionRecord instance.
-        parcel: A parcels.models.Parcel instance to post the entry against.
+        parcel: Optional Parcel instance. If None, looks up via WaterRightParcel
+            through the diversion record's point of diversion.
 
     Returns:
         The created ParcelLedger entry.
+
+    Raises:
+        ValueError: If no parcel supplied and none linked via WaterRightParcel.
     """
+    if parcel is None:
+        from surface.models import WaterRightParcel
+
+        water_right = diversion_record.point_of_diversion.water_right
+        link = WaterRightParcel.objects.filter(water_right=water_right).first()
+        if link is None:
+            raise ValueError(
+                f"No parcel supplied and no WaterRightParcel link for "
+                f"water right {water_right.right_id}"
+            )
+        parcel = link.parcel
+
     return ParcelLedger.objects.create(
         parcel=parcel,
         transaction_date=timezone.now().date(),
@@ -49,20 +61,28 @@ def create_diversion_ledger_entry(diversion_record, parcel):
     )
 
 
-def create_recharge_ledger_entries(recharge_event, zone):
+def create_recharge_ledger_entries(recharge_event, zone=None):
     """Create positive ledger entries distributing recharge volume across parcels in a zone.
-
-    The plan references "the recharge site's zone," but RechargeSite has no zone FK.
-    The caller must supply the target zone explicitly.
 
     Args:
         recharge_event: A recharge.models.RechargeEvent instance.
-        zone: A geography.models.Zone instance whose parcels receive the credit.
+        zone: Optional Zone instance. If None, falls back to
+            recharge_event.recharge_site.zone.
 
     Returns:
         List of created ParcelLedger entries, or an empty list if the zone has
         no parcels.
+
+    Raises:
+        ValueError: If no zone supplied and recharge site has no zone FK set.
     """
+    if zone is None:
+        zone = recharge_event.recharge_site.zone
+        if zone is None:
+            raise ValueError(
+                f"No zone supplied and recharge site "
+                f"'{recharge_event.recharge_site.name}' has no zone set"
+            )
     parcel_ids = ParcelZone.objects.filter(zone=zone).values_list(
         "parcel_id", flat=True
     )

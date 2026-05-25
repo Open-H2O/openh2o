@@ -23,6 +23,10 @@ class RechargeSite(models.Model):
     capacity_acre_feet = models.DecimalField(
         max_digits=12, decimal_places=4, null=True, blank=True
     )
+    zone = models.ForeignKey(
+        "geography.Zone", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="recharge_sites",
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     operator = models.CharField(max_length=200, blank=True)
     notes = models.TextField(blank=True)

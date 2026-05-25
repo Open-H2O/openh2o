@@ -26,7 +26,7 @@ from geography.models import Boundary, ParcelZone, Zone
 from measurements.models import Meter, MeterReading
 from parcels.models import Parcel, ParcelLedger
 from recharge.models import RechargeEvent, RechargeSite
-from surface.models import PointOfDiversion, WaterRight, WaterRightType
+from surface.models import PointOfDiversion, WaterRight, WaterRightParcel, WaterRightType
 from wells.models import Well, WellIrrigatedParcel, WellMeter, WellType
 
 # Center point: San Joaquin Valley, roughly near Madera, CA
@@ -494,6 +494,11 @@ class Command(BaseCommand):
             ("DEMO-A099999", approp_type, "South County Ag Cooperative",
              date(1978, 11, 20), Decimal("300.0000"), "Fresno River"),
         ]
+        holder_parcel_map = {
+            "North Valley Irrigation District": all_parcels[0],
+            "Central Basin Water Company": all_parcels[1],
+            "South County Ag Cooperative": all_parcels[2],
+        }
         for right_id, rtype, holder, pdate, face_val, source in right_configs:
             wr = WaterRight.objects.create(
                 right_id=right_id,
@@ -504,6 +509,12 @@ class Command(BaseCommand):
                 status="active",
                 source_name=source,
             )
+            # Link water right to holder's parcel
+            if holder in holder_parcel_map:
+                WaterRightParcel.objects.create(
+                    water_right=wr,
+                    parcel=holder_parcel_map[holder],
+                )
             # One point of diversion per right
             pod_lon = CENTER_LON + random.uniform(-0.05, 0.05)
             pod_lat = CENTER_LAT + random.uniform(-0.05, 0.05)
@@ -522,11 +533,11 @@ class Command(BaseCommand):
         self.stdout.write("Creating 2 recharge sites with events...")
         site_configs = [
             ("Demo North Spreading Basin", "spreading_basin",
-             CENTER_LON - 0.02, CENTER_LAT + 0.02, Decimal("250.0000")),
+             CENTER_LON - 0.02, CENTER_LAT + 0.02, Decimal("250.0000"), zones[0]),
             ("Demo South ASR Well", "asr_well",
-             CENTER_LON + 0.01, CENTER_LAT - 0.03, Decimal("100.0000")),
+             CENTER_LON + 0.01, CENTER_LAT - 0.03, Decimal("100.0000"), zones[2]),
         ]
-        for sname, stype, lon, lat, capacity in site_configs:
+        for sname, stype, lon, lat, capacity, site_zone in site_configs:
             site = RechargeSite.objects.create(
                 name=sname,
                 site_type=stype,
@@ -534,6 +545,7 @@ class Command(BaseCommand):
                 capacity_acre_feet=capacity,
                 status="active",
                 operator="Demo Valley GSA",
+                zone=site_zone,
             )
             # 3 recharge events each
             for month in range(3):
