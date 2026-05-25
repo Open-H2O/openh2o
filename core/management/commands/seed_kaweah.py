@@ -578,6 +578,421 @@ class Command(BaseCommand):
                     station_count += 1
 
         # ----------------------------------------------------------------
+        # 11. Water Right Types and Water Rights (10 total)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating water right types and 10 water rights...")
+        pre14_type, _ = WaterRightType.objects.get_or_create(
+            code="PRE14",
+            defaults={
+                "name": "Pre-1914 Appropriative",
+                "description": "Pre-1914 appropriative water right",
+            },
+        )
+        approp_type, _ = WaterRightType.objects.get_or_create(
+            code="APPROP",
+            defaults={
+                "name": "Post-1914 Appropriative",
+                "description": "Post-1914 appropriative water right",
+            },
+        )
+        riparian_type, _ = WaterRightType.objects.get_or_create(
+            code="RIPARIAN",
+            defaults={
+                "name": "Riparian",
+                "description": "Riparian water right",
+            },
+        )
+
+        right_configs = [
+            # (right_id, type, holder, priority_date, face_value, source, status)
+            # 4 pre-1914
+            ("KAW-WR-001", pre14_type, "Kaweah Delta WCD",
+             date(1872, 5, 1), 15000, "Kaweah River", "active"),
+            ("KAW-WR-002", pre14_type, "Lindsay-Strathmore ID",
+             date(1880, 3, 15), 8000, "Kaweah River", "active"),
+            ("KAW-WR-003", pre14_type, "Lindmore ID",
+             date(1895, 7, 10), 5000, "St. Johns River", "active"),
+            ("KAW-WR-004", pre14_type, "Exeter ID",
+             date(1910, 1, 20), 3000, "Kaweah River", "curtailed"),
+            # 3 post-1914
+            ("KAW-WR-005", approp_type, "Ivanhoe ID",
+             date(1925, 6, 1), 2000, "Kaweah River", "active"),
+            ("KAW-WR-006", approp_type, "Tulare ID",
+             date(1938, 9, 15), 4000, "Mill Creek", "active"),
+            ("KAW-WR-007", approp_type, "Kaweah Delta WCD",
+             date(1952, 4, 1), 6000, "Kaweah River", "curtailed"),
+            # 3 riparian (no priority date)
+            ("KAW-WR-008", riparian_type, "Three Rivers Ranch",
+             None, 500, "Kaweah River", "active"),
+            ("KAW-WR-009", riparian_type, "Mineral King Ranch",
+             None, 800, "Mill Creek", "active"),
+            ("KAW-WR-010", riparian_type, "Yokohl Valley Ranch",
+             None, 1200, "Yokohl Creek", "active"),
+        ]
+
+        water_rights = []
+        for right_id, rtype, holder, pdate, face_val, source, status in right_configs:
+            wr = WaterRight.objects.create(
+                right_id=right_id,
+                right_type=rtype,
+                holder_name=holder,
+                priority_date=pdate,
+                face_value_acre_feet=Decimal(str(face_val)),
+                status=status,
+                source_name=source,
+            )
+            water_rights.append(wr)
+
+        # ----------------------------------------------------------------
+        # 12. Points of Diversion (1-2 per right)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating points of diversion...")
+        pod_configs = [
+            # (right_index, name, lon, lat, stream, max_cfs)
+            (0, "Kaweah Main Diversion", -119.20, 36.40, "Kaweah River", 50.0),
+            (0, "McKay Point Diversion", -119.18, 36.38, "Kaweah River", 30.0),
+            (1, "Lindsay Canal Headgate", -119.12, 36.35, "Kaweah River", 25.0),
+            (2, "St Johns Diversion", -119.25, 36.32, "St. Johns River", 15.0),
+            (3, "Exeter Canal Intake", -119.14, 36.30, "Kaweah River", 12.0),
+            (3, "Exeter South Fork Intake", -119.12, 36.28, "Kaweah River", 8.0),
+            (4, "Ivanhoe Ditch Head", -119.22, 36.42, "Kaweah River", 10.0),
+            (5, "Mill Creek Weir", -119.30, 36.20, "Mill Creek", 18.0),
+            (6, "Kaweah Delta Main Canal", -119.22, 36.38, "Kaweah River", 35.0),
+            (7, "Three Rivers Riparian", -119.06, 36.43, "Kaweah River", 5.0),
+            (8, "Mill Creek Riparian", -119.08, 36.40, "Mill Creek", 4.0),
+            (9, "Yokohl Creek Take", -119.10, 36.35, "Yokohl Creek", 6.0),
+        ]
+
+        pods = []
+        for ri, pname, lon, lat, stream, max_cfs in pod_configs:
+            pod = PointOfDiversion.objects.create(
+                water_right=water_rights[ri],
+                name=pname,
+                location=Point(lon, lat),
+                stream_name=stream,
+                max_rate_cfs=Decimal(str(max_cfs)),
+                status="active",
+            )
+            pods.append(pod)
+
+        # ----------------------------------------------------------------
+        # 13. WaterRightParcel links (nearby parcels)
+        # ----------------------------------------------------------------
+        self.stdout.write("Linking water rights to parcels...")
+        wrp_count = 0
+        for i, wr in enumerate(water_rights):
+            # Pick 2-4 parcels for each right
+            num_links = random.randint(2, min(4, len(all_parcels)))
+            linked = random.sample(all_parcels, num_links)
+            for parcel in linked:
+                WaterRightParcel.objects.create(
+                    water_right=wr, parcel=parcel,
+                )
+                wrp_count += 1
+
+        # ----------------------------------------------------------------
+        # 14. Reporting Periods
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating reporting periods...")
+        wy2025, _ = ReportingPeriod.objects.get_or_create(
+            name="WY 2024-2025",
+            defaults={
+                "start_date": date(2024, 10, 1),
+                "end_date": date(2025, 9, 30),
+                "is_finalized": True,
+            },
+        )
+        wy2026 = ReportingPeriod.objects.create(
+            name="WY 2025-2026",
+            start_date=date(2025, 10, 1),
+            end_date=date(2026, 9, 30),
+        )
+
+        # ----------------------------------------------------------------
+        # 15. Diversion Records (monthly, 12 months)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating diversion records...")
+        div_count = 0
+        for pod in pods:
+            for month_offset in range(12):
+                month_num = ((10 + month_offset - 1) % 12) + 1
+                year = 2024 if month_num >= 10 else 2025
+                month_date = date(year, month_num, 1)
+
+                # Seasonal: higher Apr-Sep, near-zero Nov-Feb
+                if month_num in (4, 5, 6, 7, 8, 9):
+                    face_val = float(pod.water_right.face_value_acre_feet or 1000)
+                    # Monthly diversion is ~50-80% of monthly share of face value
+                    monthly_share = face_val / 6  # 6 irrigation months
+                    volume = Decimal(str(round(
+                        random.uniform(0.5, 0.8) * monthly_share, 2
+                    )))
+                elif month_num in (3, 10):
+                    volume = Decimal(str(round(random.uniform(5, 50), 2)))
+                else:
+                    volume = Decimal(str(round(random.uniform(0, 5), 2)))
+
+                rp = wy2025 if month_num >= 10 or month_num <= 9 else wy2026
+                # Determine correct reporting period based on water year
+                if year == 2024 and month_num >= 10:
+                    rp = wy2025
+                elif year == 2025 and month_num <= 9:
+                    rp = wy2025
+
+                DiversionRecord.objects.create(
+                    point_of_diversion=pod,
+                    reporting_period=rp,
+                    month=month_date,
+                    volume_acre_feet=volume,
+                    diversion_type="direct_use",
+                )
+                div_count += 1
+
+        # ----------------------------------------------------------------
+        # 16. Recharge Sites (4)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating 4 recharge sites...")
+        recharge_configs = [
+            ("Kaweah Delta Spreading Grounds", "spreading_basin",
+             -119.2800, 36.3100, Decimal("2000.0"), west_zone, "Kaweah Delta WCD"),
+            ("Rocky Ford Ditch Recharge", "streambed",
+             -119.1500, 36.3600, Decimal("500.0"), east_zone, "Kaweah Delta WCD"),
+            ("Exeter Recharge Basin", "spreading_basin",
+             -119.1410, 36.2960, Decimal("800.0"), east_zone, "Exeter ID"),
+            ("Terminus Dam ASR Well", "asr_well",
+             -118.9900, 36.4100, Decimal("300.0"), east_zone, "USACE / Kaweah Delta WCD"),
+        ]
+
+        recharge_sites = []
+        for sname, stype, lon, lat, capacity, site_zone, operator in recharge_configs:
+            site = RechargeSite.objects.create(
+                name=sname,
+                site_type=stype,
+                location=Point(lon, lat),
+                capacity_acre_feet=capacity,
+                status="active",
+                operator=operator,
+                zone=site_zone,
+            )
+            recharge_sites.append(site)
+
+        # ----------------------------------------------------------------
+        # 17. Recharge Events (2-4 per site, wet season Dec-Apr)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating recharge events...")
+        recharge_event_count = 0
+        for site in recharge_sites:
+            num_events = random.randint(2, 4)
+            for j in range(num_events):
+                # Wet season months: Dec, Jan, Feb, Mar, Apr
+                month = random.choice([12, 1, 2, 3, 4])
+                year = 2024 if month == 12 else 2025
+                start = date(year, month, random.randint(1, 15))
+                duration = random.randint(7, 21)
+                volume = Decimal(str(round(random.uniform(100, 2000), 2)))
+                wt = random.choice([sw, storm])
+
+                RechargeEvent.objects.create(
+                    recharge_site=site,
+                    start_date=start,
+                    end_date=start + timedelta(days=duration),
+                    volume_acre_feet=volume,
+                    water_type=wt,
+                    source_description=f"Wet-season flow to {site.name}",
+                )
+                recharge_event_count += 1
+
+        # ----------------------------------------------------------------
+        # 18. Water Accounts (10)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating 10 water accounts...")
+        account_configs = [
+            ("KAW-ACCT-001", "Kaweah Delta WCD"),
+            ("KAW-ACCT-002", "Lindsay-Strathmore ID"),
+            ("KAW-ACCT-003", "Lindmore ID"),
+            ("KAW-ACCT-004", "Exeter ID"),
+            ("KAW-ACCT-005", "Ivanhoe ID"),
+            ("KAW-ACCT-006", "Tulare Irrigation District"),
+            ("KAW-ACCT-007", "Cutler-Orosi Joint Powers"),
+            ("KAW-ACCT-008", "Woodlake Public Utility"),
+            ("KAW-ACCT-009", "Farmersville Farms Co-op"),
+            ("KAW-ACCT-010", "Three Rivers Land Trust"),
+        ]
+        accounts = []
+        for acct_num, name in account_configs:
+            acct = WaterAccount.objects.create(
+                account_number=acct_num,
+                name=name,
+                status="active",
+                contact_name=f"{name.split()[0]} Water Manager",
+                contact_email=f"water@{name.split()[0].lower()}.example.com",
+            )
+            accounts.append(acct)
+
+        # ----------------------------------------------------------------
+        # 19. WaterAccountParcel links (3-5 parcels per account)
+        # ----------------------------------------------------------------
+        self.stdout.write("Linking accounts to parcels...")
+        remaining_parcels = list(all_parcels)
+        random.shuffle(remaining_parcels)
+        wap_count = 0
+        for acct in accounts:
+            num_links = random.randint(3, min(5, len(remaining_parcels)))
+            for _ in range(num_links):
+                if not remaining_parcels:
+                    remaining_parcels = list(all_parcels)
+                    random.shuffle(remaining_parcels)
+                parcel = remaining_parcels.pop()
+                WaterAccountParcel.objects.create(
+                    water_account=acct,
+                    parcel=parcel,
+                    reporting_period=wy2025,
+                )
+                wap_count += 1
+
+        # ----------------------------------------------------------------
+        # 20. Allocation Plans (per zone per water type per period)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating allocation plans...")
+        alloc_count = 0
+        for zone in zones:
+            for wtype, rate in [(gw, "2.5"), (sw, "1.5")]:
+                for rp in [wy2025, wy2026]:
+                    AllocationPlan.objects.create(
+                        name=f"{zone.name} - {wtype.name} {rp.name}",
+                        zone=zone,
+                        water_type=wtype,
+                        reporting_period=rp,
+                        allocation_acre_feet=Decimal(rate) * Decimal("1000"),
+                    )
+                    alloc_count += 1
+
+        # ----------------------------------------------------------------
+        # 21. ParcelLedger entries (target 400+)
+        # ----------------------------------------------------------------
+        self.stdout.write("Creating parcel ledger entries...")
+        entries = []
+
+        for p in all_parcels:
+            parcel_area = float(p.area_acres or 100)
+
+            # --- Allocation entries (beginning of each period) ---
+            for rp in [wy2025, wy2026]:
+                alloc_amount = Decimal(str(round(parcel_area * 2.5, 2)))
+                entries.append(
+                    ParcelLedger(
+                        parcel=p,
+                        transaction_date=rp.start_date,
+                        effective_date=rp.start_date,
+                        amount_acre_feet=alloc_amount,
+                        water_type=gw,
+                        source_type="allocation",
+                        description=f"Annual GW allocation for {rp.name}",
+                        reporting_period=rp,
+                    )
+                )
+
+            # --- Monthly meter_reading entries (negative, extraction) ---
+            for month_offset in range(12):
+                month_num = ((10 + month_offset - 1) % 12) + 1
+                year = 2024 if month_num >= 10 else 2025
+                month_date = date(year, month_num, 15)
+
+                if month_num in (5, 6, 7, 8, 9):
+                    extraction = Decimal(str(round(
+                        random.uniform(0.3, 0.6) * parcel_area / 12, 2
+                    )))
+                else:
+                    extraction = Decimal(str(round(
+                        random.uniform(0.05, 0.15) * parcel_area / 12, 2
+                    )))
+
+                entries.append(
+                    ParcelLedger(
+                        parcel=p,
+                        transaction_date=month_date,
+                        effective_date=month_date,
+                        amount_acre_feet=-extraction,
+                        water_type=gw,
+                        source_type="meter_reading",
+                        description="Monthly groundwater extraction",
+                        reporting_period=wy2025,
+                    )
+                )
+
+            # --- Monthly ET estimate entries (negative) ---
+            for month_offset in range(12):
+                month_num = ((10 + month_offset - 1) % 12) + 1
+                year = 2024 if month_num >= 10 else 2025
+                month_date = date(year, month_num, 20)
+
+                if month_num in (5, 6, 7, 8, 9):
+                    et = Decimal(str(round(
+                        random.uniform(0.4, 0.7) * parcel_area / 12, 2
+                    )))
+                else:
+                    et = Decimal(str(round(
+                        random.uniform(0.02, 0.1) * parcel_area / 12, 2
+                    )))
+
+                entries.append(
+                    ParcelLedger(
+                        parcel=p,
+                        transaction_date=month_date,
+                        effective_date=month_date,
+                        amount_acre_feet=-et,
+                        water_type=gw,
+                        source_type="et_estimate",
+                        description="Monthly ET consumption estimate",
+                        reporting_period=wy2025,
+                    )
+                )
+
+            # --- Surface diversion entries (positive, Apr-Sep only) ---
+            for month_num in (4, 5, 6, 7, 8, 9):
+                month_date = date(2025, month_num, 10)
+                div_amount = Decimal(str(round(
+                    random.uniform(0.1, 0.3) * parcel_area / 12, 2
+                )))
+                entries.append(
+                    ParcelLedger(
+                        parcel=p,
+                        transaction_date=month_date,
+                        effective_date=month_date,
+                        amount_acre_feet=div_amount,
+                        water_type=sw,
+                        source_type="surface_diversion",
+                        description="Surface water delivery",
+                        reporting_period=wy2025,
+                    )
+                )
+
+        # --- Recharge entries (positive, one per recharge event) ---
+        # Distribute recharge credit across parcels in same zone
+        for site in recharge_sites:
+            zone_parcels = parcels_by_zone.get(site.zone_id, [])
+            if not zone_parcels:
+                continue
+            events = RechargeEvent.objects.filter(recharge_site=site)
+            for event in events:
+                credit_per_parcel = event.volume_acre_feet / len(zone_parcels)
+                for p in zone_parcels[:5]:  # Credit top 5 parcels in zone
+                    entries.append(
+                        ParcelLedger(
+                            parcel=p,
+                            transaction_date=event.start_date,
+                            effective_date=event.start_date,
+                            amount_acre_feet=credit_per_parcel,
+                            water_type=event.water_type or sw,
+                            source_type="recharge",
+                            description=f"Recharge credit from {site.name}",
+                            reporting_period=wy2025,
+                        )
+                    )
+
+        ParcelLedger.objects.bulk_create(entries, batch_size=500)
+
+        # ----------------------------------------------------------------
         # Summary
         # ----------------------------------------------------------------
         self.stdout.write(
@@ -589,5 +1004,12 @@ class Command(BaseCommand):
                 f"  {len(wells)} wells ({wip_count} well-parcel links)\n"
                 f"  {reading_count} meter readings\n"
                 f"  {station_count} monitored stations\n"
+                f"  {len(water_rights)} water rights ({len(pods)} points of diversion)\n"
+                f"  {div_count} diversion records\n"
+                f"  {len(recharge_sites)} recharge sites ({recharge_event_count} events)\n"
+                f"  {len(accounts)} water accounts ({wap_count} account-parcel links)\n"
+                f"  {alloc_count} allocation plans\n"
+                f"  {len(entries)} ledger entries\n"
+                f"  2 reporting periods"
             )
         )
