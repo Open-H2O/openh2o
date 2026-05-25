@@ -160,10 +160,13 @@ def parcel_edit_field(request, pk):
 @login_required
 def parcels_geojson(request):
     """Return all parcels as a GeoJSON FeatureCollection."""
-    data = serialize(
+    raw = serialize(
         "geojson",
         Parcel.objects.filter(geometry__isnull=False),
         geometry_field="geometry",
         fields=["parcel_number", "owner_name", "area_acres", "status"],
     )
-    return HttpResponse(data, content_type="application/json")
+    data = json.loads(raw)
+    for f in data["features"]:
+        f["properties"]["pk"] = f.get("pk")
+    return HttpResponse(json.dumps(data), content_type="application/json")
