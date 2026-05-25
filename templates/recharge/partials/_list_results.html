@@ -7,7 +7,7 @@
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised" style="overflow-x: auto;">
+<div class="card-raised table-scroll">
   <table class="data-table">
     <thead>
       <tr>
@@ -67,7 +67,11 @@
 
 {% else %}
 <div class="card-raised empty-state">
-  <div class="empty-state-icon">&#x1F30A;</div>
+  <div class="empty-state-icon">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+    </svg>
+  </div>
   <p class="empty-state-text">No recharge sites found{% if q %} matching "{{ q }}"{% endif %}{% if site_type %} with type "{{ site_type }}"{% endif %}.</p>
 </div>
 {% endif %}
