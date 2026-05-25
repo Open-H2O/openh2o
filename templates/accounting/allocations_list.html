@@ -37,9 +37,9 @@
 
     <!-- Period filter -->
     <div>
-      <label class="form-label">Period</label>
+      <label class="form-label" for="filter-period">Period</label>
       <select
-        name="period"
+        id="filter-period" name="period"
         hx-get="{% url 'accounting:allocations_list' %}"
         hx-target="#results"
         hx-trigger="change"

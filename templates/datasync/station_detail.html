@@ -46,7 +46,7 @@
         <div class="field-group">
           <div class="field-label">Data Source</div>
           <div class="row-start">
-            <span class="pill-tag" style="color: #FF6B6B;">{{ station.data_source.code }}</span>
+            <span class="pill-tag" style="color: var(--color-error);">{{ station.data_source.code }}</span>
             <span class="text-secondary text-base">{{ station.data_source.name }}</span>
           </div>
         </div>
@@ -126,7 +126,7 @@
                   font-size: 0.7rem;
                   font-weight: 600;
                   {% if log.status == 'success' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
-                  {% elif log.status == 'failed' %}background: rgba(239,68,68,0.1); color: #ef4444;
+                  {% elif log.status == 'failed' %}background: rgba(239,68,68,0.1); color: var(--color-error);
                   {% elif log.status == 'partial' %}background: rgba(234,179,8,0.1); color: var(--color-warning);
                   {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
                 ">{{ log.get_status_display }}</span>
@@ -180,8 +180,8 @@
                   display: inline-flex; align-items: center;
                   border-radius: 4px; padding: 1px 6px; font-size: 0.7rem; font-weight: 600;
                   {% if record.status == 'published' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
-                  {% elif record.status == 'rejected' %}background: rgba(239,68,68,0.1); color: #ef4444;
-                  {% elif record.status == 'duplicate' %}background: rgba(100,116,139,0.1); color: #64748b;
+                  {% elif record.status == 'rejected' %}background: rgba(239,68,68,0.1); color: var(--color-error);
+                  {% elif record.status == 'duplicate' %}background: rgba(100,116,139,0.1); color: var(--color-text-secondary);
                   {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
                 ">{{ record.get_status_display }}</span>
               </td>
