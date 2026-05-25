@@ -13,8 +13,12 @@ from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
-from geography.models import Boundary, Zone
-from geography.services.arcgis import esri_polygon_to_geos, geos_to_esri_geometry
+from geography.models import Boundary, Flowline, Zone
+from geography.services.arcgis import (
+    esri_polygon_to_geos,
+    esri_polyline_to_geos,
+    geos_to_esri_geometry,
+)
 from parcels.models import Parcel
 
 
@@ -398,3 +402,247 @@ class TestStepParcels:
         assert Parcel.objects.count() == 2
         apns = set(Parcel.objects.values_list("parcel_number", flat=True))
         assert apns == {"100-200-300", "100-200-301"}
+
+
+# ---------------------------------------------------------------------------
+# Polyline geometry conversion tests
+# ---------------------------------------------------------------------------
+
+class TestEsriPolylineToGeos:
+    def test_single_path(self):
+        """A simple polyline with one path converts to a valid MultiLineString."""
+        esri = {
+            "paths": [
+                [
+                    [-119.5, 36.0],
+                    [-119.4, 36.1],
+                    [-119.3, 36.2],
+                    [-119.2, 36.3],
+                ]
+            ]
+        }
+        result = esri_polyline_to_geos(esri)
+
+        assert result is not None
+        assert result.geom_type == "MultiLineString"
+        assert result.srid == 4326
+        assert result.valid
+
+    def test_multi_path(self):
+        """A polyline with multiple paths produces MultiLineString with multiple lines."""
+        esri = {
+            "paths": [
+                [[-119.5, 36.0], [-119.4, 36.1]],
+                [[-119.3, 36.2], [-119.2, 36.3]],
+            ]
+        }
+        result = esri_polyline_to_geos(esri)
+
+        assert result is not None
+        assert result.geom_type == "MultiLineString"
+        assert len(result) == 2
+
+    def test_empty_returns_none(self):
+        """None or empty geometry input returns None."""
+        assert esri_polyline_to_geos(None) is None
+        assert esri_polyline_to_geos({}) is None
+        assert esri_polyline_to_geos({"paths": []}) is None
+
+
+# ---------------------------------------------------------------------------
+# 3DHP flowline test fixtures
+# ---------------------------------------------------------------------------
+
+def _3dhp_features():
+    """Two sample 3DHP flowline features for testing."""
+    return [
+        {
+            "attributes": {
+                "id3dhp": "FL00001",
+                "gnisidlabel": "Kaweah River",
+                "featuretypelabel": "Stream/River",
+                "lengthkm": 12.5,
+                "streamorder": 4,
+            },
+            "geometry": {
+                "paths": [
+                    [
+                        [-119.3, 36.3],
+                        [-119.25, 36.32],
+                        [-119.2, 36.35],
+                        [-119.15, 36.38],
+                    ]
+                ]
+            },
+        },
+        {
+            "attributes": {
+                "id3dhp": "FL00002",
+                "gnisidlabel": "Mill Creek",
+                "featuretypelabel": "Stream/River",
+                "lengthkm": 5.2,
+                "streamorder": 2,
+            },
+            "geometry": {
+                "paths": [
+                    [
+                        [-119.28, 36.31],
+                        [-119.24, 36.33],
+                        [-119.2, 36.35],
+                    ]
+                ]
+            },
+        },
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Flowline step tests
+# ---------------------------------------------------------------------------
+
+class TestStepFlowlines:
+    @patch("geography.services.arcgis.requests.get")
+    def test_creates_flowlines(self, mock_get, boundary):
+        """Flowlines step creates Flowline records from mocked API response."""
+        mock_get.return_value = _make_mock_response(_3dhp_features())
+
+        out = StringIO()
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="flowlines",
+            stdout=out,
+        )
+
+        flowlines = Flowline.objects.filter(boundary=boundary)
+        assert flowlines.count() == 2
+
+        names = set(flowlines.values_list("name", flat=True))
+        assert names == {"Kaweah River", "Mill Creek"}
+
+        kaweah = flowlines.get(name="Kaweah River")
+        assert kaweah.stream_order == 4
+        assert kaweah.geometry is not None
+        assert kaweah.geometry.geom_type == "MultiLineString"
+
+    @patch("geography.services.arcgis.requests.get")
+    def test_idempotent(self, mock_get, boundary):
+        """Running the flowlines step twice creates flowlines only once."""
+        mock_get.return_value = _make_mock_response(_3dhp_features())
+
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="flowlines",
+            stdout=StringIO(),
+        )
+        assert Flowline.objects.filter(boundary=boundary).count() == 2
+
+        mock_get.return_value = _make_mock_response(_3dhp_features())
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="flowlines",
+            stdout=StringIO(),
+        )
+        assert Flowline.objects.filter(boundary=boundary).count() == 2
+
+    @patch("geography.services.arcgis.requests.get")
+    def test_dry_run_flowlines(self, mock_get, boundary):
+        """Dry run reports flowline count but writes nothing."""
+        mock_get.return_value = _make_mock_response(_3dhp_features())
+
+        out = StringIO()
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="flowlines",
+            dry_run=True,
+            stdout=out,
+        )
+
+        assert Flowline.objects.count() == 0
+        output = out.getvalue()
+        assert "would create" in output.lower() or "2" in output
+
+
+# ---------------------------------------------------------------------------
+# County loading test fixtures
+# ---------------------------------------------------------------------------
+
+def _county_features():
+    """Two sample county features for testing."""
+    return [
+        {
+            "attributes": {
+                "NAME": "Tulare County",
+                "GEOID": "06107",
+                "BASENAME": "Tulare",
+            },
+            "geometry": {
+                "rings": [
+                    [
+                        [-119.8, 35.8],
+                        [-118.3, 35.8],
+                        [-118.3, 36.7],
+                        [-119.8, 36.7],
+                        [-119.8, 35.8],
+                    ]
+                ]
+            },
+        },
+        {
+            "attributes": {
+                "NAME": "Kings County",
+                "GEOID": "06031",
+                "BASENAME": "Kings",
+            },
+            "geometry": {
+                "rings": [
+                    [
+                        [-120.2, 35.8],
+                        [-119.5, 35.8],
+                        [-119.5, 36.3],
+                        [-120.2, 36.3],
+                        [-120.2, 35.8],
+                    ]
+                ]
+            },
+        },
+    ]
+
+
+# ---------------------------------------------------------------------------
+# County loading tests
+# ---------------------------------------------------------------------------
+
+class TestLoadCounties:
+    @patch("geography.services.arcgis.requests.get")
+    def test_creates_boundaries(self, mock_get):
+        """load_counties creates Boundary records for each county."""
+        mock_get.return_value = _make_mock_response(_county_features())
+
+        out = StringIO()
+        call_command("load_counties", stdout=out)
+
+        boundaries = Boundary.objects.filter(name__endswith="County")
+        assert boundaries.count() == 2
+
+        names = set(boundaries.values_list("name", flat=True))
+        assert names == {"Tulare County", "Kings County"}
+
+        tulare = boundaries.get(name="Tulare County")
+        assert "06107" in tulare.description
+        assert tulare.geometry is not None
+
+    @patch("geography.services.arcgis.requests.get")
+    def test_idempotent_counties(self, mock_get):
+        """Running load_counties twice creates counties only once."""
+        mock_get.return_value = _make_mock_response(_county_features())
+
+        call_command("load_counties", stdout=StringIO())
+        assert Boundary.objects.filter(name__endswith="County").count() == 2
+
+        mock_get.return_value = _make_mock_response(_county_features())
+        call_command("load_counties", stdout=StringIO())
+        assert Boundary.objects.filter(name__endswith="County").count() == 2
