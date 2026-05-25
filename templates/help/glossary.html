@@ -20,13 +20,9 @@
   <!-- Alphabetical jump nav -->
   <div class="card-raised" style="padding: var(--space-sm) var(--space-lg);">
     <p class="text-tertiary text-xs" style="margin-bottom: var(--space-xs);">Jump to letter:</p>
-    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+    <div class="jump-nav">
       {% for letter in letters %}
-        <a href="#letter-{{ letter }}"
-           class="text-secondary text-sm"
-           style="text-decoration: none; padding: 2px 10px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); transition: color 150ms, border-color 150ms;">
-          {{ letter }}
-        </a>
+        <a href="#letter-{{ letter }}">{{ letter }}</a>
       {% endfor %}
     </div>
   </div>
@@ -34,9 +30,9 @@
   <div class="card-raised">
     <dl id="glossary-list" style="margin: 0;">
       {% for term, definition in terms %}
-      <div class="glossary-entry" data-term="{{ term }}" style="margin-bottom: var(--space-md);">
-        <dt style="font-weight: 600; color: var(--color-text-primary); font-size: 0.9375rem; margin-bottom: 2px;">{{ term }}</dt>
-        <dd style="margin: 0; color: var(--color-text-secondary); font-size: 0.875rem; line-height: 1.5;">{{ definition }}</dd>
+      <div class="glossary-entry" data-term="{{ term }}">
+        <dt class="glossary-term">{{ term }}</dt>
+        <dd class="glossary-def">{{ definition }}</dd>
       </div>
       {% endfor %}
     </dl>
@@ -48,14 +44,17 @@
 {% block extra_scripts %}
 <script>
 (function() {
-  // Assign letter anchor IDs to the first term starting with each letter
   var seen = {};
   document.querySelectorAll('#glossary-list .glossary-entry').forEach(function(el) {
     var term = el.getAttribute('data-term') || '';
     var letter = term[0] ? term[0].toUpperCase() : '';
     if (letter && !seen[letter]) {
       seen[letter] = true;
-      el.id = 'letter-' + letter;
+      var heading = document.createElement('div');
+      heading.className = 'glossary-letter-heading';
+      heading.id = 'letter-' + letter;
+      heading.textContent = letter;
+      el.parentNode.insertBefore(heading, el);
     }
   });
 })();

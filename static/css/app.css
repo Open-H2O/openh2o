@@ -604,6 +604,95 @@ a { color: inherit; }
     pointer-events: auto;
 }
 
+/* -- Help Pages ---------------------------------------------------------- */
+
+.step-card {
+    display: flex;
+    gap: var(--space-md);
+    align-items: flex-start;
+    border-left: 3px solid var(--color-gold);
+}
+
+.step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: oklch(0.45 0.12 80 / 0.15);
+    color: var(--color-gold);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.step-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.glossary-letter-heading {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-blue);
+    padding: var(--space-xs) 0;
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-sm);
+    border-bottom: 2px solid oklch(0.35 0.08 220 / 0.4);
+}
+
+.glossary-letter-heading:first-child {
+    margin-top: 0;
+}
+
+.glossary-entry {
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid oklch(0.20 0.01 250 / 0.5);
+}
+
+.glossary-entry:last-child {
+    border-bottom: none;
+}
+
+.glossary-term {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    margin-bottom: 2px;
+}
+
+.glossary-def {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.jump-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.jump-nav a {
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition: color 150ms, border-color 150ms, background 150ms;
+}
+
+.jump-nav a:hover {
+    color: var(--color-blue);
+    border-color: var(--color-blue);
+    background: oklch(0.35 0.08 220 / 0.12);
+}
+
 /* -- Navigation ---------------------------------------------------------- */
 
 .back-link {
