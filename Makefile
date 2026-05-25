@@ -9,7 +9,8 @@ EXEC    = $(COMPOSE) exec web python manage.py
 .PHONY: help up down build logs shell dbshell migrate makemigrations \
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
-        seed-well-types demo flush-demo kaweah flush-kaweah check test fresh
+        seed-well-types demo flush-demo kaweah flush-kaweah check test fresh \
+        install-cron show-cron sync
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -57,7 +58,7 @@ check: ## Run Django system checks (deployment readiness)
 	$(EXEC) check --deploy
 
 test: ## Run test suite
-	$(EXEC) test
+	$(COMPOSE) exec web python -m pytest tests/ -v
 
 # ---------------------------------------------------------------------------
 # Seed Data
@@ -105,6 +106,16 @@ health: ## Run health checks
 
 prune: ## Prune old staging data and sync logs
 	$(EXEC) prune_old_data
+
+install-cron: ## Install crontab.txt entries (appends, preserves existing entries)
+	(crontab -l 2>/dev/null; cat crontab.txt) | crontab -
+	@echo "Cron entries installed. Run 'make show-cron' to verify."
+
+show-cron: ## Display current crontab entries
+	crontab -l
+
+sync: ## Run sync_all manually (syncs all active data sources)
+	$(EXEC) sync_all
 
 # ---------------------------------------------------------------------------
 # Composite Targets
