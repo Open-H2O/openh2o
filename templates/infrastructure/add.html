@@ -458,7 +458,7 @@
     drawMode = mode;
     document.getElementById('draw-point').classList.toggle('active', mode === 'point');
     document.getElementById('draw-polygon').classList.toggle('active', mode === 'polygon');
-    map.getCanvas().style.cursor = 'crosshair';
+    try { map.getCanvas().style.cursor = 'crosshair'; } catch(e) {}
   }
 
   function updateGeometry(geojson) {
