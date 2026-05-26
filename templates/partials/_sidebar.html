@@ -34,10 +34,21 @@
             <span class="sidebar-link-text">Map</span>
         </a>
 
-        <!-- MANAGE -->
+        <!-- DATA -->
         <div class="sidebar-section">
-            <span class="sidebar-link-text sidebar-section-label">Manage</span>
+            <span class="sidebar-link-text sidebar-section-label">Data</span>
         </div>
+        <a href="{% url 'accounting:ledger_list' %}"
+           class="sidebar-link{% if '/accounting/ledger' in request.path %} active{% endif %}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <line x1="10" y1="9" x2="8" y2="9"/>
+            </svg>
+            <span class="sidebar-link-text">Ledger</span>
+        </a>
         <a href="{% url 'parcels:list' %}"
            class="sidebar-link{% if '/parcels/' in request.path %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -68,7 +79,7 @@
                 <line x1="16" y1="13" x2="8" y2="13"/>
                 <line x1="16" y1="17" x2="8" y2="17"/>
             </svg>
-            <span class="sidebar-link-text">Water Rights</span>
+            <span class="sidebar-link-text">Surface Water</span>
         </a>
         <a href="{% url 'recharge:list' %}"
            class="sidebar-link{% if '/recharge/' in request.path %} active{% endif %}">
@@ -77,20 +88,6 @@
             </svg>
             <span class="sidebar-link-text">Recharge</span>
         </a>
-        <a href="{% url 'infrastructure:list' %}"
-           class="sidebar-link{% if '/infrastructure/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 20h20"/>
-                <path d="M5 20V8l7-5 7 5v12"/>
-                <rect x="9" y="12" width="6" height="8"/>
-            </svg>
-            <span class="sidebar-link-text">Infrastructure</span>
-        </a>
-
-        <!-- TRACK -->
-        <div class="sidebar-section">
-            <span class="sidebar-link-text sidebar-section-label">Track</span>
-        </div>
         <a href="{% url 'datasync:station_list' %}"
            class="sidebar-link{% if '/datasync/stations' in request.path %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -106,21 +103,19 @@
             </svg>
             <span class="sidebar-link-text">Stations</span>
         </a>
-        <a href="{% url 'accounting:ledger_list' %}"
-           class="sidebar-link{% if '/accounting/ledger' in request.path %} active{% endif %}">
+        <a href="{% url 'infrastructure:list' %}"
+           class="sidebar-link{% if '/infrastructure/' in request.path %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <line x1="10" y1="9" x2="8" y2="9"/>
+                <path d="M2 20h20"/>
+                <path d="M5 20V8l7-5 7 5v12"/>
+                <rect x="9" y="12" width="6" height="8"/>
             </svg>
-            <span class="sidebar-link-text">Water Use</span>
+            <span class="sidebar-link-text">Infrastructure</span>
         </a>
 
-        <!-- REPORT -->
+        <!-- REPORTING -->
         <div class="sidebar-section">
-            <span class="sidebar-link-text sidebar-section-label">Report</span>
+            <span class="sidebar-link-text sidebar-section-label">Reporting</span>
         </div>
         <a href="{% url 'reporting:report_list' %}"
            class="sidebar-link{% if '/reporting/' in request.path %} active{% endif %}">
@@ -132,6 +127,36 @@
             </svg>
             <span class="sidebar-link-text">Reports</span>
         </a>
+
+        <!-- SYSTEM -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">System</span>
+        </div>
+        <a href="{% url 'health:dashboard' %}"
+           class="sidebar-link{% if '/health/' in request.path %} active{% endif %}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            <span class="sidebar-link-text">Health</span>
+        </a>
+        <a href="{% url 'setup:wizard' %}"
+           class="sidebar-link{% if '/setup/' in request.path %} active{% endif %}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 1.36 13.37"/>
+                <path d="M4.93 4.93a10 10 0 0 0-1.36 13.37"/>
+                <path d="M12 2v3"/>
+                <path d="M12 19v3"/>
+                <path d="M2 12h3"/>
+                <path d="M19 12h3"/>
+            </svg>
+            <span class="sidebar-link-text">Setup Wizard</span>
+        </a>
+
+        <!-- SETUP -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Setup</span>
+        </div>
         <a href="{% url 'accounting:accounts_list' %}"
            class="sidebar-link{% if '/accounting/accounts' in request.path %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -160,31 +185,6 @@
                 <path d="M2 12h10"/>
             </svg>
             <span class="sidebar-link-text">Allocations</span>
-        </a>
-
-        <!-- SYSTEM -->
-        <div class="sidebar-section">
-            <span class="sidebar-link-text sidebar-section-label">System</span>
-        </div>
-        <a href="{% url 'health:dashboard' %}"
-           class="sidebar-link{% if '/health/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-            <span class="sidebar-link-text">Health</span>
-        </a>
-        <a href="{% url 'setup:wizard' %}"
-           class="sidebar-link{% if '/setup/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.07 4.93a10 10 0 0 1 1.36 13.37"/>
-                <path d="M4.93 4.93a10 10 0 0 0-1.36 13.37"/>
-                <path d="M12 2v3"/>
-                <path d="M12 19v3"/>
-                <path d="M2 12h3"/>
-                <path d="M19 12h3"/>
-            </svg>
-            <span class="sidebar-link-text">Setup Wizard</span>
         </a>
 
         <!-- HELP -->
