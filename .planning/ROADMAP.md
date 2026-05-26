@@ -184,6 +184,15 @@ Plans: 1
 Plans: 1
 - [x] 19-01: Monitoring dashboard, freshness map, setup wizard, sidebar navigation
 
+#### Phase 19.1: Wizard Fix & Infrastructure Entry (INSERTED)
+
+**Goal**: Fix broken wizard confirm map, build unified infrastructure entry with type-adaptive form, map draw modes, file upload, and parcel linkage.
+**Depends on**: Phase 19
+**Status**: Complete
+
+Plans: 1
+- [x] 19.1-01: Wizard confirm MapLibre fix, infrastructure app, type-adaptive form with map draw
+
 #### Phase 20: AI Operator Guide (DEFERRED from v1.1 Phase 13.1)
 
 **Goal**: Rewrite CLAUDE.md so a fresh Claude Code instance can deploy the platform and run the auto-populate setup wizard autonomously. Document the full onboarding flow that the setup wizard (Phase 19) enables.
@@ -231,5 +240,6 @@ Plans:
 | 17. Static GIS & Auto-Populate Engine | v1.2 | 3/3 | Complete | 2026-05-25 |
 | 18. Telemetry Discovery & OpenET | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 1/1 | Complete | 2026-05-25 |
+| 19.1 Wizard Fix & Infrastructure Entry | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
