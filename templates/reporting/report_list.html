@@ -6,7 +6,7 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'reporting:report_list' %}">Reporting</a>
+    <a href="{% url 'reporting:report_list' %}">Compliance</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Reports</span>
   </nav>
@@ -17,33 +17,61 @@
 {% block content %}
 <div class="page-stack">
 
-  <div class="card-raised" style="padding: var(--space-lg);">
+  <!-- Hero cards: one per report type -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
 
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md);">
-      <div class="report-tabs">
-        <button class="report-tab{% if tab == 'gears' %} active{% endif %}"
-                hx-get="{% url 'reporting:report_list' %}?tab=gears"
-                hx-target="#tab-content"
-                hx-push-url="?tab=gears"
-                onclick="document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active')); this.classList.add('active');">
-          GEARS
-        </button>
-        <button class="report-tab{% if tab == 'calwatrs' %} active{% endif %}"
-                hx-get="{% url 'reporting:report_list' %}?tab=calwatrs"
-                hx-target="#tab-content"
-                hx-push-url="?tab=calwatrs"
-                onclick="document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active')); this.classList.add('active');">
-          CalWATRS
-        </button>
+    <!-- GEARS card -->
+    <div class="card-raised" style="border-top: 3px solid var(--color-gold);">
+      <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 var(--space-sm) 0;">GEARS</h3>
+      <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md) 0; line-height: 1.5;">Groundwater Extraction Annual Report. Per-well extraction volumes for SGMA compliance reporting to the Department of Water Resources.</p>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span class="text-tertiary text-sm">{{ gears_count }} report{{ gears_count|pluralize }}</span>
+        <a href="{% url 'reporting:report_generate' %}?type=gears" class="btn-primary btn-sm" style="text-decoration: none;">Generate Report</a>
       </div>
-      <a href="{% url 'reporting:report_generate' %}{% if tab == 'calwatrs' %}?type=calwatrs{% endif %}" class="btn-primary btn-sm" style="text-decoration: none; white-space: nowrap;">
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Generate Report
-      </a>
     </div>
 
-    <div id="tab-content">
-      {% include "reporting/partials/_tab_content.html" %}
+    <!-- CalWATRS card -->
+    <div class="card-raised" style="border-top: 3px solid var(--color-blue);">
+      <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 var(--space-sm) 0;">CalWATRS</h3>
+      <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md) 0; line-height: 1.5;">California Water Transfer Reporting System. Surface water diversion records for the State Water Resources Control Board.</p>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span class="text-tertiary text-sm">{{ calwatrs_count }} report{{ calwatrs_count|pluralize }}</span>
+        <a href="{% url 'reporting:report_generate' %}?type=calwatrs" class="btn-primary btn-sm" style="text-decoration: none;">Generate Report</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Report History -->
+  <div class="card-raised" style="padding: var(--space-lg);">
+    <h3 class="card-header-ruled">Report History</h3>
+
+    <div style="display: flex; gap: var(--space-sm); margin-bottom: var(--space-md);">
+      <input type="search"
+             name="q"
+             value="{{ q }}"
+             placeholder="Search reports..."
+             hx-get="{% url 'reporting:report_list' %}"
+             hx-target="#report-history"
+             hx-trigger="keyup changed delay:300ms"
+             hx-include="[name='status']"
+             class="form-input search-input-icon"
+             style="flex: 1;">
+      <select name="status"
+              hx-get="{% url 'reporting:report_list' %}"
+              hx-target="#report-history"
+              hx-trigger="change"
+              hx-include="[name='q']"
+              class="form-select" style="width: auto;">
+        <option value="">All statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div id="report-history">
+      {% include "reporting/partials/_report_history.html" %}
     </div>
 
   </div>

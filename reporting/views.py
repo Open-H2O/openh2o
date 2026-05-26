@@ -20,16 +20,10 @@ from reporting.validators import validate_report
 def report_list(request):
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
-    tab = request.GET.get("tab", "gears").strip()
 
     queryset = ReportSubmission.objects.select_related(
         "report_template", "reporting_period",
     ).order_by("-created_at")
-
-    if tab == "gears":
-        queryset = queryset.filter(report_template__report_type__startswith="gears")
-    elif tab == "calwatrs":
-        queryset = queryset.filter(report_template__report_type__startswith="calwatrs")
 
     if q:
         queryset = queryset.filter(
@@ -43,17 +37,25 @@ def report_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    gears_count = ReportSubmission.objects.filter(
+        report_template__report_type__startswith="gears",
+    ).count()
+    calwatrs_count = ReportSubmission.objects.filter(
+        report_template__report_type__startswith="calwatrs",
+    ).count()
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "q": q,
         "status": status,
-        "tab": tab,
+        "gears_count": gears_count,
+        "calwatrs_count": calwatrs_count,
         "status_choices": ReportSubmission.STATUS_CHOICES,
     }
 
     if request.headers.get("HX-Request"):
-        return render(request, "reporting/partials/_tab_content.html", context)
+        return render(request, "reporting/partials/_report_history.html", context)
 
     return render(request, "reporting/report_list.html", context)
 

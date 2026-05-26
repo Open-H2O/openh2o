@@ -1,0 +1,78 @@
+<div class="text-tertiary text-xs mb-sm">
+  {{ total_count }} report{{ total_count|pluralize }}
+</div>
+
+{% if page_obj.object_list %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Report</th>
+      <th>Period</th>
+      <th>Status</th>
+      <th>Generated</th>
+      <th>Submitted</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for sub in page_obj %}
+    <tr>
+      <td>
+        {% if 'gears' in sub.report_template.report_type %}
+        <span class="badge badge-pill badge-gold">GEARS</span>
+        {% else %}
+        <span class="badge badge-pill badge-blue">CalWATRS</span>
+        {% endif %}
+      </td>
+      <td><a href="{% url 'reporting:report_detail' pk=sub.pk %}" class="data-table-link">{{ sub.report_template.name }}</a></td>
+      <td class="text-secondary">{{ sub.reporting_period.name }}</td>
+      <td>
+        {% if sub.status == "submitted" or sub.status == "accepted" %}
+        <span class="badge badge-green">{{ sub.get_status_display }}</span>
+        {% elif sub.status == "reviewed" %}
+        <span class="badge badge-orange">{{ sub.get_status_display }}</span>
+        {% elif sub.status == "rejected" %}
+        <span class="badge badge-red">{{ sub.get_status_display }}</span>
+        {% else %}
+        <span class="badge badge-grey">{{ sub.get_status_display }}</span>
+        {% endif %}
+      </td>
+      <td class="text-tertiary text-sm">
+        {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
+      </td>
+      <td class="text-tertiary text-sm">
+        {% if sub.submitted_at %}{{ sub.submitted_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-row">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
+     class="btn-secondary btn-sm">Previous</a>
+  {% endif %}
+  <span class="pagination-label text-tertiary text-sm">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
+     class="btn-secondary btn-sm">Next</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-state-icon">
+    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+    </svg>
+  </div>
+  <p class="empty-state-text">No reports generated yet.</p>
+  <a href="{% url 'reporting:report_generate' %}" class="text-sm" style="color: var(--color-gold); text-decoration: none; font-weight: 600;">Generate your first report</a>
+</div>
+{% endif %}
