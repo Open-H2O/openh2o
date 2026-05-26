@@ -30,10 +30,12 @@ a { color: inherit; }
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-pop-sm);
     padding: var(--space-lg);
+    transition: border-color 200ms, box-shadow 200ms, transform 200ms;
 }
 
 .card-raised:hover {
     border-color: var(--color-border-hover);
+    transform: translateY(-1px);
 }
 
 /* -- Buttons ------------------------------------------------------------- */
@@ -444,6 +446,7 @@ a { color: inherit; }
     color: var(--color-text-primary);
     font-size: 0.875rem;
     font-family: var(--font-display);
+    box-shadow: var(--shadow-inset);
 }
 
 .form-input:focus {
