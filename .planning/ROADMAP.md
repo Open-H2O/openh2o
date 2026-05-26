@@ -197,11 +197,11 @@ Plans: 1
 
 **Goal**: Professional visual overhaul: palette harmonization with logo, shadow/radius alignment to VanderDev Pacific Golden, navigation renaming ("Surface Water"), sidebar reorganization (By Domain structure), and reports page redesign.
 **Depends on**: Phase 19.1
-**Status**: In progress (1/2 plans)
+**Status**: Complete
 
 Plans: 2
 - [x] 19.2-01: Deep Pacific palette, single-source shadows, tighter radii, font weights, Surface Water rename, GEARS/CalWATRS tabs, input styling fixes
-- [ ] 19.2-02: TBD (sidebar reorganization, reports redesign, station AOI scoping)
+- [x] 19.2-02: Reports hero cards, boundary-scoped stations, sidebar reorg deferred
 
 #### Phase 20: AI Operator Guide (DEFERRED from v1.1 Phase 13.1)
 
@@ -251,6 +251,6 @@ Plans:
 | 18. Telemetry Discovery & OpenET | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19.1 Wizard Fix & Infrastructure Entry | v1.2 | 1/1 | Complete | 2026-05-25 |
-| 19.2 Visual Overhaul & UX Refinement | v1.2 | 1/2 | In progress | - |
+| 19.2 Visual Overhaul & UX Refinement | v1.2 | 2/2 | Complete | 2026-05-26 |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
