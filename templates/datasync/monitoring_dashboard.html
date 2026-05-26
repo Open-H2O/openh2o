@@ -11,6 +11,7 @@
     <span class="breadcrumb-current">Monitoring Dashboard</span>
   </nav>
   <p class="page-description">Station health, data freshness, and sync status across all active data sources. Refreshes every 60 seconds.</p>
+  {% if boundary_name %}<p class="text-secondary text-sm" style="margin-top: 0;">Showing stations within {{ boundary_name }}</p>{% endif %}
 </div>
 {% endblock %}
 
