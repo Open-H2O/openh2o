@@ -1585,6 +1585,35 @@ a { color: inherit; }
     line-height: 1.5;
 }
 
+/* -- Report tabs --------------------------------------------------------- */
+
+.report-tabs {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.report-tab {
+    padding: var(--space-sm) var(--space-xs);
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 150ms, border-color 150ms;
+}
+
+.report-tab:hover {
+    color: var(--color-text-primary);
+}
+
+.report-tab.active {
+    color: var(--color-gold);
+    border-bottom-color: var(--color-gold);
+}
+
 /* -- Responsive ---------------------------------------------------------- */
 
 /* -- Stat grid 4-col ---------------------------------------------------- */
