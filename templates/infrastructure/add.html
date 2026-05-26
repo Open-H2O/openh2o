@@ -306,6 +306,7 @@
     });
   });
   document.querySelector('.infra-type-card[data-type="well"]').classList.add('active');
+  updateDrawModeForType();
 
   // Storage type sub-selector also affects draw mode
   var storageTypeSelect = document.getElementById('storage_type');
