@@ -15,3 +15,12 @@ class ReportGenerateForm(forms.Form):
         empty_label="Select period",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
+
+    def __init__(self, *args, report_type_filter="", **kwargs):
+        super().__init__(*args, **kwargs)
+        if report_type_filter:
+            self.fields["report_template"].queryset = (
+                ReportTemplate.objects.filter(
+                    is_active=True, report_type__startswith=report_type_filter
+                )
+            )

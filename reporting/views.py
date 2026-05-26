@@ -62,8 +62,10 @@ def report_list(request):
 
 @login_required
 def report_generate(request):
+    report_type_filter = request.GET.get("type", "").strip()
+
     if request.method == "POST":
-        form = ReportGenerateForm(request.POST)
+        form = ReportGenerateForm(request.POST, report_type_filter=report_type_filter)
         if form.is_valid():
             template = form.cleaned_data["report_template"]
             period = form.cleaned_data["reporting_period"]
@@ -116,9 +118,12 @@ def report_generate(request):
 
             return redirect("reporting:report_detail", pk=submission.pk)
     else:
-        form = ReportGenerateForm()
+        form = ReportGenerateForm(report_type_filter=report_type_filter)
 
-    return render(request, "reporting/report_generate.html", {"form": form})
+    return render(request, "reporting/report_generate.html", {
+        "form": form,
+        "report_type_filter": report_type_filter,
+    })
 
 
 @login_required
