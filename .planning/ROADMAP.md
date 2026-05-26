@@ -193,6 +193,16 @@ Plans: 1
 Plans: 1
 - [x] 19.1-01: Wizard confirm MapLibre fix, infrastructure app, type-adaptive form with map draw
 
+#### Phase 19.2: Visual Overhaul & UX Refinement (INSERTED)
+
+**Goal**: Professional visual overhaul: palette harmonization with logo, shadow/radius alignment to VanderDev Pacific Golden, navigation renaming ("Surface Water"), sidebar reorganization (By Domain structure), and reports page redesign.
+**Depends on**: Phase 19.1
+**Status**: In progress (1/2 plans)
+
+Plans: 2
+- [x] 19.2-01: Deep Pacific palette, single-source shadows, tighter radii, font weights, Surface Water rename, GEARS/CalWATRS tabs, input styling fixes
+- [ ] 19.2-02: TBD (sidebar reorganization, reports redesign, station AOI scoping)
+
 #### Phase 20: AI Operator Guide (DEFERRED from v1.1 Phase 13.1)
 
 **Goal**: Rewrite CLAUDE.md so a fresh Claude Code instance can deploy the platform and run the auto-populate setup wizard autonomously. Document the full onboarding flow that the setup wizard (Phase 19) enables.
@@ -241,5 +251,6 @@ Plans:
 | 18. Telemetry Discovery & OpenET | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19.1 Wizard Fix & Infrastructure Entry | v1.2 | 1/1 | Complete | 2026-05-25 |
+| 19.2 Visual Overhaul & UX Refinement | v1.2 | 1/2 | In progress | - |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
