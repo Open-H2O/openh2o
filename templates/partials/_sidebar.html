@@ -5,7 +5,7 @@
     <!-- Brand -->
     <div class="sidebar-brand">
         <span class="sidebar-brand-icon">
-            <img src="{% static 'img/favicon-192.png' %}" alt="" height="24" style="border-radius: 4px; width: auto;">
+            <img src="{% static 'img/favicon-192.png' %}" alt="" height="36" style="width: auto;">
         </span>
         <span class="sidebar-brand-text">OpenH2O</span>
     </div>
@@ -79,7 +79,7 @@
                 <line x1="16" y1="13" x2="8" y2="13"/>
                 <line x1="16" y1="17" x2="8" y2="17"/>
             </svg>
-            <span class="sidebar-link-text">Water Rights</span>
+            <span class="sidebar-link-text">Surface Water</span>
         </a>
         <a href="{% url 'recharge:list' %}"
            class="sidebar-link{% if '/recharge/' in request.path %} active{% endif %}">
