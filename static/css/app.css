@@ -3,7 +3,7 @@
  * Loaded separately from Tailwind (which compiles to output.css).
  */
 
-@import './tokens.css';
+/* tokens.css loaded via separate <link> tag in base.html for cache control */
 
 /* -- Base ---------------------------------------------------------------- */
 
