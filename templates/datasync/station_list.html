@@ -19,6 +19,7 @@
     <span class="breadcrumb-current">Stations</span>
   </nav>
   <p class="page-description">Monitoring stations linked to external data sources. Freshness shows how recently each station reported data.</p>
+  {% if boundary_name %}<p class="text-secondary text-sm" style="margin-top: 0;">Showing stations within {{ boundary_name }}</p>{% endif %}
 </div>
 {% endblock %}
 

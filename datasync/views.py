@@ -19,6 +19,7 @@ from datasync.models import (
     MonitoredStation,
     OpenETCache,
 )
+from geography.models import Boundary
 
 
 @login_required
@@ -32,9 +33,13 @@ def station_list(request):
     source = request.GET.get("source", "").strip()
     active = request.GET.get("active", "").strip()
 
+    boundary = Boundary.objects.first()
+
     queryset = MonitoredStation.objects.select_related("data_source").order_by(
         "data_source__code", "station_name"
     )
+    if boundary:
+        queryset = queryset.filter(location__within=boundary.geometry)
 
     if q:
         queryset = queryset.filter(
@@ -114,8 +119,10 @@ def station_list(request):
     if request.headers.get("HX-Request"):
         return render(request, "datasync/partials/_station_list_results.html", context)
 
-    # Full page: add summary stats and source status
+    # Full page: add summary stats and source status (boundary-scoped)
     all_active = MonitoredStation.objects.filter(is_active=True)
+    if boundary:
+        all_active = all_active.filter(location__within=boundary.geometry)
     total_active = all_active.count()
     fresh_count = sum(1 for s in all_active if s.last_data_at and s.last_data_at >= threshold_24h)
     stale_count = total_active - fresh_count
@@ -124,8 +131,11 @@ def station_list(request):
     source_status_list = []
     for src in sources:
         log = DataSyncLog.objects.filter(data_source=src).order_by("-started_at").first()
-        total = MonitoredStation.objects.filter(data_source=src).count()
-        src_active = MonitoredStation.objects.filter(data_source=src, is_active=True).count()
+        src_stations = MonitoredStation.objects.filter(data_source=src)
+        if boundary:
+            src_stations = src_stations.filter(location__within=boundary.geometry)
+        total = src_stations.count()
+        src_active = src_stations.filter(is_active=True).count()
         source_status_list.append({
             "source": src,
             "log": log,
@@ -142,6 +152,7 @@ def station_list(request):
         "source_status_list": source_status_list,
         "openet_used": openet_used,
         "openet_limit": openet_limit,
+        "boundary_name": boundary.name if boundary else None,
     })
 
     return render(request, "datasync/station_list.html", context)
@@ -263,9 +274,13 @@ def monitoring_dashboard(request):
     threshold_24h = now - timedelta(hours=24)
     threshold_7d = now - timedelta(days=7)
 
+    boundary = Boundary.objects.first()
+
     active_stations = MonitoredStation.objects.filter(
         is_active=True
     ).select_related("data_source").order_by("data_source__code", "station_name")
+    if boundary:
+        active_stations = active_stations.filter(location__within=boundary.geometry)
 
     fresh_count = sum(
         1 for s in active_stations
@@ -277,13 +292,16 @@ def monitoring_dashboard(request):
     )
     total_active = active_stations.count()
 
-    # Source stats with most recent log per source
+    # Source stats with most recent log per source (boundary-scoped)
     sources = DataSource.objects.filter(is_active=True).order_by("code")
     source_status_list = []
     for source in sources:
         log = DataSyncLog.objects.filter(data_source=source).order_by("-started_at").first()
-        total = MonitoredStation.objects.filter(data_source=source).count()
-        active = MonitoredStation.objects.filter(data_source=source, is_active=True).count()
+        src_stations = MonitoredStation.objects.filter(data_source=source)
+        if boundary:
+            src_stations = src_stations.filter(location__within=boundary.geometry)
+        total = src_stations.count()
+        active = src_stations.filter(is_active=True).count()
         source_status_list.append({
             "source": source,
             "log": log,
@@ -357,6 +375,7 @@ def monitoring_dashboard(request):
         "station_list": station_list,
         "openet_used": openet_used,
         "openet_limit": openet_limit,
+        "boundary_name": boundary.name if boundary else None,
     }
 
     if request.headers.get("HX-Request"):
