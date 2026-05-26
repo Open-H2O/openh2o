@@ -32,3 +32,4 @@ tailwindcss-*
 
 # Media (user-uploaded / generated reports)
 media/
+.claude/
