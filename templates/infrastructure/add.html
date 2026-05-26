@@ -84,11 +84,11 @@
         <div class="form-stack">
           <div class="form-group">
             <label class="field-label" for="name">Name</label>
-            <input type="text" id="name" name="name" required class="input-field" placeholder="e.g. Johnson Ranch Well #3">
+            <input type="text" id="name" name="name" required class="form-input" placeholder="e.g. Johnson Ranch Well #3">
           </div>
           <div class="form-group">
             <label class="field-label" for="status">Status</label>
-            <select id="status" name="status" class="input-field">
+            <select id="status" name="status" class="form-select">
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="proposed">Proposed</option>
@@ -96,7 +96,7 @@
           </div>
           <div class="form-group">
             <label class="field-label" for="notes">Notes</label>
-            <textarea id="notes" name="notes" class="input-field" rows="3" placeholder="Optional notes..."></textarea>
+            <textarea id="notes" name="notes" class="form-textarea" rows="3" placeholder="Optional notes..."></textarea>
           </div>
         </div>
       </div>
@@ -108,16 +108,16 @@
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="depth_ft">Depth (ft)</label>
-              <input type="number" id="depth_ft" name="depth_ft" step="0.01" class="input-field" placeholder="e.g. 350">
+              <input type="number" id="depth_ft" name="depth_ft" step="0.01" class="form-input" placeholder="e.g. 350">
             </div>
             <div class="form-group">
               <label class="field-label" for="capacity_gpm">Capacity (gpm)</label>
-              <input type="number" id="capacity_gpm" name="capacity_gpm" step="0.01" class="input-field" placeholder="e.g. 500">
+              <input type="number" id="capacity_gpm" name="capacity_gpm" step="0.01" class="form-input" placeholder="e.g. 500">
             </div>
           </div>
           <div class="form-group">
             <label class="field-label" for="owner_name">Owner Name</label>
-            <input type="text" id="owner_name" name="owner_name" class="input-field" placeholder="Property or well owner">
+            <input type="text" id="owner_name" name="owner_name" class="form-input" placeholder="Property or well owner">
           </div>
         </div>
       </div>
@@ -127,11 +127,11 @@
         <div class="form-stack">
           <div class="form-group">
             <label class="field-label" for="stream_name">Stream Name</label>
-            <input type="text" id="stream_name" name="stream_name" class="input-field" placeholder="e.g. Merced River">
+            <input type="text" id="stream_name" name="stream_name" class="form-input" placeholder="e.g. Merced River">
           </div>
           <div class="form-group">
             <label class="field-label" for="max_rate_cfs">Max Rate (cfs)</label>
-            <input type="number" id="max_rate_cfs" name="max_rate_cfs" step="0.0001" class="input-field" placeholder="e.g. 2.5">
+            <input type="number" id="max_rate_cfs" name="max_rate_cfs" step="0.0001" class="form-input" placeholder="e.g. 2.5">
           </div>
         </div>
       </div>
@@ -141,14 +141,14 @@
         <div class="form-stack">
           <div class="form-group">
             <label class="field-label" for="storage_type">Storage Type</label>
-            <select id="storage_type" name="storage_type" class="input-field">
+            <select id="storage_type" name="storage_type" class="form-select">
               <option value="storage_pond">Storage Pond</option>
               <option value="storage_tank">Storage Tank</option>
             </select>
           </div>
           <div class="form-group">
             <label class="field-label" for="capacity_af_storage">Capacity (acre-feet)</label>
-            <input type="number" id="capacity_af_storage" name="capacity_acre_feet" step="0.0001" class="input-field" placeholder="e.g. 120">
+            <input type="number" id="capacity_af_storage" name="capacity_acre_feet" step="0.0001" class="form-input" placeholder="e.g. 120">
           </div>
         </div>
       </div>
@@ -158,7 +158,7 @@
         <div class="form-stack">
           <div class="form-group">
             <label class="field-label" for="site_type">Site Type</label>
-            <select id="site_type" name="site_type" class="input-field">
+            <select id="site_type" name="site_type" class="form-select">
               <option value="spreading_basin">Spreading Basin</option>
               <option value="injection_well">Injection Well</option>
               <option value="streambed">Streambed</option>
@@ -168,11 +168,11 @@
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="capacity_af_recharge">Capacity (acre-feet)</label>
-              <input type="number" id="capacity_af_recharge" name="capacity_acre_feet" step="0.0001" class="input-field" placeholder="e.g. 500">
+              <input type="number" id="capacity_af_recharge" name="capacity_acre_feet" step="0.0001" class="form-input" placeholder="e.g. 500">
             </div>
             <div class="form-group">
               <label class="field-label" for="operator">Operator</label>
-              <input type="text" id="operator" name="operator" class="input-field" placeholder="Operating entity">
+              <input type="text" id="operator" name="operator" class="form-input" placeholder="Operating entity">
             </div>
           </div>
         </div>
@@ -193,7 +193,7 @@
                      hx-trigger="input changed delay:300ms"
                      hx-target="#parcel-results"
                      name="q"
-                     class="input-field">
+                     class="form-input search-input-icon">
               <div id="parcel-results"></div>
             </div>
             <div class="row-start" style="gap: var(--space-sm);">
