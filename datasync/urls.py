@@ -11,4 +11,5 @@ urlpatterns = [
     path("stations/<int:pk>/toggle/", views.station_toggle, name="station_toggle"),
     path("stations/geojson/", views.stations_geojson, name="stations_geojson"),
     path("stations/freshness-geojson/", views.stations_freshness_geojson, name="stations_freshness_geojson"),
+    path("monitoring/", views.monitoring_dashboard, name="monitoring_dashboard"),
 ]
