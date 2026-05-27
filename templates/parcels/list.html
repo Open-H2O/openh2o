@@ -11,6 +11,10 @@
     <span class="breadcrumb-current">Use Areas</span>
   </nav>
   <p class="page-description">Use areas tracked in the system. Import from GeoJSON or Shapefile, then assign to water accounts for tracking.</p>
+  <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    <a href="{% url 'infrastructure:add' %}" class="btn-secondary btn-sm">Import</a>
+    <a href="{% url 'infrastructure:add' %}" class="btn-primary btn-sm">+ Add Use Area</a>
+  </div>
 </div>
 {% endblock %}
 

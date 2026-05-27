@@ -11,6 +11,10 @@
     <span class="breadcrumb-current">Extraction Wells</span>
   </nav>
   <p class="page-description">Groundwater extraction wells. Import from CSV or Shapefile. Each well can be linked to a meter for automated reading tracking.</p>
+  <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    <a href="{% url 'infrastructure:add' %}" class="btn-secondary btn-sm">Import</a>
+    <a href="{% url 'infrastructure:add' %}" class="btn-primary btn-sm">+ Add Well</a>
+  </div>
 </div>
 {% endblock %}
 
