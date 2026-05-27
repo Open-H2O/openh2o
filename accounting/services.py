@@ -461,6 +461,17 @@ def _balance_dict(queryset):
 
     Returns:
         dict with keys: total (alias for net), supply, usage, net.
+        - supply: sum of positive entries (Decimal, always >= 0)
+        - usage: absolute value of sum of negative entries (Decimal, always >= 0)
+        - net: supply - usage (can be negative if usage exceeds supply)
+        - total: alias for net
+
+    Edge cases:
+        - Empty queryset: supply=0, usage=0, net=0
+        - All-positive entries: usage=0
+        - All-negative entries: supply=0
+        - Zero-amount entries (amount=0) are excluded from both supply (gt=0)
+          and usage (lt=0). This is correct: zero entries don't affect balance.
     """
     agg = queryset.aggregate(
         supply=Sum(
