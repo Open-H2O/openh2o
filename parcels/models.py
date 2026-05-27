@@ -23,6 +23,10 @@ class Parcel(models.Model):
     area_acres = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
+    area_override = models.BooleanField(
+        default=False,
+        help_text="When checked, area_acres is manually set and will not be auto-calculated from geometry."
+    )
     geometry = models.MultiPolygonField(srid=4326, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     address = models.TextField(blank=True)
