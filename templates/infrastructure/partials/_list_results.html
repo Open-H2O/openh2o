@@ -1,21 +1,77 @@
 {% if items %}
 <div class="card-grid">
   {% for item in items %}
+
+  {% if item.detail_url %}
+  <a href="{{ item.detail_url }}" class="card-raised card-link" style="padding: var(--space-md);">
+  {% else %}
   <div class="card-raised" style="padding: var(--space-md);">
-    <div class="row-start" style="gap: var(--space-sm); margin-bottom: var(--space-xs);">
-      {% if item.type == "well" %}
-      <span class="badge badge-blue">Well</span>
-      {% elif item.type == "diversion" %}
-      <span class="badge badge-teal">Diversion</span>
-      {% elif item.type == "recharge" %}
-      <span class="badge badge-green">Recharge</span>
+  {% endif %}
+
+    <div class="row-between" style="margin-bottom: var(--space-xs);">
+      <div class="row-start" style="gap: var(--space-sm);">
+        {% if item.type == "well" %}
+        <span class="badge badge-blue">Well</span>
+        {% elif item.type == "diversion" %}
+        <span class="badge badge-teal">Diversion</span>
+        {% elif item.type == "recharge" %}
+        <span class="badge badge-green">Recharge</span>
+        {% endif %}
+        <span class="text-xs text-tertiary">{{ item.status }}</span>
+      </div>
+      {% if item.detail_url %}
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3;">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
       {% endif %}
-      <span class="text-sm text-tertiary">
-        {% if item.created_at %}{{ item.created_at|date:"M j, Y" }}{% endif %}
-      </span>
     </div>
-    <h3 class="text-base" style="margin: 0; font-weight: 600;">{{ item.name }}</h3>
+
+    <h3 class="text-base" style="margin: 0 0 var(--space-sm); font-weight: 600;">{{ item.name }}</h3>
+
+    {% if item.type == "well" %}
+    <div class="text-sm text-secondary" style="display: flex; gap: var(--space-md);">
+      {% if item.depth_ft %}
+      <span>{{ item.depth_ft }} ft deep</span>
+      {% endif %}
+      {% if item.capacity_gpm %}
+      <span>{{ item.capacity_gpm }} GPM</span>
+      {% endif %}
+      {% if not item.depth_ft and not item.capacity_gpm %}
+      <span class="text-tertiary">No details recorded</span>
+      {% endif %}
+    </div>
+    {% elif item.type == "diversion" %}
+    <div class="text-sm text-secondary" style="display: flex; gap: var(--space-md);">
+      {% if item.stream_name %}
+      <span>{{ item.stream_name }}</span>
+      {% endif %}
+      {% if item.max_rate_cfs %}
+      <span>{{ item.max_rate_cfs }} CFS max</span>
+      {% endif %}
+      {% if not item.stream_name and not item.max_rate_cfs %}
+      <span class="text-tertiary">No details recorded</span>
+      {% endif %}
+    </div>
+    {% elif item.type == "recharge" %}
+    <div class="text-sm text-secondary" style="display: flex; gap: var(--space-md);">
+      {% if item.site_type %}
+      <span>{{ item.site_type }}</span>
+      {% endif %}
+      {% if item.capacity_acre_feet %}
+      <span>{{ item.capacity_acre_feet }} AF capacity</span>
+      {% endif %}
+      {% if not item.site_type and not item.capacity_acre_feet %}
+      <span class="text-tertiary">No details recorded</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  {% if item.detail_url %}
+  </a>
+  {% else %}
   </div>
+  {% endif %}
+
   {% endfor %}
 </div>
 {% else %}

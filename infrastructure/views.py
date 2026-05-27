@@ -11,6 +11,7 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
@@ -27,22 +28,70 @@ def infrastructure_list(request):
     pods = PointOfDiversion.objects.filter(water_right__isnull=True)
     recharge_sites = RechargeSite.objects.all()
 
+    well_count = wells.count()
+    pod_count = pods.count()
+    recharge_count = recharge_sites.count()
+    total_count = well_count + pod_count + recharge_count
+
+    type_filter = request.GET.get("type", "").strip()
     epoch = timezone.make_aware(timezone.datetime(2000, 1, 1))
-    items = sorted(
-        chain(
-            [{"type": "well", "obj": w, "name": w.name, "created_at": w.created_at} for w in wells],
-            [{"type": "diversion", "obj": p, "name": p.name, "created_at": epoch} for p in pods],
-            [{"type": "recharge", "obj": r, "name": r.name, "created_at": r.created_at} for r in recharge_sites],
-        ),
-        key=lambda x: x["created_at"],
-        reverse=True,
-    )
+
+    items_lists = []
+    if type_filter in ("", "well"):
+        items_lists.append([
+            {
+                "type": "well",
+                "name": w.name,
+                "created_at": w.created_at,
+                "status": w.get_status_display(),
+                "depth_ft": w.depth_ft,
+                "capacity_gpm": w.capacity_gpm,
+                "detail_url": reverse("wells:detail", args=[w.pk]),
+            }
+            for w in wells
+        ])
+    if type_filter in ("", "diversion"):
+        items_lists.append([
+            {
+                "type": "diversion",
+                "name": p.name,
+                "created_at": epoch,
+                "status": p.get_status_display(),
+                "stream_name": p.stream_name,
+                "max_rate_cfs": p.max_rate_cfs,
+                "detail_url": None,
+            }
+            for p in pods
+        ])
+    if type_filter in ("", "recharge"):
+        items_lists.append([
+            {
+                "type": "recharge",
+                "name": r.name,
+                "created_at": r.created_at,
+                "status": r.get_status_display(),
+                "site_type": r.get_site_type_display(),
+                "capacity_acre_feet": r.capacity_acre_feet,
+                "detail_url": reverse("recharge:detail", args=[r.pk]),
+            }
+            for r in recharge_sites
+        ])
+
+    items = sorted(chain(*items_lists), key=lambda x: x["created_at"], reverse=True)
 
     q = request.GET.get("q", "").strip()
     if q:
         items = [i for i in items if q.lower() in i["name"].lower()]
 
-    context = {"items": items, "query": q}
+    context = {
+        "items": items,
+        "query": q,
+        "type_filter": type_filter,
+        "total_count": total_count,
+        "well_count": well_count,
+        "pod_count": pod_count,
+        "recharge_count": recharge_count,
+    }
 
     if request.headers.get("HX-Request"):
         return render(request, "infrastructure/partials/_list_results.html", context)
