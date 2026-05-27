@@ -6,6 +6,7 @@ import pytest
 from django.db import IntegrityError
 
 from accounting.services import (
+    _balance_dict,
     account_balance,
     create_diversion_ledger_entry,
     create_diversion_ledger_entries,
@@ -442,3 +443,64 @@ class TestParcelAreaAutoCalc:
         parcel = ParcelFactory(area_acres=Decimal("500.00"))
         parcel.refresh_from_db()
         assert parcel.area_acres == Decimal("500.00")
+
+
+# ---------------------------------------------------------------------------
+# _balance_dict edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestBalanceDict:
+    def test_empty_queryset(self):
+        """Empty queryset returns all zeros."""
+        from parcels.models import ParcelLedger
+
+        qs = ParcelLedger.objects.none()
+        result = _balance_dict(qs)
+        assert result["supply"] == Decimal("0")
+        assert result["usage"] == Decimal("0")
+        assert result["net"] == Decimal("0")
+        assert result["total"] == Decimal("0")
+
+    def test_all_positive(self):
+        """All-positive entries: usage is 0, supply is the sum."""
+        parcel = ParcelFactory()
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("10.0000"))
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("20.0000"))
+
+        from parcels.models import ParcelLedger
+
+        qs = ParcelLedger.objects.filter(parcel=parcel)
+        result = _balance_dict(qs)
+        assert result["supply"] == Decimal("30.0000")
+        assert result["usage"] == Decimal("0")
+        assert result["net"] == Decimal("30.0000")
+
+    def test_all_negative(self):
+        """All-negative entries: supply is 0, usage is the absolute sum."""
+        parcel = ParcelFactory()
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-15.0000"))
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-25.0000"))
+
+        from parcels.models import ParcelLedger
+
+        qs = ParcelLedger.objects.filter(parcel=parcel)
+        result = _balance_dict(qs)
+        assert result["supply"] == Decimal("0")
+        assert result["usage"] == Decimal("40.0000")
+        assert result["net"] == Decimal("-40.0000")
+
+    def test_zero_entries_excluded(self):
+        """Zero-amount entries are excluded from both supply and usage."""
+        parcel = ParcelFactory()
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("0.0000"))
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("50.0000"))
+        ParcelLedgerFactory(parcel=parcel, amount_acre_feet=Decimal("-20.0000"))
+
+        from parcels.models import ParcelLedger
+
+        qs = ParcelLedger.objects.filter(parcel=parcel)
+        result = _balance_dict(qs)
+        assert result["supply"] == Decimal("50.0000")
+        assert result["usage"] == Decimal("20.0000")
+        assert result["net"] == Decimal("30.0000")
