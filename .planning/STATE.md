@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 ## Current Position
 
 Phase: 22 of 25 (Engineering & Math Validation)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-05-27 - Completed 22-01-PLAN.md (6 accounting bug fixes, 16 new tests)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-05-27 - Completed 22-02-PLAN.md (3 report bug fixes, OpenET pipeline, unit audit)
 
-Progress: █████████░░░ 80%
+Progress: █████████░░░ 84%
 
 ## Performance Metrics
 
@@ -41,7 +41,7 @@ All marked ✓ Good after v1.0 validation.
 - OpenET API key not yet requested (needed for live adapter testing)
 - Automated test suite established (28 tests, pytest + factory_boy)
 - Cron scheduling configured: sync_all (daily 2AM mock), run_health_checks (6-hourly), prune_old_data (monthly)
-- Test suite expanded to 171 tests (from 121 pre-Phase 22, originally 28)
+- Test suite expanded to 186 tests (from 121 pre-Phase 22, originally 28)
 
 ### Roadmap Evolution
 
@@ -57,5 +57,5 @@ All marked ✓ Good after v1.0 validation.
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: Completed 22-01-PLAN.md (PostGIS area auto-calc, area-weighted recharge, multi-parcel diversions, dashboard pro-rating, CSV sign validation, _balance_dict edge cases)
-Resume file: None — proceed to 22-02-PLAN.md
+Stopped at: Completed 22-02-PLAN.md (GEARS fraction normalization, null water_right guards, OpenET threshold, sync_openet_to_ledger, unit audit)
+Resume file: None — Phase 22 complete, proceed to Phase 23
