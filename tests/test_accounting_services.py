@@ -29,6 +29,8 @@ from tests.factories import (
     WaterAccountParcelFactory,
     WaterRightFactory,
     WaterRightParcelFactory,
+    WellFactory,
+    WellIrrigatedParcelFactory,
     ZoneFactory,
 )
 
@@ -504,3 +506,91 @@ class TestBalanceDict:
         assert result["supply"] == Decimal("50.0000")
         assert result["usage"] == Decimal("20.0000")
         assert result["net"] == Decimal("30.0000")
+
+
+# ---------------------------------------------------------------------------
+# GEARS by-well fraction normalization (Task 1)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestGearsWellFractionNormalization:
+    def test_gears_well_fraction_normalization(self):
+        """A well irrigating 3 parcels (all fraction=1.0) reports 1x extraction, not 3x."""
+        from reporting.generators import generate_gears_csv
+
+        period = ReportingPeriodFactory(
+            start_date=date(2024, 1, 1), end_date=date(2024, 12, 31)
+        )
+        well = WellFactory()
+        p1 = ParcelFactory()
+        p2 = ParcelFactory()
+        p3 = ParcelFactory()
+
+        # Each parcel linked to the same well with default fraction=1.0
+        WellIrrigatedParcelFactory(well=well, parcel=p1, fraction=Decimal("1.0000"))
+        WellIrrigatedParcelFactory(well=well, parcel=p2, fraction=Decimal("1.0000"))
+        WellIrrigatedParcelFactory(well=well, parcel=p3, fraction=Decimal("1.0000"))
+
+        # One ledger entry of -30 AF on parcel p1
+        ParcelLedgerFactory(
+            parcel=p1,
+            source_type="meter_reading",
+            effective_date=date(2024, 6, 15),
+            amount_acre_feet=Decimal("-30.0000"),
+        )
+
+        output = generate_gears_csv(period, method="by_well")
+        content = output.read()
+        lines = [l for l in content.strip().split("\n") if well.name in l or (well.well_registration_id or "") in l]
+
+        # Parse all volume values from matching rows
+        # CSV: reg_id, name, lat, lon, month, volume, method
+        total_reported = Decimal("0")
+        reader = __import__("csv").reader(content.splitlines())
+        next(reader)  # skip header
+        for row in reader:
+            if len(row) >= 7:
+                try:
+                    total_reported += Decimal(row[5])
+                except Exception:
+                    pass
+
+        # With 3 parcels each fraction=1.0, normalized fraction = 1/3 each.
+        # Total reported = 30 * (1/3) = 10 AF (1 ledger entry on p1 only).
+        # Without normalization it would be 30 * 1.0 = 30 AF — the triple-count bug.
+        assert total_reported == Decimal("30") * (Decimal("1") / Decimal("3"))
+
+    def test_gears_well_single_parcel_fraction_unchanged(self):
+        """A well irrigating 1 parcel (fraction=1.0) reports the full extraction volume."""
+        from reporting.generators import generate_gears_csv
+
+        period = ReportingPeriodFactory(
+            start_date=date(2024, 1, 1), end_date=date(2024, 12, 31)
+        )
+        well = WellFactory()
+        parcel = ParcelFactory()
+        WellIrrigatedParcelFactory(well=well, parcel=parcel, fraction=Decimal("1.0000"))
+
+        ParcelLedgerFactory(
+            parcel=parcel,
+            source_type="meter_reading",
+            effective_date=date(2024, 6, 15),
+            amount_acre_feet=Decimal("-50.0000"),
+        )
+
+        output = generate_gears_csv(period, method="by_well")
+        content = output.read()
+
+        total_reported = Decimal("0")
+        reader = __import__("csv").reader(content.splitlines())
+        next(reader)  # skip header
+        for row in reader:
+            if len(row) >= 7:
+                try:
+                    total_reported += Decimal(row[5])
+                except Exception:
+                    pass
+
+        # Single parcel: normalized fraction = 1.0/1.0 = 1.0 → full 50 AF reported
+        assert total_reported == Decimal("50")
