@@ -185,7 +185,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         if key not in raw:
             if wr is None:
                 right_id = ""
-                holder_name = f"[No water right] {pod.name}"
+                holder_name = f"[INCOMPLETE] [No water right] {pod.name}"
             else:
                 right_id = wr.right_id
                 holder_name = wr.holder_name

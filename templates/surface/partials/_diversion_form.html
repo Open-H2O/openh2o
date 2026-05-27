@@ -1,0 +1,37 @@
+<form hx-post="{% url 'surface:diversion_record_create' pod.pk %}"
+      hx-target="#diversion-records-section"
+      hx-swap="innerHTML"
+      class="form-stack"
+      style="padding: var(--space-md) 0; border-top: 1px solid var(--color-border);">
+  {% csrf_token %}
+  <div class="row-between" style="align-items: flex-start;">
+    <h3 class="text-sm font-semibold text-secondary" style="margin: 0;">Add Diversion Record</h3>
+  </div>
+  <div class="form-row-2col">
+    <div class="form-group">
+      <label class="field-label" for="id_month">Month</label>
+      {{ form.month }}
+    </div>
+    <div class="form-group">
+      <label class="field-label" for="id_volume_acre_feet">Volume (AF)</label>
+      {{ form.volume_acre_feet }}
+    </div>
+  </div>
+  <div class="form-row-2col">
+    <div class="form-group">
+      <label class="field-label" for="id_max_flow_rate_cfs">Max Flow Rate (CFS)</label>
+      {{ form.max_flow_rate_cfs }}
+    </div>
+    <div class="form-group">
+      <label class="field-label" for="id_diversion_type">Diversion Type</label>
+      {{ form.diversion_type }}
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="field-label" for="id_notes">Notes</label>
+    {{ form.notes }}
+  </div>
+  <div class="row-end">
+    <button type="submit" class="btn-primary btn-sm">Add Record</button>
+  </div>
+</form>

@@ -1,0 +1,33 @@
+<h2 class="section-header mb-md">Diversion Records</h2>
+{% if diversion_records %}
+<table class="data-table text-sm">
+  <thead>
+    <tr>
+      <th>Month</th>
+      <th class="th-right">Volume (AF)</th>
+      <th class="th-right">Max Flow (CFS)</th>
+      <th>Type</th>
+      <th>Period</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for record in diversion_records %}
+    <tr>
+      <td class="text-secondary text-mono">{{ record.month|date:"M Y" }}</td>
+      <td class="td-num">{{ record.volume_acre_feet|floatformat:2 }}</td>
+      <td class="td-num text-secondary">
+        {% if record.max_flow_rate_cfs %}{{ record.max_flow_rate_cfs|floatformat:2 }}{% else %}—{% endif %}
+      </td>
+      <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
+      <td class="text-tertiary">
+        {% if record.reporting_period %}{{ record.reporting_period.name }}{% else %}—{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p class="text-tertiary text-sm">No diversion records yet.</p>
+{% endif %}
+
+{% include "surface/partials/_diversion_form.html" %}

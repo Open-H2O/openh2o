@@ -1,0 +1,86 @@
+<!-- Count badge -->
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
+    diversion point{{ total_count|pluralize }} found
+  </span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Stream</th>
+        <th>Status</th>
+        <th class="th-right">Diversions</th>
+        <th>Water Right</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pod in page_obj %}
+      <tr>
+        <td>
+          <a href="{% url 'surface:pod_detail' pod.pk %}" class="data-table-link">
+            {{ pod.name }}
+          </a>
+        </td>
+        <td class="text-secondary">{{ pod.stream_name|default:"—" }}</td>
+        <td>
+          {% include "surface/partials/_status_badge.html" with status=pod.status %}
+        </td>
+        <td class="td-num text-secondary">{{ pod.diversion_count }}</td>
+        <td>
+          {% if pod.water_right %}
+            <a href="{% url 'surface:detail' pod.water_right.pk %}" class="data-table-link text-mono" style="font-size: 0.8125rem;">
+              {{ pod.water_right.right_id }}
+            </a>
+          {% else %}
+            <span class="text-tertiary">None</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination-row">
+  {% if page_obj.has_previous %}
+    <button
+      hx-get="{% url 'surface:pod_list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Previous
+    </button>
+  {% endif %}
+  <span class="pagination-label">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+    <button
+      hx-get="{% url 'surface:pod_list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Next
+    </button>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card-raised empty-state">
+  <div class="empty-state-icon">
+    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+    </svg>
+  </div>
+  <p class="empty-state-text">No diversion points found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+</div>
+{% endif %}
