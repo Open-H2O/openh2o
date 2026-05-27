@@ -4,6 +4,12 @@ Accounting service functions.
 Diversion/recharge ledger integration utilities and balance calculations.
 """
 
+# --- Unit conversion constants ---
+# 1 acre-foot (AF) = 1,233.48 cubic meters = 325,851 US gallons
+# 1 CFS (cubic foot per second) flowing for 1 day = 1.9835 AF
+# 1 mm of ET over 1 acre = 1/304.8 AF = 0.003281 AF
+# Reference: USGS Water Science School, California DWR conversion tables
+
 import csv
 import io
 import logging
@@ -432,6 +438,27 @@ def parse_ledger_csv(csv_file, reporting_period=None, dry_run=False):
         "errors": errors,
         "preview": preview,
     }
+
+
+# ---------------------------------------------------------------------------
+# OpenET conversion helpers
+# ---------------------------------------------------------------------------
+
+
+def et_mm_to_acre_feet(et_mm, area_acres):
+    """Convert evapotranspiration in mm to acre-feet consumed.
+
+    ET (AF) = ET (mm) × area (acres) / 304.8
+
+    Derivation:
+      1 acre-foot = 1 acre × 1 foot = 43,560 ft² × 0.3048 m/ft = 1,233.48 m³
+      1 mm over 1 acre = 0.001 m × 4,046.86 m² = 4.04686 m³
+      1 AF / 4.04686 m³ per (mm·acre) = 304.8 mm·acre per AF
+
+    Returns a negative value because ET is water consumption (usage).
+    Reference: USGS Water Science School unit conversions; CA DWR ET guidance.
+    """
+    return -(Decimal(str(et_mm)) / Decimal("304.8")) * area_acres
 
 
 # ---------------------------------------------------------------------------
