@@ -56,38 +56,50 @@ def dashboard(request):
     grand_supply = Decimal("0")
     grand_usage = Decimal("0")
 
+    has_allocations = False
+
     if selected_period is not None:
+        has_allocations = AllocationPlan.objects.filter(
+            reporting_period=selected_period,
+        ).exists()
+
         # Account summaries
         active_accounts = WaterAccount.objects.filter(status="active").order_by("account_number")
         for account in active_accounts:
             bal = account_balance(account, reporting_period=selected_period)
-            # Allocation: pro-rated by account's parcel count in each zone.
-            # Formula: for each zone, allocation * (account_parcels / total_parcels).
-            # Uses parcel count (not area) because area data may be incomplete.
-            parcel_ids = WaterAccountParcel.objects.filter(
-                water_account=account,
-                removed_date__isnull=True,
-            ).values_list("parcel_id", flat=True)
-            zone_ids = ParcelZone.objects.filter(
-                parcel_id__in=parcel_ids
-            ).values_list("zone_id", flat=True).distinct()
-            allocation = Decimal("0")
-            for zone_id in zone_ids:
-                zone_alloc = AllocationPlan.objects.filter(
-                    zone_id=zone_id,
-                    reporting_period=selected_period,
-                ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
-                total_parcels_in_zone = ParcelZone.objects.filter(zone_id=zone_id).count()
-                account_parcels_in_zone = ParcelZone.objects.filter(
-                    zone_id=zone_id, parcel_id__in=parcel_ids
-                ).count()
-                if total_parcels_in_zone > 0:
-                    allocation += (
-                        zone_alloc
-                        * Decimal(account_parcels_in_zone)
-                        / Decimal(total_parcels_in_zone)
-                    )
-            remaining = allocation - bal["usage"]
+
+            if has_allocations:
+                # Allocation: pro-rated by account's parcel count in each zone.
+                # Formula: for each zone, allocation * (account_parcels / total_parcels).
+                # Uses parcel count (not area) because area data may be incomplete.
+                parcel_ids = WaterAccountParcel.objects.filter(
+                    water_account=account,
+                    removed_date__isnull=True,
+                ).values_list("parcel_id", flat=True)
+                zone_ids = ParcelZone.objects.filter(
+                    parcel_id__in=parcel_ids
+                ).values_list("zone_id", flat=True).distinct()
+                allocation = Decimal("0")
+                for zone_id in zone_ids:
+                    zone_alloc = AllocationPlan.objects.filter(
+                        zone_id=zone_id,
+                        reporting_period=selected_period,
+                    ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
+                    total_parcels_in_zone = ParcelZone.objects.filter(zone_id=zone_id).count()
+                    account_parcels_in_zone = ParcelZone.objects.filter(
+                        zone_id=zone_id, parcel_id__in=parcel_ids
+                    ).count()
+                    if total_parcels_in_zone > 0:
+                        allocation += (
+                            zone_alloc
+                            * Decimal(account_parcels_in_zone)
+                            / Decimal(total_parcels_in_zone)
+                        )
+                remaining = allocation - bal["usage"]
+            else:
+                allocation = None
+                remaining = None
+
             account_summaries.append({
                 "account": account,
                 "supply": bal["supply"],
@@ -102,11 +114,15 @@ def dashboard(request):
         # Zone summaries
         for zone in Zone.objects.order_by("name"):
             zbal = zone_balance(zone, reporting_period=selected_period)
-            zone_allocation = AllocationPlan.objects.filter(
-                zone=zone,
-                reporting_period=selected_period,
-            ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
-            zone_remaining = zone_allocation - zbal["usage"]
+            if has_allocations:
+                zone_allocation = AllocationPlan.objects.filter(
+                    zone=zone,
+                    reporting_period=selected_period,
+                ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
+                zone_remaining = zone_allocation - zbal["usage"]
+            else:
+                zone_allocation = None
+                zone_remaining = None
             zone_summaries.append({
                 "zone": zone,
                 "supply": zbal["supply"],
@@ -126,6 +142,7 @@ def dashboard(request):
         "grand_supply": grand_supply,
         "grand_usage": grand_usage,
         "grand_net": grand_net,
+        "has_allocations": has_allocations,
     }
 
     if request.headers.get("HX-Request"):
