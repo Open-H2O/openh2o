@@ -8,6 +8,7 @@ from django.db import IntegrityError
 from accounting.services import (
     account_balance,
     create_diversion_ledger_entry,
+    create_diversion_ledger_entries,
     create_recharge_ledger_entries,
     parcel_balance,
     parse_ledger_csv,
@@ -19,6 +20,7 @@ from tests.factories import (
     ParcelLedgerFactory,
     ParcelZoneFactory,
     PointOfDiversionFactory,
+    PointOfDiversionParcelFactory,
     RechargeEventFactory,
     RechargeSiteFactory,
     ReportingPeriodFactory,
@@ -138,15 +140,26 @@ class TestZoneBalance:
 
 class TestCreateDiversionLedgerEntry:
     def test_explicit_parcel(self):
+        """Explicit parcel param creates a single entry (backward compat)."""
+        parcel = ParcelFactory()
+        record = DiversionRecordFactory(volume_acre_feet=Decimal("25.0000"))
+        entries = create_diversion_ledger_entries(record, parcel=parcel)
+
+        assert len(entries) == 1
+        assert entries[0].parcel == parcel
+        assert entries[0].amount_acre_feet == Decimal("-25.0000")
+        assert entries[0].source_type == "surface_diversion"
+
+    def test_single_parcel_backward_compat(self):
+        """The old create_diversion_ledger_entry alias still works."""
         parcel = ParcelFactory()
         record = DiversionRecordFactory(volume_acre_feet=Decimal("25.0000"))
         entry = create_diversion_ledger_entry(record, parcel=parcel)
-
         assert entry.parcel == parcel
         assert entry.amount_acre_feet == Decimal("-25.0000")
-        assert entry.source_type == "surface_diversion"
 
     def test_from_fk(self):
+        """Falls back to WaterRightParcel when no POD-parcel links exist."""
         wr = WaterRightFactory()
         parcel = ParcelFactory()
         WaterRightParcelFactory(water_right=wr, parcel=parcel)
@@ -155,14 +168,65 @@ class TestCreateDiversionLedgerEntry:
             point_of_diversion=pod, volume_acre_feet=Decimal("10.0000")
         )
 
-        entry = create_diversion_ledger_entry(record)
-        assert entry.parcel == parcel
-        assert entry.amount_acre_feet == Decimal("-10.0000")
+        entries = create_diversion_ledger_entries(record)
+        assert len(entries) == 1
+        assert entries[0].parcel == parcel
+        assert entries[0].amount_acre_feet == Decimal("-10.0000")
 
     def test_no_parcel_raises(self):
         record = DiversionRecordFactory()
         with pytest.raises(ValueError, match="No parcel supplied"):
-            create_diversion_ledger_entry(record)
+            create_diversion_ledger_entries(record)
+
+    def test_multi_parcel_pod(self):
+        """POD linked to 3 parcels with fractions 0.5, 0.3, 0.2."""
+        wr = WaterRightFactory()
+        pod = PointOfDiversionFactory(water_right=wr)
+        p1 = ParcelFactory()
+        p2 = ParcelFactory()
+        p3 = ParcelFactory()
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=p1, fraction=Decimal("0.5000")
+        )
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=p2, fraction=Decimal("0.3000")
+        )
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=p3, fraction=Decimal("0.2000")
+        )
+        record = DiversionRecordFactory(
+            point_of_diversion=pod, volume_acre_feet=Decimal("100.0000")
+        )
+
+        entries = create_diversion_ledger_entries(record)
+        assert len(entries) == 3
+        amounts = sorted(abs(e.amount_acre_feet) for e in entries)
+        assert amounts == [Decimal("20.0000"), Decimal("30.0000"), Decimal("50.0000")]
+        assert all(e.amount_acre_feet < 0 for e in entries)
+
+    def test_multi_parcel_residual(self):
+        """Entries sum exactly to diversion volume (no rounding loss)."""
+        wr = WaterRightFactory()
+        pod = PointOfDiversionFactory(water_right=wr)
+        p1 = ParcelFactory()
+        p2 = ParcelFactory()
+        p3 = ParcelFactory()
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=p1, fraction=Decimal("0.3333")
+        )
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=p2, fraction=Decimal("0.3333")
+        )
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=p3, fraction=Decimal("0.3334")
+        )
+        record = DiversionRecordFactory(
+            point_of_diversion=pod, volume_acre_feet=Decimal("100.0000")
+        )
+
+        entries = create_diversion_ledger_entries(record)
+        total = sum(abs(e.amount_acre_feet) for e in entries)
+        assert total == Decimal("100.0000")
 
 
 class TestCreateRechargeLedgerEntries:
