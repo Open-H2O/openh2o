@@ -237,8 +237,9 @@ Plans: 2
 - Review allocation plan math: is zone-level allocation the right granularity, or should parcel-level be supported?
 - Validate that the `_balance_dict` supply/usage split handles edge cases (zero entries, all-positive, all-negative)
 
-Plans:
-- [ ] 22-01: TBD (run /gsd:plan-phase 22 to break down)
+Plans: 2
+- [x] 22-01: PostGIS area auto-calc, area-weighted recharge, multi-parcel diversions, dashboard pro-rating, CSV sign validation, _balance_dict edge cases
+- [ ] 22-02: TBD
 
 #### Phase 23: Navigation Restructure & Naming (UI Overhaul A)
 
@@ -379,7 +380,7 @@ Plans:
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19.1 Wizard Fix & Infrastructure Entry | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19.2 Visual Overhaul & UX Refinement | v1.2 | 2/2 | Complete | 2026-05-26 |
-| 22. Engineering & Math Validation | v1.2 | 0/? | Not started | - |
+| 22. Engineering & Math Validation | v1.2 | 1/2 | In progress | - |
 | 23. Navigation Restructure & Naming | v1.2 | 0/? | Not started | - |
 | 24. Data Model UX Overhaul | v1.2 | 0/? | Not started | - |
 | 25. Content & Polish | v1.2 | 0/? | Not started | - |
