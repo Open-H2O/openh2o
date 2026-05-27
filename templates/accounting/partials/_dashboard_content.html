@@ -37,6 +37,15 @@
 
 </div>
 
+{% if not has_allocations %}
+<!-- Info banner: no allocations for this period -->
+<div class="card-raised" style="border-left: 3px solid var(--color-gold); padding: var(--space-md);">
+  <p class="text-secondary text-sm" style="margin: 0;">
+    No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Create allocations</a> to enable budget tracking.
+  </p>
+</div>
+{% endif %}
+
 <h2 class="content-section-label">Account Details</h2>
 <div class="card-raised mb-md">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
@@ -51,8 +60,10 @@
         <th class="th-right">Supply (AF)</th>
         <th class="th-right">Usage (AF)</th>
         <th class="th-right">Net (AF)</th>
+        {% if has_allocations %}
         <th class="th-right">Allocation (AF)</th>
         <th class="th-right">Remaining (AF)</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -75,12 +86,14 @@
         <td class="td-num-bold {% if row.net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
           {{ row.net|floatformat:2 }}
         </td>
+        {% if has_allocations %}
         <td class="td-num">
           {{ row.allocation|floatformat:2 }}
         </td>
         <td class="td-num-bold {% if row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
           {{ row.remaining|floatformat:2 }}
         </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>
@@ -105,8 +118,10 @@
         <th class="th-right">Supply (AF)</th>
         <th class="th-right">Usage (AF)</th>
         <th class="th-right">Net (AF)</th>
+        {% if has_allocations %}
         <th class="th-right">Allocation (AF)</th>
         <th class="th-right">Remaining (AF)</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -122,12 +137,14 @@
         <td class="td-num-bold {% if row.net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
           {{ row.net|floatformat:2 }}
         </td>
+        {% if has_allocations %}
         <td class="td-num">
           {{ row.allocation|floatformat:2 }}
         </td>
         <td class="td-num-bold {% if row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
           {{ row.remaining|floatformat:2 }}
         </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>
