@@ -384,6 +384,40 @@ class TestParseLedgerCsv:
         assert result["error_count"] == 1
         assert "invalid amount" in result["errors"][0]["messages"][0]
 
+    def test_csv_positive_meter_reading_rejected(self):
+        """Positive amount for a usage source_type (meter_reading) is rejected."""
+        ParcelFactory(parcel_number="P-SIGN-1")
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-SIGN-1,2024-01-15,10.0,meter_reading\n"
+        )
+        result = parse_ledger_csv(self._csv_file(csv_text))
+        assert result["error_count"] == 1
+        assert "positive amount" in result["errors"][0]["messages"][0]
+        assert "usage" in result["errors"][0]["messages"][0]
+
+    def test_csv_negative_meter_reading_accepted(self):
+        """Negative amount for meter_reading is accepted."""
+        ParcelFactory(parcel_number="P-SIGN-2")
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-SIGN-2,2024-01-15,-10.0,meter_reading\n"
+        )
+        result = parse_ledger_csv(self._csv_file(csv_text))
+        assert result["created_count"] == 1
+        assert result["error_count"] == 0
+
+    def test_csv_positive_recharge_accepted(self):
+        """Positive amount for a supply source_type (recharge) is accepted."""
+        ParcelFactory(parcel_number="P-SIGN-3")
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-SIGN-3,2024-01-15,10.0,recharge\n"
+        )
+        result = parse_ledger_csv(self._csv_file(csv_text))
+        assert result["created_count"] == 1
+        assert result["error_count"] == 0
+
 
 # ---------------------------------------------------------------------------
 # PostGIS auto-calc of area_acres

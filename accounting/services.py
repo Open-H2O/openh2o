@@ -360,6 +360,14 @@ def parse_ledger_csv(csv_file, reporting_period=None, dry_run=False):
         elif source_type not in valid_source_types:
             row_errors.append(f"invalid source_type: {source_type}")
 
+        # Validate sign matches source_type: usage types must be <= 0
+        USAGE_SOURCE_TYPES = {"meter_reading", "et_estimate", "surface_diversion"}
+        if source_type in USAGE_SOURCE_TYPES and amount is not None and amount > 0:
+            row_errors.append(
+                f"positive amount ({amount}) not allowed for usage source_type "
+                f"'{source_type}' — usage entries must be negative or zero"
+            )
+
         # Validate optional water_type_code
         water_type = None
         if water_type_code:
