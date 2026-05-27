@@ -200,6 +200,22 @@
               <button type="button" id="btn-parcel-map" class="btn-secondary btn-sm">Select on map</button>
               <button type="button" id="btn-parcel-draw" class="btn-secondary btn-sm">Draw new parcel</button>
             </div>
+            <div id="parcel-draw-form" style="display: none;">
+              <div class="form-stack" style="margin-top: var(--space-sm);">
+                <div class="form-group">
+                  <label class="field-label" for="new-parcel-number">Parcel Number</label>
+                  <input type="text" id="new-parcel-number" class="form-input" placeholder="e.g. 123-456-789">
+                </div>
+                <div class="form-group">
+                  <label class="field-label" for="new-parcel-owner">Owner Name</label>
+                  <input type="text" id="new-parcel-owner" class="form-input" placeholder="Optional">
+                </div>
+                <div class="row-start" style="gap: var(--space-sm);">
+                  <button type="button" id="save-new-parcel" class="btn-primary btn-sm">Save Parcel</button>
+                  <button type="button" id="cancel-new-parcel" class="btn-secondary btn-sm">Cancel</button>
+                </div>
+              </div>
+            </div>
             <input type="hidden" name="parcel_id" id="parcel_id" value="">
             <div id="parcel-selected"></div>
           </div>
@@ -281,6 +297,9 @@
   var drawMode = 'point';
   var marker = null;
   var vertices = [];
+  var parcelMode = null;
+  var parcelDrawGeometry = null;
+  var parcelClickHandled = false;
 
   // Type field visibility
   var typeFields = {
@@ -387,10 +406,34 @@
       filter: ['==', '$type', 'Point'],
       paint: { 'circle-radius': 6, 'circle-color': '#E4A317', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
     });
+
+    map.addSource('parcels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'parcels-fill', type: 'fill', source: 'parcels',
+      paint: { 'fill-color': '#3DB4E0', 'fill-opacity': 0.12 },
+      layout: { 'visibility': 'none' }
+    });
+    map.addLayer({
+      id: 'parcels-line', type: 'line', source: 'parcels',
+      paint: { 'line-color': '#3DB4E0', 'line-width': 1.5 },
+      layout: { 'visibility': 'none' }
+    });
+
+    map.addSource('parcel-highlight', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'parcel-highlight-fill', type: 'fill', source: 'parcel-highlight',
+      paint: { 'fill-color': '#E4A317', 'fill-opacity': 0.25 }
+    });
+    map.addLayer({
+      id: 'parcel-highlight-line', type: 'line', source: 'parcel-highlight',
+      paint: { 'line-color': '#E4A317', 'line-width': 2.5 }
+    });
   });
 
   // Map click handler
   map.on('click', function(e) {
+    if (parcelClickHandled) { parcelClickHandled = false; return; }
+    if (parcelMode === 'select') return;
     if (drawMode === 'point') {
       placePoint(e.lngLat);
     } else if (drawMode === 'polygon') {
@@ -432,14 +475,28 @@
 
   function finishPolygon() {
     if (vertices.length < 3) return;
+    var numVerts = vertices.length;
     var ring = vertices.concat([vertices[0]]);
     var geojson = { type: 'Polygon', coordinates: [ring] };
+
+    if (parcelMode === 'draw') {
+      parcelDrawGeometry = geojson;
+      map.getSource('parcel-highlight').setData({ type: 'Feature', geometry: geojson, properties: {} });
+      map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
+      document.getElementById('draw-finish').style.display = 'none';
+      document.getElementById('coord-display').textContent = numVerts + ' vertices — enter parcel details below';
+      document.getElementById('parcel-draw-form').style.display = '';
+      document.getElementById('new-parcel-number').focus();
+      vertices = [];
+      document.querySelector('.parcel-link-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+
     map.getSource('finished').setData({ type: 'Feature', geometry: geojson, properties: {} });
     map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
     updateGeometry(geojson);
     document.getElementById('draw-finish').style.display = 'none';
-    var coordEl = document.getElementById('coord-display');
-    coordEl.textContent = vertices.length + ' vertices, polygon complete';
+    document.getElementById('coord-display').textContent = numVerts + ' vertices, polygon complete';
     vertices = [];
   }
 
@@ -534,6 +591,159 @@
       document.getElementById('upload-file').dispatchEvent(new Event('change', { bubbles: true }));
     }
   });
+
+  // ── Parcel map interaction ──
+  var parcelGeojsonUrl = '{% url "parcels:geojson" %}';
+  var parcelCreateUrl = '{% url "infrastructure:parcel_create" %}';
+  var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  var parcelsLoaded = false;
+  var savedDrawMode = null;
+
+  document.getElementById('btn-parcel-map').addEventListener('click', function() {
+    if (parcelMode === 'select') { exitParcelMode(); return; }
+    if (parcelMode === 'draw') exitParcelMode();
+    var btn = this;
+    if (!parcelsLoaded) {
+      btn.textContent = 'Loading...';
+      fetch(parcelGeojsonUrl, { credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.features.length === 0) {
+            btn.textContent = 'Select on map';
+            document.getElementById('coord-display').textContent = 'No parcels in database yet';
+            return;
+          }
+          map.getSource('parcels').setData(data);
+          parcelsLoaded = true;
+          activateParcelSelect();
+        })
+        .catch(function() { btn.textContent = 'Select on map'; });
+    } else {
+      activateParcelSelect();
+    }
+  });
+
+  function activateParcelSelect() {
+    parcelMode = 'select';
+    map.setLayoutProperty('parcels-fill', 'visibility', 'visible');
+    map.setLayoutProperty('parcels-line', 'visibility', 'visible');
+    var btn = document.getElementById('btn-parcel-map');
+    btn.textContent = 'Cancel selection';
+    btn.classList.add('active');
+    document.getElementById('coord-display').textContent = 'Click a parcel to select it';
+    document.getElementById('infra-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  map.on('click', 'parcels-fill', function(e) {
+    if (parcelMode !== 'select') return;
+    parcelClickHandled = true;
+    var feat = e.features[0];
+    var props = feat.properties;
+    document.getElementById('parcel_id').value = props.pk;
+    document.getElementById('parcel-status').textContent = '(' + props.parcel_number + ')';
+    var info = '<div class="inset-card" data-parcel-id="' + props.pk + '" style="margin-top: var(--space-sm);">';
+    info += '<span class="text-sm">Linked: <strong>' + props.parcel_number + '</strong></span>';
+    if (props.owner_name) info += ' <span class="text-xs text-tertiary">(' + props.owner_name + ')</span>';
+    info += '</div>';
+    document.getElementById('parcel-selected').innerHTML = info;
+    map.getSource('parcel-highlight').setData(feat);
+    exitParcelMode();
+    document.querySelector('.parcel-link-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  map.on('mouseenter', 'parcels-fill', function() {
+    if (parcelMode === 'select') map.getCanvas().style.cursor = 'pointer';
+  });
+  map.on('mouseleave', 'parcels-fill', function() {
+    if (parcelMode === 'select') map.getCanvas().style.cursor = 'crosshair';
+  });
+
+  document.getElementById('btn-parcel-draw').addEventListener('click', function() {
+    if (parcelMode === 'draw') { exitParcelMode(); return; }
+    if (parcelMode === 'select') exitParcelMode();
+    parcelMode = 'draw';
+    savedDrawMode = drawMode;
+    setDrawMode('polygon');
+    vertices = [];
+    map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
+    this.textContent = 'Cancel draw';
+    this.classList.add('active');
+    document.getElementById('draw-point').disabled = true;
+    document.getElementById('draw-polygon').disabled = true;
+    document.getElementById('draw-clear').disabled = true;
+    document.getElementById('coord-display').textContent = 'Click map vertices to draw parcel boundary';
+    document.getElementById('infra-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  document.getElementById('save-new-parcel').addEventListener('click', function() {
+    var parcelNumber = document.getElementById('new-parcel-number').value.trim();
+    if (!parcelNumber) { document.getElementById('new-parcel-number').focus(); return; }
+    var ownerName = document.getElementById('new-parcel-owner').value.trim();
+    var body = new FormData();
+    body.append('parcel_number', parcelNumber);
+    body.append('owner_name', ownerName);
+    body.append('geometry_json', JSON.stringify(parcelDrawGeometry));
+    body.append('csrfmiddlewaretoken', csrfToken);
+    var btn = this;
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    fetch(parcelCreateUrl, { method: 'POST', body: body, credentials: 'same-origin' })
+      .then(function(r) {
+        if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || 'Save failed'); });
+        return r.text();
+      })
+      .then(function(html) {
+        document.getElementById('parcel-selected').innerHTML = html;
+        var el = document.getElementById('parcel-selected').querySelector('[data-parcel-id]');
+        if (el) {
+          document.getElementById('parcel_id').value = el.dataset.parcelId;
+          document.getElementById('parcel-status').textContent = '(' + parcelNumber + ')';
+        }
+        document.getElementById('parcel-draw-form').style.display = 'none';
+        document.getElementById('new-parcel-number').value = '';
+        document.getElementById('new-parcel-owner').value = '';
+        parcelsLoaded = false;
+        exitParcelMode();
+      })
+      .catch(function() {
+        btn.textContent = 'Save Parcel';
+        btn.disabled = false;
+        document.getElementById('coord-display').textContent = 'Error saving parcel — try again';
+      });
+  });
+
+  document.getElementById('new-parcel-number').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('save-new-parcel').click(); }
+  });
+
+  document.getElementById('cancel-new-parcel').addEventListener('click', function() {
+    document.getElementById('parcel-draw-form').style.display = 'none';
+    document.getElementById('new-parcel-number').value = '';
+    document.getElementById('new-parcel-owner').value = '';
+    parcelDrawGeometry = null;
+    map.getSource('parcel-highlight').setData({ type: 'FeatureCollection', features: [] });
+    exitParcelMode();
+  });
+
+  function exitParcelMode() {
+    parcelMode = null;
+    map.setLayoutProperty('parcels-fill', 'visibility', 'none');
+    map.setLayoutProperty('parcels-line', 'visibility', 'none');
+    var selectBtn = document.getElementById('btn-parcel-map');
+    selectBtn.textContent = 'Select on map';
+    selectBtn.classList.remove('active');
+    var drawBtn = document.getElementById('btn-parcel-draw');
+    drawBtn.textContent = 'Draw new parcel';
+    drawBtn.classList.remove('active');
+    document.getElementById('draw-clear').disabled = false;
+    updateDrawModeForType();
+    savedDrawMode = null;
+    parcelDrawGeometry = null;
+    document.getElementById('coord-display').textContent = 'Click map to place geometry';
+    var saveBtn = document.getElementById('save-new-parcel');
+    saveBtn.textContent = 'Save Parcel';
+    saveBtn.disabled = false;
+  }
 })();
 </script>
 {% endblock %}
