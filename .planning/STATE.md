@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 Phase: 19.2 of 21 (Visual Overhaul & UX Refinement)
 Plan: 2 of 2 in current phase
-Status: Phase complete
-Last activity: 2026-05-26 - Completed 19.2-02-PLAN.md
+Status: Phase complete + post-phase sidebar/infrastructure redesign
+Last activity: 2026-05-26 - Sidebar redesign, infrastructure list redesign, Butler deploy fixes
 
 Progress: ████████████ 96%
 
@@ -34,7 +34,7 @@ All marked ✓ Good after v1.0 validation.
 
 ### Deferred Issues
 
-None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
+- ISSUE-005: Infrastructure add page "Select on map" and "Draw new parcel" buttons are dead (no JS wired). Needs: parcel GeoJSON endpoint on map, polygon draw mode for new parcels, parcel click selection. See handoff doc.
 
 ### Open Items for Next Milestone
 
@@ -55,5 +55,5 @@ None (ISSUE-003 and ISSUE-004 resolved post-Phase 12)
 ## Session Continuity
 
 Last session: 2026-05-26
-Stopped at: Completed 19.2-02-PLAN.md (reports hero cards, boundary-scoped stations, sidebar reorg reverted). Phase 19.2 complete.
-Resume file: None
+Stopped at: Sidebar redesign shipped (task-based groupings). Infrastructure list redesigned (stat cards, type filters, richer cards). Butler deploy pipeline fixed (SSH alias, stale branch, Docker volume). Infrastructure add page map buttons still broken (deferred).
+Resume file: ~/Documents/Work/SWRCB-Ops/handoff-infra-map-buttons-2026-05-26.md
