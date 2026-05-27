@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Ledger CSV - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Upload Ledger CSV{% endblock %}
+{% block title %}Upload Use Ledger CSV - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Upload Use Ledger CSV{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'accounting:ledger_list' %}">Accounting</a>
+    <a href="{% url 'accounting:ledger_list' %}">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'accounting:ledger_list' %}">Ledger</a>
+    <a href="{% url 'accounting:ledger_list' %}">Use Ledger</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">CSV Upload</span>
   </nav>
-  <p class="page-description">Bulk-import ledger entries from CSV. Download the template, fill in your data, then upload. Use dry-run mode to validate before committing.</p>
+  <p class="page-description">Bulk-import use ledger entries from CSV. Download the template, fill in your data, then upload. Use dry-run mode to validate before committing.</p>
 </div>
 {% endblock %}
 
@@ -20,7 +20,7 @@
 <div class="page-stack page-medium">
 
   <!-- Back link -->
-  <a href="{% url 'accounting:ledger_list' %}" class="back-link">&larr; Back to Ledger</a>
+  <a href="{% url 'accounting:ledger_list' %}" class="back-link">&larr; Back to Use Ledger</a>
 
   <!-- Upload card -->
   <div class="card-raised">

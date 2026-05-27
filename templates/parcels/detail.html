@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Parcel {{ parcel.parcel_number }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Parcel {{ parcel.parcel_number }}{% endblock %}
+{% block title %}Use Area {{ parcel.parcel_number }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Use Area {{ parcel.parcel_number }}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="{% url 'parcels:list' %}">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'parcels:list' %}">Parcels</a>
+    <a href="{% url 'parcels:list' %}">Use Areas</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ parcel.parcel_number }}</span>
   </nav>
-  <p class="page-description">Parcel details and related data. Click any editable field to update it.</p>
+  <p class="page-description">Use area details and related data. Click any editable field to update it.</p>
 </div>
 {% endblock %}
 
@@ -26,7 +26,7 @@
   <!-- Back link -->
   <div>
     <a href="{% url 'parcels:list' %}" class="back-link">
-      &larr; Back to Parcels
+      &larr; Back to Use Areas
     </a>
   </div>
 

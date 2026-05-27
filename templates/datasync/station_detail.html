@@ -6,13 +6,13 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'datasync:station_list' %}">Data Sync</a>
+    <a href="{% url 'datasync:station_list' %}">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'datasync:station_list' %}">Stations</a>
+    <a href="{% url 'datasync:station_list' %}">Monitoring Stations</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ station.station_name }}</span>
   </nav>
-  <p class="page-description">Station details, data source, and recent measurements.</p>
+  <p class="page-description">Monitoring station details, data source, and recent measurements.</p>
 </div>
 {% endblock %}
 
@@ -26,7 +26,7 @@
   <!-- Back link -->
   <div>
     <a href="{% url 'datasync:station_list' %}" class="back-link">
-      &larr; Back to Stations
+      &larr; Back to Monitoring Stations
     </a>
   </div>
 

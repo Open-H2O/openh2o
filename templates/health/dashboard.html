@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}System Health - OpenH2O{% endblock %}
-{% block page_title %}System Health{% endblock %}
+{% block title %}Site Health - OpenH2O{% endblock %}
+{% block page_title %}Site Health{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'health:dashboard' %}">System</a>
+    <a href="{% url 'health:dashboard' %}">Administration</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Health</span>
+    <span class="breadcrumb-current">Site Health</span>
   </nav>
-  <p class="page-description">System health checks across 8 categories. Green means healthy, yellow means attention needed, red means action required.</p>
+  <p class="page-description">Site health checks across 8 categories. Green means healthy, yellow means attention needed, red means action required.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack" style="max-width: 1200px;">
     <div class="row-between">
-        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--color-text-primary); margin: 0;">System Health</h1>
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--color-text-primary); margin: 0;">Site Health</h1>
         {% if total > 0 %}
         <div class="row-start" style="padding: var(--space-xs) var(--space-md); border-radius: var(--radius-md); background: var(--color-card); border: 1px solid var(--color-border);">
             <span style="width: 10px; height: 10px; border-radius: 50%; background: {% if overall_status == 'healthy' %}var(--forest-400){% elif overall_status == 'degraded' %}var(--furnace-400){% else %}oklch(0.55 0.20 25){% endif %};"></span>

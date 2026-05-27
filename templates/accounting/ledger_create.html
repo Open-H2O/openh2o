@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}New Ledger Entry - Open Water Accounting Platform{% endblock %}
-{% block page_title %}New Ledger Entry{% endblock %}
+{% block title %}New Use Ledger Entry - Open Water Accounting Platform{% endblock %}
+{% block page_title %}New Use Ledger Entry{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'accounting:ledger_list' %}">Accounting</a>
+    <a href="{% url 'accounting:ledger_list' %}">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'accounting:ledger_list' %}">Ledger</a>
+    <a href="{% url 'accounting:ledger_list' %}">Use Ledger</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">New Entry</span>
   </nav>
@@ -19,7 +19,7 @@
 <div class="page-stack page-narrow">
 
   <!-- Back link -->
-  <a href="{% url 'accounting:ledger_list' %}" class="back-link">&larr; Back to Ledger</a>
+  <a href="{% url 'accounting:ledger_list' %}" class="back-link">&larr; Back to Use Ledger</a>
 
   <div class="card-raised">
     <h2 class="card-header-ruled">

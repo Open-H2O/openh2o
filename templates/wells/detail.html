@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Well {{ well.name }} - Open Water Accounting Platform{% endblock %}
+{% block title %}Extraction Well {{ well.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ well.name }}{% endblock %}
 
 {% block breadcrumbs %}
@@ -8,11 +8,11 @@
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="{% url 'wells:list' %}">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'wells:list' %}">Wells</a>
+    <a href="{% url 'wells:list' %}">Extraction Wells</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ well.name }}</span>
   </nav>
-  <p class="page-description">Well details, linked meters, and measurement history. Click editable fields to update.</p>
+  <p class="page-description">Extraction well details, linked meters, and measurement history. Click editable fields to update.</p>
 </div>
 {% endblock %}
 
@@ -26,7 +26,7 @@
   <!-- Back link -->
   <div>
     <a href="{% url 'wells:list' %}" class="back-link">
-      &larr; Back to Wells
+      &larr; Back to Extraction Wells
     </a>
   </div>
 

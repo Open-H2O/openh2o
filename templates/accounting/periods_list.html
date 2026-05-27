@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Reporting Periods - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Reporting Periods{% endblock %}
+{% block title %}Water Years - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water Years{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'accounting:periods_list' %}">Accounting</a>
+    <a href="{% url 'accounting:periods_list' %}">Compliance</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Periods</span>
+    <span class="breadcrumb-current">Water Years</span>
   </nav>
-  <p class="page-description">Reporting periods define the time window for water accounting. Most agencies use the water year (October through September).</p>
+  <p class="page-description">Water years define the time window for water accounting. Most agencies use the water year (October through September).</p>
 </div>
 {% endblock %}
 
@@ -36,7 +36,7 @@
 
     <!-- Create button -->
     <div>
-      <a href="{% url 'accounting:period_create' %}" class="btn-primary">+ New Period</a>
+      <a href="{% url 'accounting:period_create' %}" class="btn-primary">+ New Water Year</a>
     </div>
   </div>
 

@@ -6,13 +6,13 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'recharge:list' %}">Surface Water</a>
+    <a href="{% url 'recharge:list' %}">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'recharge:list' %}">Recharge Sites</a>
+    <a href="{% url 'recharge:list' %}">Recharge Areas</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ site.name }}</span>
   </nav>
-  <p class="page-description">Recharge site details, geometry, and event history.</p>
+  <p class="page-description">Recharge area details, geometry, and event history.</p>
 </div>
 {% endblock %}
 
@@ -26,7 +26,7 @@
   <!-- Back link -->
   <div>
     <a href="{% url 'recharge:list' %}" class="back-link">
-      &larr; Back to Recharge Sites
+      &larr; Back to Recharge Areas
     </a>
   </div>
 
