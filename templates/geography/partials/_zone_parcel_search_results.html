@@ -1,0 +1,25 @@
+{% if results %}
+<div class="search-result-list">
+  {% for parcel in results %}
+  <div class="item-row">
+    <div>
+      <span class="text-base font-semibold">{{ parcel.parcel_number }}</span>
+      {% if parcel.owner_name %}
+        <span class="text-tertiary text-sm ml-sm">{{ parcel.owner_name }}</span>
+      {% endif %}
+    </div>
+    <button
+      hx-post="{% url 'geography:zone_parcel_assign' zone.pk %}"
+      hx-vals='{"parcel_id": "{{ parcel.pk }}"}'
+      hx-target="#zone-parcels"
+      class="btn-primary btn-xs">
+      Assign
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% elif q %}
+<p class="text-tertiary text-sm">No matching parcels found for "{{ q }}".</p>
+{% else %}
+<p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
+{% endif %}

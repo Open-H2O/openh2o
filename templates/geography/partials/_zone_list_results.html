@@ -1,0 +1,75 @@
+<!-- Count badge -->
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
+    zone{{ total_count|pluralize }} found
+  </span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th class="th-right">Parcels</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for zone in page_obj %}
+      <tr>
+        <td>
+          <a href="{% url 'geography:zone_detail' zone.pk %}" class="data-table-link">
+            {{ zone.name }}
+          </a>
+        </td>
+        <td class="text-secondary">{{ zone.get_zone_type_display|default:"—" }}</td>
+        <td class="td-num text-secondary">{{ zone.parcel_count }}</td>
+        <td class="text-tertiary" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {{ zone.description|truncatewords:12|default:"—" }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination-row">
+  {% if page_obj.has_previous %}
+    <button
+      hx-get="{% url 'geography:zone_list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&zone_type={{ zone_type }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Previous
+    </button>
+  {% endif %}
+  <span class="pagination-label">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+    <button
+      hx-get="{% url 'geography:zone_list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&zone_type={{ zone_type }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Next
+    </button>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card-raised empty-state">
+  <div class="empty-state-icon">
+    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  </div>
+  <p class="empty-state-text">No zones found{% if q %} matching "{{ q }}"{% endif %}{% if zone_type %} of type "{{ zone_type }}"{% endif %}.</p>
+  <a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm" style="margin-top: var(--space-sm);">+ Create First Zone</a>
+</div>
+{% endif %}

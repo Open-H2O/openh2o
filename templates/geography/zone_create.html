@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Create Zone - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Create Zone{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'geography:zone_list' %}">Administration</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'geography:zone_list' %}">Zones</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Create</span>
+  </nav>
+  <p class="page-description">Draw a polygon on the map to define the zone boundary. Parcels can be assigned to zones after creation.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<form method="post" action="{% url 'geography:zone_create' %}" id="zone-form">
+  {% csrf_token %}
+
+  {% if error %}
+  <div class="card-raised" style="border-left: 3px solid var(--furnace-400); padding: var(--space-md); margin-bottom: var(--space-lg);">
+    <p class="text-base" style="margin: 0; color: var(--furnace-400);">{{ error }}</p>
+  </div>
+  {% endif %}
+
+  <div class="map-form-layout">
+
+    <!-- LEFT: Form fields -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+        <h2 class="card-header-ruled">Zone Details</h2>
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="field-label" for="id_name">Name</label>
+            {{ form.name }}
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="id_zone_type">Type</label>
+            {{ form.zone_type }}
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="id_description">Description</label>
+            {{ form.description }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="form-footer-ruled">
+        <a href="{% url 'geography:zone_list' %}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary" id="submit-btn">Create Zone</button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Map -->
+    <div class="page-stack">
+      <div class="card-raised" style="padding: 0; overflow: hidden;">
+        <!-- Draw toolbar -->
+        <div class="draw-toolbar">
+          <button type="button" class="draw-btn active" id="draw-polygon" title="Draw polygon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 18 21 6 21 2 8.5"/></svg>
+            Polygon
+          </button>
+          <button type="button" class="draw-btn" id="draw-clear" title="Clear drawing">
+            Clear
+          </button>
+          <button type="button" class="draw-btn" id="draw-finish" title="Finish polygon" style="display: none;">
+            Finish
+          </button>
+        </div>
+        <!-- Map container -->
+        <div id="zone-draw-map" style="height: 480px; width: 100%;"></div>
+        <!-- Coordinate display -->
+        <div class="coord-display" id="coord-display">
+          <span class="text-xs text-tertiary">Click map to draw zone polygon</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hidden geometry input -->
+  <input type="hidden" name="geometry_json" id="geometry_json" value="">
+</form>
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(function() {
+  var vertices = [];
+
+  var map = new maplibregl.Map({
+    container: 'zone-draw-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    zoom: 8,
+    center: [-119.5, 37.3],
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+  map.on('load', function() {
+    map.addSource('drawing', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'drawing-line', type: 'line', source: 'drawing',
+      paint: { 'line-color': '#E4A317', 'line-width': 2, 'line-dasharray': [4, 2] }
+    });
+    map.addLayer({
+      id: 'drawing-vertices', type: 'circle', source: 'drawing',
+      filter: ['==', '$type', 'Point'],
+      paint: { 'circle-radius': 5, 'circle-color': '#E4A317', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+    });
+
+    map.addSource('finished', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'finished-fill', type: 'fill', source: 'finished',
+      paint: { 'fill-color': '#1B7FAF', 'fill-opacity': 0.25 }
+    });
+    map.addLayer({
+      id: 'finished-line', type: 'line', source: 'finished',
+      paint: { 'line-color': '#3DB4E0', 'line-width': 2 }
+    });
+
+    map.getCanvas().style.cursor = 'crosshair';
+  });
+
+  map.on('click', function(e) {
+    addVertex(e.lngLat);
+  });
+
+  map.on('dblclick', function(e) {
+    if (vertices.length >= 3) {
+      e.preventDefault();
+      finishPolygon();
+    }
+  });
+
+  function addVertex(lngLat) {
+    vertices.push([lngLat.lng, lngLat.lat]);
+    updateDrawing();
+    var n = vertices.length;
+    var hint;
+    if (n < 3) {
+      hint = n + ' of 3 minimum corners placed';
+    } else {
+      hint = n + ' corners placed. Double-click or press Finish to complete.';
+    }
+    document.getElementById('coord-display').textContent =
+      lngLat.lng.toFixed(6) + ', ' + lngLat.lat.toFixed(6) + ' (' + hint + ')';
+    document.getElementById('draw-finish').style.display = n >= 3 ? '' : 'none';
+  }
+
+  function updateDrawing() {
+    var features = [];
+    vertices.forEach(function(v) {
+      features.push({ type: 'Feature', geometry: { type: 'Point', coordinates: v }, properties: {} });
+    });
+    if (vertices.length >= 2) {
+      features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: vertices }, properties: {} });
+    }
+    map.getSource('drawing').setData({ type: 'FeatureCollection', features: features });
+  }
+
+  function finishPolygon() {
+    if (vertices.length < 3) return;
+    var numVerts = vertices.length;
+    var ring = vertices.concat([vertices[0]]);
+    var geojson = { type: 'Polygon', coordinates: [ring] };
+
+    map.getSource('finished').setData({ type: 'Feature', geometry: geojson, properties: {} });
+    map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
+    document.getElementById('geometry_json').value = JSON.stringify(geojson);
+    document.getElementById('draw-finish').style.display = 'none';
+    document.getElementById('coord-display').textContent = numVerts + ' vertices, polygon complete';
+    vertices = [];
+  }
+
+  function clearDrawing() {
+    vertices = [];
+    map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
+    map.getSource('finished').setData({ type: 'FeatureCollection', features: [] });
+    document.getElementById('geometry_json').value = '';
+    document.getElementById('draw-finish').style.display = 'none';
+    document.getElementById('coord-display').textContent = 'Click map to draw zone polygon';
+  }
+
+  document.getElementById('draw-polygon').addEventListener('click', function() { clearDrawing(); });
+  document.getElementById('draw-clear').addEventListener('click', clearDrawing);
+  document.getElementById('draw-finish').addEventListener('click', finishPolygon);
+})();
+</script>
+{% endblock %}
