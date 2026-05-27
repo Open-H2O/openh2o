@@ -116,8 +116,30 @@ class OpenETAdapter(BaseAdapter):
             })
         return records
 
-    def validate(self, records):
-        """Validate ET values (must be non-negative, reasonable)."""
+    def validate(self, records, temporal_resolution="monthly"):
+        """Validate ET values. Threshold depends on temporal granularity.
+
+        The 500mm/month cap is reasonable for monthly data (that is roughly
+        20 inches/month — extremely high for any California crop). But OpenET
+        can return data at daily or annual granularity. For annual totals,
+        Central Valley alfalfa or rice can legitimately exceed 1200mm/year.
+
+        Thresholds (with agronomic citations):
+        - daily:   15mm (~0.6 in/day, peak alfalfa ET from UC Davis CIMIS)
+        - monthly: 500mm (generous cap for any CA irrigated crop)
+        - annual:  2000mm (~79 in, exceeds any CA crop)
+
+        Reference: UC Davis CIMIS peak ET rates for Central Valley crops.
+        Alfalfa peak: ~8-10mm/day, ~250mm/month, ~1500mm/year.
+        Rice peak: similar range. 500mm/month cap is generous.
+        """
+        THRESHOLDS = {
+            "daily": 15,
+            "monthly": 500,
+            "annual": 2000,
+        }
+        max_et = THRESHOLDS.get(temporal_resolution, 500)
+
         valid = []
         rejected = []
         for rec in records:
@@ -127,8 +149,10 @@ class OpenETAdapter(BaseAdapter):
             elif rec["value"] < 0:
                 rec["rejection_reason"] = "negative ET"
                 rejected.append(rec)
-            elif rec["value"] > 500:
-                rec["rejection_reason"] = "ET exceeds 500mm (implausible)"
+            elif rec["value"] > max_et:
+                rec["rejection_reason"] = (
+                    f"ET exceeds {max_et}mm ({temporal_resolution} threshold)"
+                )
                 rejected.append(rec)
             else:
                 valid.append(rec)
@@ -230,7 +254,7 @@ class OpenETAdapter(BaseAdapter):
             return None
 
         parsed = self.parse(raw_data)
-        valid, _rejected = self.validate(parsed)
+        valid, _rejected = self.validate(parsed, temporal_resolution="monthly")
 
         et_data = [
             {
