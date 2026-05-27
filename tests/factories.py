@@ -171,6 +171,17 @@ class DiversionRecordFactory(factory.django.DjangoModelFactory):
     diversion_type = "direct_use"
 
 
+class AllocationPlanFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "accounting.AllocationPlan"
+
+    name = factory.Sequence(lambda n: f"Allocation {n}")
+    zone = factory.SubFactory(ZoneFactory)
+    water_type = factory.SubFactory(WaterTypeFactory)
+    reporting_period = factory.SubFactory(ReportingPeriodFactory)
+    allocation_acre_feet = Decimal("100.0000")
+
+
 class RechargeSiteFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "recharge.RechargeSite"

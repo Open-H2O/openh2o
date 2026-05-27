@@ -12,11 +12,17 @@ from django.test import Client
 from django.urls import reverse
 
 from tests.factories import (
+    AllocationPlanFactory,
     ParcelFactory,
+    ParcelZoneFactory,
+    ReportingPeriodFactory,
     WaterAccountFactory,
+    WaterAccountParcelFactory,
+    WaterTypeFactory,
     WellFactory,
     RechargeSiteFactory,
     WaterRightFactory,
+    ZoneFactory,
 )
 
 
@@ -91,6 +97,48 @@ class TestHelpPages:
 # ---------------------------------------------------------------------------
 # Accounting pages (login required)
 # ---------------------------------------------------------------------------
+
+
+class TestDashboardAllocationProRating:
+    def test_prorates_allocation_by_parcel_count(self, auth_client):
+        """Zone with 4 parcels, account owns 1: allocation = 25% of zone total."""
+        from datetime import date
+        from decimal import Decimal
+
+        period = ReportingPeriodFactory(
+            start_date=date(2025, 10, 1), end_date=date(2026, 9, 30)
+        )
+        zone = ZoneFactory()
+        water_type = WaterTypeFactory()
+
+        # Create 4 parcels in the zone
+        parcels = [ParcelFactory() for _ in range(4)]
+        for p in parcels:
+            ParcelZoneFactory(parcel=p, zone=zone)
+
+        # Account owns only 1 of the 4 parcels
+        account = WaterAccountFactory()
+        WaterAccountParcelFactory(water_account=account, parcel=parcels[0])
+
+        # Zone allocation is 100 AF
+        AllocationPlanFactory(
+            zone=zone,
+            water_type=water_type,
+            reporting_period=period,
+            allocation_acre_feet=Decimal("100.0000"),
+        )
+
+        response = auth_client.get(
+            reverse("accounting:dashboard") + f"?period={period.pk}"
+        )
+        assert response.status_code == 200
+
+        # Find the account summary in context
+        account_summaries = response.context["account_summaries"]
+        match = [s for s in account_summaries if s["account"] == account]
+        assert len(match) == 1
+        # Pro-rated: 100 AF * (1/4) = 25 AF
+        assert match[0]["allocation"] == Decimal("25.0000")
 
 
 class TestAccountingPages:
