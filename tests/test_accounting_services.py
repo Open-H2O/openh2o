@@ -594,3 +594,64 @@ class TestGearsWellFractionNormalization:
 
         # Single parcel: normalized fraction = 1.0/1.0 = 1.0 → full 50 AF reported
         assert total_reported == Decimal("50")
+
+
+# ---------------------------------------------------------------------------
+# CalWATRS and Email JSON null water_right guards (Task 2)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestNullWaterRightGuards:
+    def test_calwatrs_null_water_right(self):
+        """CalWATRS CSV generates without crashing when POD has no water right.
+        Row shows empty right_id."""
+        from reporting.generators import generate_calwatrs_csv
+
+        period = ReportingPeriodFactory(
+            start_date=date(2024, 1, 1), end_date=date(2024, 12, 31)
+        )
+        # POD with no water_right
+        pod = PointOfDiversionFactory(water_right=None)
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("25.0000"),
+            diversion_type="direct_use",
+        )
+
+        # Must not raise
+        output = generate_calwatrs_csv(period, template_type="a1")
+        content = output.read()
+        lines = content.strip().split("\n")
+        # Should have header + 1 data row
+        assert len(lines) == 2
+        # First column (Water Right ID) should be empty string
+        import csv as csv_mod
+        rows = list(csv_mod.reader(lines))
+        assert rows[1][0] == ""  # empty right_id
+        assert "[No water right]" in rows[1][1]  # holder shows pod name
+
+    def test_email_json_null_water_right(self):
+        """Email JSON generates without crashing when POD has no water right.
+        Diversion row shows empty string for water_right."""
+        from reporting.generators import generate_email_json
+
+        period = ReportingPeriodFactory(
+            start_date=date(2024, 1, 1), end_date=date(2024, 12, 31)
+        )
+        pod = PointOfDiversionFactory(water_right=None)
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("15.0000"),
+            diversion_type="direct_use",
+        )
+
+        # Must not raise
+        payload = generate_email_json(period)
+        assert "diversions" in payload
+        assert len(payload["diversions"]) == 1
+        assert payload["diversions"][0]["water_right"] == ""

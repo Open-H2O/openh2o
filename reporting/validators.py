@@ -150,6 +150,17 @@ def validate_report(reporting_period, report_type):
                 "message": f"{dupe_count} duplicate POD-month combination(s) in diversion records.",
             })
 
+        # Warn about PODs missing water rights — CalWATRS rows will show empty right_id.
+        pods_no_wr = PointOfDiversion.objects.filter(
+            water_right__isnull=True,
+            diversionrecord__reporting_period=reporting_period,
+        ).distinct().count()
+        if pods_no_wr > 0:
+            warnings.append({
+                "level": "warning",
+                "message": f"{pods_no_wr} point(s) of diversion have no linked water right.",
+            })
+
         active_pods = PointOfDiversion.objects.filter(status="active").count()
         if active_pods > 0 and div_count > 0:
             pods_with_data = (
