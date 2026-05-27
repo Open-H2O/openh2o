@@ -162,3 +162,47 @@ class TestSyncWithCache:
             )
             mock_fetch.assert_not_called()
         assert result is None
+
+
+# ---------------------------------------------------------------------------
+# OpenET temporal-granularity-aware validation thresholds (Task 3)
+# ---------------------------------------------------------------------------
+
+
+class TestOpenETValidateThresholds:
+    """Validate that ET thresholds are granularity-aware (daily/monthly/annual)."""
+
+    def _make_rec(self, value):
+        return {"station_id": "test", "observation_date": "2024-06", "value": value, "unit": "mm"}
+
+    def test_validate_monthly_400mm_accepted(self):
+        """400mm monthly is below the 500mm monthly cap — accepted."""
+        adapter = OpenETAdapter()
+        valid, rejected = adapter.validate([self._make_rec(400)], temporal_resolution="monthly")
+        assert len(valid) == 1
+        assert len(rejected) == 0
+
+    def test_validate_monthly_600mm_rejected(self):
+        """600mm monthly exceeds the 500mm monthly cap — rejected."""
+        adapter = OpenETAdapter()
+        valid, rejected = adapter.validate([self._make_rec(600)], temporal_resolution="monthly")
+        assert len(valid) == 0
+        assert len(rejected) == 1
+        assert "500mm" in rejected[0]["rejection_reason"]
+        assert "monthly" in rejected[0]["rejection_reason"]
+
+    def test_validate_annual_1200mm_accepted(self):
+        """1200mm annual is below the 2000mm annual cap — accepted (valid alfalfa total)."""
+        adapter = OpenETAdapter()
+        valid, rejected = adapter.validate([self._make_rec(1200)], temporal_resolution="annual")
+        assert len(valid) == 1
+        assert len(rejected) == 0
+
+    def test_validate_annual_2500mm_rejected(self):
+        """2500mm annual exceeds the 2000mm annual cap — rejected."""
+        adapter = OpenETAdapter()
+        valid, rejected = adapter.validate([self._make_rec(2500)], temporal_resolution="annual")
+        assert len(valid) == 0
+        assert len(rejected) == 1
+        assert "2000mm" in rejected[0]["rejection_reason"]
+        assert "annual" in rejected[0]["rejection_reason"]
