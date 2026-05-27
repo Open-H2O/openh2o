@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 Phase: 19.2 of 21 (Visual Overhaul & UX Refinement)
 Plan: 2 of 2 in current phase
-Status: Phase complete + post-phase sidebar/infrastructure redesign
-Last activity: 2026-05-26 - Sidebar redesign, infrastructure list redesign, Butler deploy fixes
+Status: Phase complete + post-phase work (sidebar, infra list, map buttons all shipped)
+Last activity: 2026-05-27 - Infrastructure add page parcel map buttons wired up and UX polished
 
 Progress: ████████████ 96%
 
@@ -34,7 +34,7 @@ All marked ✓ Good after v1.0 validation.
 
 ### Deferred Issues
 
-- ISSUE-005: Infrastructure add page "Select on map" and "Draw new parcel" buttons are dead (no JS wired). Needs: parcel GeoJSON endpoint on map, polygon draw mode for new parcels, parcel click selection. See handoff doc.
+- ~~Map buttons: Infrastructure add page "Select on map" and "Draw new parcel" wired up. Commits 9c183b5, 70eabc5. Deployed to Butler.~~
 
 ### Open Items for Next Milestone
 
@@ -54,6 +54,6 @@ All marked ✓ Good after v1.0 validation.
 
 ## Session Continuity
 
-Last session: 2026-05-26
-Stopped at: Sidebar redesign shipped (task-based groupings). Infrastructure list redesigned (stat cards, type filters, richer cards). Butler deploy pipeline fixed (SSH alias, stale branch, Docker volume). Infrastructure add page map buttons still broken (deferred).
-Resume file: ~/Documents/Work/SWRCB-Ops/handoff-infra-map-buttons-2026-05-26.md
+Last session: 2026-05-27
+Stopped at: All deferred post-phase work complete. Map buttons wired, UX polished (zoom-to-fit, progressive draw hints, hover tooltips). No open deferred items.
+Resume file: None needed — clean stopping point.
