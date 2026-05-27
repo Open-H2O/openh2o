@@ -167,9 +167,10 @@ class TestCreateDiversionLedgerEntry:
 
 class TestCreateRechargeLedgerEntries:
     def test_explicit_zone(self):
+        """Two parcels with 100 and 300 acres get 25/75 area-weighted split."""
         zone = ZoneFactory()
-        p1 = ParcelFactory()
-        p2 = ParcelFactory()
+        p1 = ParcelFactory(area_acres=Decimal("100.00"))
+        p2 = ParcelFactory(area_acres=Decimal("300.00"))
         ParcelZoneFactory(parcel=p1, zone=zone)
         ParcelZoneFactory(parcel=p2, zone=zone)
 
@@ -177,8 +178,64 @@ class TestCreateRechargeLedgerEntries:
         entries = create_recharge_ledger_entries(event, zone=zone)
 
         assert len(entries) == 2
-        assert all(e.amount_acre_feet == Decimal("50.0000") for e in entries)
+        amounts = sorted(e.amount_acre_feet for e in entries)
+        assert amounts[0] == Decimal("25.0000")
+        assert amounts[1] == Decimal("75.0000")
         assert all(e.source_type == "recharge" for e in entries)
+
+    def test_area_weighted_three_parcels(self):
+        """Three parcels with 10, 20, 70 acres get 10/20/70% split."""
+        zone = ZoneFactory()
+        p1 = ParcelFactory(area_acres=Decimal("10.00"))
+        p2 = ParcelFactory(area_acres=Decimal("20.00"))
+        p3 = ParcelFactory(area_acres=Decimal("70.00"))
+        ParcelZoneFactory(parcel=p1, zone=zone)
+        ParcelZoneFactory(parcel=p2, zone=zone)
+        ParcelZoneFactory(parcel=p3, zone=zone)
+
+        event = RechargeEventFactory(volume_acre_feet=Decimal("100.0000"))
+        entries = create_recharge_ledger_entries(event, zone=zone)
+
+        assert len(entries) == 3
+        amounts = sorted(e.amount_acre_feet for e in entries)
+        assert amounts[0] == Decimal("10.0000")
+        assert amounts[1] == Decimal("20.0000")
+        assert amounts[2] == Decimal("70.0000")
+
+    def test_area_weighted_residual(self):
+        """Entries always sum exactly to input volume (no rounding loss)."""
+        zone = ZoneFactory()
+        p1 = ParcelFactory(area_acres=Decimal("33.00"))
+        p2 = ParcelFactory(area_acres=Decimal("33.00"))
+        p3 = ParcelFactory(area_acres=Decimal("34.00"))
+        ParcelZoneFactory(parcel=p1, zone=zone)
+        ParcelZoneFactory(parcel=p2, zone=zone)
+        ParcelZoneFactory(parcel=p3, zone=zone)
+
+        event = RechargeEventFactory(volume_acre_feet=Decimal("100.0000"))
+        entries = create_recharge_ledger_entries(event, zone=zone)
+
+        assert len(entries) == 3
+        total = sum(e.amount_acre_feet for e in entries)
+        assert total == Decimal("100.0000")
+
+    def test_null_area_fallback(self):
+        """Parcels with no area_acres fall back to equal distribution."""
+        zone = ZoneFactory()
+        p1 = ParcelFactory(area_acres=None, geometry=None)
+        p2 = ParcelFactory(area_acres=None, geometry=None)
+        ParcelZoneFactory(parcel=p1, zone=zone)
+        ParcelZoneFactory(parcel=p2, zone=zone)
+
+        event = RechargeEventFactory(volume_acre_feet=Decimal("100.0000"))
+        entries = create_recharge_ledger_entries(event, zone=zone)
+
+        assert len(entries) == 2
+        total = sum(e.amount_acre_feet for e in entries)
+        assert total == Decimal("100.0000")
+        amounts = sorted(e.amount_acre_feet for e in entries)
+        assert amounts[0] == Decimal("50.0000")
+        assert amounts[1] == Decimal("50.0000")
 
     def test_from_fk(self):
         zone = ZoneFactory()

@@ -6,6 +6,7 @@ Diversion/recharge ledger integration utilities and balance calculations.
 
 import csv
 import io
+import logging
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
@@ -17,6 +18,8 @@ from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 
 from accounting.models import ReportingPeriod, WaterAccountParcel, WaterType
+
+logger = logging.getLogger(__name__)
 
 
 def create_diversion_ledger_entry(diversion_record, parcel=None):
@@ -91,29 +94,73 @@ def create_recharge_ledger_entries(recharge_event, zone=None):
     if not parcels:
         return []
 
-    per_parcel_amount = recharge_event.volume_acre_feet / Decimal(
-        str(len(parcels))
-    )
     today = timezone.now().date()
+    total_volume = recharge_event.volume_acre_feet
+    total_area = sum(p.area_acres or Decimal("0") for p in parcels)
     entries = []
 
-    for parcel in parcels:
-        entries.append(
-            ParcelLedger(
-                parcel=parcel,
-                transaction_date=today,
-                effective_date=recharge_event.start_date,
-                amount_acre_feet=per_parcel_amount,
-                source_type="recharge",
-                description=(
-                    f"Recharge from {recharge_event.recharge_site.name}: "
-                    f"{recharge_event.volume_acre_feet} AF distributed "
-                    f"across {len(parcels)} parcels"
-                ),
-                reporting_period=None,
-                water_type=recharge_event.water_type,
-            )
+    if total_area == 0:
+        # Fallback: equal distribution when no parcels have area data
+        logger.warning(
+            "All %d parcels in zone '%s' have null/zero area_acres; "
+            "distributing recharge equally",
+            len(parcels),
+            zone.name,
         )
+        distributed = Decimal("0")
+        for i, parcel in enumerate(parcels):
+            if i == len(parcels) - 1:
+                amount = total_volume - distributed
+            else:
+                amount = (total_volume / Decimal(str(len(parcels)))).quantize(
+                    Decimal("0.0001")
+                )
+                distributed += amount
+            entries.append(
+                ParcelLedger(
+                    parcel=parcel,
+                    transaction_date=today,
+                    effective_date=recharge_event.start_date,
+                    amount_acre_feet=amount,
+                    source_type="recharge",
+                    description=(
+                        f"Recharge from {recharge_event.recharge_site.name}: "
+                        f"{total_volume} AF distributed equally "
+                        f"across {len(parcels)} parcels"
+                    ),
+                    reporting_period=None,
+                    water_type=recharge_event.water_type,
+                )
+            )
+    else:
+        # Area-weighted distribution with rounding residual on last entry
+        distributed = Decimal("0")
+        for i, parcel in enumerate(parcels):
+            area = parcel.area_acres or Decimal("0")
+            if i == len(parcels) - 1:
+                # Last entry gets residual to ensure exact sum
+                amount = total_volume - distributed
+            else:
+                amount = (area / total_area * total_volume).quantize(
+                    Decimal("0.0001")
+                )
+                distributed += amount
+            entries.append(
+                ParcelLedger(
+                    parcel=parcel,
+                    transaction_date=today,
+                    effective_date=recharge_event.start_date,
+                    amount_acre_feet=amount,
+                    source_type="recharge",
+                    description=(
+                        f"Recharge from {recharge_event.recharge_site.name}: "
+                        f"{total_volume} AF area-weighted "
+                        f"across {len(parcels)} parcels"
+                    ),
+                    reporting_period=None,
+                    water_type=recharge_event.water_type,
+                )
+            )
 
     return ParcelLedger.objects.bulk_create(entries)
 
