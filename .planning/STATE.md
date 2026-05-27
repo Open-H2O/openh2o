@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 22 of 25 (Engineering & Math Validation)
-Plan: 2 of 2 in current phase
+Phase: 23 of 25 (Navigation Restructure & Naming)
+Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-05-27 - Completed 22-02-PLAN.md (3 report bug fixes, OpenET pipeline, unit audit)
+Last activity: 2026-05-27 - Completed 23-01-PLAN.md (sidebar restructure, 8 renames, Add/Import buttons, area_override, DWR sweep)
 
-Progress: █████████░░░ 84%
+Progress: ██████████░░ 88%
 
 ## Performance Metrics
 
@@ -57,5 +57,5 @@ All marked ✓ Good after v1.0 validation.
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: Completed 22-02-PLAN.md (GEARS fraction normalization, null water_right guards, OpenET threshold, sync_openet_to_ledger, unit audit)
-Resume file: None — Phase 22 complete, proceed to Phase 23
+Stopped at: Completed 23-01-PLAN.md (sidebar restructure, template renames, Add/Import buttons, area_override, DWR acronym sweep)
+Resume file: None — Phase 23 complete, proceed to Phase 24

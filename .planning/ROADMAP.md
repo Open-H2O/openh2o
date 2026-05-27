@@ -272,7 +272,7 @@ Plans: 2
 **DWR sweep:** Replace all "DWR" with full agency name in templates, adapters, seed data, docs. Department of Water Resources (CDEC, Bulletin 118, SGMA Portal, Water Data Library) vs Division of Water Rights (CalWATRS, eWRIMS, water right permits).
 
 Plans:
-- [ ] 23-01: TBD (run /gsd:plan-phase 23 to break down)
+- [x] 23-01: Sidebar restructure, 8 renames, Add/Import buttons, area_override, DWR acronym sweep
 
 #### Phase 24: Data Model UX Overhaul (UI Overhaul B)
 
@@ -381,7 +381,7 @@ Plans:
 | 19.1 Wizard Fix & Infrastructure Entry | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19.2 Visual Overhaul & UX Refinement | v1.2 | 2/2 | Complete | 2026-05-26 |
 | 22. Engineering & Math Validation | v1.2 | 2/2 | Complete | 2026-05-27 |
-| 23. Navigation Restructure & Naming | v1.2 | 0/? | Not started | - |
+| 23. Navigation Restructure & Naming | v1.2 | 1/1 | Complete | 2026-05-27 |
 | 24. Data Model UX Overhaul | v1.2 | 0/? | Not started | - |
 | 25. Content & Polish | v1.2 | 0/? | Not started | - |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
