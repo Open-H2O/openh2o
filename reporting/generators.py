@@ -44,9 +44,21 @@ def generate_gears_csv(reporting_period, method="by_well"):
             .select_related("parcel")
         )
 
-        well_parcel_map = {}
+        # Build well→parcel map with per-well fraction normalization.
+        # WellIrrigatedParcel.fraction defaults to 1.0 (correct for single-well parcels).
+        # Without normalization, a well irrigating N parcels all at fraction=1.0
+        # would have its extraction multiplied by N — a double-counting bug.
+        # Fix: normalize each well's fractions so they always sum to 1.0.
+        raw_well_fractions = {}
         for wip in WellIrrigatedParcel.objects.select_related("well").all():
-            well_parcel_map.setdefault(wip.parcel_id, []).append((wip.well, wip.fraction))
+            raw_well_fractions.setdefault(wip.well_id, []).append(wip)
+
+        well_parcel_map = {}  # parcel_id → [(well, normalized_fraction)]
+        for well_id, wips in raw_well_fractions.items():
+            total_fraction = sum(w.fraction for w in wips)
+            for wip in wips:
+                norm_fraction = wip.fraction / total_fraction if total_fraction > 0 else Decimal("0")
+                well_parcel_map.setdefault(wip.parcel_id, []).append((wip.well, norm_fraction))
 
         rows = {}
         for entry in entries:

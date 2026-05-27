@@ -1,3 +1,6 @@
+from collections import defaultdict
+from decimal import Decimal
+
 from django.db.models import Count
 
 from parcels.models import ParcelLedger
@@ -68,6 +71,23 @@ def validate_report(reporting_period, report_type):
                 warnings.append({
                     "level": "error",
                     "message": f"{dupe_count} duplicate parcel-month combination(s) in meter readings.",
+                })
+
+            # Warn if any well's fractions don't sum to 1.0 (auto-normalized for report).
+            well_fractions = defaultdict(Decimal)
+            for wip in WellIrrigatedParcel.objects.all():
+                well_fractions[wip.well_id] += wip.fraction
+            bad_wells = [
+                wid for wid, total in well_fractions.items()
+                if abs(total - Decimal("1")) > Decimal("0.01")
+            ]
+            if bad_wells:
+                warnings.append({
+                    "level": "warning",
+                    "message": (
+                        f"{len(bad_wells)} well(s) have fractions not summing to 1.0 "
+                        "(auto-normalized for report)."
+                    ),
                 })
 
             active_wells = Well.objects.filter(status="active").count()

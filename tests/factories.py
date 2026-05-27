@@ -71,6 +71,15 @@ class WellFactory(factory.django.DjangoModelFactory):
     status = "active"
 
 
+class WellIrrigatedParcelFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "wells.WellIrrigatedParcel"
+
+    well = factory.SubFactory(WellFactory)
+    parcel = factory.SubFactory(ParcelFactory)
+    fraction = Decimal("1.0000")
+
+
 class WaterTypeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "accounting.WaterType"
