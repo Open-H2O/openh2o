@@ -7,8 +7,21 @@ Diversion/recharge ledger integration utilities and balance calculations.
 # --- Unit conversion constants ---
 # 1 acre-foot (AF) = 1,233.48 cubic meters = 325,851 US gallons
 # 1 CFS (cubic foot per second) flowing for 1 day = 1.9835 AF
+#   Derivation: 1 CFS × 86,400 s/day × 0.0283168 m³/ft³ / 1,233.48 m³/AF = 1.9835
+# 1 GPM (gallon per minute) = 0.002228 CFS = 0.004419 AF/day
+#   Well capacity_gpm field uses this; convert to CFS for hydraulic calcs.
 # 1 mm of ET over 1 acre = 1/304.8 AF = 0.003281 AF
-# Reference: USGS Water Science School, California DWR conversion tables
+#   See et_mm_to_acre_feet() for full derivation.
+# Reference: USGS Water Science School; California DWR unit conversion tables.
+#
+# DecimalField precision audit (all fields adequate for CA district scale):
+#   ParcelLedger.amount_acre_feet        max_digits=12, decimal_places=4 → max 99,999,999 AF
+#   DiversionRecord.volume_acre_feet     max_digits=12, decimal_places=4 → same
+#   AllocationPlan.allocation_acre_feet  max_digits=12, decimal_places=4 → same
+#   WaterRight.face_value_acre_feet      max_digits=12, decimal_places=4 → same
+#   WellIrrigatedParcel.fraction         max_digits=5,  decimal_places=4 → range 0–9.9999 (sufficient)
+#   Well.capacity_gpm                    max_digits=8,  decimal_places=2 → max 999,999 GPM
+#   PointOfDiversion.max_rate_cfs        max_digits=10, decimal_places=4 → max 999,999 CFS
 
 import csv
 import io
