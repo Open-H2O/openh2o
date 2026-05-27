@@ -11,6 +11,10 @@
     <span class="breadcrumb-current">Recharge Areas</span>
   </nav>
   <p class="page-description">Managed aquifer recharge areas where water is applied to replenish groundwater. Track recharge events and volumes.</p>
+  <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    <a href="{% url 'infrastructure:add' %}" class="btn-secondary btn-sm">Import</a>
+    <a href="{% url 'infrastructure:add' %}" class="btn-primary btn-sm">+ Add Recharge Site</a>
+  </div>
 </div>
 {% endblock %}
 

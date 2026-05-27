@@ -11,6 +11,10 @@
     <span class="breadcrumb-current">Surface Diversions</span>
   </nav>
   <p class="page-description">Surface water rights issued by the State Water Board. Each right has one or more points of diversion.</p>
+  <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    <a href="{% url 'infrastructure:add' %}" class="btn-secondary btn-sm">Import</a>
+    <a href="{% url 'infrastructure:add' %}" class="btn-primary btn-sm">+ Add Diversion</a>
+  </div>
 </div>
 {% endblock %}
 
