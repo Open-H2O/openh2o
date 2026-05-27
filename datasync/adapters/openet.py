@@ -97,7 +97,13 @@ class OpenETAdapter(BaseAdapter):
         return results_resp.json()
 
     def parse(self, raw_data):
-        """Parse OpenET timeseries response."""
+        """Parse OpenET timeseries response.
+
+        OpenET returns ET in millimeters (mm). To convert to acre-feet consumed:
+          ET (AF) = ET (mm) x area (acres) / 304.8
+        See accounting.services.et_mm_to_acre_feet() for the full derivation.
+        Reference: USGS Water Science School; CA DWR unit conversion tables.
+        """
         records = []
         if isinstance(raw_data, dict):
             timeseries = raw_data.get("timeseries", raw_data.get("data", []))

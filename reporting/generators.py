@@ -1,3 +1,17 @@
+"""
+Report generators for GEARS CSV, CalWATRS CSV, and Email JSON.
+
+Unit conventions used throughout:
+  - Volumes: acre-feet (AF). 1 AF = 1,233.48 m³ = 325,851 US gallons.
+  - Flow rates: CFS (cubic feet per second). 1 CFS × 1 day = 1.9835 AF.
+    CFS to AF/day: 1 CFS × 86,400 s/day × 0.0283168 m³/ft³ / 1,233.48 m³/AF = 1.9835
+  - Well capacity: GPM (gallons per minute). 1 GPM = 0.002228 CFS = 0.004419 AF/day.
+  - ET depths: mm (from OpenET). Converted to AF by accounting.services.et_mm_to_acre_feet().
+    Formula: ET (AF) = ET (mm) × area (acres) / 304.8
+  - Areas: acres. 1 acre = 43,560 ft² = 4,046.86 m².
+Reference: USGS Water Science School; California DWR unit conversion tables.
+"""
+
 import csv
 import hashlib
 import hmac
@@ -181,6 +195,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
                 "pod": pod,
                 "month": month_str,
                 "volume": Decimal("0"),
+                # max_flow_rate_cfs: reported as CFS. 1 CFS × 1 day = 1.9835 AF.
                 "max_flow": rec.max_flow_rate_cfs or Decimal("0"),
                 "type": rec.get_diversion_type_display(),
             }
