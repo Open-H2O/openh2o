@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 23 of 25 (Navigation Restructure & Naming)
+Phase: 24 of 25 (Data Model UX Overhaul)
 Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-05-27 - Completed 23-01-PLAN.md (sidebar restructure, 8 renames, Add/Import buttons, area_override, DWR sweep)
+Last activity: 2026-05-27 - Completed 24-01-PLAN.md (allocation-optional dashboard, POD-centric diversions, zone management)
 
-Progress: ██████████░░ 88%
+Progress: ███████████░ 92%
 
 ## Performance Metrics
 
@@ -57,5 +57,5 @@ All marked ✓ Good after v1.0 validation.
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: Completed 23-01-PLAN.md (sidebar restructure, template renames, Add/Import buttons, area_override, DWR acronym sweep)
-Resume file: None — Phase 23 complete, proceed to Phase 24
+Stopped at: Completed 24-01-PLAN.md (allocation-optional dashboard, POD-centric diversions, zone management)
+Resume file: None — Phase 24 complete, proceed to Phase 25

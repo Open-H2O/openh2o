@@ -300,7 +300,7 @@ Plans:
 - Visible explanation of what zones are and why they matter
 
 Plans:
-- [ ] 24-01: TBD (run /gsd:plan-phase 24 to break down)
+- [x] 24-01: Allocation-optional dashboard, POD-centric surface diversions, zone management
 
 #### Phase 25: Content & Polish (UI Overhaul C)
 
@@ -382,7 +382,7 @@ Plans:
 | 19.2 Visual Overhaul & UX Refinement | v1.2 | 2/2 | Complete | 2026-05-26 |
 | 22. Engineering & Math Validation | v1.2 | 2/2 | Complete | 2026-05-27 |
 | 23. Navigation Restructure & Naming | v1.2 | 1/1 | Complete | 2026-05-27 |
-| 24. Data Model UX Overhaul | v1.2 | 0/? | Not started | - |
+| 24. Data Model UX Overhaul | v1.2 | 1/1 | Complete | 2026-05-27 |
 | 25. Content & Polish | v1.2 | 0/? | Not started | - |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
