@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 19.2 of 21 (Visual Overhaul & UX Refinement)
+Phase: 19.2 of 25 (Visual Overhaul & UX Refinement — complete)
 Plan: 2 of 2 in current phase
-Status: Phase complete + post-phase work (sidebar, infra list, map buttons all shipped)
-Last activity: 2026-05-27 - Infrastructure add page parcel map buttons wired up and UX polished
+Status: Phase complete. Next up: Phase 22 (Engineering & Math Validation)
+Last activity: 2026-05-27 - Added math validation (Phase 22) and UI Overhaul phases (23-25) to roadmap
 
-Progress: ████████████ 96%
+Progress: █████████░░░ 79%
 
 ## Performance Metrics
 
@@ -51,6 +51,8 @@ All marked ✓ Good after v1.0 validation.
 - Phase 12.1 inserted after Phase 12: VanderDev Design Alignment (CSS + template polish)
 - Milestone v1.2 created: Enhancement Suite, 5 phases (Phase 15-19) — branding, map tie lines, GIS auto-populate, telemetry/OpenET, streaming dashboard
 - Phase 19.1 inserted: Wizard fix + infrastructure entry (type-adaptive form, map draw, file upload, parcel linkage)
+- Phase 22 added: Engineering & Mathematics Validation Sweep (9 known issues in accounting/reporting math)
+- Phases 23-25 added: Comprehensive UI Overhaul (navigation/naming, data model UX, content/polish). Phases 20-21 depend on 25 completing first.
 
 ## Session Continuity
 

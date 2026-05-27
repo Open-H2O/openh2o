@@ -8,7 +8,7 @@ Stand up an AI-deployable water accounting platform from scratch. Start with Doc
 
 - ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-05-24)
 - 🚧 **v1.1 Production Polish** — Phases 9-14 (in progress)
-- 📋 **v1.2 Enhancement Suite** — Phases 15-21 (planned)
+- 📋 **v1.2 Enhancement Suite** — Phases 15-25 (planned, includes Math Validation in 22, UI Overhaul in 23-25)
 
 ## Completed Milestones
 
@@ -203,10 +203,137 @@ Plans: 2
 - [x] 19.2-01: Deep Pacific palette, single-source shadows, tighter radii, font weights, Surface Water rename, GEARS/CalWATRS tabs, input styling fixes
 - [x] 19.2-02: Reports hero cards, boundary-scoped stations, sidebar reorg deferred
 
+#### Phase 22: Engineering & Mathematics Validation Sweep
+
+**Goal**: Audit and fix all water accounting calculations, unit conversions, and report generation logic. The platform's target users are engineers and water managers who will immediately spot incorrect math. Every formula must be defensible.
+**Depends on**: Phase 19.2
+**Research**: Likely (verify OpenET API unit conventions, confirm GEARS/CalWATRS field specs, review Rio/Qanat calculation patterns for comparison)
+**Research topics**: OpenET API response units (mm vs inches, monthly vs daily granularity), GEARS CSV field specifications from Department of Water Resources, CalWATRS A1/A2 CSV specs from Division of Water Rights, Rio ParcelLedger double-entry patterns for fractional well allocation
+
+**Known issues (verified in code):**
+
+1. **Recharge distribution ignores acreage** (`accounting/services.py:94`): Equal-share division across parcels in a zone. Must be area-weighted: `(parcel_area / total_zone_area) * recharge_volume`. Requires non-null `area_acres` on parcels — include PostGIS auto-calc in this phase as math prerequisite (Phase 23 handles the UI/override flag).
+
+2. **GEARS by-well double-counts extraction** (`reporting/generators.py:67`): `WellIrrigatedParcel.fraction` defaults to 1.0. A well irrigating 3 parcels reports 300% actual extraction. Fix: validate fractions sum to 1.0 per well, add model constraint or normalization.
+
+3. **Diversion ledger skips multi-parcel rights** (`accounting/services.py:40`): Uses `.first()` to pick one parcel from WaterRightParcel. Must distribute using `PointOfDiversionParcel` fractions, like GEARS does for wells.
+
+4. **Dashboard overstates account allocations** (`accounting/views.py:72`): Shows full zone allocation for accounts owning partial zone coverage. Must pro-rate: `zone_allocation * (account_parcels_in_zone / total_parcels_in_zone)`.
+
+5. **CalWATRS/Email JSON crash on null water_right** (`reporting/generators.py:155-156, 265`): `PointOfDiversion.water_right` is nullable but accessed unconditionally. Add null guards; skip or flag rows with missing water rights.
+
+6. **OpenET data never becomes ledger entries**: Adapter caches raw mm values in `OpenETCache` but no pipeline converts to acre-feet and creates `ParcelLedger` entries. Required formula: `-(ET_mm / 304.8) * area_acres` per parcel per month.
+
+7. **CSV import allows wrong-sign entries**: No validation that sign matches `source_type` (meter readings should be negative, allocations positive).
+
+8. **No rounding residual handling**: Decimal division in recharge distribution produces values that may not sum to original total. Standard accounting practice: assign residual to last entry.
+
+9. **OpenET 500mm validation threshold**: Per-record max of 500mm may reject valid annual totals for irrigated Central Valley crops (can exceed 1200mm/year). Threshold must account for temporal granularity.
+
+**Additional sweep items:**
+- Verify all unit labels and conversions (AF, CFS, GPM, mm) are consistent and documented
+- Confirm `DecimalField` precision is sufficient for all calculations (max_digits, decimal_places)
+- Add inline comments citing authoritative formulas (e.g., ET conversion, CFS-to-AF/day = CFS × 1.9835)
+- Review allocation plan math: is zone-level allocation the right granularity, or should parcel-level be supported?
+- Validate that the `_balance_dict` supply/usage split handles edge cases (zero entries, all-positive, all-negative)
+
+Plans:
+- [ ] 22-01: TBD (run /gsd:plan-phase 22 to break down)
+
+#### Phase 23: Navigation Restructure & Naming (UI Overhaul A)
+
+**Goal**: Streamline the sidebar from 5 groups to a cleaner hierarchy. Rename all tabs to domain-accurate names. Move Stations into Water Data, Health into Administration, Water Years into Compliance. Add per-page "Add" and "Import" buttons to Water Data pages. Auto-calculate parcel acreage from PostGIS geometry. Sweep all "DWR" acronyms to full agency names (Department of Water Resources vs Division of Water Rights).
+**Depends on**: Phase 22
+**Research**: Unlikely (internal template/model changes)
+**Plans**: TBD
+
+**Renames:**
+- Parcels → Use Areas
+- Wells → Extraction Wells
+- Surface Water → Surface Diversions
+- Recharge → Recharge Areas
+- Ledger → Use Ledger
+- Periods → Water Years (move to Compliance group)
+- Stations → Monitoring Stations (move to Water Data group)
+- Health → Site Health (move to Administration group)
+
+**Sidebar target:**
+- Overview: Dashboard, Map
+- Water Data: Use Ledger, Use Areas, Extraction Wells, Surface Diversions, Recharge Areas, Monitoring Stations
+- Compliance: Reports, Water Years
+- Administration: Accounts, Allocations, Site Health, Setup Wizard
+- Help: Getting Started, Glossary, About
+
+**Infrastructure tab removal:** Add + Import buttons on each Water Data page replace the unified Infrastructure tab. Batch import (GeoJSON/Shapefile/KML) available per page.
+
+**Acreage auto-calc:** Compute `area_acres` from PostGIS `ST_Area` on polygon save. Manual override with `area_override` flag.
+
+**DWR sweep:** Replace all "DWR" with full agency name in templates, adapters, seed data, docs. Department of Water Resources (CDEC, Bulletin 118, SGMA Portal, Water Data Library) vs Division of Water Rights (CalWATRS, eWRIMS, water right permits).
+
+Plans:
+- [ ] 23-01: TBD (run /gsd:plan-phase 23 to break down)
+
+#### Phase 24: Data Model UX Overhaul (UI Overhaul B)
+
+**Goal**: Redesign the three hardest UX problems: allocation-optional accounting, surface diversions without water rights, and zone management. Make the platform work for agencies that just track water use without formal allocations or water rights data.
+**Depends on**: Phase 23
+**Research**: Likely (review how Rio/Qanat handle allocation-optional parcels, survey real GSA workflows)
+**Research topics**: Rio ParcelLedger pattern for unallocated parcels, Qanat zone management UI, real-world GSA data entry workflows for districts without formal allocations
+
+**Allocation-optional dashboard:**
+- Dashboard gracefully handles missing allocations: usage-only view when no AllocationPlan exists
+- Prompt "Set allocation to enable budget tracking" instead of broken math
+- Zone balance calculations work regardless (sum ledger entries)
+- No schema change to AllocationPlan (stays optional by nature)
+
+**Surface Diversions redesign:**
+- Lead with PointOfDiversion, not WaterRight (POD already has nullable FK to WaterRight)
+- Diversion records (monthly volumes) are primary data entry
+- Water right fields (type, priority, face value) become optional expandable "Compliance Details" section
+- CalWATRS report generator flags diversions without linked water rights as incomplete
+
+**Zone management UI:**
+- New lightweight zone management page under Administration (or within Setup Wizard)
+- Zone CRUD with map drawing tool (reuse infrastructure add pattern)
+- ParcelZone assignment via map selection or bulk import
+- Visible explanation of what zones are and why they matter
+
+Plans:
+- [ ] 24-01: TBD (run /gsd:plan-phase 24 to break down)
+
+#### Phase 25: Content & Polish (UI Overhaul C)
+
+**Goal**: Rewrite the About page (professional intro, corrected timeline, impressive credits section), redesign Getting Started guide with page links and modern card layout, sweep all help tooltips for consistency with new names.
+**Depends on**: Phase 24
+**Research**: Unlikely (content and CSS work, credits research already done)
+**Plans**: TBD
+
+**About page:**
+- Professional intro paragraph (no sales pitch, no shots at consulting firms)
+- Timeline corrections: remove GEARS modernized tile, remove CalWATRS (2025 not 2023), remove Newsom EOs (didn't mention water)
+- Credits section with 4 tiers:
+  1. Pioneering implementations: Rosedale-Rio Bravo Water Storage District, Twin Platte Natural Resources District
+  2. Open-source foundations: Environmental Science Associates, Sitka Technology Group (Qanat/Rio/Zybach), California Water Data Consortium (AB 1755)
+  3. Data infrastructure: OpenET (NASA, USGS, Desert Research Institute, Environmental Defense Fund), CDEC, USGS National Water Information System
+  4. Technology stack: Django, PostGIS, MapLibre GL JS, HTMX, Docker
+
+**Getting Started guide:**
+- Same 8-step content, upgraded presentation
+- Clickable links to each referenced page
+- Step cards with icons instead of plain numbered list
+- Updated terminology to match new tab names
+
+**Help tooltip sweep:**
+- Update all tooltips and help text to use new names (Use Areas, Extraction Wells, etc.)
+- Ensure consistency with renamed sidebar items
+
+Plans:
+- [ ] 25-01: TBD (run /gsd:plan-phase 25 to break down)
+
 #### Phase 20: AI Operator Guide (DEFERRED from v1.1 Phase 13.1)
 
 **Goal**: Rewrite CLAUDE.md so a fresh Claude Code instance can deploy the platform and run the auto-populate setup wizard autonomously. Document the full onboarding flow that the setup wizard (Phase 19) enables.
-**Depends on**: Phase 19
+**Depends on**: Phase 25 (must reflect final UI and corrected math after overhaul)
 **Research**: Unlikely (auto-populate engine and setup wizard already built by this point)
 **Plans**: 1
 
@@ -252,5 +379,9 @@ Plans:
 | 19. Streaming Dashboard & Setup Wizard | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19.1 Wizard Fix & Infrastructure Entry | v1.2 | 1/1 | Complete | 2026-05-25 |
 | 19.2 Visual Overhaul & UX Refinement | v1.2 | 2/2 | Complete | 2026-05-26 |
+| 22. Engineering & Math Validation | v1.2 | 0/? | Not started | - |
+| 23. Navigation Restructure & Naming | v1.2 | 0/? | Not started | - |
+| 24. Data Model UX Overhaul | v1.2 | 0/? | Not started | - |
+| 25. Content & Polish | v1.2 | 0/? | Not started | - |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
