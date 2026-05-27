@@ -3,16 +3,156 @@ import json
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
+from accounting.models import ReportingPeriod
+from surface.forms import DiversionRecordForm
 from surface.models import (
     CurtailmentOrder,
     DiversionRecord,
     PointOfDiversion,
+    PointOfDiversionParcel,
     WaterRight,
 )
+
+
+# ---------------------------------------------------------------------------
+# POD-centric views (primary entry point for Surface Diversions)
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def pod_list(request):
+    """Paginated list of points of diversion with HTMX search and status filter."""
+    q = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+
+    queryset = (
+        PointOfDiversion.objects
+        .select_related("water_right")
+        .annotate(diversion_count=Count("diversionrecord"))
+        .order_by("name")
+    )
+
+    if q:
+        queryset = queryset.filter(
+            Q(name__icontains=q) | Q(stream_name__icontains=q)
+        )
+    if status:
+        queryset = queryset.filter(status=status)
+
+    paginator = Paginator(queryset, 25)
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "page_obj": page_obj,
+        "total_count": paginator.count,
+        "q": q,
+        "status": status,
+        "status_choices": PointOfDiversion.STATUS_CHOICES,
+    }
+
+    if request.headers.get("HX-Request"):
+        return render(request, "surface/partials/_pod_list_results.html", context)
+
+    return render(request, "surface/pod_list.html", context)
+
+
+@login_required
+def pod_detail(request, pk):
+    """Detail page for a single point of diversion."""
+    pod = get_object_or_404(
+        PointOfDiversion.objects.select_related("water_right"), pk=pk
+    )
+
+    # Diversion records for this POD
+    diversion_records = (
+        DiversionRecord.objects
+        .filter(point_of_diversion=pod)
+        .select_related("reporting_period")
+        .order_by("-month")
+    )
+
+    # Linked use areas (parcel connections)
+    pod_parcels = (
+        PointOfDiversionParcel.objects
+        .filter(point_of_diversion=pod)
+        .select_related("parcel")
+        .order_by("parcel__parcel_number")
+    )
+
+    # Water right info (may be None)
+    water_right = pod.water_right
+
+    # Inline form for adding diversion records
+    form = DiversionRecordForm()
+
+    # GeoJSON for the mini map
+    pod_geojson = None
+    if pod.location:
+        pod_geojson = json.dumps({
+            "type": "Feature",
+            "geometry": json.loads(pod.location.geojson),
+            "properties": {
+                "name": pod.name,
+                "stream_name": pod.stream_name,
+            },
+        })
+
+    context = {
+        "pod": pod,
+        "diversion_records": diversion_records,
+        "pod_parcels": pod_parcels,
+        "water_right": water_right,
+        "form": form,
+        "pod_geojson": pod_geojson,
+    }
+    return render(request, "surface/pod_detail.html", context)
+
+
+@login_required
+@require_POST
+def diversion_record_create(request, pk):
+    """HTMX POST endpoint: create a DiversionRecord for a POD."""
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    form = DiversionRecordForm(request.POST)
+
+    if form.is_valid():
+        record = form.save(commit=False)
+        record.point_of_diversion = pod
+
+        # Auto-assign reporting_period from the record's month
+        month = record.month
+        period = ReportingPeriod.objects.filter(
+            start_date__lte=month,
+            end_date__gte=month,
+        ).first()
+        record.reporting_period = period
+        record.save()
+
+    # Return updated records partial regardless (shows validation errors in form)
+    diversion_records = (
+        DiversionRecord.objects
+        .filter(point_of_diversion=pod)
+        .select_related("reporting_period")
+        .order_by("-month")
+    )
+    new_form = DiversionRecordForm()
+
+    return render(request, "surface/partials/_diversion_records.html", {
+        "pod": pod,
+        "diversion_records": diversion_records,
+        "form": new_form,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Water Rights views (kept for compliance-focused navigation)
+# ---------------------------------------------------------------------------
 
 
 @login_required

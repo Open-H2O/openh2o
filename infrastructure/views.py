@@ -59,7 +59,7 @@ def infrastructure_list(request):
                 "status": p.get_status_display(),
                 "stream_name": p.stream_name,
                 "max_rate_cfs": p.max_rate_cfs,
-                "detail_url": None,
+                "detail_url": reverse("surface:pod_detail", args=[p.pk]),
             }
             for p in pods
         ])
