@@ -31,9 +31,6 @@ COPY . .
 # Compile Tailwind CSS (standalone binary, no Node.js)
 RUN ./tailwindcss-linux-x64 -i static/css/input.css -o static/css/output.css --minify
 
-# Collect static files
-RUN SECRET_KEY=build-placeholder python manage.py collectstatic --noinput --clear
-
 EXPOSE 8000
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput --clear && python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2"]
