@@ -1,5 +1,5 @@
 """
-Seed realistic data for the Kaweah Subbasin (DWR Basin 5-022.11).
+Seed realistic data for the Kaweah Subbasin (Department of Water Resources Basin 5-022.11).
 
 Uses real geography, real monitoring-station IDs, and representative
 water-right holders from Tulare County. Designed to coexist with the
@@ -121,7 +121,7 @@ def make_field_parcel(cx, cy, size=0.005, seed_val=0):
 
 class Command(BaseCommand):
     help = (
-        "Seed data for the Kaweah Subbasin (DWR Basin 5-022.11) using "
+        "Seed data for the Kaweah Subbasin (Department of Water Resources Basin 5-022.11) using "
         "real geography and monitoring stations. "
         "Idempotent: skips if 'Kaweah Subbasin' already exists."
     )
@@ -307,7 +307,7 @@ class Command(BaseCommand):
         boundary = Boundary.objects.create(
             name="Kaweah Subbasin",
             description=(
-                "DWR Basin 5-022.11 in Tulare County, part of the "
+                "Department of Water Resources Basin 5-022.11 in Tulare County, part of the "
                 "San Joaquin Valley Groundwater Basin. Critically "
                 "overdrafted under SGMA."
             ),

@@ -9,7 +9,7 @@ Unit conventions used throughout:
   - ET depths: mm (from OpenET). Converted to AF by accounting.services.et_mm_to_acre_feet().
     Formula: ET (AF) = ET (mm) × area (acres) / 304.8
   - Areas: acres. 1 acre = 43,560 ft² = 4,046.86 m².
-Reference: USGS Water Science School; California DWR unit conversion tables.
+Reference: USGS Water Science School; California Department of Water Resources unit conversion tables.
 """
 
 import csv

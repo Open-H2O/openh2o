@@ -102,7 +102,7 @@ class OpenETAdapter(BaseAdapter):
         OpenET returns ET in millimeters (mm). To convert to acre-feet consumed:
           ET (AF) = ET (mm) x area (acres) / 304.8
         See accounting.services.et_mm_to_acre_feet() for the full derivation.
-        Reference: USGS Water Science School; CA DWR unit conversion tables.
+        Reference: USGS Water Science School; California Department of Water Resources unit conversion tables.
         """
         records = []
         if isinstance(raw_data, dict):

@@ -1,5 +1,5 @@
 """
-DWR Water Data Library adapter.
+Department of Water Resources (DWR) Water Data Library adapter.
 
 API docs: https://wdl.water.ca.gov/waterdatalibrary/
 No authentication required.
