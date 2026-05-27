@@ -743,6 +743,11 @@ a { color: inherit; }
     color: var(--color-blue);
 }
 
+.badge-teal {
+    background-color: oklch(0.45 0.10 200 / 0.2);
+    color: var(--reservoir-400);
+}
+
 .badge-grey {
     background-color: rgba(148, 163, 184, 0.12);
     color: var(--color-text-secondary);
@@ -1609,12 +1614,30 @@ a { color: inherit; }
     flex-shrink: 0;
 }
 
-/* -- Station card grid --------------------------------------------------- */
+/* -- Card grids ---------------------------------------------------------- */
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-md);
+}
 
 .station-card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: var(--space-md);
+}
+
+.card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 150ms, box-shadow 150ms;
+}
+
+.card-link:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-pop-sm);
 }
 
 .station-card-link {
@@ -1624,6 +1647,35 @@ a { color: inherit; }
 .station-card-link:hover {
     border-color: var(--color-border-hover);
     box-shadow: var(--shadow-pop-sm);
+}
+
+/* -- Filter tabs --------------------------------------------------------- */
+
+.filter-tabs {
+    display: flex;
+    gap: 0;
+}
+
+.filter-tab {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 150ms, border-color 150ms;
+    background: none;
+    text-decoration: none;
+}
+
+.filter-tab:hover {
+    color: var(--color-text-secondary);
+}
+
+.filter-tab.active {
+    color: var(--color-text-primary);
+    border-bottom-color: var(--color-gold);
 }
 
 /* -- Freshness dots ------------------------------------------------------ */

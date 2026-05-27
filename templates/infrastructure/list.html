@@ -15,22 +15,82 @@
 {% block content %}
 <div class="page-stack">
 
-  <div class="row-between">
-    <div class="search-bar" style="flex: 1; max-width: 400px;">
+  <!-- Stat cards -->
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm);">
+    <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--color-blue);">
+      <div class="stat-card-label">Wells</div>
+      <div class="stat-card-value" style="color: var(--color-blue);">{{ well_count }}</div>
+    </div>
+    <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--reservoir-400);">
+      <div class="stat-card-label">Diversions</div>
+      <div class="stat-card-value" style="color: var(--reservoir-400);">{{ pod_count }}</div>
+    </div>
+    <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--forest-400);">
+      <div class="stat-card-label">Recharge Sites</div>
+      <div class="stat-card-value" style="color: var(--forest-400);">{{ recharge_count }}</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="card-raised toolbar-row" style="align-items: center;">
+    <div style="flex: 1; min-width: 200px; max-width: 360px;">
       <input type="search" name="q" value="{{ query }}"
              placeholder="Search by name..."
              hx-get="{% url 'infrastructure:list' %}"
              hx-trigger="input changed delay:300ms, search"
              hx-target="#infra-results"
+             hx-include="#type-filter"
              hx-push-url="true"
              class="form-input search-input-icon">
     </div>
-    <a href="{% url 'infrastructure:add' %}" class="btn-primary">+ Add Infrastructure</a>
+    <input type="hidden" name="type" id="type-filter" value="{{ type_filter }}">
+    <div class="filter-tabs">
+      <button type="button" class="filter-tab{% if not type_filter %} active{% endif %}" data-type="">
+        All <span class="badge badge-grey" style="margin-left: 4px;">{{ total_count }}</span>
+      </button>
+      <button type="button" class="filter-tab{% if type_filter == 'well' %} active{% endif %}" data-type="well">
+        Wells <span class="badge badge-blue" style="margin-left: 4px;">{{ well_count }}</span>
+      </button>
+      <button type="button" class="filter-tab{% if type_filter == 'diversion' %} active{% endif %}" data-type="diversion">
+        Diversions <span class="badge badge-teal" style="margin-left: 4px;">{{ pod_count }}</span>
+      </button>
+      <button type="button" class="filter-tab{% if type_filter == 'recharge' %} active{% endif %}" data-type="recharge">
+        Recharge <span class="badge badge-green" style="margin-left: 4px;">{{ recharge_count }}</span>
+      </button>
+    </div>
+    <a href="{% url 'infrastructure:add' %}" class="btn-primary" style="margin-left: auto;">+ Add Infrastructure</a>
   </div>
 
+  <!-- Results -->
   <div id="infra-results">
     {% include "infrastructure/partials/_list_results.html" %}
   </div>
 
 </div>
+
+<script>
+(function() {
+  var tabs = document.querySelectorAll('.filter-tab');
+  var hiddenType = document.getElementById('type-filter');
+  var searchInput = document.querySelector('[name="q"]');
+
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var type = this.dataset.type;
+      hiddenType.value = type;
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      this.classList.add('active');
+
+      var url = '{% url "infrastructure:list" %}';
+      var params = [];
+      if (type) params.push('type=' + type);
+      var q = searchInput ? searchInput.value.trim() : '';
+      if (q) params.push('q=' + encodeURIComponent(q));
+      if (params.length) url += '?' + params.join('&');
+
+      htmx.ajax('GET', url, {target: '#infra-results', pushUrl: true});
+    });
+  });
+})();
+</script>
 {% endblock %}
