@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}New Reporting Period - Open Water Accounting Platform{% endblock %}
-{% block page_title %}New Reporting Period{% endblock %}
+{% block title %}New Water Year - Open Water Accounting Platform{% endblock %}
+{% block page_title %}New Water Year{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'accounting:periods_list' %}">Accounting</a>
+    <a href="{% url 'accounting:periods_list' %}">Compliance</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'accounting:periods_list' %}">Periods</a>
+    <a href="{% url 'accounting:periods_list' %}">Water Years</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">New Period</span>
+    <span class="breadcrumb-current">New Water Year</span>
   </nav>
 </div>
 {% endblock %}
@@ -19,7 +19,7 @@
 <div class="page-stack" style="max-width: 600px;">
 
   <!-- Back link -->
-  <a href="{% url 'accounting:periods_list' %}" class="back-link">&larr; Back to Reporting Periods</a>
+  <a href="{% url 'accounting:periods_list' %}" class="back-link">&larr; Back to Water Years</a>
 
   <div class="card-raised">
     <h2 class="card-header-ruled">
@@ -45,7 +45,7 @@
       </div>
       {% endfor %}
       <div class="form-footer">
-        <button type="submit" class="btn-primary">Create Period</button>
+        <button type="submit" class="btn-primary">Create Water Year</button>
         <a href="{% url 'accounting:periods_list' %}" class="btn-secondary">Cancel</a>
       </div>
     </form>

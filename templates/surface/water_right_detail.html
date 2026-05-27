@@ -6,9 +6,9 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'surface:water_rights_list' %}">Surface Water</a>
+    <a href="{% url 'surface:water_rights_list' %}">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'surface:water_rights_list' %}">Surface Water</a>
+    <a href="{% url 'surface:water_rights_list' %}">Surface Diversions</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ water_right.right_id }}</span>
   </nav>
@@ -26,7 +26,7 @@
   <!-- Back link -->
   <div>
     <a href="{% url 'surface:water_rights_list' %}" class="back-link">
-      &larr; Back to Surface Water
+      &larr; Back to Surface Diversions
     </a>
   </div>
 

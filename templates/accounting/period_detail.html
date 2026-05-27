@@ -6,9 +6,9 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'accounting:periods_list' %}">Accounting</a>
+    <a href="{% url 'accounting:periods_list' %}">Compliance</a>
     <span class="breadcrumb-separator">/</span>
-    <a href="{% url 'accounting:periods_list' %}">Periods</a>
+    <a href="{% url 'accounting:periods_list' %}">Water Years</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ period.name }}</span>
   </nav>
@@ -21,7 +21,7 @@
   <!-- Back link -->
   <div>
     <a href="{% url 'accounting:periods_list' %}" class="back-link">
-      &larr; Back to Reporting Periods
+      &larr; Back to Water Years
     </a>
   </div>
 
