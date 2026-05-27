@@ -41,8 +41,13 @@ def _compute_area_acres(parcel_pk):
 def auto_compute_area_acres(sender, instance, **kwargs):
     """Compute area_acres from geometry when geometry is set and area_acres is null.
 
+    Respects area_override: if True, area_acres is never touched regardless of
+    whether it is null or has a value (user has manually set it).
+
     Uses queryset.update() to avoid infinite recursion (does not re-trigger save).
     """
+    if instance.area_override:
+        return
     if instance.geometry is not None and instance.area_acres is None:
         area_acres = _compute_area_acres(instance.pk)
         if area_acres is not None:

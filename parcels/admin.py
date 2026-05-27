@@ -11,8 +11,8 @@ class CropTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Parcel)
 class ParcelAdmin(admin.ModelAdmin):
-    list_display = ["parcel_number", "owner_name", "area_acres", "status", "updated_at"]
-    list_filter = ["status"]
+    list_display = ["parcel_number", "owner_name", "area_acres", "area_override", "status", "updated_at"]
+    list_filter = ["status", "area_override"]
     search_fields = ["parcel_number", "owner_name"]
 
 
