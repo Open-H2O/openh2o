@@ -160,7 +160,8 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
     )
     combined_parcel_ids = gw_parcel_ids & sw_parcel_ids
 
-    # Aggregate raw volumes per (pod, month), then expand per parcel fraction
+    # Aggregate raw volumes per (pod, month), then expand per parcel fraction.
+    # PointOfDiversion.water_right is a nullable FK — guard against None.
     raw = {}
     for rec in records:
         pod = rec.point_of_diversion
@@ -168,9 +169,15 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         month_str = rec.month.strftime("%Y-%m")
         key = (pod.pk, month_str)
         if key not in raw:
+            if wr is None:
+                right_id = ""
+                holder_name = f"[No water right] {pod.name}"
+            else:
+                right_id = wr.right_id
+                holder_name = wr.holder_name
             raw[key] = {
-                "right_id": wr.right_id,
-                "holder": wr.holder_name,
+                "right_id": right_id,
+                "holder": holder_name,
                 "pod": pod,
                 "month": month_str,
                 "volume": Decimal("0"),
@@ -271,8 +278,10 @@ def generate_email_json(reporting_period):
     for rec in DiversionRecord.objects.filter(
         reporting_period=reporting_period,
     ).select_related("point_of_diversion__water_right").order_by("month"):
+        # PointOfDiversion.water_right is a nullable FK — guard against None.
+        wr = rec.point_of_diversion.water_right
         diversions_list.append({
-            "water_right": rec.point_of_diversion.water_right.right_id,
+            "water_right": wr.right_id if wr else "",
             "pod_name": rec.point_of_diversion.name,
             "month": rec.month.isoformat(),
             "volume": float(rec.volume_acre_feet),
