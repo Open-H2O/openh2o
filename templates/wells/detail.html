@@ -45,7 +45,7 @@
         <div class="field-group">
           <div class="field-label field-row">
             Registration ID
-            {% include "partials/_help_tooltip.html" with label="State Well Number" text="The unique identifier assigned by DWR. Format: TxxN/RxxE-xxAxx (Township/Range/Section)." %}
+            {% include "partials/_help_tooltip.html" with label="State Well Number" text="The unique identifier assigned by the Department of Water Resources. Format: TxxN/RxxE-xxAxx (Township/Range/Section)." %}
           </div>
           <div class="field-value-mono">{{ well.well_registration_id|default:"—" }}</div>
         </div>

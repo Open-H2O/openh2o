@@ -1,5 +1,5 @@
 """
-DWR SGMA Portal adapter.
+Department of Water Resources (DWR) SGMA Portal adapter.
 
 API docs: https://sgma.water.ca.gov/webservice/
 No authentication required.
