@@ -458,8 +458,16 @@
   function addVertex(lngLat) {
     vertices.push([lngLat.lng, lngLat.lat]);
     updateDrawing();
-    updateCoordDisplay(lngLat.lng, lngLat.lat, vertices.length + ' vertices');
-    document.getElementById('draw-finish').style.display = vertices.length >= 3 ? '' : 'none';
+    var n = vertices.length;
+    var hint;
+    if (n < 3) {
+      hint = n + ' of 3 minimum — click to add more corners';
+    } else {
+      hint = n + ' corners — double-click or press Finish to complete';
+    }
+    if (parcelMode === 'draw') hint = 'Parcel: ' + hint;
+    updateCoordDisplay(lngLat.lng, lngLat.lat, hint);
+    document.getElementById('draw-finish').style.display = n >= 3 ? '' : 'none';
   }
 
   function updateDrawing() {
@@ -615,6 +623,16 @@
           }
           map.getSource('parcels').setData(data);
           parcelsLoaded = true;
+          var bounds = new maplibregl.LngLatBounds();
+          data.features.forEach(function(f) {
+            var flat = JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*/g);
+            if (flat) {
+              for (var i = 0; i < flat.length - 1; i += 2) {
+                bounds.extend([parseFloat(flat[i]), parseFloat(flat[i+1])]);
+              }
+            }
+          });
+          if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, maxZoom: 16 });
           activateParcelSelect();
         })
         .catch(function() { btn.textContent = 'Select on map'; });
@@ -651,11 +669,22 @@
     document.querySelector('.parcel-link-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
-  map.on('mouseenter', 'parcels-fill', function() {
-    if (parcelMode === 'select') map.getCanvas().style.cursor = 'pointer';
+  var parcelPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 10 });
+
+  map.on('mousemove', 'parcels-fill', function(e) {
+    if (parcelMode !== 'select') return;
+    map.getCanvas().style.cursor = 'pointer';
+    var props = e.features[0].properties;
+    var label = props.parcel_number || 'Parcel';
+    if (props.owner_name) label += ' — ' + props.owner_name;
+    parcelPopup.setLngLat(e.lngLat)
+      .setHTML('<div style="color:#111;font-size:13px;padding:2px 6px;">' + label + '</div>')
+      .addTo(map);
   });
+
   map.on('mouseleave', 'parcels-fill', function() {
-    if (parcelMode === 'select') map.getCanvas().style.cursor = 'crosshair';
+    map.getCanvas().style.cursor = 'crosshair';
+    parcelPopup.remove();
   });
 
   document.getElementById('btn-parcel-draw').addEventListener('click', function() {
@@ -671,7 +700,7 @@
     document.getElementById('draw-point').disabled = true;
     document.getElementById('draw-polygon').disabled = true;
     document.getElementById('draw-clear').disabled = true;
-    document.getElementById('coord-display').textContent = 'Click map vertices to draw parcel boundary';
+    document.getElementById('coord-display').textContent = 'Click the map to place parcel corners (at least 3). Double-click last corner to finish.';
     document.getElementById('infra-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
@@ -727,6 +756,7 @@
 
   function exitParcelMode() {
     parcelMode = null;
+    parcelPopup.remove();
     map.setLayoutProperty('parcels-fill', 'visibility', 'none');
     map.setLayoutProperty('parcels-line', 'visibility', 'none');
     var selectBtn = document.getElementById('btn-parcel-map');
