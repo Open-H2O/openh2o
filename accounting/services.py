@@ -22,46 +22,119 @@ from accounting.models import ReportingPeriod, WaterAccountParcel, WaterType
 logger = logging.getLogger(__name__)
 
 
-def create_diversion_ledger_entry(diversion_record, parcel=None):
-    """Create a negative ledger entry for a surface water diversion.
+def create_diversion_ledger_entries(diversion_record, parcel=None):
+    """Create negative ledger entries for a surface water diversion.
+
+    Distributes the diversion volume across all parcels linked to the point of
+    diversion via PointOfDiversionParcel, using each link's fraction field.
 
     Args:
         diversion_record: A surface.models.DiversionRecord instance.
-        parcel: Optional Parcel instance. If None, looks up via WaterRightParcel
-            through the diversion record's point of diversion.
+        parcel: Optional Parcel instance. When supplied, creates a single entry
+            for that parcel (backward-compatible behavior).
 
     Returns:
-        The created ParcelLedger entry.
+        List of created ParcelLedger entries.
 
     Raises:
-        ValueError: If no parcel supplied and none linked via WaterRightParcel.
+        ValueError: If no parcel supplied and no links found via
+            PointOfDiversionParcel or WaterRightParcel.
     """
-    if parcel is None:
-        from surface.models import WaterRightParcel
+    if parcel is not None:
+        # Backward-compatible: explicit parcel gets a single entry
+        entry = ParcelLedger.objects.create(
+            parcel=parcel,
+            transaction_date=timezone.now().date(),
+            effective_date=diversion_record.month,
+            amount_acre_feet=-abs(diversion_record.volume_acre_feet),
+            source_type="surface_diversion",
+            description=(
+                f"Diversion from {diversion_record.point_of_diversion.name}: "
+                f"{diversion_record.volume_acre_feet} AF "
+                f"({diversion_record.get_diversion_type_display()})"
+            ),
+            reporting_period=diversion_record.reporting_period,
+            water_type=None,
+        )
+        return [entry]
 
-        water_right = diversion_record.point_of_diversion.water_right
-        link = WaterRightParcel.objects.filter(water_right=water_right).first()
-        if link is None:
-            raise ValueError(
-                f"No parcel supplied and no WaterRightParcel link for "
-                f"water right {water_right.right_id}"
-            )
-        parcel = link.parcel
+    from surface.models import PointOfDiversionParcel, WaterRightParcel
 
-    return ParcelLedger.objects.create(
-        parcel=parcel,
-        transaction_date=timezone.now().date(),
-        effective_date=diversion_record.month,
-        amount_acre_feet=-abs(diversion_record.volume_acre_feet),
-        source_type="surface_diversion",
-        description=(
-            f"Diversion from {diversion_record.point_of_diversion.name}: "
-            f"{diversion_record.volume_acre_feet} AF "
-            f"({diversion_record.get_diversion_type_display()})"
-        ),
-        reporting_period=diversion_record.reporting_period,
-        water_type=None,
+    pod = diversion_record.point_of_diversion
+    pod_parcels = list(
+        PointOfDiversionParcel.objects.filter(
+            point_of_diversion=pod
+        ).select_related("parcel")
     )
+
+    if pod_parcels:
+        # Distribute by fraction with rounding residual on last entry
+        total_volume = abs(diversion_record.volume_acre_feet)
+        today = timezone.now().date()
+        entries = []
+        distributed = Decimal("0")
+
+        for i, pod_parcel in enumerate(pod_parcels):
+            if i == len(pod_parcels) - 1:
+                amount = total_volume - distributed
+            else:
+                amount = (total_volume * pod_parcel.fraction).quantize(
+                    Decimal("0.0001")
+                )
+                distributed += amount
+
+            entries.append(
+                ParcelLedger(
+                    parcel=pod_parcel.parcel,
+                    transaction_date=today,
+                    effective_date=diversion_record.month,
+                    amount_acre_feet=-amount,
+                    source_type="surface_diversion",
+                    description=(
+                        f"Diversion from {pod.name}: "
+                        f"{diversion_record.volume_acre_feet} AF "
+                        f"({diversion_record.get_diversion_type_display()}) "
+                        f"fraction={pod_parcel.fraction}"
+                    ),
+                    reporting_period=diversion_record.reporting_period,
+                    water_type=None,
+                )
+            )
+
+        return list(ParcelLedger.objects.bulk_create(entries))
+
+    # Fallback: use WaterRightParcel if no POD-parcel links
+    water_right = pod.water_right
+    if water_right is not None:
+        link = WaterRightParcel.objects.filter(water_right=water_right).first()
+        if link is not None:
+            entry = ParcelLedger.objects.create(
+                parcel=link.parcel,
+                transaction_date=timezone.now().date(),
+                effective_date=diversion_record.month,
+                amount_acre_feet=-abs(diversion_record.volume_acre_feet),
+                source_type="surface_diversion",
+                description=(
+                    f"Diversion from {pod.name}: "
+                    f"{diversion_record.volume_acre_feet} AF "
+                    f"({diversion_record.get_diversion_type_display()})"
+                ),
+                reporting_period=diversion_record.reporting_period,
+                water_type=None,
+            )
+            return [entry]
+
+    raise ValueError(
+        f"No parcel supplied and no PointOfDiversionParcel or WaterRightParcel "
+        f"link for POD '{pod.name}'"
+    )
+
+
+# Backward-compatible alias
+def create_diversion_ledger_entry(diversion_record, parcel=None):
+    """Deprecated alias for create_diversion_ledger_entries. Returns a single entry."""
+    entries = create_diversion_ledger_entries(diversion_record, parcel=parcel)
+    return entries[0] if entries else None
 
 
 def create_recharge_ledger_entries(recharge_event, zone=None):

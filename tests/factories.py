@@ -152,6 +152,15 @@ class PointOfDiversionFactory(factory.django.DjangoModelFactory):
     status = "active"
 
 
+class PointOfDiversionParcelFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "surface.PointOfDiversionParcel"
+
+    point_of_diversion = factory.SubFactory(PointOfDiversionFactory)
+    parcel = factory.SubFactory(ParcelFactory)
+    fraction = Decimal("1.0000")
+
+
 class DiversionRecordFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "surface.DiversionRecord"
