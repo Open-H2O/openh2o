@@ -262,3 +262,28 @@ class TestParseLedgerCsv:
         result = parse_ledger_csv(self._csv_file(csv_text))
         assert result["error_count"] == 1
         assert "invalid amount" in result["errors"][0]["messages"][0]
+
+
+# ---------------------------------------------------------------------------
+# PostGIS auto-calc of area_acres
+# ---------------------------------------------------------------------------
+
+
+class TestParcelAreaAutoCalc:
+    def test_auto_computes_area_from_geometry(self):
+        """Parcel with geometry but no area_acres gets area auto-computed on save."""
+        from parcels.models import Parcel
+
+        parcel = ParcelFactory(area_acres=None)
+        # Refresh from DB to get the value set by the signal via queryset.update()
+        parcel.refresh_from_db()
+        assert parcel.area_acres is not None
+        # Default factory box is ~0.01 deg at lat 36.5 => ~244 acres
+        # Allow 1% tolerance for PostGIS geodetic calculation differences
+        assert Decimal("241") < parcel.area_acres < Decimal("248")
+
+    def test_preserves_manual_area(self):
+        """Parcel with explicit area_acres is NOT overwritten by signal."""
+        parcel = ParcelFactory(area_acres=Decimal("500.00"))
+        parcel.refresh_from_db()
+        assert parcel.area_acres == Decimal("500.00")
