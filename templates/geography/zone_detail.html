@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}{{ zone.name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{{ zone.name }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'geography:zone_list' %}">Administration</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'geography:zone_list' %}">Zones</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ zone.name }}</span>
+  </nav>
+</div>
+{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'geography:zone_list' %}" class="back-link">
+      &larr; Back to Zones
+    </a>
+  </div>
+
+  <div class="page-grid-2col">
+
+    <!-- Left column: Zone Info + Parcels + Budget -->
+    <div class="page-stack">
+
+      <!-- Zone Info card -->
+      <div class="card-raised">
+        <h2 class="section-header">Zone Information</h2>
+
+        <div class="field-group">
+          <div class="field-label">Name</div>
+          <div class="field-value">{{ zone.name }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Type</div>
+          <div class="field-value">{{ zone.get_zone_type_display|default:"—" }}</div>
+        </div>
+
+        {% if zone.description %}
+        <div class="field-group">
+          <div class="field-label">Description</div>
+          <div class="text-secondary text-base">{{ zone.description }}</div>
+        </div>
+        {% endif %}
+
+        <div class="border-separator">
+          <div class="text-tertiary text-xs">
+            Created {{ zone.created_at|date:"M d, Y" }} &middot; Updated {{ zone.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Assigned Parcels card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Assigned Use Areas</h2>
+        <div id="zone-parcels">
+          {% include "geography/partials/_zone_parcels.html" %}
+        </div>
+      </div>
+
+      <!-- Assign Parcel search card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Assign Parcel</h2>
+
+        <div class="field-group">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by parcel number or owner..."
+            hx-get="{% url 'geography:zone_parcel_search' zone.pk %}"
+            hx-target="#zone-parcel-search-results"
+            hx-trigger="keyup changed delay:300ms"
+            class="form-input"
+          >
+        </div>
+
+        <div id="zone-parcel-search-results">
+          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
+        </div>
+      </div>
+
+      <!-- Budget card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Budget</h2>
+        {% if allocations %}
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Water Type</th>
+              <th class="th-right">Allocation (AF)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alloc in allocations %}
+            <tr>
+              <td class="text-secondary">{{ alloc.reporting_period.name }}</td>
+              <td class="text-secondary">{{ alloc.water_type.name }}</td>
+              <td class="td-num">{{ alloc.allocation_acre_feet|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-tertiary text-sm">No allocations for this zone.</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right column: Map -->
+    <div class="page-stack">
+      <div class="card-raised" style="padding: 0; overflow: hidden;">
+        <div id="zone-map" class="map-embed" style="height: 400px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(function() {
+  var geojson = {% if zone_geojson %}{{ zone_geojson|safe }}{% else %}null{% endif %};
+
+  var defaultCenter = [-120.5, 37.5];
+  var defaultZoom = 10;
+
+  var map = new maplibregl.Map({
+    container: 'zone-map',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    center: defaultCenter,
+    zoom: defaultZoom
+  });
+
+  map.on('load', function() {
+    if (geojson) {
+      map.addSource('zone', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'zone-fill',
+        type: 'fill',
+        source: 'zone',
+        paint: {
+          'fill-color': '#1B7FAF',
+          'fill-opacity': 0.25
+        }
+      });
+      map.addLayer({
+        id: 'zone-line',
+        type: 'line',
+        source: 'zone',
+        paint: {
+          'line-color': '#3DB4E0',
+          'line-width': 2
+        }
+      });
+
+      // Fit map to zone bounds
+      var coords = JSON.stringify(geojson.geometry.coordinates).match(/-?\d+\.?\d*/g);
+      if (coords && coords.length >= 4) {
+        var lngs = [], lats = [];
+        for (var i = 0; i < coords.length - 1; i += 2) {
+          lngs.push(parseFloat(coords[i]));
+          lats.push(parseFloat(coords[i + 1]));
+        }
+        map.fitBounds([
+          [Math.min.apply(null, lngs), Math.min.apply(null, lats)],
+          [Math.max.apply(null, lngs), Math.max.apply(null, lats)]
+        ], { padding: 48, maxZoom: 14 });
+      }
+    } else {
+      var el = document.createElement('div');
+      el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d5e6f;font-size:0.875rem;pointer-events:none;';
+      el.textContent = 'No geometry set for this zone';
+      document.getElementById('zone-map').appendChild(el);
+    }
+  });
+})();
+</script>
+{% endblock %}

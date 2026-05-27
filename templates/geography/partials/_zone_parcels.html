@@ -1,0 +1,39 @@
+{% if parcel_zones %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Parcel</th>
+      <th>Owner</th>
+      <th class="th-right">Area (acres)</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for pz in parcel_zones %}
+    <tr>
+      <td>
+        <a href="{% url 'parcels:detail' pz.parcel.pk %}" class="data-table-link">
+          {{ pz.parcel.parcel_number }}
+        </a>
+      </td>
+      <td class="text-secondary">{{ pz.parcel.owner_name|default:"—" }}</td>
+      <td class="td-num text-secondary">
+        {% if pz.parcel.area_acres %}{{ pz.parcel.area_acres|floatformat:2 }}{% else %}—{% endif %}
+      </td>
+      <td style="text-align: right;">
+        <button
+          hx-post="{% url 'geography:zone_parcel_remove' zone.pk pz.pk %}"
+          hx-target="#zone-parcels"
+          hx-confirm="Remove parcel {{ pz.parcel.parcel_number }} from this zone?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-tertiary" style="font-size: 0.875rem;">No parcels assigned to this zone.</p>
+{% endif %}
