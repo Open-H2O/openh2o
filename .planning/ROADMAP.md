@@ -426,6 +426,15 @@ Plans:
 - [x] 27-01: Recharge event entry + auto-ledger + color-coded source pills (measurement form pulled per user) — 2026-05-28
 - [ ] 27-02: Allocation → Water Budget terminology sweep
 
+#### Phase 28: Public Deployment (openh2o.com)
+
+**Goal**: Take the platform public at https://openh2o.com via a Cloudflare Tunnel on Butler, running Django production settings, gated by the app's own login. Single-environment demo deploy — the 186-test suite is the deploy gate; production settings (DEBUG=False) prevent debug leakage. Closes the tunnel work that was a Phase 26 goal bullet but never planned.
+**Depends on**: Phase 26 (deployed app on Butler)
+**Decisions (2026-05-28)**: openh2o.com apex; app-login only (no Cloudflare Access); one environment, no staging.
+
+Plans:
+- [ ] 28-01: Cloudflare tunnel + nameserver migration + production-settings flip — in progress (blocked on Hostinger→Cloudflare nameserver change + DNS propagation)
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -463,3 +472,4 @@ Plans:
 | 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 2/2 | Complete | 2026-05-28 |
 | 26.1 Monitoring Completion | v1.2 | 1/1 | Complete | 2026-05-28 |
 | 27. Data Entry & UX Clarity | v1.2 | 1/2 | In progress | - |
+| 28. Public Deployment (openh2o.com) | v1.2 | 0/1 | In progress | - |
