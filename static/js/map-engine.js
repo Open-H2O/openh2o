@@ -440,8 +440,13 @@ function updateCoords() {
 window.copyCoords = function() {
     navigator.clipboard.writeText(coordText.textContent);
     var toast = document.getElementById('coord-toast');
+    toast.textContent = '✓ Copied to clipboard';
+    toast.classList.add('copied');
     toast.style.opacity = '1';
-    setTimeout(function() { toast.style.opacity = '0'; }, 1200);
+    setTimeout(function() {
+        toast.classList.remove('copied');
+    }, 250);
+    setTimeout(function() { toast.style.opacity = '0'; }, 1500);
 };
 map.on('move', updateCoords);
 updateCoords();
