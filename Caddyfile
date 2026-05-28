@@ -1,4 +1,8 @@
-# Local development (plain HTTP)
+# Entry point for both local dev (plain HTTP on LAN) and the Cloudflare Tunnel.
+# TLS is terminated at the Cloudflare edge; the tunnel forwards plain HTTP here,
+# so we assert X-Forwarded-Proto=https to the app. Django's production settings
+# trust that header (SECURE_PROXY_SSL_HEADER); without it SECURE_SSL_REDIRECT
+# would bounce every request to https and loop through the tunnel forever.
 :80 {
     encode gzip
 
@@ -11,7 +15,9 @@
 
     # Proxy everything else to Django
     handle {
-        reverse_proxy web:8000
+        reverse_proxy web:8000 {
+            header_up X-Forwarded-Proto https
+        }
     }
 }
 
