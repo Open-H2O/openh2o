@@ -71,6 +71,8 @@
             <span class="field-value" style="flex: 1;">
               {% if ef.name == "status" %}
                 {% include "wells/partials/_status_badge.html" with status=ef.value %}
+              {% elif ef.type == "number" %}
+                {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
               {% else %}
                 {{ ef.value|default:"—" }}
               {% endif %}
@@ -122,7 +124,7 @@
               {{ wip.parcel.parcel_number }}
             </a>
             <div style="text-align: right;">
-              <span class="text-secondary text-sm">{{ wip.fraction|floatformat:4 }} fraction</span>
+              <span class="text-secondary text-sm">{{ wip.fraction|floatformat:2 }} fraction</span>
               {% if wip.parcel.owner_name %}
                 <div class="text-tertiary text-xs">{{ wip.parcel.owner_name }}</div>
               {% endif %}
@@ -164,7 +166,7 @@
           {% if monitoring.reference_elevation_ft %}
           <div class="field-group mb-0">
             <span class="field-label">Reference Elevation</span>
-            <div class="field-value-sm">{{ monitoring.reference_elevation_ft }} ft</div>
+            <div class="field-value-sm">{{ monitoring.reference_elevation_ft|floatformat:1 }} ft</div>
           </div>
           {% endif %}
           {% if monitoring.notes %}

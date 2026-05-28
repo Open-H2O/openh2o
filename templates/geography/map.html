@@ -211,7 +211,7 @@ var MAP_CONFIG = {
         },
         'boundary-outline': function(p) {
             return '<strong>' + (p.name || 'Boundary') + '</strong><br>' +
-                   (p.area_sq_miles ? p.area_sq_miles + ' sq mi' : '');
+                   (p.area_sq_miles ? parseFloat(p.area_sq_miles).toFixed(1) + ' sq mi' : '');
         },
         'zones-fill': function(p) {
             return '<strong>' + (p.name || 'Zone') + '</strong><br>' +
@@ -220,33 +220,33 @@ var MAP_CONFIG = {
         'parcels-fill': function(p) {
             return '<strong>' + (p.parcel_number || 'Unknown') + '</strong><br>' +
                    'Owner: ' + (p.owner_name || '—') + '<br>' +
-                   'Area: ' + (p.area_acres ? p.area_acres + ' ac' : '—') + '<br>' +
+                   'Area: ' + (p.area_acres ? parseFloat(p.area_acres).toFixed(2) + ' ac' : '—') + '<br>' +
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/parcels/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         'recharge-fill': function(p) {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
-                   'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—') + '<br>' +
+                   'Capacity: ' + (p.capacity_acre_feet ? parseFloat(p.capacity_acre_feet).toFixed(2) + ' AF' : '—') + '<br>' +
                    '<a href="/recharge/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         'recharge-points': function(p) {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
-                   'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—') + '<br>' +
+                   'Capacity: ' + (p.capacity_acre_feet ? parseFloat(p.capacity_acre_feet).toFixed(2) + ' AF' : '—') + '<br>' +
                    '<a href="/recharge/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         'wells-points': function(p) {
             return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
                    'Reg ID: ' + (p.well_registration_id || '—') + '<br>' +
-                   'Depth: ' + (p.depth_ft ? p.depth_ft + ' ft' : '—') + '<br>' +
+                   'Depth: ' + (p.depth_ft ? parseFloat(p.depth_ft).toFixed(0) + ' ft' : '—') + '<br>' +
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/wells/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         'pods-points': function(p) {
             return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
                    'Stream: ' + (p.stream_name || '—') + '<br>' +
-                   'Max rate: ' + (p.max_rate_cfs ? p.max_rate_cfs + ' cfs' : '—');
+                   'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—');
         },
         'stations-points': function(p) {
             return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +

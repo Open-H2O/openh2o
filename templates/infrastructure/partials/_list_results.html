@@ -31,10 +31,10 @@
     {% if item.type == "well" %}
     <div class="text-sm text-secondary" style="display: flex; gap: var(--space-md);">
       {% if item.depth_ft %}
-      <span>{{ item.depth_ft }} ft deep</span>
+      <span>{{ item.depth_ft|floatformat:0 }} ft deep</span>
       {% endif %}
       {% if item.capacity_gpm %}
-      <span>{{ item.capacity_gpm }} GPM</span>
+      <span>{{ item.capacity_gpm|floatformat:0 }} GPM</span>
       {% endif %}
       {% if not item.depth_ft and not item.capacity_gpm %}
       <span class="text-tertiary">No details recorded</span>
@@ -46,7 +46,7 @@
       <span>{{ item.stream_name }}</span>
       {% endif %}
       {% if item.max_rate_cfs %}
-      <span>{{ item.max_rate_cfs }} CFS max</span>
+      <span>{{ item.max_rate_cfs|floatformat:2 }} CFS max</span>
       {% endif %}
       {% if not item.stream_name and not item.max_rate_cfs %}
       <span class="text-tertiary">No details recorded</span>
