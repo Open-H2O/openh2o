@@ -45,8 +45,6 @@
         </div>
     </div>
 
-    {% block map_scripts %}{% endblock %}
-
     <!-- Entity color system: single source of truth for MapLibre configs -->
     <script>
     window.OH2O = { colors: {
@@ -55,6 +53,8 @@
         boundary: '#E4A317'
     }};
     </script>
+
+    {% block map_scripts %}{% endblock %}
 
     <script>
     (function() {
