@@ -5,8 +5,9 @@ from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.db.models import Q
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
+from recharge.forms import RechargeEventForm, RechargeMeasurementForm
 from recharge.models import RechargeMeasurement, RechargeEvent, RechargeSite
 
 
@@ -73,9 +74,111 @@ def recharge_site_detail(request, pk):
         "site": site,
         "events": events,
         "recent_measurements": recent_measurements,
+        "event_form": RechargeEventForm(),
+        "measurement_form": RechargeMeasurementForm(),
         "geojson": json.dumps(geojson) if geojson else None,
     }
     return render(request, "recharge/site_detail.html", context)
+
+
+@login_required
+def recharge_event_create(request, pk):
+    """Create a RechargeEvent for a site and auto-distribute it to the ledger.
+
+    Renders the event-history partial (table + inline form) for HTMX swap.
+    """
+    site = get_object_or_404(RechargeSite, pk=pk)
+
+    # Forms live inline on the detail page; a bare GET has nothing to do here.
+    if request.method != "POST":
+        return redirect("recharge:detail", pk=pk)
+
+    form = RechargeEventForm(request.POST)
+    if not form.is_valid():
+        events = (
+            RechargeEvent.objects.filter(recharge_site=site)
+            .select_related("water_type")
+            .order_by("-start_date")
+        )
+        context = {"site": site, "events": events, "event_form": form}
+        return render(request, "recharge/partials/_event_history.html", context)
+
+    event = form.save(commit=False)
+    event.recharge_site = site
+    event.save()
+
+    # The service is the single source of truth for the zone rule; let it decide.
+    from accounting.services import create_recharge_ledger_entries
+
+    try:
+        created = create_recharge_ledger_entries(event)
+        count = len(created)
+        if count:
+            ledger_msg = (
+                f"Created {count} ledger "
+                f"entr{'y' if count == 1 else 'ies'} across zone parcels."
+            )
+        else:
+            ledger_msg = (
+                "Event saved. The site's zone has no parcels, so no ledger "
+                "entries were generated."
+            )
+    except ValueError:
+        ledger_msg = (
+            "Event saved. No zone assigned to this site, so no ledger entries "
+            "were generated — assign a zone to auto-distribute recharge."
+        )
+
+    events = (
+        RechargeEvent.objects.filter(recharge_site=site)
+        .select_related("water_type")
+        .order_by("-start_date")
+    )
+    context = {
+        "site": site,
+        "events": events,
+        "event_form": RechargeEventForm(),
+        "ledger_msg": ledger_msg,
+    }
+    return render(request, "recharge/partials/_event_history.html", context)
+
+
+@login_required
+def recharge_measurement_create(request, pk):
+    """Create a RechargeMeasurement for a site. No ledger side effects.
+
+    Renders the measurements partial (table + inline form) for HTMX swap.
+    """
+    site = get_object_or_404(RechargeSite, pk=pk)
+
+    if request.method != "POST":
+        return redirect("recharge:detail", pk=pk)
+
+    form = RechargeMeasurementForm(request.POST)
+    if not form.is_valid():
+        recent_measurements = RechargeMeasurement.objects.filter(
+            recharge_site=site
+        ).order_by("-measurement_date")[:10]
+        context = {
+            "site": site,
+            "recent_measurements": recent_measurements,
+            "measurement_form": form,
+        }
+        return render(request, "recharge/partials/_measurements.html", context)
+
+    measurement = form.save(commit=False)
+    measurement.recharge_site = site
+    measurement.save()
+
+    recent_measurements = RechargeMeasurement.objects.filter(
+        recharge_site=site
+    ).order_by("-measurement_date")[:10]
+    context = {
+        "site": site,
+        "recent_measurements": recent_measurements,
+        "measurement_form": RechargeMeasurementForm(),
+    }
+    return render(request, "recharge/partials/_measurements.html", context)
 
 
 @login_required
