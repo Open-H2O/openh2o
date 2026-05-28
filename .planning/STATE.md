@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 27 of 27 (Data Entry & UX Clarity) - In progress
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-05-28 - Completed 27-01-PLAN.md (recharge event entry + auto-ledger + source-type pill badges; measurement form pulled per user)
+Phase: 28 of 28 (Public Deployment) - COMPLETE
+Plan: 1 of 1 in current phase
+Status: openh2o.com LIVE (public, production settings) — final visual sign-off pending
+Last activity: 2026-05-28 - Completed 28-01 (Cloudflare tunnel + production flip). 27-02 still pending.
 
 Progress: ██████████████ 99%
 
@@ -46,6 +46,8 @@ All marked ✓ Good after v1.0 validation.
 | 27-01 | Inline entry form lives inside its HTMX-swapped partial | Lets validation errors + typed values survive the swap |
 | 27-01 | Catch ValueError from ledger service vs pre-checking zone | Service is single source of truth for the zone rule |
 | 27-01 | Measurement entry form pulled (user decision) | Defer until production shows whether districts want manual measurement entry |
+| 28-01 | Public URL = openh2o.com apex; app-login only; single environment (no staging) | Demo site, no real users; 186-test suite is the deploy gate |
+| 28-01 | Cloudflare Tunnel (no exposed ports) on Butler | Home-hosted; outbound-only connection keeps the network closed |
 
 ### Deferred Issues
 
@@ -75,5 +77,5 @@ All marked ✓ Good after v1.0 validation.
 ## Session Continuity
 
 Last session: 2026-05-28
-Stopped at: Completed 27-01-PLAN.md (recharge event entry, auto-ledger, source-type pill badges; measurement form pulled per user, to revisit after production). Next: 27-02 (Allocation → Water Budget terminology sweep).
+Stopped at: openh2o.com is LIVE publicly via Cloudflare Tunnel on Butler, production settings (DEBUG=False), app-login gated. Demo account demo@openh2o.com / OpenWaterDemo2026. 27-01 done. Open items: (1) 27-02 Allocation→Water Budget sweep (sidebar + ledger column still say "Allocation"); (2) final visual sign-off of live site; (3) ISS-012 rotate Postgres password; (4) ISS-011 login page polish.
 Resume file: None

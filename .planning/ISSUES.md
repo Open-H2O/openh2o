@@ -4,6 +4,12 @@ Deferred items and nice-to-haves discovered during execution.
 
 ## Open
 
+### ISS-012: Rotate default Postgres password before real data
+- **Phase:** 28-01 (discovered during public deploy)
+- **Priority:** P2 (low risk now, must-fix before any real district data)
+- **Description:** The Postgres role still uses the default password `openh2o` (in Butler's `.env` `POSTGRES_PASSWORD` and `DATABASE_URL`). Low risk today: the DB port is NOT published to the host or internet — only the web app is reachable, through the Cloudflare Tunnel, and the DB is reachable only on the internal `openh2o_default` Docker network. Must rotate before the site holds anything beyond demo data.
+- **How to fix:** Generate a strong password; `ALTER USER openh2o WITH PASSWORD '...'` in the db container; update both `POSTGRES_PASSWORD` and the inline password in `DATABASE_URL` in Butler's `.env`; `docker compose up -d`. Not in git (`.env` is gitignored).
+
 ### ISS-007: Get CIMIS API key and wire CIMIS adapter
 - **Phase:** 26-02 (discovered during checkpoint)
 - **Priority:** P2 (ET and precip data for water budgets)

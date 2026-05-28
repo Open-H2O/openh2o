@@ -433,7 +433,7 @@ Plans:
 **Decisions (2026-05-28)**: openh2o.com apex; app-login only (no Cloudflare Access); one environment, no staging.
 
 Plans:
-- [ ] 28-01: Cloudflare tunnel + nameserver migration + production-settings flip — in progress (blocked on Hostinger→Cloudflare nameserver change + DNS propagation)
+- [x] 28-01: Cloudflare tunnel + nameserver migration + production-settings flip — 2026-05-28 (openh2o.com LIVE; final visual sign-off pending next session)
 
 ## Progress
 
@@ -472,4 +472,4 @@ Plans:
 | 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 2/2 | Complete | 2026-05-28 |
 | 26.1 Monitoring Completion | v1.2 | 1/1 | Complete | 2026-05-28 |
 | 27. Data Entry & UX Clarity | v1.2 | 1/2 | In progress | - |
-| 28. Public Deployment (openh2o.com) | v1.2 | 0/1 | In progress | - |
+| 28. Public Deployment (openh2o.com) | v1.2 | 1/1 | Complete | 2026-05-28 |
