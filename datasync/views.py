@@ -118,10 +118,8 @@ def station_list(request):
     if request.headers.get("HX-Request"):
         return render(request, "datasync/partials/_station_list_results.html", context)
 
-    # Full page: add summary stats and source status (boundary-scoped)
+    # Full page: add summary stats and source status
     all_active = MonitoredStation.objects.filter(is_active=True)
-    if boundary:
-        all_active = all_active.filter(location__within=boundary.geometry)
     total_active = all_active.count()
     fresh_count = sum(1 for s in all_active if s.last_data_at and s.last_data_at >= threshold_24h)
     stale_count = total_active - fresh_count
@@ -131,8 +129,6 @@ def station_list(request):
     for src in sources:
         log = DataSyncLog.objects.filter(data_source=src).order_by("-started_at").first()
         src_stations = MonitoredStation.objects.filter(data_source=src)
-        if boundary:
-            src_stations = src_stations.filter(location__within=boundary.geometry)
         total = src_stations.count()
         src_active = src_stations.filter(is_active=True).count()
         source_status_list.append({
