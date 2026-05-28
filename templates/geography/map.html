@@ -230,13 +230,13 @@ var MAP_CONFIG = {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
                    'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—') + '<br>' +
-                   '<a href="/recharge/sites/' + p.pk + '/" style="color:#E4A317">View details →</a>';
+                   '<a href="/recharge/' + p.pk + '/" style="color:#E4A317">View details →</a>';
         },
         'recharge-points': function(p) {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
                    'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—') + '<br>' +
-                   '<a href="/recharge/sites/' + p.pk + '/" style="color:#E4A317">View details →</a>';
+                   '<a href="/recharge/' + p.pk + '/" style="color:#E4A317">View details →</a>';
         },
         'stations-points': function(p) {
             return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +
