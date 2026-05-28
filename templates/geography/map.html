@@ -199,6 +199,16 @@ var MAP_CONFIG = {
         }
     ],
     popups: {
+        'gw-tie-lines': function(p) {
+            var pct = Math.round((p.fraction || 0) * 100);
+            return '<strong>Well ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
+                   'Fraction: ' + pct + '%';
+        },
+        'sw-tie-lines': function(p) {
+            var pct = Math.round((p.fraction || 0) * 100);
+            return '<strong>POD ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
+                   'Fraction: ' + pct + '%';
+        },
         'boundary-outline': function(p) {
             return '<strong>' + (p.name || 'Boundary') + '</strong><br>' +
                    (p.area_sq_miles ? p.area_sq_miles + ' sq mi' : '');
@@ -214,18 +224,6 @@ var MAP_CONFIG = {
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/parcels/' + p.pk + '/" style="color:#E4A317">View details →</a>';
         },
-        'wells-points': function(p) {
-            return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
-                   'Reg ID: ' + (p.well_registration_id || '—') + '<br>' +
-                   'Depth: ' + (p.depth_ft ? p.depth_ft + ' ft' : '—') + '<br>' +
-                   'Status: ' + (p.status || '—') + '<br>' +
-                   '<a href="/wells/' + p.pk + '/" style="color:#E4A317">View details →</a>';
-        },
-        'pods-points': function(p) {
-            return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
-                   'Stream: ' + (p.stream_name || '—') + '<br>' +
-                   'Max rate: ' + (p.max_rate_cfs ? p.max_rate_cfs + ' cfs' : '—');
-        },
         'recharge-fill': function(p) {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
@@ -238,22 +236,24 @@ var MAP_CONFIG = {
                    'Capacity: ' + (p.capacity_acre_feet ? p.capacity_acre_feet + ' AF' : '—') + '<br>' +
                    '<a href="/recharge/' + p.pk + '/" style="color:#E4A317">View details →</a>';
         },
+        'wells-points': function(p) {
+            return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
+                   'Reg ID: ' + (p.well_registration_id || '—') + '<br>' +
+                   'Depth: ' + (p.depth_ft ? p.depth_ft + ' ft' : '—') + '<br>' +
+                   'Status: ' + (p.status || '—') + '<br>' +
+                   '<a href="/wells/' + p.pk + '/" style="color:#E4A317">View details →</a>';
+        },
+        'pods-points': function(p) {
+            return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
+                   'Stream: ' + (p.stream_name || '—') + '<br>' +
+                   'Max rate: ' + (p.max_rate_cfs ? p.max_rate_cfs + ' cfs' : '—');
+        },
         'stations-points': function(p) {
             return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +
                    'Source: ' + (p.data_source_code || '—') + '<br>' +
                    'ID: ' + (p.external_station_id || '—') + '<br>' +
                    'Last data: ' + (p.last_data_at ? p.last_data_at.slice(0,10) : '—') + '<br>' +
                    '<a href="/datasync/stations/' + p.pk + '/" style="color:#E4A317">View details →</a>';
-        },
-        'gw-tie-lines': function(p) {
-            var pct = Math.round((p.fraction || 0) * 100);
-            return '<strong>Well ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
-                   'Fraction: ' + pct + '%';
-        },
-        'sw-tie-lines': function(p) {
-            var pct = Math.round((p.fraction || 0) * 100);
-            return '<strong>POD ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
-                   'Fraction: ' + pct + '%';
         }
     },
     legend: []
