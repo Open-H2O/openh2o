@@ -423,7 +423,8 @@ Plans:
 - Clarify ledger as a balance sheet: budget entries (positive, what you're allowed) vs usage entries (negative, what was consumed)
 
 Plans:
-- [ ] 27-01: TBD (run /gsd:plan-phase 27 to break down)
+- [x] 27-01: Recharge event entry + auto-ledger + color-coded source pills (measurement form pulled per user) — 2026-05-28
+- [ ] 27-02: Allocation → Water Budget terminology sweep
 
 ## Progress
 
@@ -461,4 +462,4 @@ Plans:
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
 | 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 2/2 | Complete | 2026-05-28 |
 | 26.1 Monitoring Completion | v1.2 | 1/1 | Complete | 2026-05-28 |
-| 27. Data Entry & UX Clarity | v1.2 | 0/1 | Not started | - |
+| 27. Data Entry & UX Clarity | v1.2 | 1/2 | In progress | - |

@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 26.1 of 27 (Monitoring Completion) - COMPLETE
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-05-28 - Completed 26.1-01-PLAN.md (parameter registry, chart labels/units, DWR adapter rewrite, live sync)
+Phase: 27 of 27 (Data Entry & UX Clarity) - In progress
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-05-28 - Completed 27-01-PLAN.md (recharge event entry + auto-ledger + source-type pill badges; measurement form pulled per user)
 
 Progress: ██████████████ 99%
 
@@ -43,6 +43,9 @@ All marked ✓ Good after v1.0 validation.
 | 26.1-01 | DWR adapters rewritten for CNRA CKAN API | Original WDL and SGMA endpoints decommissioned (404) |
 | 26.1-01 | Lazy importlib in parameter registry | Avoids circular imports with adapter registration |
 | 26.1-01 | CIMIS deferred (ISS-007) | Works without it; OpenET provides ET data |
+| 27-01 | Inline entry form lives inside its HTMX-swapped partial | Lets validation errors + typed values survive the swap |
+| 27-01 | Catch ValueError from ledger service vs pre-checking zone | Service is single source of truth for the zone rule |
+| 27-01 | Measurement entry form pulled (user decision) | Defer until production shows whether districts want manual measurement entry |
 
 ### Deferred Issues
 
@@ -72,5 +75,5 @@ All marked ✓ Good after v1.0 validation.
 ## Session Continuity
 
 Last session: 2026-05-28
-Stopped at: Phase 26.1 complete. ISS-006/008/009/010 resolved. ISS-007 (CIMIS) deferred. ISS-011 (login page) logged. Next: Phase 27 (Data Entry & UX Clarity) or Phase 20 (AI Operator Guide).
+Stopped at: Completed 27-01-PLAN.md (recharge event entry, auto-ledger, source-type pill badges; measurement form pulled per user, to revisit after production). Next: 27-02 (Allocation → Water Budget terminology sweep).
 Resume file: None
