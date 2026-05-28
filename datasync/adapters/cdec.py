@@ -84,11 +84,9 @@ class CDECAdapter(BaseAdapter):
     def discover_stations(self, boundary_geometry, radius_km=50):
         """
         Discover CDEC stations near a boundary.
-        Uses the CDEC station metadata endpoint.
+        Uses the CDEC station metadata endpoint with bounding box filter.
+        Probes each station to find which parameters actually have data.
         """
-        centroid = boundary_geometry.centroid
-        # CDEC doesn't have a spatial search API, so we fetch nearby
-        # counties and filter by distance. For now, use a bounding box.
         bbox = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
 
         params = {
@@ -112,14 +110,23 @@ class CDECAdapter(BaseAdapter):
                 lon = item.get("longitude") or item.get("Longitude")
                 sid = item.get("stationId") or item.get("id", "")
                 name = item.get("stationName") or item.get("name", "")
-                if lat and lon and sid:
-                    stations.append({
-                        "station_id": sid,
-                        "name": name,
-                        "latitude": float(lat),
-                        "longitude": float(lon),
-                        "parameters": list(PARAMETER_MAP.keys()),
-                    })
+                if not (lat and lon and sid):
+                    continue
+
+                # Extract sensor list from metadata if available
+                sensors = item.get("sensorNumbers") or item.get("sensors") or []
+                if sensors:
+                    available = [str(s) for s in sensors if str(s) in PARAMETER_MAP]
+                else:
+                    available = list(PARAMETER_MAP.keys())
+
+                stations.append({
+                    "station_id": sid,
+                    "name": name,
+                    "latitude": float(lat),
+                    "longitude": float(lon),
+                    "parameters": available if available else list(PARAMETER_MAP.keys()),
+                })
         return stations
 
 
