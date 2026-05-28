@@ -64,6 +64,7 @@ All marked ✓ Good after v1.0 validation.
 - Phases 23-25 added: Comprehensive UI Overhaul (navigation/naming, data model UX, content/polish). Phases 20-21 depend on 25 completing first.
 - Phase 26 added: Geospatial Polish & Monitoring Overhaul (map visual polish + monitoring station telemetry + Cloudflare tunnel)
 - Phase 27 added: Data Entry & UX Clarity (recharge event form, ledger source badges, "Allocation" → "Water Budget" rename)
+- Phase 26.1 inserted after Phase 26: Monitoring Completion (URGENT) — wire USGS/DWR WDL/DWR SGMA/CIMIS adapters, fix chart labels/units, audit monitoring pages. Covers ISS-006 through ISS-010.
 
 ## Session Continuity
 
