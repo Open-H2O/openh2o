@@ -215,7 +215,7 @@
             {% for record in recent_records %}
             <tr>
               <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
-              <td class="text-secondary text-mono text-xs">{{ record.parameter_code }}</td>
+              <td class="text-secondary text-sm">{{ record.param_display }}</td>
               <td class="td-num">
                 {% if record.value is not None %}{{ record.value|floatformat:2 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
               </td>
@@ -311,10 +311,12 @@
         }
         var empty = document.getElementById('chart-empty');
         if (!data.labels || !data.labels.length) {
-          canvas.style.display = 'none';
+          chart.data.labels = [];
+          chart.data.datasets[0].data = [];
+          chart.data.datasets[0].label = '';
+          chart.update();
           if (empty) empty.style.display = '';
         } else {
-          canvas.style.display = '';
           if (empty) empty.style.display = 'none';
           chart.data.labels = data.labels;
           chart.data.datasets[0].data = data.datasets[0] ? data.datasets[0].data : [];
