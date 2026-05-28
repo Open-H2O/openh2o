@@ -62,6 +62,8 @@
             <span class="field-value" style="flex: 1;">
               {% if ef.name == "status" %}
                 {% include "parcels/partials/_status_badge.html" with status=ef.value %}
+              {% elif ef.type == "number" %}
+                {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
               {% else %}
                 {{ ef.value|default:"—" }}
               {% endif %}

@@ -181,7 +181,7 @@
               <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
               <td class="text-secondary text-mono text-xs">{{ record.parameter_code }}</td>
               <td class="td-num">
-                {% if record.value is not None %}{{ record.value|floatformat:4 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
+                {% if record.value is not None %}{{ record.value|floatformat:2 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
               </td>
               <td>
                 <span style="

@@ -117,7 +117,7 @@
               <div class="text-tertiary text-xs">{{ pod.stream_name }}</div>
             {% endif %}
             {% if pod.max_rate_cfs %}
-              <div class="text-tertiary text-xs">Max rate: {{ pod.max_rate_cfs }} cfs</div>
+              <div class="text-tertiary text-xs">Max rate: {{ pod.max_rate_cfs|floatformat:2 }} cfs</div>
             {% endif %}
           </div>
           {% endfor %}
