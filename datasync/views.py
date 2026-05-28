@@ -167,7 +167,7 @@ def station_detail(request, pk):
 
     recent_records = DataRecordStaging.objects.filter(station=station).order_by(
         "-observation_date"
-    )[:20]
+    )[:10]
 
     recent_logs = DataSyncLog.objects.filter(data_source=station.data_source).order_by(
         "-started_at"
@@ -195,6 +195,16 @@ def station_detail(request, pk):
             }
         )
 
+    # Determine freshness for chart color
+    now_ts = timezone.now()
+    threshold_24h = now_ts - timedelta(hours=24)
+    if station.last_data_at and station.last_data_at >= threshold_24h:
+        station_freshness = "fresh"
+    elif station.last_data_at:
+        station_freshness = "stale"
+    else:
+        station_freshness = "dead"
+
     context = {
         "station": station,
         "recent_records": recent_records,
@@ -202,6 +212,8 @@ def station_detail(request, pk):
         "station_geojson": station_geojson,
         "lat": station.location.y if station.location else None,
         "lng": station.location.x if station.location else None,
+        "station_freshness": station_freshness,
+        "chart_data_url": f"/datasync/stations/{station.pk}/chart-data/",
     }
     return render(request, "datasync/station_detail.html", context)
 
@@ -382,6 +394,90 @@ def monitoring_dashboard(request):
         return render(request, "datasync/partials/_monitoring_content.html", context)
 
     return render(request, "datasync/monitoring_dashboard.html", context)
+
+
+@login_required
+def station_chart_data(request, pk):
+    """Return JSON chart data for a station's telemetry records."""
+    station = get_object_or_404(MonitoredStation, pk=pk)
+
+    parameter = request.GET.get("parameter", "").strip()
+    days_raw = request.GET.get("days", "30")
+    try:
+        days = int(days_raw)
+    except (ValueError, TypeError):
+        days = 30
+    days = max(7, min(days, 365))
+
+    since = timezone.now() - timedelta(days=days)
+
+    # Determine available parameters from published records
+    available_params_qs = (
+        DataRecordStaging.objects
+        .filter(station=station, status="published", observation_date__gte=since)
+        .values("parameter_code", "unit")
+        .distinct()
+        .order_by("parameter_code")
+    )
+    param_codes = [r["parameter_code"] for r in available_params_qs]
+    units_by_code = {r["parameter_code"]: r["unit"] for r in available_params_qs}
+
+    # Fall back to station.parameters if no published data yet
+    if not param_codes and station.parameters:
+        param_codes = list(station.parameters)
+
+    # Default to first parameter if none specified or specified one not available
+    if not parameter or parameter not in param_codes:
+        parameter = param_codes[0] if param_codes else None
+
+    # Build parameter metadata list (use CDEC names if available)
+    PARAM_NAMES = {
+        "15": "Reservoir Storage",
+        "1": "River Stage",
+        "20": "Flow",
+        "2": "Precipitation",
+    }
+    parameters_meta = []
+    for code in param_codes:
+        unit = units_by_code.get(code, "")
+        name = PARAM_NAMES.get(code, f"Parameter {code}")
+        label = f"{name} ({unit})" if unit else name
+        parameters_meta.append({"code": code, "name": name, "unit": unit, "label": label})
+
+    labels = []
+    data_values = []
+    dataset_label = ""
+
+    if parameter:
+        records = (
+            DataRecordStaging.objects
+            .filter(station=station, status="published", parameter_code=parameter,
+                    observation_date__gte=since)
+            .order_by("observation_date")
+            .values("observation_date", "value", "unit")
+        )
+        for r in records:
+            labels.append(r["observation_date"].strftime("%Y-%m-%d"))
+            data_values.append(float(r["value"]) if r["value"] is not None else None)
+
+        unit = units_by_code.get(parameter, "")
+        name = PARAM_NAMES.get(parameter, f"Parameter {parameter}")
+        dataset_label = f"{name} ({unit})" if unit else name
+
+    result = {
+        "labels": labels,
+        "datasets": [
+            {
+                "label": dataset_label,
+                "data": data_values,
+                "parameter_code": parameter,
+            }
+        ] if parameter else [],
+        "parameters": parameters_meta,
+        "selected_parameter": parameter,
+        "days": days,
+    }
+    return JsonResponse(result)
 
 
 @login_required
