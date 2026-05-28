@@ -109,9 +109,15 @@ def dist_sq(a, b):
     return dx * dx + dy * dy
 
 
-def nearest_parcels(point, parcels, n):
+MAX_LINK_DEG = 0.04  # ~2.7 miles at this latitude
+
+def nearest_parcels(point, parcels, n, max_dist=None):
     ranked = sorted(parcels, key=lambda p: dist_sq(point, p.geometry.centroid))
-    return ranked[:min(n, len(ranked))]
+    result = ranked[:min(n, len(ranked))]
+    if max_dist is not None:
+        limit_sq = max_dist * max_dist
+        result = [p for p in result if dist_sq(point, p.geometry.centroid) <= limit_sq]
+    return result
 
 
 class Command(BaseCommand):
@@ -673,7 +679,12 @@ class Command(BaseCommand):
         podp_count = 0
         for pod in pods:
             num_links = random.randint(2, 4)
-            linked = nearest_parcels(pod.location, all_parcels, num_links)
+            linked = nearest_parcels(
+                pod.location, all_parcels, num_links,
+                max_dist=MAX_LINK_DEG,
+            )
+            if not linked:
+                continue
             fraction = Decimal(str(round(1.0 / len(linked), 4)))
             for parcel in linked:
                 PointOfDiversionParcel.objects.create(
@@ -776,7 +787,7 @@ class Command(BaseCommand):
             ("Exeter Recharge Basin", "spreading_basin",
              -119.1410, 36.2960, Decimal("800.0"), "Exeter ID"),
             ("Terminus Dam ASR Well", "asr_well",
-             -118.9900, 36.4100, Decimal("300.0"),
+             -118.9950, 36.4020, Decimal("300.0"),
              "USACE / Kaweah Delta WCD"),
         ]
         recharge_sites = []
