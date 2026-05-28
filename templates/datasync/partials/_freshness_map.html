@@ -1,0 +1,110 @@
+{% comment %}
+Shared freshness map initialization partial.
+
+The parent page must provide a <div> with the matching map_id in its layout.
+Include this partial AFTER MapLibre GL JS is loaded and after the DOM has loaded
+(e.g., in {% block extra_scripts %} or at bottom of an HTMX partial).
+
+Usage:
+  In content block, create the container div:
+    <div id="freshness-map" style="height: 200px; width: 100%;"></div>
+
+  Then include this partial (after MapLibre loads):
+    {% include "datasync/partials/_freshness_map.html" with map_id="freshness-map" %}
+
+Variables:
+  map_id     - ID of the existing <div> container on the page (required)
+{% endcomment %}
+<script>
+(function() {
+  if (!window.maplibregl) return;
+  var el = document.getElementById('{{ map_id }}');
+  if (!el || el._mapInit) return;
+  el._mapInit = true;
+
+  var map = new maplibregl.Map({
+    container: '{{ map_id }}',
+    style: {
+      version: 8,
+      sources: {
+        'esri-aerial': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 19 },
+        'esri-labels': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 19 }
+      },
+      layers: [
+        { id: 'aerial-tiles', type: 'raster', source: 'esri-aerial' },
+        { id: 'aerial-labels', type: 'raster', source: 'esri-labels', paint: { 'raster-opacity': 0.7 } }
+      ]
+    },
+    zoom: 7,
+    center: [-119.5, 37.3],
+    attributionControl: false
+  });
+
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+  map.on('load', function() {
+    fetch('{% url "datasync:stations_freshness_geojson" %}')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.features || !data.features.length) return;
+
+        var coords = data.features.map(function(f) { return f.geometry.coordinates; });
+        if (coords.length > 1) {
+          var lngs = coords.map(function(c) { return c[0]; });
+          var lats = coords.map(function(c) { return c[1]; });
+          map.fitBounds(
+            [[Math.min.apply(null, lngs), Math.min.apply(null, lats)], [Math.max.apply(null, lngs), Math.max.apply(null, lats)]],
+            { padding: 40, maxZoom: 13 }
+          );
+        } else {
+          map.setCenter(coords[0]);
+          map.setZoom(11);
+        }
+
+        map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+
+        map.addLayer({
+          id: '{{ map_id }}-glow',
+          type: 'circle',
+          source: '{{ map_id }}-source',
+          paint: {
+            'circle-radius': 16,
+            'circle-opacity': 0.15,
+            'circle-blur': 1,
+            'circle-color': ['match', ['get', 'freshness'], 'fresh', '#22c55e', 'stale', '#f59e0b', '#ef4444']
+          }
+        });
+
+        map.addLayer({
+          id: '{{ map_id }}-dots',
+          type: 'circle',
+          source: '{{ map_id }}-source',
+          paint: {
+            'circle-radius': 7,
+            'circle-color': ['match', ['get', 'freshness'], 'fresh', '#22c55e', 'stale', '#f59e0b', '#ef4444'],
+            'circle-stroke-width': 1.5,
+            'circle-stroke-color': 'rgba(255,255,255,0.3)'
+          }
+        });
+
+        map.on('click', '{{ map_id }}-dots', function(e) {
+          var p = e.features[0].properties;
+          var hrs = p.hours_since_data ? Math.round(p.hours_since_data) + 'h ago' : 'no data';
+          new maplibregl.Popup({ closeButton: false })
+            .setLngLat(e.lngLat)
+            .setHTML(
+              '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:8px 12px;border-radius:6px;font-size:12px;">' +
+              '<strong>' + p.station_name + '</strong><br>' +
+              '<span style="color:#8899aa;">' + p.data_source_code + ' &middot; ' + p.freshness + ' &middot; ' + hrs + '</span>' +
+              '</div>'
+            )
+            .addTo(map);
+        });
+
+        map.on('mouseenter', '{{ map_id }}-dots', function() { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', '{{ map_id }}-dots', function() { map.getCanvas().style.cursor = ''; });
+      })
+      .catch(function(err) { console.error('Freshness GeoJSON failed:', err); });
+  });
+})();
+</script>
