@@ -347,15 +347,12 @@ class Command(BaseCommand):
             if parcel_geom.geom_type == 'Polygon':
                 parcel_geom = MultiPolygon(parcel_geom)
 
-            acres_raw = props.get('GROW_AC') or props.get('TOT_ACRES')
-            area = (Decimal(str(round(float(acres_raw), 2)))
-                    if acres_raw else Decimal("40.0"))
             use_desc = props.get('USEDSCRP', '')
 
             p = Parcel.objects.create(
                 parcel_number=f"KAW-APN-{i + 1:03d}",
                 owner_name=use_desc or "Agricultural",
-                area_acres=area, geometry=parcel_geom, status="active",
+                geometry=parcel_geom, status="active",
             )
             zone = assign_zone(p.geometry.centroid)
             ParcelZone.objects.create(parcel=p, zone=zone)
@@ -365,7 +362,7 @@ class Command(BaseCommand):
             crop = crops[i % len(crops)]
             UsageLocation.objects.create(
                 parcel=p, name=f"{p.parcel_number} {crop.name}",
-                crop_type=crop, area_acres=area,
+                crop_type=crop, area_acres=p.area_acres,
                 geometry=p.geometry.centroid,
             )
 
