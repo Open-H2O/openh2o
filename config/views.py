@@ -57,14 +57,14 @@ def glossary(request):
         "Managed Aquifer Recharge (MAR)": "Intentionally adding water to an aquifer through spreading basins or injection wells.",
         "Monitoring Station": "A curated external sensor (stream gauge, weather station, groundwater well) linked to a data source.",
         "OpenET": "Satellite-based evapotranspiration estimates, used to calculate crop water use.",
-        "Parcel": "A plot of land identified by an Assessor Parcel Number (APN), the basic unit of water accounting.",
+        "Use Area": "A plot of land identified by an Assessor Parcel Number (APN), the basic unit of water accounting.",
         "Point of Diversion (POD)": "The physical location where water is diverted from a stream or river.",
-        "Reporting Period": "A time window (usually water year Oct 1 - Sep 30) for accounting.",
+        "Water Year": "A time window (usually October 1 through September 30) for water accounting and reporting.",
         "SGMA": "Sustainable Groundwater Management Act (2014), the California law requiring groundwater management.",
         "USGS": "United States Geological Survey, provides stream gauge and groundwater level data.",
-        "Water Account": "Groups parcels for accounting purposes, tracks supply and usage.",
+        "Water Account": "Groups use areas for accounting purposes, tracks supply and usage.",
         "Water Right": "A legal entitlement to divert surface water, issued by the State Water Board.",
-        "Well": "A borehole used to extract groundwater, identified by state well number or local ID.",
+        "Extraction Well": "A borehole used to extract groundwater, identified by state well number or local ID.",
     }
     sorted_terms = sorted(terms.items())
     # Build list of unique first letters for the jump nav
