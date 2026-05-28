@@ -62,7 +62,7 @@
           <div class="field-label field-row">
             {{ ef.label }}
             {% if ef.name == "status" %}
-              {% include "partials/_help_tooltip.html" with label="Status" text="Active wells are included in extraction reporting. Inactive wells are excluded." %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active extraction wells are included in extraction reporting. Inactive extraction wells are excluded." %}
             {% elif ef.name == "total_depth_ft" or ef.name == "depth_ft" %}
               {% include "partials/_help_tooltip.html" with label="Total Depth" text="Depth of the well bore in feet below ground surface." %}
             {% endif %}

@@ -18,7 +18,7 @@
   <!-- Stat cards -->
   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-sm);">
     <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--color-blue);">
-      <div class="stat-card-label">Wells</div>
+      <div class="stat-card-label">Extraction Wells</div>
       <div class="stat-card-value" style="color: var(--color-blue);">{{ well_count }}</div>
     </div>
     <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--reservoir-400);">
@@ -49,7 +49,7 @@
         All <span class="badge badge-grey" style="margin-left: 4px;">{{ total_count }}</span>
       </button>
       <button type="button" class="filter-tab{% if type_filter == 'well' %} active{% endif %}" data-type="well">
-        Wells <span class="badge badge-blue" style="margin-left: 4px;">{{ well_count }}</span>
+        Extraction Wells <span class="badge badge-blue" style="margin-left: 4px;">{{ well_count }}</span>
       </button>
       <button type="button" class="filter-tab{% if type_filter == 'diversion' %} active{% endif %}" data-type="diversion">
         Diversions <span class="badge badge-teal" style="margin-left: 4px;">{{ pod_count }}</span>
