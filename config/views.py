@@ -44,7 +44,8 @@ def getting_started(request):
 def glossary(request):
     """Glossary of water accounting terms used throughout the platform."""
     terms = {
-        "Allocation Plan": "Sets water budgets per zone and water type for a reporting period.",
+        "Water Budget": "The volume of water assigned to a use area (or zone) for a reporting period. It's the amount you're allowed to use, recorded as a positive ledger entry. Compare with Usage.",
+        "Usage": "Water consumed via extraction (well meters) or evapotranspiration (ET estimates), recorded as negative ledger entries.",
         "CalWATRS": "California Water Transfer Reporting System, the Water Board format for surface diversions.",
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
