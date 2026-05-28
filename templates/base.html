@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Design tokens (loaded separately for cache control) -->
-    <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=6">
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=7">
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <!-- App layout and component styles -->
@@ -46,6 +46,15 @@
     </div>
 
     {% block map_scripts %}{% endblock %}
+
+    <!-- Entity color system: single source of truth for MapLibre configs -->
+    <script>
+    window.OH2O = { colors: {
+        gold: '#E4A317', teal: '#4ECDC4', purple: '#7B68EE',
+        red: '#FF6B6B', blue: '#1B7FAF', blueBright: '#3DB4E0',
+        boundary: '#E4A317'
+    }};
+    </script>
 
     <script>
     (function() {
