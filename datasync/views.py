@@ -71,13 +71,18 @@ def station_list(request):
         DataRecordStaging.objects
         .filter(station__in=page_station_ids)
         .order_by("station_id", "-observation_date")
-        .values("station_id", "value")
+        .values("station_id", "value", "unit")
     )
     raw_records: dict = {}
+    latest_unit: dict = {}
+    latest_value: dict = {}
     for row in staging_qs:
         sid = row["station_id"]
         if sid not in raw_records:
             raw_records[sid] = []
+            # First row is the most recent record for this station
+            latest_value[sid] = row["value"]
+            latest_unit[sid] = row["unit"] or ""
         if len(raw_records[sid]) < 10:
             raw_records[sid].append(row["value"])
 
@@ -96,13 +101,23 @@ def station_list(request):
             points.append(f"{x},{y}")
         station_sparklines[sid] = " ".join(points)
 
-    # Enrich page objects with freshness and sparkline
+    # Enrich page objects with freshness, sparkline, and latest value/unit
     enriched_stations = []
     for s in page_obj:
+        lv = latest_value.get(s.pk)
+        lu = latest_unit.get(s.pk, "")
+        if lv is not None:
+            try:
+                latest_tooltip = f"Latest: {float(lv):,.2f} {lu}".strip()
+            except (ValueError, TypeError):
+                latest_tooltip = None
+        else:
+            latest_tooltip = None
         enriched_stations.append({
             "station": s,
             "freshness": station_freshness.get(s.pk, "dead"),
             "sparkline_points": station_sparklines.get(s.pk),
+            "latest_tooltip": latest_tooltip,
         })
 
     context = {
@@ -333,15 +348,19 @@ def monitoring_dashboard(request):
         DataRecordStaging.objects
         .filter(station__in=station_ids)
         .order_by("station_id", "-observation_date")
-        .values("station_id", "value", "observation_date")
+        .values("station_id", "value", "unit", "observation_date")
     )
 
-    # Group by station, keep latest 10 per station
+    # Group by station, keep latest 10 per station; capture latest value+unit
     raw_records: dict = {}
+    latest_unit_dash: dict = {}
+    latest_value_dash: dict = {}
     for row in staging_qs:
         sid = row["station_id"]
         if sid not in raw_records:
             raw_records[sid] = []
+            latest_value_dash[sid] = row["value"]
+            latest_unit_dash[sid] = row["unit"] or ""
         if len(raw_records[sid]) < 10:
             raw_records[sid].append(row["value"])
 
@@ -376,10 +395,20 @@ def monitoring_dashboard(request):
             freshness = "stale"
         else:
             freshness = "dead"
+        lv = latest_value_dash.get(s.pk)
+        lu = latest_unit_dash.get(s.pk, "")
+        if lv is not None:
+            try:
+                latest_tooltip = f"Latest: {float(lv):,.2f} {lu}".strip()
+            except (ValueError, TypeError):
+                latest_tooltip = None
+        else:
+            latest_tooltip = None
         station_list.append({
             "station": s,
             "freshness": freshness,
             "sparkline_points": station_sparklines.get(s.pk),
+            "latest_tooltip": latest_tooltip,
         })
 
     # OpenET budget

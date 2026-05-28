@@ -279,7 +279,19 @@
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { mode: 'index', intersect: false }
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: function(context) {
+              var unit = chart.options.scales.y.title.text || '';
+              var val = context.parsed.y;
+              if (val === null || val === undefined) return '';
+              var formatted = val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+              return unit ? (formatted + ' ' + unit) : formatted;
+            }
+          }
+        }
       },
       scales: {
         x: { grid: { color: 'rgba(100,140,180,0.07)' }, ticks: { maxTicksLimit: 8, color: '#8899aa', font: { size: 11 } } },
