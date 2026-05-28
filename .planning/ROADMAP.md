@@ -329,7 +329,7 @@ Plans:
 - Ensure consistency with renamed sidebar items
 
 Plans:
-- [ ] 25-01: TBD (run /gsd:plan-phase 25 to break down)
+- [x] 25-01: About page rewrite, Getting Started redesign, glossary name sweep
 
 #### Phase 20: AI Operator Guide (DEFERRED from v1.1 Phase 13.1)
 
@@ -383,6 +383,6 @@ Plans:
 | 22. Engineering & Math Validation | v1.2 | 2/2 | Complete | 2026-05-27 |
 | 23. Navigation Restructure & Naming | v1.2 | 1/1 | Complete | 2026-05-27 |
 | 24. Data Model UX Overhaul | v1.2 | 1/1 | Complete | 2026-05-27 |
-| 25. Content & Polish | v1.2 | 0/? | Not started | - |
+| 25. Content & Polish | v1.2 | 1/1 | Complete | 2026-05-28 |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |

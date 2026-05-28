@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 24 of 25 (Data Model UX Overhaul)
+Phase: 25 of 25 (Content & Polish)
 Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-05-27 - Completed 24-01-PLAN.md (allocation-optional dashboard, POD-centric diversions, zone management)
+Last activity: 2026-05-28 - Completed 25-01-PLAN.md (About page, Getting Started, glossary sweep)
 
-Progress: ███████████░ 92%
+Progress: ████████████ 96%
 
 ## Performance Metrics
 
@@ -56,6 +56,6 @@ All marked ✓ Good after v1.0 validation.
 
 ## Session Continuity
 
-Last session: 2026-05-27
-Stopped at: Completed 24-01-PLAN.md (allocation-optional dashboard, POD-centric diversions, zone management)
-Resume file: None — Phase 24 complete, proceed to Phase 25
+Last session: 2026-05-28
+Stopped at: Completed 25-01-PLAN.md (About page, Getting Started, glossary sweep). Phase 25 complete. UI Overhaul (23/24/25) finished.
+Resume file: None — Phase 25 complete, proceed to Phase 20 (AI Operator Guide)
