@@ -1,0 +1,19 @@
+{% if source_type == "et_estimate" %}
+  <span class="badge badge-pill badge-teal">ET Estimate</span>
+{% elif source_type == "meter_reading" %}
+  <span class="badge badge-pill badge-blue">Meter Read</span>
+{% elif source_type == "surface_diversion" %}
+  <span class="badge badge-pill badge-orange">Surface Diversion</span>
+{% elif source_type == "recharge" %}
+  <span class="badge badge-pill badge-green">Recharge</span>
+{% elif source_type == "allocation" %}
+  <span class="badge badge-pill badge-gold">Water Budget</span>
+{% elif source_type == "adjustment" %}
+  <span class="badge badge-pill badge-red">Adjustment</span>
+{% elif source_type == "manual_entry" %}
+  <span class="badge badge-pill badge-grey">Manual</span>
+{% elif source_type == "csv_import" %}
+  <span class="badge badge-pill badge-grey">CSV Import</span>
+{% else %}
+  <span class="badge badge-pill badge-grey">{{ source_type|capfirst }}</span>
+{% endif %}

@@ -24,7 +24,7 @@
         <td class="td-num-bold {% if entry.amount_acre_feet >= 0 %}text-supply{% else %}text-usage{% endif %}">
           {{ entry.amount_acre_feet|floatformat:2 }}
         </td>
-        <td class="text-tertiary">{{ entry.get_source_type_display }}</td>
+        <td>{% include "accounting/partials/_source_badge.html" with source_type=entry.source_type %}</td>
         <td class="text-tertiary">
           {% if entry.water_type %}{{ entry.water_type.name }}{% else %}&mdash;{% endif %}
         </td>
