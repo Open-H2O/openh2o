@@ -259,9 +259,6 @@
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
 
-  // Gradient fill
-  var gradient = ctx.createLinearGradient(0, 0, 0, 220);
-  gradient.addColorStop(0, lineColor.replace('#', 'rgba(').replace(/^rgba\(/, 'rgba(') + '33');
   // Build gradient from line color
   function hexToRgba(hex, alpha) {
     var r = parseInt(hex.slice(1, 3), 16);
