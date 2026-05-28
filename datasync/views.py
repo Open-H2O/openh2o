@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from datasync.adapters.cdec import PARAMETER_MAP as CDEC_PARAMETER_MAP
+from datasync.adapters.registry import get_parameter_label
 from datasync.models import (
     DataRecordStaging,
     DataSource,
@@ -163,10 +163,10 @@ def station_detail(request, pk):
     recent_records_qs = DataRecordStaging.objects.filter(station=station).order_by(
         "-observation_date"
     )[:10]
-    param_display_map = {code: f"{info['name']} ({info['unit']})" for code, info in CDEC_PARAMETER_MAP.items()}
     recent_records = list(recent_records_qs)
+    source_code = station.data_source.code
     for rec in recent_records:
-        rec.param_display = param_display_map.get(rec.parameter_code, rec.parameter_code)
+        rec.param_display = get_parameter_label(source_code, rec.parameter_code)
 
     recent_logs = DataSyncLog.objects.filter(data_source=station.data_source).order_by(
         "-started_at"
@@ -204,6 +204,12 @@ def station_detail(request, pk):
     else:
         station_freshness = "dead"
 
+    # Build enriched parameter list so template dropdown shows human labels on first render
+    enriched_parameters = [
+        {"code": code, "label": get_parameter_label(source_code, code)}
+        for code in (station.parameters or [])
+    ]
+
     context = {
         "station": station,
         "recent_records": recent_records,
@@ -213,6 +219,7 @@ def station_detail(request, pk):
         "lng": station.location.x if station.location else None,
         "station_freshness": station_freshness,
         "chart_data_url": f"/datasync/stations/{station.pk}/chart-data/",
+        "enriched_parameters": enriched_parameters,
     }
     return render(request, "datasync/station_detail.html", context)
 
@@ -432,18 +439,17 @@ def station_chart_data(request, pk):
     if not parameter or parameter not in param_codes:
         parameter = param_codes[0] if param_codes else None
 
-    # Build parameter metadata list (use CDEC names if available)
-    PARAM_NAMES = {
-        "15": "Reservoir Storage",
-        "1": "River Stage",
-        "20": "Flow",
-        "2": "Precipitation",
-    }
+    # Build parameter metadata list using the unified registry
+    source_code = station.data_source.code
     parameters_meta = []
     for code in param_codes:
         unit = units_by_code.get(code, "")
-        name = PARAM_NAMES.get(code, f"Parameter {code}")
-        label = f"{name} ({unit})" if unit else name
+        label = get_parameter_label(source_code, code)
+        # Extract name without unit for the name field (strip trailing " (unit)" if present)
+        if unit and label.endswith(f" ({unit})"):
+            name = label[: -(len(unit) + 3)]
+        else:
+            name = label
         parameters_meta.append({"code": code, "name": name, "unit": unit, "label": label})
 
     labels = []
@@ -462,9 +468,7 @@ def station_chart_data(request, pk):
             labels.append(r["observation_date"].strftime("%Y-%m-%d"))
             data_values.append(float(r["value"]) if r["value"] is not None else None)
 
-        unit = units_by_code.get(parameter, "")
-        name = PARAM_NAMES.get(parameter, f"Parameter {parameter}")
-        dataset_label = f"{name} ({unit})" if unit else name
+        dataset_label = get_parameter_label(source_code, parameter)
 
     result = {
         "labels": labels,
