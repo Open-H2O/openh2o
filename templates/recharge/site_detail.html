@@ -103,9 +103,30 @@
       <!-- Recent Measurements card -->
       <div class="card-raised">
         <h2 class="section-header mb-md">Recent Measurements</h2>
-        <div id="measurements-list">
-          {% include "recharge/partials/_measurements.html" %}
-        </div>
+        {% if recent_measurements %}
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th class="th-right">Value</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in recent_measurements %}
+            <tr>
+              <td class="text-secondary">{{ m.measurement_date|date:"M d, Y H:i" }}</td>
+              <td class="text-secondary">{{ m.get_measurement_type_display }}</td>
+              <td class="td-num">{{ m.value|floatformat:2 }}</td>
+              <td class="text-tertiary">{{ m.unit }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p class="text-tertiary text-base">No measurements recorded.</p>
+        {% endif %}
       </div>
 
     </div>
