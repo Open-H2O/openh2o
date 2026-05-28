@@ -30,6 +30,19 @@ key-files:
     - templates/about.html
     - templates/help/getting_started.html
     - config/views.py
+    - templates/index.html
+    - templates/accounting/accounts_list.html
+    - templates/accounting/account_detail.html
+    - templates/accounting/partials/_accounts_list_results.html
+    - templates/geography/zone_list.html
+    - templates/geography/zone_create.html
+    - templates/geography/zone_detail.html
+    - templates/geography/partials/_zone_list_results.html
+    - templates/geography/map.html
+    - templates/infrastructure/list.html
+    - templates/setup/wizard.html
+    - templates/parcels/detail.html
+    - templates/wells/detail.html
 
 key-decisions:
   - "CalWATRS timeline entry placed at 2025, not 2023 (actual launch year)"
@@ -38,7 +51,7 @@ key-decisions:
 
 issues-created: []
 
-duration: 4min
+duration: 9min
 completed: 2026-05-28
 ---
 
@@ -48,11 +61,11 @@ completed: 2026-05-28
 
 ## Performance
 
-- **Duration:** 4 min
-- **Started:** 2026-05-28T00:14:21Z
-- **Completed:** 2026-05-28T00:18:56Z
-- **Tasks:** 3
-- **Files modified:** 3
+- **Duration:** 9 min
+- **Started:** 2026-05-28T00:11:36Z
+- **Completed:** 2026-05-28T00:20:10Z
+- **Tasks:** 3 (4 commits — Task 3 split into glossary + template sweep)
+- **Files modified:** 16
 
 ## Accomplishments
 
@@ -66,13 +79,27 @@ Each task was committed atomically:
 
 1. **Task 1: Rewrite About page** - `ec8d516` (feat)
 2. **Task 2: Redesign Getting Started guide** - `59498a8` (feat)
-3. **Task 3: Sweep glossary for name consistency** - `4615456` (feat)
+3. **Task 3a: Sweep glossary for name consistency** - `4615456` (feat)
+4. **Task 3b: Sweep templates for Phase 23 name consistency** - `d8320fd` (fix)
 
 ## Files Created/Modified
 
 - `templates/about.html` - Professional intro, 6-entry timeline, 4-tier card-raised credits
 - `templates/help/getting_started.html` - Page links, Unicode icons, updated terminology
 - `config/views.py` - Glossary terms renamed to match Phase 23 conventions
+- `templates/index.html` - Dashboard cards: Parcels→Use Areas, Wells→Extraction Wells, Surface Water→Surface Diversions
+- `templates/accounting/accounts_list.html` - Page description: "group parcels" → "group use areas"
+- `templates/accounting/account_detail.html` - Section headers: Assigned Parcels→Assigned Use Areas
+- `templates/accounting/partials/_accounts_list_results.html` - Column header: Parcels→Use Areas
+- `templates/geography/zone_list.html` - Page description: "Assign parcels" → "Assign use areas"
+- `templates/geography/zone_create.html` - Page description updated
+- `templates/geography/zone_detail.html` - Section headers and comments updated
+- `templates/geography/partials/_zone_list_results.html` - Column header: Parcels→Use Areas
+- `templates/geography/map.html` - Page description updated
+- `templates/infrastructure/list.html` - Stat card and filter tab: Wells→Extraction Wells
+- `templates/setup/wizard.html` - Page description: "wells, parcels" → "extraction wells, use areas"
+- `templates/parcels/detail.html` - Tooltip: "Active parcels" → "Active use areas"
+- `templates/wells/detail.html` - Tooltip: "Active wells" → "Active extraction wells"
 
 ## Decisions Made
 
@@ -82,7 +109,7 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan executed exactly as written. Template tooltip sweep (Task 3) found zero stale references in templates because Phase 23 had already updated all page descriptions and tooltip text. Only the glossary definitions in config/views.py needed updating.
+Task 3 split into two commits: glossary terms in config/views.py (`4615456`) and a template sweep across 13 files (`d8320fd`) that caught remaining old-name references in dashboard cards, account detail headers, zone management pages, infrastructure filters, and tooltips. The plan anticipated 3 commits but produced 4 because the template sweep was broader than expected.
 
 ## Issues Encountered
 
