@@ -64,7 +64,7 @@
         <tr>
           <td class="text-mono">{{ entry.parcel_number }}</td>
           <td>{{ entry.effective_date }}</td>
-          <td class="td-num text-mono" style="{% if entry.amount >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">{{ entry.amount }}</td>
+          <td class="td-num" style="{% if entry.amount >= 0 %}color: var(--forest-500);{% else %}color: var(--furnace-500);{% endif %}">{{ entry.amount }}</td>
           <td class="text-secondary">{{ entry.source_type }}</td>
         </tr>
         {% endfor %}

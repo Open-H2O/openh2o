@@ -54,7 +54,7 @@
         {% if pod.max_rate_cfs %}
         <div class="field-group">
           <div class="field-label">Max Rate (CFS)</div>
-          <div class="field-value text-mono">{{ pod.max_rate_cfs|floatformat:4 }}</div>
+          <div class="field-value">{{ pod.max_rate_cfs|floatformat:4 }}</div>
         </div>
         {% endif %}
 
@@ -106,13 +106,13 @@
               {% if water_right.priority_date %}
               <div class="field-group">
                 <div class="field-label">Priority Date</div>
-                <div class="field-value text-mono">{{ water_right.priority_date|date:"M d, Y" }}</div>
+                <div class="field-value">{{ water_right.priority_date|date:"M d, Y" }}</div>
               </div>
               {% endif %}
               {% if water_right.face_value_acre_feet %}
               <div class="field-group">
                 <div class="field-label">Face Value (AF)</div>
-                <div class="field-value text-mono">{{ water_right.face_value_acre_feet|floatformat:2 }}</div>
+                <div class="field-value">{{ water_right.face_value_acre_feet|floatformat:2 }}</div>
               </div>
               {% endif %}
               <div class="field-group">

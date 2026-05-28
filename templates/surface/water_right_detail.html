@@ -61,7 +61,7 @@
             Priority Date
             {% include "partials/_help_tooltip.html" with label="Priority Date" text="The date establishing seniority. Earlier dates have higher priority during shortages." %}
           </div>
-          <div class="field-value text-mono">
+          <div class="field-value">
             {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
           </div>
         </div>
@@ -71,7 +71,7 @@
             Face Value (AF)
             {% include "partials/_help_tooltip.html" with label="Face Value" text="The maximum amount of water authorized by the right, in acre-feet per year." %}
           </div>
-          <div class="field-value text-mono">
+          <div class="field-value">
             {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
           </div>
         </div>
@@ -175,7 +175,7 @@
           <tbody>
             {% for record in recent_diversions %}
             <tr>
-              <td class="text-secondary text-mono">{{ record.month|date:"M Y" }}</td>
+              <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
               <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
               <td class="td-num">{{ record.volume_acre_feet|floatformat:2 }}</td>
               <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>

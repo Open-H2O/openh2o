@@ -1060,13 +1060,11 @@ a { color: inherit; }
 .td-num {
     text-align: right;
     font-variant-numeric: tabular-nums;
-    font-family: var(--font-mono);
 }
 
 .td-num-bold {
     text-align: right;
     font-variant-numeric: tabular-nums;
-    font-family: var(--font-mono);
     font-weight: 600;
 }
 
