@@ -402,19 +402,22 @@ def station_chart_data(request, pk):
     station = get_object_or_404(MonitoredStation, pk=pk)
 
     parameter = request.GET.get("parameter", "").strip()
-    days_raw = request.GET.get("days", "30")
+    days_raw = request.GET.get("days", "0")
     try:
         days = int(days_raw)
     except (ValueError, TypeError):
-        days = 30
-    days = max(7, min(days, 365))
+        days = 0
+    if days > 0:
+        days = max(7, days)
 
-    since = timezone.now() - timedelta(days=days)
+    date_filter = {}
+    if days > 0:
+        date_filter["observation_date__gte"] = timezone.now() - timedelta(days=days)
 
     # Determine available parameters from published records
     available_params_qs = (
         DataRecordStaging.objects
-        .filter(station=station, status="published", observation_date__gte=since)
+        .filter(station=station, status="published", **date_filter)
         .values("parameter_code", "unit")
         .distinct()
         .order_by("parameter_code")
@@ -452,7 +455,7 @@ def station_chart_data(request, pk):
         records = (
             DataRecordStaging.objects
             .filter(station=station, status="published", parameter_code=parameter,
-                    observation_date__gte=since)
+                    **date_filter)
             .order_by("observation_date")
             .values("observation_date", "value", "unit")
         )
