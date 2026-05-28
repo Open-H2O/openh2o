@@ -351,17 +351,19 @@ map.on('load', function() {
             map.addLayer(layerDef);
         });
 
-        // ── Popups ──
+        // ── Popups (single instance to prevent stacking) ──
+        var _activePopup = null;
         var popupLayerIds = Object.keys(MAP_CONFIG.popups || {});
         popupLayerIds.forEach(function(layerId) {
             map.on('click', layerId, function(e) {
                 if (_measureActive) return;
+                if (_activePopup) _activePopup.remove();
                 var props = e.features[0].properties;
                 var coords = e.features[0].geometry.type === 'Point'
                     ? e.features[0].geometry.coordinates.slice()
                     : [e.lngLat.lng, e.lngLat.lat];
                 var html = MAP_CONFIG.popups[layerId](props, coords);
-                new maplibregl.Popup()
+                _activePopup = new maplibregl.Popup()
                     .setLngLat(coords)
                     .setHTML(html)
                     .addTo(map);
