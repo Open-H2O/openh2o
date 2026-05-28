@@ -126,7 +126,7 @@ document.title = MAP_CONFIG.title;
     });
 })();
 
-var currentBase = 'dark';
+var currentBase = 'aerial';
 
 var map = new maplibregl.Map({
     container: 'map',
@@ -157,10 +157,10 @@ var map = new maplibregl.Map({
         },
         glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         layers: [
-            { id: 'background', type: 'background', paint: { 'background-color': '#040608' } },
-            { id: 'dark-tiles', type: 'raster', source: 'carto-dark', paint: { 'raster-opacity': 1.0 } },
-            { id: 'aerial-tiles', type: 'raster', source: 'esri-aerial', layout: { visibility: 'none' }, paint: { 'raster-opacity': 1.0 } },
-            { id: 'aerial-labels', type: 'raster', source: 'esri-labels', layout: { visibility: 'none' }, paint: { 'raster-opacity': 0.7 } }
+            { id: 'background', type: 'background', paint: { 'background-color': '#1a3040' } },
+            { id: 'dark-tiles', type: 'raster', source: 'carto-dark', layout: { visibility: 'none' }, paint: { 'raster-opacity': 1.0 } },
+            { id: 'aerial-tiles', type: 'raster', source: 'esri-aerial', paint: { 'raster-opacity': 1.0 } },
+            { id: 'aerial-labels', type: 'raster', source: 'esri-labels', paint: { 'raster-opacity': 0.7 } }
         ]
     },
     center: MAP_CONFIG.center,
