@@ -343,7 +343,7 @@ map.on('load', function() {
             if (layer.layout) layerDef.layout = Object.assign({}, layer.layout);
             if (layer.filter) layerDef.filter = layer.filter;
             if (layer.minzoom) layerDef.minzoom = layer.minzoom;
-            if (layer.visible === false) {
+            if (layer.visible === false || layer.groupHidden) {
                 layerDef.layout = layerDef.layout || {};
                 layerDef.layout.visibility = 'none';
             }
