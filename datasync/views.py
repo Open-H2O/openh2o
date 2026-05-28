@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from datasync.adapters.cdec import PARAMETER_MAP as CDEC_PARAMETER_MAP
 from datasync.models import (
     DataRecordStaging,
     DataSource,
@@ -165,9 +166,13 @@ def station_detail(request, pk):
         MonitoredStation.objects.select_related("data_source"), pk=pk
     )
 
-    recent_records = DataRecordStaging.objects.filter(station=station).order_by(
+    recent_records_qs = DataRecordStaging.objects.filter(station=station).order_by(
         "-observation_date"
     )[:10]
+    param_display_map = {code: f"{info['name']} ({info['unit']})" for code, info in CDEC_PARAMETER_MAP.items()}
+    recent_records = list(recent_records_qs)
+    for rec in recent_records:
+        rec.param_display = param_display_map.get(rec.parameter_code, rec.parameter_code)
 
     recent_logs = DataSyncLog.objects.filter(data_source=station.data_source).order_by(
         "-started_at"
