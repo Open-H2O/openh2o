@@ -245,7 +245,7 @@ map.on('click', function(e) {
     var pt = [e.lngLat.lng, e.lngLat.lat];
     _mPts.push(pt);
     var el = document.createElement('div');
-    el.style.cssText = 'width:10px;height:10px;background:#E4A317;border:2px solid #fff;border-radius:50%;';
+    el.style.cssText = 'width:10px;height:10px;background:' + (window.OH2O ? OH2O.colors.gold : '#E4A317') + ';border:2px solid #fff;border-radius:50%;';
     _mMarkers.push(new maplibregl.Marker({ element: el }).setLngLat(pt).addTo(map));
     if (_mPts.length > 1) {
         var gj = { type:'Feature', geometry:{ type:'LineString', coordinates:_mPts } };
@@ -253,7 +253,7 @@ map.on('click', function(e) {
         else {
             map.addSource('measure-line', { type:'geojson', data:gj });
             map.addLayer({ id:'measure-line-layer', type:'line', source:'measure-line',
-                paint:{'line-color':'#E4A317','line-width':2.5,'line-dasharray':[4,3]} });
+                paint:{'line-color': (window.OH2O ? OH2O.colors.gold : '#E4A317'),'line-width':2.5,'line-dasharray':[4,3]} });
         }
         var total = 0;
         for (var i=1; i<_mPts.length; i++) total += haversine(_mPts[i-1], _mPts[i]);

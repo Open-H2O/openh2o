@@ -120,22 +120,22 @@
     map.addSource('drawing', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'drawing-line', type: 'line', source: 'drawing',
-      paint: { 'line-color': '#E4A317', 'line-width': 2, 'line-dasharray': [4, 2] }
+      paint: { 'line-color': OH2O.colors.gold, 'line-width': 2, 'line-dasharray': [4, 2] }
     });
     map.addLayer({
       id: 'drawing-vertices', type: 'circle', source: 'drawing',
       filter: ['==', '$type', 'Point'],
-      paint: { 'circle-radius': 5, 'circle-color': '#E4A317', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+      paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.gold, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
     });
 
     map.addSource('finished', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'finished-fill', type: 'fill', source: 'finished',
-      paint: { 'fill-color': '#1B7FAF', 'fill-opacity': 0.25 }
+      paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.25 }
     });
     map.addLayer({
       id: 'finished-line', type: 'line', source: 'finished',
-      paint: { 'line-color': '#3DB4E0', 'line-width': 2 }
+      paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 2 }
     });
 
     map.getCanvas().style.cursor = 'crosshair';
