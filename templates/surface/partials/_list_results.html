@@ -29,7 +29,7 @@
         </td>
         <td class="text-secondary">{{ right.right_type|default:"—" }}</td>
         <td>{{ right.holder_name|default:"—" }}</td>
-        <td class="text-secondary text-mono">
+        <td class="text-secondary">
           {% if right.priority_date %}{{ right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
         </td>
         <td class="text-secondary td-num">

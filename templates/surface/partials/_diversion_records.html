@@ -13,7 +13,7 @@
   <tbody>
     {% for record in diversion_records %}
     <tr>
-      <td class="text-secondary text-mono">{{ record.month|date:"M Y" }}</td>
+      <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
       <td class="td-num">{{ record.volume_acre_feet|floatformat:2 }}</td>
       <td class="td-num text-secondary">
         {% if record.max_flow_rate_cfs %}{{ record.max_flow_rate_cfs|floatformat:2 }}{% else %}—{% endif %}

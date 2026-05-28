@@ -500,14 +500,18 @@ function updateCoords() {
     if (coordLink) coordLink.href = 'https://www.google.com/maps/@' + lat + ',' + lng + ',14z';
 }
 window.copyCoords = function() {
-    navigator.clipboard.writeText(coordText.textContent);
+    var text = coordText.textContent;
+    try { navigator.clipboard.writeText(text); } catch(e) {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
     var toast = document.getElementById('coord-toast');
     toast.textContent = '✓ Copied to clipboard';
     toast.classList.add('copied');
     toast.style.opacity = '1';
-    setTimeout(function() {
-        toast.classList.remove('copied');
-    }, 250);
+    setTimeout(function() { toast.classList.remove('copied'); }, 250);
     setTimeout(function() { toast.style.opacity = '0'; }, 1500);
 };
 map.on('move', updateCoords);
