@@ -39,8 +39,6 @@ def station_list(request):
     queryset = MonitoredStation.objects.select_related("data_source").order_by(
         "data_source__code", "station_name"
     )
-    if boundary:
-        queryset = queryset.filter(location__within=boundary.geometry)
 
     if q:
         queryset = queryset.filter(
