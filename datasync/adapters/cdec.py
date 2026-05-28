@@ -54,14 +54,15 @@ class CDECAdapter(BaseAdapter):
         """Parse CDEC JSON response into standard records."""
         records = []
         for item in raw_data:
-            param_code = str(item.get("sensorNumber", ""))
+            param_code = str(item.get("SENSOR_NUM", item.get("sensorNumber", "")))
             param_info = PARAMETER_MAP.get(param_code, {})
+            unit = item.get("units", "") or param_info.get("unit", "")
             records.append({
                 "station_id": item.get("stationId", ""),
-                "observation_date": item.get("date", item.get("obsDate", "")),
+                "observation_date": item.get("obsDate", item.get("date", "")),
                 "parameter_code": param_code,
                 "value": item.get("value"),
-                "unit": param_info.get("unit", ""),
+                "unit": unit,
                 "raw": item,
             })
         return records
