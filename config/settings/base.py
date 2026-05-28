@@ -177,7 +177,7 @@ _google_client_secret = env("GOOGLE_OAUTH_CLIENT_SECRET", default="")
 
 # -- Datasync ----------------------------------------------------------------
 
-DATASYNC_MOCK_MODE = env.bool("DATASYNC_MOCK_MODE", default=True)
+DATASYNC_MOCK_MODE = env.bool("DATASYNC_MOCK_MODE", default=False)
 OPENET_CACHE_DAYS = int(os.environ.get("OPENET_CACHE_DAYS", "30"))
 OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "400"))
 
