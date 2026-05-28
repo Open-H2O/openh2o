@@ -1,7 +1,13 @@
 {% extends "base_auth.html" %}
 {% block title %}Log In — Open Water{% endblock %}
 {% block content %}
-<div class="card-raised" style="width: 100%; max-width: 420px;">
+{% load static %}
+<div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); width: 100%; max-width: 420px;">
+<a href="/" style="display: flex; align-items: center; gap: var(--space-sm); text-decoration: none;">
+    <img src="{% static 'img/favicon-192.png' %}" alt="" height="40" style="width: auto;">
+    <span style="font-size: 1.6rem; font-weight: 800; color: var(--color-gold); letter-spacing: -0.02em;">OpenH2O</span>
+</a>
+<div class="card-raised" style="width: 100%;">
     <h1 class="section-header" style="border: none; color: var(--color-gold);">Log In</h1>
     <p class="text-sm mb-md text-secondary">Sign in to your water accounting dashboard.</p>
     {% if form.errors %}
@@ -36,5 +42,6 @@
     <a href="{% provider_login_url 'google' %}" class="btn-secondary" style="width: 100%;">Continue with Google</a>
     </div>
     {% endif %}
+</div>
 </div>
 {% endblock %}
