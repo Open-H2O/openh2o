@@ -79,13 +79,17 @@ class AllocationPlan(models.Model):
     zone = models.ForeignKey("geography.Zone", on_delete=models.CASCADE)
     water_type = models.ForeignKey(WaterType, on_delete=models.CASCADE)
     reporting_period = models.ForeignKey(ReportingPeriod, on_delete=models.CASCADE)
-    allocation_acre_feet = models.DecimalField(max_digits=12, decimal_places=4)
+    allocation_acre_feet = models.DecimalField(
+        max_digits=12, decimal_places=4, verbose_name="Water budget (AF)"
+    )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = [("zone", "water_type", "reporting_period")]
+        verbose_name = "Water Budget"
+        verbose_name_plural = "Water Budgets"
 
     def __str__(self):
         return self.name
