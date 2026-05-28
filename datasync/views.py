@@ -92,8 +92,8 @@ def station_list(request):
         span = max_v - min_v if max_v != min_v else 1.0
         points = []
         for i, v in enumerate(numeric):
-            x = round(i * 79 / (len(numeric) - 1), 2)
-            y = round(24 - ((v - min_v) / span) * 20 - 2, 2)
+            x = round(i * 119 / (len(numeric) - 1), 2)
+            y = round(40 - ((v - min_v) / span) * 34 - 2, 2)
             points.append(f"{x},{y}")
         station_sparklines[sid] = " ".join(points)
 
@@ -351,13 +351,13 @@ def monitoring_dashboard(request):
         min_v = min(numeric)
         max_v = max(numeric)
         span = max_v - min_v if max_v != min_v else 1.0
-        width = 80
-        height = 24
+        width = 120
+        height = 40
         n = len(numeric)
         points = []
         for i, v in enumerate(numeric):
             x = round(i * (width - 1) / (n - 1), 2)
-            y = round(height - ((v - min_v) / span) * (height - 4) - 2, 2)
+            y = round(height - ((v - min_v) / span) * (height - 6) - 2, 2)
             points.append(f"{x},{y}")
         station_sparklines[sid] = " ".join(points)
 
