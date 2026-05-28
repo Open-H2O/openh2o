@@ -441,5 +441,5 @@ Plans:
 | 25. Content & Polish | v1.2 | 1/1 | Complete | 2026-05-28 |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
-| 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 1/1 | Complete | 2026-05-28 |
+| 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 1/2 | In progress | - |
 | 27. Data Entry & UX Clarity | v1.2 | 0/1 | Not started | - |
