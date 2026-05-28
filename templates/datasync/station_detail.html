@@ -179,10 +179,11 @@
             </select>
             {% endif %}
             <div style="display: flex; gap: 2px;">
-              <button class="chart-range-btn active-range" data-days="7" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 4px 0 0 4px; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">7d</button>
-              <button class="chart-range-btn" data-days="30" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-right: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">30d</button>
-              <button class="chart-range-btn" data-days="90" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-right: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">90d</button>
-              <button class="chart-range-btn" data-days="365" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 0 4px 4px 0; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">1y</button>
+              <button class="chart-range-btn" data-days="7" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 4px 0 0 4px; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">7d</button>
+              <button class="chart-range-btn" data-days="30" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">30d</button>
+              <button class="chart-range-btn" data-days="90" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">90d</button>
+              <button class="chart-range-btn" data-days="365" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">1y</button>
+              <button class="chart-range-btn active-range" data-days="0" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 0 4px 4px 0; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">All</button>
             </div>
           </div>
         </div>
@@ -287,7 +288,7 @@
     }
   });
 
-  var currentDays = 7;
+  var currentDays = 0;
   var currentParam = null;
 
   function loadChart(param, days) {
