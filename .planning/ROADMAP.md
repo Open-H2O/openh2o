@@ -8,7 +8,7 @@ Stand up an AI-deployable water accounting platform from scratch. Start with Doc
 
 - ✅ **v1.0 MVP** — Phases 1-8 (shipped 2026-05-24)
 - 🚧 **v1.1 Production Polish** — Phases 9-14 (in progress)
-- 📋 **v1.2 Enhancement Suite** — Phases 15-25 (planned, includes Math Validation in 22, UI Overhaul in 23-25)
+- 📋 **v1.2 Enhancement Suite** — Phases 15-27 (planned, includes Math Validation in 22, UI Overhaul in 23-25, Geo Polish in 26-27)
 
 ## Completed Milestones
 
@@ -352,6 +352,61 @@ Plans:
 Plans:
 - [ ] 21-01: TBD (run /gsd:plan-phase 21 to break down)
 
+#### Phase 26: Geospatial Polish & Monitoring Overhaul
+
+**Goal**: Make every map world-class and get monitoring stations showing real data. Two sub-sections: (A) Visual polish across all 13 maps, (B) monitoring station overhaul with real telemetry.
+**Depends on**: Phase 25
+**Research**: Unlikely (internal CSS/JS/template work, Chart.js CDN integration)
+**Plans**: 1
+
+**Sub-section A — Visual Polish:**
+- Shrink main map with breathing room to match site spacing (card container with consistent padding)
+- Full font sweep: kill slashed-zero font bleed where Public Sans is not applied (station info card, other elements)
+- Unify all map colors into CSS token variables (fix `#D49A2B` vs `#E4A317` gold mismatch across tokens.css, map-engine.js, and 10+ templates)
+- Redesign layers panel with collapsible grouped sections (Administrative / Land Use / Infrastructure / Monitoring) and logical ordering
+- Fix POD detail pages to use teal (`#4ECDC4`) matching main map instead of gold
+- Make coordinate copy toast more visible with brief animation
+- Enlarge earth/globe icon slightly for better visibility
+- Add ledger source-type pill badges (ET Estimate / Meter Read / Water Budget in distinct colors, keeping green/red positive/negative sign coloring)
+- Rename "Allocation" to "Water Budget" across all templates, models, and help text
+
+**Sub-section B — Monitoring Overhaul:**
+- Add Chart.js via CDN for real time-series telemetry graphs
+- Redesign station detail page with full telemetry chart (parameter selector + date range picker)
+- Replace four stat tiles with clearer labels (rename "Fresh" to "Reporting" or add explanatory subtitles)
+- Improve station list sparklines (larger, interactive)
+- Configure Cloudflare tunnel on Butler for public API access to data adapters
+- Wire up CDEC adapter (auth-free) as first live data source
+- Test data sync pipeline end-to-end (fetch → stage → publish → sparkline)
+
+Plans:
+- [x] 26-01: Visual polish — unified color tokens, entity-color bug fixes, font sweep, layer panel redesign, significant figures normalization
+
+#### Phase 27: Data Entry & UX Clarity
+
+**Goal**: Add missing data entry forms and clarify accounting terminology so the platform is self-explanatory to first-time users.
+**Depends on**: Phase 26
+**Research**: Unlikely (internal template/view/form work)
+**Plans**: 0
+
+**Recharge event entry:**
+- HTMX-powered inline form on recharge site detail page for creating RechargeEvent records
+- On save, auto-call `create_recharge_ledger_entries()` to generate positive ParcelLedger entries immediately
+- Also add RechargeMeasurement entry form (water level, flow rate, infiltration rate)
+
+**Ledger source-type differentiation:**
+- Color-coded pill badges on ledger entries showing source type (ET Estimate, Meter Read, Water Budget, Recharge, Manual, CSV Import)
+- Distinct colors per source type alongside existing green/red sign coloring
+- Source type filter on ledger list page
+
+**Terminology clarity:**
+- Rename "Allocation" → "Water Budget" across all templates, views, models display names, help text, and glossary
+- Add contextual explanations: "Water Budget: the amount assigned to this area for the period" vs "Usage: water consumed via extraction or evapotranspiration"
+- Clarify ledger as a balance sheet: budget entries (positive, what you're allowed) vs usage entries (negative, what was consumed)
+
+Plans:
+- [ ] 27-01: TBD (run /gsd:plan-phase 27 to break down)
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -386,3 +441,5 @@ Plans:
 | 25. Content & Polish | v1.2 | 1/1 | Complete | 2026-05-28 |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
+| 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 1/1 | Complete | 2026-05-28 |
+| 27. Data Entry & UX Clarity | v1.2 | 0/1 | Not started | - |

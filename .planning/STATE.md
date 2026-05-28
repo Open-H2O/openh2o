@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 25 of 25 (Content & Polish)
+Phase: 26 of 27 (Geospatial Polish & Monitoring Overhaul)
 Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-05-28 - Completed 25-01-PLAN.md (About page, Getting Started, glossary sweep)
+Status: In progress (Plan 26-01 complete, phase may have more plans)
+Last activity: 2026-05-28 - Completed 26-01-PLAN.md (visual polish, color tokens, font sweep, layer panel)
 
-Progress: ████████████ 96%
+Progress: █████████████ 97%
 
 ## Performance Metrics
 
@@ -31,6 +31,12 @@ Progress: ████████████ 96%
 
 All decisions logged in PROJECT.md Key Decisions table.
 All marked ✓ Good after v1.0 validation.
+
+| Phase | Decision | Rationale |
+|-------|----------|-----------|
+| 26-01 | Public Sans + tabular-nums for numeric data | Eliminates slashed-zero font bleed while keeping column alignment |
+| 26-01 | OH2O.colors JS global for MapLibre | CSS vars can't be used in MapLibre paint properties; JS object is the bridge |
+| 26-01 | floatformat:2 as standard precision | Water accounting values don't need 4 decimal places |
 
 ### Deferred Issues
 
@@ -53,9 +59,11 @@ All marked ✓ Good after v1.0 validation.
 - Phase 19.1 inserted: Wizard fix + infrastructure entry (type-adaptive form, map draw, file upload, parcel linkage)
 - Phase 22 added: Engineering & Mathematics Validation Sweep (9 known issues in accounting/reporting math)
 - Phases 23-25 added: Comprehensive UI Overhaul (navigation/naming, data model UX, content/polish). Phases 20-21 depend on 25 completing first.
+- Phase 26 added: Geospatial Polish & Monitoring Overhaul (map visual polish + monitoring station telemetry + Cloudflare tunnel)
+- Phase 27 added: Data Entry & UX Clarity (recharge event form, ledger source badges, "Allocation" → "Water Budget" rename)
 
 ## Session Continuity
 
 Last session: 2026-05-28
-Stopped at: Completed 25-01-PLAN.md (About page, Getting Started, glossary sweep). Phase 25 complete. UI Overhaul (23/24/25) finished.
-Resume file: None — Phase 25 complete, proceed to Phase 20 (AI Operator Guide)
+Stopped at: Completed 26-01-PLAN.md (visual polish, color tokens, font sweep, layer panel). Check if Phase 26 has more plans (monitoring overhaul).
+Resume file: None
