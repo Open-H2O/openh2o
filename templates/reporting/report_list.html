@@ -23,7 +23,7 @@
     <!-- GEARS card -->
     <div class="card-raised" style="border-top: 3px solid var(--color-gold);">
       <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 var(--space-sm) 0;">GEARS</h3>
-      <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md) 0; line-height: 1.5;">Groundwater Extraction Annual Report. Per-well extraction volumes for SGMA compliance reporting to the Department of Water Resources.</p>
+      <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md) 0; line-height: 1.5;">Groundwater Extraction Annual Report. Per-well extraction volumes for SGMA compliance reporting to the State Water Board.</p>
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <span class="text-tertiary text-sm">{{ gears_count }} report{{ gears_count|pluralize }}</span>
         <a href="{% url 'reporting:report_generate' %}?type=gears" class="btn-primary btn-sm" style="text-decoration: none;">Generate Report</a>

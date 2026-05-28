@@ -49,7 +49,7 @@ def glossary(request):
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
         "Data Source": "An external agency or API that provides hydrologic measurements.",
-        "GEARS": "Groundwater Extraction Annual Report System, the DWR reporting format for per-well extraction.",
+        "GEARS": "Groundwater Extraction Annual Report System, the State Water Board reporting format for per-well extraction.",
         "GSA": "Groundwater Sustainability Agency, the local agency responsible for managing groundwater under SGMA.",
         "GSP": "Groundwater Sustainability Plan, the 20-year plan each GSA must adopt.",
         "Health Check": "Automated system diagnostic covering data freshness, connectivity, and configuration.",
