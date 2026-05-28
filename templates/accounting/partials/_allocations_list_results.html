@@ -2,7 +2,7 @@
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
-    allocation{{ total_count|pluralize }} found
+    water budget{{ total_count|pluralize }} found
   </span>
 </div>
 
@@ -15,7 +15,7 @@
         <th>Zone</th>
         <th>Water Type</th>
         <th>Period</th>
-        <th class="th-right">Allocation (AF)</th>
+        <th class="th-right">Water Budget (AF)</th>
       </tr>
     </thead>
     <tbody>
@@ -71,6 +71,6 @@
       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
     </svg>
   </div>
-  <p class="empty-state-text">No allocation plans found{% if q %} matching "{{ q }}"{% endif %}{% if period_id %} for this period{% endif %}.</p>
+  <p class="empty-state-text">No water budgets found{% if q %} matching "{{ q }}"{% endif %}{% if period_id %} for this period{% endif %}.</p>
 </div>
 {% endif %}

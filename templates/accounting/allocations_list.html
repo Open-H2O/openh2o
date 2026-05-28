@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Allocation Plans - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Allocation Plans{% endblock %}
+{% block title %}Water Budgets - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water Budgets{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="{% url 'accounting:allocations_list' %}">Accounting</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Allocations</span>
+    <span class="breadcrumb-current">Water Budgets</span>
   </nav>
-  <p class="page-description">Allocation plans set water budgets per zone and water type. Compare actual usage against allocated amounts.</p>
+  <p class="page-description">Water budgets set the volume of water assigned per zone and water type for a period. Compare actual usage against the budgeted amount.</p>
 </div>
 {% endblock %}
 
@@ -55,7 +55,7 @@
 
     <!-- Create button -->
     <div>
-      <a href="{% url 'accounting:allocation_create' %}" class="btn-primary">+ New Allocation</a>
+      <a href="{% url 'accounting:allocation_create' %}" class="btn-primary">+ New Water Budget</a>
     </div>
   </div>
 
