@@ -31,3 +31,6 @@ from datasync.adapters.dwr_wdl import DWRWDLAdapter  # noqa: F401
 from datasync.adapters.noaa import NOAAAdapter  # noqa: F401
 from datasync.adapters.openet import OpenETAdapter  # noqa: F401
 from datasync.adapters.usgs import USGSAdapter  # noqa: F401
+
+# Registry exports — available after all adapters are registered.
+from datasync.adapters.registry import get_all_parameter_maps, get_parameter_label  # noqa: F401
