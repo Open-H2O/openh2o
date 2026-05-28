@@ -54,11 +54,21 @@
         <td>
           {% if item.sparkline_points %}
           <div class="sparkline-container">
-            <svg viewBox="0 0 80 24" width="80" height="24" fill="none" preserveAspectRatio="none">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-{{ item.station.pk }}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <polygon
+                points="{{ item.sparkline_points }} 119,40 0,40"
+                fill="url(#spk-grad-{{ item.station.pk }})"
+              />
               <polyline
                 points="{{ item.sparkline_points }}"
-                stroke="{% if item.freshness == 'fresh' %}var(--forest-400){% elif item.freshness == 'stale' %}var(--furnace-400){% else %}var(--color-text-tertiary){% endif %}"
-                stroke-width="1.5"
+                stroke="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}"
+                stroke-width="2"
                 fill="none"
                 stroke-linecap="round"
                 stroke-linejoin="round"
