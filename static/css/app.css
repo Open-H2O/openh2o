@@ -1606,8 +1606,8 @@ a { color: inherit; }
 
 .sparkline-container {
     display: inline-block;
-    width: 80px;
-    height: 24px;
+    width: 120px;
+    min-height: 40px;
     vertical-align: middle;
     flex-shrink: 0;
 }

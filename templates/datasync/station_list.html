@@ -32,24 +32,24 @@
     <!-- Left: stat cards 2x2 -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm);">
       <div class="card-raised stat-card stat-card-accent-supply" style="margin: 0;">
-        <div class="stat-card-label">Active</div>
+        <div class="stat-card-label">Active Stations</div>
         <div class="stat-card-value text-supply">{{ total_active }}</div>
-        <div class="stat-card-unit">stations</div>
+        <div class="stat-card-unit">total linked to sources</div>
       </div>
       <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--forest-400);">
-        <div class="stat-card-label">Fresh</div>
+        <div class="stat-card-label">Reporting</div>
         <div class="stat-card-value" style="color: var(--forest-400);">{{ fresh_count }}</div>
-        <div class="stat-card-unit">last 24h</div>
+        <div class="stat-card-unit">updated in last 24 hours</div>
       </div>
       <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--furnace-400);">
-        <div class="stat-card-label">Stale</div>
+        <div class="stat-card-label">Not Reporting</div>
         <div class="stat-card-value" style="color: var(--furnace-400);">{{ stale_count }}</div>
-        <div class="stat-card-unit">no recent data</div>
+        <div class="stat-card-unit">no data in 24+ hours</div>
       </div>
       <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--reservoir-400);">
-        <div class="stat-card-label">OpenET</div>
+        <div class="stat-card-label">OpenET Queries</div>
         <div class="stat-card-value" style="color: var(--reservoir-400);">{{ openet_used }}</div>
-        <div class="stat-card-unit">of {{ openet_limit }} queries/mo</div>
+        <div class="stat-card-unit">of {{ openet_limit }} monthly budget used</div>
       </div>
     </div>
 
