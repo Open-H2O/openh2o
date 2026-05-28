@@ -1,13 +1,16 @@
 """
 Department of Water Resources (DWR) SGMA Portal adapter.
 
-API docs: https://sgma.water.ca.gov/webservice/
-No authentication required.
+Data source: CNRA Open Data Portal (CKAN) — Periodic Groundwater Level Measurements
+Dataset: https://data.cnra.ca.gov/dataset/periodic-groundwater-level-measurements
 
+The sgma.water.ca.gov/webservice/ endpoint does not exist. SGMA monitoring well
+data is in the same CNRA CKAN dataset as CASGEM, filterable by monitoring_program='SGMA'.
+
+Station IDs use the CNRA site_code format: e.g. "362273N1191386W002"
 Parameters:
-  gw_level - Groundwater level (ft msl)
-  subsidence - Land subsidence (ft)
-  isw - Interconnected surface water (binary/qualitative)
+  gw_level - Groundwater level (ft msl, using wlm_rpe field = RP elevation)
+             or depth below ground surface (gse_gwe field)
 """
 
 import logging
@@ -17,110 +20,114 @@ from datasync.adapters.base import BaseAdapter
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://sgma.water.ca.gov/webservice/SGMA"
+MEASUREMENTS_RESOURCE_ID = "bfa9f262-24a1-45bd-8dc8-138bc8107266"
+STATIONS_RESOURCE_ID = "af157380-fb42-4abf-b72a-6f9f98868077"
+CNRA_BASE = "https://data.cnra.ca.gov/api/3/action"
 
 PARAMETER_MAP = {
-    "gw_level": {"name": "Groundwater Level", "unit": "ft msl"},
-    "subsidence": {"name": "Land Subsidence", "unit": "ft"},
-    "isw": {"name": "Interconnected Surface Water", "unit": ""},
+    "gw_level": {"name": "Groundwater Level", "unit": "ft bgs"},
 }
 
 
 class DWRSGMAAdapter(BaseAdapter):
     source_code = "dwr_sgma"
-    rate_limit_seconds = 2.0
+    rate_limit_seconds = 1.0
 
     def fetch(self, station, start_date, end_date):
-        """Fetch monitoring data from DWR SGMA portal."""
-        params = {
-            "siteCode": station.external_station_id,
-            "startDate": start_date.strftime("%Y-%m-%d"),
-            "endDate": end_date.strftime("%Y-%m-%d"),
-        }
-        resp = self._request("GET", f"{BASE_URL}/MonitoringSites", params=params)
+        """Fetch SGMA monitoring well data from CNRA Open Data Portal."""
+        sql = (
+            f"SELECT site_code, msmt_date, gse_gwe "
+            f"FROM \"{MEASUREMENTS_RESOURCE_ID}\" "
+            f"WHERE site_code = '{station.external_station_id}' "
+            f"AND monitoring_program = 'SGMA' "
+            f"AND msmt_date >= '{start_date.strftime('%Y-%m-%d')}' "
+            f"AND msmt_date <= '{end_date.strftime('%Y-%m-%d')}' "
+            f"ORDER BY msmt_date"
+        )
+        params = {"sql": sql}
+        resp = self._request("GET", f"{CNRA_BASE}/datastore_search_sql", params=params)
         return resp.json()
 
     def parse(self, raw_data):
-        """Parse SGMA monitoring data into standard records."""
+        """Parse CNRA CKAN response into standard records."""
         records = []
-        if isinstance(raw_data, list):
-            items = raw_data
-        elif isinstance(raw_data, dict):
-            items = raw_data.get("data", raw_data.get("records", []))
-        else:
-            return records
+        result = raw_data.get("result", {}) if isinstance(raw_data, dict) else {}
+        rows = result.get("records", [])
 
-        for item in items:
-            param = item.get("parameter", item.get("parameter_code", "gw_level"))
+        for item in rows:
+            raw_val = item.get("gse_gwe")
+            try:
+                value = float(raw_val) if raw_val is not None else None
+            except (ValueError, TypeError):
+                value = None
+
             records.append({
-                "station_id": item.get("site_code", item.get("station_id", "")),
-                "observation_date": item.get(
-                    "measurement_date", item.get("date", item.get("observation_date", ""))
-                ),
-                "parameter_code": param,
-                "value": item.get("value", item.get("measurement_value")),
-                "unit": PARAMETER_MAP.get(param, {}).get("unit", ""),
+                "station_id": item.get("site_code", ""),
+                "observation_date": item.get("msmt_date", ""),
+                "parameter_code": "gw_level",
+                "value": value,
+                "unit": "ft bgs",
             })
         return records
 
     def validate(self, records):
-        """Validate SGMA records."""
+        """Validate SGMA monitoring records."""
         valid = []
         rejected = []
         for rec in records:
             if rec["value"] is None:
                 rec["rejection_reason"] = "null value"
                 rejected.append(rec)
-            elif rec["parameter_code"] == "gw_level":
-                val = rec["value"]
-                if isinstance(val, (int, float)) and (val < -1000 or val > 15000):
-                    rec["rejection_reason"] = "GW level out of range"
-                    rejected.append(rec)
-                else:
-                    valid.append(rec)
-            elif rec["parameter_code"] == "subsidence":
-                val = rec["value"]
-                if isinstance(val, (int, float)) and (val < -50 or val > 50):
-                    rec["rejection_reason"] = "subsidence out of range"
-                    rejected.append(rec)
-                else:
-                    valid.append(rec)
+            elif isinstance(rec["value"], (int, float)) and rec["value"] < 0:
+                rec["rejection_reason"] = "negative depth (implausible for ft bgs)"
+                rejected.append(rec)
+            elif isinstance(rec["value"], (int, float)) and rec["value"] > 2000:
+                rec["rejection_reason"] = "depth exceeds 2000 ft (implausible)"
+                rejected.append(rec)
             else:
                 valid.append(rec)
         return valid, rejected
 
     def discover_stations(self, boundary_geometry, radius_km=50):
-        """Discover SGMA monitoring sites near a boundary."""
+        """Discover SGMA monitoring sites from CNRA Open Data Portal near a boundary."""
         bbox = boundary_geometry.extent
-        params = {
-            "north": bbox[3],
-            "south": bbox[1],
-            "east": bbox[2],
-            "west": bbox[0],
-        }
-
+        sql = (
+            f"SELECT s.site_code, s.well_name, s.latitude, s.longitude "
+            f"FROM \"{STATIONS_RESOURCE_ID}\" s "
+            f"WHERE CAST(s.latitude AS FLOAT) BETWEEN {bbox[1]} AND {bbox[3]} "
+            f"AND CAST(s.longitude AS FLOAT) BETWEEN {bbox[0]} AND {bbox[2]} "
+            f"AND EXISTS ("
+            f"  SELECT 1 FROM \"{MEASUREMENTS_RESOURCE_ID}\" m "
+            f"  WHERE m.site_code = s.site_code AND m.monitoring_program = 'SGMA'"
+            f") "
+            f"LIMIT 50"
+        )
         try:
-            resp = self._request("GET", f"{BASE_URL}/MonitoringSites", params=params)
+            resp = self._request(
+                "GET", f"{CNRA_BASE}/datastore_search_sql", params={"sql": sql}
+            )
             data = resp.json()
         except Exception as exc:
-            logger.warning("DWR SGMA station discovery failed: %s", exc)
+            logger.warning("DWR SGMA (CNRA) station discovery failed: %s", exc)
             return []
 
         stations = []
-        sites = data if isinstance(data, list) else data.get("sites", [])
-        for site in sites:
-            lat = site.get("latitude")
-            lon = site.get("longitude")
-            sid = site.get("site_code", site.get("siteCode", ""))
-            name = site.get("site_name", site.get("siteName", ""))
+        for row in data.get("result", {}).get("records", []):
+            lat = row.get("latitude")
+            lon = row.get("longitude")
+            sid = row.get("site_code", "")
+            name = row.get("well_name", "") or sid
             if lat and lon and sid:
-                stations.append({
-                    "station_id": str(sid),
-                    "name": name,
-                    "latitude": float(lat),
-                    "longitude": float(lon),
-                    "parameters": list(PARAMETER_MAP.keys()),
-                })
+                try:
+                    stations.append({
+                        "station_id": sid,
+                        "name": name,
+                        "latitude": float(lat),
+                        "longitude": float(lon),
+                        "parameters": list(PARAMETER_MAP.keys()),
+                    })
+                except (ValueError, TypeError):
+                    continue
         return stations
 
 
