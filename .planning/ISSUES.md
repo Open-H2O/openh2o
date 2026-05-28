@@ -4,34 +4,16 @@ Deferred items and nice-to-haves discovered during execution.
 
 ## Open
 
-### ISS-006: Wire remaining adapters for live telemetry sync
-- **Phase:** 26-02 (discovered during checkpoint)
-- **Priority:** P1 (monitoring tab shows 1/7 active stations reporting)
-- **Description:** USGS, DWR WDL, and DWR SGMA adapters exist but never ran live (DATASYNC_MOCK_MODE was True). Run `sync_source` for each, fix date/field parsing bugs, verify data.
-- **Stations:** USGS 11210100, USGS 11208730, DWR WDL KAW-GWL-01/02, DWR SGMA TUL-001
-- **Effort:** ~30 min (adapters exist, just need live testing)
-
 ### ISS-007: Get CIMIS API key and wire CIMIS adapter
 - **Phase:** 26-02 (discovered during checkpoint)
 - **Priority:** P2 (ET and precip data for water budgets)
 - **Description:** CIMIS adapter exists but needs appKey from et.water.ca.gov. Free registration. Station: CIMIS 54 (Visalia).
 - **Blocked by:** API key registration at https://et.water.ca.gov/Home/Register
 
-### ISS-008: Chart parameter dropdown shows raw codes ("15", "20")
-- **Phase:** 26-02 (user feedback)
-- **Priority:** P1 (meaningless numbers in dropdown)
-- **Description:** `<select>` populated from `station.parameters` raw codes. JS label update fails when API returns fewer params than template. Fix: populate from API response or use PARAMETER_MAP labels server-side.
-- **File:** `templates/datasync/station_detail.html` JS block
-
-### ISS-009: Chart Y-axis needs unit label and contextual title
-- **Phase:** 26-02 (user feedback)
-- **Priority:** P1 (numbers without units are meaningless)
-- **Description:** Y-axis shows bare numbers. Title says "Telemetry" not parameter name. Use Chart.js `scales.y.title.text` and dynamic card title.
-
-### ISS-010: Units and labels audit across all monitoring pages
-- **Phase:** 26-02 (user feedback)
-- **Priority:** P2 (values without units throughout monitoring section)
-- **Description:** Audit station detail records table, sparkline tooltips, chart tooltips, station list for missing units. Each adapter needs PARAMETER_MAP with display names and units.
+### ISS-011: Login page needs visual overhaul
+- **Phase:** 26.1-01 (user feedback during checkpoint)
+- **Priority:** P1 (first impression for new users)
+- **Description:** Login page uses unstyled Django default. Needs VanderDev design system treatment: dark mode, proper branding, centered card layout matching the rest of the platform.
 
 ### ISSUE-005: Open-source licensing and trademark protection
 - **Phase:** None (non-code, do before public release)
@@ -57,6 +39,22 @@ Deferred items and nice-to-haves discovered during execution.
 ### ISSUE-004: Wells/PODs need association with Place of Use (parcels)
 - **Phase:** 11.1-02 (discovered), post-12 (resolved)
 - **Resolution:** WellIrrigatedParcel already existed (Phase 2). Added PointOfDiversionParcel junction table mirroring the same pattern. Migration 0003. Admin registered. UI rename to "Place of Use" deferred as non-essential. Commit 7e163d4, 41c82f2.
+
+### ISS-006: Wire remaining adapters for live telemetry sync
+- **Phase:** 26-02 (discovered), 26.1-01 (resolved)
+- **Resolution:** USGS adapter worked as-is (273 records from station 11208730). DWR WDL and DWR SGMA adapters rewritten from scratch — original endpoints (wdl.water.ca.gov and sgma.water.ca.gov/webservice) returned 404 (decommissioned). Both now query the CNRA Open Data Portal CKAN API (data.cnra.ca.gov Periodic Groundwater Level Measurements dataset). DWR WDL: 1,014 records from 2 Kaweah wells. DWR SGMA: 2 records (quarterly measurements). Commits 74c2ccc, b3bff39.
+
+### ISS-008: Chart parameter dropdown shows raw codes ("15", "20")
+- **Phase:** 26-02 (user feedback), 26.1-01 (resolved)
+- **Resolution:** Created unified parameter registry (`datasync/adapters/registry.py`) merging all adapter PARAMETER_MAPs. Views now use `get_parameter_label()` instead of hardcoded dicts. Template renders `enriched_parameters` with human labels on first load. Commit 03d1134.
+
+### ISS-009: Chart Y-axis needs unit label and contextual title
+- **Phase:** 26-02 (user feedback), 26.1-01 (resolved)
+- **Resolution:** Chart.js config updated with Y-axis title, dynamic chart card title, and tooltip callbacks appending units. All driven by registry labels via API response. Commits 03d1134, 7220008.
+
+### ISS-010: Units and labels audit across all monitoring pages
+- **Phase:** 26-02 (user feedback), 26.1-01 (resolved)
+- **Resolution:** Sparkline hover tooltips show "Latest: {value} {unit}". Chart tooltips append units. Parameter pills on station detail show human names. Recent records table uses registry labels for all sources. Commit 7220008.
 
 ### ISSUE-002: WaterRight missing parcel FK
 - **Phase:** 04-02 (deferred), 09-01 (resolved)

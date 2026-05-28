@@ -388,17 +388,17 @@ Plans: 2
 **Goal**: Wire remaining data adapters (USGS, DWR Water Data Library, DWR SGMA Portal, CIMIS) for live telemetry sync. Fix chart parameter dropdown to show human-readable labels instead of raw codes. Add Y-axis unit labels and contextual chart titles. Audit all monitoring pages for missing units (station detail records, sparkline tooltips, chart tooltips, station list).
 **Depends on**: Phase 26
 **Research**: Unlikely (adapters exist, issues diagnosed in ISS-006 through ISS-010)
-**Plans**: 0
+**Plans**: 1
 
-**Tracked issues:**
-- ISS-006: Wire USGS/DWR WDL/DWR SGMA adapters for live sync (P1)
-- ISS-007: Get CIMIS API key and wire CIMIS adapter (P2)
-- ISS-008: Chart parameter dropdown shows raw codes instead of names (P1)
-- ISS-009: Chart Y-axis needs unit label and contextual title (P1)
-- ISS-010: Units and labels audit across all monitoring pages (P2)
+**Tracked issues (resolved):**
+- ~~ISS-006: Wire USGS/DWR WDL/DWR SGMA adapters for live sync (P1)~~ — Done
+- ISS-007: Get CIMIS API key and wire CIMIS adapter (P2) — Deferred (optional)
+- ~~ISS-008: Chart parameter dropdown shows raw codes instead of names (P1)~~ — Done
+- ~~ISS-009: Chart Y-axis needs unit label and contextual title (P1)~~ — Done
+- ~~ISS-010: Units and labels audit across all monitoring pages (P2)~~ — Done
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 26.1 to break down)
+- [x] 26.1-01: Parameter registry, chart labels/units, DWR adapter rewrite, live sync for USGS/WDL/SGMA
 
 #### Phase 27: Data Entry & UX Clarity
 
@@ -460,5 +460,5 @@ Plans:
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
 | 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 2/2 | Complete | 2026-05-28 |
-| 26.1 Monitoring Completion | v1.2 | 0/? | Not started | - |
+| 26.1 Monitoring Completion | v1.2 | 1/1 | Complete | 2026-05-28 |
 | 27. Data Entry & UX Clarity | v1.2 | 0/1 | Not started | - |

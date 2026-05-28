@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 26 of 27 (Geospatial Polish & Monitoring Overhaul) - COMPLETE
-Plan: 2 of 2 in current phase
+Phase: 26.1 of 27 (Monitoring Completion) - COMPLETE
+Plan: 1 of 1 in current phase
 Status: Phase complete
-Last activity: 2026-05-28 - Completed 26-02-PLAN.md (Chart.js telemetry, CDEC live sync, stat labels, freshness map)
+Last activity: 2026-05-28 - Completed 26.1-01-PLAN.md (parameter registry, chart labels/units, DWR adapter rewrite, live sync)
 
-Progress: ██████████████ 98%
+Progress: ██████████████ 99%
 
 ## Performance Metrics
 
@@ -40,6 +40,9 @@ All marked ✓ Good after v1.0 validation.
 | 26-02 | DATASYNC_MOCK_MODE default=False | Live API calls are the norm; mock is opt-in |
 | 26-02 | Removed boundary filter from station list | Watershed stations in foothills must be visible |
 | 26-02 | Deleted 21 non-Kaweah stations | Demo scoped to Kaweah subbasin only |
+| 26.1-01 | DWR adapters rewritten for CNRA CKAN API | Original WDL and SGMA endpoints decommissioned (404) |
+| 26.1-01 | Lazy importlib in parameter registry | Avoids circular imports with adapter registration |
+| 26.1-01 | CIMIS deferred (ISS-007) | Works without it; OpenET provides ET data |
 
 ### Deferred Issues
 
@@ -69,5 +72,5 @@ All marked ✓ Good after v1.0 validation.
 ## Session Continuity
 
 Last session: 2026-05-28
-Stopped at: Phase 26 complete. 5 monitoring issues logged (ISS-006 through ISS-010): wire USGS/DWR/CIMIS adapters, fix chart labels/units. Next: Phase 26.1 (monitoring completion) or Phase 27.
+Stopped at: Phase 26.1 complete. ISS-006/008/009/010 resolved. ISS-007 (CIMIS) deferred. ISS-011 (login page) logged. Next: Phase 27 (Data Entry & UX Clarity) or Phase 20 (AI Operator Guide).
 Resume file: None
