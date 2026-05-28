@@ -80,8 +80,7 @@
         <div class="row-between">
           <span class="badge badge-grey badge-pill text-xs">{{ item.station.data_source.code }}</span>
           {% if item.sparkline_points %}
-          <div class="sparkline-container">
-            {% with color=item.freshness == 'fresh' and '#22c55e' or item.freshness == 'stale' and '#f59e0b' or '#9ca3af' %}
+          <div class="sparkline-container" {% if item.latest_tooltip %}title="{{ item.latest_tooltip }}" style="cursor: default;"{% endif %}>
             <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="spk-grad-{{ item.station.pk }}" x1="0" y1="0" x2="0" y2="1">
@@ -89,6 +88,7 @@
                   <stop offset="100%" stop-color="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}" stop-opacity="0"/>
                 </linearGradient>
               </defs>
+              {% if item.latest_tooltip %}<title>{{ item.latest_tooltip }}</title>{% endif %}
               <polygon
                 points="{{ item.sparkline_points }} 119,40 0,40"
                 fill="url(#spk-grad-{{ item.station.pk }})"
@@ -102,7 +102,6 @@
                 stroke-linejoin="round"
               />
             </svg>
-            {% endwith %}
           </div>
           {% else %}
           <span class="text-tertiary text-xs">No data</span>
