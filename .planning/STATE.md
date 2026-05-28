@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 26 of 27 (Geospatial Polish & Monitoring Overhaul)
-Plan: 1 of 1 in current phase
-Status: In progress (Plan 26-01 complete, phase may have more plans)
-Last activity: 2026-05-28 - Completed 26-01-PLAN.md (visual polish, color tokens, font sweep, layer panel)
+Phase: 26 of 27 (Geospatial Polish & Monitoring Overhaul) - COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-05-28 - Completed 26-02-PLAN.md (Chart.js telemetry, CDEC live sync, stat labels, freshness map)
 
-Progress: █████████████ 97%
+Progress: ██████████████ 98%
 
 ## Performance Metrics
 
@@ -37,6 +37,9 @@ All marked ✓ Good after v1.0 validation.
 | 26-01 | Public Sans + tabular-nums for numeric data | Eliminates slashed-zero font bleed while keeping column alignment |
 | 26-01 | OH2O.colors JS global for MapLibre | CSS vars can't be used in MapLibre paint properties; JS object is the bridge |
 | 26-01 | floatformat:2 as standard precision | Water accounting values don't need 4 decimal places |
+| 26-02 | DATASYNC_MOCK_MODE default=False | Live API calls are the norm; mock is opt-in |
+| 26-02 | Removed boundary filter from station list | Watershed stations in foothills must be visible |
+| 26-02 | Deleted 21 non-Kaweah stations | Demo scoped to Kaweah subbasin only |
 
 ### Deferred Issues
 
@@ -65,5 +68,5 @@ All marked ✓ Good after v1.0 validation.
 ## Session Continuity
 
 Last session: 2026-05-28
-Stopped at: Completed 26-01-PLAN.md (visual polish, color tokens, font sweep, layer panel). Check if Phase 26 has more plans (monitoring overhaul).
+Stopped at: Phase 26 complete. 5 monitoring issues logged (ISS-006 through ISS-010): wire USGS/DWR/CIMIS adapters, fix chart labels/units. Next: Phase 26.1 (monitoring completion) or Phase 27.
 Resume file: None

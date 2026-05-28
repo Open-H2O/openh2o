@@ -379,8 +379,9 @@ Plans:
 - Wire up CDEC adapter (auth-free) as first live data source
 - Test data sync pipeline end-to-end (fetch → stage → publish → sparkline)
 
-Plans:
+Plans: 2
 - [x] 26-01: Visual polish — unified color tokens, entity-color bug fixes, font sweep, layer panel redesign, significant figures normalization
+- [x] 26-02: Monitoring overhaul — Chart.js telemetry, live CDEC sync (Terminus Dam 87 records), stat labels, freshness map consolidation, 8 bug fixes
 
 #### Phase 27: Data Entry & UX Clarity
 
@@ -441,5 +442,5 @@ Plans:
 | 25. Content & Polish | v1.2 | 1/1 | Complete | 2026-05-28 |
 | 20. AI Operator Guide | v1.2 | 0/1 | Not started | - |
 | 21. Merced Automated Deployment Test | v1.2 | 0/1 | Not started | - |
-| 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 1/2 | In progress | - |
+| 26. Geospatial Polish & Monitoring Overhaul | v1.2 | 2/2 | Complete | 2026-05-28 |
 | 27. Data Entry & UX Clarity | v1.2 | 0/1 | Not started | - |

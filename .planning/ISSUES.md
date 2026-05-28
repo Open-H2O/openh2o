@@ -4,6 +4,35 @@ Deferred items and nice-to-haves discovered during execution.
 
 ## Open
 
+### ISS-006: Wire remaining adapters for live telemetry sync
+- **Phase:** 26-02 (discovered during checkpoint)
+- **Priority:** P1 (monitoring tab shows 1/7 active stations reporting)
+- **Description:** USGS, DWR WDL, and DWR SGMA adapters exist but never ran live (DATASYNC_MOCK_MODE was True). Run `sync_source` for each, fix date/field parsing bugs, verify data.
+- **Stations:** USGS 11210100, USGS 11208730, DWR WDL KAW-GWL-01/02, DWR SGMA TUL-001
+- **Effort:** ~30 min (adapters exist, just need live testing)
+
+### ISS-007: Get CIMIS API key and wire CIMIS adapter
+- **Phase:** 26-02 (discovered during checkpoint)
+- **Priority:** P2 (ET and precip data for water budgets)
+- **Description:** CIMIS adapter exists but needs appKey from et.water.ca.gov. Free registration. Station: CIMIS 54 (Visalia).
+- **Blocked by:** API key registration at https://et.water.ca.gov/Home/Register
+
+### ISS-008: Chart parameter dropdown shows raw codes ("15", "20")
+- **Phase:** 26-02 (user feedback)
+- **Priority:** P1 (meaningless numbers in dropdown)
+- **Description:** `<select>` populated from `station.parameters` raw codes. JS label update fails when API returns fewer params than template. Fix: populate from API response or use PARAMETER_MAP labels server-side.
+- **File:** `templates/datasync/station_detail.html` JS block
+
+### ISS-009: Chart Y-axis needs unit label and contextual title
+- **Phase:** 26-02 (user feedback)
+- **Priority:** P1 (numbers without units are meaningless)
+- **Description:** Y-axis shows bare numbers. Title says "Telemetry" not parameter name. Use Chart.js `scales.y.title.text` and dynamic card title.
+
+### ISS-010: Units and labels audit across all monitoring pages
+- **Phase:** 26-02 (user feedback)
+- **Priority:** P2 (values without units throughout monitoring section)
+- **Description:** Audit station detail records table, sparkline tooltips, chart tooltips, station list for missing units. Each adapter needs PARAMETER_MAP with display names and units.
+
 ### ISSUE-005: Open-source licensing and trademark protection
 - **Phase:** None (non-code, do before public release)
 - **Context:** Domain openh2o owned. Code intended to be open source, but must prevent corporations from forking and selling as a proprietary product. Need to select a license that allows free use by water districts/GSAs while blocking commercial appropriation.
