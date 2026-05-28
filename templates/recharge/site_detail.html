@@ -199,16 +199,16 @@
       if (geomType === 'Point') {
         map.addLayer({
           id: 'site-point', type: 'circle', source: 'site',
-          paint: { 'circle-radius': 10, 'circle-color': '#E4A317', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }
+          paint: { 'circle-radius': 10, 'circle-color': OH2O.colors.purple, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' }
         });
       } else {
         map.addLayer({
           id: 'site-fill', type: 'fill', source: 'site',
-          paint: { 'fill-color': '#E4A317', 'fill-opacity': 0.25 }
+          paint: { 'fill-color': OH2O.colors.purple, 'fill-opacity': 0.25 }
         });
         map.addLayer({
           id: 'site-outline', type: 'line', source: 'site',
-          paint: { 'line-color': '#E4A317', 'line-width': 2 }
+          paint: { 'line-color': OH2O.colors.purple, 'line-width': 2 }
         });
       }
       var bounds = new maplibregl.LngLatBounds();

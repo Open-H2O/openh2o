@@ -382,60 +382,60 @@
     map.addSource('drawing', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'drawing-line', type: 'line', source: 'drawing',
-      paint: { 'line-color': '#E4A317', 'line-width': 2, 'line-dasharray': [4, 2] }
+      paint: { 'line-color': OH2O.colors.gold, 'line-width': 2, 'line-dasharray': [4, 2] }
     });
     map.addLayer({
       id: 'drawing-vertices', type: 'circle', source: 'drawing',
       filter: ['==', '$type', 'Point'],
-      paint: { 'circle-radius': 5, 'circle-color': '#E4A317', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+      paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.gold, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
     });
 
     map.addSource('finished', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'finished-fill', type: 'fill', source: 'finished',
-      paint: { 'fill-color': '#1B7FAF', 'fill-opacity': 0.25 }
+      paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.25 }
     });
     map.addLayer({
       id: 'finished-line', type: 'line', source: 'finished',
-      paint: { 'line-color': '#3DB4E0', 'line-width': 2 }
+      paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 2 }
     });
 
     map.addSource('upload-preview', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'upload-fill', type: 'fill', source: 'upload-preview',
       filter: ['==', '$type', 'Polygon'],
-      paint: { 'fill-color': '#E4A317', 'fill-opacity': 0.15 }
+      paint: { 'fill-color': OH2O.colors.gold, 'fill-opacity': 0.15 }
     });
     map.addLayer({
       id: 'upload-line', type: 'line', source: 'upload-preview',
-      paint: { 'line-color': '#E4A317', 'line-width': 2, 'line-dasharray': [3, 2] }
+      paint: { 'line-color': OH2O.colors.gold, 'line-width': 2, 'line-dasharray': [3, 2] }
     });
     map.addLayer({
       id: 'upload-point', type: 'circle', source: 'upload-preview',
       filter: ['==', '$type', 'Point'],
-      paint: { 'circle-radius': 6, 'circle-color': '#E4A317', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+      paint: { 'circle-radius': 6, 'circle-color': OH2O.colors.gold, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
     });
 
     map.addSource('parcels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'parcels-fill', type: 'fill', source: 'parcels',
-      paint: { 'fill-color': '#3DB4E0', 'fill-opacity': 0.12 },
+      paint: { 'fill-color': OH2O.colors.blueBright, 'fill-opacity': 0.12 },
       layout: { 'visibility': 'none' }
     });
     map.addLayer({
       id: 'parcels-line', type: 'line', source: 'parcels',
-      paint: { 'line-color': '#3DB4E0', 'line-width': 1.5 },
+      paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 1.5 },
       layout: { 'visibility': 'none' }
     });
 
     map.addSource('parcel-highlight', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'parcel-highlight-fill', type: 'fill', source: 'parcel-highlight',
-      paint: { 'fill-color': '#E4A317', 'fill-opacity': 0.25 }
+      paint: { 'fill-color': OH2O.colors.gold, 'fill-opacity': 0.25 }
     });
     map.addLayer({
       id: 'parcel-highlight-line', type: 'line', source: 'parcel-highlight',
-      paint: { 'line-color': '#E4A317', 'line-width': 2.5 }
+      paint: { 'line-color': OH2O.colors.gold, 'line-width': 2.5 }
     });
   });
 
@@ -452,7 +452,7 @@
 
   function placePoint(lngLat) {
     if (marker) marker.remove();
-    marker = new maplibregl.Marker({ color: '#E4A317', draggable: true })
+    marker = new maplibregl.Marker({ color: OH2O.colors.gold, draggable: true })
       .setLngLat(lngLat)
       .addTo(map);
     marker.on('dragend', function() {
