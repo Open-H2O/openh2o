@@ -20,23 +20,8 @@ document.title = MAP_CONFIG.title;
     var panel = document.getElementById('controls');
     var groupsSeen = {};
 
-    MAP_CONFIG.layers.forEach(function(layer) {
-        if (layer.groupHidden) return;
-
-        var layerIds = [layer.id];
-        if (layer.glow) layerIds.unshift(layer.id + '-glow');
-        if (layer.group) {
-            if (groupsSeen[layer.group]) return;
-            groupsSeen[layer.group] = true;
-            layerIds = [];
-            MAP_CONFIG.layers.forEach(function(l) {
-                if (l.group === layer.group) {
-                    if (l.glow) layerIds.push(l.id + '-glow');
-                    layerIds.push(l.id);
-                }
-            });
-        }
-
+    // Helper: build a single layer-toggle label
+    function buildToggle(layer, layerIds) {
         var label = document.createElement('label');
         label.className = 'layer-toggle';
 
@@ -84,7 +69,84 @@ document.title = MAP_CONFIG.title;
         label.appendChild(cb);
         label.appendChild(swatch);
         label.appendChild(document.createTextNode(layer.label || layer.id));
-        panel.appendChild(label);
+        return label;
+    }
+
+    // Determine if any layer has a section property (grouped mode)
+    var hasSections = MAP_CONFIG.layers.some(function(l) { return l.section; });
+
+    if (!hasSections) {
+        // Flat mode: backward compatible with detail page mini-maps
+        MAP_CONFIG.layers.forEach(function(layer) {
+            if (layer.groupHidden) return;
+
+            var layerIds = [layer.id];
+            if (layer.glow) layerIds.unshift(layer.id + '-glow');
+            if (layer.group) {
+                if (groupsSeen[layer.group]) return;
+                groupsSeen[layer.group] = true;
+                layerIds = [];
+                MAP_CONFIG.layers.forEach(function(l) {
+                    if (l.group === layer.group) {
+                        if (l.glow) layerIds.push(l.id + '-glow');
+                        layerIds.push(l.id);
+                    }
+                });
+            }
+            panel.appendChild(buildToggle(layer, layerIds));
+        });
+        return;
+    }
+
+    // Grouped mode: collect sections in order of first appearance
+    var sectionOrder = [];
+    var sectionMap = {};
+
+    MAP_CONFIG.layers.forEach(function(layer) {
+        if (layer.groupHidden) return;
+        var sectionName = layer.section || 'Other';
+        if (!sectionMap[sectionName]) {
+            sectionMap[sectionName] = [];
+            sectionOrder.push(sectionName);
+        }
+        // Dedup groups within sections
+        if (layer.group) {
+            if (groupsSeen[layer.group]) return;
+            groupsSeen[layer.group] = true;
+        }
+        sectionMap[sectionName].push(layer);
+    });
+
+    sectionOrder.forEach(function(sectionName) {
+        var layers = sectionMap[sectionName];
+
+        var section = document.createElement('div');
+        section.className = 'layer-section';
+
+        var header = document.createElement('div');
+        header.className = 'layer-section-header';
+        header.innerHTML = '<span class="section-chevron">&#9662;</span> ' + sectionName;
+        header.addEventListener('click', function() {
+            section.classList.toggle('collapsed');
+        });
+        section.appendChild(header);
+
+        layers.forEach(function(layer) {
+            var layerIds = [layer.id];
+            if (layer.glow) layerIds.unshift(layer.id + '-glow');
+            if (layer.group) {
+                layerIds = [];
+                MAP_CONFIG.layers.forEach(function(l) {
+                    if (l.group === layer.group) {
+                        if (l.glow) layerIds.push(l.id + '-glow');
+                        layerIds.push(l.id);
+                    }
+                });
+            }
+            section.appendChild(buildToggle(layer, layerIds));
+        });
+
+        panel.appendChild(section);
     });
 })();
 

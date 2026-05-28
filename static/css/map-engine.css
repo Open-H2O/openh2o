@@ -84,6 +84,19 @@
 .swatch-diamond { flex-shrink:0; font-size:14px; line-height:1; }
 .swatch-fill { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
 
+/* ── Layer section groupings ── */
+.layer-section { margin-bottom: 8px; }
+.layer-section-header {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+    text-transform: uppercase; color: var(--color-text-tertiary, #6b7f94);
+    padding: 4px 0; cursor: pointer; display: flex; align-items: center; gap: 4px;
+    user-select: none;
+}
+.layer-section-header:hover { color: var(--color-text-secondary, #8899aa); }
+.section-chevron { font-size: 8px; transition: transform 0.2s; }
+.layer-section.collapsed .section-chevron { transform: rotate(-90deg); }
+.layer-section.collapsed .layer-toggle { display: none; }
+
 /* ── Legend (bottom left) ── */
 #legend {
     position:absolute; bottom:30px; left:12px; z-index:10;
