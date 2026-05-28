@@ -18,66 +18,76 @@
 <div class="page-stack page-medium">
 
   <div class="card-raised step-card">
-    <span class="step-number">1</span>
+    <span class="step-number">&#x1F4CD; 1</span>
     <div class="step-body">
       <h2 class="section-header">Import Your Use Areas</h2>
       <p class="text-secondary text-base">Upload use area boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Use Areas and use the import command. Each use area needs an Assessor Parcel Number (APN).</p>
+      <a href="{% url 'parcels:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Areas &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">2</span>
+    <span class="step-number">&#x26F1; 2</span>
     <div class="step-body">
       <h2 class="section-header">Import Your Extraction Wells</h2>
       <p class="text-secondary text-base">Upload extraction well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
+      <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Extraction Wells &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">3</span>
+    <span class="step-number">&#x1F465; 3</span>
     <div class="step-body">
       <h2 class="section-header">Set Up Water Accounts</h2>
-      <p class="text-secondary text-base">Create water accounts to group parcels for tracking. Go to Setup &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
+      <p class="text-secondary text-base">Create water accounts to group use areas for tracking. Go to Administration &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
+      <a href="{% url 'accounting:accounts_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Accounts &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">4</span>
+    <span class="step-number">&#x1F4C5; 4</span>
     <div class="step-body">
       <h2 class="section-header">Create a Water Year</h2>
       <p class="text-secondary text-base">Define the time window for accounting. Go to Compliance &gt; Water Years. Most agencies use the water year (October 1 through September 30).</p>
+      <a href="{% url 'accounting:periods_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Years &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">5</span>
+    <span class="step-number">&#x1F4D2; 5</span>
     <div class="step-body">
       <h2 class="section-header">Enter Use Ledger Data</h2>
       <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. The use ledger is the core of water accounting.</p>
+      <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Ledger &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">6</span>
+    <span class="step-number">&#x1F4E1; 6</span>
     <div class="step-body">
       <h2 class="section-header">Connect Monitoring Stations</h2>
       <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS wells, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
+      <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Monitoring Stations &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">7</span>
+    <span class="step-number">&#x1F4A7; 7</span>
     <div class="step-body">
       <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection wells.</p>
+      <a href="{% url 'surface:pod_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Surface Diversions &rarr;</a>
+      <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
+      <a href="{% url 'recharge:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Recharge Areas &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">8</span>
+    <span class="step-number">&#x1F4C4; 8</span>
     <div class="step-body">
       <h2 class="section-header">Generate State Reports</h2>
       <p class="text-secondary text-base">When your reporting period is complete, generate GEARS CSV (per-well extraction) and CalWATRS CSV (surface diversions) for submission to the Water Board. Go to Reports &gt; Generate.</p>
+      <a href="{% url 'reporting:report_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Reports &rarr;</a>
     </div>
   </div>
 
