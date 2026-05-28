@@ -424,7 +424,9 @@ Plans:
 
 Plans:
 - [x] 27-01: Recharge event entry + auto-ledger + color-coded source pills (measurement form pulled per user) — 2026-05-28
-- [ ] 27-02: Allocation → Water Budget terminology sweep
+- [x] 27-02: Allocation → Water Budget terminology sweep (display-only; state-only migrations) — 2026-05-28
+
+**Phase 27 COMPLETE** (2/2 plans) — 2026-05-28
 
 #### Phase 28: Public Deployment (openh2o.com)
 

@@ -65,3 +65,9 @@ Deferred items and nice-to-haves discovered during execution.
 ### ISSUE-002: WaterRight missing parcel FK
 - **Phase:** 04-02 (deferred), 09-01 (resolved)
 - **Resolution:** Added `WaterRightParcel` junction table (many-to-many via explicit model) with `unique_together` constraint. `create_diversion_ledger_entry` now looks up parcel via `WaterRightParcel` when no parcel param supplied. Migration: `surface/migrations/0002_waterrightparcel.py`.
+
+### ISS-013: Pre-existing migration drift in datasync and recharge apps
+- **Phase:** 27-02 (discovered during makemigrations --check)
+- **Severity:** Low (state-only: index renames + a choices-label alter; no DB schema/data impact)
+- **Detail:** `manage.py makemigrations --check` reports uncommitted model changes in two apps unrelated to this plan: `datasync` (index renames on OpenETCache, from Phase 18-01 commit 68a9882) and `recharge` (alter field `site_type` on RechargeSite, from a later edit). These are committed model definitions whose matching migrations were never generated. The accounting/parcels label migrations added in 27-02 are fully in sync.
+- **Fix:** Run `docker compose exec web python manage.py makemigrations datasync recharge` on Butler, commit the generated files, redeploy. Trivial and low-risk, but out of scope for the Water Budget terminology plan.

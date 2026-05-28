@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 28 of 28 (Public Deployment) - COMPLETE
-Plan: 1 of 1 in current phase
-Status: openh2o.com LIVE (public, production settings) — final visual sign-off pending
-Last activity: 2026-05-28 - Completed 28-01 (Cloudflare tunnel + production flip). 27-02 still pending.
+Phase: 28 of 28 COMPLETE — Phase 27 also COMPLETE (2/2 plans)
+Plan: 27-02 complete (Allocation → Water Budget rename, deployed + verified)
+Status: openh2o.com LIVE and publicly reachable (DNS fixed this session). All planned phases done.
+Last activity: 2026-05-28 - Completed 27-02 (Water Budget rename) + fixed openh2o.com public DNS.
 
-Progress: ██████████████ 99%
+Progress: ███████████████ 100%
 
 ## Performance Metrics
 
@@ -77,5 +77,7 @@ All marked ✓ Good after v1.0 validation.
 ## Session Continuity
 
 Last session: 2026-05-28
-Stopped at: openh2o.com is LIVE publicly via Cloudflare Tunnel on Butler, production settings (DEBUG=False), app-login gated. Demo account demo@openh2o.com / OpenWaterDemo2026. 27-01 done. Open items: (1) 27-02 Allocation→Water Budget sweep (sidebar + ledger column still say "Allocation"); (2) final visual sign-off of live site; (3) ISS-012 rotate Postgres password; (4) ISS-011 login page polish.
+Stopped at: Completed 27-02 (Allocation→Water Budget rename, deployed to Butler, 186 tests pass, verified rendering). Phase 27 complete. ALSO fixed openh2o.com public DNS: it was serving Hostinger's parked page because the home network's PRIMARY DNS (NetSentry, 192.168.0.113) had stale data at two layers — Unbound cached Hostinger's old nameserver delegation, and Pi-hole/FTL cached the old IP. Cloudflare DNS record (CNAME→tunnel, proxied), the tunnel, and ALL public resolvers were correct the whole time. Fix: `unbound-control flush_zone openh2o.com` + `sudo systemctl restart pihole-FTL` on NetSentry (NOT Butler's Pi-hole — Butler forwards to 1.1.1.1 and was already correct). Site verified live from Mac + public resolvers.
+Open items: ISS-011 (login page visual polish — user called it bare/ugly, wants it fixed), ISS-012 (rotate default Postgres password 'openh2o'), ISS-013 (pre-existing datasync/recharge migration drift). Next roadmap phase: Phase 20 (AI Operator Guide).
+Resume file: None
 Resume file: None
