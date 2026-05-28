@@ -124,7 +124,10 @@ class BaseAdapter(ABC):
             try:
                 obs_date = rec["observation_date"]
                 if isinstance(obs_date, str):
-                    obs_date = datetime.fromisoformat(obs_date)
+                    try:
+                        obs_date = datetime.fromisoformat(obs_date)
+                    except ValueError:
+                        obs_date = datetime.strptime(obs_date, "%Y-%m-%d %H:%M")
                 if timezone.is_naive(obs_date):
                     obs_date = timezone.make_aware(obs_date)
 
