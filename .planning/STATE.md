@@ -78,6 +78,8 @@ All marked ✓ Good after v1.0 validation.
 
 Last session: 2026-05-28
 Stopped at: Completed 27-02 (Allocation→Water Budget rename, deployed to Butler, 186 tests pass, verified rendering). Phase 27 complete. ALSO fixed openh2o.com public DNS: it was serving Hostinger's parked page because the home network's PRIMARY DNS (NetSentry, 192.168.0.113) had stale data at two layers — Unbound cached Hostinger's old nameserver delegation, and Pi-hole/FTL cached the old IP. Cloudflare DNS record (CNAME→tunnel, proxied), the tunnel, and ALL public resolvers were correct the whole time. Fix: `unbound-control flush_zone openh2o.com` + `sudo systemctl restart pihole-FTL` on NetSentry (NOT Butler's Pi-hole — Butler forwards to 1.1.1.1 and was already correct). Site verified live from Mac + public resolvers.
-Open items: ISS-011 (login page visual polish — user called it bare/ugly, wants it fixed), ISS-012 (rotate default Postgres password 'openh2o'), ISS-013 (pre-existing datasync/recharge migration drift). Next roadmap phase: Phase 20 (AI Operator Guide).
+Open items: ISS-012 (rotate default Postgres password 'openh2o'), ISS-013 (pre-existing datasync/recharge migration drift). Next roadmap phase: Phase 20 (AI Operator Guide).
+
+ISS-011 RESOLVED (2026-05-28): Login page rendered fully unstyled (white page, default fonts) because base_auth.html never loaded tokens.css — every var(--color-*)/var(--space-*) resolved to nothing despite app.css/output.css loading fine. Fix: added tokens.css link (?v=7) to base_auth.html + OpenH2O brand lockup above login card. Deployed to Butler, verified live. Commits e3db272 + login branding commit.
 Resume file: None
 Resume file: None

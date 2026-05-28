@@ -16,11 +16,6 @@ Deferred items and nice-to-haves discovered during execution.
 - **Description:** CIMIS adapter exists but needs appKey from et.water.ca.gov. Free registration. Station: CIMIS 54 (Visalia).
 - **Blocked by:** API key registration at https://et.water.ca.gov/Home/Register
 
-### ISS-011: Login page needs visual overhaul
-- **Phase:** 26.1-01 (user feedback during checkpoint)
-- **Priority:** P1 (first impression for new users)
-- **Description:** Login page uses unstyled Django default. Needs VanderDev design system treatment: dark mode, proper branding, centered card layout matching the rest of the platform.
-
 ### ISSUE-005: Open-source licensing and trademark protection
 - **Phase:** None (non-code, do before public release)
 - **Context:** Domain openh2o owned. Code intended to be open source, but must prevent corporations from forking and selling as a proprietary product. Need to select a license that allows free use by water districts/GSAs while blocking commercial appropriation.
@@ -33,6 +28,11 @@ Deferred items and nice-to-haves discovered during execution.
 - **Decision required:** Which license best fits "free for public agencies, hostile to commercial capture"
 
 ## Closed
+
+### ISS-011: Login page needs visual overhaul
+- **Phase:** 26.1-01 (discovered), 2026-05-28 (resolved)
+- **Root cause:** Not "unstyled Django default" as originally described — the auth templates DO use VanderDev classes. The real bug: `base_auth.html` loaded `output.css` and `app.css` but NOT `tokens.css`, where all the `--color-*` and `--space-*` custom properties are defined. Every `var(--color-card)` etc. resolved to nothing, so the login/signup/password-reset pages rendered with no background, no card styling, and default browser fonts despite the rule files loading correctly (HTTP 200, correct MIME).
+- **Resolution:** Added `tokens.css` link to `base_auth.html` (with `?v=7` cache-bust matching `base.html`), widened the Public Sans weight range to match the main layout, and added the OpenH2O brand lockup (favicon + gold wordmark) above the login card for "proper branding." Commits e3db272, plus login branding commit. Deployed to Butler, verified live at openh2o.com/accounts/login/ via computed styles + screenshot.
 
 ### ISSUE-001: RechargeSite missing zone FK
 - **Phase:** 04-02 (deferred), 09-01 (resolved)
