@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from recharge.forms import RechargeEventForm, RechargeMeasurementForm
+from recharge.forms import RechargeEventForm
 from recharge.models import RechargeMeasurement, RechargeEvent, RechargeSite
 
 
@@ -75,7 +75,6 @@ def recharge_site_detail(request, pk):
         "events": events,
         "recent_measurements": recent_measurements,
         "event_form": RechargeEventForm(),
-        "measurement_form": RechargeMeasurementForm(),
         "geojson": json.dumps(geojson) if geojson else None,
     }
     return render(request, "recharge/site_detail.html", context)
@@ -141,44 +140,6 @@ def recharge_event_create(request, pk):
         "ledger_msg": ledger_msg,
     }
     return render(request, "recharge/partials/_event_history.html", context)
-
-
-@login_required
-def recharge_measurement_create(request, pk):
-    """Create a RechargeMeasurement for a site. No ledger side effects.
-
-    Renders the measurements partial (table + inline form) for HTMX swap.
-    """
-    site = get_object_or_404(RechargeSite, pk=pk)
-
-    if request.method != "POST":
-        return redirect("recharge:detail", pk=pk)
-
-    form = RechargeMeasurementForm(request.POST)
-    if not form.is_valid():
-        recent_measurements = RechargeMeasurement.objects.filter(
-            recharge_site=site
-        ).order_by("-measurement_date")[:10]
-        context = {
-            "site": site,
-            "recent_measurements": recent_measurements,
-            "measurement_form": form,
-        }
-        return render(request, "recharge/partials/_measurements.html", context)
-
-    measurement = form.save(commit=False)
-    measurement.recharge_site = site
-    measurement.save()
-
-    recent_measurements = RechargeMeasurement.objects.filter(
-        recharge_site=site
-    ).order_by("-measurement_date")[:10]
-    context = {
-        "site": site,
-        "recent_measurements": recent_measurements,
-        "measurement_form": RechargeMeasurementForm(),
-    }
-    return render(request, "recharge/partials/_measurements.html", context)
 
 
 @login_required

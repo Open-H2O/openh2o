@@ -1,6 +1,6 @@
 from django import forms
 
-from recharge.models import RechargeEvent, RechargeMeasurement
+from recharge.models import RechargeEvent
 
 
 class RechargeEventForm(forms.ModelForm):
@@ -26,28 +26,5 @@ class RechargeEventForm(forms.ModelForm):
             ),
             "water_type": forms.Select(attrs={"class": "form-select"}),
             "source_description": forms.TextInput(attrs={"class": "form-input"}),
-            "notes": forms.Textarea(attrs={"rows": 2, "class": "form-textarea"}),
-        }
-
-
-class RechargeMeasurementForm(forms.ModelForm):
-    class Meta:
-        model = RechargeMeasurement
-        fields = [
-            "measurement_date",
-            "measurement_type",
-            "value",
-            "unit",
-            "notes",
-        ]
-        widgets = {
-            "measurement_date": forms.DateTimeInput(
-                attrs={"class": "form-input", "type": "datetime-local"}
-            ),
-            "measurement_type": forms.Select(attrs={"class": "form-select"}),
-            "value": forms.NumberInput(
-                attrs={"step": "0.0001", "class": "form-input"}
-            ),
-            "unit": forms.TextInput(attrs={"class": "form-input"}),
             "notes": forms.Textarea(attrs={"rows": 2, "class": "form-textarea"}),
         }
