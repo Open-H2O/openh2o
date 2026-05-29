@@ -4,6 +4,18 @@ Deferred items and nice-to-haves discovered during execution.
 
 ## Open
 
+### ISS-015: Re-enable signup email verification (needs SMTP)
+- **Phase:** None (deferred 2026-05-29, follow-up to the signup-500 fix)
+- **Priority:** P2 (must-do before real users; fine for demo)
+- **Description:** Signup email verification is currently OFF (`ACCOUNT_EMAIL_VERIFICATION = "none"` in `config/settings/base.py`). It was turned off because the previous `"optional"` setting made django-allauth attempt to send a confirmation email at signup, and with no SMTP configured (`EMAIL_HOST=""`) every registration crashed with a 500. With verification off, new users are created and logged in immediately without confirming their email. Acceptable for a public demo; not acceptable once the platform onboards real district staff (no defense against typo'd or impersonated email addresses).
+- **How to fix:** (1) Provision an outbound mail provider — a transactional service (Postmark, Amazon SES, Mailgun) is preferred over a personal Gmail app password for deliverability. (2) Set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, and `DEFAULT_FROM_EMAIL` in Butler's gitignored `.env` (the settings already read these via `env()`). (3) Flip `ACCOUNT_EMAIL_VERIFICATION` back to `"mandatory"` (block login until confirmed) or `"optional"` (send but don't block). (4) Send a real test signup and confirm the email lands before declaring done. Pairs with ISS-007 (other external-service credentials).
+
+### ISS-016: Wire request-error logging so production 500s aren't silent
+- **Phase:** None (deferred 2026-05-29, surfaced by the signup-500 investigation)
+- **Priority:** P2 (operability — every future production bug is invisible until this is done)
+- **Description:** With `DEBUG=False` in production, Django returns the generic 500 page to the user but does not, by default, write the traceback anywhere the operator can see it. The signup-500 left zero trace in `docker compose logs web` — the only way to find the cause was to reproduce the failing code path by hand. Every unhandled exception in production is currently a silent guessing game.
+- **How to fix:** Add a `LOGGING` dict to `config/settings/production.py` (or `base.py`) that routes the `django.request` logger to a console `StreamHandler` at `ERROR` level so tracebacks print to container stdout and show up in `docker compose logs web`. Optionally also add a catch-all root logger. No external service required. Consider a follow-up to ship logs somewhere durable (file volume or an aggregator) so they survive container restarts.
+
 ### ISS-014: Demo account credentials are hardcoded in a public planning doc
 - **Phase:** 28-01 (discovered 2026-05-28)
 - **Priority:** P2 (acceptable for a public demo with throwaway data; must-fix before real users or real data)
