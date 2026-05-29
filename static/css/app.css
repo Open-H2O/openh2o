@@ -1122,6 +1122,53 @@ a { color: inherit; }
     color: oklch(0.65 0.20 25);
 }
 
+/* -- About page: credit cards & inline links ---------------------------- */
+.credit-card {
+    margin-bottom: var(--space-md);
+}
+.credit-card--lead {
+    border-top: 3px solid var(--color-gold);
+}
+.credit-eyebrow {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-sm);
+}
+.credit-card--lead .credit-eyebrow {
+    color: var(--color-gold);
+}
+.credit-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-sm) 0;
+}
+.credit-body {
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    margin: 0 0 var(--space-sm) 0;
+}
+.credit-note {
+    color: var(--color-text-tertiary);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    margin: 0;
+}
+.text-link {
+    color: var(--color-gold);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+}
+.text-link:hover {
+    color: var(--color-gold-hover);
+}
+
 /* -- Form error box ------------------------------------------------------ */
 
 .form-error-box {
