@@ -33,3 +33,6 @@ tailwindcss-*
 # Media (user-uploaded / generated reports)
 media/
 .claude/
+
+# Internal planning / build scaffolding (not for public repo)
+.planning/
