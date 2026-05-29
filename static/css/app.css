@@ -869,7 +869,7 @@ a { color: inherit; }
 }
 
 .stat-card-accent-usage {
-    border-top: 3px solid oklch(0.65 0.20 25);
+    border-top: 3px solid var(--color-text-tertiary);
 }
 
 .stat-card-accent-balance {
