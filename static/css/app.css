@@ -1108,6 +1108,15 @@ a { color: inherit; }
     color: var(--color-text-secondary);
 }
 
+/* Inside data tables the base `.data-table td` rule (a class + an element)
+   out-ranks a bare semantic utility class, so the color never shows. Re-assert
+   the positive/green utilities with matching specificity. Reds (text-usage,
+   text-deficit) are intentionally left neutral per the "green-only" ledger look. */
+.data-table td.text-supply,
+.data-table td.text-surplus {
+    color: var(--forest-400);
+}
+
 /* -- Form error box ------------------------------------------------------ */
 
 .form-error-box {
