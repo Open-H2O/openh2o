@@ -1147,13 +1147,13 @@ a { color: inherit; }
     color: var(--color-text-primary);
     margin: 0 0 var(--space-sm) 0;
 }
-.credit-body {
+.about-credits .credit-body {
     color: var(--color-text-primary);
     font-size: 0.9375rem;
     line-height: 1.65;
     margin: 0 0 var(--space-sm) 0;
 }
-.credit-note {
+.about-credits .credit-note {
     color: var(--color-text-tertiary);
     font-size: 0.8125rem;
     line-height: 1.6;
