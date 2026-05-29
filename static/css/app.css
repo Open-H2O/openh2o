@@ -1414,8 +1414,8 @@ a { color: inherit; }
 
 /* -- Utility: constrained page widths ----------------------------------- */
 
-.page-narrow { max-width: 640px; }
-.page-medium { max-width: 800px; }
+.page-narrow { max-width: 640px; margin-inline: auto; }
+.page-medium { max-width: 800px; margin-inline: auto; }
 
 /* -- Utility: toolbar flex row ------------------------------------------ */
 
