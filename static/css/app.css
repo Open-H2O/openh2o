@@ -1110,11 +1110,16 @@ a { color: inherit; }
 
 /* Inside data tables the base `.data-table td` rule (a class + an element)
    out-ranks a bare semantic utility class, so the color never shows. Re-assert
-   the positive/green utilities with matching specificity. Reds (text-usage,
-   text-deficit) are intentionally left neutral per the "green-only" ledger look. */
+   the semantic utilities with matching specificity. Green for positive
+   supply/surplus; red reserved for an actual overdraft (negative net/remaining).
+   text-usage stays neutral — a usage figure is a plain total, not a warning. */
 .data-table td.text-supply,
 .data-table td.text-surplus {
     color: var(--forest-400);
+}
+
+.data-table td.text-deficit {
+    color: oklch(0.65 0.20 25);
 }
 
 /* -- Form error box ------------------------------------------------------ */
