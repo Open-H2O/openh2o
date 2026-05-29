@@ -21,7 +21,7 @@
             {{ entry.parcel.parcel_number }}
           </a>
         </td>
-        <td class="td-num-bold {% if entry.amount_acre_feet >= 0 %}text-supply{% else %}text-usage{% endif %}">
+        <td class="td-num-bold {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">
           {{ entry.amount_acre_feet|floatformat:2 }}
         </td>
         <td>{% include "accounting/partials/_source_badge.html" with source_type=entry.source_type %}</td>

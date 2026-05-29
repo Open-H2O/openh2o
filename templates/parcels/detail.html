@@ -162,7 +162,7 @@
             {% for entry in recent_ledger %}
             <tr>
               <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
-              <td class="td-num">{{ entry.amount_acre_feet|floatformat:2 }}</td>
+              <td class="td-num {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">{{ entry.amount_acre_feet|floatformat:2 }}</td>
               <td class="text-tertiary">{{ entry.get_source_type_display }}</td>
             </tr>
             {% endfor %}
