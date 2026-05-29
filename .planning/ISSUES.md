@@ -4,6 +4,12 @@ Deferred items and nice-to-haves discovered during execution.
 
 ## Open
 
+### ISS-014: Demo account credentials are hardcoded in a public planning doc
+- **Phase:** 28-01 (discovered 2026-05-28)
+- **Priority:** P2 (acceptable for a public demo with throwaway data; must-fix before real users or real data)
+- **Description:** The demo login (`demo@openh2o.com` / `OpenWaterDemo2026`) is committed in plaintext at `.planning/phases/28-public-deployment/28-01-SUMMARY.md:45`. The repo is public and the site is publicly reachable at openh2o.com, so anyone can read the credentials and log into the demo. Fine while the account is a non-admin user pointed at disposable seed data, but it becomes a real exposure the moment the platform holds anything beyond the demo dataset.
+- **How to fix:** Before any non-demo use — (1) rotate the demo password to a fresh value and update it in the deploy/onboarding docs without committing the new value to git; or (2) drop the shared demo account entirely and have evaluators self-register; or (3) move the credentials out of the tracked planning doc into the gitignored `.env`/secrets store. Pairs with ISS-012 (default Postgres password) — both are "rotate before real data" items.
+
 ### ISS-012: Rotate default Postgres password before real data
 - **Phase:** 28-01 (discovered during public deploy)
 - **Priority:** P2 (low risk now, must-fix before any real district data)
