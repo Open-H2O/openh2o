@@ -1,12 +1,16 @@
 <div class="card-raised">
-  <h3 class="section-header-sm">Status</h3>
+  <h3 class="section-header-sm">Internal Status</h3>
+  <p class="text-tertiary text-xs mb-md">
+    These steps track your agency's own progress toward filing. None of them sends
+    anything to the State Water Board — you file in the state portal yourself.
+  </p>
 
   <div class="row-start mb-md">
     {% if submission.status == "filed" %}
     <span class="badge badge-green">{{ submission.get_status_display }}</span>
-    {% elif submission.status == "internally_approved" %}
-    <span class="badge badge-orange">{{ submission.get_status_display }}</span>
     {% elif submission.status == "exported" %}
+    <span class="badge badge-gold">{{ submission.get_status_display }}</span>
+    {% elif submission.status == "internally_approved" %}
     <span class="badge badge-blue">{{ submission.get_status_display }}</span>
     {% else %}
     <span class="badge badge-grey">{{ submission.get_status_display }}</span>
@@ -36,7 +40,7 @@
 
   {% if submission.internal_notes %}
   <div class="mb-md">
-    <div class="field-label">Internal Notes</div>
+    <div class="field-label">Internal Approval Notes</div>
     <div class="text-secondary text-sm" style="background: var(--color-elevated); padding: var(--space-sm); border-radius: var(--radius-sm);">
       {{ submission.internal_notes }}
     </div>
@@ -49,17 +53,37 @@
         hx-swap="innerHTML"
         class="page-stack" style="gap: var(--space-sm);">
     {% csrf_token %}
-    <input type="hidden" name="action" value="approve">
+    <input type="hidden" name="action" value="approve_internal">
     <div class="form-group mb-0">
-      <label class="form-label" for="id_internal_notes">Internal Notes (optional)</label>
+      <label class="form-label" for="id_internal_notes">Internal Approval Notes (optional)</label>
+      <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs);">
+        Your agency's sign-off before filing — not a State Water Board review.
+      </p>
       <textarea id="id_internal_notes" name="internal_notes" rows="2" class="form-textarea" style="min-height: 0;"
-                placeholder="Internal sign-off notes (not seen by the state)..."></textarea>
+                placeholder="Who approved this, and any internal notes (the state never sees this)..."></textarea>
     </div>
     <div>
-      <button type="submit" class="btn-primary btn-sm">Mark Internally Approved</button>
+      <button type="submit" class="btn-primary btn-sm">Approve Internally</button>
     </div>
   </form>
-  {% elif submission.status == "internally_approved" or submission.status == "exported" %}
+
+  {% elif submission.status == "internally_approved" %}
+  <form hx-post="{% url 'reporting:report_transition' pk=submission.pk %}"
+        hx-target="#status-section"
+        hx-swap="innerHTML"
+        class="page-stack" style="gap: var(--space-sm);">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="mark_exported">
+    <p class="text-tertiary text-xs" style="margin: 0;">
+      Once you've downloaded the GEARS file (or opened the CalWATRS worksheet) to take
+      to the state portal, mark it exported.
+    </p>
+    <div>
+      <button type="submit" class="btn-secondary btn-sm">Mark as Exported</button>
+    </div>
+  </form>
+
+  {% elif submission.status == "exported" %}
   <form hx-post="{% url 'reporting:report_transition' pk=submission.pk %}"
         hx-target="#status-section"
         hx-swap="innerHTML"
@@ -67,9 +91,16 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="mark_filed">
     <div class="form-group mb-0">
-      <label class="form-label" for="id_state_confirmation_number">State Confirmation Number (optional)</label>
+      <label class="form-label" for="id_state_confirmation_number">State Confirmation Number</label>
+      <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs);">
+        After you upload/enter this in the state portal and certify under penalty of
+        perjury, paste the confirmation number here for your records.
+      </p>
       <input id="id_state_confirmation_number" name="state_confirmation_number" type="text" class="form-input"
-             placeholder="Confirmation the portal gave you after filing">
+             required placeholder="Confirmation the portal gave you after filing">
+      {% if filing_error %}
+      <p class="text-xs" style="margin: var(--space-xs) 0 0; color: var(--color-red);">{{ filing_error }}</p>
+      {% endif %}
     </div>
     <div>
       <button type="submit" class="btn-primary btn-sm" style="background-color: var(--forest-400); color: var(--color-base);">
