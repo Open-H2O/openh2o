@@ -234,6 +234,14 @@ _CHOICE_FIELDS = {
     },
 }
 
+# Free-text fields copied straight through when mapped + present.
+_STRING_FIELDS = {
+    "well": ["wcr_number", "state_well_number", "casing_material", "owner_name"],
+    "diversion": ["stream_name"],
+    "recharge_site": ["site_type", "operator"],
+    "storage": ["site_type", "operator"],
+}
+
 _CA_LAT = (32.0, 42.5)
 _CA_LON = (-125.0, -113.0)
 
@@ -321,15 +329,6 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids):
         )
 
     return results
-
-
-# Free-text fields copied straight through when mapped + present.
-_STRING_FIELDS = {
-    "well": ["wcr_number", "state_well_number", "casing_material", "owner_name"],
-    "diversion": ["stream_name"],
-    "recharge_site": ["site_type", "operator"],
-    "storage": ["site_type", "operator"],
-}
 
 
 def _resolve_location(row, mapping, errors):
