@@ -334,3 +334,34 @@ class TestImportFlowViews:
 
         with pytest.raises(NoReverseMatch):
             reverse("infrastructure:upload")
+
+    def test_result_counts_reconcile(self, auth_client):
+        """created + skipped must equal the total shown — the result screen's
+        whole job is an honest count, so the badges must never disagree."""
+        import json as _json
+
+        rows = [
+            {"name": "", "LAT": "37.2", "LON": "-119.5", "reg_id": "R-1"},          # bad: no name
+            {"name": "Dup", "LAT": "37.3", "LON": "-119.6", "reg_id": "DUP-IT"},    # bad: dup (below)
+            {"name": "Fine", "LAT": "37.4", "LON": "-119.7", "reg_id": "R-3"},      # good
+        ]
+        # Seed an existing well so row 2's reg id is a true duplicate.
+        from tests.factories import WellFactory
+
+        WellFactory(well_registration_id="DUP-IT")
+
+        resp = auth_client.post(
+            reverse("infrastructure:import_commit"),
+            {
+                "infra_type": "well",
+                "rows_json": _json.dumps(rows),
+                "map:name": "name",
+                "map:latitude": "LAT",
+                "map:longitude": "LON",
+                "map:well_registration_id": "reg_id",
+            },
+        )
+        body = resp.content.decode()
+        assert "Created 1" in body
+        assert "Skipped 2" in body
+        assert "3 rows total" in body  # 1 + 2 == 3, badges reconcile
