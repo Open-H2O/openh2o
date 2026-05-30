@@ -1,17 +1,16 @@
-import json
 import os
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
 from accounting.models import ReportingPeriod
-from reporting.generators import generate_calwatrs_csv, generate_email_json, generate_gears_csv
+from reporting.generators import generate_calwatrs_csv, generate_gears_csv
 from reporting.models import ReportSubmission, ReportTemplate
 from reporting.validators import validate_report
 
 
 class Command(BaseCommand):
-    help = "Generate a state report (GEARS CSV, CalWATRS CSV, or Email JSON)"
+    help = "Generate a state report (GEARS CSV or CalWATRS CSV)"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -55,9 +54,6 @@ class Command(BaseCommand):
             template_type = "a1" if report_type == "calwatrs_a1" else "a2"
             csv_output = generate_calwatrs_csv(period, template_type=template_type)
             content = csv_output.getvalue()
-        elif report_type == "email_json":
-            payload = generate_email_json(period)
-            content = json.dumps(payload, indent=2, default=str)
 
         if output_path:
             os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)

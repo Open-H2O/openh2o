@@ -179,14 +179,4 @@ def validate_report(reporting_period, report_type):
                     "message": f"Data completeness: {coverage:.0f}% of active PODs have data ({pods_with_data}/{active_pods}).",
                 })
 
-    elif report_type == "email_json":
-        ledger_count = ParcelLedger.objects.filter(
-            reporting_period=reporting_period,
-        ).count()
-        if ledger_count == 0:
-            warnings.append({
-                "level": "warning",
-                "message": "No ledger entries for this period. Email JSON summary will show zeros.",
-            })
-
     return warnings
