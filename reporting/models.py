@@ -81,12 +81,28 @@ class ReportTemplate(models.Model):
 
 
 class ReportSubmission(models.Model):
+    """A report OpenH2O prepared for a filing the user makes themselves.
+
+    No status here means the State Water Board received or accepted anything.
+    OpenH2O cannot submit to GEARS or CalWATRS — there is no intake API. The
+    lifecycle tracks the agency's own internal progress toward a hand-filing:
+
+      draft               -> generated, not yet signed off internally
+      internally_approved -> the GSA/agency approved it for filing (internal)
+      exported            -> the file was downloaded to upload into the portal
+      filed               -> the user recorded that THEY filed and certified it
+                             in the state portal (self-reported bookkeeping)
+
+    `filed_at`, `certified_by`, and `state_confirmation_number` are the user's
+    own record of a filing they performed and certified in person; they are not
+    a confirmation from OpenH2O to the state.
+    """
+
     STATUS_CHOICES = [
         ("draft", "Draft"),
-        ("reviewed", "Reviewed"),
-        ("submitted", "Submitted"),
-        ("accepted", "Accepted"),
-        ("rejected", "Rejected"),
+        ("internally_approved", "Internally Approved"),
+        ("exported", "Exported"),
+        ("filed", "Filed at State"),
     ]
 
     report_template = models.ForeignKey(ReportTemplate, on_delete=models.PROTECT)
@@ -96,11 +112,27 @@ class ReportSubmission(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     generated_file = models.CharField(max_length=500, blank=True)
     generated_at = models.DateTimeField(null=True, blank=True)
-    submitted_at = models.DateTimeField(null=True, blank=True)
-    submitted_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    filed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the user recorded that they filed this in the state portal.",
     )
-    reviewer_notes = models.TextField(blank=True)
+    certified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="User who recorded certifying this filing in the state portal.",
+    )
+    state_confirmation_number = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Confirmation number the state portal returned to the user after filing.",
+    )
+    internal_notes = models.TextField(
+        blank=True,
+        help_text="Internal GSA/agency sign-off notes. Not a Water Board reviewer's notes.",
+    )
     validation_warnings = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

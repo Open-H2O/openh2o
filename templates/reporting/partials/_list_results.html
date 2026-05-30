@@ -10,7 +10,7 @@
       <th>Period</th>
       <th>Status</th>
       <th>Generated</th>
-      <th>Submitted</th>
+      <th>Filed</th>
     </tr>
   </thead>
   <tbody>
@@ -19,12 +19,12 @@
       <td><a href="{% url 'reporting:report_detail' pk=sub.pk %}" class="data-table-link">{{ sub.report_template.name }}</a></td>
       <td class="text-secondary">{{ sub.reporting_period.name }}</td>
       <td>
-        {% if sub.status == "submitted" or sub.status == "accepted" %}
+        {% if sub.status == "filed" %}
         <span class="badge badge-green">{{ sub.get_status_display }}</span>
-        {% elif sub.status == "reviewed" %}
+        {% elif sub.status == "internally_approved" %}
         <span class="badge badge-orange">{{ sub.get_status_display }}</span>
-        {% elif sub.status == "rejected" %}
-        <span class="badge badge-red">{{ sub.get_status_display }}</span>
+        {% elif sub.status == "exported" %}
+        <span class="badge badge-blue">{{ sub.get_status_display }}</span>
         {% else %}
         <span class="badge badge-grey">{{ sub.get_status_display }}</span>
         {% endif %}
@@ -33,7 +33,7 @@
         {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
       </td>
       <td class="text-tertiary text-sm">
-        {% if sub.submitted_at %}{{ sub.submitted_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
+        {% if sub.filed_at %}{{ sub.filed_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
       </td>
     </tr>
     {% endfor %}
