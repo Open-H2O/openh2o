@@ -57,8 +57,8 @@ collectstatic: ## Collect static files
 check: ## Run Django system checks (deployment readiness)
 	$(EXEC) check --deploy
 
-test: ## Run test suite
-	$(COMPOSE) exec web python -m pytest tests/ -v
+test: ## Run test suite (pinned to local settings; --ds outranks the container's prod env)
+	$(COMPOSE) exec web python -m pytest tests/ -v --ds=config.settings.local
 
 # ---------------------------------------------------------------------------
 # Seed Data
