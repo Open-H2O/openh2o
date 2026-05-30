@@ -2,28 +2,43 @@
   <h3 class="section-header-sm">Status</h3>
 
   <div class="row-start mb-md">
-    {% if submission.status == "submitted" or submission.status == "accepted" %}
+    {% if submission.status == "filed" %}
     <span class="badge badge-green">{{ submission.get_status_display }}</span>
-    {% elif submission.status == "reviewed" %}
+    {% elif submission.status == "internally_approved" %}
     <span class="badge badge-orange">{{ submission.get_status_display }}</span>
-    {% elif submission.status == "rejected" %}
-    <span class="badge badge-red">{{ submission.get_status_display }}</span>
+    {% elif submission.status == "exported" %}
+    <span class="badge badge-blue">{{ submission.get_status_display }}</span>
     {% else %}
     <span class="badge badge-grey">{{ submission.get_status_display }}</span>
     {% endif %}
 
-    {% if submission.submitted_at %}
+    {% if submission.filed_at %}
     <span class="text-tertiary text-sm">
-      Submitted {{ submission.submitted_at|date:"M j, Y H:i" }}
+      Filed {{ submission.filed_at|date:"M j, Y H:i" }}
+      {% if submission.certified_by %}by {{ submission.certified_by.get_full_name|default:submission.certified_by.username }}{% endif %}
     </span>
     {% endif %}
   </div>
 
-  {% if submission.reviewer_notes %}
+  {% if submission.status == "filed" %}
+  <p class="text-tertiary text-xs mb-md">
+    Self-reported: the agency recorded filing and certifying this in the state portal.
+    OpenH2O did not submit anything to the State Water Board.
+  </p>
+  {% endif %}
+
+  {% if submission.state_confirmation_number %}
   <div class="mb-md">
-    <div class="field-label">Reviewer Notes</div>
+    <div class="field-label">State Confirmation Number</div>
+    <div class="text-secondary text-sm">{{ submission.state_confirmation_number }}</div>
+  </div>
+  {% endif %}
+
+  {% if submission.internal_notes %}
+  <div class="mb-md">
+    <div class="field-label">Internal Notes</div>
     <div class="text-secondary text-sm" style="background: var(--color-elevated); padding: var(--space-sm); border-radius: var(--radius-sm);">
-      {{ submission.reviewer_notes }}
+      {{ submission.internal_notes }}
     </div>
   </div>
   {% endif %}
@@ -34,25 +49,33 @@
         hx-swap="innerHTML"
         class="page-stack" style="gap: var(--space-sm);">
     {% csrf_token %}
-    <input type="hidden" name="action" value="review">
+    <input type="hidden" name="action" value="approve">
     <div class="form-group mb-0">
-      <label class="form-label" for="id_reviewer_notes">Reviewer Notes (optional)</label>
-      <textarea id="id_reviewer_notes" name="reviewer_notes" rows="2" class="form-textarea" style="min-height: 0;"
-                placeholder="Any notes about this report..."></textarea>
+      <label class="form-label" for="id_internal_notes">Internal Notes (optional)</label>
+      <textarea id="id_internal_notes" name="internal_notes" rows="2" class="form-textarea" style="min-height: 0;"
+                placeholder="Internal sign-off notes (not seen by the state)..."></textarea>
     </div>
     <div>
-      <button type="submit" class="btn-primary btn-sm">Mark as Reviewed</button>
+      <button type="submit" class="btn-primary btn-sm">Mark Internally Approved</button>
     </div>
   </form>
-  {% elif submission.status == "reviewed" %}
+  {% elif submission.status == "internally_approved" or submission.status == "exported" %}
   <form hx-post="{% url 'reporting:report_transition' pk=submission.pk %}"
         hx-target="#status-section"
-        hx-swap="innerHTML">
+        hx-swap="innerHTML"
+        class="page-stack" style="gap: var(--space-sm);">
     {% csrf_token %}
-    <input type="hidden" name="action" value="submit">
-    <button type="submit" class="btn-primary btn-sm" style="background-color: var(--forest-400); color: var(--color-base);">
-      Mark as Submitted
-    </button>
+    <input type="hidden" name="action" value="mark_filed">
+    <div class="form-group mb-0">
+      <label class="form-label" for="id_state_confirmation_number">State Confirmation Number (optional)</label>
+      <input id="id_state_confirmation_number" name="state_confirmation_number" type="text" class="form-input"
+             placeholder="Confirmation the portal gave you after filing">
+    </div>
+    <div>
+      <button type="submit" class="btn-primary btn-sm" style="background-color: var(--forest-400); color: var(--color-base);">
+        Record as Filed at State
+      </button>
+    </div>
   </form>
   {% endif %}
 </div>

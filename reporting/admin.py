@@ -17,7 +17,7 @@ class ReportTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(ReportSubmission)
 class ReportSubmissionAdmin(admin.ModelAdmin):
-    list_display = ["report_template", "reporting_period", "status", "generated_at", "submitted_at"]
+    list_display = ["report_template", "reporting_period", "status", "generated_at", "filed_at"]
     list_filter = ["status", "report_template"]
     date_hierarchy = "created_at"
 

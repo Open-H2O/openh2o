@@ -159,16 +159,25 @@ def report_transition(request, pk):
 
     action = request.POST.get("action", "")
 
-    if action == "review" and submission.status == "draft":
-        submission.status = "reviewed"
-        submission.reviewer_notes = request.POST.get("reviewer_notes", "")
-        submission.save(update_fields=["status", "reviewer_notes", "updated_at"])
+    if action == "approve" and submission.status == "draft":
+        # Internal GSA/agency sign-off. This is NOT a Water Board review —
+        # the state never sees this status.
+        submission.status = "internally_approved"
+        submission.internal_notes = request.POST.get("internal_notes", "")
+        submission.save(update_fields=["status", "internal_notes", "updated_at"])
 
-    elif action == "submit" and submission.status == "reviewed":
-        submission.status = "submitted"
-        submission.submitted_at = timezone.now()
-        submission.submitted_by = request.user
-        submission.save(update_fields=["status", "submitted_at", "submitted_by", "updated_at"])
+    elif action == "mark_filed" and submission.status in ("internally_approved", "exported"):
+        # The user records that THEY filed and certified this in the state
+        # portal. OpenH2O did not submit anything — this is self-reported.
+        submission.status = "filed"
+        submission.filed_at = timezone.now()
+        submission.certified_by = request.user
+        submission.state_confirmation_number = request.POST.get(
+            "state_confirmation_number", ""
+        )
+        submission.save(update_fields=[
+            "status", "filed_at", "certified_by", "state_confirmation_number", "updated_at",
+        ])
 
     if request.headers.get("HX-Request"):
         return render(request, "reporting/partials/_status_section.html", {"submission": submission})
