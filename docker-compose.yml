@@ -1,6 +1,7 @@
 services:
   db:
     image: postgis/postgis:16-3.4
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-openh2o}
       POSTGRES_USER: ${POSTGRES_USER:-openh2o}
@@ -15,6 +16,7 @@ services:
 
   web:
     build: .
+    restart: unless-stopped
     env_file: .env
     environment:
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.local}
@@ -27,6 +29,7 @@ services:
 
   caddy:
     image: caddy:2-alpine
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
