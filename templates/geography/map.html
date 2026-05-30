@@ -60,15 +60,15 @@
         </div>
     </div>
 
-    <div id="controls">
-        <h3>Layers</h3>
-    </div>
+    <div id="controls"></div>
 
     <div id="legend"></div>
 
     <div id="coords" onclick="copyCoords()">
         <span id="coord-text" class="coord-text"></span>
-        <a id="coord-link" class="coord-link" href="#" target="_blank" onclick="event.stopPropagation();" title="Open in Google Maps">&#x1f30d;</a>
+        <a id="coord-link" class="coord-link" href="#" target="_blank" onclick="event.stopPropagation();" title="Open in Google Maps" aria-label="Open in Google Maps">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
     </div>
 
     <div id="coord-toast">Copied!</div>
@@ -77,9 +77,12 @@
 
 {% block map_scripts %}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
 <script>
+var ENT = OH2O.entities;
 var MAP_CONFIG = {
     title: 'Open Water Accounting Platform',
+    basemap: 'aerial',
     center: [{{ center_lng }}, {{ center_lat }}],
     zoom: {{ zoom }},
     maxZoom: 18,
@@ -97,12 +100,18 @@ var MAP_CONFIG = {
         { id: 'tie-lines', url: '{% url "geography:tie_lines_geojson" %}' }
     ],
     layers: [
+        // ── Administrative ──
         {
             id: 'boundary-outline', type: 'line', source: 'boundaries',
-            label: 'Boundary', group: 'boundary', section: 'Administrative',
-            paint: { 'line-color': OH2O.colors.boundary, 'line-width': 2.5, 'line-opacity': 0.8 },
+            label: 'Agency Boundary', section: 'Administrative', label_id: 'boundary-label',
+            paint: { 'line-color': OH2O.colors.boundary, 'line-width': 2.5, 'line-opacity': 0.85, 'line-blur': 0.3 },
             swatch: 'line', swatchColor: OH2O.colors.boundary
         },
+        Object.assign(OH2O.makeLabelLayer('boundary-label', 'boundaries', 'boundary', {
+            anchor: 'center', offset: [0, 0],
+            layout: { 'text-transform': 'uppercase', 'text-letter-spacing': 0.18,
+                      'text-size': ['interpolate', ['linear'], ['zoom'], 8, 11, 12, 15] }
+        }), { panelHidden: true, section: 'Administrative', paint: { 'text-color': OH2O.colors.gold, 'text-halo-color': '#040608', 'text-halo-width': 1.6, 'text-opacity': 0.85 } }),
         {
             id: 'zones-fill', type: 'fill', source: 'zones',
             label: 'GSA Zones', group: 'zones', section: 'Administrative',
@@ -111,65 +120,74 @@ var MAP_CONFIG = {
                 'Mid-Kaweah GSA', '#40916c',
                 'Greater Kaweah GSA', '#52b788',
                 '#3a7d5c'
-            ], 'fill-opacity': 0.15 },
+            ], 'fill-opacity': 0.16 },
             swatch: 'fill', swatchColor: '#40916c'
         },
         {
             id: 'zones-outline', type: 'line', source: 'zones',
             group: 'zones', groupHidden: true, section: 'Administrative',
-            paint: { 'line-color': '#52b788', 'line-width': 1.5, 'line-dasharray': [4, 3] }
+            paint: { 'line-color': '#74c69d', 'line-width': 1.5, 'line-dasharray': [4, 3], 'line-opacity': 0.85 }
         },
+        Object.assign(OH2O.makeLabelLayer('zones-label', 'zones', 'zone', { anchor: 'center', offset: [0, 0] }),
+            { panelHidden: true, group: 'zones', section: 'Administrative' }),
+
+        // ── Land Use ──
         {
             id: 'parcels-fill', type: 'fill', source: 'parcels',
             label: 'Parcels', group: 'parcels', section: 'Land Use',
-            paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.3 },
+            paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.10, 15, 0.22] },
             swatch: 'fill', swatchColor: OH2O.colors.blue
         },
         {
             id: 'parcels-outline', type: 'line', source: 'parcels',
             group: 'parcels', groupHidden: true, section: 'Land Use',
-            paint: { 'line-color': OH2O.colors.blue, 'line-width': 1.5 }
+            paint: { 'line-color': OH2O.colors.blueBright, 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.5, 15, 1.4], 'line-opacity': 0.7 }
         },
-        {
-            id: 'gw-tie-lines', type: 'line', source: 'tie-lines',
-            label: 'GW Tie Lines', group: 'tie-lines', section: 'Infrastructure',
-            filter: ['==', ['get', 'source_type'], 'gw'],
-            paint: { 'line-color': OH2O.colors.gold, 'line-width': 1.5, 'line-opacity': 0.6, 'line-dasharray': [6, 3] },
-            swatch: 'line-dash', swatchColor: OH2O.colors.gold
-        },
-        {
-            id: 'sw-tie-lines', type: 'line', source: 'tie-lines',
-            label: 'SW Tie Lines', group: 'tie-lines', groupHidden: true, section: 'Infrastructure',
-            filter: ['==', ['get', 'source_type'], 'sw'],
-            paint: { 'line-color': OH2O.colors.teal, 'line-width': 1.5, 'line-opacity': 0.6, 'line-dasharray': [6, 3] },
-            swatch: 'line-dash', swatchColor: OH2O.colors.teal
-        },
-        {
-            id: 'tie-line-labels', type: 'symbol', source: 'tie-lines',
-            group: 'tie-lines', groupHidden: true, section: 'Infrastructure',
-            minzoom: 13,
-            layout: {
-                'text-field': ['concat', ['to-string', ['*', ['get', 'fraction'], 100]], '%'],
-                'text-size': 11,
-                'text-offset': [0, -0.8],
-                'symbol-placement': 'line-center'
-            },
-            paint: { 'text-color': '#e8edf4', 'text-halo-color': '#040608', 'text-halo-width': 1.5 }
-        },
+        Object.assign(OH2O.makeLabelLayer('parcels-label', 'parcels', 'parcel', { anchor: 'center', offset: [0, 0],
+            layout: { 'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 17, 12.5] } }),
+            { panelHidden: true, group: 'parcels', section: 'Land Use' }),
         {
             id: 'wells-points', type: 'circle', source: 'wells',
-            label: 'Wells', section: 'Land Use',
-            paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.gold, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
-            glow: { width: 12, opacity: 0.15 },
+            label: 'Wells', section: 'Land Use', label_id: 'wells-label',
+            paint: OH2O.pointPaint('well'),
+            glow: { paint: OH2O.glowPaint('well') },
             swatch: 'dot', swatchColor: OH2O.colors.gold
         },
+        Object.assign(OH2O.makeLabelLayer('wells-label', 'wells', 'well', {}), { panelHidden: true, section: 'Land Use' }),
+
+        // ── Surface Water ──
         {
             id: 'pods-points', type: 'circle', source: 'pods',
-            label: 'Points of Diversion', section: 'Land Use',
-            paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.teal, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
-            glow: { width: 12, opacity: 0.15 },
+            label: 'Points of Diversion', section: 'Surface Water', label_id: 'pods-label',
+            paint: OH2O.pointPaint('pod'),
+            glow: { paint: OH2O.glowPaint('pod') },
             swatch: 'dot', swatchColor: OH2O.colors.teal
         },
+        Object.assign(OH2O.makeLabelLayer('pods-label', 'pods', 'pod', {}), { panelHidden: true, section: 'Surface Water' }),
+        {
+            id: 'sw-tie-lines', type: 'line', source: 'tie-lines',
+            label: 'SW Allocation Links', group: 'sw-tie-lines', section: 'Surface Water',
+            filter: ['==', ['get', 'source_type'], 'sw'],
+            paint: { 'line-color': OH2O.colors.teal, 'line-width': 1.5, 'line-opacity': 0.55, 'line-dasharray': [6, 3] },
+            swatch: 'line-dash', swatchColor: OH2O.colors.teal
+        },
+        Object.assign(OH2O.makeLabelLayer('sw-tie-labels', 'tie-lines', 'pod', {
+            minzoom: 13, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '%'],
+            layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
+        }), { panelHidden: true, group: 'sw-tie-lines', section: 'Surface Water', filter: ['==', ['get', 'source_type'], 'sw'] }),
+
+        // ── Infrastructure ──
+        {
+            id: 'gw-tie-lines', type: 'line', source: 'tie-lines',
+            label: 'GW Allocation Links', group: 'gw-tie-lines', section: 'Infrastructure',
+            filter: ['==', ['get', 'source_type'], 'gw'],
+            paint: { 'line-color': OH2O.colors.gold, 'line-width': 1.5, 'line-opacity': 0.55, 'line-dasharray': [6, 3] },
+            swatch: 'line-dash', swatchColor: OH2O.colors.gold
+        },
+        Object.assign(OH2O.makeLabelLayer('gw-tie-labels', 'tie-lines', 'well', {
+            minzoom: 13, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '%'],
+            layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
+        }), { panelHidden: true, group: 'gw-tie-lines', section: 'Infrastructure', filter: ['==', ['get', 'source_type'], 'gw'] }),
         {
             id: 'recharge-fill', type: 'fill', source: 'recharge',
             label: 'Recharge Sites', group: 'recharge', section: 'Infrastructure',
@@ -181,22 +199,27 @@ var MAP_CONFIG = {
             id: 'recharge-outline', type: 'line', source: 'recharge',
             group: 'recharge', groupHidden: true, section: 'Infrastructure',
             filter: ['!=', '$type', 'Point'],
-            paint: { 'line-color': OH2O.colors.purple, 'line-width': 1.5 }
+            paint: { 'line-color': OH2O.colors.purple, 'line-width': 1.5, 'line-opacity': 0.85 }
         },
         {
             id: 'recharge-points', type: 'circle', source: 'recharge',
             group: 'recharge', groupHidden: true, section: 'Infrastructure',
             filter: ['==', '$type', 'Point'],
-            paint: { 'circle-radius': 6, 'circle-color': OH2O.colors.purple, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
-            glow: { width: 14, opacity: 0.15 }
+            paint: OH2O.pointPaint('recharge'),
+            glow: { paint: OH2O.glowPaint('recharge') }
         },
+        Object.assign(OH2O.makeLabelLayer('recharge-label', 'recharge', 'recharge', { anchor: 'center', offset: [0, 0] }),
+            { panelHidden: true, group: 'recharge', section: 'Infrastructure' }),
+
+        // ── Monitoring ──
         {
             id: 'stations-points', type: 'circle', source: 'stations',
-            label: 'Monitoring Stations', section: 'Monitoring',
-            paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.red, 'circle-stroke-width': 1.5, 'circle-stroke-color': '#fff' },
-            glow: { width: 12, opacity: 0.15 },
+            label: 'Monitoring Stations', section: 'Monitoring', label_id: 'stations-label',
+            paint: OH2O.pointPaint('station'),
+            glow: { paint: OH2O.glowPaint('station') },
             swatch: 'dot', swatchColor: OH2O.colors.red
-        }
+        },
+        Object.assign(OH2O.makeLabelLayer('stations-label', 'stations', 'station', {}), { panelHidden: true, section: 'Monitoring' })
     ],
     popups: {
         'gw-tie-lines': function(p) {
@@ -256,8 +279,14 @@ var MAP_CONFIG = {
                    '<a href="/datasync/stations/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         }
     },
-    legend: []
+    legend: [
+        { title: 'GSA Zones', items: [
+            { label: 'East Kaweah GSA',    swatch: 'fill', color: '#2d6a4f' },
+            { label: 'Mid-Kaweah GSA',     swatch: 'fill', color: '#40916c' },
+            { label: 'Greater Kaweah GSA', swatch: 'fill', color: '#52b788' }
+        ]}
+    ]
 };
 </script>
-<script src="{% static 'js/map-engine.js' %}?v=2"></script>
+<script src="{% static 'js/map-engine.js' %}"></script>
 {% endblock %}
