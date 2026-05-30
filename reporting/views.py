@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -12,6 +13,7 @@ from django.views.decorators.http import require_POST
 from reporting.forms import ReportGenerateForm
 from reporting.generators import generate_calwatrs_csv, generate_gears_csv
 from reporting.models import ReportingProfile, ReportSubmission, ReportTemplate
+from reporting.services import PREFILL_METHOD_BY_REPORT_TYPE, build_openet_prefill
 from reporting.validators import validate_report
 from surface.models import DiversionRecord
 
@@ -263,3 +265,83 @@ def calwatrs_worksheet(request, pk):
         ),
     }
     return render(request, "reporting/calwatrs_worksheet.html", context)
+
+
+def _apply_prefill_overrides(prefill, overrides):
+    """Overlay saved edits onto computed OpenET values and tag each one.
+
+    Adds to every month-value object:
+      - field_key:     the prefill_overrides key ("entity_type:entity_id:month")
+      - display_value: the saved edit if present, else the raw OpenET figure
+      - modified:      True when the user has saved a different value
+    The raw OpenET figure (value_af) and its label are left untouched, so the
+    template can always show "OpenET said X / you entered Y".
+    """
+    for entity in prefill["entities"]:
+        for mv in entity["months"]:
+            field_key = f"{entity['entity_type']}:{entity['entity_id']}:{mv['month']}"
+            mv["field_key"] = field_key
+            if field_key in overrides:
+                mv["display_value"] = overrides[field_key]
+                mv["modified"] = True
+            else:
+                mv["display_value"] = mv["value_af"]
+                mv["modified"] = False
+    return prefill
+
+
+@login_required
+def report_prefill(request, pk):
+    """Prepare a filing's monthly numbers from OpenET satellite ET.
+
+    GET renders one editable input per entity-month, pre-populated with the raw
+    OpenET consumptive-use estimate and tagged with its provenance. POST saves
+    the (possibly edited) values onto ReportSubmission.prefill_overrides — never
+    the ledger — so a user's reviewed figures survive without double-counting
+    against the et_estimate entries the report generators read.
+    """
+    submission = get_object_or_404(
+        ReportSubmission.objects.select_related("report_template", "reporting_period"),
+        pk=pk,
+    )
+    report_type = submission.report_template.report_type
+    method = PREFILL_METHOD_BY_REPORT_TYPE.get(report_type)
+    if method is None:
+        raise Http404("OpenET pre-fill is not available for this report type.")
+
+    saved = False
+    if request.method == "POST":
+        overrides = {}
+        for key, value in request.POST.items():
+            if not key.startswith("val:"):
+                continue
+            raw = value.strip()
+            if not raw:
+                continue
+            field_key = key[len("val:"):]
+            try:
+                # Store a canonical numeric string so reloads are stable. Junk
+                # input is dropped rather than persisted as a fake "edit".
+                overrides[field_key] = str(Decimal(raw))
+            except (InvalidOperation, ValueError):
+                continue
+        submission.prefill_overrides = overrides
+        submission.save(update_fields=["prefill_overrides", "updated_at"])
+        saved = True
+
+    prefill = _apply_prefill_overrides(
+        build_openet_prefill(submission.reporting_period, method),
+        submission.prefill_overrides or {},
+    )
+
+    context = {
+        "submission": submission,
+        "prefill": prefill,
+        "report_type": report_type,
+        "is_gears": report_type.startswith("gears"),
+        "is_calwatrs": report_type.startswith("calwatrs"),
+        "saved": saved,
+    }
+    if request.headers.get("HX-Request"):
+        return render(request, "reporting/partials/_openet_prefill.html", context)
+    return render(request, "reporting/report_prefill.html", context)

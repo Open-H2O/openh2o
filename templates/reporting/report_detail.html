@@ -81,6 +81,19 @@
   </div>
   {% endif %}
 
+  <!-- Optional aid: pre-fill monthly numbers from OpenET satellite ET -->
+  <div class="card-raised">
+    <h3 class="section-header-sm">Save typing: prepare with OpenET</h3>
+    <p class="text-tertiary text-xs mb-md">
+      Pre-fill the monthly values from OpenET satellite evapotranspiration so you
+      don't type them from scratch. ET is the water your crops consumed — not the
+      same as what you pumped or diverted — so each value is an editable estimate
+      you review and adjust before certifying your own figures in the state portal.
+    </p>
+    <a href="{% url 'reporting:report_prefill' pk=submission.pk %}"
+       class="btn-secondary btn-sm" style="text-decoration: none;">Prepare with OpenET</a>
+  </div>
+
   <!-- Per-system handoff: how to actually file this -->
   {% include "reporting/partials/_handoff.html" %}
 
