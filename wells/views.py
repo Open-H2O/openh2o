@@ -9,15 +9,30 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
-from wells.models import Well
+from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES, Well
 
 
 EDITABLE_FIELDS = {
     "name": {"label": "Name", "type": "text", "max_length": 200},
-    "depth_ft": {"label": "Depth (ft)", "type": "number", "step": "0.01"},
-    "capacity_gpm": {"label": "Capacity (gpm)", "type": "number", "step": "0.01"},
-    "status": {"label": "Status", "type": "select", "choices": Well.STATUS_CHOICES},
     "owner_name": {"label": "Owner Name", "type": "text", "max_length": 200},
+    "wcr_number": {"label": "WCR Number", "type": "text", "max_length": 50},
+    "state_well_number": {"label": "State Well Number", "type": "text", "max_length": 50},
+    "status": {"label": "Status", "type": "select", "choices": Well.STATUS_CHOICES},
+    "capacity_gpm": {"label": "Capacity (gpm)", "type": "number", "step": "0.01"},
+    "year_pumping_began": {
+        "label": "Year Pumping Began", "type": "number", "step": "1", "integer": True
+    },
+    "measurement_method": {
+        "label": "Measurement Method", "type": "select",
+        "choices": MEASUREMENT_METHOD_CHOICES,
+    },
+    "depth_ft": {"label": "Depth (ft)", "type": "number", "step": "0.01"},
+    "casing_diameter_in": {"label": "Casing Diameter (in)", "type": "number", "step": "0.01"},
+    "casing_material": {"label": "Casing Material", "type": "text", "max_length": 50},
+    "screen_top_ft": {"label": "Screen Top (ft)", "type": "number", "step": "0.01"},
+    "screen_bottom_ft": {"label": "Screen Bottom (ft)", "type": "number", "step": "0.01"},
+    "tested_yield_gpm": {"label": "Tested Yield (gpm)", "type": "number", "step": "0.01"},
+    "pump_type": {"label": "Pump Type", "type": "select", "choices": PUMP_TYPE_CHOICES},
     "notes": {"label": "Notes", "type": "textarea"},
 }
 
@@ -74,25 +89,26 @@ def well_detail(request, pk):
             )
         )
 
-    # Build editable field list with current values for the template
-    editable_fields_with_values = [
-        {
+    # Build editable fields keyed by name so the template can place each one
+    # under the right section heading (Identification / State Reporting / Construction).
+    editable_fields_map = {
+        fname: {
             "name": fname,
             "label": fmeta["label"],
             "type": fmeta["type"],
             "choices": fmeta.get("choices", []),
+            "integer": fmeta.get("integer", False),
             "value": getattr(well, fname),
         }
         for fname, fmeta in EDITABLE_FIELDS.items()
-    ]
+    }
 
     context = {
         "well": well,
         "current_meters": current_meters,
         "irrigated_parcels": irrigated_parcels,
         "monitoring": monitoring,
-        "editable_fields": EDITABLE_FIELDS,
-        "editable_fields_with_values": editable_fields_with_values,
+        "ef": editable_fields_map,
         "geojson": json.dumps(geojson) if geojson else None,
     }
     return render(request, "wells/detail.html", context)

@@ -5,6 +5,8 @@ Replaces the content of #field-<fieldname>.
 <span style="color: var(--color-text-primary); font-size: 0.9375rem; flex: 1;">
   {% if field == "status" %}
     {% include "wells/partials/_status_badge.html" with status=value %}
+  {% elif field_meta.type == "select" %}
+    {% if value %}{% for cval, clabel in field_meta.choices %}{% if cval == value|stringformat:"s" %}{{ clabel }}{% endif %}{% endfor %}{% else %}—{% endif %}
   {% else %}
     {{ value|default:"—" }}
   {% endif %}

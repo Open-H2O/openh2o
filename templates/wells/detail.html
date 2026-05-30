@@ -37,18 +37,23 @@
 
       <!-- Well Info card -->
       <div class="card-raised">
-        <h2 class="section-header">
-          Well Information
-        </h2>
 
-        <!-- Static field: well_registration_id -->
+        <!-- ── Identification ── -->
+        <h2 class="section-header">Identification</h2>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.name %}
+
+        <!-- Static field: well_registration_id (local registry id) -->
         <div class="field-group">
           <div class="field-label field-row">
             Registration ID
-            {% include "partials/_help_tooltip.html" with label="State Well Number" text="The unique identifier assigned by the Department of Water Resources. Format: TxxN/RxxE-xxAxx (Township/Range/Section)." %}
+            {% include "partials/_help_tooltip.html" with label="Registration ID" text="This agency's local registry identifier for the well. The statewide DWR identifier is the State Well Number field below." %}
           </div>
           <div class="field-value-mono">{{ well.well_registration_id|default:"—" }}</div>
         </div>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.wcr_number %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.state_well_number %}
 
         <!-- Static field: well_type -->
         <div class="field-group">
@@ -56,41 +61,33 @@
           <div class="field-value">{{ well.well_type|default:"—" }}</div>
         </div>
 
-        <!-- Editable fields -->
-        {% for ef in editable_fields_with_values %}
-        <div class="field-group">
-          <div class="field-label field-row">
-            {{ ef.label }}
-            {% if ef.name == "status" %}
-              {% include "partials/_help_tooltip.html" with label="Status" text="Active extraction wells are included in extraction reporting. Inactive extraction wells are excluded." %}
-            {% elif ef.name == "total_depth_ft" or ef.name == "depth_ft" %}
-              {% include "partials/_help_tooltip.html" with label="Total Depth" text="Depth of the well bore in feet below ground surface." %}
-            {% endif %}
-          </div>
-          <div id="field-{{ ef.name }}" class="field-row">
-            <span class="field-value" style="flex: 1;">
-              {% if ef.name == "status" %}
-                {% include "wells/partials/_status_badge.html" with status=ef.value %}
-              {% elif ef.type == "number" %}
-                {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
-              {% else %}
-                {{ ef.value|default:"—" }}
-              {% endif %}
-            </span>
-            <button
-              hx-get="{% url 'wells:edit_field' well.pk %}?field={{ ef.name }}"
-              hx-target="#field-{{ ef.name }}"
-              hx-swap="innerHTML"
-              class="edit-btn"
-              title="Edit {{ ef.label }}">
-              &#9998;
-            </button>
-          </div>
-        </div>
-        {% endfor %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.owner_name %}
 
-        <!-- Static timestamps -->
+        <!-- ── State Reporting (GEARS) ── -->
+        <h2 class="section-header" style="margin-top: var(--space-lg);">State Reporting (GEARS)</h2>
+        <p class="text-tertiary text-xs" style="margin-bottom: var(--space-sm);">
+          These fields feed a GEARS extraction filing.
+        </p>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.status %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.capacity_gpm %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.year_pumping_began %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.measurement_method %}
+
+        <!-- ── Construction (DWR Well Completion Report) ── -->
+        <h2 class="section-header" style="margin-top: var(--space-lg);">Construction (DWR Well Completion Report)</h2>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.depth_ft %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.casing_diameter_in %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.casing_material %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.screen_top_ft %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.screen_bottom_ft %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.tested_yield_gpm %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.pump_type %}
+
+        <!-- Notes + timestamps -->
         <div class="border-separator">
+          {% include "wells/partials/_editable_field.html" with ef=ef.notes %}
           <div class="text-tertiary text-xs">
             Created {{ well.created_at|date:"M d, Y" }} &middot; Updated {{ well.updated_at|date:"M d, Y" }}
           </div>
