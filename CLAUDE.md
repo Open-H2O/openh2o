@@ -63,7 +63,7 @@ openh2o/
 
 ## Development Commands
 
-All commands run on the server where Docker is running (Butler: 192.168.0.114).
+All commands run on the server where Docker is running (Butler).
 
 A `Makefile` provides shortcuts for common operations. Run `make help` to see all targets.
 
@@ -113,4 +113,4 @@ TODO: Testing conventions will be established in later phases.
 - **Caddy, not nginx.** Auto-HTTPS with smaller configuration footprint.
 - **AUTH_USER_MODEL = 'core.User'** is set from day one. Never change this after migrations run.
 - **PostGIS from day one.** All geographic models use spatial fields.
-- **Deploy target: Butler** (192.168.0.114) via Cloudflare Tunnel for public access.
+- **Deploy target: Butler** via Cloudflare Tunnel for public access.
