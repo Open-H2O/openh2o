@@ -16,8 +16,7 @@ import csv
 import io
 from decimal import Decimal
 
-from accounting.models import ReportingPeriod
-from parcels.models import Parcel, ParcelLedger
+from parcels.models import ParcelLedger
 from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
 from wells.models import Well, WellIrrigatedParcel
 
