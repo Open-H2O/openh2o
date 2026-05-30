@@ -16,12 +16,12 @@ REPORT_TEMPLATES = [
     {
         "name": "CalWATRS — Direct Use",
         "report_type": "calwatrs_a1",
-        "description": "Surface water diverted and put to direct use, monthly volumes (CalWATRS schedule A1)",
+        "description": "Surface water diverted and put to direct use, monthly volumes",
     },
     {
         "name": "CalWATRS — To Storage",
         "report_type": "calwatrs_a2",
-        "description": "Surface water diverted into storage for later use, monthly volumes (CalWATRS schedule A2)",
+        "description": "Surface water diverted into storage for later use, monthly volumes",
     },
 ]
 
