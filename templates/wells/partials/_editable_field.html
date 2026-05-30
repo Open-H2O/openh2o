@@ -1,0 +1,38 @@
+{% comment %}
+Renders one inline-editable well field for the detail tile.
+Expects: well, ef (dict with name, label, type, choices, integer, value).
+Keeps the HTMX inline-edit pattern (pencil -> _field_edit.html -> _field_value.html).
+{% endcomment %}
+<div class="field-group">
+  <div class="field-label field-row">
+    {{ ef.label }}
+    {% if ef.name == "status" %}
+      {% include "partials/_help_tooltip.html" with label="Status" text="Active extraction wells are included in extraction reporting. Inactive extraction wells are excluded." %}
+    {% elif ef.name == "depth_ft" %}
+      {% include "partials/_help_tooltip.html" with label="Total Depth" text="Depth of the well bore in feet below ground surface." %}
+    {% elif ef.name == "measurement_method" %}
+      {% include "partials/_help_tooltip.html" with label="Measurement Method" text="How extraction volume is determined. Feeds the GEARS filing; certified-meter readings carry a calibration date." %}
+    {% endif %}
+  </div>
+  <div id="field-{{ ef.name }}" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      {% if ef.name == "status" %}
+        {% include "wells/partials/_status_badge.html" with status=ef.value %}
+      {% elif ef.type == "select" %}
+        {% if ef.value %}{% for cval, clabel in ef.choices %}{% if cval == ef.value|stringformat:"s" %}{{ clabel }}{% endif %}{% endfor %}{% else %}—{% endif %}
+      {% elif ef.type == "number" %}
+        {% if ef.value is not None %}{% if ef.integer %}{{ ef.value|floatformat:"0" }}{% else %}{{ ef.value|floatformat:2 }}{% endif %}{% else %}—{% endif %}
+      {% else %}
+        {{ ef.value|default:"—" }}
+      {% endif %}
+    </span>
+    <button
+      hx-get="{% url 'wells:edit_field' well.pk %}?field={{ ef.name }}"
+      hx-target="#field-{{ ef.name }}"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit {{ ef.label }}">
+      &#9998;
+    </button>
+  </div>
+</div>
