@@ -132,6 +132,14 @@ class ReportSubmission(models.Model):
         blank=True,
         help_text="Internal GSA/agency sign-off notes. Not a Water Board reviewer's notes.",
     )
+    prefill_overrides = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="User-edited OpenET pre-fill values, keyed by entity+month "
+        "(e.g. 'well:12:2024-03'). These are the agency's reviewed figures for "
+        "data entry; they are NOT written back to the parcel ledger, so they "
+        "never double-count against the et_estimate entries the generators read.",
+    )
     validation_warnings = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
