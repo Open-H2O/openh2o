@@ -4,20 +4,42 @@ from decimal import Decimal
 from django.db.models import Count
 
 from parcels.models import ParcelLedger
-from surface.models import DiversionRecord, PointOfDiversion
+from reporting.models import ReportingProfile
+from surface.models import DiversionRecord, PointOfDiversion, WaterRight
 from wells.models import Well, WellIrrigatedParcel
 
 
 def validate_report(reporting_period, report_type):
+    """Pre-flight checks phrased as the state outcome they predict.
+
+    Messages name the system (GEARS / CalWATRS) and what it will do — a hard
+    reject, an empty filing, or enforcement exposure — rather than just naming a
+    missing internal field. The goal is that the user reads a warning and knows
+    what will happen at the portal.
+    """
     warnings = []
 
     if not reporting_period.is_finalized:
         warnings.append({
             "level": "warning",
-            "message": f"Period '{reporting_period.name}' is not finalized.",
+            "message": (
+                f"Period '{reporting_period.name}' is not finalized — finalize it so the "
+                "numbers can't change after you certify the filing."
+            ),
         })
 
     if report_type in ("gears_by_well", "gears_by_et"):
+        # GEARS login requires the Correspondence ID the state mailed the agency.
+        profile = ReportingProfile.objects.first()
+        if not profile or not profile.gears_correspondence_id:
+            warnings.append({
+                "level": "warning",
+                "message": (
+                    "No GEARS Correspondence ID on file — you'll need it to log in and "
+                    "upload. Add it to your Reporting Profile."
+                ),
+            })
+
         ledger_count = ParcelLedger.objects.filter(
             effective_date__gte=reporting_period.start_date,
             effective_date__lte=reporting_period.end_date,
@@ -26,7 +48,7 @@ def validate_report(reporting_period, report_type):
         if ledger_count == 0:
             warnings.append({
                 "level": "error",
-                "message": "No ledger entries found for this period. GEARS report will be empty.",
+                "message": "No ledger entries for this period — the GEARS upload would be empty.",
             })
 
         if report_type == "gears_by_well":
@@ -39,7 +61,10 @@ def validate_report(reporting_period, report_type):
             if source_count == 0:
                 warnings.append({
                     "level": "error",
-                    "message": "No meter_reading entries found. GEARS by-well report requires meter readings.",
+                    "message": (
+                        "No meter readings for this period — GEARS by-well requires metered "
+                        "extraction volumes."
+                    ),
                 })
 
             missing_reg = Well.objects.filter(
@@ -52,8 +77,11 @@ def validate_report(reporting_period, report_type):
             ).count()
             if missing_reg > 0:
                 warnings.append({
-                    "level": "warning",
-                    "message": f"{missing_reg} active well(s) missing well_registration_id.",
+                    "level": "error",
+                    "message": (
+                        f"{missing_reg} active well(s) have no well registration ID — GEARS "
+                        "rejects well rows without one. Register them before you upload."
+                    ),
                 })
 
             dupes = (
@@ -70,10 +98,13 @@ def validate_report(reporting_period, report_type):
             if dupe_count > 0:
                 warnings.append({
                     "level": "error",
-                    "message": f"{dupe_count} duplicate parcel-month combination(s) in meter readings.",
+                    "message": (
+                        f"{dupe_count} duplicate parcel-month reading(s) — GEARS rejects more "
+                        "than one volume per well per month."
+                    ),
                 })
 
-            # Warn if any well's fractions don't sum to 1.0 (auto-normalized for report).
+            # Warn if any well's fractions don't sum to 1.0 (auto-normalized for the file).
             well_fractions = defaultdict(Decimal)
             for wip in WellIrrigatedParcel.objects.all():
                 well_fractions[wip.well_id] += wip.fraction
@@ -85,8 +116,8 @@ def validate_report(reporting_period, report_type):
                 warnings.append({
                     "level": "warning",
                     "message": (
-                        f"{len(bad_wells)} well(s) have fractions not summing to 1.0 "
-                        "(auto-normalized for report)."
+                        f"{len(bad_wells)} well(s) have parcel fractions not summing to 1.0 "
+                        "(auto-normalized for the GEARS file)."
                     ),
                 })
 
@@ -106,7 +137,11 @@ def validate_report(reporting_period, report_type):
                 if coverage < 80:
                     warnings.append({
                         "level": "warning",
-                        "message": f"Data completeness: {coverage:.0f}% of active wells have data ({wells_with_data}/{active_wells}).",
+                        "message": (
+                            f"Only {coverage:.0f}% of active wells have data "
+                            f"({wells_with_data}/{active_wells}) — the GEARS file will only "
+                            "contain wells with readings."
+                        ),
                     })
 
         elif report_type == "gears_by_et":
@@ -118,7 +153,10 @@ def validate_report(reporting_period, report_type):
             if et_count == 0:
                 warnings.append({
                     "level": "error",
-                    "message": "No et_estimate entries found. GEARS by-ET report requires ET data.",
+                    "message": (
+                        "No ET estimates for this period — GEARS by-ET requires ET-derived "
+                        "consumptive-use data."
+                    ),
                 })
 
     elif report_type in ("calwatrs_a1", "calwatrs_a2"):
@@ -131,7 +169,10 @@ def validate_report(reporting_period, report_type):
         if div_count == 0:
             warnings.append({
                 "level": "error",
-                "message": f"No {diversion_type} diversion records found for this period.",
+                "message": (
+                    f"No {diversion_type.replace('_', ' ')} diversion records for this period — "
+                    "the CalWATRS form would have nothing to enter."
+                ),
             })
 
         dupes = (
@@ -147,10 +188,13 @@ def validate_report(reporting_period, report_type):
         if dupe_count > 0:
             warnings.append({
                 "level": "error",
-                "message": f"{dupe_count} duplicate POD-month combination(s) in diversion records.",
+                "message": (
+                    f"{dupe_count} duplicate POD-month record(s) — CalWATRS expects one entry "
+                    "per point of diversion per month."
+                ),
             })
 
-        # Warn about PODs missing water rights — CalWATRS rows will show empty right_id.
+        # PODs with no linked right are unauthorized-diversion exposure in CalWATRS.
         pods_no_wr = PointOfDiversion.objects.filter(
             water_right__isnull=True,
             diversionrecord__reporting_period=reporting_period,
@@ -158,7 +202,30 @@ def validate_report(reporting_period, report_type):
         if pods_no_wr > 0:
             warnings.append({
                 "level": "warning",
-                "message": f"{pods_no_wr} point(s) of diversion have no linked water right.",
+                "message": (
+                    f"{pods_no_wr} point(s) of diversion have no linked water right — filing "
+                    "these in CalWATRS may be flagged as an unauthorized diversion "
+                    "(Water Code §1846). Link each POD to its right first."
+                ),
+            })
+
+        # CalWATRS is filed per right under that right's PIN.
+        rights_missing_pin = (
+            WaterRight.objects.filter(
+                pointofdiversion__diversionrecord__reporting_period=reporting_period,
+                pointofdiversion__diversionrecord__diversion_type=diversion_type,
+                calwatrs_pin="",
+            )
+            .distinct()
+            .count()
+        )
+        if rights_missing_pin > 0:
+            warnings.append({
+                "level": "warning",
+                "message": (
+                    f"{rights_missing_pin} water right(s) in this filing have no CalWATRS PIN — "
+                    "you need each right's PIN to file. Add it on the water right."
+                ),
             })
 
         active_pods = PointOfDiversion.objects.filter(status="active").count()
@@ -176,7 +243,11 @@ def validate_report(reporting_period, report_type):
             if coverage < 80:
                 warnings.append({
                     "level": "warning",
-                    "message": f"Data completeness: {coverage:.0f}% of active PODs have data ({pods_with_data}/{active_pods}).",
+                    "message": (
+                        f"Only {coverage:.0f}% of active PODs have data "
+                        f"({pods_with_data}/{active_pods}) — CalWATRS will only contain the "
+                        "diversions you entered."
+                    ),
                 })
 
     return warnings
