@@ -170,6 +170,40 @@ ALIASES = {
     "storage": _RECHARGE_ALIASES,
 }
 
+# Human-readable labels for the column-mapping UI. A GSA user sees "Casing
+# diameter (in)", not "casing_diameter_in".
+FIELD_LABELS = {
+    "name": "Name",
+    "well_registration_id": "Registration ID (local)",
+    "wcr_number": "WCR Number",
+    "state_well_number": "State Well Number",
+    "capacity_gpm": "Capacity (gpm)",
+    "tested_yield_gpm": "Tested Yield (gpm)",
+    "depth_ft": "Depth (ft)",
+    "casing_diameter_in": "Casing Diameter (in)",
+    "casing_material": "Casing Material",
+    "screen_top_ft": "Screen Top (ft)",
+    "screen_bottom_ft": "Screen Bottom (ft)",
+    "pump_type": "Pump Type",
+    "year_pumping_began": "Year Pumping Began",
+    "measurement_method": "Measurement Method",
+    "owner_name": "Owner Name",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "geometry": "Geometry (GeoJSON / WKT)",
+    "stream_name": "Stream Name",
+    "max_rate_cfs": "Max Rate (cfs)",
+    "site_type": "Site Type",
+    "capacity_acre_feet": "Capacity (acre-feet)",
+    "operator": "Operator",
+}
+
+
+def import_fields(infra_type):
+    """Ordered [(model_field, label)] the import UI offers a column mapping for."""
+    table = ALIASES.get(infra_type, _WELL_ALIASES)
+    return [(field, FIELD_LABELS.get(field, field)) for field in table.keys()]
+
 
 def _normalize(col):
     """Lowercase, strip, collapse any run of non-alphanumerics to single '_'."""
