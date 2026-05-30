@@ -12,8 +12,8 @@
   </nav>
   <p class="page-description">Points of diversion from streams and canals. Each diversion point tracks monthly water volumes and links to water rights for compliance.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
-    <a href="{% url 'infrastructure:add' %}" class="btn-secondary btn-sm">Import</a>
-    <a href="{% url 'infrastructure:add' %}" class="btn-primary btn-sm">+ Add Diversion</a>
+    <a href="{% url 'infrastructure:import' %}?type=diversion" class="btn-secondary btn-sm">Import</a>
+    <a href="{% url 'infrastructure:add' %}?type=diversion" class="btn-primary btn-sm">+ Add Diversion</a>
   </div>
 </div>
 {% endblock %}
