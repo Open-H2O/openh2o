@@ -27,6 +27,12 @@ class WaterRight(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     source_name = models.CharField(max_length=200, blank=True)
+    calwatrs_pin = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="CalWATRS PIN mailed by SWRCB for this water right. The state "
+        "issues one PIN per right; supplied by the agency, not fetched by OpenH2O.",
+    )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
