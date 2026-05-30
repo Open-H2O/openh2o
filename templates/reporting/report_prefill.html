@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Prepare with OpenET - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Prepare with OpenET — {{ submission.reporting_period.name }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'reporting:report_list' %}">Reporting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'reporting:report_detail' pk=submission.pk %}">{{ submission.report_template.name }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Prepare with OpenET</span>
+  </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <div class="row-start">
+    <a href="{% url 'reporting:report_detail' pk=submission.pk %}" class="back-link text-sm">Back to report</a>
+    <span class="text-tertiary">/</span>
+    <span class="text-secondary text-sm">{{ submission.report_template.name }}</span>
+  </div>
+
+  <div id="prefill-wrap" class="page-stack" style="gap: var(--space-md);">
+    {% include "reporting/partials/_openet_prefill.html" %}
+  </div>
+
+</div>
+{% endblock %}
