@@ -2,6 +2,63 @@ from django.conf import settings
 from django.contrib.gis.db import models
 
 
+class ReportingProfile(models.Model):
+    """The agency's state-issued filing identity and certifier of record.
+
+    These values are NOT credentials OpenH2O uses to talk to the state. There
+    is no API. A human logs into the GEARS and CalWATRS web portals and files
+    by hand. The fields here are the identity tokens the state MAILS to the
+    agency, transcribed so reports can be pre-addressed and the right person
+    can be reminded who signs:
+
+      - gears_correspondence_id: the Correspondence ID SWRCB mails to bind a
+        GEARS account to an extractor/property. The human supplies it; OpenH2O
+        only stores it. (CalWATRS PINs are issued per water right and live on
+        surface.WaterRight, not here.)
+      - certifier_*: the person who will swear the filing in the state portal
+        under penalty of perjury (Water Code 5107). OpenH2O never certifies on
+        anyone's behalf.
+
+    Single-tenant deployment: one profile represents the one agency, optionally
+    linked to the geography.Boundary that stands for its area. A district that
+    holds several distinct GEARS extractors (and thus several Correspondence
+    IDs) is a documented simplification of this single-field model.
+    """
+
+    boundary = models.OneToOneField(
+        "geography.Boundary",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reporting_profile",
+        help_text="The geography.Boundary representing this agency's area.",
+    )
+    legal_entity_name = models.CharField(
+        max_length=255,
+        help_text="Legal name of the agency as it appears on state filings.",
+    )
+    gears_correspondence_id = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Correspondence ID mailed by SWRCB to bind the GEARS account. "
+        "Supplied by the agency; OpenH2O does not issue or fetch it.",
+    )
+    certifier_name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Person who certifies filings in the state portal under penalty of perjury.",
+    )
+    certifier_title = models.CharField(max_length=200, blank=True)
+    certifier_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=50, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.legal_entity_name
+
+
 class ReportTemplate(models.Model):
     REPORT_TYPE_CHOICES = [
         ("gears_by_well", "GEARS by Well"),

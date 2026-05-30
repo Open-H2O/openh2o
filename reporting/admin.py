@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import ReportingCrosswalk, ReportSubmission, ReportTemplate
+from .models import ReportingCrosswalk, ReportingProfile, ReportSubmission, ReportTemplate
+
+
+@admin.register(ReportingProfile)
+class ReportingProfileAdmin(admin.ModelAdmin):
+    list_display = ["legal_entity_name", "boundary", "gears_correspondence_id", "certifier_name"]
+    search_fields = ["legal_entity_name", "gears_correspondence_id", "certifier_name"]
 
 
 @admin.register(ReportTemplate)
