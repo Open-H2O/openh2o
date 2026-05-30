@@ -1,0 +1,58 @@
+{% if is_gears %}
+<div class="card-raised">
+  <h3 class="section-header-sm">How to file this in GEARS</h3>
+  <p class="text-tertiary text-xs mb-md">
+    GEARS accepts a bulk CSV upload. Download the file below, upload it in the portal,
+    and certify there. OpenH2O does not connect to GEARS.
+  </p>
+
+  <div class="mb-md">
+    <div class="field-label">Your GEARS Correspondence ID</div>
+    {% if profile.gears_correspondence_id %}
+    <div class="text-secondary text-sm" style="font-family: var(--font-mono);">
+      {{ profile.gears_correspondence_id }}
+    </div>
+    {% else %}
+    <div class="alert-warning text-sm" style="border: none;">
+      No Correspondence ID on file. You need it to log into GEARS — add it to your
+      Reporting Profile (Admin → Reporting → Reporting profiles).
+    </div>
+    {% endif %}
+  </div>
+
+  <ol class="text-secondary text-sm" style="margin: 0; padding-left: 1.25rem; display: grid; gap: var(--space-xs);">
+    <li>
+      Download the GEARS CSV:
+      {% if submission.generated_file %}
+      <a href="{% url 'reporting:report_download' pk=submission.pk %}"
+         style="color: var(--color-gold); text-decoration: none; font-weight: 600;">Download file</a>
+      {% else %}<span class="text-tertiary">(no file generated yet)</span>{% endif %}
+    </li>
+    <li>Log into GEARS with your Correspondence ID.</li>
+    <li>Go to <strong>Bulk Volume Upload</strong>, choose the water year, and upload the CSV.</li>
+    <li>Review GEARS' validation results and fix anything it rejects.</li>
+    <li>Certify the filing in GEARS under penalty of perjury.</li>
+    <li>Come back here and <strong>Record as Filed</strong> with the confirmation number.</li>
+  </ol>
+</div>
+
+{% elif is_calwatrs %}
+<div class="card-raised">
+  <h3 class="section-header-sm">How to file this in CalWATRS</h3>
+  <p class="text-tertiary text-xs mb-md">
+    CalWATRS has no file upload — it's a web form. You enter each Point of Diversion's
+    monthly values by hand. The worksheet lays them out in transcription order, with
+    each water right's CalWATRS PIN beside it.
+  </p>
+
+  <ol class="text-secondary text-sm" style="margin: 0 0 var(--space-md); padding-left: 1.25rem; display: grid; gap: var(--space-xs);">
+    <li>Open the transcription worksheet (below) and keep it beside the CalWATRS form.</li>
+    <li>Log into CalWATRS and enter each POD's monthly volume and max rate.</li>
+    <li>Certify the filing in CalWATRS under penalty of perjury.</li>
+    <li>Come back here and <strong>Record as Filed</strong> with the confirmation number.</li>
+  </ol>
+
+  <a href="{% url 'reporting:calwatrs_worksheet' pk=submission.pk %}"
+     class="btn-primary btn-sm" style="text-decoration: none;">Open transcription worksheet</a>
+</div>
+{% endif %}

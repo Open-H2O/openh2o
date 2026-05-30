@@ -11,8 +11,9 @@ from django.views.decorators.http import require_POST
 
 from reporting.forms import ReportGenerateForm
 from reporting.generators import generate_calwatrs_csv, generate_gears_csv
-from reporting.models import ReportSubmission, ReportTemplate
+from reporting.models import ReportingProfile, ReportSubmission, ReportTemplate
 from reporting.validators import validate_report
+from surface.models import DiversionRecord
 
 
 @login_required
@@ -124,7 +125,15 @@ def report_detail(request, pk):
         ReportSubmission.objects.select_related("report_template", "reporting_period"),
         pk=pk,
     )
-    context = {"submission": submission}
+    report_type = submission.report_template.report_type
+    context = {
+        "submission": submission,
+        "report_type": report_type,
+        "is_gears": report_type.startswith("gears"),
+        "is_calwatrs": report_type.startswith("calwatrs"),
+        # Single-tenant: one agency profile carries the GEARS Correspondence ID.
+        "profile": ReportingProfile.objects.first(),
+    }
     return render(request, "reporting/report_detail.html", context)
 
 
@@ -194,3 +203,63 @@ def report_transition(request, pk):
         )
 
     return redirect("reporting:report_detail", pk=submission.pk)
+
+
+@login_required
+def calwatrs_worksheet(request, pk):
+    """A per-POD transcription worksheet for CalWATRS.
+
+    CalWATRS has no upload — the user types each Point of Diversion's monthly
+    values into the state web form by hand. This view lays the same numbers the
+    CSV generator produces out as one block per POD, in a top-to-bottom order
+    that mirrors the portal, with each right's CalWATRS PIN beside it.
+    """
+    submission = get_object_or_404(
+        ReportSubmission.objects.select_related("report_template", "reporting_period"),
+        pk=pk,
+    )
+    report_type = submission.report_template.report_type
+    if report_type not in ("calwatrs_a1", "calwatrs_a2"):
+        raise Http404("The transcription worksheet is only for CalWATRS reports.")
+
+    period = submission.reporting_period
+    diversion_type = "direct_use" if report_type == "calwatrs_a1" else "to_storage"
+
+    records = (
+        DiversionRecord.objects.filter(
+            reporting_period=period,
+            diversion_type=diversion_type,
+        )
+        .select_related("point_of_diversion__water_right__right_type")
+        .order_by("point_of_diversion__name", "month")
+    )
+
+    blocks = {}
+    for rec in records:
+        pod = rec.point_of_diversion
+        wr = pod.water_right
+        if pod.pk not in blocks:
+            blocks[pod.pk] = {
+                "pod_name": pod.name,
+                "stream_name": pod.stream_name,
+                "has_water_right": wr is not None,
+                "right_id": wr.right_id if wr else "",
+                "holder_name": wr.holder_name if wr else "",
+                "right_type": wr.right_type.name if wr else "",
+                "calwatrs_pin": wr.calwatrs_pin if wr else "",
+                "rows": [],
+            }
+        blocks[pod.pk]["rows"].append({
+            "month": rec.month,
+            "volume_af": rec.volume_acre_feet,
+            "max_rate_cfs": rec.max_flow_rate_cfs,
+        })
+
+    context = {
+        "submission": submission,
+        "blocks": list(blocks.values()),
+        "diversion_type_display": (
+            "Direct Use" if diversion_type == "direct_use" else "To Storage"
+        ),
+    }
+    return render(request, "reporting/calwatrs_worksheet.html", context)

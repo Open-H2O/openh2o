@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}CalWATRS Worksheet - Open Water Accounting Platform{% endblock %}
+{% block page_title %}CalWATRS Transcription Worksheet{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'reporting:report_list' %}">Reporting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'reporting:report_detail' pk=submission.pk %}">{{ submission.report_template.name }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Worksheet</span>
+  </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <div class="row-start">
+    <a href="{% url 'reporting:report_detail' pk=submission.pk %}" class="back-link text-sm">Back to report</a>
+    <span class="text-tertiary">/</span>
+    <span class="text-secondary text-sm">{{ submission.reporting_period.name }} · {{ diversion_type_display }}</span>
+  </div>
+
+  <div class="card-raised" style="border-left: 3px solid var(--color-gold);">
+    <p class="text-secondary text-sm" style="margin: 0;">
+      <strong style="color: var(--color-primary);">Type these values into CalWATRS by hand.</strong>
+      CalWATRS has no upload. Work top to bottom: one block per Point of Diversion, with
+      its water right's PIN. When you've entered and certified everything in the portal,
+      return to the report to record the confirmation number.
+    </p>
+  </div>
+
+  {% for block in blocks %}
+  <div class="card-raised">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-md);">
+      <div class="field-group mb-0">
+        <div class="field-label">Point of Diversion</div>
+        <div class="field-value-sm">{{ block.pod_name }}{% if block.stream_name %} <span class="text-tertiary">({{ block.stream_name }})</span>{% endif %}</div>
+      </div>
+      <div class="field-group mb-0">
+        <div class="field-label">Water Right</div>
+        <div class="field-value-sm">
+          {% if block.has_water_right %}{{ block.right_id }}{% else %}<span style="color: var(--color-error);">No linked water right</span>{% endif %}
+        </div>
+      </div>
+      <div class="field-group mb-0">
+        <div class="field-label">Holder</div>
+        <div class="field-value-sm">{{ block.holder_name|default:"—" }}</div>
+      </div>
+      <div class="field-group mb-0">
+        <div class="field-label">Right Type</div>
+        <div class="field-value-sm">{{ block.right_type|default:"—" }}</div>
+      </div>
+      <div class="field-group mb-0">
+        <div class="field-label">CalWATRS PIN</div>
+        <div class="field-value-sm" style="font-family: var(--font-mono);">
+          {% if block.calwatrs_pin %}{{ block.calwatrs_pin }}{% else %}<span class="text-tertiary">Add this right's PIN on the water right</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <table class="data-table" style="width: 100%;">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th style="text-align: right;">Volume (AF)</th>
+          <th style="text-align: right;">Max Rate (CFS)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in block.rows %}
+        <tr>
+          <td>{{ row.month|date:"Y-m" }}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums;">{{ row.volume_af|floatformat:2 }}</td>
+          <td style="text-align: right; font-variant-numeric: tabular-nums;">{% if row.max_rate_cfs %}{{ row.max_rate_cfs|floatformat:2 }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% empty %}
+  <div class="card-raised">
+    <p class="text-secondary text-sm" style="margin: 0;">
+      No {{ diversion_type_display }} diversion records found for this period. There is
+      nothing to transcribe.
+    </p>
+  </div>
+  {% endfor %}
+
+  <div class="row-start">
+    <a href="{% url 'reporting:report_detail' pk=submission.pk %}" class="btn-primary btn-sm" style="text-decoration: none;">Return to report to record filing</a>
+  </div>
+
+</div>
+{% endblock %}
