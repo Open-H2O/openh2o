@@ -10,18 +10,60 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from parcels.models import Parcel
 from recharge.models import RechargeSite
 from surface.models import PointOfDiversion, PointOfDiversionParcel
-from wells.models import Well, WellIrrigatedParcel
+from wells.models import (
+    MEASUREMENT_METHOD_CHOICES,
+    PUMP_TYPE_CHOICES,
+    Well,
+    WellIrrigatedParcel,
+)
+
+
+# preselect type -> (list-view url name, breadcrumb/back label)
+ADD_TYPE_BACK = {
+    "well": ("wells:list", "Extraction Wells"),
+    "diversion": ("surface:pod_list", "Surface Diversions"),
+    "storage": ("recharge:list", "Recharge Areas"),
+    "recharge_site": ("recharge:list", "Recharge Areas"),
+}
+ADD_TYPE_LABEL = {
+    "well": "Well",
+    "diversion": "Diversion",
+    "storage": "Storage",
+    "recharge_site": "Recharge Site",
+}
+
+
+def _add_context(infra_type, **extra):
+    """Build the type-aware context for add.html (GET and POST-error re-renders)."""
+    if infra_type not in ADD_TYPE_BACK:
+        infra_type = "well"
+    back_name, back_label = ADD_TYPE_BACK[infra_type]
+    context = {
+        "preselect_type": infra_type,
+        "preselect_label": ADD_TYPE_LABEL[infra_type],
+        "back_url": reverse(back_name),
+        "back_label": back_label,
+        "measurement_method_choices": MEASUREMENT_METHOD_CHOICES,
+        "pump_type_choices": PUMP_TYPE_CHOICES,
+    }
+    context.update(extra)
+    return context
 
 
 @login_required
 def infrastructure_add(request):
     if request.method == "GET":
-        return render(request, "infrastructure/add.html")
+        return render(
+            request,
+            "infrastructure/add.html",
+            _add_context(request.GET.get("type", "well").strip()),
+        )
 
     infra_type = request.POST.get("infra_type", "well")
     name = request.POST.get("name", "").strip()
@@ -40,7 +82,7 @@ def infrastructure_add(request):
     if infra_type == "well":
         location = _parse_point(geometry_json)
         if not location:
-            return render(request, "infrastructure/add.html", {"error": "A point location is required for wells."})
+            return render(request, "infrastructure/add.html", _add_context("well", error="A point location is required for wells."))
         well = Well.objects.create(
             name=name,
             location=location,
@@ -48,6 +90,16 @@ def infrastructure_add(request):
             capacity_gpm=request.POST.get("capacity_gpm") or None,
             status=status,
             owner_name=request.POST.get("owner_name", ""),
+            year_pumping_began=request.POST.get("year_pumping_began") or None,
+            measurement_method=request.POST.get("measurement_method", ""),
+            wcr_number=request.POST.get("wcr_number", ""),
+            state_well_number=request.POST.get("state_well_number", ""),
+            casing_diameter_in=request.POST.get("casing_diameter_in") or None,
+            casing_material=request.POST.get("casing_material", ""),
+            screen_top_ft=request.POST.get("screen_top_ft") or None,
+            screen_bottom_ft=request.POST.get("screen_bottom_ft") or None,
+            tested_yield_gpm=request.POST.get("tested_yield_gpm") or None,
+            pump_type=request.POST.get("pump_type", ""),
             notes=notes,
         )
         if parcel:
@@ -57,7 +109,7 @@ def infrastructure_add(request):
     elif infra_type == "diversion":
         location = _parse_point(geometry_json)
         if not location:
-            return render(request, "infrastructure/add.html", {"error": "A point location is required for diversions."})
+            return render(request, "infrastructure/add.html", _add_context("diversion", error="A point location is required for diversions."))
         pod = PointOfDiversion.objects.create(
             name=name,
             location=location,
@@ -76,7 +128,7 @@ def infrastructure_add(request):
         geometry = _parse_polygon(geometry_json)
 
         if not location and not geometry:
-            return render(request, "infrastructure/add.html", {"error": "A location or polygon is required."})
+            return render(request, "infrastructure/add.html", _add_context(infra_type, error="A location or polygon is required."))
 
         if geometry and not location:
             location = geometry.centroid
@@ -97,7 +149,7 @@ def infrastructure_add(request):
         )
         return redirect("recharge:detail", pk=site.pk)
 
-    return render(request, "infrastructure/add.html", {"error": "Invalid infrastructure type."})
+    return render(request, "infrastructure/add.html", _add_context(infra_type, error="Invalid infrastructure type."))
 
 
 @login_required

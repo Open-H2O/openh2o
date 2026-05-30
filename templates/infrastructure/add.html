@@ -10,11 +10,11 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="{% url 'infrastructure:list' %}">Infrastructure</a>
+    <a href="{{ back_url }}">{{ back_label }}</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Add</span>
+    <span class="breadcrumb-current">Add {{ preselect_label }}</span>
   </nav>
-  <p class="page-description">Add a well, diversion, storage, or recharge site with map placement or file upload.</p>
+  <p class="page-description">Add a single well, diversion, storage, or recharge site with map placement.</p>
 </div>
 {% endblock %}
 
@@ -37,8 +37,8 @@
       <div class="card-raised">
         <h2 class="card-header-ruled">Infrastructure Type</h2>
         <div class="infra-type-grid">
-          <label class="infra-type-card" data-type="well">
-            <input type="radio" name="infra_type" value="well" checked>
+          <label class="infra-type-card{% if preselect_type == 'well' %} active{% endif %}" data-type="well">
+            <input type="radio" name="infra_type" value="well"{% if preselect_type == 'well' %} checked{% endif %}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
               <path d="M12 2v4"/><path d="M12 18v4"/>
@@ -48,8 +48,8 @@
             <span class="infra-type-label">Groundwater Well</span>
             <span class="infra-type-desc">Production, monitoring, or domestic well</span>
           </label>
-          <label class="infra-type-card" data-type="diversion">
-            <input type="radio" name="infra_type" value="diversion">
+          <label class="infra-type-card{% if preselect_type == 'diversion' %} active{% endif %}" data-type="diversion">
+            <input type="radio" name="infra_type" value="diversion"{% if preselect_type == 'diversion' %} checked{% endif %}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
@@ -58,8 +58,8 @@
             <span class="infra-type-label">Surface Water Diversion</span>
             <span class="infra-type-desc">Point of diversion from stream or canal</span>
           </label>
-          <label class="infra-type-card" data-type="storage">
-            <input type="radio" name="infra_type" value="storage">
+          <label class="infra-type-card{% if preselect_type == 'storage' %} active{% endif %}" data-type="storage">
+            <input type="radio" name="infra_type" value="storage"{% if preselect_type == 'storage' %} checked{% endif %}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="6" width="20" height="12" rx="2"/>
               <path d="M12 6v12"/><path d="M2 12h20"/>
@@ -67,8 +67,8 @@
             <span class="infra-type-label">Storage Pond / Tank</span>
             <span class="infra-type-desc">Surface water storage facility</span>
           </label>
-          <label class="infra-type-card" data-type="recharge_site">
-            <input type="radio" name="infra_type" value="recharge_site">
+          <label class="infra-type-card{% if preselect_type == 'recharge_site' %} active{% endif %}" data-type="recharge_site">
+            <input type="radio" name="infra_type" value="recharge_site"{% if preselect_type == 'recharge_site' %} checked{% endif %}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
             </svg>
@@ -102,7 +102,7 @@
       </div>
 
       <!-- Type-specific fields -->
-      <div class="card-raised" id="fields-well">
+      <div class="card-raised" id="fields-well"{% if preselect_type != 'well' %} style="display: none;"{% endif %}>
         <h2 class="card-header-ruled">Well Details</h2>
         <div class="form-stack">
           <div class="form-row-2col">
@@ -119,10 +119,76 @@
             <label class="field-label" for="owner_name">Owner Name</label>
             <input type="text" id="owner_name" name="owner_name" class="form-input" placeholder="Property or well owner">
           </div>
+
+          <!-- State reporting (SGMA / GEARS) -->
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="year_pumping_began">Year Pumping Began</label>
+              <input type="number" id="year_pumping_began" name="year_pumping_began" step="1" min="1850" max="2100" class="form-input" placeholder="e.g. 1998">
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="measurement_method">Measurement Method</label>
+              <select id="measurement_method" name="measurement_method" class="form-select">
+                <option value="">—</option>
+                {% for val, label in measurement_method_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Registry identifiers -->
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="wcr_number">WCR Number</label>
+              <input type="text" id="wcr_number" name="wcr_number" class="form-input" placeholder="DWR Well Completion Report #">
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="state_well_number">State Well Number</label>
+              <input type="text" id="state_well_number" name="state_well_number" class="form-input" placeholder="e.g. 12N/13E-34Q01">
+            </div>
+          </div>
+
+          <!-- Construction (DWR Well Completion Report) -->
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="casing_diameter_in">Casing Diameter (in)</label>
+              <input type="number" id="casing_diameter_in" name="casing_diameter_in" step="0.01" class="form-input" placeholder="e.g. 8">
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="casing_material">Casing Material</label>
+              <input type="text" id="casing_material" name="casing_material" class="form-input" placeholder="e.g. PVC, steel">
+            </div>
+          </div>
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="screen_top_ft">Screen Top (ft)</label>
+              <input type="number" id="screen_top_ft" name="screen_top_ft" step="0.01" class="form-input" placeholder="depth to top of perforation">
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="screen_bottom_ft">Screen Bottom (ft)</label>
+              <input type="number" id="screen_bottom_ft" name="screen_bottom_ft" step="0.01" class="form-input" placeholder="depth to bottom of perforation">
+            </div>
+          </div>
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="tested_yield_gpm">Tested Yield (gpm)</label>
+              <input type="number" id="tested_yield_gpm" name="tested_yield_gpm" step="0.01" class="form-input" placeholder="WCR pump-test yield">
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="pump_type">Pump Type</label>
+              <select id="pump_type" name="pump_type" class="form-select">
+                <option value="">—</option>
+                {% for val, label in pump_type_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="card-raised" id="fields-diversion" style="display: none;">
+      <div class="card-raised" id="fields-diversion"{% if preselect_type != 'diversion' %} style="display: none;"{% endif %}>
         <h2 class="card-header-ruled">Diversion Details</h2>
         <div class="form-stack">
           <div class="form-group">
@@ -136,7 +202,7 @@
         </div>
       </div>
 
-      <div class="card-raised" id="fields-storage" style="display: none;">
+      <div class="card-raised" id="fields-storage"{% if preselect_type != 'storage' %} style="display: none;"{% endif %}>
         <h2 class="card-header-ruled">Storage Details</h2>
         <div class="form-stack">
           <div class="form-group">
@@ -153,7 +219,7 @@
         </div>
       </div>
 
-      <div class="card-raised" id="fields-recharge_site" style="display: none;">
+      <div class="card-raised" id="fields-recharge_site"{% if preselect_type != 'recharge_site' %} style="display: none;"{% endif %}>
         <h2 class="card-header-ruled">Recharge Site Details</h2>
         <div class="form-stack">
           <div class="form-group">
@@ -224,8 +290,8 @@
 
       <!-- Submit -->
       <div class="form-footer-ruled">
-        <a href="{% url 'infrastructure:list' %}" class="btn-secondary">Cancel</a>
-        <button type="submit" class="btn-primary" id="submit-btn">Create Well</button>
+        <a href="{{ back_url }}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary" id="submit-btn">Create {{ preselect_label }}</button>
       </div>
 
     </div>
@@ -258,28 +324,6 @@
         </div>
       </div>
 
-      <!-- Upload tab -->
-      <div class="card-raised">
-        <h2 class="card-header-ruled">Or Upload File</h2>
-        <div class="upload-zone" id="upload-zone"
-             hx-post="{% url 'infrastructure:upload' %}"
-             hx-encoding="multipart/form-data"
-             hx-target="#upload-results"
-             hx-trigger="change from:#upload-file">
-          {% csrf_token %}
-          <input type="file" id="upload-file" name="file" accept=".geojson,.json,.zip,.kml" style="display: none;">
-          <div class="upload-zone-content" onclick="document.getElementById('upload-file').click()">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5;">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            <span class="text-sm text-secondary">Drop .geojson, .zip (shapefile), or .kml</span>
-            <span class="text-xs text-tertiary">or click to browse</span>
-          </div>
-        </div>
-        <div id="upload-results"></div>
-      </div>
     </div>
 
   </div>
@@ -293,7 +337,8 @@
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 (function() {
-  var currentType = 'well';
+  var checkedTypeRadio = document.querySelector('input[name="infra_type"]:checked');
+  var currentType = checkedTypeRadio ? checkedTypeRadio.value : 'well';
   var drawMode = 'point';
   var marker = null;
   var vertices = [];
@@ -324,7 +369,17 @@
       });
     });
   });
-  document.querySelector('.infra-type-card[data-type="well"]').classList.add('active');
+  // Sync visible fields / active tile / submit label to the preselected type on load
+  Object.keys(typeFields).forEach(function(k) {
+    typeFields[k].style.display = k === currentType ? '' : 'none';
+  });
+  document.querySelectorAll('.infra-type-card').forEach(function(card) {
+    card.classList.toggle('active', card.dataset.type === currentType);
+  });
+  (function() {
+    var initNames = { well: 'Well', diversion: 'Diversion', storage: 'Storage', recharge_site: 'Recharge Site' };
+    document.getElementById('submit-btn').textContent = 'Create ' + initNames[currentType];
+  })();
   updateDrawModeForType();
 
   // Storage type sub-selector also affects draw mode
@@ -398,22 +453,6 @@
     map.addLayer({
       id: 'finished-line', type: 'line', source: 'finished',
       paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 2 }
-    });
-
-    map.addSource('upload-preview', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addLayer({
-      id: 'upload-fill', type: 'fill', source: 'upload-preview',
-      filter: ['==', '$type', 'Polygon'],
-      paint: { 'fill-color': OH2O.colors.gold, 'fill-opacity': 0.15 }
-    });
-    map.addLayer({
-      id: 'upload-line', type: 'line', source: 'upload-preview',
-      paint: { 'line-color': OH2O.colors.gold, 'line-width': 2, 'line-dasharray': [3, 2] }
-    });
-    map.addLayer({
-      id: 'upload-point', type: 'circle', source: 'upload-preview',
-      filter: ['==', '$type', 'Point'],
-      paint: { 'circle-radius': 6, 'circle-color': OH2O.colors.gold, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
     });
 
     map.addSource('parcels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
@@ -522,7 +561,6 @@
     vertices = [];
     map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
     map.getSource('finished').setData({ type: 'FeatureCollection', features: [] });
-    map.getSource('upload-preview').setData({ type: 'FeatureCollection', features: [] });
     document.getElementById('geometry_json').value = '';
     document.getElementById('draw-finish').style.display = 'none';
     document.getElementById('coord-display').textContent = 'Click map to place geometry';
@@ -556,56 +594,6 @@
     if (drawMode === 'polygon' && vertices.length >= 3) {
       e.preventDefault();
       finishPolygon();
-    }
-  });
-
-  // Upload results handler
-  document.body.addEventListener('htmx:afterRequest', function(evt) {
-    if (evt.detail.target && evt.detail.target.id === 'upload-results') {
-      try {
-        var resp = JSON.parse(evt.detail.xhr.responseText);
-        if (resp.features && resp.features.length > 0) {
-          var fc = { type: 'FeatureCollection', features: resp.features.map(function(f) {
-            return { type: 'Feature', geometry: f.geometry, properties: f.properties || {} };
-          })};
-          map.getSource('upload-preview').setData(fc);
-          var first = resp.features[0].geometry;
-          updateGeometry(first);
-          var msgEl = document.getElementById('upload-results');
-          msgEl.textContent = resp.features.length + ' feature(s) loaded. Using first feature as geometry.';
-          // Fit to uploaded features
-          var bounds = new maplibregl.LngLatBounds();
-          fc.features.forEach(function(f) {
-            if (f.geometry.type === 'Point') {
-              bounds.extend(f.geometry.coordinates);
-            } else if (f.geometry.coordinates) {
-              var flat = JSON.stringify(f.geometry.coordinates).match(/-?\d+\.?\d*/g);
-              if (flat) {
-                for (var i = 0; i < flat.length - 1; i += 2) {
-                  bounds.extend([parseFloat(flat[i]), parseFloat(flat[i+1])]);
-                }
-              }
-            }
-          });
-          if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, maxZoom: 14 });
-        } else if (resp.error) {
-          document.getElementById('upload-results').textContent = resp.error;
-        }
-      } catch(ex) {}
-    }
-  });
-
-  // Drag and drop on upload zone
-  var zone = document.getElementById('upload-zone');
-  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', function() { zone.classList.remove('drag-over'); });
-  zone.addEventListener('drop', function(e) {
-    e.preventDefault();
-    zone.classList.remove('drag-over');
-    var files = e.dataTransfer.files;
-    if (files.length > 0) {
-      document.getElementById('upload-file').files = files;
-      document.getElementById('upload-file').dispatchEvent(new Event('change', { bubbles: true }));
     }
   });
 
