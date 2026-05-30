@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Import - OpenH2O{% endblock %}
+{% block page_title %}Bulk Import{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span class="breadcrumb-current">Bulk Import</span>
+  </nav>
+  <p class="page-description">Upload a CSV or spatial file to create many records at once.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Bulk Import</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      Importing: <strong>{{ preselect_type }}</strong>
+    </p>
+    <p class="text-sm text-tertiary" style="margin-top: var(--space-sm);">
+      The bulk importer — file upload, column mapping, and a validation preview before
+      records are created — is coming in the next update. For now, add records one at a
+      time from the Add form.
+    </p>
+  </div>
+</div>
+{% endblock %}

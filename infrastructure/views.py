@@ -101,6 +101,16 @@ def infrastructure_add(request):
 
 
 @login_required
+@require_GET
+def infrastructure_import(request):
+    """Bulk import landing. Full column-mapping/validation UI ships in 30-02."""
+    preselect_type = request.GET.get("type", "well").strip()
+    return render(
+        request, "infrastructure/import.html", {"preselect_type": preselect_type}
+    )
+
+
+@login_required
 @require_POST
 def infrastructure_upload(request):
     uploaded = request.FILES.get("file")
