@@ -17,10 +17,31 @@ mapped from their column headers, bad rows reported and skipped, good rows made.
 import io
 from decimal import Decimal
 
+import factory
 import pytest
+from django.contrib.auth.hashers import make_password
+from django.test import Client
+from django.urls import reverse
 
 from infrastructure import importer
 from wells.models import Well
+
+
+class _UserFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "core.User"
+
+    username = factory.Sequence(lambda n: f"importer{n}")
+    email = factory.Sequence(lambda n: f"importer{n}@example.com")
+    password = factory.LazyFunction(lambda: make_password("testpass123"))
+    is_active = True
+
+
+@pytest.fixture
+def auth_client(db):
+    c = Client()
+    c.force_login(_UserFactory())
+    return c
 
 
 # ---------------------------------------------------------------------------
@@ -237,3 +258,79 @@ class TestCommitRows:
         created = importer.commit_rows(results, "well")
         assert created == 2
         assert Well.objects.count() == before + 2
+
+
+# ---------------------------------------------------------------------------
+# End-to-end through the views (the HTMX glue)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestImportFlowViews:
+    def _wells_csv(self):
+        return io.BytesIO(
+            (
+                "name,WCR_NO,LAT,LON,CASING_DIA,SCREEN_TOP,YIELD_GPM,PUMP_TYPE\n"
+                "Alpha Well,WCR-1,37.20,-119.50,8,120,500,submersible\n"
+                "Beta Well,WCR-2,37.30,-119.60,10,140,650,turbine\n"
+            ).encode("utf-8")
+        )
+
+    def test_import_page_renders_with_type(self, auth_client):
+        resp = auth_client.get(reverse("infrastructure:import") + "?type=well")
+        assert resp.status_code == 200
+        assert b"Bulk Import" in resp.content
+
+    def test_preview_returns_mapping_with_guesses(self, auth_client):
+        upload = self._wells_csv()
+        upload.name = "wells.csv"
+        resp = auth_client.post(
+            reverse("infrastructure:import_preview"),
+            {"infra_type": "well", "file": upload},
+        )
+        assert resp.status_code == 200
+        body = resp.content.decode()
+        # The mapping table offers the well fields and pre-selects the right column.
+        assert "Casing Diameter (in)" in body
+        assert "WCR_NO" in body
+        assert 'name="rows_json"' in body
+
+    def test_commit_creates_rows_and_reports_counts(self, auth_client):
+        import json as _json
+
+        rows = [
+            {"name": "Alpha Well", "WCR_NO": "WCR-1", "LAT": "37.20", "LON": "-119.50",
+             "CASING_DIA": "8", "SCREEN_TOP": "120", "YIELD_GPM": "500", "PUMP_TYPE": "submersible"},
+            {"name": "", "WCR_NO": "WCR-2", "LAT": "37.30", "LON": "-119.60",
+             "CASING_DIA": "10", "SCREEN_TOP": "140", "YIELD_GPM": "650", "PUMP_TYPE": "turbine"},
+        ]
+        before = Well.objects.count()
+        resp = auth_client.post(
+            reverse("infrastructure:import_commit"),
+            {
+                "infra_type": "well",
+                "rows_json": _json.dumps(rows),
+                "map:name": "name",
+                "map:wcr_number": "WCR_NO",
+                "map:latitude": "LAT",
+                "map:longitude": "LON",
+                "map:casing_diameter_in": "CASING_DIA",
+                "map:screen_top_ft": "SCREEN_TOP",
+                "map:tested_yield_gpm": "YIELD_GPM",
+                "map:pump_type": "PUMP_TYPE",
+            },
+        )
+        assert resp.status_code == 200
+        # One valid row created, one skipped (blank name).
+        assert Well.objects.count() == before + 1
+        assert b"Created 1" in resp.content
+        created = Well.objects.get(name="Alpha Well")
+        assert created.wcr_number == "WCR-1"
+        assert created.tested_yield_gpm == Decimal("500")
+        assert created.pump_type == "submersible"
+
+    def test_old_upload_route_is_gone(self):
+        from django.urls import NoReverseMatch
+
+        with pytest.raises(NoReverseMatch):
+            reverse("infrastructure:upload")
