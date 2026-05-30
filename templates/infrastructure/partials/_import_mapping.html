@@ -1,0 +1,73 @@
+{% comment %}
+Column-mapping step. Renders one row per model field with a <select> of the
+uploaded file's columns (pre-set to the auto-detected guess), plus a sample of
+the first rows, and a button that posts the confirmed mapping to import/commit/.
+The parsed rows ride along as a hidden JSON field so commit needs no re-upload.
+{% endcomment %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Match your columns &mdash; {{ infra_label }}</h2>
+  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    Found <strong>{{ row_count }}</strong> record{{ row_count|pluralize }} and
+    <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}. Each field below is
+    set to our best guess &mdash; change any that look wrong, then create the records.
+  </p>
+
+  <form
+    hx-post="{% url 'infrastructure:import_commit' %}"
+    hx-target="#import-area"
+    hx-indicator="#commit-spinner"
+    style="margin-top: var(--space-lg);">
+    {% csrf_token %}
+    <input type="hidden" name="infra_type" value="{{ infra_type }}">
+    <input type="hidden" name="rows_json" value="{{ rows_json }}">
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 45%;">Field</th>
+          <th>Your column</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fr in field_rows %}
+        <tr>
+          <td>{{ fr.label }}</td>
+          <td>
+            <select name="map:{{ fr.field }}" class="form-select">
+              <option value="">&mdash; not imported &mdash;</option>
+              {% for col in columns %}
+              <option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{{ col }}</option>
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="row-start pt-sm" style="margin-top: var(--space-lg);">
+      <button type="submit" class="btn-primary">Create {{ row_count }} record{{ row_count|pluralize }}</button>
+      <span id="commit-spinner" class="htmx-indicator text-tertiary text-sm">Creating&hellip;</span>
+    </div>
+  </form>
+</div>
+
+<div class="card-raised">
+  <h3 class="section-header-sm">Sample of your data (first {{ sample_count }} row{{ sample_count|pluralize }})</h3>
+  <div style="overflow-x: auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% for col in columns %}<th class="text-mono">{{ col }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for cells in sample_table %}
+        <tr>
+          {% for cell in cells %}<td>{{ cell|default:"" }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
