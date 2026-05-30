@@ -150,28 +150,47 @@ def report_transition(request, pk):
     )
 
     action = request.POST.get("action", "")
+    filing_error = ""
 
-    if action == "approve" and submission.status == "draft":
+    if action == "approve_internal" and submission.status == "draft":
         # Internal GSA/agency sign-off. This is NOT a Water Board review —
         # the state never sees this status.
         submission.status = "internally_approved"
         submission.internal_notes = request.POST.get("internal_notes", "")
         submission.save(update_fields=["status", "internal_notes", "updated_at"])
 
-    elif action == "mark_filed" and submission.status in ("internally_approved", "exported"):
+    elif action == "mark_exported" and submission.status == "internally_approved":
+        # The user has downloaded the GEARS file / opened the CalWATRS worksheet
+        # and is taking it to the state portal. Still nothing sent by OpenH2O.
+        submission.status = "exported"
+        submission.save(update_fields=["status", "updated_at"])
+
+    elif action == "mark_filed" and submission.status == "exported":
         # The user records that THEY filed and certified this in the state
         # portal. OpenH2O did not submit anything — this is self-reported.
-        submission.status = "filed"
-        submission.filed_at = timezone.now()
-        submission.certified_by = request.user
-        submission.state_confirmation_number = request.POST.get(
-            "state_confirmation_number", ""
-        )
-        submission.save(update_fields=[
-            "status", "filed_at", "certified_by", "state_confirmation_number", "updated_at",
-        ])
+        # A confirmation number is required: it is the only proof a filing
+        # actually happened, so we won't record "filed" without it.
+        confirmation = request.POST.get("state_confirmation_number", "").strip()
+        if not confirmation:
+            filing_error = (
+                "Enter the confirmation number the state portal gave you "
+                "before recording this as filed."
+            )
+        else:
+            submission.status = "filed"
+            submission.filed_at = timezone.now()
+            submission.certified_by = request.user
+            submission.state_confirmation_number = confirmation
+            submission.save(update_fields=[
+                "status", "filed_at", "certified_by",
+                "state_confirmation_number", "updated_at",
+            ])
 
     if request.headers.get("HX-Request"):
-        return render(request, "reporting/partials/_status_section.html", {"submission": submission})
+        return render(
+            request,
+            "reporting/partials/_status_section.html",
+            {"submission": submission, "filing_error": filing_error},
+        )
 
     return redirect("reporting:report_detail", pk=submission.pk)
