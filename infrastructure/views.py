@@ -1,11 +1,6 @@
 import json
-import os
-import shutil
-import tempfile
-import zipfile
 
 from django.contrib.auth.decorators import login_required
-from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
 from django.db.models import Q
 from django.http import JsonResponse
@@ -13,6 +8,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
+from infrastructure import importer
 from parcels.models import Parcel
 from recharge.models import RechargeSite
 from surface.models import PointOfDiversion, PointOfDiversionParcel
@@ -152,40 +148,127 @@ def infrastructure_add(request):
     return render(request, "infrastructure/add.html", _add_context(infra_type, error="Invalid infrastructure type."))
 
 
+# ---------------------------------------------------------------------------
+# Bulk import: page -> preview/map -> commit
+# ---------------------------------------------------------------------------
+
+
+def _import_type(raw):
+    """Normalize a ?type / infra_type value to a supported import type."""
+    raw = (raw or "well").strip()
+    return raw if raw in ADD_TYPE_BACK else "well"
+
+
 @login_required
 @require_GET
 def infrastructure_import(request):
-    """Bulk import landing. Full column-mapping/validation UI ships in 30-02."""
-    preselect_type = request.GET.get("type", "well").strip()
+    """Bulk import landing page (the file dropzone)."""
+    infra_type = _import_type(request.GET.get("type"))
+    back_name, back_label = ADD_TYPE_BACK[infra_type]
     return render(
-        request, "infrastructure/import.html", {"preselect_type": preselect_type}
+        request,
+        "infrastructure/import.html",
+        {
+            "infra_type": infra_type,
+            "infra_label": ADD_TYPE_LABEL[infra_type],
+            "back_url": reverse(back_name),
+            "back_label": back_label,
+        },
     )
 
 
 @login_required
 @require_POST
-def infrastructure_upload(request):
+def infrastructure_import_preview(request):
+    """Parse the uploaded file, auto-map its columns, return the mapping UI."""
+    infra_type = _import_type(request.POST.get("infra_type"))
     uploaded = request.FILES.get("file")
     if not uploaded:
-        return JsonResponse({"error": "No file provided."}, status=400)
+        return render(
+            request,
+            "infrastructure/partials/_import_result.html",
+            {"error": "No file provided. Choose a CSV, GeoJSON, shapefile (.zip), or KML."},
+        )
 
-    filename = uploaded.name.lower()
     try:
-        if filename.endswith((".geojson", ".json")):
-            features = _parse_geojson_file(uploaded)
-        elif filename.endswith(".zip"):
-            features = _parse_shapefile_zip(uploaded)
-        elif filename.endswith(".kml"):
-            features = _parse_kml_file(uploaded)
-        else:
-            return JsonResponse({"error": "Unsupported format. Use .geojson, .zip (shapefile), or .kml."}, status=400)
-    except Exception as e:
-        return JsonResponse({"error": f"Parse error: {str(e)}"}, status=400)
+        parsed = importer.parse_upload(uploaded, uploaded.name)
+    except ImportError as exc:
+        return render(
+            request,
+            "infrastructure/partials/_import_result.html",
+            {"error": str(exc)},
+        )
 
-    if len(features) > 500:
-        return JsonResponse({"error": "File contains more than 500 features. Please use a smaller file."}, status=400)
+    columns = parsed["columns"]
+    rows = parsed["rows"]
+    mapping = importer.auto_map_columns(columns, infra_type)
 
-    return JsonResponse({"features": features})
+    return render(
+        request,
+        "infrastructure/partials/_import_mapping.html",
+        {
+            "infra_type": infra_type,
+            "infra_label": ADD_TYPE_LABEL[infra_type],
+            "columns": columns,
+            "mapping": mapping,
+            "fields": importer.import_fields(infra_type),
+            "sample_rows": rows[:5],
+            "row_count": len(rows),
+            "rows_json": json.dumps(rows),
+        },
+    )
+
+
+@login_required
+@require_POST
+def infrastructure_import_commit(request):
+    """Validate the confirmed mapping against the parsed rows and bulk-create."""
+    infra_type = _import_type(request.POST.get("infra_type"))
+
+    try:
+        rows = json.loads(request.POST.get("rows_json", "") or "[]")
+    except json.JSONDecodeError:
+        rows = []
+
+    if not rows:
+        return render(
+            request,
+            "infrastructure/partials/_import_result.html",
+            {"error": "No rows to import — please re-upload your file and try again."},
+        )
+
+    # Rebuild the field -> column mapping from the confirmed <select> values.
+    mapping = {
+        key[len("map:"):]: val
+        for key, val in request.POST.items()
+        if key.startswith("map:") and val
+    }
+
+    existing_reg_ids = set()
+    if infra_type == "well":
+        existing_reg_ids = set(
+            Well.objects.exclude(well_registration_id__isnull=True)
+            .exclude(well_registration_id="")
+            .values_list("well_registration_id", flat=True)
+        )
+
+    results = importer.validate_rows(rows, mapping, infra_type, existing_reg_ids)
+    created = importer.commit_rows(results, infra_type)
+    skipped = [r for r in results if r["errors"]]
+
+    back_name, back_label = ADD_TYPE_BACK[infra_type]
+    return render(
+        request,
+        "infrastructure/partials/_import_result.html",
+        {
+            "created": created,
+            "skipped": skipped,
+            "total": len(results),
+            "infra_label": ADD_TYPE_LABEL[infra_type],
+            "back_url": reverse(back_name),
+            "back_label": back_label,
+        },
+    )
 
 
 @login_required
@@ -280,84 +363,3 @@ def _parse_polygon(geometry_json):
     except (json.JSONDecodeError, KeyError, IndexError, TypeError):
         pass
     return None
-
-
-def _parse_geojson_file(uploaded):
-    content = json.loads(uploaded.read().decode("utf-8"))
-    features = []
-
-    if content.get("type") == "FeatureCollection":
-        raw_features = content.get("features", [])
-    elif content.get("type") == "Feature":
-        raw_features = [content]
-    else:
-        raw_features = [{"type": "Feature", "geometry": content, "properties": {}}]
-
-    for feat in raw_features:
-        features.append({
-            "geometry": feat.get("geometry"),
-            "properties": feat.get("properties", {}),
-        })
-    return features
-
-
-def _parse_shapefile_zip(uploaded):
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        zip_path = os.path.join(tmp_dir, "upload.zip")
-        with open(zip_path, "wb") as f:
-            for chunk in uploaded.chunks():
-                f.write(chunk)
-
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(tmp_dir)
-
-        shp_files = [f for f in os.listdir(tmp_dir) if f.endswith(".shp")]
-        if not shp_files:
-            for root, dirs, files in os.walk(tmp_dir):
-                for f in files:
-                    if f.endswith(".shp"):
-                        shp_files.append(os.path.join(root, f))
-                        break
-                if shp_files:
-                    break
-
-        if not shp_files:
-            raise ValueError("No .shp file found in archive.")
-
-        shp_path = shp_files[0] if os.path.isabs(shp_files[0]) else os.path.join(tmp_dir, shp_files[0])
-        return _extract_features_from_datasource(shp_path)
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-def _parse_kml_file(uploaded):
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        kml_path = os.path.join(tmp_dir, "upload.kml")
-        with open(kml_path, "wb") as f:
-            for chunk in uploaded.chunks():
-                f.write(chunk)
-        return _extract_features_from_datasource(kml_path)
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-def _extract_features_from_datasource(path):
-    ds = DataSource(path)
-    features = []
-    for layer in ds:
-        for feat in layer:
-            geom = feat.geom
-            if geom.srid and geom.srid != 4326:
-                geom.transform(4326)
-            properties = {}
-            for field_name in feat.fields:
-                val = feat.get(field_name)
-                if val is not None:
-                    properties[field_name] = str(val)
-            features.append({
-                "geometry": json.loads(geom.geojson),
-                "properties": properties,
-            })
-    return features
