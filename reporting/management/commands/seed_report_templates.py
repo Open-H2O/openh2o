@@ -14,14 +14,14 @@ REPORT_TEMPLATES = [
         "description": "Per-parcel ET-based extraction estimates",
     },
     {
-        "name": "CalWATRS A1",
+        "name": "CalWATRS — Direct Use",
         "report_type": "calwatrs_a1",
-        "description": "Diversion to direct use monthly volumes",
+        "description": "Surface water diverted and put to direct use, monthly volumes (CalWATRS schedule A1)",
     },
     {
-        "name": "CalWATRS A2",
+        "name": "CalWATRS — To Storage",
         "report_type": "calwatrs_a2",
-        "description": "Diversion to storage monthly volumes",
+        "description": "Surface water diverted into storage for later use, monthly volumes (CalWATRS schedule A2)",
     },
 ]
 
