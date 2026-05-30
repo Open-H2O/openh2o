@@ -203,6 +203,15 @@ def infrastructure_import_preview(request):
     rows = parsed["rows"]
     mapping = importer.auto_map_columns(columns, infra_type)
 
+    # Pre-shape for the template (Django can't index a dict by a loop variable):
+    # one row per model field with its auto-detected guess, and a plain grid of
+    # the first few data rows aligned to `columns`.
+    field_rows = [
+        {"field": field, "label": label, "guess": mapping.get(field, "")}
+        for field, label in importer.import_fields(infra_type)
+    ]
+    sample_table = [[row.get(col, "") for col in columns] for row in rows[:5]]
+
     return render(
         request,
         "infrastructure/partials/_import_mapping.html",
@@ -210,9 +219,9 @@ def infrastructure_import_preview(request):
             "infra_type": infra_type,
             "infra_label": ADD_TYPE_LABEL[infra_type],
             "columns": columns,
-            "mapping": mapping,
-            "fields": importer.import_fields(infra_type),
-            "sample_rows": rows[:5],
+            "field_rows": field_rows,
+            "sample_table": sample_table,
+            "sample_count": len(sample_table),
             "row_count": len(rows),
             "rows_json": json.dumps(rows),
         },
@@ -264,6 +273,7 @@ def infrastructure_import_commit(request):
             "created": created,
             "skipped": skipped,
             "total": len(results),
+            "infra_type": infra_type,
             "infra_label": ADD_TYPE_LABEL[infra_type],
             "back_url": reverse(back_name),
             "back_label": back_label,
