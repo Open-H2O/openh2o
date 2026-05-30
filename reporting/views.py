@@ -1,5 +1,5 @@
 import os
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -267,25 +267,43 @@ def calwatrs_worksheet(request, pk):
     return render(request, "reporting/calwatrs_worksheet.html", context)
 
 
+_CENTS = Decimal("0.01")
+
+
+def _two_dp(value):
+    """Quantize to 2 dp the same way on display and on save, so an unedited value
+    submitted back never looks 'modified' due to a rounding mismatch."""
+    return Decimal(value).quantize(_CENTS, rounding=ROUND_HALF_UP)
+
+
+def _field_key(entity, mv):
+    return f"{entity['entity_type']}:{entity['entity_id']}:{mv['month']}"
+
+
 def _apply_prefill_overrides(prefill, overrides):
     """Overlay saved edits onto computed OpenET values and tag each one.
 
     Adds to every month-value object:
       - field_key:     the prefill_overrides key ("entity_type:entity_id:month")
-      - display_value: the saved edit if present, else the raw OpenET figure
-      - modified:      True when the user has saved a different value
-    The raw OpenET figure (value_af) and its label are left untouched, so the
-    template can always show "OpenET said X / you entered Y".
+      - openet_value:  the raw OpenET figure, rounded for display (always shown)
+      - display_value: the saved edit if present, else the OpenET figure
+      - modified:      True only when the user saved a value that differs from OpenET
+
+    `overrides` only ever holds genuine edits (see report_prefill POST), so a
+    "Modified" pill marks a value the user actually changed — not merely one that
+    was re-submitted unchanged when the whole form saved.
     """
     for entity in prefill["entities"]:
         for mv in entity["months"]:
-            field_key = f"{entity['entity_type']}:{entity['entity_id']}:{mv['month']}"
+            field_key = _field_key(entity, mv)
+            openet_display = _two_dp(mv["value_af"])
             mv["field_key"] = field_key
+            mv["openet_value"] = openet_display
             if field_key in overrides:
-                mv["display_value"] = overrides[field_key]
+                mv["display_value"] = _two_dp(overrides[field_key])
                 mv["modified"] = True
             else:
-                mv["display_value"] = mv["value_af"]
+                mv["display_value"] = openet_display
                 mv["modified"] = False
     return prefill
 
@@ -309,8 +327,19 @@ def report_prefill(request, pk):
     if method is None:
         raise Http404("OpenET pre-fill is not available for this report type.")
 
+    prefill = build_openet_prefill(submission.reporting_period, method)
+
     saved = False
     if request.method == "POST":
+        # The form posts every input on each save, so we compare each submitted
+        # value against the OpenET figure shown in that input (same 2dp rounding)
+        # and persist ONLY the ones the user actually changed. That keeps
+        # prefill_overrides — and the "Modified" pills — limited to real edits.
+        baseline = {
+            _field_key(entity, mv): _two_dp(mv["value_af"])
+            for entity in prefill["entities"]
+            for mv in entity["months"]
+        }
         overrides = {}
         for key, value in request.POST.items():
             if not key.startswith("val:"):
@@ -320,19 +349,18 @@ def report_prefill(request, pk):
                 continue
             field_key = key[len("val:"):]
             try:
-                # Store a canonical numeric string so reloads are stable. Junk
-                # input is dropped rather than persisted as a fake "edit".
-                overrides[field_key] = str(Decimal(raw))
+                entered = Decimal(raw)
             except (InvalidOperation, ValueError):
+                # Junk input is ignored rather than persisted as a fake edit.
                 continue
+            base = baseline.get(field_key)
+            if base is None or _two_dp(entered) != base:
+                overrides[field_key] = str(entered)
         submission.prefill_overrides = overrides
         submission.save(update_fields=["prefill_overrides", "updated_at"])
         saved = True
 
-    prefill = _apply_prefill_overrides(
-        build_openet_prefill(submission.reporting_period, method),
-        submission.prefill_overrides or {},
-    )
+    prefill = _apply_prefill_overrides(prefill, submission.prefill_overrides or {})
 
     context = {
         "submission": submission,

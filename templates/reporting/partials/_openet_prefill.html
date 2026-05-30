@@ -54,7 +54,7 @@
                name="val:{{ mv.field_key }}"
                type="number" step="0.01" inputmode="decimal"
                class="form-input"
-               value="{{ mv.display_value|floatformat:2 }}">
+               value="{{ mv.display_value }}">
         <div class="row-start" style="gap: var(--space-xs); margin-top: 4px; flex-wrap: wrap;">
           {% if mv.modified %}
           <span class="badge badge-gold">Modified</span>
@@ -65,7 +65,7 @@
         </div>
         {% if mv.modified %}
         <div class="text-tertiary text-xs" style="margin-top: 2px;">
-          OpenET said {{ mv.value_af|floatformat:2 }} AF
+          OpenET said {{ mv.openet_value }} AF
         </div>
         {% endif %}
       </div>

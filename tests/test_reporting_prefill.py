@@ -10,13 +10,16 @@ Plus the multi-parcel well normalization (no double-count), reusing the SAME
 shared map the GEARS by-well CSV uses.
 """
 
+import re
 from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.urls import reverse
 
 from parcels.models import ParcelLedger
 from reporting.generators import build_normalized_well_parcel_map
+from reporting.models import ReportSubmission, ReportTemplate
 from reporting.services import OPENET_PREFILL_LABEL, build_openet_prefill
 from tests.factories import (
     ParcelFactory,
@@ -150,3 +153,55 @@ def test_unknown_method_raises():
     period = ReportingPeriodFactory()
     with pytest.raises(ValueError):
         build_openet_prefill(period, "not_a_method")
+
+
+def _gears_submission_with_et(month_values):
+    """A draft gears_by_well submission whose single well has et_estimate data."""
+    period = ReportingPeriodFactory()
+    well = WellFactory()
+    parcel = ParcelFactory()
+    WellIrrigatedParcelFactory(well=well, parcel=parcel, fraction=Decimal("1.0000"))
+    for month, af in month_values:
+        _et_entry(parcel, month, af)
+    template, _ = ReportTemplate.objects.get_or_create(
+        report_type="gears_by_well", defaults={"name": "GEARS by Well"}
+    )
+    return ReportSubmission.objects.create(
+        report_template=template, reporting_period=period, status="draft"
+    )
+
+
+def test_prefill_post_persists_only_genuine_edits(client, django_user_model):
+    """Saving the whole form must flag ONLY values the user actually changed.
+
+    Regression guard: the form re-posts every input on each save, so persisting
+    every submitted value would mark all of them 'modified' — defeating the
+    raw-OpenET vs user-edited distinction the feature exists to preserve.
+    """
+    submission = _gears_submission_with_et(
+        [(1, "-12.0000"), (2, "-8.0000"), (3, "-4.0000")]
+    )
+    user = django_user_model.objects.create_user(username="prefiller", password="x")
+    client.force_login(user)
+    url = reverse("reporting:report_prefill", kwargs={"pk": submission.pk})
+
+    get = client.get(url)
+    assert get.status_code == 200
+    html = get.content.decode()
+    fields = re.findall(r'name="val:([^"]+)"\s+[^>]*value="([^"]*)"', html)
+    assert fields, "expected pre-filled inputs in the rendered form"
+
+    # Re-post every value unchanged → nothing should be recorded as an edit.
+    unchanged = {f"val:{k}": v for k, v in fields}
+    client.post(url, unchanged)
+    submission.refresh_from_db()
+    assert submission.prefill_overrides == {}
+
+    # Change exactly one value → only that one is persisted as an override.
+    edited_key = fields[0][0]
+    payload = dict(unchanged)
+    payload[f"val:{edited_key}"] = "777.77"
+    client.post(url, payload)
+    submission.refresh_from_db()
+    assert set(submission.prefill_overrides) == {edited_key}
+    assert submission.prefill_overrides[edited_key] == "777.77"
