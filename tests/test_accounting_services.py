@@ -598,7 +598,7 @@ class TestGearsWellFractionNormalization:
 
 
 # ---------------------------------------------------------------------------
-# CalWATRS and Email JSON null water_right guards (Task 2)
+# CalWATRS null water_right guards (Task 2)
 # ---------------------------------------------------------------------------
 
 
@@ -633,29 +633,6 @@ class TestNullWaterRightGuards:
         rows = list(csv_mod.reader(lines))
         assert rows[1][0] == ""  # empty right_id
         assert "[No water right]" in rows[1][1]  # holder shows pod name
-
-    def test_email_json_null_water_right(self):
-        """Email JSON generates without crashing when POD has no water right.
-        Diversion row shows empty string for water_right."""
-        from reporting.generators import generate_email_json
-
-        period = ReportingPeriodFactory(
-            start_date=date(2024, 1, 1), end_date=date(2024, 12, 31)
-        )
-        pod = PointOfDiversionFactory(water_right=None)
-        DiversionRecordFactory(
-            point_of_diversion=pod,
-            reporting_period=period,
-            month=date(2024, 3, 1),
-            volume_acre_feet=Decimal("15.0000"),
-            diversion_type="direct_use",
-        )
-
-        # Must not raise
-        payload = generate_email_json(period)
-        assert "diversions" in payload
-        assert len(payload["diversions"]) == 1
-        assert payload["diversions"][0]["water_right"] == ""
 
 
 # ---------------------------------------------------------------------------

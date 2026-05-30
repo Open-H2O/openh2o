@@ -65,7 +65,6 @@ class ReportTemplate(models.Model):
         ("gears_by_et", "GEARS by ET"),
         ("calwatrs_a1", "CalWATRS A1"),
         ("calwatrs_a2", "CalWATRS A2"),
-        ("email_json", "Email JSON"),
     ]
 
     name = models.CharField(max_length=200)

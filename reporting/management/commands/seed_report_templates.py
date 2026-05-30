@@ -23,11 +23,6 @@ REPORT_TEMPLATES = [
         "report_type": "calwatrs_a2",
         "description": "Diversion to storage monthly volumes",
     },
-    {
-        "name": "Email+JSON",
-        "report_type": "email_json",
-        "description": "Structured email reporting via Power Automate",
-    },
 ]
 
 

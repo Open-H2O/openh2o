@@ -1,4 +1,3 @@
-import json
 import os
 
 from django.conf import settings
@@ -11,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from reporting.forms import ReportGenerateForm
-from reporting.generators import generate_calwatrs_csv, generate_email_json, generate_gears_csv
+from reporting.generators import generate_calwatrs_csv, generate_gears_csv
 from reporting.models import ReportSubmission, ReportTemplate
 from reporting.validators import validate_report
 
@@ -97,13 +96,6 @@ def report_generate(request):
                 filepath = os.path.join(media_dir, filename)
                 with open(filepath, "w") as f:
                     f.write(csv_output.getvalue())
-
-            elif report_type == "email_json":
-                payload = generate_email_json(period)
-                filename = f"{report_type}_{period.name}_{timestamp}.json"
-                filepath = os.path.join(media_dir, filename)
-                with open(filepath, "w") as f:
-                    json.dump(payload, f, indent=2, default=str)
 
             rel_path = os.path.join("reports", filename)
 
