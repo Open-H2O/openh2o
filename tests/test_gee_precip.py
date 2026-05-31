@@ -27,7 +27,7 @@ from django.core.management.base import CommandError
 from datasync.adapters.gee import (
     EE_SCALE,
     GRIDMET_COLLECTION,
-    GRIDMET_SCALE,
+    PRECIP_REDUCE_SCALE,
     build_precip_data,
     reduce_et_by_parcel,
     reduce_precip_by_parcel,
@@ -206,9 +206,11 @@ class TestReducePrecip:
         assert out == {parcel.pk: {"2024-06": 12.0, "2024-07": 3.5, "2024-08": 0.0}}
         # 3 months -> 3 reduceRegions, NOT 90 (one per daily image).
         assert [mk for mk, _ in recorder] == ["2024-06", "2024-07", "2024-08"]
-        # Precip samples the ~4.6 km GRIDMET grid, never OpenET's 30 m.
-        assert all(scale == GRIDMET_SCALE for _, scale in recorder)
-        assert GRIDMET_SCALE != EE_SCALE
+        # Precip reduces at the FINE scale (30 m), not GRIDMET's 4.6 km: a coarse
+        # reduce null-drops parcels smaller than a pixel (KAW-APN-003 in a live
+        # run). Resampling the coarse value finer keeps every parcel.
+        assert all(scale == PRECIP_REDUCE_SCALE for _, scale in recorder)
+        assert PRECIP_REDUCE_SCALE == EE_SCALE
 
     def test_zero_daily_images_raises(self, parcel):
         fake = _FakeEE({"2024-06": {parcel.pk: 1.0}}, [], daily_count=0)

@@ -37,7 +37,16 @@ EE_SCALE = 30  # OpenET native resolution (m). Polygon mean, not centroid point.
 # reduce_precip_by_parcel); it is NOT a band swap on the ET path.
 GRIDMET_COLLECTION = "IDAHO_EPSCOR/GRIDMET"
 GRIDMET_BAND = "pr"  # daily precipitation amount, mm
-GRIDMET_SCALE = 4638  # GRIDMET native grid (~4.6 km). Sampling finer wastes compute.
+GRIDMET_NATIVE_SCALE = 4638  # GRIDMET native grid (~4.6 km), for reference only.
+
+# We reduce precip at the OpenET native scale (30 m), NOT GRIDMET's 4.6 km. At the
+# coarse native scale, reduceRegions(mean) returns NULL for a parcel smaller than
+# one pixel when no pixel centroid falls inside it — proven live when KAW-APN-003
+# (~20 acres) dropped out of a real run entirely. Resampling the coarse precip
+# value to 30 m (nearest-neighbor) does not change the number, but guarantees
+# every parcel overlaps pixels so none is silently lost. Same scale the ET path
+# already uses reliably on these exact parcels.
+PRECIP_REDUCE_SCALE = EE_SCALE
 
 
 def _first_of_month(d):
@@ -210,7 +219,7 @@ def reduce_precip_by_parcel(ee, parcels, start, end):
         monthly_images.append((month_key, daily.sum()))
         cursor = nxt
 
-    return _reduce_images_by_parcel(ee, parcels, monthly_images, GRIDMET_SCALE)
+    return _reduce_images_by_parcel(ee, parcels, monthly_images, PRECIP_REDUCE_SCALE)
 
 
 def build_et_data(et_by_month):
