@@ -26,6 +26,12 @@
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous" defer></script>
 
+    {# Umami analytics: renders only when UMAMI_WEBSITE_ID is set in the
+       environment. A fresh self-hosted clone leaves it blank and tracks nothing. #}
+    {% if umami_website_id %}
+    <script defer src="{{ umami_script_url }}" data-website-id="{{ umami_website_id }}"></script>
+    {% endif %}
+
     {% block extra_head %}{% endblock %}
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>

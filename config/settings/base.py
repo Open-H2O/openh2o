@@ -90,6 +90,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.site_config",
+                "core.context_processors.analytics",
             ],
         },
     },
@@ -189,6 +190,14 @@ OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "400"))
 OPENET_MODE = env("OPENET_MODE", default="api")
 GEE_PROJECT = env("GEE_PROJECT", default="")
 GEE_SERVICE_ACCOUNT_EMAIL = env("GEE_SERVICE_ACCOUNT_EMAIL", default="")
+
+# -- Analytics ---------------------------------------------------------------
+# Umami is opt-in and deployment-specific. UMAMI_WEBSITE_ID is blank by default
+# so a self-hosted copy reports traffic to no one; the tracking <script> only
+# renders when this is set (see core.context_processors.analytics and the
+# base templates). Set it in the environment on your own deployment only.
+UMAMI_WEBSITE_ID = env("UMAMI_WEBSITE_ID", default="")
+UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="https://analytics.vanderdev.net/script.js")
 GEE_SERVICE_ACCOUNT_KEY_FILE = env("GEE_SERVICE_ACCOUNT_KEY_FILE", default="")
 
 if _google_client_id and _google_client_secret:

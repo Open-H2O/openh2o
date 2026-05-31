@@ -15,6 +15,11 @@
     <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=7">
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <link rel="stylesheet" href="{% static 'css/app.css' %}?v=7">
+
+    {# Umami analytics: renders only when UMAMI_WEBSITE_ID is set (see base.html). #}
+    {% if umami_website_id %}
+    <script defer src="{{ umami_script_url }}" data-website-id="{{ umami_website_id }}"></script>
+    {% endif %}
 </head>
 <body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: var(--space-lg);">
     {% block content %}{% endblock %}
