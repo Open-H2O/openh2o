@@ -40,6 +40,13 @@ class Meter(models.Model):
 
 class MeterReading(models.Model):
     meter = models.ForeignKey(Meter, on_delete=models.CASCADE)
+    observed_property = models.ForeignKey(
+        "standards.ObservedProperty",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="meter_readings",
+    )
     reading_date = models.DateTimeField()
     previous_value = models.DecimalField(
         max_digits=14, decimal_places=4, null=True, blank=True
@@ -88,6 +95,13 @@ class Sensor(models.Model):
 
 class SensorMeasurement(models.Model):
     sensor = models.ForeignKey(Sensor, on_delete=models.CASCADE)
+    observed_property = models.ForeignKey(
+        "standards.ObservedProperty",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sensor_measurements",
+    )
     measurement_date = models.DateTimeField()
     value = models.DecimalField(max_digits=14, decimal_places=4)
     unit = models.CharField(max_length=20)
@@ -111,6 +125,13 @@ class WaterMeasurement(models.Model):
 
     name = models.CharField(max_length=200)
     measurement_type = models.CharField(max_length=50)
+    observed_property = models.ForeignKey(
+        "standards.ObservedProperty",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="water_measurements",
+    )
     value = models.DecimalField(max_digits=14, decimal_places=4)
     unit = models.CharField(max_length=20)
     measurement_date = models.DateTimeField()
