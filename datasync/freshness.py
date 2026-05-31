@@ -21,11 +21,11 @@ from django.utils import timezone
 # sync cadence. A daily gauge updates every ~24h; periodic groundwater is read
 # roughly quarterly; OpenET publishes monthly satellite composites.
 EXPECTED_DATA_INTERVAL_HOURS = {
-    "cdec": 24,            # daily reservoir / stream telemetry
-    "usgs": 24,            # daily values (dv)
-    "cimis": 24,           # daily reference ET
-    "cnrfc": 24,           # daily river / precip forecasts
-    "noaa": 48,            # daily climate, typically lags ~1 day
+    "cdec": 36,            # daily reservoir / stream telemetry (slight posting lag)
+    "usgs": 48,            # daily values (dv) — published with a ~1-2 day lag
+    "cimis": 48,           # daily reference ET — posts a day or two behind
+    "cnrfc": 36,           # daily river / precip forecasts
+    "noaa": 72,            # daily climate, typically lags ~2-3 days
     "dwr_wdl": 24 * 120,   # periodic groundwater (~quarterly) -> 120 days
     "dwr_sgma": 24 * 120,  # periodic SGMA monitoring -> 120 days
     "openet": 24 * 45,     # monthly satellite ET -> ~45 days
