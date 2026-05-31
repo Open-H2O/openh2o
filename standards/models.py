@@ -108,3 +108,76 @@ class SourceParameter(models.Model):
 
     def __str__(self):
         return f"{self.source_code}:{self.parameter_code} → {self.observed_property.key}"
+
+
+class Datastream(models.Model):
+    """
+    A SensorThings Datastream: the addressable series binding a Thing
+    (a well or an external/surface station) + a Sensor + an ObservedProperty.
+
+    This is the one OGC SensorThings entity the 48-table model didn't already
+    have. Phase 32 serializes each Datastream and attaches Observations to it
+    (a SensorMeasurement *is* the Observation in that mapping — no separate
+    Observation table). The FeatureOfInterest is derived from the well's screen
+    interval + vertical datum, so there is no FeatureOfInterest table either.
+    Datastream is therefore the only new structural entity v1.3 adds.
+    """
+
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    observed_property = models.ForeignKey(
+        ObservedProperty,
+        on_delete=models.PROTECT,
+        related_name="datastreams",
+        help_text="What is measured (the canonical concept).",
+    )
+    sensor = models.ForeignKey(
+        "measurements.Sensor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="datastreams",
+        help_text="The SensorThings Sensor — the instrument/procedure.",
+    )
+    well = models.ForeignKey(
+        "wells.Well",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="datastreams",
+        help_text="The SensorThings Thing for a groundwater series.",
+    )
+    monitored_station = models.ForeignKey(
+        "datasync.MonitoredStation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="datastreams",
+        help_text="The SensorThings Thing for an external/surface telemetry series.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Datastream"
+        verbose_name_plural = "Datastreams"
+        # Soft guard against duplicate series. NOTE: Postgres treats NULLs as
+        # distinct, so a row with a NULL sensor/well/monitored_station is not
+        # blocked from repeating — this is a guard, not an airtight constraint
+        # (adequate for the demo; tighten with partial unique indexes if needed).
+        unique_together = [
+            ("observed_property", "sensor", "well", "monitored_station")
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def uom(self) -> str:
+        """
+        Unit of measurement, read live from the linked ObservedProperty's UCUM
+        unit so it can never drift from the canonical vocabulary. Phase 32 would
+        only add a stored column here if it ever needs a per-series override.
+        """
+        return self.observed_property.ucum_unit

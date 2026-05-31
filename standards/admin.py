@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import ObservedProperty, SourceParameter
+from .models import Datastream, ObservedProperty, SourceParameter
 
 
 @admin.register(ObservedProperty)
@@ -26,3 +26,17 @@ class SourceParameterAdmin(admin.ModelAdmin):
     list_filter = ["source_code"]
     search_fields = ["source_code", "parameter_code", "native_name"]
     autocomplete_fields = ["observed_property"]
+
+
+@admin.register(Datastream)
+class DatastreamAdmin(admin.ModelAdmin):
+    list_display = [
+        "name", "observed_property", "uom", "sensor", "well", "monitored_station",
+    ]
+    list_filter = ["observed_property"]
+    search_fields = ["name", "description"]
+    autocomplete_fields = ["observed_property", "sensor", "well", "monitored_station"]
+
+    @admin.display(description="Unit (UCUM)")
+    def uom(self, obj):
+        return obj.uom
