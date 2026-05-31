@@ -23,12 +23,45 @@ from datasync.models import (
 from geography.models import Boundary
 
 
+def _build_source_status(boundary, now):
+    """
+    Per-source status for the dashboard cards: station counts, the most recent
+    sync log, a source-aware fresh count, and an honest status code/label that
+    distinguishes "needs key" / "no stations" / "no recent data" from "failed".
+    """
+    sources = DataSource.objects.filter(is_active=True).order_by("code")
+    result = []
+    for src in sources:
+        src_stations = MonitoredStation.objects.filter(data_source=src)
+        if boundary:
+            src_stations = src_stations.filter(location__within=boundary.geometry)
+        total = src_stations.count()
+        active_qs = src_stations.filter(is_active=True)
+        active = active_qs.count()
+        fresh = sum(
+            1 for s in active_qs
+            if freshness.classify_freshness(src.code, s.last_data_at, now) == "fresh"
+        )
+        log = DataSyncLog.objects.filter(data_source=src).order_by("-started_at").first()
+        status_code = freshness.classify_source_status(src.code, active, log, fresh)
+        result.append({
+            "source": src,
+            "log": log,
+            "total": total,
+            "active": active,
+            "fresh": fresh,
+            "blurb": freshness.source_blurb(src.code),
+            "status_code": status_code,
+            "status_label": freshness.status_label(status_code),
+            "status_tone": freshness.status_tone(status_code),
+        })
+    return result
+
+
 @login_required
 def station_list(request):
     """Unified station list with monitoring stats, freshness map, and enriched table."""
     now = timezone.now()
-    threshold_24h = now - timedelta(hours=24)
-    threshold_7d = now - timedelta(days=7)
 
     q = request.GET.get("q", "").strip()
     source = request.GET.get("source", "").strip()
@@ -55,15 +88,11 @@ def station_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # Freshness classification for current page stations
-    station_freshness = {}
-    for s in page_obj:
-        if s.last_data_at and s.last_data_at >= threshold_24h:
-            station_freshness[s.pk] = "fresh"
-        elif s.last_data_at and s.last_data_at >= threshold_7d:
-            station_freshness[s.pk] = "stale"
-        else:
-            station_freshness[s.pk] = "dead"
+    # Freshness classification for current page stations (source-aware)
+    station_freshness = {
+        s.pk: freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        for s in page_obj
+    }
 
     # Sparkline data for current page stations
     page_station_ids = [s.pk for s in page_obj]
@@ -133,25 +162,16 @@ def station_list(request):
     if request.headers.get("HX-Request"):
         return render(request, "datasync/partials/_station_list_results.html", context)
 
-    # Full page: add summary stats and source status
-    all_active = MonitoredStation.objects.filter(is_active=True)
+    # Full page: add summary stats and source status (source-aware freshness)
+    all_active = MonitoredStation.objects.filter(is_active=True).select_related("data_source")
     total_active = all_active.count()
-    fresh_count = sum(1 for s in all_active if s.last_data_at and s.last_data_at >= threshold_24h)
+    fresh_count = sum(
+        1 for s in all_active
+        if freshness.classify_freshness(s.data_source.code, s.last_data_at, now) == "fresh"
+    )
     stale_count = total_active - fresh_count
 
-    sources = DataSource.objects.filter(is_active=True).order_by("code")
-    source_status_list = []
-    for src in sources:
-        log = DataSyncLog.objects.filter(data_source=src).order_by("-started_at").first()
-        src_stations = MonitoredStation.objects.filter(data_source=src)
-        total = src_stations.count()
-        src_active = src_stations.filter(is_active=True).count()
-        source_status_list.append({
-            "source": src,
-            "log": log,
-            "total": total,
-            "active": src_active,
-        })
+    source_status_list = _build_source_status(None, now)
 
     _, openet_used, openet_limit = OpenETCache.check_budget()
 
@@ -209,15 +229,10 @@ def station_detail(request, pk):
             }
         )
 
-    # Determine freshness for chart color
-    now_ts = timezone.now()
-    threshold_24h = now_ts - timedelta(hours=24)
-    if station.last_data_at and station.last_data_at >= threshold_24h:
-        station_freshness = "fresh"
-    elif station.last_data_at:
-        station_freshness = "stale"
-    else:
-        station_freshness = "dead"
+    # Determine freshness for chart color (source-aware)
+    station_freshness = freshness.classify_freshness(
+        source_code, station.last_data_at, timezone.now()
+    )
 
     # Build enriched parameter list so template dropdown shows human labels on first render
     enriched_parameters = [
@@ -304,8 +319,6 @@ def station_add(request):
 def monitoring_dashboard(request):
     """Monitoring dashboard with station health stats, sparklines, and freshness map."""
     now = timezone.now()
-    threshold_24h = now - timedelta(hours=24)
-    threshold_7d = now - timedelta(days=7)
 
     boundary = Boundary.objects.first()
 
@@ -317,30 +330,13 @@ def monitoring_dashboard(request):
 
     fresh_count = sum(
         1 for s in active_stations
-        if s.last_data_at and s.last_data_at >= threshold_24h
-    )
-    stale_count = sum(
-        1 for s in active_stations
-        if not s.last_data_at or s.last_data_at < threshold_24h
+        if freshness.classify_freshness(s.data_source.code, s.last_data_at, now) == "fresh"
     )
     total_active = active_stations.count()
+    stale_count = total_active - fresh_count
 
-    # Source stats with most recent log per source (boundary-scoped)
-    sources = DataSource.objects.filter(is_active=True).order_by("code")
-    source_status_list = []
-    for source in sources:
-        log = DataSyncLog.objects.filter(data_source=source).order_by("-started_at").first()
-        src_stations = MonitoredStation.objects.filter(data_source=source)
-        if boundary:
-            src_stations = src_stations.filter(location__within=boundary.geometry)
-        total = src_stations.count()
-        active = src_stations.filter(is_active=True).count()
-        source_status_list.append({
-            "source": source,
-            "log": log,
-            "total": total,
-            "active": active,
-        })
+    # Per-source status (boundary-scoped), source-aware freshness
+    source_status_list = _build_source_status(boundary, now)
 
     # Sparkline data: last 10 DataRecordStaging per active station
     station_ids = list(active_stations.values_list("pk", flat=True))
@@ -386,15 +382,10 @@ def monitoring_dashboard(request):
             points.append(f"{x},{y}")
         station_sparklines[sid] = " ".join(points)
 
-    # Determine freshness class for each active station
+    # Determine freshness class for each active station (source-aware)
     station_list = []
     for s in active_stations:
-        if s.last_data_at and s.last_data_at >= threshold_24h:
-            freshness = "fresh"
-        elif s.last_data_at and s.last_data_at >= threshold_7d:
-            freshness = "stale"
-        else:
-            freshness = "dead"
+        fresh_class = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
         lv = latest_value_dash.get(s.pk)
         lu = latest_unit_dash.get(s.pk, "")
         if lv is not None:
@@ -406,7 +397,7 @@ def monitoring_dashboard(request):
             latest_tooltip = None
         station_list.append({
             "station": s,
-            "freshness": freshness,
+            "freshness": fresh_class,
             "sparkline_points": station_sparklines.get(s.pk),
             "latest_tooltip": latest_tooltip,
         })
@@ -433,10 +424,25 @@ def monitoring_dashboard(request):
 
 @login_required
 def station_chart_data(request, pk):
-    """Return JSON chart data for a station's telemetry records."""
+    """
+    Return JSON chart data for a station's telemetry.
+
+    Robustness contract that fixes the "graph goes blank on range change" bug:
+      * The list of available parameters is STABLE — derived from all published
+        records for the station (plus the station's declared parameters), NOT
+        from whatever happens to fall inside the selected time window. So the
+        dropdown never empties and never desyncs when you switch ranges.
+      * A selected parameter that has no data in the chosen window returns empty
+        series + the full parameter list, so the page shows a clean "no data for
+        this period" message instead of a blank canvas with a broken dropdown.
+      * An optional second parameter (``parameter2``) is returned as a separate
+        series so two variables (e.g. flow + stage) can be compared.
+    """
     station = get_object_or_404(MonitoredStation, pk=pk)
+    source_code = station.data_source.code
 
     parameter = request.GET.get("parameter", "").strip()
+    parameter2 = request.GET.get("parameter2", "").strip()
     days_raw = request.GET.get("days", "0")
     try:
         days = int(days_raw)
@@ -449,67 +455,80 @@ def station_chart_data(request, pk):
     if days > 0:
         date_filter["observation_date__gte"] = timezone.now() - timedelta(days=days)
 
-    # Determine available parameters from published records
-    available_params_qs = (
+    # STABLE parameter universe: every parameter this station has ever published,
+    # unioned with its declared parameters. Window-independent on purpose.
+    published_param_rows = (
         DataRecordStaging.objects
-        .filter(station=station, status="published", **date_filter)
+        .filter(station=station, status="published")
         .values("parameter_code", "unit")
         .distinct()
-        .order_by("parameter_code")
     )
-    param_codes = [r["parameter_code"] for r in available_params_qs]
-    units_by_code = {r["parameter_code"]: r["unit"] for r in available_params_qs}
+    units_by_code = {r["parameter_code"]: r["unit"] for r in published_param_rows}
+    param_codes = list(units_by_code.keys())
+    for code in (station.parameters or []):
+        if code not in param_codes:
+            param_codes.append(code)
+    param_codes.sort()
 
-    # Fall back to station.parameters if no published data yet
-    if not param_codes and station.parameters:
-        param_codes = list(station.parameters)
-
-    # Default to first parameter if none specified or specified one not available
+    # Resolve the selected parameter(s) against the stable universe.
     if not parameter or parameter not in param_codes:
         parameter = param_codes[0] if param_codes else None
+    if parameter2 and (parameter2 not in param_codes or parameter2 == parameter):
+        parameter2 = ""
 
-    # Build parameter metadata list using the unified registry
-    source_code = station.data_source.code
     parameters_meta = []
     for code in param_codes:
         unit = units_by_code.get(code, "")
         label = get_parameter_label(source_code, code)
-        # Extract name without unit for the name field (strip trailing " (unit)" if present)
         if unit and label.endswith(f" ({unit})"):
             name = label[: -(len(unit) + 3)]
         else:
             name = label
         parameters_meta.append({"code": code, "name": name, "unit": unit, "label": label})
 
-    labels = []
-    data_values = []
-    dataset_label = ""
-
-    if parameter:
-        records = (
+    def series_for(param):
+        """Return {date: value} for one parameter inside the window."""
+        rows = (
             DataRecordStaging.objects
-            .filter(station=station, status="published", parameter_code=parameter,
-                    **date_filter)
+            .filter(station=station, status="published", parameter_code=param, **date_filter)
             .order_by("observation_date")
-            .values("observation_date", "value", "unit")
+            .values("observation_date", "value")
         )
-        for r in records:
-            labels.append(r["observation_date"].strftime("%Y-%m-%d"))
-            data_values.append(float(r["value"]) if r["value"] is not None else None)
+        out = {}
+        for r in rows:
+            key = r["observation_date"].strftime("%Y-%m-%d")
+            out[key] = float(r["value"]) if r["value"] is not None else None
+        return out
 
-        dataset_label = get_parameter_label(source_code, parameter)
+    datasets = []
+    labels = []
+    if parameter:
+        primary = series_for(parameter)
+        secondary = series_for(parameter2) if parameter2 else {}
+        # Shared, sorted date axis across both series.
+        labels = sorted(set(primary) | set(secondary))
+        datasets.append({
+            "label": get_parameter_label(source_code, parameter),
+            "data": [primary.get(d) for d in labels],
+            "parameter_code": parameter,
+            "unit": units_by_code.get(parameter, ""),
+            "axis": "y",
+        })
+        if parameter2:
+            datasets.append({
+                "label": get_parameter_label(source_code, parameter2),
+                "data": [secondary.get(d) for d in labels],
+                "parameter_code": parameter2,
+                "unit": units_by_code.get(parameter2, ""),
+                "axis": "y1",
+            })
 
     result = {
         "labels": labels,
-        "datasets": [
-            {
-                "label": dataset_label,
-                "data": data_values,
-                "parameter_code": parameter,
-            }
-        ] if parameter else [],
+        "datasets": datasets,
         "parameters": parameters_meta,
         "selected_parameter": parameter,
+        "selected_parameter2": parameter2 or None,
         "days": days,
     }
     return JsonResponse(result)
@@ -519,8 +538,6 @@ def station_chart_data(request, pk):
 def stations_freshness_geojson(request):
     """Return active stations as GeoJSON with freshness metadata."""
     now = timezone.now()
-    threshold_24h = now - timedelta(hours=24)
-    threshold_7d = now - timedelta(days=7)
 
     stations = MonitoredStation.objects.filter(
         is_active=True, location__isnull=False
@@ -528,18 +545,11 @@ def stations_freshness_geojson(request):
 
     features = []
     for s in stations:
-        if s.last_data_at and s.last_data_at >= threshold_24h:
-            freshness = "fresh"
-            hours_since = (now - s.last_data_at).total_seconds() / 3600
-        elif s.last_data_at and s.last_data_at >= threshold_7d:
-            freshness = "stale"
-            hours_since = (now - s.last_data_at).total_seconds() / 3600
-        else:
-            freshness = "dead"
-            hours_since = (
-                (now - s.last_data_at).total_seconds() / 3600
-                if s.last_data_at else None
-            )
+        fresh_class = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        hours_since = (
+            (now - s.last_data_at).total_seconds() / 3600
+            if s.last_data_at else None
+        )
 
         features.append({
             "type": "Feature",
@@ -552,7 +562,7 @@ def stations_freshness_geojson(request):
                 "station_name": s.station_name,
                 "external_station_id": s.external_station_id,
                 "data_source_code": s.data_source.code,
-                "freshness": freshness,
+                "freshness": fresh_class,
                 "hours_since_data": round(hours_since, 1) if hours_since is not None else None,
                 "last_data_at": s.last_data_at.isoformat() if s.last_data_at else None,
             },

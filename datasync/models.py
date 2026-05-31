@@ -93,6 +93,16 @@ class DataRecordStaging(models.Model):
 
     class Meta:
         ordering = ["-observation_date"]
+        constraints = [
+            # One observation per station+parameter+timestamp. Lets repeated
+            # syncs (hourly for live gauges) re-pull the same readings as a
+            # no-op via bulk_create(ignore_conflicts=True) instead of piling up
+            # duplicate rows that put multiple points per date on charts.
+            models.UniqueConstraint(
+                fields=["station", "parameter_code", "observation_date"],
+                name="uniq_staging_station_param_obsdate",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.station} {self.observation_date}: {self.parameter_code}={self.value}"

@@ -8,14 +8,14 @@
       <div class="stat-card-unit">total linked to sources</div>
     </div>
     <div class="card-raised stat-card" style="border-top: 3px solid var(--forest-400);">
-      <div class="stat-card-label">Reporting</div>
+      <div class="stat-card-label">On Schedule</div>
       <div class="stat-card-value" style="color: var(--forest-400);">{{ fresh_count }}</div>
-      <div class="stat-card-unit">updated in last 24 hours</div>
+      <div class="stat-card-unit">reporting on their normal cadence</div>
     </div>
     <div class="card-raised stat-card" style="border-top: 3px solid var(--furnace-400);">
-      <div class="stat-card-label">Not Reporting</div>
+      <div class="stat-card-label">Behind Schedule</div>
       <div class="stat-card-value" style="color: var(--furnace-400);">{{ stale_count }}</div>
-      <div class="stat-card-unit">no data in 24+ hours</div>
+      <div class="stat-card-unit">overdue vs. their expected cadence</div>
     </div>
     <div class="card-raised stat-card" style="border-top: 3px solid var(--reservoir-400);">
       <div class="stat-card-label">OpenET Queries</div>
@@ -33,24 +33,20 @@
       <div class="card-raised">
         <div class="row-between mb-sm">
           <h3 class="section-header-flush">{{ info.source.name }}</h3>
-          {% if info.log %}
-            {% if info.log.status == "success" %}
-            <span class="health-status-badge-green">Success</span>
-            {% elif info.log.status == "running" %}
-            <span class="health-status-badge-yellow">Running</span>
-            {% elif info.log.status == "partial" %}
-            <span class="health-status-badge-yellow">Partial</span>
-            {% else %}
-            <span class="health-status-badge-red">Failed</span>
-            {% endif %}
-          {% else %}
-          <span class="badge badge-grey">No syncs</span>
-          {% endif %}
+          {% include "datasync/partials/_status_pill.html" with tone=info.status_tone label=info.status_label %}
         </div>
+        {% if info.blurb %}
+        <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs) 0; line-height: 1.4;">{{ info.blurb }}</p>
+        {% endif %}
         <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs) 0;">
           {{ info.active }} active / {{ info.total }} total stations
+          {% if info.fresh %}&middot; <span style="color: var(--forest-400);">{{ info.fresh }} on schedule</span>{% endif %}
         </p>
-        {% if info.log %}
+        {% if info.status_code == "needs_key" %}
+        <p class="text-tertiary text-xs" style="margin: 0;">Add the API credential on the server to enable this source.</p>
+        {% elif info.status_code == "no_stations" %}
+        <p class="text-tertiary text-xs" style="margin: 0;">No stations wired yet &mdash; run station discovery for this source.</p>
+        {% elif info.log %}
         <p class="text-tertiary text-xs" style="margin: 0;">
           Last sync: {{ info.log.started_at|timesince }} ago
           {% if info.log.records_published %}&middot; {{ info.log.records_published }} published{% endif %}

@@ -1,0 +1,5 @@
+{% comment %}
+Source-status pill. Maps a freshness "tone" to a coloured badge.
+Usage: {% include "datasync/partials/_status_pill.html" with tone=info.status_tone label=info.status_label %}
+Tones: fresh (green), stale/running (amber), dead (red), info/needs-key (gold), neutral (grey).
+{% endcomment %}{% if tone == "fresh" %}<span class="health-status-badge-green">{{ label }}</span>{% elif tone == "stale" %}<span class="health-status-badge-yellow">{{ label }}</span>{% elif tone == "dead" %}<span class="health-status-badge-red">{{ label }}</span>{% elif tone == "info" %}<span class="health-status-badge-green" style="background: rgba(228,163,23,0.12); color: var(--color-gold, #E4A317);">{{ label }}</span>{% else %}<span class="badge badge-grey">{{ label }}</span>{% endif %}

@@ -40,14 +40,14 @@
         <div class="stat-card-unit">total linked to sources</div>
       </div>
       <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--forest-400);">
-        <div class="stat-card-label">Reporting</div>
+        <div class="stat-card-label">On Schedule</div>
         <div class="stat-card-value" style="color: var(--forest-400);">{{ fresh_count }}</div>
-        <div class="stat-card-unit">updated in last 24 hours</div>
+        <div class="stat-card-unit">reporting on their normal cadence</div>
       </div>
       <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--furnace-400);">
-        <div class="stat-card-label">Not Reporting</div>
+        <div class="stat-card-label">Behind Schedule</div>
         <div class="stat-card-value" style="color: var(--furnace-400);">{{ stale_count }}</div>
-        <div class="stat-card-unit">no data in 24+ hours</div>
+        <div class="stat-card-unit">overdue vs. their expected cadence</div>
       </div>
       <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--reservoir-400);">
         <div class="stat-card-label">OpenET Queries</div>
@@ -69,20 +69,10 @@
     <div style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: center;">
       <span class="text-secondary text-xs" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Sources</span>
       {% for info in source_status_list %}
-      <span style="display: inline-flex; align-items: center; gap: var(--space-xs); font-size: 0.8rem;">
+      <span style="display: inline-flex; align-items: center; gap: var(--space-xs); font-size: 0.8rem;" title="{{ info.source.name }}{% if info.blurb %} — {{ info.blurb }}{% endif %}">
         <span class="text-primary" style="font-weight: 600;">{{ info.source.code }}</span>
         <span class="text-tertiary">{{ info.active }}/{{ info.total }}</span>
-        {% if info.log %}
-          {% if info.log.status == "success" %}
-          <span class="health-status-badge-green" style="font-size: 0.65rem; padding: 1px 6px;">OK</span>
-          {% elif info.log.status == "running" %}
-          <span class="health-status-badge-yellow" style="font-size: 0.65rem; padding: 1px 6px;">Running</span>
-          {% else %}
-          <span class="health-status-badge-red" style="font-size: 0.65rem; padding: 1px 6px;">Fail</span>
-          {% endif %}
-        {% else %}
-          <span class="text-tertiary text-xs">no syncs</span>
-        {% endif %}
+        {% include "datasync/partials/_status_pill.html" with tone=info.status_tone label=info.status_label %}
       </span>
       {% endfor %}
     </div>
