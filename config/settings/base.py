@@ -181,6 +181,14 @@ DATASYNC_MOCK_MODE = env.bool("DATASYNC_MOCK_MODE", default=False)
 OPENET_CACHE_DAYS = int(os.environ.get("OPENET_CACHE_DAYS", "30"))
 OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "400"))
 
+# OpenET source selection: "api" = OpenET REST API (default, the live path);
+# "gee" = pull the same OpenET Ensemble collection directly from Google Earth
+# Engine (opt-in, for large districts). See docs/earth-engine-tier-setup.md.
+OPENET_MODE = env("OPENET_MODE", default="api")
+GEE_PROJECT = env("GEE_PROJECT", default="")
+GEE_SERVICE_ACCOUNT_EMAIL = env("GEE_SERVICE_ACCOUNT_EMAIL", default="")
+GEE_SERVICE_ACCOUNT_KEY_FILE = env("GEE_SERVICE_ACCOUNT_KEY_FILE", default="")
+
 if _google_client_id and _google_client_secret:
     SOCIALACCOUNT_PROVIDERS = {
         "google": {
