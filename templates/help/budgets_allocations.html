@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Water Budgets & Allocations - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water Budgets & Allocations{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'getting_started' %}">Help</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Water Budgets &amp; Allocations</span>
+  </nav>
+  <p class="page-description">How the platform turns a zone-wide cap into each account's individual limit.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <div class="card-raised">
+    <h2 class="section-header">The short version</h2>
+    <p class="text-secondary text-base">A <strong>water budget</strong> and an <strong>allocation</strong> are the same number seen from two directions. The budget is the whole pie &mdash; the total volume of water assigned to a management zone for a reporting period. The allocation is one account's slice of that pie, worked out from how much land the account holds in the zone. Set the budget at the top; the platform divides it into allocations underneath.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Water budget &mdash; the cap you set</h2>
+    <p class="text-secondary text-base">The water budget is the top-down decision. Your agency declares, for example, &ldquo;this zone gets 12,000 acre-feet of groundwater this water year.&rdquo; You set one budget per <strong>zone</strong>, per <strong>water type</strong> (groundwater, surface water, and so on), per <strong>reporting period</strong>. It is the policy ceiling for a whole area &mdash; the total volume available before anyone&rsquo;s individual share is worked out.</p>
+    <p class="text-tertiary text-sm">An acre-foot is the volume of water covering one acre to a depth of one foot &mdash; roughly a year of household use. It is the standard unit California water managers count in.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Allocation &mdash; each account's share</h2>
+    <p class="text-secondary text-base">A single landowner does not care about the zone&rsquo;s full 12,000 acre-feet &mdash; they care about <em>their</em> limit. The platform calculates each account&rsquo;s allocation by pro-rating the zone budget according to how many parcels (use areas) that account holds in the zone:</p>
+    <div class="card-raised" style="background: var(--color-surface-base); margin: var(--space-md) 0;">
+      <p class="text-primary text-base" style="margin: 0; text-align: center;">
+        account allocation = zone budget &times; (account&rsquo;s parcels in zone &divide; total parcels in zone)
+      </p>
+    </div>
+    <p class="text-secondary text-base">Parcel <em>count</em> is used &mdash; not parcel acreage &mdash; on purpose: parcel-area data is often incomplete, and counts are always available. It trades a little precision for not breaking when data is missing.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">A worked example</h2>
+    <p class="text-secondary text-base">Say a zone has a water budget of <strong>12,000 acre-feet</strong> for the year, and contains <strong>600 parcels</strong> in total. Your account holds <strong>30</strong> of those parcels. Your allocation is:</p>
+    <div class="card-raised" style="background: var(--color-surface-base); margin: var(--space-md) 0;">
+      <p class="text-primary text-base" style="margin: 0; text-align: center;">
+        12,000 &times; (30 &divide; 600) = <strong>600 acre-feet</strong>
+      </p>
+    </div>
+    <p class="text-secondary text-base">The platform then subtracts what the account actually <strong>used</strong> &mdash; the sum of its ledger entries (every metered extraction, surface diversion, and recharge credit) &mdash; to show what is left:</p>
+    <div class="card-raised" style="background: var(--color-surface-base); margin: var(--space-md) 0;">
+      <p class="text-primary text-base" style="margin: 0; text-align: center;">
+        remaining = allocation &minus; usage
+      </p>
+    </div>
+    <p class="text-secondary text-base">That &ldquo;remaining&rdquo; figure is what turns a row red on the dashboard. When an account pumps past its allocation, remaining goes negative &mdash; that is an overdraft, and the only thing the platform colors red.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">One thing worth knowing</h2>
+    <p class="text-secondary text-base">If no water budget has been set for a zone in a given period, every account&rsquo;s allocation shows as <strong>blank</strong> &mdash; not zero. &ldquo;No budget defined&rdquo; and &ldquo;a budget of zero&rdquo; are deliberately different: the platform will not imply a limit nobody actually set. To start enforcing allocations, set a water budget for the zone and period first.</p>
+    <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Budgets &rarr;</a>
+  </div>
+
+</div>
+{% endblock %}
