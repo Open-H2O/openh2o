@@ -23,9 +23,7 @@ Usage:
   python manage.py prove_gee_auth --limit 5 --write-cache
 """
 
-import json
 import logging
-import os
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
@@ -33,24 +31,17 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from datasync.adapters.gee import (
+    _first_of_month,
+    _first_of_next_month,
+    build_et_data,
+    init_earth_engine,
+    reduce_et_by_parcel,
+)
 from datasync.models import OpenETCache
 from parcels.models import Parcel
 
 logger = logging.getLogger(__name__)
-
-EE_COLLECTION = "projects/openet/assets/ensemble/conus/gridmet/monthly/v2_1"
-EE_BAND = "et_ensemble_mad"
-EE_SCALE = 30  # OpenET native resolution (m). Polygon mean, not centroid point.
-
-
-def _first_of_month(d):
-    return date(d.year, d.month, 1)
-
-
-def _first_of_next_month(d):
-    if d.month == 12:
-        return date(d.year + 1, 1, 1)
-    return date(d.year, d.month + 1, 1)
 
 
 class Command(BaseCommand):
@@ -83,65 +74,6 @@ class Command(BaseCommand):
             default=False,
             help="Write GEE results to OpenETCache (default OFF: read-only proof).",
         )
-
-    # -- setup gates ---------------------------------------------------------
-
-    def _check_settings(self):
-        """Refuse to run unless the GEE settings + key file are present."""
-        missing = [
-            name
-            for name in (
-                "GEE_PROJECT",
-                "GEE_SERVICE_ACCOUNT_EMAIL",
-                "GEE_SERVICE_ACCOUNT_KEY_FILE",
-            )
-            if not getattr(settings, name, "")
-        ]
-        if missing:
-            raise CommandError(
-                "Earth Engine tier is not configured: missing "
-                + ", ".join(missing)
-                + ". See docs/earth-engine-tier-setup.md and set OPENET_MODE=gee "
-                "plus the GEE_* vars in .env."
-            )
-        key_file = settings.GEE_SERVICE_ACCOUNT_KEY_FILE
-        if not os.path.exists(key_file):
-            raise CommandError(
-                f"Service-account key not found at {key_file}. Place the JSON key "
-                "there (the docker mount expects ./secrets/gee-key.json). "
-                "See docs/earth-engine-tier-setup.md."
-            )
-
-    def _init_earth_engine(self):
-        """Headless service-account auth. Fail loud: this is the go/no-go signal."""
-        try:
-            import ee
-        except ImportError as exc:
-            raise CommandError(
-                "earthengine-api is not installed. Rebuild the web container "
-                "(docker compose up -d --build web)."
-            ) from exc
-
-        try:
-            creds = ee.ServiceAccountCredentials(
-                settings.GEE_SERVICE_ACCOUNT_EMAIL,
-                settings.GEE_SERVICE_ACCOUNT_KEY_FILE,
-            )
-            ee.Initialize(creds, project=settings.GEE_PROJECT)
-        except Exception as exc:
-            # Do NOT swallow: headless auth working is the whole point.
-            raise CommandError(
-                "Earth Engine headless auth FAILED (this is the go/no-go gate). "
-                f"Exact error: {exc!r}"
-            ) from exc
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Earth Engine initialized headlessly (project "
-                f"{settings.GEE_PROJECT}, service account "
-                f"{settings.GEE_SERVICE_ACCOUNT_EMAIL})."
-            )
-        )
-        return ee
 
     # -- parcel + window selection ------------------------------------------
 
@@ -239,53 +171,6 @@ class Command(BaseCommand):
 
     # -- the proof ----------------------------------------------------------
 
-    def _gee_et_by_parcel(self, ee, parcels, start, end):
-        """Polygon reduceRegions over each monthly image. Returns
-        {parcel_id: {YYYY-MM: et_mm}}."""
-        features = []
-        for parcel in parcels:
-            geojson = json.loads(parcel.geometry.geojson)
-            features.append(
-                ee.Feature(ee.Geometry(geojson), {"parcel_id": parcel.pk})
-            )
-        fc = ee.FeatureCollection(features)
-
-        filter_start = _first_of_month(start).isoformat()
-        filter_end = _first_of_next_month(end).isoformat()  # exclusive
-        ic = (
-            ee.ImageCollection(EE_COLLECTION)
-            .filterDate(filter_start, filter_end)
-            .select(EE_BAND)
-        )
-
-        image_list = ic.toList(ic.size())
-        count = int(ic.size().getInfo())
-        if count == 0:
-            raise CommandError(
-                f"Earth Engine returned 0 monthly images for {filter_start}.."
-                f"{filter_end}. Check the date window against the collection's "
-                "coverage."
-            )
-
-        result = defaultdict(dict)
-        for i in range(count):
-            img = ee.Image(image_list.get(i))
-            month_key = ee.Date(img.get("system:time_start")).format(
-                "YYYY-MM"
-            ).getInfo()
-            reduced = img.reduceRegions(
-                collection=fc,
-                reducer=ee.Reducer.mean(),
-                scale=EE_SCALE,
-            ).getInfo()
-            for feat in reduced.get("features", []):
-                props = feat.get("properties", {})
-                pid = props.get("parcel_id")
-                mean = props.get("mean")
-                if pid is not None and mean is not None:
-                    result[pid][month_key] = mean
-        return result
-
     def _print_table(self, parcels, months, gee, rest):
         self.stdout.write("")
         self.stdout.write(
@@ -311,13 +196,6 @@ class Command(BaseCommand):
                     f"{parcel.parcel_number:<16}{month:<10}{g_str:>10}{r_str:>10}{d_str:>10}"
                 )
 
-    def _build_et_data(self, gee_for_parcel):
-        """GEE month->mm dict into the EXACT REST OpenETCache.et_data shape."""
-        return [
-            {"date": month, "et": mm, "unit": "mm"}
-            for month, mm in sorted(gee_for_parcel.items())
-        ]
-
     def _write_cache(self, parcels, start, end, gee):
         written = 0
         for parcel in parcels:
@@ -331,7 +209,7 @@ class Command(BaseCommand):
                 end_date=end,
                 variable="ET",
                 model_name="Ensemble",
-                et_data=self._build_et_data(gee_for_parcel),
+                et_data=build_et_data(gee_for_parcel),
             )
             written += 1
         self.stdout.write(
@@ -345,8 +223,19 @@ class Command(BaseCommand):
     # -- entrypoint ---------------------------------------------------------
 
     def handle(self, *args, **options):
-        self._check_settings()
-        ee = self._init_earth_engine()
+        # Re-raise library RuntimeErrors as CommandError so the go/no-go gate
+        # still fails loud the way this proof command always has.
+        try:
+            ee = init_earth_engine()
+        except RuntimeError as exc:
+            raise CommandError(str(exc)) from exc
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Earth Engine initialized headlessly (project "
+                f"{settings.GEE_PROJECT}, service account "
+                f"{settings.GEE_SERVICE_ACCOUNT_EMAIL})."
+            )
+        )
 
         parcels, _has_rest = self._select_parcels(options["limit"])
         self.stdout.write(
@@ -362,7 +251,10 @@ class Command(BaseCommand):
             f"Window: {start.isoformat()} .. {end.isoformat()}"
         )
 
-        gee = self._gee_et_by_parcel(ee, parcels, start, end)
+        try:
+            gee = reduce_et_by_parcel(ee, parcels, start, end)
+        except RuntimeError as exc:
+            raise CommandError(str(exc)) from exc
 
         months = sorted(
             {m for pm in gee.values() for m in pm}
