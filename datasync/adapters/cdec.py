@@ -23,6 +23,9 @@ STATION_URL = "https://cdec.water.ca.gov/dynamicapp/staMeta"
 
 PARAMETER_MAP = {
     "15": {"name": "Reservoir Storage", "unit": "AF"},
+    "6": {"name": "Reservoir Elevation", "unit": "ft"},
+    "76": {"name": "Reservoir Inflow", "unit": "cfs"},
+    "23": {"name": "Reservoir Outflow", "unit": "cfs"},
     "1": {"name": "River Stage", "unit": "ft"},
     "20": {"name": "Flow", "unit": "cfs"},
     "2": {"name": "Precipitation", "unit": "in"},
