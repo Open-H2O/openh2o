@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "parcels",
     "wells",
     "measurements",
+    "standards",
     "accounting",
     "surface",
     "recharge",
