@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Discover monitoring stations near a boundary and create inactive MonitoredStation records.
 

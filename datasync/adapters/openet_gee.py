@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 GEE-backed OpenET adapter — the batched Earth Engine tier.
 

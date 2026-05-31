@@ -2,20 +2,23 @@
 #
 # Install:   make install-cron
 # Verify:    make show-cron
-# Location:  set OPENH2O_DIR to your deployment path (Butler uses /home/butler/openh2o)
+#
+# Set the two paths below to match YOUR deployment before installing:
+#   OPENH2O_DIR      where you cloned the repo (the dir holding docker-compose.yml)
+#   OPENH2O_LOG_DIR  a directory the cron user can write logs to
 #
 # Jobs:
 #   run-sync.sh    - Resilient external-data sync (ensures container is up,
-#                    logs to a writable path, alerts via ntfy on failure).
+#                    logs to a writable path, alerts via ntfy on failure if
+#                    OPENH2O_NTFY_URL is set).
 #                    Live gauges (CDEC, USGS) run hourly for near-real-time flow;
 #                    slower sources (ET, groundwater, forecasts, climate) run
 #                    once daily because they only publish daily/periodically.
 #   run_health_checks - Check database, disk, SSL, migrations, and sync freshness
 #   prune_old_data    - Delete staging records and logs older than retention thresholds
-#
-# Adjust OPENH2O_DIR to match your deployment path if different.
 
-OPENH2O_DIR=/home/butler/openh2o
+OPENH2O_DIR=/opt/openh2o
+OPENH2O_LOG_DIR=/opt/openh2o-logs
 
 # Hourly: live stream / reservoir telemetry (near-real-time flow & stage)
 0 * * * * $OPENH2O_DIR/scripts/run-sync.sh cdec usgs
@@ -24,7 +27,7 @@ OPENH2O_DIR=/home/butler/openh2o
 0 2 * * * $OPENH2O_DIR/scripts/run-sync.sh cimis cnrfc dwr_wdl dwr_sgma noaa openet
 
 # Health checks every 6 hours
-0 */6 * * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py run_health_checks >> /home/butler/openh2o-logs/health.log 2>&1
+0 */6 * * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py run_health_checks >> $OPENH2O_LOG_DIR/health.log 2>&1
 
 # Monthly data pruning on the 1st at 3:00 AM (--confirm required; default is dry-run)
-0 3 1 * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py prune_old_data --confirm >> /home/butler/openh2o-logs/prune.log 2>&1
+0 3 1 * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py prune_old_data --confirm >> $OPENH2O_LOG_DIR/prune.log 2>&1

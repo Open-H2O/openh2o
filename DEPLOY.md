@@ -256,8 +256,8 @@ The jobs in `crontab.txt`:
 `scripts/run-sync.sh` is a resilient wrapper: it runs `docker compose up -d`
 first (a no-op if the stack is already running, but it revives the container if
 an unattended-upgrade reboot left it stopped — the original cause of silent
-sync failures), logs to `$OPENH2O_LOG_DIR` (default `/home/butler/openh2o-logs`),
-and pings ntfy if any source errors.
+sync failures), logs to `$OPENH2O_LOG_DIR` (default `/opt/openh2o-logs`),
+and pings ntfy on failure if you set `OPENH2O_NTFY_URL` to a topic URL.
 
 Install the crontab. **Note:** `make install-cron` *appends*; if you are
 replacing older OpenH2O cron lines, edit `crontab -e` and remove the old
@@ -269,8 +269,9 @@ make install-cron
 make show-cron
 ```
 
-Edit `crontab.txt` to adjust `OPENH2O_DIR` if your deployment path differs from
-`/home/butler/openh2o`.
+Edit `crontab.txt` to set `OPENH2O_DIR` (where you cloned the repo) and
+`OPENH2O_LOG_DIR` (a writable log directory) to match your deployment. The
+defaults are `/opt/openh2o` and `/opt/openh2o-logs`.
 
 ### External Data API Keys
 

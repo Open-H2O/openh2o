@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 NOAA NCEI (National Centers for Environmental Information) adapter.
 

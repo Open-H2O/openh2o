@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 import io
 from datetime import date
 from decimal import Decimal

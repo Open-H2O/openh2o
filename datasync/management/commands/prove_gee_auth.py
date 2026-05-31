@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Prove the Earth Engine tier end to end, headlessly.
 

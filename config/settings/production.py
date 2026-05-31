@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Production settings.
 """
@@ -21,6 +22,26 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+
+# -- Fail-fast hardening -----------------------------------------------------
+# The development default password is fine inside the Docker network (the db
+# port is never published), but it must never reach a public deployment. Refuse
+# to boot in production if the database password or ALLOWED_HOSTS were left at
+# their insecure defaults, rather than silently running an exposed instance.
+from django.core.exceptions import ImproperlyConfigured  # noqa: E402
+
+_db_password = DATABASES["default"].get("PASSWORD", "")  # noqa: F405
+if _db_password in ("", "openh2o", "postgres", "password", "changeme"):
+    raise ImproperlyConfigured(
+        "Insecure database password in production. Set a strong POSTGRES_PASSWORD "
+        "(or DATABASE_URL) in your .env before deploying. See DEPLOY.md."
+    )
+
+if not ALLOWED_HOSTS:  # noqa: F405
+    raise ImproperlyConfigured(
+        "ALLOWED_HOSTS is empty in production. Set it to your domain in .env "
+        "(e.g. ALLOWED_HOSTS=water.example.org). See DEPLOY.md."
+    )
 
 # -- Email -------------------------------------------------------------------
 

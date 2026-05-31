@@ -17,14 +17,17 @@
 #         run-sync.sh cimis cnrfc dwr_wdl dwr_sgma noaa openet
 set -uo pipefail
 
-OPENH2O_DIR="${OPENH2O_DIR:-/home/butler/openh2o}"
-LOG_DIR="${OPENH2O_LOG_DIR:-/home/butler/openh2o-logs}"
-NTFY_URL="${OPENH2O_NTFY_URL:-http://localhost:8080/vander-infra}"
+OPENH2O_DIR="${OPENH2O_DIR:-/opt/openh2o}"
+LOG_DIR="${OPENH2O_LOG_DIR:-/opt/openh2o-logs}"
+# Optional: set OPENH2O_NTFY_URL to an ntfy topic URL to receive failure alerts
+# (e.g. https://ntfy.sh/your-private-topic). Leave unset to disable alerting.
+NTFY_URL="${OPENH2O_NTFY_URL:-}"
 
 mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/sync.log"
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 alert() {
+  [ -n "$NTFY_URL" ] || return 0  # alerting disabled unless a topic URL is set
   curl -fsS -H "Title: OpenH2O data sync" -H "Priority: high" -H "Tags: warning" \
     -d "$1" "$NTFY_URL" >/dev/null 2>&1 || true
 }

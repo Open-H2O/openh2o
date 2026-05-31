@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Drive the OpenET adapter over parcels — the live parcel-ET sync path.
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.db.models import Max

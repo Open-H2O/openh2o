@@ -1,0 +1,27 @@
+source_code,source_parameter_code,observed_property_key,observed_property_name,usgs_pcode,wqx_characteristic_name,ucum_unit
+usgs,00060,discharge,Stream Discharge,00060,Stream flow,[cft_i]/s
+usgs,00065,gage_height,Gage Height,00065,Gage height,[ft_i]
+usgs,00010,water_temperature,Water Temperature,00010,"Temperature, water",Cel
+usgs,72019,groundwater_level_depth,Depth to Groundwater,72019,Depth to water level below land surface,[ft_i]
+usgs,72020,groundwater_level_elevation,Groundwater Level Elevation,72020,Water level elevation above NAVD 1988,[ft_i]
+usgs,62610,groundwater_level,Groundwater Level,62610,Groundwater level,[ft_i]
+cdec,15,reservoir_storage,Reservoir Storage,,Reservoir storage,[acr_us].[ft_i]
+cdec,6,reservoir_elevation,Reservoir Elevation,,Reservoir water surface elevation,[ft_i]
+cdec,76,reservoir_inflow,Reservoir Inflow,,"Flow, inflow",[cft_i]/s
+cdec,23,reservoir_outflow,Reservoir Outflow,,"Flow, outflow",[cft_i]/s
+cdec,1,gage_height,Gage Height,00065,Gage height,[ft_i]
+cdec,20,discharge,Stream Discharge,00060,Stream flow,[cft_i]/s
+cdec,2,precipitation,Precipitation,00045,Precipitation,mm
+dwr_wdl,gw_level,groundwater_level_depth,Depth to Groundwater,72019,Depth to water level below land surface,[ft_i]
+dwr_sgma,gw_level,groundwater_level_depth,Depth to Groundwater,72019,Depth to water level below land surface,[ft_i]
+cimis,day-eto,reference_et,Reference Evapotranspiration,,"Evapotranspiration, reference",mm
+cimis,day-precip,precipitation,Precipitation,00045,Precipitation,mm
+cimis,day-sol-rad-avg,solar_radiation,Solar Radiation,,Solar radiation,W/m2
+cimis,day-wind-spd-avg,wind_speed,Wind Speed,,Wind velocity,m/s
+cimis,day-air-tmp-avg,air_temperature,Air Temperature,,"Temperature, air",Cel
+noaa,PRCP,precipitation,Precipitation,00045,Precipitation,mm
+noaa,TMAX,air_temperature,Air Temperature,,"Temperature, air",Cel
+noaa,TMIN,air_temperature,Air Temperature,,"Temperature, air",Cel
+noaa,SNOW,snowfall,Snowfall,,Snow depth,mm
+cnrfc,streamflow,discharge,Stream Discharge,00060,Stream flow,[cft_i]/s
+cnrfc,precip,precipitation,Precipitation,00045,Precipitation,mm

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Smoke tests verifying every page returns HTTP 200 for appropriate users.
 

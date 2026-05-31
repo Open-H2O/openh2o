@@ -7,6 +7,14 @@ name = "openh2o"
 version = "0.1.0"
 description = "Open Water Accounting Platform for California water agencies"
 requires-python = ">=3.12"
+license = "AGPL-3.0-or-later"
+authors = [{ name = "Brent Vanderburgh" }]
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Framework :: Django",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: GIS",
+]
 dependencies = [
     "Django>=5.1,<6.0",
     "psycopg[binary]>=3.1",

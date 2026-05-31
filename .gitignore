@@ -44,3 +44,4 @@ media/
 .env.*
 *.bak
 *.bak.*
+static/img/logo-alternatives/

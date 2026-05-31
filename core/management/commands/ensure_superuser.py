@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Idempotently ensure an admin superuser exists, built from environment vars.
 
 This runs on every container start (wired into the Dockerfile CMD, right after

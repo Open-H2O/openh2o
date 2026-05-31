@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Shared Google Earth Engine mechanics for the OpenET GEE tier.
 

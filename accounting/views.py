@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 from decimal import Decimal
 
 import csv as csv_module

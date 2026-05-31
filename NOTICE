@@ -1,0 +1,34 @@
+Open Water Accounting Platform (OpenH2O)
+Copyright (C) 2026 Brent Vanderburgh
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+----------------------------------------------------------------------------
+
+AGPL Section 13 (network use): if you run a modified version of this software
+and let users interact with it over a network, you must offer those users
+access to the corresponding source code. The running application links to its
+source repository in the page footer and on the About page to satisfy this
+requirement; keep that link pointing at your published source if you modify it.
+
+----------------------------------------------------------------------------
+
+Lineage and acknowledgment
+
+OpenH2O is an independent, clean-room reimplementation on an open stack
+(Django, GeoDjango, PostgreSQL/PostGIS, Docker). It descends conceptually from
+the Groundwater Accounting Platform stewarded by the California Water Data
+Consortium and developed by ESA (formerly Sitka Technology Group), which is
+likewise released under the GNU Affero General Public License v3. We are
+grateful for that prior art. No ESA/Sitka source code is included in this
+repository.

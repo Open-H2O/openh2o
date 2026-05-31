@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 Seed realistic data for the Kaweah Subbasin (DWR Basin 5-022.11).
 
