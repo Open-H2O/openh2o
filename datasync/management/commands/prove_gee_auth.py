@@ -146,26 +146,47 @@ class Command(BaseCommand):
     # -- parcel + window selection ------------------------------------------
 
     def _select_parcels(self, limit):
-        """Real parcels with geometry + area that also have a REST cache row."""
-        cached_parcel_ids = (
+        """Pick real parcels to test.
+
+        Prefer parcels that already have an OpenET REST cache row, so the proof
+        can show GEE vs REST side by side. If none exist (e.g. a demo DB that
+        never ran a live REST sync), fall back to any parcels with geometry +
+        area: the GEE auth + reduceRegions proof still stands, just without a
+        REST baseline to compare against. Returns (parcels, has_rest_baseline).
+        """
+        cached_parcel_ids = list(
             OpenETCache.objects.filter(parcel__isnull=False)
             .values_list("parcel_id", flat=True)
             .distinct()
         )
+        if cached_parcel_ids:
+            parcels = list(
+                Parcel.objects.filter(
+                    pk__in=cached_parcel_ids,
+                    geometry__isnull=False,
+                    area_acres__isnull=False,
+                ).order_by("parcel_number")[:limit]
+            )
+            if parcels:
+                return parcels, True
+
         parcels = list(
             Parcel.objects.filter(
-                pk__in=list(cached_parcel_ids),
-                geometry__isnull=False,
-                area_acres__isnull=False,
+                geometry__isnull=False, area_acres__isnull=False
             ).order_by("parcel_number")[:limit]
         )
         if not parcels:
             raise CommandError(
-                "No parcels found that have geometry, area_acres, AND an OpenET "
-                "REST cache row. Populate the OpenET cache first (sync_all / the "
-                "OpenET adapter) so there is something to compare against."
+                "No parcels with geometry + area_acres found. Load parcel data "
+                "first (e.g. seed_demo_data)."
             )
-        return parcels
+        self.stdout.write(
+            self.style.WARNING(
+                "No OpenET REST cache rows on this DB; running GEE-only proof "
+                "(no REST baseline to compare against)."
+            )
+        )
+        return parcels, False
 
     def _rest_lookup(self, parcels):
         """Build {parcel_id: {YYYY-MM: et_mm}} from REST OpenETCache rows.
@@ -201,10 +222,14 @@ class Command(BaseCommand):
             {m for pmonths in rest_lookup.values() for m in pmonths.keys()}
         )
         if not months:
-            raise CommandError(
-                "No dated ET values in the REST cache for these parcels; pass "
-                "--start-date/--end-date explicitly."
+            # No REST baseline to derive a window from. Default to a peak-season
+            # 2-month window in a year with settled OpenET coverage; summer ET
+            # is a strong, easy-to-sanity-check signal for Kaweah crops.
+            self.stdout.write(
+                "No REST window to borrow; defaulting to 2023-06-01..2023-07-31 "
+                "(override with --start-date/--end-date)."
             )
+            return date(2023, 6, 1), date(2023, 7, 31)
         chosen = months[-2:] if len(months) >= 2 else months
         start = datetime.strptime(chosen[0], "%Y-%m").date()
         end_month = datetime.strptime(chosen[-1], "%Y-%m").date()
@@ -323,7 +348,7 @@ class Command(BaseCommand):
         self._check_settings()
         ee = self._init_earth_engine()
 
-        parcels = self._select_parcels(options["limit"])
+        parcels, _has_rest = self._select_parcels(options["limit"])
         self.stdout.write(
             f"Selected {len(parcels)} parcel(s): "
             + ", ".join(p.parcel_number for p in parcels)

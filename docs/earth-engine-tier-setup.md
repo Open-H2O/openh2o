@@ -169,10 +169,20 @@ gcloud iam service-accounts create openh2o-gee \
   --project=my-gsa-openh2o \
   --display-name="OpenH2O Earth Engine"
 
-# Grant it permission to use Earth Engine resources
+# Grant it TWO roles. Both are required:
+#   1. earthengine.viewer            — read EE data and run computations
+#   2. serviceusage.serviceUsageConsumer — permission to CALL the project's
+#                                           APIs (without this, auth succeeds
+#                                           but every Earth Engine call is
+#                                           rejected with a "does not have
+#                                           permission to use project" error)
 gcloud projects add-iam-policy-binding my-gsa-openh2o \
   --member="serviceAccount:openh2o-gee@my-gsa-openh2o.iam.gserviceaccount.com" \
   --role="roles/earthengine.viewer"
+
+gcloud projects add-iam-policy-binding my-gsa-openh2o \
+  --member="serviceAccount:openh2o-gee@my-gsa-openh2o.iam.gserviceaccount.com" \
+  --role="roles/serviceusage.serviceUsageConsumer"
 
 # Download the JSON key (this is the secret OpenH2O will use)
 gcloud iam service-accounts keys create gee-key.json \
@@ -180,7 +190,10 @@ gcloud iam service-accounts keys create gee-key.json \
 ```
 
 If you later need Earth Engine to *write* exports (a feature of the larger,
-async tier), grant `roles/earthengine.writer` instead of `viewer`.
+async tier), grant `roles/earthengine.writer` in addition to the two above.
+
+IAM changes can take a couple of minutes to take effect, so if the first auth
+attempt is rejected for permissions, wait briefly and retry.
 
 The service account's email is
 `openh2o-gee@my-gsa-openh2o.iam.gserviceaccount.com`; you will need it in step 4.
