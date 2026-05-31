@@ -41,10 +41,17 @@ def getting_started(request):
 
 
 @login_required
+def budgets_allocations(request):
+    """Explainer: how a zone water budget becomes each account's allocation."""
+    return render(request, "help/budgets_allocations.html")
+
+
+@login_required
 def glossary(request):
     """Glossary of water accounting terms used throughout the platform."""
     terms = {
-        "Water Budget": "The volume of water assigned to a use area (or zone) for a reporting period. It's the amount you're allowed to use, recorded as a positive ledger entry. Compare with Usage.",
+        "Water Budget": "The total volume of water assigned to a zone for a reporting period, set per zone, water type, and period. It is the policy ceiling for a whole area. The platform divides it into per-account Allocations. See Help > Water Budgets & Allocations.",
+        "Allocation": "A single account's share of a zone's Water Budget, pro-rated by how many parcels the account holds in the zone. Allocation minus usage gives the account's remaining water; a negative remaining is an overdraft. See Help > Water Budgets & Allocations.",
         "Usage": "Water consumed via extraction (well meters) or evapotranspiration (ET estimates), recorded as negative ledger entries.",
         "CalWATRS": "California Water Transfer Reporting System, the Water Board format for surface diversions.",
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
