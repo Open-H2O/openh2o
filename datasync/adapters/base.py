@@ -162,23 +162,34 @@ class BaseAdapter(ABC):
 
     def publish(self, sync_log):
         """Promote staged records to published and update station timestamps."""
+        from django.db.models import Max
+
         staged_qs = DataRecordStaging.objects.filter(
             data_source=sync_log.data_source,
             status="staged",
         )
         now = timezone.now()
+        # Stations that had data staged this run (capture before the update
+        # flips them out of "staged").
+        affected_station_ids = list(
+            staged_qs.values_list("station_id", flat=True).distinct()
+        )
         published_count = staged_qs.update(status="published", published_at=now)
 
-        # Update last_data_at on each station that received data
-        station_ids = (
-            DataRecordStaging.objects.filter(
-                data_source=sync_log.data_source,
-                published_at=now,
+        # Set last_data_at to the newest OBSERVATION timestamp for each affected
+        # station, not the sync clock. Freshness then reflects how recent the
+        # data actually is — a daily gauge synced hourly stays "fresh" off its
+        # latest daily reading rather than resetting on every empty re-pull.
+        for station_id in affected_station_ids:
+            latest_obs = (
+                DataRecordStaging.objects
+                .filter(station_id=station_id, status="published")
+                .aggregate(m=Max("observation_date"))["m"]
             )
-            .values_list("station_id", flat=True)
-            .distinct()
-        )
-        MonitoredStation.objects.filter(id__in=station_ids).update(last_data_at=now)
+            if latest_obs:
+                MonitoredStation.objects.filter(id=station_id).update(
+                    last_data_at=latest_obs
+                )
 
         return published_count
 

@@ -102,54 +102,95 @@ class USGSAdapter(BaseAdapter):
         return valid, rejected
 
     def discover_stations(self, boundary_geometry, radius_km=50):
-        """Discover USGS stream sites, groundwater wells, and springs."""
+        """
+        Discover USGS stream gauges and groundwater wells in the boundary.
+
+        Uses the Site Service in RDB (tab-delimited) format. The older
+        ``format=mapper`` endpoint was retired and now 404s; RDB is the stable
+        machine-readable format. We require ``hasDataTypeCd=dv`` so we only wire
+        sites that actually publish daily values, and pass a representative
+        ``parameterCd`` so we don't return gauges that lack the variable we want.
+        """
         bbox = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
         bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
 
         site_type_configs = [
-            {"siteType": "ST", "params": STREAM_PARAMS, "label": "stream"},
-            {"siteType": "GW,SP", "params": GW_PARAMS, "label": "groundwater/spring"},
+            {"siteType": "ST", "params": STREAM_PARAMS, "label": "stream",
+             "parameterCd": "00060"},
+            {"siteType": "GW", "params": GW_PARAMS, "label": "groundwater",
+             "parameterCd": "72019"},
         ]
 
         stations = []
+        seen = set()
         for config in site_type_configs:
             params = {
-                "format": "mapper",
+                "format": "rdb",
                 "bBox": bbox_str,
                 "siteType": config["siteType"],
                 "siteStatus": "active",
                 "hasDataTypeCd": "dv",
+                "parameterCd": config["parameterCd"],
             }
             try:
                 resp = self._request("GET", SITE_URL, params=params)
-                data = resp.json()
+                rows = self._parse_rdb(resp.text)
             except Exception as exc:
                 logger.warning(
                     "USGS %s discovery failed: %s", config["label"], exc
                 )
                 continue
 
-            sites = data.get("sites", data.get("value", {}).get("timeSeries", []))
-            if not isinstance(sites, list):
-                continue
-
-            for site in sites:
-                lat = site.get("latitude") or site.get("lat")
-                lon = site.get("longitude") or site.get("lng")
-                sid = site.get("site_no") or site.get("siteNumber", "")
-                name = site.get("station_nm") or site.get("siteName", "")
-                site_type = site.get("site_tp_cd", config["siteType"].split(",")[0])
-                if lat and lon and sid:
-                    stations.append({
-                        "station_id": sid,
-                        "name": name,
-                        "latitude": float(lat),
-                        "longitude": float(lon),
-                        "parameters": config["params"],
-                        "site_type": site_type,
-                    })
+            for row in rows:
+                sid = row.get("site_no", "")
+                lat = row.get("dec_lat_va", "")
+                lon = row.get("dec_long_va", "")
+                name = row.get("station_nm", "")
+                site_type = row.get("site_tp_cd", config["siteType"])
+                if not (sid and lat and lon) or sid in seen:
+                    continue
+                try:
+                    lat_f, lon_f = float(lat), float(lon)
+                except (ValueError, TypeError):
+                    continue
+                seen.add(sid)
+                stations.append({
+                    "station_id": sid,
+                    "name": name,
+                    "latitude": lat_f,
+                    "longitude": lon_f,
+                    "parameters": config["params"],
+                    "site_type": site_type,
+                })
 
         return stations
+
+    @staticmethod
+    def _parse_rdb(text):
+        """
+        Parse a USGS RDB (tab-delimited) response into a list of dict rows.
+
+        RDB files have ``#`` comment lines, then a header row of column names,
+        then a format-spec row (e.g. ``5s 15s``) which must be skipped, then
+        tab-delimited data rows.
+        """
+        import re
+        fmt_token = re.compile(r"^\d+[sndSND]$")
+        header = None
+        rows = []
+        for line in text.splitlines():
+            if not line or line.startswith("#"):
+                continue
+            fields = line.split("\t")
+            if header is None:
+                header = fields
+                continue
+            # Skip the format-spec row that follows the header (e.g. "5s\t15s\t50s").
+            nonempty = [f.strip() for f in fields if f.strip()]
+            if nonempty and all(fmt_token.match(f) for f in nonempty):
+                continue
+            rows.append(dict(zip(header, fields)))
+        return rows
 
 
 register_adapter("usgs", USGSAdapter)

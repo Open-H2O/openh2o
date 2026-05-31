@@ -244,31 +244,47 @@ docker compose exec web python manage.py collectstatic --noinput
 
 ### Scheduled Jobs
 
-Three jobs are included in `crontab.txt`:
+The jobs in `crontab.txt`:
 
 | Job | Schedule | Purpose |
 |-----|----------|---------|
-| `sync_all --mock` | Daily 2:00 AM | Sync external data sources (CDEC, USGS, CIMIS, etc.) |
+| `run-sync.sh cdec usgs` | Hourly | Live stream / reservoir telemetry (near-real-time flow & stage) |
+| `run-sync.sh cimis cnrfc dwr_wdl dwr_sgma noaa openet` | Daily 2:00 AM | Slower sources — ET, groundwater, river forecasts, climate |
 | `run_health_checks` | Every 6 hours | Check database, disk, SSL, migrations, sync freshness |
 | `prune_old_data --confirm` | 1st of month 3:00 AM | Delete old staging records and sync logs |
 
-Install the crontab (appends to existing entries, preserves any other cron jobs):
+`scripts/run-sync.sh` is a resilient wrapper: it runs `docker compose up -d`
+first (a no-op if the stack is already running, but it revives the container if
+an unattended-upgrade reboot left it stopped — the original cause of silent
+sync failures), logs to `$OPENH2O_LOG_DIR` (default `/home/butler/openh2o-logs`),
+and pings ntfy if any source errors.
+
+Install the crontab. **Note:** `make install-cron` *appends*; if you are
+replacing older OpenH2O cron lines, edit `crontab -e` and remove the old
+entries first so you don't run two schedules.
 
 ```bash
 make install-cron
-# or manually:
-(crontab -l 2>/dev/null; cat crontab.txt) | crontab -
-```
-
-Verify the entries were added:
-
-```bash
+# verify:
 make show-cron
-# or: crontab -l | grep openh2o
 ```
 
-Edit `crontab.txt` to adjust the deployment path (default: `/opt/openh2o`) before installing.
-Remove `--mock` from the `sync_all` entry once real API keys are configured in `.env`.
+Edit `crontab.txt` to adjust `OPENH2O_DIR` if your deployment path differs from
+`/home/butler/openh2o`.
+
+### External Data API Keys
+
+CDEC, USGS, CNRFC and the DWR sources are public and need no credentials. Three
+sources require a key, set in `.env` (then `docker compose up -d` to reload):
+
+| Source | `.env` variable | Get a key from |
+|--------|-----------------|----------------|
+| CIMIS | `CIMIS_API_KEY` | https://cimis.water.ca.gov (register → App Key) |
+| NOAA | `NOAA_CDO_TOKEN` | https://www.ncdc.noaa.gov/cdo-web/token |
+| OpenET | `OPENET_API_KEY` | https://etdata.org (account → API key) |
+
+Until a key is set, that source shows **"Needs API key"** on the monitoring
+page rather than a misleading failure, and is skipped by the sync.
 
 ### Health Checks
 
@@ -306,11 +322,14 @@ Sync external data (CDEC, USGS, CIMIS, etc.) manually:
 
 ```bash
 docker compose exec web python manage.py sync_all
+# Or sync one source:
+docker compose exec web python manage.py sync_source cdec
 # Or: make sync
 ```
 
-Note: `sync_all` runs in mock mode in `crontab.txt` until real API keys are configured.
-Remove `--mock` from `crontab.txt` when ready.
+Sync runs against the live public APIs. Sources needing a key (CIMIS, NOAA,
+OpenET) are skipped until their key is set in `.env` — see "External Data API
+Keys" above.
 
 ### Running Tests
 

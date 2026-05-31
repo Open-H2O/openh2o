@@ -179,6 +179,12 @@
               <option value="{{ p.code }}">{{ p.label }}</option>
               {% endfor %}
             </select>
+            <select id="chart-param2" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;" title="Overlay a second parameter on the right-hand axis">
+              <option value="">Compare…</option>
+              {% for p in enriched_parameters %}
+              <option value="{{ p.code }}">{{ p.label }}</option>
+              {% endfor %}
+            </select>
             {% endif %}
             <div style="display: flex; gap: 2px;">
               <button class="chart-range-btn" data-days="7" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 4px 0 0 4px; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">7d</button>
@@ -255,42 +261,42 @@
   Chart.defaults.borderColor = 'rgba(100,140,180,0.07)';
 
   var freshness = '{{ station_freshness }}';
-  var lineColor = freshness === 'fresh' ? '#22c55e' : freshness === 'stale' ? '#f59e0b' : '#ef4444';
+  var primaryColor = freshness === 'fresh' ? '#22c55e' : freshness === 'stale' ? '#f59e0b' : '#ef4444';
+  var compareColor = '#1B7FAF'; // Pacific blue for the second (compare) series
   var chartDataUrl = '{{ chart_data_url }}';
 
   var canvas = document.getElementById('telemetry-chart');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
 
-  // Build gradient from line color
   function hexToRgba(hex, alpha) {
     var r = parseInt(hex.slice(1, 3), 16);
     var g = parseInt(hex.slice(3, 5), 16);
     var b = parseInt(hex.slice(5, 7), 16);
     return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
   }
-  gradient = ctx.createLinearGradient(0, 0, 0, 220);
-  gradient.addColorStop(0, hexToRgba(lineColor, 0.20));
-  gradient.addColorStop(1, hexToRgba(lineColor, 0.00));
+  var gradient = ctx.createLinearGradient(0, 0, 0, 220);
+  gradient.addColorStop(0, hexToRgba(primaryColor, 0.20));
+  gradient.addColorStop(1, hexToRgba(primaryColor, 0.00));
 
   var chart = new Chart(ctx, {
     type: 'line',
-    data: { labels: [], datasets: [{ label: '', data: [], borderColor: lineColor, backgroundColor: gradient, borderWidth: 2, pointRadius: 2, pointHoverRadius: 4, tension: 0.3, fill: true }] },
+    data: { labels: [], datasets: [] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
-          mode: 'index',
-          intersect: false,
           callbacks: {
             label: function(context) {
-              var unit = chart.options.scales.y.title.text || '';
+              var ds = context.dataset || {};
               var val = context.parsed.y;
               if (val === null || val === undefined) return '';
               var formatted = val.toLocaleString(undefined, { maximumFractionDigits: 2 });
-              return unit ? (formatted + ' ' + unit) : formatted;
+              var unit = ds._unit || '';
+              return (ds.label || '') + ': ' + (unit ? (formatted + ' ' + unit) : formatted);
             }
           }
         }
@@ -298,74 +304,113 @@
       scales: {
         x: { grid: { color: 'rgba(100,140,180,0.07)' }, ticks: { maxTicksLimit: 8, color: '#8899aa', font: { size: 11 } } },
         y: {
+          position: 'left',
           grid: { color: 'rgba(100,140,180,0.07)' },
           ticks: { color: '#8899aa', font: { size: 11 } },
-          title: { display: false, text: '', color: '#8899aa', font: { size: 11, family: "'Public Sans', sans-serif" } }
+          title: { display: false, text: '', color: primaryColor, font: { size: 11, family: "'Public Sans', sans-serif" } }
+        },
+        y1: {
+          position: 'right',
+          display: false,
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#8899aa', font: { size: 11 } },
+          title: { display: false, text: '', color: compareColor, font: { size: 11, family: "'Public Sans', sans-serif" } }
         }
       }
     }
   });
 
+  // Style helpers for one dataset.
+  function styleDataset(d, isSecondary) {
+    var color = isSecondary ? compareColor : primaryColor;
+    return {
+      label: d.label,
+      data: d.data,
+      _unit: d.unit || '',
+      yAxisID: d.axis || (isSecondary ? 'y1' : 'y'),
+      borderColor: color,
+      backgroundColor: isSecondary ? hexToRgba(color, 0.0) : gradient,
+      borderWidth: 2,
+      pointRadius: 2,
+      pointHoverRadius: 4,
+      tension: 0.3,
+      fill: !isSecondary,
+      spanGaps: true
+    };
+  }
+
+  // Rebuild a <select>'s options from the server's stable parameter list,
+  // preserving the chosen value. Keeps the dropdown from ever desyncing or
+  // emptying when the time range changes.
+  function syncSelect(sel, params, selected, includeNone) {
+    if (!sel) return;
+    var want = selected || '';
+    sel.innerHTML = '';
+    if (includeNone) {
+      var opt0 = document.createElement('option');
+      opt0.value = ''; opt0.text = 'Compare…';
+      sel.appendChild(opt0);
+    }
+    params.forEach(function(p) {
+      var o = document.createElement('option');
+      o.value = p.code; o.text = p.label || p.name;
+      sel.appendChild(o);
+    });
+    sel.value = want;
+  }
+
   var currentDays = 0;
   var currentParam = null;
+  var currentParam2 = '';
 
-  function loadChart(param, days) {
-    var url = chartDataUrl + '?days=' + days;
-    if (param) url += '&parameter=' + encodeURIComponent(param);
+  function loadChart() {
+    var url = chartDataUrl + '?days=' + currentDays;
+    if (currentParam) url += '&parameter=' + encodeURIComponent(currentParam);
+    if (currentParam2) url += '&parameter2=' + encodeURIComponent(currentParam2);
     fetch(url)
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        // Update param selector labels if we have metadata
-        if (data.parameters && data.parameters.length) {
-          var sel = document.getElementById('chart-param');
-          if (sel && sel.options.length === data.parameters.length) {
-            data.parameters.forEach(function(p, i) {
-              sel.options[i].text = p.label || p.name;
-              sel.options[i].value = p.code;
-            });
-          }
-          currentParam = data.selected_parameter;
-          if (sel) sel.value = currentParam || '';
-        }
+        var params = data.parameters || [];
+        currentParam = data.selected_parameter || null;
+        currentParam2 = data.selected_parameter2 || '';
+        syncSelect(document.getElementById('chart-param'), params, currentParam, false);
+        syncSelect(document.getElementById('chart-param2'), params, currentParam2, true);
 
-        // Update chart title and Y-axis unit from selected parameter metadata
-        var paramMeta = data.parameters && data.selected_parameter
-          ? data.parameters.find(function(p) { return p.code === data.selected_parameter; })
-          : null;
+        var primaryMeta = params.find(function(p) { return p.code === currentParam; });
         var titleEl = document.getElementById('chart-title');
-        if (paramMeta) {
-          if (titleEl) titleEl.textContent = paramMeta.label || paramMeta.name || 'Telemetry';
-          chart.options.scales.y.title.text = paramMeta.unit || '';
-          chart.options.scales.y.title.display = !!(paramMeta.unit);
-        } else {
-          if (titleEl) titleEl.textContent = 'Telemetry';
-          chart.options.scales.y.title.display = false;
-        }
+        if (titleEl) titleEl.textContent = primaryMeta ? (primaryMeta.label || primaryMeta.name) : 'Telemetry';
+
+        // Y axis titles / units.
+        chart.options.scales.y.title.text = primaryMeta ? (primaryMeta.unit || '') : '';
+        chart.options.scales.y.title.display = !!(primaryMeta && primaryMeta.unit);
+        var ds2 = (data.datasets || [])[1];
+        chart.options.scales.y1.display = !!ds2;
+        chart.options.scales.y1.title.text = ds2 ? (ds2.unit || '') : '';
+        chart.options.scales.y1.title.display = !!(ds2 && ds2.unit);
+        chart.options.plugins.legend.display = !!ds2; // show legend only when comparing
 
         var empty = document.getElementById('chart-empty');
-        if (!data.labels || !data.labels.length) {
-          chart.data.labels = [];
-          chart.data.datasets[0].data = [];
-          chart.data.datasets[0].label = '';
-          chart.update();
-          if (empty) empty.style.display = '';
-        } else {
-          if (empty) empty.style.display = 'none';
-          chart.data.labels = data.labels;
-          chart.data.datasets[0].data = data.datasets[0] ? data.datasets[0].data : [];
-          chart.data.datasets[0].label = data.datasets[0] ? data.datasets[0].label : '';
-          chart.update();
-        }
+        var hasData = data.labels && data.labels.length &&
+          (data.datasets || []).some(function(d) {
+            return d.data.some(function(v) { return v !== null && v !== undefined; });
+          });
+
+        chart.data.labels = data.labels || [];
+        chart.data.datasets = (data.datasets || []).map(function(d, i) {
+          return styleDataset(d, i === 1);
+        });
+        chart.update();
+        if (empty) empty.style.display = hasData ? 'none' : '';
       })
       .catch(function(err) { console.error('Chart data load failed:', err); });
   }
 
-  // Initial load
+  // Initial selection from the server-rendered dropdown.
   var paramSel = document.getElementById('chart-param');
   currentParam = paramSel ? paramSel.value : null;
-  loadChart(currentParam, currentDays);
+  loadChart();
 
-  // Range buttons
+  // Range buttons.
   document.querySelectorAll('.chart-range-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       currentDays = parseInt(this.dataset.days, 10);
@@ -378,23 +423,30 @@
       this.classList.add('active-range');
       this.style.background = 'rgba(100,140,180,0.15)';
       this.style.color = 'var(--color-text-primary)';
-      loadChart(currentParam, currentDays);
+      loadChart();
     });
   });
 
-  // Parameter selector
+  // Primary + compare selectors.
   if (paramSel) {
-    paramSel.addEventListener('change', function() {
-      currentParam = this.value;
-      loadChart(currentParam, currentDays);
-    });
+    paramSel.addEventListener('change', function() { currentParam = this.value; loadChart(); });
+  }
+  var paramSel2 = document.getElementById('chart-param2');
+  if (paramSel2) {
+    paramSel2.addEventListener('change', function() { currentParam2 = this.value; loadChart(); });
   }
 
-  // Style the first range button as active
-  var firstBtn = document.querySelector('.chart-range-btn[data-days="7"]');
-  if (firstBtn) {
-    firstBtn.style.background = 'rgba(100,140,180,0.15)';
-    firstBtn.style.color = 'var(--color-text-primary)';
+  // Highlight the range button matching the default range (All = 0 days).
+  document.querySelectorAll('.chart-range-btn').forEach(function(b) {
+    b.classList.remove('active-range');
+    b.style.background = 'var(--color-elevated)';
+    b.style.color = 'var(--color-text-secondary)';
+  });
+  var activeBtn = document.querySelector('.chart-range-btn[data-days="' + currentDays + '"]');
+  if (activeBtn) {
+    activeBtn.classList.add('active-range');
+    activeBtn.style.background = 'rgba(100,140,180,0.15)';
+    activeBtn.style.color = 'var(--color-text-primary)';
   }
 })();
 </script>
