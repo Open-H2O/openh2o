@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ pod.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ pod.name }}{% endblock %}
@@ -18,6 +19,7 @@
 
 {% block map_styles %}
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -175,6 +177,7 @@
 
 {% block map_scripts %}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
 <script>
 (function() {
   var geojson = {% if pod_geojson %}{{ pod_geojson|safe }}{% else %}null{% endif %};
@@ -186,34 +189,18 @@
 
   var map = new maplibregl.Map({
     container: 'pod-map',
-    style: {
-      version: 8, sources: {
-        'esri-aerial': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 19 },
-        'esri-labels': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 19 }
-      },
-      layers: [
-        { id: 'aerial-tiles', type: 'raster', source: 'esri-aerial' },
-        { id: 'aerial-labels', type: 'raster', source: 'esri-labels', paint: { 'raster-opacity': 0.7 } }
-      ]
-    },
+    style: OH2O.basemapStyle('aerial'),
     center: defaultCenter,
     zoom: 13
   });
 
   map.on('load', function() {
+    map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+    OH2O.mountBasemapToggle(map, 'aerial');
     if (geojson) {
       map.addSource('pod', { type: 'geojson', data: geojson });
-      map.addLayer({
-        id: 'pod-point',
-        type: 'circle',
-        source: 'pod',
-        paint: {
-          'circle-radius': 9,
-          'circle-color': OH2O.colors.teal,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
-        }
-      });
+      map.addLayer({ id: 'pod-glow', type: 'circle', source: 'pod', paint: OH2O.glowPaint('pod') });
+      map.addLayer({ id: 'pod-point', type: 'circle', source: 'pod', paint: OH2O.pointPaint('pod', { 'circle-stroke-width': 2 }) });
     } else {
       var el = document.createElement('div');
       el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d5e6f;font-size:0.875rem;pointer-events:none;';

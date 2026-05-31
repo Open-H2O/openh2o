@@ -1,14 +1,17 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Monitoring Stations - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Monitoring Stations{% endblock %}
 
 {% block map_styles %}
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
 {% endblock %}
 
 {% block map_scripts %}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
 {% endblock %}
 
 {% block breadcrumbs %}
