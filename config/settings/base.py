@@ -201,3 +201,6 @@ if _google_client_id and _google_client_secret:
             "AUTH_PARAMS": {"access_type": "online"},
         }
     }
+
+# One-click Google sign-in: skip allauth intermediate confirm page
+SOCIALACCOUNT_LOGIN_ON_GET = True
