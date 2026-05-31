@@ -35,5 +35,11 @@
     <p class="text-sm text-center text-secondary">
         Already have an account? <a href="{% url 'account_login' %}" class="text-blue">Log in</a>
     </p>
+    {% if site_config and site_config.allow_google_oauth %}
+    <div class="border-separator pt-sm" style="margin-top: var(--space-md);">
+    {% load socialaccount %}
+    <a href="{% provider_login_url 'google' %}" class="btn-secondary w-full">Continue with Google</a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

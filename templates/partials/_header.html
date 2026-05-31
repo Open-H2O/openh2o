@@ -19,8 +19,7 @@
     <!-- User menu -->
     <div class="app-header-user">
         {% if user.is_authenticated %}
-            <span class="app-header-email">{{ user.email }}</span>
-            <a href="{% url 'account_change_password' %}" class="btn-secondary btn-sm">Change Password</a>
+            <a href="{% url 'profile' %}" class="app-header-email">{{ user.email }}</a>
             <a href="{% url 'account_logout' %}" class="btn-secondary btn-sm">Sign Out</a>
         {% else %}
             <a href="{% url 'account_login' %}" class="btn-primary btn-sm">Log In</a>

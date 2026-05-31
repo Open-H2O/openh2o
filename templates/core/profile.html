@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Your Profile — OpenH2O{% endblock %}
+{% block page_title %}Your Profile{% endblock %}
+{% block content %}
+<div class="page-narrow">
+
+    <div class="card-raised">
+        <h2 class="section-header">Profile</h2>
+        <p class="text-sm text-secondary mb-md">
+            Your contact details. Signed in as <strong>{{ user.email }}</strong>.
+        </p>
+
+        {% if form.non_field_errors %}
+        <div class="form-error-box mb-md">
+            <p class="text-sm text-furnace">{{ form.non_field_errors|striptags }}</p>
+        </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}<p class="text-sm text-furnace">{{ form.first_name.errors|striptags }}</p>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}<p class="text-sm text-furnace">{{ form.last_name.errors|striptags }}</p>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.title.id_for_label }}">Title</label>
+                {{ form.title }}
+                {% if form.title.errors %}<p class="text-sm text-furnace">{{ form.title.errors|striptags }}</p>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.phone.id_for_label }}">Phone</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}<p class="text-sm text-furnace">{{ form.phone.errors|striptags }}</p>{% endif %}
+            </div>
+            <button type="submit" class="btn-primary">Save Changes</button>
+        </form>
+    </div>
+
+    <div class="card-raised" style="margin-top: var(--space-lg);">
+        <h2 class="section-header">Sign-in &amp; Security</h2>
+        <p class="text-sm text-secondary mb-md">
+            Your email address and password are managed on their own pages so
+            sign-in stays consistent.
+        </p>
+        <div class="row-start" style="gap: var(--space-sm); flex-wrap: wrap;">
+            <a href="{% url 'account_email' %}" class="btn-secondary">Manage Email</a>
+            <a href="{% url 'account_change_password' %}" class="btn-secondary">Change Password</a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
