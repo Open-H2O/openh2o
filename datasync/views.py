@@ -12,6 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from datasync import freshness
 from datasync.adapters.registry import get_parameter_label
 from datasync.models import (
     DataRecordStaging,
