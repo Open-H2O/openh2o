@@ -111,8 +111,12 @@ class USGSAdapter(BaseAdapter):
         sites that actually publish daily values, and pass a representative
         ``parameterCd`` so we don't return gauges that lack the variable we want.
         """
-        bbox = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
-        bbox_str = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
+        # Expand the boundary box by the search radius (USGS wants a bBox, and a
+        # small GSA boundary often contains no active daily gauges on its own).
+        # ~111 km per degree of latitude; widen lon by the same rough amount.
+        deg = max(radius_km, 1) / 111.0
+        x0, y0, x1, y1 = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
+        bbox_str = f"{x0 - deg:.4f},{y0 - deg:.4f},{x1 + deg:.4f},{y1 + deg:.4f}"
 
         site_type_configs = [
             {"siteType": "ST", "params": STREAM_PARAMS, "label": "stream",
