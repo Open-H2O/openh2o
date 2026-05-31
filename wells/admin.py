@@ -28,8 +28,11 @@ class WellAdmin(admin.ModelAdmin):
         }),
         ("Construction", {
             "fields": ("depth_ft", "casing_diameter_in", "casing_material",
-                       "screen_top_ft", "screen_bottom_ft", "tested_yield_gpm",
-                       "pump_type"),
+                       "screen_top_ft", "screen_bottom_ft", "vertical_datum",
+                       "tested_yield_gpm", "pump_type"),
+        }),
+        ("Standards / Cross-walk", {
+            "fields": ("usgs_site_id", "wqx_monitoring_location_id"),
         }),
         ("Location", {"fields": ("location",)}),
         ("Notes", {"fields": ("notes",)}),

@@ -31,6 +31,19 @@ class MonitoredStation(models.Model):
     external_station_id = models.CharField(max_length=100)
     station_name = models.CharField(max_length=200)
     location = models.PointField(srid=4326)
+    # Partner cross-walk identifiers — the same station seen in the federal/
+    # state systems, so a self-published series can line up with theirs.
+    usgs_site_id = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="USGS NWIS site number (waterdata.usgs.gov), if this station "
+        "is also a USGS site.",
+    )
+    wqx_monitoring_location_id = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="EPA WQX MonitoringLocationIdentifier (Water Quality Portal).",
+    )
     parameters = models.JSONField(default=list, blank=True)
     is_active = models.BooleanField(default=True)
     last_data_at = models.DateTimeField(null=True, blank=True)

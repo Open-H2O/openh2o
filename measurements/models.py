@@ -1,6 +1,15 @@
 from django.conf import settings
 from django.contrib.gis.db import models
 
+# Observation quality/status, following SensorThings + USGS semantics. Freshly
+# synced or hand-entered data is "provisional" until a later workflow promotes
+# it to "approved"; "estimated" marks values derived/filled rather than measured.
+QUALITY_CHOICES = [
+    ("provisional", "Provisional"),
+    ("approved", "Approved"),
+    ("estimated", "Estimated"),
+]
+
 
 class Meter(models.Model):
     METER_TYPE_CHOICES = [
@@ -55,6 +64,13 @@ class MeterReading(models.Model):
     calculated_volume = models.DecimalField(
         max_digits=12, decimal_places=4, null=True, blank=True
     )
+    quality = models.CharField(
+        max_length=20,
+        choices=QUALITY_CHOICES,
+        default="provisional",
+        help_text="Observation quality/status (SensorThings/USGS). Defaults to "
+        "provisional until a review workflow approves it.",
+    )
     read_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -105,6 +121,13 @@ class SensorMeasurement(models.Model):
     measurement_date = models.DateTimeField()
     value = models.DecimalField(max_digits=14, decimal_places=4)
     unit = models.CharField(max_length=20)
+    quality = models.CharField(
+        max_length=20,
+        choices=QUALITY_CHOICES,
+        default="provisional",
+        help_text="Observation quality/status (SensorThings/USGS). Defaults to "
+        "provisional until a review workflow approves it.",
+    )
     is_anomalous = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

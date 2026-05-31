@@ -7,6 +7,19 @@ class Boundary(models.Model):
     description = models.TextField(blank=True)
     geometry = gis_models.MultiPolygonField(srid=4326)
     area_sq_miles = models.FloatField(null=True, blank=True)
+    # DWR Bulletin 118 basin/subbasin identity — the basin code WaDE and AB1755
+    # expect for cross-agency reconciliation.
+    basin_code = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text='DWR Bulletin 118 basin/subbasin number, e.g. "5-022.11" '
+        "(Kaweah). The basin identity WaDE/AB1755 expect.",
+    )
+    huc = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Optional USGS Hydrologic Unit Code (HUC) for the area.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -29,6 +42,12 @@ class Zone(models.Model):
     description = models.TextField(blank=True)
     geometry = gis_models.MultiPolygonField(srid=4326)
     zone_type = models.CharField(max_length=50, blank=True, choices=ZONE_TYPE_CHOICES)
+    # A zone may map to one specific DWR Bulletin 118 subbasin.
+    basin_code = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text='DWR Bulletin 118 subbasin number this zone maps to, e.g. "5-022.11".',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -15,6 +15,15 @@ PUMP_TYPE_CHOICES = [
     ("other", "Other"),
 ]
 
+# Vertical datum a depth/elevation is referenced to. A water-level "elevation"
+# is meaningless without it. NAVD88 is the modern North American standard;
+# NGVD29 is the legacy datum many older well records still use. Defined once
+# here and reused by both Well and MonitoringWell.
+VERTICAL_DATUM_CHOICES = [
+    ("NAVD88", "NAVD88"),
+    ("NGVD29", "NGVD29"),
+]
+
 
 class WellType(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -62,6 +71,30 @@ class Well(models.Model):
     state_well_number = models.CharField(
         max_length=50, blank=True
     )  # State Well Number (Township/Range/Section)
+
+    # Partner cross-walk identifiers — let a self-published feature line up with
+    # the federal/state monitoring systems it also appears in.
+    usgs_site_id = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="USGS NWIS site number (waterdata.usgs.gov), if this well is "
+        "also a USGS monitoring site.",
+    )
+    wqx_monitoring_location_id = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="EPA WQX MonitoringLocationIdentifier (Water Quality Portal).",
+    )
+
+    # Vertical datum for screen-interval depths, so they can be expressed as
+    # elevations for the Phase 32 SensorThings FeatureOfInterest.
+    vertical_datum = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=VERTICAL_DATUM_CHOICES,
+        help_text="Vertical datum (NAVD88 / NGVD29) the screen-interval depths "
+        "reference. Required to express depths as elevations.",
+    )
 
     # Construction (DWR Well Completion Report, Form 188)
     casing_diameter_in = models.DecimalField(
@@ -123,6 +156,14 @@ class MonitoringWell(models.Model):
     measurement_frequency = models.CharField(max_length=50, blank=True)
     reference_elevation_ft = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    # The datum reference_elevation_ft is measured against. Without it the
+    # elevation is ambiguous, so the datum belongs right here beside it.
+    vertical_datum = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=VERTICAL_DATUM_CHOICES,
+        help_text="Vertical datum (NAVD88 / NGVD29) for reference_elevation_ft.",
     )
     notes = models.TextField(blank=True)
 
