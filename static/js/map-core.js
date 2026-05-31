@@ -170,4 +170,34 @@ OH2O.switchBasemap = function (map, mode) {
     return mode;
 };
 
+/* Inject a compact Dark/Aerial basemap toggle into a map's own container.
+   Used by detail mini-maps so every map shares one toggle implementation. */
+var _ICON_DARK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>';
+var _ICON_AERIAL = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+
+OH2O.mountBasemapToggle = function (map, mode) {
+    mode = mode || 'aerial';
+    var host = map.getContainer();
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'position:absolute;top:10px;left:10px;z-index:5;';
+    var group = document.createElement('div');
+    group.className = 'tb-group';
+    var bDark = document.createElement('button');
+    bDark.className = 'tb-btn' + (mode === 'dark' ? ' active' : '');
+    bDark.type = 'button'; bDark.innerHTML = _ICON_DARK + ' Dark';
+    var bAerial = document.createElement('button');
+    bAerial.className = 'tb-btn' + (mode === 'aerial' ? ' active' : '');
+    bAerial.type = 'button'; bAerial.innerHTML = _ICON_AERIAL + ' Aerial';
+    group.appendChild(bDark); group.appendChild(bAerial);
+    bar.appendChild(group); host.appendChild(bar);
+    bDark.addEventListener('click', function () {
+        OH2O.switchBasemap(map, 'dark'); bDark.classList.add('active'); bAerial.classList.remove('active');
+    });
+    bAerial.addEventListener('click', function () {
+        OH2O.switchBasemap(map, 'aerial'); bAerial.classList.add('active'); bDark.classList.remove('active');
+    });
+    return bar;
+};
+
 })();

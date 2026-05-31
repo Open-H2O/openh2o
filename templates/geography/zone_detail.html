@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ zone.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ zone.name }}{% endblock %}
@@ -17,6 +18,7 @@
 
 {% block map_styles %}
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -132,6 +134,7 @@
 
 {% block map_scripts %}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
 <script>
 (function() {
   var geojson = {% if zone_geojson %}{{ zone_geojson|safe }}{% else %}null{% endif %};
@@ -141,21 +144,14 @@
 
   var map = new maplibregl.Map({
     container: 'zone-map',
-    style: {
-      version: 8, sources: {
-        'esri-aerial': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 19 },
-        'esri-labels': { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 19 }
-      },
-      layers: [
-        { id: 'aerial-tiles', type: 'raster', source: 'esri-aerial' },
-        { id: 'aerial-labels', type: 'raster', source: 'esri-labels', paint: { 'raster-opacity': 0.7 } }
-      ]
-    },
+    style: OH2O.basemapStyle('aerial'),
     center: defaultCenter,
     zoom: defaultZoom
   });
 
   map.on('load', function() {
+    map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+    OH2O.mountBasemapToggle(map, 'aerial');
     if (geojson) {
       map.addSource('zone', { type: 'geojson', data: geojson });
       map.addLayer({
