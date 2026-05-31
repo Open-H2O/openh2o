@@ -3,6 +3,16 @@
 {% block title %}Monitoring Dashboard - OpenH2O{% endblock %}
 {% block page_title %}Monitoring Dashboard{% endblock %}
 
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+{% load static %}<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -13,7 +23,7 @@
     <span class="breadcrumb-current">Monitoring Dashboard</span>
   </nav>
   <p class="page-description">Station health, data freshness, and sync status across all active data sources. Refreshes every 60 seconds.</p>
-  {% if boundary_name %}<p class="text-secondary text-sm" style="margin-top: 0;">Showing stations within {{ boundary_name }}</p>{% endif %}
+  {% if boundary_name %}<p class="text-secondary text-sm" style="margin-top: 0;">{{ boundary_name }} &mdash; including reservoirs and upstream gauges outside the agency boundary.</p>{% endif %}
 </div>
 {% endblock %}
 
