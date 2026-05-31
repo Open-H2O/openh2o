@@ -322,11 +322,13 @@ def monitoring_dashboard(request):
 
     boundary = Boundary.objects.first()
 
+    # Show ALL active monitored stations, not only those inside the GSA polygon.
+    # Agencies legitimately track reservoirs and upstream river gauges that sit
+    # outside their own boundary (e.g. the dam that feeds them), so geo-filtering
+    # the monitoring view just hides relevant stations.
     active_stations = MonitoredStation.objects.filter(
         is_active=True
     ).select_related("data_source").order_by("data_source__code", "station_name")
-    if boundary:
-        active_stations = active_stations.filter(location__within=boundary.geometry)
 
     fresh_count = sum(
         1 for s in active_stations
@@ -335,8 +337,8 @@ def monitoring_dashboard(request):
     total_active = active_stations.count()
     stale_count = total_active - fresh_count
 
-    # Per-source status (boundary-scoped), source-aware freshness
-    source_status_list = _build_source_status(boundary, now)
+    # Per-source status, source-aware freshness (not boundary-scoped — see above)
+    source_status_list = _build_source_status(None, now)
 
     # Sparkline data: last 10 DataRecordStaging per active station
     station_ids = list(active_stations.values_list("pk", flat=True))
