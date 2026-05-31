@@ -59,6 +59,19 @@ SOURCE_BLURBS = {
     "openet": "OpenET — monthly satellite evapotranspiration estimates (needs an API key).",
 }
 
+# Short display labels for the source chips — proper acronym casing rather than
+# the lowercase internal code. Falls back to code.upper() for anything unlisted.
+SOURCE_DISPLAY = {
+    "cdec": "CDEC",
+    "usgs": "USGS",
+    "cimis": "CIMIS",
+    "cnrfc": "CNRFC",
+    "noaa": "NOAA",
+    "dwr_wdl": "DWR-WDL",
+    "dwr_sgma": "DWR-SGMA",
+    "openet": "OpenET",
+}
+
 # Human-readable status label + the freshness colour family each status maps to.
 STATUS_META = {
     "healthy": {"label": "Healthy", "tone": "fresh"},
@@ -87,6 +100,11 @@ def credential_missing(source_code):
 def source_blurb(source_code):
     """Plain-English description of a source, or empty string."""
     return SOURCE_BLURBS.get(source_code, "")
+
+
+def source_display(source_code):
+    """Proper-cased short label for a source (e.g. 'USGS', 'OpenET')."""
+    return SOURCE_DISPLAY.get(source_code, (source_code or "").upper())
 
 
 def classify_freshness(source_code, last_data_at, now=None):
