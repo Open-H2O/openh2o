@@ -30,6 +30,15 @@ EE_COLLECTION = "projects/openet/assets/ensemble/conus/gridmet/monthly/v2_1"
 EE_BAND = "et_ensemble_mad"
 EE_SCALE = 30  # OpenET native resolution (m). Polygon mean, not centroid point.
 
+# GRIDMET precipitation. The OpenET ensemble above is BUILT on gridmet, but the
+# ensemble collection carries only ET bands — raw precip lives in the source
+# GRIDMET collection, and its `pr` band is DAILY mm. So the precip path sums each
+# month's daily images into one monthly image before reducing (see
+# reduce_precip_by_parcel); it is NOT a band swap on the ET path.
+GRIDMET_COLLECTION = "IDAHO_EPSCOR/GRIDMET"
+GRIDMET_BAND = "pr"  # daily precipitation amount, mm
+GRIDMET_SCALE = 4638  # GRIDMET native grid (~4.6 km). Sampling finer wastes compute.
+
 
 def _first_of_month(d):
     return date(d.year, d.month, 1)
@@ -97,16 +106,18 @@ def init_earth_engine():
     return ee
 
 
-def reduce_et_by_parcel(ee, parcels, start, end):
-    """Batched polygon ``reduceRegions`` over the OpenET Ensemble monthly images.
+def _reduce_images_by_parcel(ee, parcels, monthly_images, scale):
+    """Run one ``reduceRegions(mean)`` per monthly image over all parcels at once.
 
-    Builds ONE ``FeatureCollection`` of all parcels (each tagged with its pk),
-    then runs ONE ``reduceRegions(mean)`` per monthly image in the window. This
-    batching is the entire reason the GEE tier exists: a district with thousands
-    of parcels gets all of them reduced in a handful of compute calls instead of
-    one REST query per parcel.
+    This is the shared mechanic behind both faucets. ``monthly_images`` is an
+    ordered list of ``(month_key, ee.Image)`` where each image is already reduced
+    to the single band we want sampled. Builds ONE ``FeatureCollection`` of all
+    parcels (each tagged with its pk) and reduces every image against it — the
+    batching that is the entire reason the GEE tier exists: a district with
+    thousands of parcels is reduced in a handful of compute calls, not one query
+    per parcel.
 
-    Returns ``{parcel_id: {"YYYY-MM": et_mm}}``. ET is in millimeters.
+    Returns ``{parcel_id: {"YYYY-MM": value}}`` (value in the image's units).
     """
     features = []
     for parcel in parcels:
@@ -116,6 +127,29 @@ def reduce_et_by_parcel(ee, parcels, start, end):
         )
     fc = ee.FeatureCollection(features)
 
+    result = defaultdict(dict)
+    for month_key, img in monthly_images:
+        # Single-band image + Reducer.mean() -> output property is "mean".
+        reduced = img.reduceRegions(
+            collection=fc,
+            reducer=ee.Reducer.mean(),
+            scale=scale,
+        ).getInfo()
+        for feat in reduced.get("features", []):
+            props = feat.get("properties", {})
+            pid = props.get("parcel_id")
+            mean = props.get("mean")
+            if pid is not None and mean is not None:
+                result[pid][month_key] = mean
+    return result
+
+
+def reduce_et_by_parcel(ee, parcels, start, end):
+    """Batched polygon ET reduce over the OpenET Ensemble monthly images.
+
+    The ensemble collection is already monthly, so each image maps to one month.
+    Returns ``{parcel_id: {"YYYY-MM": et_mm}}``. ET is in millimeters.
+    """
     filter_start = _first_of_month(start).isoformat()
     filter_end = _first_of_next_month(end).isoformat()  # exclusive
     ic = (
@@ -133,24 +167,50 @@ def reduce_et_by_parcel(ee, parcels, start, end):
             "coverage."
         )
 
-    result = defaultdict(dict)
+    monthly_images = []
     for i in range(count):
         img = ee.Image(image_list.get(i))
         month_key = ee.Date(img.get("system:time_start")).format(
             "YYYY-MM"
         ).getInfo()
-        reduced = img.reduceRegions(
-            collection=fc,
-            reducer=ee.Reducer.mean(),
-            scale=EE_SCALE,
-        ).getInfo()
-        for feat in reduced.get("features", []):
-            props = feat.get("properties", {})
-            pid = props.get("parcel_id")
-            mean = props.get("mean")
-            if pid is not None and mean is not None:
-                result[pid][month_key] = mean
-    return result
+        monthly_images.append((month_key, img))
+
+    return _reduce_images_by_parcel(ee, parcels, monthly_images, EE_SCALE)
+
+
+def reduce_precip_by_parcel(ee, parcels, start, end):
+    """Batched polygon precipitation reduce over GRIDMET.
+
+    GRIDMET ``pr`` is DAILY mm, so for each month in the window we filter that
+    month's daily images and ``.sum()`` them into one monthly precip image, then
+    reduce all months over all parcels via the shared mechanic. Months are walked
+    in Python (deterministic ``YYYY-MM`` keys, no reliance on EE date formatting).
+
+    Returns ``{parcel_id: {"YYYY-MM": precip_mm}}``. Precip is in millimeters.
+    """
+    monthly_images = []
+    cursor = _first_of_month(start)
+    last = _first_of_month(end)
+    while cursor <= last:
+        nxt = _first_of_next_month(cursor)
+        month_key = cursor.strftime("%Y-%m")
+        daily = (
+            ee.ImageCollection(GRIDMET_COLLECTION)
+            .filterDate(cursor.isoformat(), nxt.isoformat())  # [start, next) exclusive
+            .select(GRIDMET_BAND)
+        )
+        count = int(daily.size().getInfo())
+        if count == 0:
+            raise RuntimeError(
+                f"GRIDMET returned 0 daily images for {month_key} "
+                f"({cursor.isoformat()}..{nxt.isoformat()}). Check the date "
+                "window against GRIDMET coverage."
+            )
+        # Monthly total precip = sum of the month's daily pr images.
+        monthly_images.append((month_key, daily.sum()))
+        cursor = nxt
+
+    return _reduce_images_by_parcel(ee, parcels, monthly_images, GRIDMET_SCALE)
 
 
 def build_et_data(et_by_month):
@@ -163,4 +223,17 @@ def build_et_data(et_by_month):
     return [
         {"date": month, "et": mm, "unit": "mm"}
         for month, mm in sorted(et_by_month.items())
+    ]
+
+
+def build_precip_data(precip_by_month):
+    """Convert a ``{YYYY-MM: precip_mm}`` dict into the precip cache shape.
+
+    Mirrors ``build_et_data`` but keys the value as ``precip`` (named for the
+    variable) so a future generic reader can dispatch on ``OpenETCache.variable``.
+    Written to ``OpenETCache.et_data`` with ``variable="precip"``.
+    """
+    return [
+        {"date": month, "precip": mm, "unit": "mm"}
+        for month, mm in sorted(precip_by_month.items())
     ]
