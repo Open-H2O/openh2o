@@ -204,3 +204,9 @@ if _google_client_id and _google_client_secret:
 
 # One-click Google sign-in: skip allauth intermediate confirm page
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# When Google vouches for a verified email that matches an existing account,
+# sign into that account and link the social login (instead of erroring on the
+# email collision). Safe because the provider verifies the email.
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True

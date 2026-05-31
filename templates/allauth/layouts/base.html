@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block head_title %}Account{% endblock %} — OpenH2O</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23E4A317' d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/></svg>">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=13">
+    {% block extra_head %}{% endblock %}
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh; padding:var(--space-lg);">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:var(--space-lg); width:100%; max-width:440px;">
+        <a href="/" style="display:flex; align-items:center; gap:var(--space-sm); text-decoration:none;">
+            <img src="{% static 'img/favicon-192.png' %}" alt="" height="40" style="width:auto;">
+            <span style="font-size:1.6rem; font-weight:800; color:var(--color-gold); letter-spacing:-0.02em;">OpenH2O</span>
+        </a>
+        <div class="card-raised" style="width:100%;">
+            {% if messages %}
+            <div class="mb-md">
+                {% for message in messages %}
+                <p class="text-sm text-secondary" style="margin:0 0 4px;">{{ message }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+    {% block extra_body %}{% endblock %}
+</body>
+</html>
