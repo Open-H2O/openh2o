@@ -29,51 +29,26 @@
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
 
-  <!-- Summary row: stat cards + freshness map side by side -->
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); align-items: start;">
-
-    <!-- Left: stat cards 2x2 -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm);">
-      <div class="card-raised stat-card stat-card-accent-supply" style="margin: 0;">
-        <div class="stat-card-label">Active Stations</div>
-        <div class="stat-card-value text-supply">{{ total_active }}</div>
-        <div class="stat-card-unit">total linked to sources</div>
-      </div>
-      <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--forest-400);">
-        <div class="stat-card-label">On Schedule</div>
-        <div class="stat-card-value" style="color: var(--forest-400);">{{ fresh_count }}</div>
-        <div class="stat-card-unit">reporting on their normal cadence</div>
-      </div>
-      <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--furnace-400);">
-        <div class="stat-card-label">Behind Schedule</div>
-        <div class="stat-card-value" style="color: var(--furnace-400);">{{ stale_count }}</div>
-        <div class="stat-card-unit">overdue vs. their expected cadence</div>
-      </div>
-      <div class="card-raised stat-card" style="margin: 0; border-top: 3px solid var(--reservoir-400);">
-        <div class="stat-card-label">OpenET Queries</div>
-        <div class="stat-card-value" style="color: var(--reservoir-400);">{{ openet_used }}</div>
-        <div class="stat-card-unit">of {{ openet_limit }} monthly budget used</div>
-      </div>
-    </div>
-
-    <!-- Right: freshness map -->
-    <div class="card-raised" style="padding: 0; overflow: hidden; min-height: 200px;">
-      <div id="freshness-map" style="height: 200px; width: 100%;"></div>
-    </div>
-
+  <!-- Freshness map: full-width top row -->
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="freshness-map" style="height: 380px; width: 100%;"></div>
   </div>
 
-  <!-- Source status compact row -->
+  <!-- Source status: one chip per source -->
   {% if source_status_list %}
-  <div class="card-raised" style="padding: var(--space-sm) var(--space-md);">
-    <div style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: center;">
-      <span class="text-secondary text-xs" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Sources</span>
+  <div>
+    <div class="row-between" style="margin-bottom: var(--space-sm);">
+      <span class="text-secondary text-xs" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Sources</span>
+      <span class="text-tertiary text-xs">{{ total_active }} active &middot; {{ fresh_count }} on schedule &middot; {{ stale_count }} behind</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: var(--space-sm);">
       {% for info in source_status_list %}
-      <span style="display: inline-flex; align-items: center; gap: var(--space-xs); font-size: 0.8rem;" title="{{ info.source.name }}{% if info.blurb %} — {{ info.blurb }}{% endif %}">
-        <span class="text-primary" style="font-weight: 600;">{{ info.source.code }}</span>
-        <span class="text-tertiary">{{ info.active }}/{{ info.total }}</span>
+      <div class="card-raised" style="padding: var(--space-xs) var(--space-sm); display: inline-flex; align-items: center; gap: var(--space-sm); margin: 0;"
+           title="{{ info.source.name }}{% if info.blurb %} — {{ info.blurb }}{% endif %}">
+        <span class="text-primary text-sm" style="font-weight: 700; letter-spacing: 0.02em;">{{ info.display }}</span>
+        <span class="text-tertiary text-xs" style="font-variant-numeric: tabular-nums;">{{ info.active }}/{{ info.total }}</span>
         {% include "datasync/partials/_status_pill.html" with tone=info.status_tone label=info.status_label %}
-      </span>
+      </div>
       {% endfor %}
     </div>
   </div>
@@ -107,7 +82,7 @@
       >
         <option value="" {% if not source %}selected{% endif %}>All Sources</option>
         {% for ds in data_sources %}
-          <option value="{{ ds.code }}" {% if source == ds.code %}selected{% endif %}>{{ ds.code }}</option>
+          <option value="{{ ds.code }}" {% if source == ds.code %}selected{% endif %}>{{ ds.code|upper }}</option>
         {% endfor %}
       </select>
     </div>

@@ -47,6 +47,7 @@ def _build_source_status(boundary, now):
         status_code = freshness.classify_source_status(src.code, active, log, fresh)
         result.append({
             "source": src,
+            "display": freshness.source_display(src.code),
             "log": log,
             "total": total,
             "active": active,
