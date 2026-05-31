@@ -9,8 +9,9 @@ description = "Open Water Accounting Platform for California water agencies"
 requires-python = ">=3.12"
 license = "AGPL-3.0-or-later"
 authors = [{ name = "Brent Vanderburgh" }]
+# Note: do not add a "License ::" trove classifier — PEP 639 forbids combining
+# it with the SPDX license expression above, and setuptools will refuse to build.
 classifiers = [
-    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Framework :: Django",
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: GIS",
