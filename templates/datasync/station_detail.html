@@ -302,7 +302,35 @@
         }
       },
       scales: {
-        x: { grid: { color: 'rgba(100,140,180,0.07)' }, ticks: { maxTicksLimit: 8, color: '#8899aa', font: { size: 11 } } },
+        x: {
+          grid: { color: 'rgba(100,140,180,0.07)' },
+          ticks: {
+            maxTicksLimit: 8,
+            maxRotation: 0,
+            minRotation: 0,
+            autoSkip: true,
+            color: '#8899aa',
+            font: { size: 11 },
+            // Full ISO date labels ("2025-05-31") crowd and overlap. Shorten
+            // them to fit horizontally, choosing the granularity from the
+            // visible span: month+year for long ranges, month/day for short.
+            callback: function(value) {
+              var s = this.getLabelForValue(value);
+              var parts = String(s).split('-'); // YYYY-MM-DD
+              if (parts.length < 3) return s;
+              var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+              var mon = MON[parseInt(parts[1], 10) - 1] || parts[1];
+              var lbls = this.chart.data.labels || [];
+              var spanDays = 0;
+              if (lbls.length > 1) {
+                spanDays = Math.abs(new Date(lbls[lbls.length - 1]) - new Date(lbls[0])) / 86400000;
+              }
+              if (spanDays > 180) return mon + " '" + parts[0].slice(2);      // Jun '25
+              if (spanDays > 35) return mon + ' ' + parseInt(parts[2], 10);    // Jun 5
+              return parseInt(parts[1], 10) + '/' + parseInt(parts[2], 10);    // 6/5
+            }
+          }
+        },
         y: {
           position: 'left',
           grid: { color: 'rgba(100,140,180,0.07)' },
