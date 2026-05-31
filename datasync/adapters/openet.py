@@ -1,34 +1,28 @@
 """
 OpenET adapter.
 
-API docs: https://openet.dri.edu/docs
-Auth: X-API-KEY header (api_key auth_type on DataSource).
+API docs: https://etdata.org/api/api-documentation/ (host: openet-api.org)
+Auth: the API key is sent in the `Authorization` header (raw key, no "Bearer").
 
-OpenET uses a 3-stage async workflow:
-  1. POST to submit a raster/timeseries request
-  2. GET to poll job status
-  3. GET to retrieve results
+The OpenET timeseries API is synchronous: a single POST to the point or
+polygon endpoint returns the ET timeseries directly as a JSON array of
+{"time": "<date>", "et": <value>} objects. (The older submit / poll-status /
+fetch-results workflow no longer exists.)
 
-Since this is field-geometry-based (not station-based),
+Since OpenET is field-geometry-based (not station-based),
 discover_stations returns an empty list.
 """
 
 import logging
 import os
-import time
 
 from datasync.adapters import register_adapter
 from datasync.adapters.base import BaseAdapter
 
 logger = logging.getLogger(__name__)
 
-SUBMIT_URL = "https://openet-api.org/raster/timeseries/point"
+POINT_URL = "https://openet-api.org/raster/timeseries/point"
 POLYGON_URL = "https://openet-api.org/raster/timeseries/polygon"
-STATUS_URL = "https://openet-api.org/raster/timeseries/status"
-RESULTS_URL = "https://openet-api.org/raster/timeseries/results"
-
-MAX_POLL_ATTEMPTS = 30
-POLL_INTERVAL_SECONDS = 10
 
 
 class OpenETAdapter(BaseAdapter):
@@ -41,60 +35,33 @@ class OpenETAdapter(BaseAdapter):
 
     def _headers(self):
         return {
-            "X-API-KEY": self._get_api_key(),
+            "Authorization": self._get_api_key(),
             "Content-Type": "application/json",
         }
 
     def fetch(self, station, start_date, end_date):
-        """Submit an OpenET request, poll for completion, return results."""
-        # Use station location as the point geometry
-        lon = station.location.x
-        lat = station.location.y
+        """Fetch monthly ET for a station's point location.
 
+        The OpenET API is synchronous: one POST returns the timeseries as a
+        JSON array, which parse() consumes directly.
+        """
         payload = {
-            "geometry": [lon, lat],
-            "start_date": start_date.strftime("%Y-%m-%d"),
-            "end_date": end_date.strftime("%Y-%m-%d"),
-            "variable": "ET",
+            "date_range": [
+                start_date.strftime("%Y-%m-%d"),
+                end_date.strftime("%Y-%m-%d"),
+            ],
+            "interval": "monthly",
+            "geometry": [station.location.x, station.location.y],
             "model": "Ensemble",
+            "variable": "ET",
+            "reference_et": "gridMET",
             "units": "mm",
             "file_format": "JSON",
         }
-
-        # Step 1: Submit
         resp = self._request(
-            "POST", SUBMIT_URL, json=payload, headers=self._headers()
+            "POST", POINT_URL, json=payload, headers=self._headers()
         )
-        job_data = resp.json()
-        job_id = job_data.get("job_id") or job_data.get("uuid", "")
-
-        if not job_id:
-            logger.warning("OpenET: no job_id in response: %s", job_data)
-            return []
-
-        # Step 2: Poll for completion
-        for attempt in range(MAX_POLL_ATTEMPTS):
-            time.sleep(POLL_INTERVAL_SECONDS)
-            status_resp = self._request(
-                "GET", f"{STATUS_URL}/{job_id}", headers=self._headers()
-            )
-            status_data = status_resp.json()
-            job_status = status_data.get("status", "").lower()
-
-            if job_status == "complete":
-                break
-            elif job_status in ("failed", "error"):
-                logger.error("OpenET job %s failed: %s", job_id, status_data)
-                return []
-        else:
-            logger.error("OpenET job %s timed out after %d polls", job_id, MAX_POLL_ATTEMPTS)
-            return []
-
-        # Step 3: Retrieve results
-        results_resp = self._request(
-            "GET", f"{RESULTS_URL}/{job_id}", headers=self._headers()
-        )
-        return results_resp.json()
+        return resp.json()
 
     def parse(self, raw_data):
         """Parse OpenET timeseries response.
@@ -180,56 +147,41 @@ class OpenETAdapter(BaseAdapter):
         return [list(coord) for coord in poly.exterior_ring.coords]
 
     def fetch_polygon(self, geometry, start_date, end_date):
-        """Submit a polygon-based OpenET request, poll, and return results."""
-        coords = self._geometry_to_geojson_coords(geometry)
+        """Fetch monthly ET for a polygon.
+
+        Synchronous single POST. OpenET wants the polygon ring as a flat
+        coordinate list [lon, lat, lon, lat, ...]. Falls back to the centroid
+        point if the polygon request is rejected.
+        """
+        ring = self._geometry_to_geojson_coords(geometry)
+        flat_coords = [value for vertex in ring for value in vertex]
         payload = {
-            "geometry": coords,
-            "start_date": start_date.strftime("%Y-%m-%d"),
-            "end_date": end_date.strftime("%Y-%m-%d"),
-            "variable": "ET",
+            "date_range": [
+                start_date.strftime("%Y-%m-%d"),
+                end_date.strftime("%Y-%m-%d"),
+            ],
+            "interval": "monthly",
+            "geometry": flat_coords,
             "model": "Ensemble",
+            "variable": "ET",
+            "reference_et": "gridMET",
             "units": "mm",
             "file_format": "JSON",
         }
-
         try:
             resp = self._request(
                 "POST", POLYGON_URL, json=payload, headers=self._headers()
             )
         except Exception as exc:
-            logger.warning("OpenET polygon endpoint failed (%s), falling back to centroid", exc)
+            logger.warning(
+                "OpenET polygon endpoint failed (%s), falling back to centroid", exc
+            )
             centroid = geometry.centroid
             payload["geometry"] = [centroid.x, centroid.y]
             resp = self._request(
-                "POST", SUBMIT_URL, json=payload, headers=self._headers()
+                "POST", POINT_URL, json=payload, headers=self._headers()
             )
-
-        job_data = resp.json()
-        job_id = job_data.get("job_id") or job_data.get("uuid", "")
-        if not job_id:
-            logger.warning("OpenET: no job_id in polygon response: %s", job_data)
-            return []
-
-        for _attempt in range(MAX_POLL_ATTEMPTS):
-            time.sleep(POLL_INTERVAL_SECONDS)
-            status_resp = self._request(
-                "GET", f"{STATUS_URL}/{job_id}", headers=self._headers()
-            )
-            status_data = status_resp.json()
-            job_status = status_data.get("status", "").lower()
-            if job_status == "complete":
-                break
-            elif job_status in ("failed", "error"):
-                logger.error("OpenET polygon job %s failed: %s", job_id, status_data)
-                return []
-        else:
-            logger.error("OpenET polygon job %s timed out", job_id)
-            return []
-
-        results_resp = self._request(
-            "GET", f"{RESULTS_URL}/{job_id}", headers=self._headers()
-        )
-        return results_resp.json()
+        return resp.json()
 
     def sync_with_cache(self, parcel, start_date, end_date):
         """Cache-aware OpenET sync for a single parcel."""
