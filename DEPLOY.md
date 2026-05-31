@@ -286,6 +286,39 @@ sources require a key, set in `.env` (then `docker compose up -d` to reload):
 Until a key is set, that source shows **"Needs API key"** on the monitoring
 page rather than a misleading failure, and is skipped by the sync.
 
+### Email / Password Reset (SMTP)
+
+Logged-in users can change their password with no setup — the **Change Password**
+link in the header works out of the box. The **"Forgot password?"** flow on the
+login page, however, emails a reset link, so it needs an outgoing mail server.
+Until SMTP is configured, that flow silently fails (no email is sent).
+
+Set these in `.env`, then `docker compose up -d` to reload:
+
+```bash
+EMAIL_HOST=smtp.your-provider.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=<smtp-username>
+EMAIL_HOST_PASSWORD=<smtp-password-or-app-password>
+DEFAULT_FROM_EMAIL=noreply@your-domain.com
+```
+
+Any SMTP provider works. Two common choices:
+
+- **Gmail:** host `smtp.gmail.com`, port `587`, user = your full Gmail address,
+  password = a 16-character **App Password** (Google Account → Security →
+  2-Step Verification → App passwords — *not* your normal login password).
+  Fine for a single agency; subject to Gmail's daily send limits.
+- **Transactional provider (Resend, Postmark, Amazon SES):** gives a real
+  `noreply@your-domain.com` sender and higher limits. Preferred for public sites.
+
+Verify by triggering a reset and watching the log:
+
+```bash
+docker compose exec web python manage.py sendtestemail you@example.com
+```
+
 ### Health Checks
 
 Run manually at any time:
