@@ -17,6 +17,11 @@ Variables:
 {% endcomment %}
 <script>
 (function() {
+  // MapLibre loads in the map_scripts block, which renders AFTER page content,
+  // so on first render this runs before the library exists. Defer until
+  // DOMContentLoaded (library loaded by then); on an HTMX content swap the
+  // document is already loaded, so run immediately.
+  function init() {
   if (!window.maplibregl) return;
   var el = document.getElementById('{{ map_id }}');
   if (!el || el._mapInit) return;
@@ -97,5 +102,11 @@ Variables:
       })
       .catch(function(err) { console.error('Freshness GeoJSON failed:', err); });
   });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 </script>
