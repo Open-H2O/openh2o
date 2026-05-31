@@ -66,7 +66,7 @@
 
     /* -- Typography ------------------------------------------------------ */
     --font-display: 'Public Sans', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-mono: 'Inconsolata', monospace;
 
     /* -- Spacing --------------------------------------------------------- */
     --space-xs: 4px;
