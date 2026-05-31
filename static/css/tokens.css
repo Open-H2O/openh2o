@@ -66,7 +66,10 @@
 
     /* -- Typography ------------------------------------------------------ */
     --font-display: 'Public Sans', sans-serif;
-    --font-mono: 'Inconsolata', monospace;
+    /* Single typeface sitewide: data fields (IDs, coords, codes) use the
+       display font with tabular figures rather than a separate monospace,
+       so numbers never render in two different styles. */
+    --font-mono: var(--font-display);
 
     /* -- Spacing --------------------------------------------------------- */
     --space-xs: 4px;

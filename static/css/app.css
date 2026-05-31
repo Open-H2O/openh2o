@@ -365,6 +365,7 @@ a { color: inherit; }
     color: var(--color-text-primary);
     font-size: 0.9375rem;
     font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
 }
 
 .field-row {
@@ -916,6 +917,7 @@ a { color: inherit; }
 
 .text-mono {
     font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
 }
 
 .border-separator {
@@ -1046,6 +1048,7 @@ a { color: inherit; }
     padding: 2px 8px;
     font-size: 0.75rem;
     font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
     color: var(--color-text-secondary);
 }
 
