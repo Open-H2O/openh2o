@@ -41,3 +41,6 @@ media/
 
 # Internal planning / build scaffolding (not for public repo)
 .planning/
+.env.*
+*.bak
+*.bak.*
