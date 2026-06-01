@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Methodology Settings - Open Water Accounting Platform{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'index' %}">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Methodology Settings</span>
+  </nav>
+  <p class="page-description">Tune how gross satellite ET becomes billable groundwater. Changes here drive every future calculation.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+
+  <!-- Honesty banner -->
+  <div class="card-raised card-inset" style="border: 1px solid rgba(228,163,23,0.35); background: rgba(228,163,23,0.08);">
+    <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
+      <strong style="color: var(--color-gold);">Changes affect every future calculation.</strong>
+      The result is a derived extraction estimate, not measured pumping. Edit a step, save, then preview a sample parcel to see the effect before committing to a billing run.
+    </p>
+  </div>
+
+  {% if plan is None %}
+  <!-- Empty state: no active plan -->
+  <div class="card-raised">
+    <h2 class="section-header mb-md">No active methodology</h2>
+    <p class="text-secondary text-sm" style="margin: 0;">
+      There is no active calculation plan to tune. Seed the default methodology by running
+      <code>python manage.py seed_calculation_plan</code>, then reload this page.
+    </p>
+  </div>
+  {% else %}
+
+  <!-- Steps editor -->
+  <div class="card-raised">
+    <div class="row-between mb-md">
+      <h2 class="section-header" style="margin: 0;">{{ plan.name }}</h2>
+      <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }}</span>
+    </div>
+
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th style="width: 1%; white-space: nowrap;">#</th>
+          <th>Step</th>
+          <th>Type</th>
+          <th>Configuration</th>
+          <th class="th-right">Enabled</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for step in steps %}
+        <tr{% if not step.enabled %} class="text-tertiary"{% endif %}>
+          <td class="text-tertiary">{{ step.order }}</td>
+          <td style="font-weight: 600;">{{ step.label }}</td>
+          <td class="text-secondary">{{ step.get_step_type_display }}</td>
+          <td class="text-secondary">
+            {% if step.config %}{{ step.config }}{% else %}<span class="text-tertiary">—</span>{% endif %}
+          </td>
+          <td class="td-num">{% if step.enabled %}Yes{% else %}<span class="text-tertiary">No</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Live preview lands here (wired in Tasks 2–3) -->
+  <div id="preview-pane"></div>
+
+  {% endif %}
+
+</div>
+{% endblock %}

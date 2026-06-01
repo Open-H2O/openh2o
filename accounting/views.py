@@ -4,7 +4,7 @@ from decimal import Decimal
 import csv as csv_module
 import io
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
 from django.http import Http404, HttpResponse
@@ -21,6 +21,7 @@ from accounting.forms import (
 )
 from accounting.models import (
     AllocationPlan,
+    CalculationPlan,
     CalculationRun,
     ReportingPeriod,
     WaterAccount,
@@ -31,6 +32,14 @@ from accounting.models import (
 from accounting.services import account_balance, parse_ledger_csv, parcel_balance, zone_balance
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
+
+
+# A logged-in user is not enough to tune the billing methodology — that is an
+# administrator's job. Stacked on top of @login_required, this bounces an
+# authenticated-but-non-staff user. We deliberately do NOT use Django's
+# staff_member_required, which redirects to the /admin/ login rather than this
+# app's own login page.
+staff_required = user_passes_test(lambda u: u.is_active and u.is_staff)
 
 
 # ---------------------------------------------------------------------------
@@ -761,3 +770,44 @@ def calculation_run_detail(request, parcel_id, period):
         "has_banking": run.banked_af > 0 or run.drawn_af > 0,
     }
     return render(request, "accounting/calculation_run_detail.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Methodology Settings — the self-serve face of the calculation engine (38-07)
+# ---------------------------------------------------------------------------
+#
+# Staff tune the config-as-data methodology (reorder / enable-disable steps, edit
+# each step's knobs and the WaterCredit banking levers) and preview the effect on
+# a sample parcel before it touches a real billing run. Every view here is gated
+# with BOTH @login_required and @staff_required.
+
+
+def _latest_calculated_period():
+    """The most recent period that actually has a calculation run, as 'YYYY-MM'.
+
+    Used to seed the preview picker so a staff user lands on a period with data
+    rather than an empty one. Returns '' when the engine has never run.
+    """
+    run = CalculationRun.objects.order_by("-period").first()
+    return run.period if run else ""
+
+
+@login_required
+@staff_required
+def methodology_settings(request):
+    """The staff-only methodology settings page (GET).
+
+    Renders the active plan's ordered steps plus the parcel/period picker for the
+    live preview. With no active plan we show a friendly empty state rather than
+    letting evaluate_chain's ValueError become a 500.
+    """
+    plan = CalculationPlan.active()
+    steps = list(plan.steps.order_by("order")) if plan is not None else []
+
+    context = {
+        "plan": plan,
+        "steps": steps,
+        "parcels": Parcel.objects.order_by("parcel_number")[:200],
+        "default_period": _latest_calculated_period(),
+    }
+    return render(request, "accounting/methodology_settings.html", context)

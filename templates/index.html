@@ -43,6 +43,13 @@
         <div class="dashboard-card-value text-blue">{{ station_count }}</div>
         <div class="dashboard-card-sublabel">View stations</div>
     </a>
+    {% if request.user.is_staff %}
+    <a href="{% url 'accounting:methodology_settings' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Methodology Settings</div>
+        <div class="dashboard-card-value text-gold">&#9881;</div>
+        <div class="dashboard-card-sublabel">Tune how gross ET becomes billable groundwater</div>
+    </a>
+    {% endif %}
 </div>
 
 <h2 class="content-section-label" style="margin-top: var(--space-xl);">System</h2>

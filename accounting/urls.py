@@ -51,4 +51,6 @@ urlpatterns = [
         views.calculation_run_detail,
         name="calculation_run_detail",
     ),
+    # Methodology Settings (staff-only self-serve methodology tuning, 38-07)
+    path("methodology/", views.methodology_settings, name="methodology_settings"),
 ]
