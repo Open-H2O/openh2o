@@ -49,6 +49,7 @@ class ParcelLedger(models.Model):
         ("recharge", "Recharge"),
         ("allocation", "Water Budget"),
         ("adjustment", "Adjustment"),
+        ("calculated", "Calculated"),
     ]
 
     parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE)

@@ -1,7 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from django.contrib import admin
 
-from .models import AllocationPlan, ReportingPeriod, WaterAccount, WaterAccountParcel, WaterType
+from .models import (
+    AllocationPlan,
+    CalculationPlan,
+    CalculationStep,
+    ReportingPeriod,
+    WaterAccount,
+    WaterAccountParcel,
+    WaterType,
+)
 
 
 @admin.register(WaterType)
