@@ -243,6 +243,78 @@ class WaterCreditDraw(models.Model):
         return f"{self.amount_af} AF @ {self.draw_period} from {self.credit_id}"
 
 
+class AllocationCarryover(models.Model):
+    """A closed water year's leftover (or over-drawn) budget, rolled forward.
+
+    At the end of a water year an agency's zone budget is rarely hit exactly: a
+    surplus (allocation > usage) should carry FORWARD into the next year, and an
+    overdraw (usage > allocation) becomes a DEBT borrowed against it. This row is
+    that signed remainder, stored at the grain budgets actually live at —
+    ``(zone, water_type, water_year)`` — so it needs no synthetic per-parcel
+    split. ``amount_af`` is SIGNED: positive is surplus, negative is debt. One
+    number, never a surplus and a debt at once (carryover_math.net_carryover).
+
+    ``water_year`` is the year this carry-over applies TO (the opening balance it
+    contributes to), labelled by the calendar year that year ENDS in — so a
+    rollover of the closed WY ending 2025 writes rows with ``water_year=2026``.
+    ``source_water_year`` records the closed year it was derived from (provenance
+    for the audit trail; aids ISS-020). ``depreciation_rate`` / ``expires_period``
+    mirror WaterCredit so a carried-forward surplus can age or lapse on the same
+    levers — the decay itself is never re-derived here, it delegates to
+    carryover_math.available_with_carryover (which delegates to banking_math).
+
+    Idempotent like the rest of the engine: rollover_allocations does
+    delete-then-insert per ``(zone, water_type, water_year)`` so re-running never
+    double-banks. The unique_together makes a stray duplicate impossible.
+    """
+
+    zone = models.ForeignKey("geography.Zone", on_delete=models.CASCADE)
+    water_type = models.ForeignKey(WaterType, on_delete=models.CASCADE)
+    water_year = models.PositiveIntegerField(
+        help_text="Year this carry-over applies TO (opening-balance year), "
+        "labelled by the calendar year it ends in.",
+    )
+    source_water_year = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="The closed water year this was rolled forward from "
+        "(normally water_year - 1). Provenance for the audit trail.",
+    )
+    amount_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="Signed carry-over (acre-feet): + surplus carried forward, "
+        "− debt borrowed against this year.",
+    )
+    depreciation_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Per-period geometric decay of a carried-forward SURPLUS "
+        "(0 = no decay). A debt is never depreciated.",
+    )
+    expires_period = models.CharField(
+        max_length=7,
+        null=True,
+        blank=True,
+        help_text="Month at/after which the carried surplus is dead, as YYYY-MM. "
+        "Null = never expires.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-water_year", "zone", "water_type"]
+        unique_together = [("zone", "water_type", "water_year")]
+        verbose_name = "Allocation carryover"
+        verbose_name_plural = "Allocation carryovers"
+
+    def __str__(self):
+        return (
+            f"{self.zone} {self.water_type.code} WY{self.water_year}: "
+            f"{self.amount_af} AF"
+        )
+
+
 class CalculationRun(models.Model):
     """The reconstructable audit record for one `calculated` ledger row (38-05).
 

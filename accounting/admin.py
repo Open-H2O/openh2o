@@ -2,6 +2,7 @@
 from django.contrib import admin
 
 from .models import (
+    AllocationCarryover,
     AllocationPlan,
     CalculationPlan,
     CalculationRun,
@@ -47,6 +48,21 @@ class AllocationPlanAdmin(admin.ModelAdmin):
     list_display = ["name", "zone", "water_type", "reporting_period", "allocation_acre_feet"]
     list_filter = ["water_type", "reporting_period", "zone"]
     search_fields = ["name"]
+
+
+@admin.register(AllocationCarryover)
+class AllocationCarryoverAdmin(admin.ModelAdmin):
+    list_display = [
+        "zone",
+        "water_type",
+        "water_year",
+        "amount_af",
+        "source_water_year",
+        "depreciation_rate",
+        "expires_period",
+    ]
+    list_filter = ["water_year", "water_type", "zone"]
+    search_fields = ["zone__name"]
 
 
 class CalculationStepInline(admin.TabularInline):
