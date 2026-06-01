@@ -34,7 +34,12 @@ from django.db.models import Sum
 
 from accounting.banking_math import depreciated_value, is_expired, periods_between
 from accounting.calculation import evaluate_chain
-from accounting.models import ReportingPeriod, WaterCredit, WaterCreditDraw
+from accounting.models import (
+    CalculationRun,
+    ReportingPeriod,
+    WaterCredit,
+    WaterCreditDraw,
+)
 from parcels.models import Parcel, ParcelLedger
 
 PERIOD_RE = re.compile(r"^\d{4}-\d{2}$")
@@ -138,6 +143,52 @@ def _apply_banking(parcel, period, final_af, breakdown, *, commit):
     return final_af, {"deposited": deposited, "drawn": drawn_total}
 
 
+def _persist_calculation_run(parcel, period, gross_af, net_af, breakdown, info):
+    """Write the one CalculationRun for this (parcel, period) — the audit trail.
+
+    Delete-then-insert so a re-run leaves exactly one run with identical values
+    (mirrors the calculated ledger row's idempotency). All AF figures are quantized
+    to 4dp the same way the ledger row is, so ``final_af`` equals
+    ``-ledger.amount_acre_feet`` exactly. Input magnitudes come straight off the
+    breakdown the runner already evaluated; a step that did not run in this chain
+    (e.g. effective precip disabled) stores NULL rather than a fabricated zero.
+
+    MUST be called inside the per-parcel transaction.atomic() block.
+    """
+    quant = Decimal("0.0001")
+    precip_step = next(
+        (s for s in breakdown if s["step_type"] == "subtract_effective_precip"), None
+    )
+    surface_step = next(
+        (s for s in breakdown if s["step_type"] == "subtract_surface_water"), None
+    )
+
+    effective_precip_af = None
+    if precip_step is not None:
+        effective_precip_af = Decimal(
+            str(precip_step["detail"]["effective_precip_af"])
+        ).quantize(quant)
+
+    surface_water_af = None
+    if surface_step is not None:
+        surface_water_af = Decimal(
+            str(surface_step["detail"]["surface_water_af"])
+        ).quantize(quant)
+
+    CalculationRun.objects.filter(parcel=parcel, period=period).delete()
+    CalculationRun.objects.create(
+        parcel=parcel,
+        period=period,
+        gross_et_af=gross_af.quantize(quant),
+        effective_precip_af=effective_precip_af,
+        surface_water_af=surface_water_af,
+        banked_af=info["deposited"],
+        drawn_af=info["drawn"],
+        final_af=net_af.quantize(quant),
+        breakdown=breakdown,
+    )
+
+
 class Command(BaseCommand):
     help = (
         "Evaluate the active CalculationPlan and write one idempotent "
@@ -232,6 +283,14 @@ class Command(BaseCommand):
                     description="Derived extraction estimate (calculation engine)",
                     reporting_period=reporting_period,
                     water_type=None,
+                )
+                # 38-05: persist the reconstructable audit record in the SAME
+                # transaction, delete-then-insert per (parcel, period) so re-runs
+                # stay 1:1 with the calculated row and never drift. Input
+                # magnitudes are pulled off the breakdown the command already has
+                # (no re-derivation); steps absent from the chain store NULL.
+                _persist_calculation_run(
+                    parcel, period, gross_af, net_af, breakdown, info
                 )
             extra = ""
             if info["deposited"] > 0:

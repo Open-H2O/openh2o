@@ -1,0 +1,247 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""DB-bound tests for the CalculationRun audit trail (38-05).
+
+run_calculations writes one CalculationRun per calculated ledger row, in the same
+transaction, so every derived bill is reconstructable. These tests prove the
+defensibility invariants the blueprint demands:
+
+  - 1:1 — exactly one run per calculated row; a no-ET (skipped) parcel gets neither.
+  - Reconstruct — the run's stored figures add up to the billable number, and the
+    persisted breakdown is an internally consistent gross->net waterfall.
+  - Idempotency — re-running a period leaves exactly one run with identical values.
+  - Banking captured — a deposit month records banked_af; a later draw month
+    records drawn_af.
+
+A run that merely EXISTS but doesn't reconstruct is worse than none (it looks
+defensible and isn't), so the reconstruct test walks the math, it doesn't just
+count rows. Runs in the Butler web container (needs the DB).
+"""
+import datetime as dt
+from decimal import Decimal
+
+import pytest
+from django.contrib.gis.geos import MultiPolygon, Polygon
+from django.core.management import call_command
+
+from accounting.models import CalculationRun
+from accounting.services import et_mm_to_acre_feet
+from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
+
+Q = Decimal("0.0001")
+
+
+def _square(x=0.0):
+    poly = Polygon(
+        ((x, x), (x, x + 0.01), (x + 0.01, x + 0.01), (x + 0.01, x), (x, x))
+    )
+    return MultiPolygon(poly, srid=4326)
+
+
+def _parcel(number, acres="10"):
+    return Parcel.objects.create(parcel_number=number, area_acres=Decimal(acres))
+
+
+def _irrigate(parcel):
+    """Give the parcel a crop so facility_only_zero does NOT zero it out."""
+    crop = CropType.objects.create(name=f"Crop-{parcel.parcel_number}")
+    UsageLocation.objects.create(parcel=parcel, name="field", crop_type=crop)
+
+
+def _et_cache(parcel, period="2024-06", et_mm=100.0):
+    from datasync.models import OpenETCache
+
+    year, month = int(period[:4]), int(period[5:7])
+    return OpenETCache.objects.create(
+        parcel=parcel,
+        geometry=_square(),
+        start_date=dt.date(year, month, 1),
+        end_date=dt.date(year, month, 28),
+        variable="ET",
+        model_name="Ensemble",
+        et_data=[{"et": et_mm, "date": period, "unit": "mm"}],
+    )
+
+
+def _surface_row(parcel, period, af):
+    """A surface_diversion ledger row (stored NEGATIVE, like the live data)."""
+    year, month = int(period[:4]), int(period[5:7])
+    return ParcelLedger.objects.create(
+        parcel=parcel,
+        transaction_date=dt.date(year, month, 1),
+        effective_date=dt.date(year, month, 1),
+        amount_acre_feet=Decimal(str(-abs(af))),
+        source_type="surface_diversion",
+    )
+
+
+def _gross_af(et_mm="100", acres="10"):
+    """The positive gross-ET magnitude the et_gross step produces."""
+    return abs(et_mm_to_acre_feet(Decimal(et_mm), Decimal(acres)))
+
+
+def _calc_row(parcel, period):
+    year, month = int(period[:4]), int(period[5:7])
+    return ParcelLedger.objects.get(
+        parcel=parcel,
+        effective_date=dt.date(year, month, 1),
+        source_type="calculated",
+    )
+
+
+def _run(parcel, period):
+    return CalculationRun.objects.get(parcel=parcel, period=period)
+
+
+# --------------------------------------------------------------------------
+# 1:1 invariant — one run per calculated row; none for a skipped parcel
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_calculated_parcel_gets_exactly_one_run():
+    parcel = _parcel("RUN-ONE", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+
+    assert CalculationRun.objects.filter(parcel=parcel, period="2024-06").count() == 1
+    assert (
+        ParcelLedger.objects.filter(parcel=parcel, source_type="calculated").count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
+def test_no_et_parcel_gets_zero_runs_and_zero_calculated_rows():
+    """A parcel skipped for no ET produces NEITHER a calculated row NOR a run."""
+    parcel = _parcel("RUN-NOET", acres="10")
+    _irrigate(parcel)  # has a crop, but no ET cache -> skipped_no_et
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+
+    assert CalculationRun.objects.filter(parcel=parcel).count() == 0
+    assert (
+        ParcelLedger.objects.filter(parcel=parcel, source_type="calculated").count()
+        == 0
+    )
+
+
+# --------------------------------------------------------------------------
+# Reconstruct invariant — the run's stored figures add up to the bill
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_run_reconstructs_the_billable_value():
+    parcel = _parcel("RUN-RECON", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)  # ~3.28 AF gross
+    _irrigate(parcel)
+    _surface_row(parcel, "2024-06", af=1)  # partial offset -> positive bill remains
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+
+    run = _run(parcel, "2024-06")
+    calc = _calc_row(parcel, "2024-06")
+
+    # (1) final_af equals the magnitude of the calculated ledger row.
+    assert run.final_af == -calc.amount_acre_feet
+
+    # (2) gross_et_af matches the et_gross step's output (at the ledger's 4dp).
+    et_step = next(s for s in run.breakdown if s["step_type"] == "et_gross")
+    assert run.gross_et_af == Decimal(et_step["output_af"]).quantize(Q)
+    assert run.gross_et_af == _gross_af().quantize(Q)
+
+    # (3) the breakdown is an internally consistent waterfall: every step's
+    #     input equals the prior step's output (no hidden jumps in the math).
+    for prev, nxt in zip(run.breakdown, run.breakdown[1:]):
+        assert nxt["input_af"] == prev["output_af"]
+
+    # (4) last enabled step's output, minus any credit drawn, IS the final bill.
+    last = run.breakdown[-1]
+    assert last["step_type"] == "clamp_floor"
+    assert (Decimal(last["output_af"]) - run.drawn_af).quantize(Q) == run.final_af
+
+    # The surface-water subtraction is captured; the precip step ran (Pe = 0
+    # with no precip data) so its column is 0.0000, NOT null.
+    assert run.surface_water_af == Decimal("1.0000")
+    assert run.effective_precip_af == Decimal("0.0000")
+
+
+# --------------------------------------------------------------------------
+# Idempotency — re-running leaves exactly one run, identical values
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_rerunning_a_period_leaves_one_identical_run():
+    parcel = _parcel("RUN-IDEM", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    _surface_row(parcel, "2024-06", af=1)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+    run1 = _run(parcel, "2024-06")
+    snap1 = (
+        run1.gross_et_af,
+        run1.effective_precip_af,
+        run1.surface_water_af,
+        run1.banked_af,
+        run1.drawn_af,
+        run1.final_af,
+        run1.breakdown,
+    )
+
+    call_command("run_calculations", "--period", "2024-06")  # second run
+    runs = CalculationRun.objects.filter(parcel=parcel, period="2024-06")
+    assert runs.count() == 1
+    run2 = runs.first()
+    snap2 = (
+        run2.gross_et_af,
+        run2.effective_precip_af,
+        run2.surface_water_af,
+        run2.banked_af,
+        run2.drawn_af,
+        run2.final_af,
+        run2.breakdown,
+    )
+    assert snap1 == snap2
+
+
+# --------------------------------------------------------------------------
+# Banking captured — deposit month records banked_af, draw month drawn_af
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_banking_activity_is_captured_on_the_run():
+    parcel = _parcel("RUN-BANK", acres="10")
+    _irrigate(parcel)
+    # Wet month: surface water (5 AF) exceeds gross ET (~3.28 AF) -> surplus banked.
+    _et_cache(parcel, period="2024-02", et_mm=100.0)
+    _surface_row(parcel, "2024-02", af=5)
+    # Dry month: ET only, a ~3.28 AF deficit that draws the banked credit down.
+    _et_cache(parcel, period="2024-03", et_mm=100.0)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-02")  # deposit
+    call_command("run_calculations", "--period", "2024-03")  # draw
+
+    deposit_run = _run(parcel, "2024-02")
+    draw_run = _run(parcel, "2024-03")
+
+    surplus = (Decimal("5") - _gross_af()).quantize(Q)
+    # Deposit month: banked the surplus, drew nothing, billed nothing.
+    assert deposit_run.banked_af == surplus
+    assert deposit_run.drawn_af == Decimal("0.0000")
+    assert deposit_run.final_af == Decimal("0.0000")
+    # Draw month: drew the (undepreciated) credit, banked nothing.
+    assert draw_run.drawn_af == surplus
+    assert draw_run.banked_af == Decimal("0.0000")
+    # The draw reduced the bill: final = gross deficit - drawn.
+    assert draw_run.final_af == (_gross_af() - surplus).quantize(Q)
+    assert draw_run.final_af == -_calc_row(parcel, "2024-03").amount_acre_feet
