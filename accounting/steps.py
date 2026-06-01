@@ -20,15 +20,19 @@ step_record is a JSON-serializable dict
     {"step_type", "label", "input_af", "output_af", "detail"}
 so 38-04's CalculationRun can persist the breakdown verbatim.
 
-NOTE: subtract_effective_precip is intentionally ABSENT. 38-03 implements it
-test-first and registers it. The default plan ships that step disabled, so the
-evaluator (which only looks up enabled steps) never tries to resolve it here.
+subtract_effective_precip (added 38-03, TDD) nets effective rainfall out of gross
+ET. Its contested USDA-SCS / TR-21 math lives in the Django-free
+accounting/precip_math.py (proven against published vectors); this module is only
+the thin DB-bound wrapper that reads precip + ET from the cache and converts to AF.
 
 OpenETCache shape (verified against live Butler data, 2026-05-31):
-  - et_data is a LIST of dicts: [{"et": 170.02, "date": "2024-06", "unit": "mm"}, ...]
+  - et_data is a LIST of dicts:
+      ET     rows: [{"et": 170.02,  "date": "2024-06", "unit": "mm"}, ...]   var="ET"/model="Ensemble"
+      precip rows: [{"precip": 75.0, "date": "2024-02", "unit": "mm"}, ...]   var="precip"/model="GRIDMET"
   - a single cache row can span multiple months (e.g. Jun–Aug in one row)
-  - real strings are variable="ET", model_name="Ensemble" (capitalized)
-et_gross honors all three facts; getting any wrong silently zeroes the parcel.
+  - the precip value key is "precip", NOT "et" or "value" (38-01 build_precip_data)
+_read_cache_mm honors all of this for BOTH faucets so et_gross and the precip step
+can never drift on the read; getting any string wrong silently zeroes the parcel.
 """
 
 from decimal import Decimal
@@ -54,22 +58,22 @@ def _record(step_type, input_af, output_af, detail):
     }
 
 
-def et_gross(running_af, parcel, period, ctx, config):
-    """Seed the chain with the parcel's gross ET for the period (positive AF).
+def _read_cache_mm(parcel, period, variable, model, key):
+    """Sum OpenETCache <key> values (mm) for one parcel-month.
 
-    Reads OpenETCache rows matching the configured model/variable for this
-    parcel whose [start_date, end_date] span covers the period, then sums the
-    et_data list items whose "date" matches the period month. Converts the mm
-    total to a POSITIVE acre-foot magnitude using the same mm->AF math as
-    et_mm_to_acre_feet (which returns a negative usage value; we take abs).
-    Ignores the incoming running_af — this primitive starts the chain.
+    The single shared cache read behind BOTH et_gross and the precip step, so the
+    two can never drift on the variable/model/key strings (the silent-zero trap of
+    38-01/38-02: a wrong string matches zero rows and quietly zeroes the parcel).
+    Matches rows whose [start_date, end_date] span covers the period, then sums the
+    et_data list items whose "date" starts with the period and whose <key> is set.
+
+    Returns (total_mm: Decimal, months_matched: int, row_count: int).
+    A parcel with no matching rows returns (Decimal("0"), 0, 0).
     """
     import datetime as dt
 
     from datasync.models import OpenETCache
 
-    model = config.get("model", "Ensemble")
-    variable = config.get("variable", "ET")
     year, month = _period_year_month(period)
     period_first = dt.date(year, month, 1)
 
@@ -87,9 +91,29 @@ def et_gross(running_af, parcel, period, ctx, config):
         for item in row.et_data or []:
             if not isinstance(item, dict):
                 continue
-            if str(item.get("date", "")).startswith(period) and item.get("et") is not None:
-                total_mm += Decimal(str(item["et"]))
+            if str(item.get("date", "")).startswith(period) and item.get(key) is not None:
+                total_mm += Decimal(str(item[key]))
                 matched += 1
+
+    return total_mm, matched, rows.count()
+
+
+def et_gross(running_af, parcel, period, ctx, config):
+    """Seed the chain with the parcel's gross ET for the period (positive AF).
+
+    Reads OpenETCache rows matching the configured model/variable for this parcel
+    via the shared _read_cache_mm helper, summing the et_data items keyed "et" for
+    the period month. Converts the mm total to a POSITIVE acre-foot magnitude using
+    the same mm->AF math as et_mm_to_acre_feet (which returns a negative usage
+    value; we take abs). Ignores the incoming running_af — this primitive starts
+    the chain.
+    """
+    model = config.get("model", "Ensemble")
+    variable = config.get("variable", "ET")
+
+    total_mm, matched, row_count = _read_cache_mm(
+        parcel, period, variable, model, "et"
+    )
 
     area = parcel.area_acres or Decimal("0")
     # et_mm_to_acre_feet returns negative (usage); the chain threads positive
@@ -99,7 +123,7 @@ def et_gross(running_af, parcel, period, ctx, config):
     detail = {
         "model": model,
         "variable": variable,
-        "rows": rows.count(),
+        "rows": row_count,
         "months_matched": matched,
         "et_mm": str(total_mm),
         "area_acres": str(area),
@@ -167,10 +191,61 @@ def clamp_floor(running_af, parcel, period, ctx, config):
     return new_running, _record("clamp_floor", running_af, new_running, detail)
 
 
-# Maps step_type -> primitive. subtract_effective_precip is deliberately not
-# here; 38-03 adds it test-first.
+def subtract_effective_precip(running_af, parcel, period, ctx, config):
+    """Subtract effective precipitation (AF) from gross ET — net consumptive use.
+
+    The contested math (raw / fraction / usda_scs TR-21) lives in the Django-free
+    accounting/precip_math.py, proven against published reference vectors. This
+    wrapper only does the I/O and units:
+
+      1. Read parcel-month precip mm  (variable="precip", model="GRIDMET", key "precip")
+         and gross ET mm (variable="ET", model="Ensemble", key "et") from the cache.
+         Reading ET here independently keeps the step order-agnostic — it does NOT
+         trust running_af, which depends on where in the chain it sits.
+      2. mm -> inches (÷25.4), call effective_precip_inches(p_in, et_in, **config).
+      3. inches -> mm (×25.4) -> AF via the one shared mm->AF helper.
+      4. new_running = running_af − Pe_af. Does NOT floor (clamp_floor owns that);
+         usda_scs caps Pe at ET so its own output stays ≥ 0, but raw/fraction may
+         drive running_af negative — correct, clamp_floor catches it later.
+
+    No precip row -> Pe = 0 -> running_af passes through unchanged (zero effective
+    precip is a valid, correct outcome, e.g. a dry summer month).
+    """
+    from accounting.precip_math import effective_precip_inches
+
+    precip_mm, _, _ = _read_cache_mm(parcel, period, "precip", "GRIDMET", "precip")
+    et_mm, _, _ = _read_cache_mm(parcel, period, "ET", "Ensemble", "et")
+
+    mm_per_in = Decimal("25.4")
+    p_in = precip_mm / mm_per_in
+    et_in = et_mm / mm_per_in
+
+    pe_in = effective_precip_inches(p_in, et_in, **config)
+    pe_mm = pe_in * mm_per_in
+
+    area = parcel.area_acres or Decimal("0")
+    # abs(): et_mm_to_acre_feet returns a negative usage value; we want the
+    # positive effective-precip magnitude to subtract from the running total.
+    pe_af = abs(et_mm_to_acre_feet(pe_mm, area))
+    new_running = running_af - pe_af
+
+    detail = {
+        "method": config.get("method", "usda_scs"),
+        "precip_mm": str(precip_mm),
+        "et_mm": str(et_mm),
+        "effective_precip_mm": str(pe_mm),
+        "effective_precip_af": str(pe_af),
+    }
+    return new_running, _record(
+        "subtract_effective_precip", running_af, new_running, detail
+    )
+
+
+# Maps step_type -> primitive. subtract_effective_precip joined the registry in
+# 38-03 (implemented test-first against published TR-21 vectors).
 STEP_REGISTRY = {
     "et_gross": et_gross,
+    "subtract_effective_precip": subtract_effective_precip,
     "subtract_surface_water": subtract_surface_water,
     "facility_only_zero": facility_only_zero,
     "clamp_floor": clamp_floor,

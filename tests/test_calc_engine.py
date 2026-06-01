@@ -61,15 +61,16 @@ def _irrigate(parcel):
 # --------------------------------------------------------------------------
 
 
-def test_registry_has_exactly_the_four_simple_primitives():
+def test_registry_has_the_five_primitives():
     assert set(STEP_REGISTRY) == {
         "et_gross",
+        "subtract_effective_precip",
         "subtract_surface_water",
         "facility_only_zero",
         "clamp_floor",
     }
-    # subtract_effective_precip is 38-03's job — must not be present yet.
-    assert "subtract_effective_precip" not in STEP_REGISTRY
+    # subtract_effective_precip joined the registry in 38-03 (TDD).
+    assert "subtract_effective_precip" in STEP_REGISTRY
 
 
 # --------------------------------------------------------------------------
@@ -218,10 +219,12 @@ def test_evaluate_chain_skips_disabled_steps():
 def test_evaluate_chain_raises_on_enabled_unregistered_step():
     parcel = _parcel("EV-2")
     plan = CalculationPlan.objects.create(name="Broken", is_active=True)
+    # A step_type that is genuinely not in STEP_REGISTRY (subtract_effective_precip
+    # IS registered as of 38-03, so use a clearly-bogus name here).
     CalculationStep.objects.create(
         plan=plan,
         order=1,
-        step_type="subtract_effective_precip",
+        step_type="not_a_real_step",
         enabled=True,
         config={},
         label="enabled-but-unregistered",
