@@ -91,6 +91,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.site_config",
                 "core.context_processors.analytics",
+                "core.context_processors.access_flags",
             ],
         },
     },
@@ -156,6 +157,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
+# Closes public signup when ACCESS_CONTROL_ENFORCED is ON (go-live); open while
+# OFF so the demo's self-registration is unchanged. See core.adapters / ISS-021.
+ACCOUNT_ADAPTER = "core.adapters.AccessControlledAccountAdapter"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 SOCIALACCOUNT_PROVIDERS = {}
