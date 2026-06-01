@@ -8,6 +8,8 @@ from .models import (
     ReportingPeriod,
     WaterAccount,
     WaterAccountParcel,
+    WaterCredit,
+    WaterCreditDraw,
     WaterType,
 )
 
@@ -66,3 +68,23 @@ class CalculationStepAdmin(admin.ModelAdmin):
     list_display = ["plan", "order", "step_type", "enabled", "label"]
     list_filter = ["enabled", "step_type", "plan"]
     ordering = ["plan", "order"]
+
+
+@admin.register(WaterCredit)
+class WaterCreditAdmin(admin.ModelAdmin):
+    list_display = [
+        "parcel",
+        "origin",
+        "origin_period",
+        "amount_af",
+        "depreciation_rate",
+        "expires_period",
+    ]
+    list_filter = ["origin"]
+    raw_id_fields = ["parcel"]
+
+
+@admin.register(WaterCreditDraw)
+class WaterCreditDrawAdmin(admin.ModelAdmin):
+    list_display = ["credit", "draw_period", "amount_af"]
+    raw_id_fields = ["credit"]

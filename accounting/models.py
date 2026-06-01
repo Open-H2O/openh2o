@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+from decimal import Decimal
+
 from django.conf import settings
 from django.contrib.gis.db import models
 
@@ -160,3 +162,82 @@ class CalculationStep(models.Model):
 
     def __str__(self):
         return f"{self.order}. {self.label}"
+
+
+class WaterCredit(models.Model):
+    """An immutable surplus deposit — banked water carried forward to a later month.
+
+    When a parcel's chain nets out below the floor in a wet month (effective
+    precipitation + surface water exceeded gross ET), that surplus is banked here
+    as a positive ``amount_af`` rather than silently lost. The principal NEVER
+    mutates after deposit; consumption is recorded separately as WaterCreditDraw
+    rows so re-running a period is idempotent (delete the draws, recompute). The
+    depreciated, draw-net available value is computed by accounting.banking_math /
+    the runner — deliberately NOT a method here, to keep this a plain deposit row.
+    """
+
+    ORIGIN_CHOICES = [
+        ("precip_surplus", "Precip surplus"),
+        ("allocation_carryover", "Allocation carryover"),
+    ]
+
+    parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE)
+    origin_period = models.CharField(
+        max_length=7, help_text="Month the surplus was banked, as YYYY-MM."
+    )
+    amount_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="Surplus banked (acre-feet, positive). The principal — never mutated.",
+    )
+    origin = models.CharField(
+        max_length=24, choices=ORIGIN_CHOICES, default="precip_surplus"
+    )
+    depreciation_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Per-period geometric decay (0 = no decay; >=1 = gone after one period).",
+    )
+    expires_period = models.CharField(
+        max_length=7,
+        null=True,
+        blank=True,
+        help_text="Month at/after which the credit is dead, as YYYY-MM. Null = never expires.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["origin_period"]
+
+    def __str__(self):
+        return f"{self.parcel} {self.amount_af} AF @ {self.origin_period}"
+
+
+class WaterCreditDraw(models.Model):
+    """A consumption record: how much of a WaterCredit a later deficit month drew.
+
+    Tracked as rows rather than a mutable balance so re-runs stay idempotent (the
+    runner deletes this period's draws then recomputes) and so 38-05's audit trail
+    has the per-period drawdown to read. ``amount_af`` is the depreciated value
+    actually drawn in ``draw_period`` (not the credit's full principal).
+    """
+
+    credit = models.ForeignKey(
+        WaterCredit, on_delete=models.CASCADE, related_name="draws"
+    )
+    draw_period = models.CharField(
+        max_length=7, help_text="Month the draw was applied, as YYYY-MM."
+    )
+    amount_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="Depreciated value drawn in this period (acre-feet, positive).",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["draw_period"]
+
+    def __str__(self):
+        return f"{self.amount_af} AF @ {self.draw_period} from {self.credit_id}"
