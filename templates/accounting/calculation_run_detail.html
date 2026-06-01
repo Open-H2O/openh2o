@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}How {{ parcel.parcel_number }} {{ period }} was calculated - Open Water Accounting Platform{% endblock %}
+{% block page_title %}How was this calculated?{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'accounting:ledger_list' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'accounting:ledger_list' %}">Use Ledger</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ parcel.parcel_number }} · {{ period }}</span>
+  </nav>
+  <p class="page-description">The step-by-step derivation behind one calculated ledger entry, from gross satellite ET down to the billable groundwater figure.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+
+  <!-- Back link -->
+  <div>
+    <a href="{% url 'accounting:ledger_list' %}" class="back-link">
+      &larr; Back to Use Ledger
+    </a>
+  </div>
+
+  <!-- Header: parcel + period + honesty label -->
+  <div class="card-raised">
+    <div class="row-between">
+      <div>
+        <h2 class="section-header" style="margin-bottom: var(--space-xs);">
+          {{ parcel.parcel_number }} &middot; {{ period }}
+        </h2>
+        <div class="text-tertiary text-sm">
+          {% if parcel.owner_name %}{{ parcel.owner_name }} &middot; {% endif %}{{ parcel.area_acres|floatformat:2 }} acres
+        </div>
+      </div>
+      <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
+        {{ run.final_af|floatformat:4 }} AF
+        <div class="field-label" style="text-align: right;">Billable groundwater</div>
+      </div>
+    </div>
+
+    <!-- Honesty label (prominent, gold inset) -->
+    <div class="card-inset" style="margin-top: var(--space-md); border: 1px solid rgba(228,163,23,0.35); background: rgba(228,163,23,0.08);">
+      <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
+        <strong style="color: var(--color-gold);">Derived extraction estimate — not measured pumping.</strong>
+        This figure is computed from satellite evapotranspiration, not read from a meter. The steps below show every adjustment so the number can be checked.
+      </p>
+    </div>
+  </div>
+
+  <!-- The gross → net waterfall -->
+  <div class="card-raised">
+    <h2 class="section-header mb-md">Calculation steps</h2>
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th style="width: 1%; white-space: nowrap;">#</th>
+          <th>Step</th>
+          <th>Detail</th>
+          <th class="th-right">In (AF)</th>
+          <th class="th-right">Out (AF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for step in steps %}
+        <tr>
+          <td class="text-tertiary">{{ forloop.counter }}</td>
+          <td style="font-weight: 600;">{{ step.label }}</td>
+          <td class="text-secondary">{{ step.detail_text }}</td>
+          <td class="td-num text-tertiary">{{ step.input_af|floatformat:4 }}</td>
+          <td class="td-num">{{ step.output_af|floatformat:4 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Banking block (only when a credit was deposited or drawn) -->
+  {% if has_banking %}
+  <div class="card-raised">
+    <h2 class="section-header mb-md">Banked water</h2>
+    <div style="display: flex; gap: var(--space-xl); margin-bottom: var(--space-md);">
+      <div class="field-group mb-0">
+        <div class="field-label">Deposited this month</div>
+        <div class="td-num-bold" style="font-size: 1.1rem; color: var(--color-text-primary);">{{ run.banked_af|floatformat:4 }} AF</div>
+      </div>
+      <div class="field-group mb-0">
+        <div class="field-label">Drawn down this month</div>
+        <div class="td-num-bold" style="font-size: 1.1rem; color: var(--color-text-primary);">{{ run.drawn_af|floatformat:4 }} AF</div>
+      </div>
+    </div>
+    {% if draws %}
+    <p class="text-tertiary text-sm" style="margin-bottom: var(--space-sm);">Credits drawn down to reduce this month's bill:</p>
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th>Credit banked in</th>
+          <th class="th-right">Drawn (AF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for draw in draws %}
+        <tr>
+          <td class="text-secondary">{{ draw.credit.origin_period }}</td>
+          <td class="td-num">{{ draw.amount_af|floatformat:4 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Footer: the final number ties back to the ledger -->
+  <div class="card-raised card-inset">
+    <div class="row-between">
+      <div>
+        <div class="field-label">Final billable groundwater</div>
+        <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
+          Equals the magnitude of the <span class="text-secondary">calculated</span> ledger entry for {{ period }}.
+        </p>
+      </div>
+      <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary);">
+        {{ run.final_af|floatformat:4 }} AF
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

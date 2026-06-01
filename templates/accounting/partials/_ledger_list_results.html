@@ -24,7 +24,15 @@
         <td class="td-num-bold {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">
           {{ entry.amount_acre_feet|floatformat:2 }}
         </td>
-        <td>{% include "accounting/partials/_source_badge.html" with source_type=entry.source_type %}</td>
+        <td>
+          {% include "accounting/partials/_source_badge.html" with source_type=entry.source_type %}
+          {% if entry.source_type == "calculated" %}
+          <a href="{% url 'accounting:calculation_run_detail' entry.parcel.id entry.effective_date|date:'Y-m' %}"
+             class="data-table-link text-xs" style="display: block; margin-top: 2px; white-space: nowrap;">
+            How was this calculated?
+          </a>
+          {% endif %}
+        </td>
         <td class="text-tertiary">
           {% if entry.water_type %}{{ entry.water_type.name }}{% else %}&mdash;{% endif %}
         </td>

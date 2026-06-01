@@ -45,4 +45,10 @@ urlpatterns = [
     path("ledger/upload/", views.csv_upload, name="csv_upload"),
     path("ledger/template/", views.csv_template, name="csv_template"),
     path("ledger/export/", views.ledger_export, name="ledger_export"),
+    # Calculation Run audit trail ("How was this calculated?")
+    path(
+        "calculation-run/<int:parcel_id>/<str:period>/",
+        views.calculation_run_detail,
+        name="calculation_run_detail",
+    ),
 ]

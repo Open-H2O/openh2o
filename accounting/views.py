@@ -7,7 +7,7 @@ import io
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -21,9 +21,11 @@ from accounting.forms import (
 )
 from accounting.models import (
     AllocationPlan,
+    CalculationRun,
     ReportingPeriod,
     WaterAccount,
     WaterAccountParcel,
+    WaterCreditDraw,
     WaterType,
 )
 from accounting.services import account_balance, parse_ledger_csv, parcel_balance, zone_balance
@@ -669,3 +671,93 @@ def ledger_export(request):
             entry.description,
         ])
     return response
+
+
+# ---------------------------------------------------------------------------
+# Calculation Run audit trail — "How was this calculated?"
+# ---------------------------------------------------------------------------
+
+
+def _fmt(value, places=4):
+    """Round a Decimal-ish breakdown value to `places` for display, defaulting
+    to a dash when the value is missing."""
+    if value is None or value == "":
+        return "—"
+    try:
+        return f"{Decimal(str(value)):.{places}f}"
+    except (ArithmeticError, ValueError, TypeError):
+        return str(value)
+
+
+def _step_detail_summary(step):
+    """The salient, human-readable detail for one breakdown step.
+
+    Each primitive stores different keys (et_gross has et_mm/area; the precip step
+    has the method + effective_precip_af; clamp_floor has floor/surplus), so we
+    surface only the line that explains what THAT step did to the running total.
+    """
+    detail = step.get("detail", {}) or {}
+    step_type = step.get("step_type")
+
+    if step_type == "et_gross":
+        return f"{_fmt(detail.get('et_mm'), 2)} mm × {_fmt(detail.get('area_acres'), 2)} ac"
+    if step_type == "subtract_effective_precip":
+        method = detail.get("method", "usda_scs")
+        return f"{method}: −{_fmt(detail.get('effective_precip_af'))} AF effective precip"
+    if step_type == "subtract_surface_water":
+        return f"−{_fmt(detail.get('surface_water_af'))} AF surface water delivered"
+    if step_type == "facility_only_zero":
+        return "facility-only — zeroed" if detail.get("facility_only") else "has irrigation — unchanged"
+    if step_type == "clamp_floor":
+        surplus = Decimal(str(detail.get("surplus_af", "0") or "0"))
+        base = f"floor {_fmt(detail.get('floor'), 2)}"
+        if surplus > 0:
+            return f"{base}; {_fmt(surplus)} AF surplus banked"
+        return base
+    return ""
+
+
+@login_required
+def calculation_run_detail(request, parcel_id, period):
+    """Read-only audit page reconstructing one parcel-month's gross→net waterfall.
+
+    Keyed on the STABLE (parcel, period), not the run's pk: the calculated ledger
+    row is delete-recreated every run (its pk churns) and the ledger list iterates
+    rows, not runs, so this key lets a ledger link resolve without threading a run
+    pk through the list and survives re-runs. Most-recent run wins if more than one
+    ever exists; 404 when none.
+    """
+    parcel = get_object_or_404(Parcel, pk=parcel_id)
+    run = (
+        CalculationRun.objects.filter(parcel=parcel, period=period)
+        .order_by("-created_at")
+        .first()
+    )
+    if run is None:
+        raise Http404("No calculation run for this parcel and period.")
+
+    steps = [
+        {
+            "label": s.get("label") or s.get("step_type"),
+            "input_af": s.get("input_af"),
+            "output_af": s.get("output_af"),
+            "detail_text": _step_detail_summary(s),
+        }
+        for s in run.breakdown
+    ]
+
+    draws = (
+        WaterCreditDraw.objects.filter(credit__parcel=parcel, draw_period=period)
+        .select_related("credit")
+        .order_by("credit__origin_period")
+    )
+
+    context = {
+        "parcel": parcel,
+        "period": period,
+        "run": run,
+        "steps": steps,
+        "draws": draws,
+        "has_banking": run.banked_af > 0 or run.drawn_af > 0,
+    }
+    return render(request, "accounting/calculation_run_detail.html", context)
