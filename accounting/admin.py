@@ -4,6 +4,7 @@ from django.contrib import admin
 from .models import (
     AllocationPlan,
     CalculationPlan,
+    CalculationRun,
     CalculationStep,
     ReportingPeriod,
     WaterAccount,
@@ -88,3 +89,39 @@ class WaterCreditAdmin(admin.ModelAdmin):
 class WaterCreditDrawAdmin(admin.ModelAdmin):
     list_display = ["credit", "draw_period", "amount_af"]
     raw_id_fields = ["credit"]
+
+
+@admin.register(CalculationRun)
+class CalculationRunAdmin(admin.ModelAdmin):
+    """Read-only audit record — the run reconstructs a bill, so it must not be
+    hand-editable (that would let someone rewrite the math after the fact)."""
+
+    list_display = [
+        "parcel",
+        "period",
+        "gross_et_af",
+        "final_af",
+        "banked_af",
+        "drawn_af",
+        "created_at",
+    ]
+    list_filter = ["period"]
+    raw_id_fields = ["parcel"]
+    readonly_fields = [
+        "parcel",
+        "period",
+        "gross_et_af",
+        "effective_precip_af",
+        "surface_water_af",
+        "banked_af",
+        "drawn_af",
+        "final_af",
+        "breakdown",
+        "created_at",
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

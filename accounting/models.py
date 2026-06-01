@@ -241,3 +241,74 @@ class WaterCreditDraw(models.Model):
 
     def __str__(self):
         return f"{self.amount_af} AF @ {self.draw_period} from {self.credit_id}"
+
+
+class CalculationRun(models.Model):
+    """The reconstructable audit record for one `calculated` ledger row (38-05).
+
+    Persisted once per (parcel, period) by run_calculations, in the SAME
+    transaction that writes the calculated ParcelLedger row, so the 1:1 invariant
+    holds: every calculated row has exactly one run; a parcel skipped for no ET
+    gets neither. It captures the gross-ET starting magnitude, what each
+    subtraction step removed (effective precip, surface water), the WaterCredit
+    banking activity folded into the bill (deposited/drawn), the final billable
+    magnitude, and ``breakdown`` — the evaluate_chain per-step list stored VERBATIM
+    so "How was this calculated?" can replay the gross->net waterfall without
+    re-deriving anything. Decimal(4dp) throughout to match the ledger's quantize;
+    a float column would reintroduce the drift the engine was built to avoid.
+
+    No DB unique_together(parcel, period): the runner does delete-then-insert in a
+    transaction (mirroring the calculated ledger row and WaterCredit, which also
+    carry no unique constraint), so a hard constraint buys nothing and would only
+    complicate future multi-period scoping.
+    """
+
+    parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE)
+    period = models.CharField(max_length=7, help_text="Month, as YYYY-MM.")
+    gross_et_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="Chain's starting gross ET magnitude (positive AF).",
+    )
+    effective_precip_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Effective precipitation subtracted (AF); null if no precip step ran.",
+    )
+    surface_water_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Surface water subtracted (AF); null if no surface-water step ran.",
+    )
+    banked_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Surplus deposited as a WaterCredit this period (AF).",
+    )
+    drawn_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Credit drawn down to reduce the bill this period (AF).",
+    )
+    final_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="Final billable magnitude (POSITIVE; equals -ledger.amount_acre_feet).",
+    )
+    breakdown = models.JSONField(
+        default=list,
+        help_text="The evaluate_chain per-step list, stored verbatim.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.parcel} {self.period} → {self.final_af} AF"
