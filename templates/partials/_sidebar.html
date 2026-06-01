@@ -160,7 +160,19 @@
             </svg>
             <span class="sidebar-link-text">Zones</span>
         </a>
-        {% if request.user.is_staff %}
+        {% if user_is_admin %}
+        <a href="{% url 'core:users_list' %}"
+           class="sidebar-link{% if '/users/' in request.path %} active{% endif %}">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span class="sidebar-link-text">Users</span>
+        </a>
+        {% endif %}
+        {% if user_is_admin %}
         <a href="{% url 'accounting:methodology_settings' %}"
            class="sidebar-link{% if '/accounting/methodology' in request.path %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -184,6 +196,7 @@
             </svg>
             <span class="sidebar-link-text">Site Health</span>
         </a>
+        {% if not access_enforced or user_is_admin %}
         <a href="{% url 'setup:wizard' %}"
            class="sidebar-link{% if '/setup/' in request.path %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -197,6 +210,7 @@
             </svg>
             <span class="sidebar-link-text">Setup Wizard</span>
         </a>
+        {% endif %}
 
         <!-- HELP -->
         <div class="sidebar-section">
