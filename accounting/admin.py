@@ -44,3 +44,25 @@ class AllocationPlanAdmin(admin.ModelAdmin):
     list_display = ["name", "zone", "water_type", "reporting_period", "allocation_acre_feet"]
     list_filter = ["water_type", "reporting_period", "zone"]
     search_fields = ["name"]
+
+
+class CalculationStepInline(admin.TabularInline):
+    model = CalculationStep
+    extra = 0
+    fields = ["order", "step_type", "enabled", "label", "config"]
+    ordering = ["order"]
+
+
+@admin.register(CalculationPlan)
+class CalculationPlanAdmin(admin.ModelAdmin):
+    list_display = ["name", "is_active", "water_type", "created_at"]
+    list_filter = ["is_active"]
+    search_fields = ["name"]
+    inlines = [CalculationStepInline]
+
+
+@admin.register(CalculationStep)
+class CalculationStepAdmin(admin.ModelAdmin):
+    list_display = ["plan", "order", "step_type", "enabled", "label"]
+    list_filter = ["enabled", "step_type", "plan"]
+    ordering = ["plan", "order"]
