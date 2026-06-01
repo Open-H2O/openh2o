@@ -45,7 +45,33 @@
     {% include "accounting/partials/_methodology_steps.html" %}
   </div>
 
-  <!-- Live preview lands here (picker wired in Task 3) -->
+  <!-- Live preview picker -->
+  <div class="card-raised">
+    <h2 class="section-header mb-md">Preview on a sample parcel</h2>
+    <p class="text-tertiary text-sm" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-md);">
+      Edit a step above and <strong>Save</strong> it, then preview here to see the effect before any billing run. The preview writes nothing.
+    </p>
+    <form hx-post="{% url 'accounting:methodology_preview' %}"
+          hx-target="#preview-pane" hx-swap="innerHTML"
+          style="display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
+      <div class="field-group mb-0">
+        <label class="form-label" for="preview-parcel">Parcel</label>
+        <select name="parcel_id" id="preview-parcel" class="form-select">
+          {% for p in parcels %}
+          <option value="{{ p.id }}">{{ p.parcel_number }}{% if p.owner_name %} — {{ p.owner_name }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field-group mb-0">
+        <label class="form-label" for="preview-period">Period (YYYY-MM)</label>
+        <input type="text" name="period" id="preview-period" value="{{ default_period }}"
+               placeholder="2024-06" class="form-input" style="width: 9rem;">
+      </div>
+      <button type="submit" class="btn-primary btn-sm">Preview</button>
+    </form>
+  </div>
+
+  <!-- Live preview output swaps in here -->
   <div id="preview-pane"></div>
 
   {% endif %}

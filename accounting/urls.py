@@ -68,4 +68,9 @@ urlpatterns = [
         views.methodology_step_config,
         name="methodology_step_config",
     ),
+    path(
+        "methodology/preview/",
+        views.methodology_preview,
+        name="methodology_preview",
+    ),
 ]

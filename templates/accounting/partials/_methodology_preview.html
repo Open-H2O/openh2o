@@ -1,0 +1,65 @@
+{% comment %}
+Live preview output — swapped into #preview-pane by the picker form. Reflects the
+currently-SAVED methodology (evaluate_chain reads the DB plan) and persists
+nothing. Reuses the gross→net waterfall shape from calculation_run_detail.html.
+{% endcomment %}
+<div class="card-raised" style="margin-top: var(--space-md);">
+  {% if error %}
+    <p class="text-secondary text-sm" style="margin: 0;">{{ error }}</p>
+  {% else %}
+
+    <!-- Header: parcel + period + the final number -->
+    <div class="row-between mb-md" style="align-items: flex-start;">
+      <div>
+        <h2 class="section-header" style="margin-bottom: var(--space-xs);">
+          Preview &middot; {{ parcel.parcel_number }} &middot; {{ period }}
+        </h2>
+        <div class="text-tertiary text-sm">
+          Uses the currently-saved methodology. Nothing is billed or banked — this writes no data.
+        </div>
+      </div>
+      <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
+        {{ final_af|floatformat:4 }} AF
+        <div class="field-label" style="text-align: right;">Billable groundwater</div>
+      </div>
+    </div>
+
+    <!-- Honesty label -->
+    <div class="card-inset" style="border: 1px solid rgba(228,163,23,0.35); background: rgba(228,163,23,0.08); margin-bottom: var(--space-md);">
+      <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
+        <strong style="color: var(--color-gold);">Derived extraction estimate — not measured pumping.</strong>
+        Computed from satellite evapotranspiration via the saved chain below.
+      </p>
+    </div>
+
+    {% if steps %}
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th style="width: 1%; white-space: nowrap;">#</th>
+          <th>Step</th>
+          <th>Detail</th>
+          <th class="th-right">In (AF)</th>
+          <th class="th-right">Out (AF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for step in steps %}
+        <tr>
+          <td class="text-tertiary">{{ forloop.counter }}</td>
+          <td style="font-weight: 600;">{{ step.label }}</td>
+          <td class="text-secondary">{{ step.detail_text }}</td>
+          <td class="td-num text-tertiary">{{ step.input_af|floatformat:4 }}</td>
+          <td class="td-num">{{ step.output_af|floatformat:4 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-tertiary text-sm" style="margin: 0;">
+      No enabled steps produced a breakdown for this parcel-month — final {{ final_af|floatformat:4 }} AF.
+    </p>
+    {% endif %}
+
+  {% endif %}
+</div>

@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounting.calculation import evaluate_chain
 from accounting.forms import (
     AllocationPlanForm,
     CsvUploadForm,
@@ -943,3 +944,61 @@ def methodology_step_config(request, step_id):
         step.label = label
     step.save(update_fields=["config", "label"])
     return _render_steps(request, step.plan)
+
+
+@login_required
+@staff_required
+def methodology_preview(request):
+    """Live preview of the CURRENTLY-SAVED methodology on one sample parcel.
+
+    Calls evaluate_chain, which is side-effect-FREE by the 38-04 design contract:
+    it reads the active DB plan and writes NOTHING — no ledger row, no
+    WaterCredit, no CalculationRun (run_calculations is the only writer). So the
+    self-serve loop is: edit a knob → Save → Preview, and the preview reflects the
+    saved chain. Degrades to a friendly message (never a 500) on a missing parcel,
+    a blank/malformed period, or a no-active-plan state.
+    """
+    parcel_id = (request.POST.get("parcel_id") or request.GET.get("parcel_id") or "").strip()
+    period = (request.POST.get("period") or request.GET.get("period") or "").strip()
+
+    context = {
+        "parcel": None,
+        "period": period,
+        "steps": [],
+        "final_af": None,
+        "error": None,
+    }
+
+    parcel = None
+    if parcel_id:
+        try:
+            parcel = Parcel.objects.filter(pk=parcel_id).first()
+        except (ValueError, TypeError):
+            parcel = None
+    if parcel is None:
+        context["error"] = "Pick a parcel to preview."
+        return render(request, "accounting/partials/_methodology_preview.html", context)
+    context["parcel"] = parcel
+
+    if not period:
+        context["error"] = "Enter a period (YYYY-MM) to preview."
+        return render(request, "accounting/partials/_methodology_preview.html", context)
+
+    try:
+        final_af, breakdown = evaluate_chain(parcel, period)
+    except ValueError as exc:
+        # No active plan, malformed period ("2024" / "abc-de"), etc. — surface it.
+        context["error"] = f"Cannot preview: {exc}"
+        return render(request, "accounting/partials/_methodology_preview.html", context)
+
+    context["final_af"] = final_af
+    context["steps"] = [
+        {
+            "label": s.get("label") or s.get("step_type"),
+            "input_af": s.get("input_af"),
+            "output_af": s.get("output_af"),
+            "detail_text": _step_detail_summary(s),
+        }
+        for s in breakdown
+    ]
+    return render(request, "accounting/partials/_methodology_preview.html", context)
