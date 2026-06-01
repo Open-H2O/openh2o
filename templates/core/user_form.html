@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Add User - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Add User{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'core:users_list' %}">Administration</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'core:users_list' %}">Users</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Add User</span>
+  </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack" style="max-width: 600px;">
+
+  <a href="{% url 'core:users_list' %}" class="back-link">&larr; Back to Users</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Add a User</h2>
+    <p class="text-sm text-secondary mb-md">
+      Create an account someone can sign in with right away. Email isn't sent
+      from this site, so set their starting password here and share it with them
+      directly &mdash; they can change it afterward.
+    </p>
+
+    {% if form.non_field_errors %}
+    <div class="form-error-box">
+      {{ form.non_field_errors|striptags }}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+        {{ form.email }}
+        {% if form.email.errors %}<p class="form-error-text">{{ form.email.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
+        {{ form.first_name }}
+        {% if form.first_name.errors %}<p class="form-error-text">{{ form.first_name.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+        {{ form.last_name }}
+        {% if form.last_name.errors %}<p class="form-error-text">{{ form.last_name.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.title.id_for_label }}">Title</label>
+        {{ form.title }}
+        {% if form.title.errors %}<p class="form-error-text">{{ form.title.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password.id_for_label }}">Starting password</label>
+        {{ form.password }}
+        <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">{{ form.password.help_text }}</p>
+        {% if form.password.errors %}<p class="form-error-text">{{ form.password.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="row-start" style="gap: var(--space-sm); cursor: pointer;">
+          {{ form.agency_admin }}
+          <span class="form-label" style="margin: 0;">Administrator</span>
+        </label>
+        <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">{{ form.agency_admin.help_text }}</p>
+        {% if form.agency_admin.errors %}<p class="form-error-text">{{ form.agency_admin.errors|striptags }}</p>{% endif %}
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">Add User</button>
+        <a href="{% url 'core:users_list' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

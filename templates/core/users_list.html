@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Users - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Users{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'core:users_list' %}">Administration</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Users</span>
+  </nav>
+  <p class="page-description">Manage who can sign in and who has administrator access. Administrators can manage users, the setup wizard, and methodology; operators can enter and view data.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+
+  {% include "partials/_messages.html" %}
+
+  <!-- Toolbar -->
+  <div class="card-raised toolbar-row">
+    <div style="flex: 1;">
+      <span class="text-secondary text-sm">
+        <span class="count-pill">{{ users|length }}</span>
+        user{{ users|length|pluralize }}
+      </span>
+    </div>
+    <div>
+      <a href="{% url 'core:user_create' %}" class="btn-primary">+ Add User</a>
+    </div>
+  </div>
+
+  <!-- Results -->
+  {% if users %}
+  <div class="card-raised table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th class="th-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.get_full_name|default:"—" }}{% if u.title %}<br><span class="text-secondary text-sm">{{ u.title }}</span>{% endif %}</td>
+          <td class="text-secondary">{{ u.email|default:u.username }}</td>
+          <td>
+            {% if u.is_administrator %}
+              <span class="badge badge-pill badge-gold">Administrator</span>
+            {% else %}
+              <span class="badge badge-pill badge-grey">Operator</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.is_active %}
+              <span class="badge badge-pill badge-green">Active</span>
+            {% else %}
+              <span class="badge badge-pill badge-grey">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="th-right">
+            {% if u == request.user %}
+              <span class="text-tertiary text-sm">You</span>
+            {% elif u.is_staff %}
+              <span class="text-tertiary text-sm">System admin</span>
+            {% else %}
+            <div class="row-start" style="gap: var(--space-xs); justify-content: flex-end; flex-wrap: wrap;">
+              <form method="post" action="{% url 'core:user_toggle_admin' u.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-secondary btn-sm">
+                  {% if u.agency_admin %}Revoke admin{% else %}Make admin{% endif %}
+                </button>
+              </form>
+              <form method="post" action="{% url 'core:user_toggle_active' u.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-secondary btn-sm">
+                  {% if u.is_active %}Deactivate{% else %}Reactivate{% endif %}
+                </button>
+              </form>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-raised empty-state">
+    <p class="empty-state-text">No users yet.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

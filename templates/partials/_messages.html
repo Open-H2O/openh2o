@@ -1,0 +1,12 @@
+{# Render Django messages on a full page load. The app's base.html surfaces
+   feedback via HTMX-driven toasts only, so a plain POST -> redirect (as the
+   Users page uses) needs this banner for success/error feedback to show. #}
+{% if messages %}
+<div class="message-stack">
+  {% for message in messages %}
+  <div class="{% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %}">
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

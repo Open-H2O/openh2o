@@ -997,6 +997,21 @@ a { color: inherit; }
     color: var(--color-warning);
 }
 
+.alert-success {
+    padding: var(--space-sm) var(--space-md);
+    background: oklch(0.45 0.12 155 / 0.12);
+    border: 1px solid oklch(0.45 0.12 155 / 0.3);
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    color: var(--forest-400);
+}
+
+.message-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
 /* -- Map embed ----------------------------------------------------------- */
 
 .map-embed {
