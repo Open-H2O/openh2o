@@ -33,8 +33,9 @@ from django.db import transaction
 from django.db.models import Sum
 
 from accounting.banking_math import depreciated_value, is_expired, periods_between
-from accounting.calculation import evaluate_chain
+from accounting.calculation import evaluate_chain, plan_config_hash
 from accounting.models import (
+    CalculationPlan,
     CalculationRun,
     ReportingPeriod,
     WaterCredit,
@@ -143,7 +144,9 @@ def _apply_banking(parcel, period, final_af, breakdown, *, commit):
     return final_af, {"deposited": deposited, "drawn": drawn_total}
 
 
-def _persist_calculation_run(parcel, period, gross_af, net_af, breakdown, info):
+def _persist_calculation_run(
+    parcel, period, gross_af, net_af, breakdown, info, plan_id, plan_name, plan_hash
+):
     """Write the one CalculationRun for this (parcel, period) — the audit trail.
 
     Delete-then-insert so a re-run leaves exactly one run with identical values
@@ -186,6 +189,9 @@ def _persist_calculation_run(parcel, period, gross_af, net_af, breakdown, info):
         drawn_af=info["drawn"],
         final_af=net_af.quantize(quant),
         breakdown=breakdown,
+        methodology_plan_id=plan_id,
+        methodology_plan_name=plan_name,
+        config_hash=plan_hash,
     )
 
 
@@ -270,6 +276,16 @@ class Command(BaseCommand):
                 )
             )
 
+        # Snapshot the methodology ONCE: the active plan is identical for every
+        # parcel in a single run, so hashing per-parcel would be wasted work and
+        # could tear if the plan were edited mid-run. These copied values (not a
+        # FK) are stamped onto each CalculationRun so the filed number names its
+        # recipe even after the live plan changes (ISS-020 #2).
+        active_plan = CalculationPlan.active()
+        plan_hash = plan_config_hash(active_plan) if active_plan else ""
+        plan_id = active_plan.id if active_plan else None
+        plan_name = active_plan.name if active_plan else ""
+
         written = 0
         skipped_no_et = 0
         banked = 0
@@ -328,7 +344,8 @@ class Command(BaseCommand):
                 # magnitudes are pulled off the breakdown the command already has
                 # (no re-derivation); steps absent from the chain store NULL.
                 _persist_calculation_run(
-                    parcel, period, gross_af, net_af, breakdown, info
+                    parcel, period, gross_af, net_af, breakdown, info,
+                    plan_id, plan_name, plan_hash,
                 )
             extra = ""
             if info["deposited"] > 0:

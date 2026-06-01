@@ -5,8 +5,15 @@ evaluate_chain walks the active CalculationPlan's enabled steps in order,
 threading a positive extraction magnitude (acre-feet) and a shared ctx dict
 through each primitive, and returns the final magnitude plus a per-step
 breakdown suitable for persisting (38-04) or display.
+
+plan_config_hash distills that same plan into a short, stable methodology
+fingerprint stamped onto every CalculationRun (42-01), so a filed number can
+name the recipe that made it even after the live plan is later edited. It is a
+methodology fingerprint, NOT a security hash.
 """
 
+import hashlib
+import json
 from decimal import Decimal
 
 from accounting.models import CalculationPlan
@@ -51,3 +58,27 @@ def evaluate_chain(parcel, period):
         breakdown.append(record)
 
     return running_af, breakdown
+
+
+def plan_config_hash(plan):
+    """Return a 12-hex methodology fingerprint for a CalculationPlan.
+
+    Hashes ONLY the enabled steps in `order` — each step's order, step_type, and
+    config — because those are exactly the things that shape the number. Disabled
+    steps never run, and `label` is cosmetic: renaming a step or toggling one that
+    wasn't contributing must NOT change the fingerprint of an unchanged
+    calculation. The config dict is serialized with sorted keys so a re-run with
+    the same plan reproduces the same hash regardless of dict ordering.
+
+    This is a methodology fingerprint for provenance, not a security hash — the
+    12-hex prefix is plenty to distinguish methodology versions and stays readable
+    on the audit page.
+    """
+    canonical = [
+        {"order": s.order, "step_type": s.step_type, "config": s.config}
+        for s in plan.steps.filter(enabled=True).order_by("order")
+    ]
+    serialized = json.dumps(
+        canonical, sort_keys=True, separators=(",", ":"), default=str
+    )
+    return hashlib.sha256(serialized.encode()).hexdigest()[:12]

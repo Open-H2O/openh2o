@@ -333,6 +333,12 @@ class CalculationRun(models.Model):
     transaction (mirroring the calculated ledger row and WaterCredit, which also
     carry no unique constraint), so a hard constraint buys nothing and would only
     complicate future multi-period scoping.
+
+    42-01 adds three provenance fields (methodology_plan_id, methodology_plan_name,
+    config_hash) — an immutable snapshot of the CalculationPlan in force at run
+    time, so the filed number can name the recipe that made it even after the live
+    plan is edited or deleted. They are copied values, deliberately NOT a FK, for
+    exactly that durability.
     """
 
     parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE)
@@ -376,6 +382,24 @@ class CalculationRun(models.Model):
     breakdown = models.JSONField(
         default=list,
         help_text="The evaluate_chain per-step list, stored verbatim.",
+    )
+    methodology_plan_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Snapshot of the CalculationPlan id in force at run time.",
+    )
+    methodology_plan_name = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Snapshot of the plan name in force at run time.",
+    )
+    config_hash = models.CharField(
+        max_length=12,
+        blank=True,
+        default="",
+        help_text="sha256[:12] of the ordered enabled steps + config — the "
+        "methodology fingerprint behind this number.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

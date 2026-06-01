@@ -290,6 +290,96 @@ def test_rerunning_a_period_leaves_one_identical_run():
 # --------------------------------------------------------------------------
 
 
+# --------------------------------------------------------------------------
+# Methodology provenance (ISS-020 #2) — every run carries a durable fingerprint
+# of the recipe that made it; the fingerprint is stable across re-runs and moves
+# when the enabled config moves, but not when a cosmetic label changes.
+# --------------------------------------------------------------------------
+
+
+def _active_step(step_type):
+    return CalculationStep.objects.get(
+        plan=CalculationPlan.active(), step_type=step_type
+    )
+
+
+@pytest.mark.django_db
+def test_run_carries_methodology_provenance():
+    parcel = _parcel("RUN-PROV", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+
+    run = _run(parcel, "2024-06")
+    assert run.config_hash  # non-empty
+    assert len(run.config_hash) == 12
+    assert run.methodology_plan_name == CalculationPlan.active().name
+    assert run.methodology_plan_id == CalculationPlan.active().id
+
+
+@pytest.mark.django_db
+def test_config_hash_stable_across_reruns():
+    parcel = _parcel("RUN-HASHIDEM", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+    hash1 = _run(parcel, "2024-06").config_hash
+    call_command("run_calculations", "--period", "2024-06")  # unchanged plan
+    hash2 = _run(parcel, "2024-06").config_hash
+
+    assert hash1 and hash1 == hash2
+
+
+@pytest.mark.django_db
+def test_config_hash_changes_when_step_config_changes():
+    parcel = _parcel("RUN-HASHCFG", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+    hash1 = _run(parcel, "2024-06").config_hash
+
+    # Bump an enabled step's config — the methodology changed, so must the hash.
+    step = _active_step("clamp_floor")
+    step.config = {**step.config, "floor": 0.5}
+    step.save()
+    call_command("run_calculations", "--period", "2024-06")
+    hash2 = _run(parcel, "2024-06").config_hash
+
+    assert hash1 and hash2 and hash1 != hash2
+
+
+@pytest.mark.django_db
+def test_config_hash_ignores_labels_but_tracks_enabled_set():
+    parcel = _parcel("RUN-HASHLBL", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+    hash1 = _run(parcel, "2024-06").config_hash
+
+    # Renaming a step is cosmetic — the fingerprint must NOT move.
+    step = _active_step("clamp_floor")
+    step.label = "Renamed clamp (cosmetic)"
+    step.save()
+    call_command("run_calculations", "--period", "2024-06")
+    assert _run(parcel, "2024-06").config_hash == hash1
+
+    # Disabling a step changes the enabled set — the fingerprint MUST move,
+    # even when (as here, no surface data) the number itself is unchanged.
+    surf = _active_step("subtract_surface_water")
+    surf.enabled = False
+    surf.save()
+    call_command("run_calculations", "--period", "2024-06")
+    assert _run(parcel, "2024-06").config_hash != hash1
+
+
 @pytest.mark.django_db
 def test_banking_activity_is_captured_on_the_run():
     parcel = _parcel("RUN-BANK", acres="10")
