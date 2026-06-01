@@ -160,6 +160,15 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 SOCIALACCOUNT_PROVIDERS = {}
 
+# -- Access control (two-tier model, ISS-021) --------------------------------
+# Master switch for the Administrator vs Operator access model.
+#   OFF (default) = status quo: any logged-in user reaches every screen, so the
+#       live demo is unaffected by the access machinery shipped in Phase 41.
+#   ON  = enforce admin_required gates (Setup Wizard, Methodology) + close
+#       public signup (41-02).
+# Flip to True at go-live. See core.access for the switch-aware decorator.
+ACCESS_CONTROL_ENFORCED = env.bool("ACCESS_CONTROL_ENFORCED", default=False)
+
 # -- Email -------------------------------------------------------------------
 
 EMAIL_BACKEND = env(

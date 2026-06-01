@@ -9,7 +9,23 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, blank=True)
     title = models.CharField(max_length=100, blank=True)
 
+    @property
+    def is_administrator(self):
+        """The single rule for "elevated" access (ISS-021, two-tier model).
 
+        An administrator is an active user who is either Django staff/superuser
+        OR carries agency_admin=True. is_staff ALWAYS implies administrator, so
+        the deployed superuser (ensure_superuser sets is_staff=True) can never be
+        locked out when the access-control switch flips on. See core.access for
+        the switch-aware decorator that enforces this.
+        """
+        return bool(self.is_active and (self.is_staff or self.agency_admin))
+
+
+# DEPRECATED (ISS-021): superseded by the two-tier agency_admin access model
+# (see User.is_administrator + core.access). Role/UserRole are a dormant RBAC
+# scheme that gated nothing; retained only to avoid a destructive migration.
+# Safe to remove in a later cleanup phase. Do NOT build on these.
 class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
