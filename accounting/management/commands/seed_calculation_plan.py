@@ -53,7 +53,14 @@ DEFAULT_STEPS = [
         "order": 5,
         "step_type": "clamp_floor",
         "enabled": True,
-        "config": {"floor": 0, "bank": True},
+        # depreciation_rate 0 = banked surplus never decays; expiry_months None =
+        # never expires. Both are agency-tunable from the 38-06 settings screen.
+        "config": {
+            "floor": 0,
+            "bank": True,
+            "depreciation_rate": 0,
+            "expiry_months": None,
+        },
         "label": "Clamp at floor",
     },
 ]

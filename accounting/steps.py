@@ -177,17 +177,35 @@ def facility_only_zero(running_af, parcel, period, ctx, config):
 
 
 def clamp_floor(running_af, parcel, period, ctx, config):
-    """Floor running_af at config['floor'] (default 0).
+    """Floor running_af at config['floor'] (default 0), surfacing any surplus.
 
-    config knob "bank" (bool) is accepted and recorded but is a NO-OP in 38-02:
-    banking would deposit a WaterCredit, which does not exist until 38-04.
+    Side-effect-FREE by contract: this primitive is also called by --dry-run and
+    the live preview screen, so it must never write a WaterCredit. It only SIGNALS
+    intent — the surplus magnitude and the credit levers — in step_record["detail"];
+    run_calculations reads that and does the actual banking inside its transaction.
+
+    A *surplus* is the chain coming in BELOW the floor (effective precip + surface
+    water exceeded gross ET in a wet month): surplus_af = max(0, floor - running_af),
+    a positive amount. The credit levers (depreciation_rate, expiry_months) are
+    passed straight through from config so the runner reads them off the breakdown
+    without re-querying the step.
     """
     floor = Decimal(str(config.get("floor", 0)))
     bank = bool(config.get("bank", False))
 
+    surplus_af = floor - running_af
+    if surplus_af < 0:
+        surplus_af = Decimal("0")
+
     new_running = running_af if running_af >= floor else floor
-    # 38-04: deposit floored surplus as WaterCredit when bank=on
-    detail = {"floor": str(floor), "bank": bank}
+    detail = {
+        "floor": str(floor),
+        "bank": bank,
+        "surplus_af": str(surplus_af),
+        # Credit levers passed through for run_calculations (38-04 banking).
+        "depreciation_rate": config.get("depreciation_rate", 0),
+        "expiry_months": config.get("expiry_months", None),
+    }
     return new_running, _record("clamp_floor", running_af, new_running, detail)
 
 
