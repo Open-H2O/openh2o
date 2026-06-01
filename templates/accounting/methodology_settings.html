@@ -39,36 +39,13 @@
   <div class="card-raised">
     <div class="row-between mb-md">
       <h2 class="section-header" style="margin: 0;">{{ plan.name }}</h2>
-      <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }}</span>
+      <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }} — reorder, enable/disable, and edit each step's knobs</span>
     </div>
 
-    <table class="data-table text-sm">
-      <thead>
-        <tr>
-          <th style="width: 1%; white-space: nowrap;">#</th>
-          <th>Step</th>
-          <th>Type</th>
-          <th>Configuration</th>
-          <th class="th-right">Enabled</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for step in steps %}
-        <tr{% if not step.enabled %} class="text-tertiary"{% endif %}>
-          <td class="text-tertiary">{{ step.order }}</td>
-          <td style="font-weight: 600;">{{ step.label }}</td>
-          <td class="text-secondary">{{ step.get_step_type_display }}</td>
-          <td class="text-secondary">
-            {% if step.config %}{{ step.config }}{% else %}<span class="text-tertiary">—</span>{% endif %}
-          </td>
-          <td class="td-num">{% if step.enabled %}Yes{% else %}<span class="text-tertiary">No</span>{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% include "accounting/partials/_methodology_steps.html" %}
   </div>
 
-  <!-- Live preview lands here (wired in Tasks 2–3) -->
+  <!-- Live preview lands here (picker wired in Task 3) -->
   <div id="preview-pane"></div>
 
   {% endif %}

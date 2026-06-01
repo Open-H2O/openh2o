@@ -53,4 +53,19 @@ urlpatterns = [
     ),
     # Methodology Settings (staff-only self-serve methodology tuning, 38-07)
     path("methodology/", views.methodology_settings, name="methodology_settings"),
+    path(
+        "methodology/step/<int:step_id>/toggle/",
+        views.methodology_step_toggle,
+        name="methodology_step_toggle",
+    ),
+    path(
+        "methodology/step/<int:step_id>/move/<str:direction>/",
+        views.methodology_step_move,
+        name="methodology_step_move",
+    ),
+    path(
+        "methodology/step/<int:step_id>/config/",
+        views.methodology_step_config,
+        name="methodology_step_config",
+    ),
 ]

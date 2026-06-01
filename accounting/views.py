@@ -6,6 +6,7 @@ import io
 
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -23,6 +24,7 @@ from accounting.models import (
     AllocationPlan,
     CalculationPlan,
     CalculationRun,
+    CalculationStep,
     ReportingPeriod,
     WaterAccount,
     WaterAccountParcel,
@@ -811,3 +813,133 @@ def methodology_settings(request):
         "default_period": _latest_calculated_period(),
     }
     return render(request, "accounting/methodology_settings.html", context)
+
+
+def _to_float(raw, default):
+    """Coerce a posted form value to float, falling back to `default` on blank
+    or garbage. The step primitives read these via Decimal(str(...)), so a clean
+    float survives the round-trip without binary-noise surprises at these scales."""
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_int_or_none(raw):
+    """Coerce expiry_months: blank → None (never expires), else an int month-count.
+
+    Must be None and not "" — banking_math.is_expired / run_calculations treat
+    None as 'never' and otherwise call _add_months(period, expiry_months) which
+    needs a real integer.
+    """
+    if raw is None or str(raw).strip() == "":
+        return None
+    try:
+        return int(float(raw))
+    except (TypeError, ValueError):
+        return None
+
+
+def _render_steps(request, plan):
+    """Render the steps-editor partial for an HTMX swap of #methodology-steps."""
+    steps = list(plan.steps.order_by("order")) if plan is not None else []
+    return render(
+        request,
+        "accounting/partials/_methodology_steps.html",
+        {"plan": plan, "steps": steps},
+    )
+
+
+@login_required
+@staff_required
+@require_POST
+def methodology_step_toggle(request, step_id):
+    """Flip one step's enabled flag, then re-render the steps list.
+
+    Any toggle is allowed: the evaluator fails loud on a half-built chain and the
+    preview surfaces the effect, so disabling et_gross (yielding 0) is a
+    legitimate, visible outcome rather than something to guard against here.
+    """
+    step = get_object_or_404(CalculationStep, pk=step_id)
+    step.enabled = not step.enabled
+    step.save(update_fields=["enabled"])
+    return _render_steps(request, step.plan)
+
+
+@login_required
+@staff_required
+@require_POST
+def methodology_step_move(request, step_id, direction):
+    """Move a step up or down one slot, then re-render the steps list.
+
+    unique_together(plan, order) forbids two rows sharing an order even mid-swap
+    (Postgres checks the unique constraint per statement, not at commit), so we
+    never swap two values in place. Instead we compute the desired sequence in
+    Python and renumber the WHOLE list 1..N in a transaction — first lifting every
+    row out of the 1..N namespace (+10000) so the final write can never collide.
+    """
+    step = get_object_or_404(CalculationStep, pk=step_id)
+    plan = step.plan
+    ordered = list(plan.steps.order_by("order"))
+    idx = next(i for i, s in enumerate(ordered) if s.pk == step.pk)
+
+    if direction == "up" and idx > 0:
+        ordered[idx - 1], ordered[idx] = ordered[idx], ordered[idx - 1]
+    elif direction == "down" and idx < len(ordered) - 1:
+        ordered[idx + 1], ordered[idx] = ordered[idx], ordered[idx + 1]
+    # No-op cleanly at the ends (first can't move up, last can't move down).
+
+    with transaction.atomic():
+        for s in ordered:
+            s.order = s.order + 10000
+            s.save(update_fields=["order"])
+        for i, s in enumerate(ordered, start=1):
+            s.order = i
+            s.save(update_fields=["order"])
+
+    return _render_steps(request, plan)
+
+
+@login_required
+@staff_required
+@require_POST
+def methodology_step_config(request, step_id):
+    """Edit one step's config knobs (+ its audit label), then re-render the list.
+
+    The cardinal rule (38-02 silent-zero trap): MERGE the posted keys into the
+    existing config dict, never replace it — so et_gross's model/variable plumbing
+    survives a save on a different step. Only the knobs relevant to the step_type
+    are touched; the rest of the dict is left exactly as it was.
+    """
+    step = get_object_or_404(CalculationStep, pk=step_id)
+    config = dict(step.config or {})  # MERGE base — preserve every existing key.
+
+    if step.step_type == "subtract_effective_precip":
+        method = request.POST.get("method", config.get("method", "usda_scs"))
+        if method in ("raw", "fraction", "usda_scs"):
+            config["method"] = method
+        config["fraction"] = _to_float(
+            request.POST.get("fraction"), config.get("fraction", 0.70)
+        )
+        config["soil_storage_in"] = _to_float(
+            request.POST.get("soil_storage_in"), config.get("soil_storage_in", 3.0)
+        )
+    elif step.step_type == "clamp_floor":
+        # The four WaterCredit banking levers.
+        config["floor"] = _to_float(request.POST.get("floor"), config.get("floor", 0))
+        config["bank"] = "bank" in request.POST
+        config["depreciation_rate"] = _to_float(
+            request.POST.get("depreciation_rate"), config.get("depreciation_rate", 0)
+        )
+        config["expiry_months"] = _to_int_or_none(request.POST.get("expiry_months"))
+    # et_gross / subtract_surface_water / facility_only_zero: no editable knobs;
+    # their config is left untouched (et_gross keeps its model/variable plumbing).
+
+    step.config = config
+    label = request.POST.get("label", "").strip()
+    if label:
+        step.label = label
+    step.save(update_fields=["config", "label"])
+    return _render_steps(request, step.plan)
