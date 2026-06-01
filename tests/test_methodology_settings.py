@@ -26,7 +26,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
-from django.test import Client
+from django.test import Client, override_settings
 from django.urls import reverse
 
 from accounting.models import (
@@ -125,7 +125,11 @@ def test_anonymous_is_redirected_from_every_methodology_url():
 
 
 @pytest.mark.django_db
+@override_settings(ACCESS_CONTROL_ENFORCED=True)
 def test_logged_in_nonstaff_is_redirected_from_every_methodology_url():
+    # Phase 41-01 made the methodology gate switch-aware (admin_required): a
+    # non-admin is blocked only when ACCESS_CONTROL_ENFORCED is ON. With the
+    # switch OFF (default, demo) any logged-in user passes through by design.
     call_command("seed_calculation_plan")
     step_id = _step("clamp_floor").id
     c = _nonstaff_client()
