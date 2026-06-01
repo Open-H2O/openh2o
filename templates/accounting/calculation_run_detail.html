@@ -36,6 +36,10 @@
         <div class="text-tertiary text-sm">
           {% if parcel.owner_name %}{{ parcel.owner_name }} &middot; {% endif %}{{ parcel.area_acres|floatformat:2 }} acres
         </div>
+        <div class="text-tertiary text-sm" style="margin-top: var(--space-xs);">
+          Methodology: <span class="text-secondary">{{ methodology_plan_name|default:"—" }}</span>
+          ({{ config_hash|default:"—" }})
+        </div>
       </div>
       <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
         {{ run.final_af|floatformat:4 }} AF

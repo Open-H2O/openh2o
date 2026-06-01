@@ -794,6 +794,11 @@ def calculation_run_detail(request, parcel_id, period):
         "steps": steps,
         "draws": draws,
         "has_banking": run.banked_af > 0 or run.drawn_af > 0,
+        # 42-01: the methodology fingerprint behind this number. Blank on a
+        # pre-42 run, which the template renders as dashes (honest: "ran before
+        # provenance was recorded").
+        "config_hash": run.config_hash,
+        "methodology_plan_name": run.methodology_plan_name,
     }
     return render(request, "accounting/calculation_run_detail.html", context)
 
