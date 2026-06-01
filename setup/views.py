@@ -17,6 +17,7 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
+from core.access import admin_required
 from geography.models import Boundary
 from setup.services import WIZARD_STEPS, get_boundary_preview_data, run_auto_populate_step
 
@@ -30,6 +31,7 @@ SESSION_KEY_RESULTS = "setup_wizard_results"
 STEP_NAMES = [s[0] for s in WIZARD_STEPS]
 
 
+@admin_required
 @login_required
 def setup_wizard(request):
     """Step 1: Boundary selection — select existing or upload GeoJSON."""
@@ -90,6 +92,7 @@ def setup_wizard(request):
     return render(request, "setup/wizard.html", context)
 
 
+@admin_required
 @login_required
 def setup_confirm(request):
     """Step 2: Review boundary on map and confirm."""
@@ -113,6 +116,7 @@ def setup_confirm(request):
     return render(request, "setup/confirm.html", preview)
 
 
+@admin_required
 @login_required
 def setup_run(request):
     """Step 3: Progress page — HTMX polling drives step-by-step execution."""
@@ -132,6 +136,7 @@ def setup_run(request):
     return render(request, "setup/run.html", context)
 
 
+@admin_required
 @login_required
 def setup_progress(request):
     """HTMX endpoint: execute one auto_populate step at a time and return partial HTML."""
