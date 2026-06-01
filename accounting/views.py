@@ -4,7 +4,7 @@ from decimal import Decimal
 import csv as csv_module
 import io
 
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q, Sum
@@ -33,6 +33,7 @@ from accounting.models import (
     WaterType,
 )
 from accounting.carryover_math import available_with_carryover, water_year_of
+from core.access import admin_required
 from accounting.services import (
     account_balance,
     parse_ledger_csv,
@@ -44,12 +45,10 @@ from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
 
 
-# A logged-in user is not enough to tune the billing methodology — that is an
-# administrator's job. Stacked on top of @login_required, this bounces an
-# authenticated-but-non-staff user. We deliberately do NOT use Django's
-# staff_member_required, which redirects to the /admin/ login rather than this
-# app's own login page.
-staff_required = user_passes_test(lambda u: u.is_active and u.is_staff)
+# Methodology tuning is an administrator's job, gated by the shared, switch-aware
+# @admin_required from core.access (ISS-021). It honors the two-tier model and
+# deliberately bounces an authenticated non-admin back into the app rather than
+# to Django's /admin/ login (which staff_member_required would do).
 
 
 # ---------------------------------------------------------------------------
@@ -806,7 +805,7 @@ def calculation_run_detail(request, parcel_id, period):
 # Staff tune the config-as-data methodology (reorder / enable-disable steps, edit
 # each step's knobs and the WaterCredit banking levers) and preview the effect on
 # a sample parcel before it touches a real billing run. Every view here is gated
-# with BOTH @login_required and @staff_required.
+# with BOTH @login_required and @admin_required.
 
 
 def _latest_calculated_period():
@@ -820,7 +819,7 @@ def _latest_calculated_period():
 
 
 @login_required
-@staff_required
+@admin_required
 def methodology_settings(request):
     """The staff-only methodology settings page (GET).
 
@@ -878,7 +877,7 @@ def _render_steps(request, plan):
 
 
 @login_required
-@staff_required
+@admin_required
 @require_POST
 def methodology_step_toggle(request, step_id):
     """Flip one step's enabled flag, then re-render the steps list.
@@ -894,7 +893,7 @@ def methodology_step_toggle(request, step_id):
 
 
 @login_required
-@staff_required
+@admin_required
 @require_POST
 def methodology_step_move(request, step_id, direction):
     """Move a step up or down one slot, then re-render the steps list.
@@ -928,7 +927,7 @@ def methodology_step_move(request, step_id, direction):
 
 
 @login_required
-@staff_required
+@admin_required
 @require_POST
 def methodology_step_config(request, step_id):
     """Edit one step's config knobs (+ its audit label), then re-render the list.
@@ -971,7 +970,7 @@ def methodology_step_config(request, step_id):
 
 
 @login_required
-@staff_required
+@admin_required
 def methodology_preview(request):
     """Live preview of the CURRENTLY-SAVED methodology on one sample parcel.
 
