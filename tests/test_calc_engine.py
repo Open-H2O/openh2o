@@ -270,8 +270,11 @@ def test_run_calculations_writes_one_negative_row_and_is_idempotent():
         row = rows.get(parcel=p)
         assert row.effective_date == dt.date(2024, 6, 1)
         assert row.amount_acre_feet < 0  # consumption stored negative
-        expected = et_mm_to_acre_feet(Decimal("100"), Decimal(acres))  # negative
-        assert row.amount_acre_feet == expected.quantize(Decimal("0.0001"))
+        # The command stores -abs(et) quantized to 4 places; compare like-for-like.
+        expected = (-abs(et_mm_to_acre_feet(Decimal("100"), Decimal(acres)))).quantize(
+            Decimal("0.0001")
+        )
+        assert row.amount_acre_feet == expected
         assert "Derived extraction estimate" in row.description
 
     # Idempotent: second run leaves identical count + amounts (no double-count).
