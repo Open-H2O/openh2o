@@ -210,6 +210,12 @@ class Command(BaseCommand):
             action="store_true",
             help="Print the per-parcel result without writing ledger rows.",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Recompute even if the period's ReportingPeriod is finalized. "
+            "Overwrites a filed number — use deliberately.",
+        )
 
     def handle(self, *args, **options):
         period = options["period"]
@@ -231,6 +237,38 @@ class Command(BaseCommand):
         reporting_period = ReportingPeriod.objects.filter(
             start_date__lte=eff_date, end_date__gte=eff_date
         ).first()
+
+        # Finalized-period write guard (ISS-020 #1). A finalized ReportingPeriod
+        # is a number already filed with the state; re-running would silently
+        # overwrite it. Refuse unless --force, and shout when forced. Guard ONCE
+        # before the loop: finalization is a property of the period, not the
+        # parcel, so a per-parcel raise would half-write the period. dry_run is
+        # always allowed (it writes nothing — previewing a finalized recompute is
+        # safe). A month with no ReportingPeriod has nothing to finalize: proceed.
+        if (
+            reporting_period is not None
+            and reporting_period.is_finalized
+            and not dry_run
+        ):
+            if not options["force"]:
+                filed = (
+                    f" (filed {reporting_period.finalized_at:%Y-%m-%d})"
+                    if reporting_period.finalized_at
+                    else ""
+                )
+                raise CommandError(
+                    f"Refusing to recompute {period}: reporting period "
+                    f"'{reporting_period.name}' is finalized{filed}. "
+                    f"Re-running would overwrite the filed number. "
+                    f"Pass --force to override."
+                )
+            self.stderr.write(
+                self.style.WARNING(
+                    f"--force: OVERWRITING finalized period {period} "
+                    f"('{reporting_period.name}'). A number already filed with "
+                    f"the state is being recomputed — this changes a filed figure."
+                )
+            )
 
         written = 0
         skipped_no_et = 0

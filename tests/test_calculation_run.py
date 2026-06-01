@@ -22,8 +22,14 @@ from decimal import Decimal
 import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
-from accounting.models import CalculationRun
+from accounting.models import (
+    CalculationPlan,
+    CalculationRun,
+    CalculationStep,
+    ReportingPeriod,
+)
 from accounting.services import et_mm_to_acre_feet
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
 
@@ -90,6 +96,73 @@ def _calc_row(parcel, period):
 
 def _run(parcel, period):
     return CalculationRun.objects.get(parcel=parcel, period=period)
+
+
+def _finalized_period(period="2024-06", name="WY2024 June"):
+    """A ReportingPeriod covering `period`, marked finalized (a filed number)."""
+    year, month = int(period[:4]), int(period[5:7])
+    last_day = 28  # safe for any month; the lookup only needs to span the 1st
+    return ReportingPeriod.objects.create(
+        name=name,
+        start_date=dt.date(year, month, 1),
+        end_date=dt.date(year, month, last_day),
+        is_finalized=True,
+    )
+
+
+def _seed_finalized_parcel(number, period="2024-06"):
+    """Parcel + ET + crop + active plan + a finalized ReportingPeriod for `period`."""
+    parcel = _parcel(number, acres="10")
+    _et_cache(parcel, period=period, et_mm=100.0)
+    _irrigate(parcel)
+    call_command("seed_calculation_plan")
+    _finalized_period(period)
+    return parcel
+
+
+# --------------------------------------------------------------------------
+# Finalized-period write guard (ISS-020 #1) — no silent overwrite of a filed
+# number; --force overrides loudly; --dry-run is never blocked.
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_finalized_period_refuses_recompute():
+    parcel = _seed_finalized_parcel("RUN-FINAL")
+
+    with pytest.raises(CommandError, match="finalized"):
+        call_command("run_calculations", "--period", "2024-06")
+
+    # The guard fired before the loop: nothing was written.
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated"
+    ).exists()
+    assert not CalculationRun.objects.filter(parcel=parcel).exists()
+
+
+@pytest.mark.django_db
+def test_force_overrides_finalized_lock():
+    parcel = _seed_finalized_parcel("RUN-FORCE")
+
+    call_command("run_calculations", "--period", "2024-06", "--force")
+
+    assert ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated"
+    ).count() == 1
+    assert CalculationRun.objects.filter(parcel=parcel, period="2024-06").count() == 1
+
+
+@pytest.mark.django_db
+def test_dry_run_allowed_on_finalized_period():
+    parcel = _seed_finalized_parcel("RUN-DRYFINAL")
+
+    # Must not raise — a preview of a finalized recompute writes nothing.
+    call_command("run_calculations", "--period", "2024-06", "--dry-run")
+
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated"
+    ).exists()
+    assert not CalculationRun.objects.filter(parcel=parcel).exists()
 
 
 # --------------------------------------------------------------------------
