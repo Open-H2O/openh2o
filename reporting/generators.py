@@ -17,6 +17,7 @@ import csv
 import io
 from decimal import Decimal
 
+from accounting.services import billable_ledger
 from parcels.models import ParcelLedger
 from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
 from wells.models import Well, WellIrrigatedParcel
@@ -101,14 +102,20 @@ def generate_gears_csv(reporting_period, method="by_well"):
             "ET Volume (AF)", "Measurement Method",
         ])
 
+        # Query BOTH ET-family sources, then let billable_ledger() pick the
+        # netted ``calculated`` row where the engine ran and fall back to the raw
+        # ``et_estimate`` row where it didn't. This keeps the state filing
+        # consistent with the internal bill (same shared suppression helper, so
+        # they can never drift), and labels each surviving row by its own source.
         entries = (
             ParcelLedger.objects.filter(
-                source_type="et_estimate",
+                source_type__in=["et_estimate", "calculated"],
                 effective_date__gte=reporting_period.start_date,
                 effective_date__lte=reporting_period.end_date,
             )
             .select_related("parcel")
         )
+        entries = billable_ledger(entries)
 
         rows = {}
         for entry in entries:
@@ -120,7 +127,7 @@ def generate_gears_csv(reporting_period, method="by_well"):
                     "area": entry.parcel.area_acres or Decimal("0"),
                     "month": month_str,
                     "volume": Decimal("0"),
-                    "method": "et_estimate",
+                    "method": entry.source_type,
                 }
             rows[key]["volume"] += abs(entry.amount_acre_feet)
 

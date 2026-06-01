@@ -480,6 +480,48 @@ def et_mm_to_acre_feet(et_mm, area_acres):
 # ---------------------------------------------------------------------------
 
 
+def billable_ledger(queryset):
+    """Return the billable subset of a ParcelLedger queryset.
+
+    The calculation engine (Phase 38) writes a netted ``calculated`` row per
+    parcel-month alongside the pre-existing gross ``et_estimate`` row. Both are
+    stored negative, so summing every row double-counts ET. This applies the
+    settled prefer-calculated-else-et_estimate rule:
+
+      - Where a ``calculated`` row exists for a ``(parcel_id, effective_date)``,
+        the matching ``et_estimate`` row is suppressed (the netted row bills).
+      - Where no ``calculated`` row exists, the ``et_estimate`` row stands in so
+        no parcel-month silently drops to zero (the fallback).
+      - Every other row (meter_reading, surface_diversion, recharge, the
+        calculated rows themselves) passes through unchanged.
+
+    The join key is ``(parcel_id, effective_date)``: both ET-family rows are
+    dated to the first of the month, so the pair matches exactly. The
+    suppression is source-type-driven (not reporting-period-driven), so it holds
+    whether or not a period filter has already been applied to ``queryset``.
+
+    Empty queryset → empty.
+    """
+    calculated_keys = list(
+        queryset.filter(source_type="calculated").values_list(
+            "parcel_id", "effective_date"
+        )
+    )
+    if not calculated_keys:
+        return queryset
+
+    # OR of EXACT (parcel_id, effective_date) pairs. A flat
+    # ``parcel_id__in + effective_date__in`` would over-exclude the cross-product
+    # (any calculated parcel × any calculated date), wrongly suppressing an
+    # et_estimate row that has no calculated counterpart of its own. District
+    # scale is monthly and small, so the per-pair OR is cheap and correct.
+    suppression = Q()
+    for parcel_id, effective_date in calculated_keys:
+        suppression |= Q(parcel_id=parcel_id, effective_date=effective_date)
+
+    return queryset.exclude(Q(source_type="et_estimate") & suppression)
+
+
 def parcel_balance(parcel, reporting_period=None):
     """Sum of all ledger entries for a parcel.
 
@@ -493,6 +535,7 @@ def parcel_balance(parcel, reporting_period=None):
     qs = ParcelLedger.objects.filter(parcel=parcel)
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
+    qs = billable_ledger(qs)
     result = qs.aggregate(total=Sum("amount_acre_feet"))
     return result["total"] or Decimal("0")
 
@@ -557,7 +600,7 @@ def account_balance(water_account, reporting_period=None):
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
 
-    return _balance_dict(qs)
+    return _balance_dict(billable_ledger(qs))
 
 
 def zone_balance(zone, reporting_period=None):
@@ -578,4 +621,4 @@ def zone_balance(zone, reporting_period=None):
     if reporting_period is not None:
         qs = qs.filter(reporting_period=reporting_period)
 
-    return _balance_dict(qs)
+    return _balance_dict(billable_ledger(qs))
