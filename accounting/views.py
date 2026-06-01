@@ -32,7 +32,14 @@ from accounting.models import (
     WaterCreditDraw,
     WaterType,
 )
-from accounting.services import account_balance, parse_ledger_csv, parcel_balance, zone_balance
+from accounting.carryover_math import available_with_carryover, water_year_of
+from accounting.services import (
+    account_balance,
+    parse_ledger_csv,
+    parcel_balance,
+    zone_balance,
+    zone_carryover,
+)
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
 
@@ -126,6 +133,12 @@ def dashboard(request):
             grand_supply += bal["supply"]
             grand_usage += bal["usage"]
 
+        # Water year of the selected period, so we can pull the carry-over that
+        # rolled INTO it from the prior year (labelled by the year it ends in,
+        # default Oct-anchor — matches carryover_math + rollover_allocations).
+        sel_end = selected_period.end_date
+        selected_water_year = water_year_of(f"{sel_end.year}-{sel_end.month:02d}")
+
         # Zone summaries
         for zone in Zone.objects.order_by("name"):
             zbal = zone_balance(zone, reporting_period=selected_period)
@@ -134,9 +147,19 @@ def dashboard(request):
                     zone=zone,
                     reporting_period=selected_period,
                 ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
-                zone_remaining = zone_allocation - zbal["usage"]
+                # Prior-year carry-over (signed): + surplus rolled in, − debt
+                # borrowed against this year. available_with_carryover applies the
+                # surplus-depreciates / debt-doesn't rule centrally; periods
+                # elapsed = 0 because this is the opening balance for the very
+                # next year (no aging yet), so it is a plain signed adjustment.
+                zone_carryover_af = zone_carryover(zone, selected_water_year)
+                zone_available = available_with_carryover(
+                    zone_allocation, zone_carryover_af
+                )
+                zone_remaining = zone_available - zbal["usage"]
             else:
                 zone_allocation = None
+                zone_carryover_af = None
                 zone_remaining = None
             zone_summaries.append({
                 "zone": zone,
@@ -144,6 +167,7 @@ def dashboard(request):
                 "usage": zbal["usage"],
                 "net": zbal["net"],
                 "allocation": zone_allocation,
+                "carryover": zone_carryover_af,
                 "remaining": zone_remaining,
             })
 

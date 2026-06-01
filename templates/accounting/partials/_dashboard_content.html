@@ -128,6 +128,7 @@
         <th class="th-right">Net (AF)</th>
         {% if has_allocations %}
         <th class="th-right">Water Budget (AF)</th>
+        <th class="th-right" title="Surplus (+) or debt (−) rolled in from the prior water year">Carried fwd (AF)</th>
         <th class="th-right">Remaining (AF)</th>
         {% endif %}
       </tr>
@@ -148,6 +149,9 @@
         {% if has_allocations %}
         <td class="td-num">
           {{ row.allocation|floatformat:2 }}
+        </td>
+        <td class="td-num {% if row.carryover > 0 %}text-surplus{% elif row.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
+          {% if row.carryover > 0 %}+{% endif %}{{ row.carryover|floatformat:2 }}
         </td>
         <td class="td-num-bold {% if row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
           {{ row.remaining|floatformat:2 }}

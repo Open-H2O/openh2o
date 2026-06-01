@@ -37,7 +37,14 @@ from django.utils import timezone
 from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 
-from accounting.models import ReportingPeriod, WaterAccountParcel, WaterType
+from accounting.carryover_math import water_year_of
+from accounting.models import (
+    AllocationCarryover,
+    AllocationPlan,
+    ReportingPeriod,
+    WaterAccountParcel,
+    WaterType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -622,3 +629,93 @@ def zone_balance(zone, reporting_period=None):
         qs = qs.filter(reporting_period=reporting_period)
 
     return _balance_dict(billable_ledger(qs))
+
+
+# ---------------------------------------------------------------------------
+# Multi-year carry-over support (Phase 39-02)
+# ---------------------------------------------------------------------------
+#
+# A "water year" is named by the calendar year it ENDS in (carryover_math
+# convention). A ReportingPeriod is labelled by running water_year_of over its
+# end_date, so both an annual period (Oct->Sep) and a monthly period land on the
+# right year with the same rule. Usage is filtered by effective_date, NOT by the
+# reporting_period FK: the calculation engine's gross ET rows carry
+# reporting_period=None (38-06), so a FK filter would silently drop them.
+
+
+def water_year_periods(water_year, anchor_month=10):
+    """ReportingPeriods belonging to ``water_year`` (labelled by their end_date).
+
+    The period is assigned to the water year its END month falls in, so a
+    standard Oct->Sep period ending 2025-09-30 is WY2025, and a monthly period
+    "2024-10" (ending in October) rolls into WY2025. Returns a list ordered by
+    start_date; empty if no period covers that year.
+    """
+    result = []
+    for period in ReportingPeriod.objects.order_by("start_date"):
+        end = period.end_date
+        label = water_year_of(f"{end.year}-{end.month:02d}", anchor_month)
+        if label == water_year:
+            result.append(period)
+    return result
+
+
+def water_year_usage_by_type(zone, date_start, date_end):
+    """Billable usage (positive AF) in a zone over [date_start, date_end], by water-type code.
+
+    Mirrors the dashboard's basis: ``billable_ledger`` is applied so a netted
+    ``calculated`` row suppresses its gross ``et_estimate`` twin (no ET
+    double-count). Each usage row (negative amount) is attributed to a water type:
+
+      - ``et_estimate`` and ``calculated`` rows are groundwater extraction by
+        definition (the platform derives groundwater from satellite ET), so they
+        bucket to "GW" regardless of a possibly-null water_type column.
+      - every other row uses its own water_type code (meter_reading -> its type,
+        surface_diversion -> SW, ...).
+      - a non-engine row with no water_type cannot be attributed and is skipped
+        (rare; logged at debug). Summed across buckets this equals the zone's
+        total billable usage, so per-type carry-over re-aggregates to exactly the
+        per-zone number the dashboard shows.
+
+    Returns a dict {water_type_code: Decimal usage (positive)}.
+    """
+    parcel_ids = ParcelZone.objects.filter(zone=zone).values_list(
+        "parcel_id", flat=True
+    )
+    qs = ParcelLedger.objects.filter(
+        parcel_id__in=parcel_ids,
+        effective_date__gte=date_start,
+        effective_date__lte=date_end,
+        amount_acre_feet__lt=0,
+    )
+    qs = billable_ledger(qs).select_related("water_type")
+
+    buckets = {}
+    for row in qs:
+        if row.source_type in ("et_estimate", "calculated"):
+            code = "GW"
+        elif row.water_type_id:
+            code = row.water_type.code
+        else:
+            logger.debug(
+                "skipping untyped usage row %s (%s) — cannot attribute to a "
+                "water type",
+                row.pk,
+                row.source_type,
+            )
+            continue
+        buckets[code] = buckets.get(code, Decimal("0")) + (-row.amount_acre_feet)
+    return buckets
+
+
+def zone_carryover(zone, water_year):
+    """Signed sum of carried-forward budget for a zone in a water year (AF).
+
+    Positive = net surplus rolled in; negative = net debt borrowed against this
+    year. Sums across water types so it folds into the dashboard's per-zone
+    "remaining" the same way the per-zone allocation already aggregates types.
+    Returns Decimal("0") when no rollover has been run for this zone-year.
+    """
+    return AllocationCarryover.objects.filter(
+        zone=zone, water_year=water_year
+    ).aggregate(total=Sum("amount_af"))["total"] or Decimal("0")
