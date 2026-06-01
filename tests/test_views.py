@@ -15,6 +15,7 @@ from django.urls import reverse
 from tests.factories import (
     AllocationPlanFactory,
     ParcelFactory,
+    ParcelLedgerFactory,
     ParcelZoneFactory,
     ReportingPeriodFactory,
     WaterAccountFactory,
@@ -140,6 +141,59 @@ class TestDashboardAllocationProRating:
         assert len(match) == 1
         # Pro-rated: 100 AF * (1/4) = 25 AF
         assert match[0]["allocation"] == Decimal("25.0000")
+
+
+class TestLedgerDefaultPeriod:
+    """ISS-022: the ledger should land on the period that surfaces the audit
+    trail, not the empty calendar-current one."""
+
+    def _two_periods_with_rows(self):
+        from datetime import date
+
+        # Older period carries the calculated (audit-linked) rows; a newer
+        # period carries only a manual row, so by start_date it is the most
+        # recent period but it would hide every "How was this calculated?" link.
+        period_calc = ReportingPeriodFactory(
+            start_date=date(2024, 6, 1), end_date=date(2024, 6, 30)
+        )
+        period_recent = ReportingPeriodFactory(
+            start_date=date(2025, 10, 1), end_date=date(2026, 9, 30)
+        )
+        ParcelLedgerFactory(
+            reporting_period=period_calc,
+            source_type="calculated",
+            effective_date=date(2024, 6, 15),
+        )
+        ParcelLedgerFactory(
+            reporting_period=period_recent,
+            source_type="manual_entry",
+            effective_date=date(2026, 1, 15),
+        )
+        return period_calc, period_recent
+
+    def test_defaults_to_most_recent_calculated_bearing_period(self, auth_client):
+        period_calc, _ = self._two_periods_with_rows()
+
+        response = auth_client.get(reverse("accounting:ledger_list"))
+
+        assert response.status_code == 200
+        assert response.context["period_auto_defaulted"] is True
+        # period_id is rendered as a string for the dropdown selected-state check
+        assert response.context["period_id"] == str(period_calc.pk)
+        rows = list(response.context["page_obj"])
+        assert rows, "default period should not be empty"
+        assert all(r.reporting_period_id == period_calc.pk for r in rows)
+        assert all(r.source_type == "calculated" for r in rows)
+
+    def test_explicit_all_periods_stays_unfiltered(self, auth_client):
+        self._two_periods_with_rows()
+
+        # An explicit empty period= (the "All Periods" choice) must be honored.
+        response = auth_client.get(reverse("accounting:ledger_list") + "?period=")
+
+        assert response.status_code == 200
+        assert response.context["period_auto_defaulted"] is False
+        assert response.context["total_count"] == 2
 
 
 class TestAccountingPages:

@@ -542,6 +542,10 @@ def parcel_search_for_assignment(request, pk):
 def ledger_list(request):
     """Paginated list of ledger entries with HTMX search and filters."""
     q = request.GET.get("q", "").strip()
+    # "period" absent entirely (bare landing) is distinct from "period="
+    # (the "All Periods" choice, which the HTMX filters always send). Only the
+    # former gets an auto-default applied below.
+    period_present = "period" in request.GET
     period_id = request.GET.get("period", "").strip()
     source_type = request.GET.get("source_type", "").strip()
     water_type_id = request.GET.get("water_type", "").strip()
@@ -551,6 +555,43 @@ def ledger_list(request):
     queryset = ParcelLedger.objects.select_related(
         "parcel", "water_type", "reporting_period"
     ).order_by("-effective_date", "-created_at")
+
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    water_types = WaterType.objects.order_by("name")
+
+    # ISS-022: landing on the ledger with no filters at all should not bury the
+    # audit trail. The "How was this calculated?" links only render on
+    # calculated rows, so default to the most recent period that HAS calculated
+    # rows (falling back to the most recent period with any rows, then to no
+    # filter on an empty table). An explicit "All Periods" (period=) is honored.
+    period_auto_defaulted = False
+    auto_default_period_name = ""
+    auto_default_calculated = False
+    no_other_filters = not (q or source_type or water_type_id or start_date or end_date)
+    if not period_present and no_other_filters:
+        default_period_id = (
+            ParcelLedger.objects.filter(
+                source_type="calculated", reporting_period__isnull=False
+            )
+            .order_by("-reporting_period__start_date")
+            .values_list("reporting_period_id", flat=True)
+            .first()
+        )
+        auto_default_calculated = default_period_id is not None
+        if default_period_id is None:
+            default_period_id = (
+                ParcelLedger.objects.filter(reporting_period__isnull=False)
+                .order_by("-reporting_period__start_date")
+                .values_list("reporting_period_id", flat=True)
+                .first()
+            )
+        if default_period_id is not None:
+            period_id = str(default_period_id)
+            period_auto_defaulted = True
+            default_period = next(
+                (p for p in periods if p.pk == default_period_id), None
+            )
+            auto_default_period_name = default_period.name if default_period else ""
 
     if q:
         queryset = queryset.filter(
@@ -571,9 +612,6 @@ def ledger_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    periods = ReportingPeriod.objects.order_by("-start_date")
-    water_types = WaterType.objects.order_by("name")
-
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
@@ -586,6 +624,9 @@ def ledger_list(request):
         "periods": periods,
         "water_types": water_types,
         "source_type_choices": ParcelLedger.SOURCE_TYPE_CHOICES,
+        "period_auto_defaulted": period_auto_defaulted,
+        "auto_default_period_name": auto_default_period_name,
+        "auto_default_calculated": auto_default_calculated,
     }
 
     if request.headers.get("HX-Request"):

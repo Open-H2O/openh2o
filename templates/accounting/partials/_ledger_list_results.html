@@ -1,3 +1,10 @@
+{% if period_auto_defaulted %}
+<p class="text-tertiary text-sm" style="margin: 0 0 var(--space-sm);">
+  Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong> &mdash;
+  the most recent period with {% if auto_default_calculated %}calculated records{% else %}activity{% endif %}.
+  Choose &ldquo;All Periods&rdquo; in the filter to see every entry.
+</p>
+{% endif %}
 <div class="card-raised" style="padding: 0; overflow: hidden;">
   <table class="data-table">
     <thead>
