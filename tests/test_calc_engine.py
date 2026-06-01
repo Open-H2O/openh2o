@@ -196,22 +196,37 @@ def test_evaluate_chain_raises_without_active_plan():
 
 @pytest.mark.django_db
 def test_evaluate_chain_skips_disabled_steps():
-    """The disabled (unregistered) effective-precip step must be skipped, not resolved."""
+    """A disabled step must be skipped, not resolved.
+
+    The seeded chain enables all five steps as of 38-03, so this proves the skip
+    with a custom plan that explicitly disables one step (surface water).
+    """
     parcel = _parcel("EV-1", acres="10")
     _et_cache(parcel, period="2024-06", et_mm=100.0)
     _irrigate(parcel)
-    call_command("seed_calculation_plan")
+    plan = CalculationPlan.objects.create(name="Skip-test", is_active=True)
+    CalculationStep.objects.create(
+        plan=plan, order=1, step_type="et_gross", enabled=True,
+        config={"model": "Ensemble", "variable": "ET"}, label="gross",
+    )
+    CalculationStep.objects.create(
+        plan=plan, order=2, step_type="subtract_surface_water", enabled=False,
+        config={}, label="DISABLED surface water",
+    )
+    CalculationStep.objects.create(
+        plan=plan, order=3, step_type="facility_only_zero", enabled=True,
+        config={}, label="facility",
+    )
+    CalculationStep.objects.create(
+        plan=plan, order=4, step_type="clamp_floor", enabled=True,
+        config={"floor": 0}, label="floor",
+    )
 
     final_af, breakdown = evaluate_chain(parcel, "2024-06")
     step_types = [s["step_type"] for s in breakdown]
-    assert "subtract_effective_precip" not in step_types  # disabled -> skipped
-    assert step_types == [
-        "et_gross",
-        "subtract_surface_water",
-        "facility_only_zero",
-        "clamp_floor",
-    ]
-    # No surface water, irrigated -> net == gross
+    assert "subtract_surface_water" not in step_types  # disabled -> skipped
+    assert step_types == ["et_gross", "facility_only_zero", "clamp_floor"]
+    # Surface step skipped, irrigated, no precip cache -> net == gross
     assert final_af == abs(et_mm_to_acre_feet(Decimal("100"), Decimal("10")))
 
 
@@ -239,7 +254,7 @@ def test_evaluate_chain_raises_on_enabled_unregistered_step():
 
 
 @pytest.mark.django_db
-def test_seed_is_idempotent_and_precip_disabled():
+def test_seed_is_idempotent_and_precip_enabled():
     call_command("seed_calculation_plan")
     call_command("seed_calculation_plan")  # second run must not duplicate
 
@@ -248,9 +263,15 @@ def test_seed_is_idempotent_and_precip_disabled():
     plan = plans.first()
     assert plan.steps.count() == 5
 
+    # As of 38-03 the effective-precip step is enabled in the default chain.
     precip = plan.steps.get(step_type="subtract_effective_precip")
-    assert precip.enabled is False
-    assert plan.steps.filter(enabled=True).count() == 4
+    assert precip.enabled is True
+    assert precip.order == 2
+    enabled_orders = list(
+        plan.steps.filter(enabled=True).order_by("order").values_list("order", flat=True)
+    )
+    assert enabled_orders == [1, 2, 3, 4, 5]
+    assert plan.steps.filter(enabled=False).count() == 0
 
 
 # --------------------------------------------------------------------------

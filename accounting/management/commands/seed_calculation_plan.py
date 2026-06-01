@@ -5,9 +5,9 @@ Idempotent (mirrors seed_observed_properties): get_or_create one active plan,
 then update_or_create its 5 steps keyed on (plan, order). Running twice leaves
 exactly one plan and exactly five steps.
 
-The default chain ships subtract_effective_precip DISABLED — the honest seam.
-The plan exists in full shape, but the contested USDA-SCS effective-precip math
-stays dark until 38-03 implements it test-first and flips it enabled=True.
+The default chain nets effective precipitation out of gross ET: as of 38-03 the
+subtract_effective_precip step is ENABLED with the USDA-SCS / TR-21 method
+(soil_storage_in=3.0), now that its math is TDD-proven against published vectors.
 
 et_gross config uses variable="ET" / model="Ensemble" to match the strings the
 GEE adapter actually writes into OpenETCache (verified live on Butler).
@@ -31,10 +31,9 @@ DEFAULT_STEPS = [
     {
         "order": 2,
         "step_type": "subtract_effective_precip",
-        "enabled": False,
+        "enabled": True,
         "config": {"method": "usda_scs", "soil_storage_in": 3.0},
-        "label": "Subtract effective precipitation (enabled in 38-03 once the "
-        "USDA-SCS math is TDD-verified)",
+        "label": "Subtract effective precipitation (USDA-SCS)",
     },
     {
         "order": 3,
