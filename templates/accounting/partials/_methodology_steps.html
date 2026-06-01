@@ -33,65 +33,73 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
       </div>
     </div>
 
-    <!-- Config form: only the knobs relevant to this step_type -->
+    <!-- Config form: only the knobs relevant to this step_type. The header
+         above is separated by a ruled divider; the knobs lay out as a
+         responsive grid so each label + helper hint sits above its input. -->
     <form hx-post="{% url 'accounting:methodology_step_config' step.id %}"
           hx-target="#methodology-steps" hx-swap="outerHTML"
-          style="margin-top: var(--space-sm); display: flex; flex-wrap: wrap; gap: var(--space-md); align-items: flex-end;">
+          style="margin-top: var(--space-md); border-top: 1px solid var(--color-border); padding-top: var(--space-md);">
 
-      <div class="field-group mb-0">
-        <label class="form-label">Label</label>
-        <input type="text" name="label" value="{{ step.label }}" class="form-input" style="min-width: 18rem;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-md); align-items: end;">
+
+        <div class="field-group mb-0">
+          <label class="form-label">Label</label>
+          <input type="text" name="label" value="{{ step.label }}" class="form-input" style="width: 100%;">
+        </div>
+
+        {% if step.step_type == 'subtract_effective_precip' %}
+          <div class="field-group mb-0">
+            <label class="form-label">Method</label>
+            <select name="method" class="form-select">
+              <option value="raw" {% if step.config.method == 'raw' %}selected{% endif %}>Raw (all precipitation)</option>
+              <option value="fraction" {% if step.config.method == 'fraction' %}selected{% endif %}>Fraction of precipitation</option>
+              <option value="usda_scs" {% if step.config.method == 'usda_scs' %}selected{% endif %}>USDA-SCS (TR-21)</option>
+            </select>
+          </div>
+          <div class="field-group mb-0">
+            <label class="form-label">Fraction <span class="text-tertiary">(method = fraction)</span></label>
+            <input type="number" step="0.01" min="0" max="1" name="fraction"
+                   value="{{ step.config.fraction|default:'0.70' }}" class="form-input" style="width: 7rem;">
+          </div>
+          <div class="field-group mb-0">
+            <label class="form-label">Soil storage (in) <span class="text-tertiary">(method = USDA-SCS)</span></label>
+            <input type="number" step="0.1" min="0" name="soil_storage_in"
+                   value="{{ step.config.soil_storage_in|default:'3.0' }}" class="form-input" style="width: 7rem;">
+          </div>
+
+        {% elif step.step_type == 'clamp_floor' %}
+          <div class="field-group mb-0">
+            <label class="form-label">Floor (AF)</label>
+            <input type="number" step="0.01" name="floor"
+                   value="{{ step.config.floor|default:'0' }}" class="form-input" style="width: 7rem;">
+          </div>
+          <div class="field-group mb-0">
+            <label class="form-label">Bank surplus</label>
+            <label style="display: inline-flex; align-items: center; gap: var(--space-xs); height: 38px;">
+              <input type="checkbox" name="bank" {% if step.config.bank %}checked{% endif %}>
+              <span class="text-secondary text-sm">Carry wet-month surplus forward</span>
+            </label>
+          </div>
+          <div class="field-group mb-0">
+            <label class="form-label">Depreciation / mo <span class="text-tertiary">(0&ndash;1)</span></label>
+            <input type="number" step="0.01" min="0" max="1" name="depreciation_rate"
+                   value="{{ step.config.depreciation_rate|default:'0' }}" class="form-input" style="width: 7rem;">
+          </div>
+          <div class="field-group mb-0">
+            <label class="form-label">Expiry (months) <span class="text-tertiary">(blank = never)</span></label>
+            <input type="number" step="1" min="1" name="expiry_months"
+                   value="{{ step.config.expiry_months|default_if_none:'' }}" class="form-input" style="width: 7rem;">
+          </div>
+
+        {% else %}
+          <p class="text-tertiary text-sm mb-0" style="grid-column: 1 / -1; align-self: center;">No configurable options for this step.</p>
+        {% endif %}
+
       </div>
 
-      {% if step.step_type == 'subtract_effective_precip' %}
-        <div class="field-group mb-0">
-          <label class="form-label">Method</label>
-          <select name="method" class="form-select">
-            <option value="raw" {% if step.config.method == 'raw' %}selected{% endif %}>Raw (all precipitation)</option>
-            <option value="fraction" {% if step.config.method == 'fraction' %}selected{% endif %}>Fraction of precipitation</option>
-            <option value="usda_scs" {% if step.config.method == 'usda_scs' %}selected{% endif %}>USDA-SCS (TR-21)</option>
-          </select>
-        </div>
-        <div class="field-group mb-0">
-          <label class="form-label">Fraction <span class="text-tertiary">(method = fraction)</span></label>
-          <input type="number" step="0.01" min="0" max="1" name="fraction"
-                 value="{{ step.config.fraction|default:'0.70' }}" class="form-input" style="width: 7rem;">
-        </div>
-        <div class="field-group mb-0">
-          <label class="form-label">Soil storage (in) <span class="text-tertiary">(method = USDA-SCS)</span></label>
-          <input type="number" step="0.1" min="0" name="soil_storage_in"
-                 value="{{ step.config.soil_storage_in|default:'3.0' }}" class="form-input" style="width: 7rem;">
-        </div>
-
-      {% elif step.step_type == 'clamp_floor' %}
-        <div class="field-group mb-0">
-          <label class="form-label">Floor (AF)</label>
-          <input type="number" step="0.01" name="floor"
-                 value="{{ step.config.floor|default:'0' }}" class="form-input" style="width: 7rem;">
-        </div>
-        <div class="field-group mb-0">
-          <label class="form-label">Bank surplus</label>
-          <label style="display: inline-flex; align-items: center; gap: var(--space-xs); height: 38px;">
-            <input type="checkbox" name="bank" {% if step.config.bank %}checked{% endif %}>
-            <span class="text-secondary text-sm">Carry wet-month surplus forward</span>
-          </label>
-        </div>
-        <div class="field-group mb-0">
-          <label class="form-label">Depreciation / mo <span class="text-tertiary">(0&ndash;1)</span></label>
-          <input type="number" step="0.01" min="0" max="1" name="depreciation_rate"
-                 value="{{ step.config.depreciation_rate|default:'0' }}" class="form-input" style="width: 7rem;">
-        </div>
-        <div class="field-group mb-0">
-          <label class="form-label">Expiry (months) <span class="text-tertiary">(blank = never)</span></label>
-          <input type="number" step="1" min="1" name="expiry_months"
-                 value="{{ step.config.expiry_months|default_if_none:'' }}" class="form-input" style="width: 7rem;">
-        </div>
-
-      {% else %}
-        <p class="text-tertiary text-sm mb-0" style="align-self: center;">No configurable options for this step.</p>
-      {% endif %}
-
-      <button type="submit" class="btn-secondary btn-sm">Save step</button>
+      <div class="form-footer-ruled" style="margin-top: var(--space-md); justify-content: flex-end;">
+        <button type="submit" class="btn-secondary btn-sm">Save step</button>
+      </div>
     </form>
   </div>
   {% endfor %}
