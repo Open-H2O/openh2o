@@ -142,7 +142,8 @@ def test_subtract_surface_water_subtracts_absolute_and_can_go_negative():
     new, record = fn(Decimal("2"), parcel, "2024-06", {}, {})
     # 2 - abs(-3) = -1; this step does NOT floor (clamp_floor owns that)
     assert new == Decimal("-1")
-    assert record["detail"]["surface_water_af"] == "3"
+    # DB stores amount as a 4-place Decimal, so the summed magnitude is "3.0000".
+    assert Decimal(record["detail"]["surface_water_af"]) == Decimal("3")
 
 
 @pytest.mark.django_db

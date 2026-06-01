@@ -65,6 +65,7 @@ class TestParcelLedgerSourceType:
         expected = {
             "meter_reading", "et_estimate", "manual_entry", "csv_import",
             "surface_diversion", "recharge", "allocation", "adjustment",
+            "calculated",
         }
         assert valid_codes == expected
 
