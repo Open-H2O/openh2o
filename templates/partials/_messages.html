@@ -1,6 +1,8 @@
-{# Render Django messages on a full page load. The app's base.html surfaces
-   feedback via HTMX-driven toasts only, so a plain POST -> redirect (as the
-   Users page uses) needs this banner for success/error feedback to show. #}
+{% comment %}
+Render Django messages on a full page load. The app's base.html surfaces
+feedback via HTMX-driven toasts only, so a plain POST -> redirect (as the
+Users page uses) needs this banner for success/error feedback to show.
+{% endcomment %}
 {% if messages %}
 <div class="message-stack">
   {% for message in messages %}
