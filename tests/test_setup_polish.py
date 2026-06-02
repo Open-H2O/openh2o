@@ -241,3 +241,31 @@ def test_step_result_with_data_shows_count(db):
     ok = {"label": "Basins", "success": True, "count": 3, "errors": []}
     html = render_to_string("setup/partials/_step_result.html", {"result": ok})
     assert "3 records created" in html
+
+
+# --------------------------------------------------------------------------
+# Task 4 — completion routes to next steps, not a dead-end
+# --------------------------------------------------------------------------
+
+
+def test_completion_panel_routes_to_next_steps(db):
+    boundary = _boundary()
+    ctx = {
+        "all_done": True,
+        "results": [{"label": "Basins", "step": "basins", "success": True, "count": 2, "errors": []}],
+        "boundary": boundary,
+        "review_groups": [],
+        "review_total": 0,
+        "review_active": 0,
+        "review_inactive": 0,
+    }
+    html = render_to_string("setup/partials/_progress.html", ctx)
+    assert "what's next" in html.lower()
+    # Routes into the Getting Started walkthrough + the four ordered next actions.
+    assert reverse("getting_started") in html
+    assert reverse("parcels:list") in html
+    assert reverse("wells:list") in html
+    assert reverse("accounting:accounts_list") in html
+    assert reverse("geography:zone_list") in html
+    # The old single-link dead-end to the station list is gone from the panel.
+    assert "Go to Stations" not in html

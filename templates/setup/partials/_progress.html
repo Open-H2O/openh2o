@@ -11,17 +11,31 @@
   {% include "setup/partials/_station_review.html" %}
 
   <div class="card-raised" style="background: oklch(0.49 0.11 145 / 0.08); border-color: var(--forest-400);">
-    <div class="row-between">
-      <div>
-        <p class="section-header-flush mb-sm">Setup complete!</p>
-        <p class="text-secondary text-sm" style="margin: 0;">
-          Geographic data has been populated for {{ boundary.name }}.
-          Head to Stations to review freshness and activate monitoring.
-        </p>
+    <p class="section-header-flush mb-sm">Setup complete — what's next</p>
+    <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md);">
+      Geographic data is populated for {{ boundary.name }}. Here's the rest of
+      first-time setup, in order:
+    </p>
+    <div class="onboarding-steps">
+      <div class="onboarding-step">
+        <span class="step-badge step-badge-active">1</span>
+        <span class="text-sm"><a href="{% url 'parcels:list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Review imported parcels</a> — confirm the use areas brought in for your watershed</span>
+      </div>
+      <div class="onboarding-step">
+        <span class="step-badge">2</span>
+        <span class="text-secondary text-sm"><a href="{% url 'wells:list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Add extraction wells</a> — the wells that pump groundwater</span>
+      </div>
+      <div class="onboarding-step">
+        <span class="step-badge">3</span>
+        <span class="text-secondary text-sm"><a href="{% url 'accounting:accounts_list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Set up water accounts</a> — group parcels into the accounts you'll track</span>
+      </div>
+      <div class="onboarding-step">
+        <span class="step-badge">4</span>
+        <span class="text-secondary text-sm"><a href="{% url 'geography:zone_list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Define management zones</a> — the areas a water budget applies to</span>
       </div>
     </div>
     <div class="form-footer" style="margin-top: var(--space-md);">
-      <a href="{% url 'datasync:station_list' %}" class="btn-primary">Go to Stations →</a>
+      <a href="{% url 'getting_started' %}" class="btn-primary">Open the Getting Started guide →</a>
     </div>
   </div>
 </div>
