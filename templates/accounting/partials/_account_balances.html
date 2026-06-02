@@ -15,7 +15,7 @@
     <div class="stat-card-unit">AF</div>
   </div>
   <div class="inset-card">
-    <div class="stat-card-label">Net</div>
+    <div class="stat-card-label">Net {% include "partials/_help_tooltip.html" with label="Net" text="Supply minus usage to date. Positive means more water was supplied than used; negative means usage has exceeded supply." %}</div>
     <div class="stat-card-value-sm {% if balance.net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
       {{ balance.net|floatformat:2 }}
     </div>

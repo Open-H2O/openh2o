@@ -125,11 +125,11 @@
         <th>Zone</th>
         <th class="th-right">Supply (AF)</th>
         <th class="th-right">Usage (AF)</th>
-        <th class="th-right">Net (AF)</th>
+        <th class="th-right">Net (AF) {% include "partials/_help_tooltip.html" with label="Net" text="Supply minus usage for the zone. Negative means usage has exceeded supply." %}</th>
         {% if has_allocations %}
         <th class="th-right">Water Budget (AF)</th>
-        <th class="th-right" title="Surplus (+) or debt (−) rolled in from the prior water year">Carried fwd (AF)</th>
-        <th class="th-right">Remaining (AF)</th>
+        <th class="th-right">Carried fwd (AF) {% include "partials/_help_tooltip.html" with label="Carried forward" text="Surplus (+) or debt (−) rolled in from the prior water year." %}</th>
+        <th class="th-right">Remaining (AF) {% include "partials/_help_tooltip.html" with label="Remaining" text="Water budget plus any carried-forward balance, minus usage. A negative Remaining is an overdraft." %}</th>
         {% endif %}
       </tr>
     </thead>

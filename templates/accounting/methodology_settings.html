@@ -24,6 +24,15 @@
     </p>
   </div>
 
+  <!-- What is a methodology? help block -->
+  <div class="card-raised">
+    <h2 class="section-header mb-md">What is a methodology?</h2>
+    <p class="text-secondary text-base">A <strong>methodology</strong> (or calculation plan) is the ordered, configurable chain of <strong>steps</strong> the platform applies to turn measurements into a defensible billable-groundwater figure for each use area: gross ET, minus effective precipitation, minus surface water deliveries, minus edge cases. Each step below is one operation in that chain &mdash; reorder it, enable or disable it, and tune its knobs, then preview a sample parcel to see the effect.</p>
+    <a href="{% url 'glossary' %}" class="text-sm" style="color: var(--color-gold);">Glossary &rarr;</a>
+    <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
+    <a href="{% url 'getting_started' %}" class="text-sm" style="color: var(--color-gold);">Getting Started &rarr;</a>
+  </div>
+
   {% if plan is None %}
   <!-- Empty state: no active plan -->
   <div class="card-raised">
