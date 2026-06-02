@@ -191,7 +191,9 @@ def test_upload_non_json_shows_specific_error(db):
     client.force_login(_admin())
     resp = _upload(client, b"this is not json at all")
     assert resp.status_code == 200
-    assert "isn't valid JSON" in resp.content.decode()
+    # Apostrophe in "isn't" is HTML-escaped through the {{ error }} variable;
+    # assert on the apostrophe-free part of the message.
+    assert "valid JSON" in resp.content.decode()
     assert not Boundary.objects.exists()
 
 
