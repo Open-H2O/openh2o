@@ -115,14 +115,16 @@ def zone_detail(request, pk):
     # GeoJSON for the zone map
     zone_geojson = None
     if zone.geometry:
-        zone_geojson = json.dumps({
+        # Python object (not a json.dumps string): the template escapes it via
+        # json_script so zone.name can't break out of <script>.
+        zone_geojson = {
             "type": "Feature",
             "geometry": json.loads(zone.geometry.geojson),
             "properties": {
                 "name": zone.name,
                 "zone_type": zone.zone_type,
             },
-        })
+        }
 
     context = {
         "zone": zone,

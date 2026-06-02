@@ -213,24 +213,25 @@ def station_detail(request, pk):
     # Build point GeoJSON for the embedded map
     station_geojson = None
     if station.location:
-        station_geojson = json.dumps(
-            {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": [station.location.x, station.location.y],
-                        },
-                        "properties": {
-                            "station_name": station.station_name,
-                            "external_station_id": station.external_station_id,
-                        },
-                    }
-                ],
-            }
-        )
+        # Python object (not a json.dumps string): the template escapes it via
+        # json_script so station_name / external_station_id can't break out of
+        # <script>.
+        station_geojson = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [station.location.x, station.location.y],
+                    },
+                    "properties": {
+                        "station_name": station.station_name,
+                        "external_station_id": station.external_station_id,
+                    },
+                }
+            ],
+        }
 
     # Determine freshness for chart color (source-aware)
     station_freshness = freshness.classify_freshness(

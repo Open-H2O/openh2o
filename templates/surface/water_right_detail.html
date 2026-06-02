@@ -198,9 +198,11 @@
 {% block map_scripts %}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="{% static 'js/map-core.js' %}"></script>
+{% if pods_geojson %}{{ pods_geojson|json_script:"pods-geojson-data" }}{% endif %}
 <script>
 (function() {
-  var geojson = {% if pods_geojson %}{{ pods_geojson|safe }}{% else %}null{% endif %};
+  var _gjEl = document.getElementById('pods-geojson-data');
+  var geojson = _gjEl ? JSON.parse(_gjEl.textContent) : null;
 
   var defaultCenter = [-120.5, 37.5];
   if (geojson && geojson.features && geojson.features.length > 0) {

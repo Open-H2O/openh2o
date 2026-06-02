@@ -92,7 +92,8 @@ def get_boundary_preview_data(boundary: Boundary) -> dict:
         "existing_parcels": existing_parcels,
         "existing_flowlines": existing_flowlines,
         "existing_stations": existing_stations,
-        "boundary_geojson": json.dumps(geojson) if geojson else None,
+        # Python object (or None); confirm.html escapes it via json_script.
+        "boundary_geojson": geojson,
     }
 
 

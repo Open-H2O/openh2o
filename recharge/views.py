@@ -76,7 +76,8 @@ def recharge_site_detail(request, pk):
         "events": events,
         "recent_measurements": recent_measurements,
         "event_form": RechargeEventForm(),
-        "geojson": json.dumps(geojson) if geojson else None,
+        # Python object (or None); template escapes it via json_script.
+        "geojson": geojson,
     }
     return render(request, "recharge/site_detail.html", context)
 

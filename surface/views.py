@@ -95,14 +95,16 @@ def pod_detail(request, pk):
     # GeoJSON for the mini map
     pod_geojson = None
     if pod.location:
-        pod_geojson = json.dumps({
+        # Python object (not a json.dumps string): the template escapes it via
+        # json_script so pod.name / stream_name can't break out of <script>.
+        pod_geojson = {
             "type": "Feature",
             "geometry": json.loads(pod.location.geojson),
             "properties": {
                 "name": pod.name,
                 "stream_name": pod.stream_name,
             },
-        })
+        }
 
     context = {
         "pod": pod,
@@ -234,7 +236,8 @@ def water_right_detail(request, pk):
         "pods": pods,
         "recent_diversions": recent_diversions,
         "active_curtailments": active_curtailments,
-        "pods_geojson": json.dumps(pods_geojson) if pods_geojson else None,
+        # Python object (or None); template escapes it via json_script.
+        "pods_geojson": pods_geojson,
     }
     return render(request, "surface/water_right_detail.html", context)
 

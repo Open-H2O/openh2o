@@ -113,7 +113,9 @@ def well_detail(request, pk):
         "irrigated_parcels": irrigated_parcels,
         "monitoring": monitoring,
         "ef": editable_fields_map,
-        "geojson": json.dumps(geojson) if geojson else None,
+        # Pass the Python object (or None); the template escapes it via
+        # json_script so a malicious place-name can't break out of <script>.
+        "geojson": geojson,
     }
     return render(request, "wells/detail.html", context)
 

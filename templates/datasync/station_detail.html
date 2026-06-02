@@ -484,9 +484,10 @@
 {% if station_geojson %}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="{% static 'js/map-core.js' %}"></script>
+{{ station_geojson|json_script:"station-geojson-data" }}
 <script>
 (function() {
-  var geojson = {{ station_geojson|safe }};
+  var geojson = JSON.parse(document.getElementById('station-geojson-data').textContent);
   var lng = {{ lng }};
   var lat = {{ lat }};
 

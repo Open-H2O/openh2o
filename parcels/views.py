@@ -101,7 +101,9 @@ def parcel_detail(request, pk):
         "recent_ledger": recent_ledger,
         "editable_fields": EDITABLE_FIELDS,
         "editable_fields_with_values": editable_fields_with_values,
-        "geojson": json.dumps(geojson) if geojson else None,
+        # Pass the Python object (or None); the template escapes it via
+        # json_script so operator free-text can't break out of <script>.
+        "geojson": geojson,
     }
     return render(request, "parcels/detail.html", context)
 
