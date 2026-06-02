@@ -7,7 +7,10 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+    # Fail closed: the shipped default is production (refuses to boot without a
+    # strong DB password + real ALLOWED_HOSTS). Local dev runs via make/pytest,
+    # which pass --ds=config.settings.local explicitly, or override this env var.
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

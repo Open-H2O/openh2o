@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.local}
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.production}
       DATABASE_URL: postgis://${POSTGRES_USER:-openh2o}:${POSTGRES_PASSWORD:-openh2o}@db:5432/${POSTGRES_DB:-openh2o}
     depends_on:
       db:
