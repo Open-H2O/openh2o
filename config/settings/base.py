@@ -92,6 +92,7 @@ TEMPLATES = [
                 "core.context_processors.site_config",
                 "core.context_processors.analytics",
                 "core.context_processors.access_flags",
+                "core.context_processors.setup_status",
             ],
         },
     },

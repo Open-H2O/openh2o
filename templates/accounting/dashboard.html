@@ -17,7 +17,23 @@
 {% block content %}
 <div class="page-stack">
 
-  {% if not periods.exists %}
+  {% if needs_setup %}
+  <!-- First run: no watershed configured yet. Point an admin straight at the
+       Setup Wizard (which auto-populates parcels, basins, flowlines, and
+       stations) before the manual accounting onboarding below. Gated by the
+       needs_setup context flag, which only fires for viewers who can run setup. -->
+  <div class="card-raised empty-state" style="border-color: var(--color-gold);">
+    <h2 class="section-header-flush mb-sm">Start here — set up your watershed</h2>
+    <p class="empty-state-text" style="max-width: 540px; margin-left: auto; margin-right: auto;">
+      This deployment has no watershed yet. Set one up to import parcels, wells,
+      groundwater basins, and the monitoring stations near your district —
+      everything the dashboard needs to start tracking water.
+    </p>
+    <div class="form-footer" style="justify-content: center; margin-top: var(--space-lg);">
+      <a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>
+    </div>
+  </div>
+  {% elif not periods.exists %}
   <!-- Empty state: guide the user -->
   <div class="card-raised empty-state">
     <h2 class="section-header-flush mb-sm">Welcome to OpenH2O</h2>
