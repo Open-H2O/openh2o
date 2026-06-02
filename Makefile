@@ -10,7 +10,7 @@ EXEC    = $(COMPOSE) exec web python manage.py
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo kaweah flush-kaweah check test fresh \
-        install-cron show-cron sync
+        verify-clean install-cron show-cron sync
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -56,6 +56,9 @@ collectstatic: ## Collect static files
 
 check: ## Run Django system checks (deployment readiness)
 	$(EXEC) check --deploy
+
+verify-clean: ## Assert this install has reference data only (no demo/agency content)
+	$(EXEC) verify_clean_install
 
 test: ## Run test suite (pinned to local settings; --ds outranks the container's prod env)
 	$(COMPOSE) exec web python -m pytest tests/ -v --ds=config.settings.local

@@ -1,0 +1,55 @@
+name: clean-install-guard
+
+# Proves the public software always ships clean: a fresh database + migrations +
+# reference data only (`seed_data`) must contain ZERO demo/agency content. If a
+# demo row (Demo Valley GSA, Kaweah Subbasin, any parcel/well/station/account)
+# ever sneaks into a clean install, this build fails. See
+# core/management/commands/verify_clean_install.py.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  clean-install:
+    runs-on: ubuntu-latest
+    env:
+      # Throwaway values for CI only — not secrets. base.py requires SECRET_KEY
+      # with no default; local settings boot without real credentials.
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      SECRET_KEY: ci-clean-install-guard-not-a-secret
+      POSTGRES_DB: openh2o
+      POSTGRES_USER: openh2o
+      POSTGRES_PASSWORD: openh2o
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start PostGIS database
+        run: docker compose up -d --wait db
+
+      - name: Build web image
+        run: docker compose build web
+
+      - name: Migrate (fresh schema)
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py migrate --noinput
+
+      - name: Seed REFERENCE data only (never demo/kaweah)
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py seed_data
+
+      - name: Assert the install is clean (no demo/agency content)
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py verify_clean_install
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
