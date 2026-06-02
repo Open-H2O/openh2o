@@ -54,16 +54,36 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4D2; 5</span>
+    <span class="step-number">&#x1F5FA; 5</span>
     <div class="step-body">
-      <h2 class="section-header">Enter Use Ledger Data</h2>
-      <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. The use ledger is the core of water accounting.</p>
-      <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Ledger &rarr;</a>
+      <h2 class="section-header">Define Management Zones</h2>
+      <p class="text-secondary text-base">A management zone is a sub-area of your district that carries its own water budget &mdash; each use area belongs to a zone. Zones are a prerequisite for the next step: a water budget is set per zone, so at least one zone must exist before you can budget water. Go to Administration &gt; Zones and create your zones, then assign use areas to each.</p>
+      <a href="{% url 'geography:zone_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Zones &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4E1; 6</span>
+    <span class="step-number">&#x1F4CA; 6</span>
+    <div class="step-body">
+      <h2 class="section-header">Set Water Budgets</h2>
+      <p class="text-secondary text-base">A water budget is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Create a budget for each zone, water type, and period. New to the difference between a budget and an allocation? See the short guide linked at the bottom of this page.</p>
+      <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Budgets &rarr;</a>
+    </div>
+  </div>
+
+  <div class="card-raised step-card">
+    <span class="step-number">&#x1F4D2; 7</span>
+    <div class="step-body">
+      <h2 class="section-header">Enter Use Ledger Data</h2>
+      <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. Usage can also be derived from satellite evapotranspiration (ET) &mdash; how that calculation works is configured on your Methodology page. The use ledger is the core of water accounting.</p>
+      <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Ledger &rarr;</a>
+      <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
+      <a href="{% url 'accounting:methodology_settings' %}" class="text-sm" style="color: var(--color-gold);">View the Methodology &rarr;</a>
+    </div>
+  </div>
+
+  <div class="card-raised step-card">
+    <span class="step-number">&#x1F4E1; 8</span>
     <div class="step-body">
       <h2 class="section-header">Connect Monitoring Stations</h2>
       <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS wells, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
@@ -72,7 +92,7 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4A7; 7</span>
+    <span class="step-number">&#x1F4A7; 9</span>
     <div class="step-body">
       <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection wells.</p>
@@ -83,7 +103,7 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4C4; 8</span>
+    <span class="step-number">&#x1F4C4; 10</span>
     <div class="step-body">
       <h2 class="section-header">Generate State Reports</h2>
       <p class="text-secondary text-base">When your reporting period is complete, generate GEARS CSV (per-well extraction) and CalWATRS CSV (surface diversions) for submission to the Water Board. Go to Reports &gt; Generate.</p>
