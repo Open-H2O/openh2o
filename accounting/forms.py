@@ -22,6 +22,16 @@ class ReportingPeriodForm(forms.ModelForm):
             ),
         }
 
+    def clean(self):
+        # Catch end-before-start at the form layer so it never reaches the DB
+        # CheckConstraint (start_date < end_date), which would 500 on save.
+        cleaned = super().clean()
+        start = cleaned.get("start_date")
+        end = cleaned.get("end_date")
+        if start and end and end <= start:
+            self.add_error("end_date", "The end date must be after the start date.")
+        return cleaned
+
 
 class AllocationPlanForm(forms.ModelForm):
     class Meta:

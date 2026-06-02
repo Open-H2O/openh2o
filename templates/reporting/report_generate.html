@@ -22,6 +22,10 @@
     Select a report type and period. The system validates data quality before generating.
   </p>
 
+  {% if error %}
+  <div class="alert-error"><strong>Error:</strong> {{ error }}</div>
+  {% endif %}
+
   {% if warnings %}
   <div class="page-stack" style="gap: var(--space-sm);">
     {% for w in warnings %}

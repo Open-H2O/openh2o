@@ -101,6 +101,20 @@ def report_generate(request):
                 with open(filepath, "w") as f:
                     f.write(csv_output.getvalue())
 
+            else:
+                # report_type is none of the four known kinds — without this guard
+                # `filename` is never assigned and line below raises
+                # UnboundLocalError → 500. Return a handled error instead.
+                context = {
+                    "form": form,
+                    "report_type_filter": report_type_filter,
+                    "error": (
+                        f"Unknown report type '{report_type}'. This report template "
+                        "can't be generated — check its configuration."
+                    ),
+                }
+                return render(request, "reporting/report_generate.html", context)
+
             rel_path = os.path.join("reports", filename)
 
             submission = ReportSubmission.objects.create(
