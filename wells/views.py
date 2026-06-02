@@ -8,8 +8,10 @@ from django.core.serializers import serialize
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES, Well
 
 
@@ -19,20 +21,21 @@ EDITABLE_FIELDS = {
     "wcr_number": {"label": "WCR Number", "type": "text", "max_length": 50},
     "state_well_number": {"label": "State Well Number", "type": "text", "max_length": 50},
     "status": {"label": "Status", "type": "select", "choices": Well.STATUS_CHOICES},
-    "capacity_gpm": {"label": "Capacity (gpm)", "type": "number", "step": "0.01"},
+    "capacity_gpm": {"label": "Capacity (gpm)", "type": "number", "step": "0.01", "min_value": 0},
     "year_pumping_began": {
-        "label": "Year Pumping Began", "type": "number", "step": "1", "integer": True
+        "label": "Year Pumping Began", "type": "number", "step": "1", "integer": True,
+        "min_value": 1850, "max_is_current_year": True,
     },
     "measurement_method": {
         "label": "Measurement Method", "type": "select",
         "choices": MEASUREMENT_METHOD_CHOICES,
     },
-    "depth_ft": {"label": "Depth (ft)", "type": "number", "step": "0.01"},
-    "casing_diameter_in": {"label": "Casing Diameter (in)", "type": "number", "step": "0.01"},
+    "depth_ft": {"label": "Depth (ft)", "type": "number", "step": "0.01", "min_value": 0},
+    "casing_diameter_in": {"label": "Casing Diameter (in)", "type": "number", "step": "0.01", "min_value": 0},
     "casing_material": {"label": "Casing Material", "type": "text", "max_length": 50},
-    "screen_top_ft": {"label": "Screen Top (ft)", "type": "number", "step": "0.01"},
-    "screen_bottom_ft": {"label": "Screen Bottom (ft)", "type": "number", "step": "0.01"},
-    "tested_yield_gpm": {"label": "Tested Yield (gpm)", "type": "number", "step": "0.01"},
+    "screen_top_ft": {"label": "Screen Top (ft)", "type": "number", "step": "0.01", "min_value": 0},
+    "screen_bottom_ft": {"label": "Screen Bottom (ft)", "type": "number", "step": "0.01", "min_value": 0},
+    "tested_yield_gpm": {"label": "Tested Yield (gpm)", "type": "number", "step": "0.01", "min_value": 0},
     "pump_type": {"label": "Pump Type", "type": "select", "choices": PUMP_TYPE_CHOICES},
     "notes": {"label": "Notes", "type": "textarea"},
 }
@@ -152,7 +155,33 @@ def well_edit_field(request, pk):
             return HttpResponseBadRequest("Invalid choice.")
 
     if field_meta["type"] == "number":
-        save_value = None if not new_value else new_value
+        try:
+            if field_meta.get("integer"):
+                max_value = field_meta.get("max_value")
+                if field_meta.get("max_is_current_year"):
+                    max_value = timezone.now().year
+                save_value = coerce_int(
+                    new_value, field_meta["label"],
+                    min_value=field_meta.get("min_value"),
+                    max_value=max_value,
+                )
+            else:
+                save_value = coerce_decimal(
+                    new_value, field_meta["label"],
+                    min_value=field_meta.get("min_value"),
+                    min_exclusive=field_meta.get("min_exclusive", False),
+                )
+        except FieldValidationError as exc:
+            # Re-render the edit form (HTMX swaps it back into #field-X) with the
+            # entered value preserved and a friendly error — never a 500.
+            context = {
+                "well": well,
+                "field": field,
+                "field_meta": field_meta,
+                "value": new_value,
+                "error": str(exc),
+            }
+            return render(request, "wells/partials/_field_edit.html", context)
     else:
         save_value = new_value
     setattr(well, field, save_value)

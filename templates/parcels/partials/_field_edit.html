@@ -11,6 +11,10 @@ On submit: PATCH back with field name and new value, which returns _field_value.
 
   <input type="hidden" name="field" value="{{ field }}">
 
+  {% if error %}
+    <span class="text-xs" style="color: var(--furnace-400); width: 100%; flex-basis: 100%;">{{ error }}</span>
+  {% endif %}
+
   {% if field_meta.type == "select" %}
     <select name="value" class="form-select" style="flex: 1; border-color: var(--color-gold);">
       {% for choice_val, choice_label in field_meta.choices %}

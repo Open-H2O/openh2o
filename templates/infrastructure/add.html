@@ -86,7 +86,7 @@
         <div class="form-stack">
           <div class="form-group">
             <label class="field-label" for="name">Name</label>
-            <input type="text" id="name" name="name" required class="form-input" placeholder="e.g. Johnson Ranch Well #3">
+            <input type="text" id="name" name="name" required class="form-input" placeholder="e.g. Johnson Ranch Well #3" value="{{ submitted.name|default:'' }}">
           </div>
           <div class="form-group">
             <label class="field-label" for="status">Status</label>
@@ -98,7 +98,7 @@
           </div>
           <div class="form-group">
             <label class="field-label" for="notes">Notes</label>
-            <textarea id="notes" name="notes" class="form-textarea" rows="3" placeholder="Optional notes..."></textarea>
+            <textarea id="notes" name="notes" class="form-textarea" rows="3" placeholder="Optional notes...">{{ submitted.notes|default:'' }}</textarea>
           </div>
         </div>
       </div>
@@ -110,23 +110,23 @@
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="depth_ft">Depth (ft)</label>
-              <input type="number" id="depth_ft" name="depth_ft" step="0.01" class="form-input" placeholder="e.g. 350">
+              <input type="number" id="depth_ft" name="depth_ft" step="0.01" class="form-input" placeholder="e.g. 350" value="{{ submitted.depth_ft|default:'' }}">
             </div>
             <div class="form-group">
               <label class="field-label" for="capacity_gpm">Capacity (gpm)</label>
-              <input type="number" id="capacity_gpm" name="capacity_gpm" step="0.01" class="form-input" placeholder="e.g. 500">
+              <input type="number" id="capacity_gpm" name="capacity_gpm" step="0.01" class="form-input" placeholder="e.g. 500" value="{{ submitted.capacity_gpm|default:'' }}">
             </div>
           </div>
           <div class="form-group">
             <label class="field-label" for="owner_name">Owner Name</label>
-            <input type="text" id="owner_name" name="owner_name" class="form-input" placeholder="Property or well owner">
+            <input type="text" id="owner_name" name="owner_name" class="form-input" placeholder="Property or well owner" value="{{ submitted.owner_name|default:'' }}">
           </div>
 
           <!-- State reporting (SGMA / GEARS) -->
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="year_pumping_began">Year Pumping Began</label>
-              <input type="number" id="year_pumping_began" name="year_pumping_began" step="1" min="1850" max="2100" class="form-input" placeholder="e.g. 1998">
+              <input type="number" id="year_pumping_began" name="year_pumping_began" step="1" min="1850" max="2100" class="form-input" placeholder="e.g. 1998" value="{{ submitted.year_pumping_began|default:'' }}">
             </div>
             <div class="form-group">
               <label class="field-label" for="measurement_method">Measurement Method</label>
@@ -143,11 +143,11 @@
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="wcr_number">WCR Number</label>
-              <input type="text" id="wcr_number" name="wcr_number" class="form-input" placeholder="DWR Well Completion Report #">
+              <input type="text" id="wcr_number" name="wcr_number" class="form-input" placeholder="DWR Well Completion Report #" value="{{ submitted.wcr_number|default:'' }}">
             </div>
             <div class="form-group">
               <label class="field-label" for="state_well_number">State Well Number</label>
-              <input type="text" id="state_well_number" name="state_well_number" class="form-input" placeholder="e.g. 12N/13E-34Q01">
+              <input type="text" id="state_well_number" name="state_well_number" class="form-input" placeholder="e.g. 12N/13E-34Q01" value="{{ submitted.state_well_number|default:'' }}">
             </div>
           </div>
 
@@ -155,27 +155,27 @@
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="casing_diameter_in">Casing Diameter (in)</label>
-              <input type="number" id="casing_diameter_in" name="casing_diameter_in" step="0.01" class="form-input" placeholder="e.g. 8">
+              <input type="number" id="casing_diameter_in" name="casing_diameter_in" step="0.01" class="form-input" placeholder="e.g. 8" value="{{ submitted.casing_diameter_in|default:'' }}">
             </div>
             <div class="form-group">
               <label class="field-label" for="casing_material">Casing Material</label>
-              <input type="text" id="casing_material" name="casing_material" class="form-input" placeholder="e.g. PVC, steel">
+              <input type="text" id="casing_material" name="casing_material" class="form-input" placeholder="e.g. PVC, steel" value="{{ submitted.casing_material|default:'' }}">
             </div>
           </div>
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="screen_top_ft">Screen Top (ft)</label>
-              <input type="number" id="screen_top_ft" name="screen_top_ft" step="0.01" class="form-input" placeholder="depth to top of perforation">
+              <input type="number" id="screen_top_ft" name="screen_top_ft" step="0.01" class="form-input" placeholder="depth to top of perforation" value="{{ submitted.screen_top_ft|default:'' }}">
             </div>
             <div class="form-group">
               <label class="field-label" for="screen_bottom_ft">Screen Bottom (ft)</label>
-              <input type="number" id="screen_bottom_ft" name="screen_bottom_ft" step="0.01" class="form-input" placeholder="depth to bottom of perforation">
+              <input type="number" id="screen_bottom_ft" name="screen_bottom_ft" step="0.01" class="form-input" placeholder="depth to bottom of perforation" value="{{ submitted.screen_bottom_ft|default:'' }}">
             </div>
           </div>
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="tested_yield_gpm">Tested Yield (gpm)</label>
-              <input type="number" id="tested_yield_gpm" name="tested_yield_gpm" step="0.01" class="form-input" placeholder="WCR pump-test yield">
+              <input type="number" id="tested_yield_gpm" name="tested_yield_gpm" step="0.01" class="form-input" placeholder="WCR pump-test yield" value="{{ submitted.tested_yield_gpm|default:'' }}">
             </div>
             <div class="form-group">
               <label class="field-label" for="pump_type">Pump Type</label>
@@ -195,11 +195,11 @@
         <div class="form-stack">
           <div class="form-group">
             <label class="field-label" for="stream_name">Stream Name</label>
-            <input type="text" id="stream_name" name="stream_name" class="form-input" placeholder="e.g. Merced River">
+            <input type="text" id="stream_name" name="stream_name" class="form-input" placeholder="e.g. Merced River" value="{{ submitted.stream_name|default:'' }}">
           </div>
           <div class="form-group">
             <label class="field-label" for="max_rate_cfs">Max Rate (cfs)</label>
-            <input type="number" id="max_rate_cfs" name="max_rate_cfs" step="0.0001" class="form-input" placeholder="e.g. 2.5">
+            <input type="number" id="max_rate_cfs" name="max_rate_cfs" step="0.0001" class="form-input" placeholder="e.g. 2.5" value="{{ submitted.max_rate_cfs|default:'' }}">
           </div>
         </div>
       </div>
@@ -216,7 +216,7 @@
           </div>
           <div class="form-group">
             <label class="field-label" for="capacity_af_storage">Capacity (acre-feet)</label>
-            <input type="number" id="capacity_af_storage" name="capacity_acre_feet" step="0.0001" class="form-input" placeholder="e.g. 120">
+            <input type="number" id="capacity_af_storage" name="capacity_acre_feet" step="0.0001" class="form-input" placeholder="e.g. 120" value="{{ submitted.capacity_acre_feet|default:'' }}">
           </div>
         </div>
       </div>
@@ -236,11 +236,11 @@
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="capacity_af_recharge">Capacity (acre-feet)</label>
-              <input type="number" id="capacity_af_recharge" name="capacity_acre_feet" step="0.0001" class="form-input" placeholder="e.g. 500">
+              <input type="number" id="capacity_af_recharge" name="capacity_acre_feet" step="0.0001" class="form-input" placeholder="e.g. 500" value="{{ submitted.capacity_acre_feet|default:'' }}">
             </div>
             <div class="form-group">
               <label class="field-label" for="operator">Operator</label>
-              <input type="text" id="operator" name="operator" class="form-input" placeholder="Operating entity">
+              <input type="text" id="operator" name="operator" class="form-input" placeholder="Operating entity" value="{{ submitted.operator|default:'' }}">
             </div>
           </div>
         </div>
@@ -331,7 +331,7 @@
   </div>
 
   <!-- Hidden geometry inputs -->
-  <input type="hidden" name="geometry_json" id="geometry_json" value="">
+  <input type="hidden" name="geometry_json" id="geometry_json" value="{{ submitted.geometry_json|default:'' }}">
 </form>
 {% endblock %}
 

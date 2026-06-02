@@ -10,12 +10,16 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
+from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from parcels.models import Parcel, ParcelLedger
 
 
 EDITABLE_FIELDS = {
     "owner_name": {"label": "Owner Name", "type": "text", "max_length": 200},
-    "area_acres": {"label": "Area (Acres)", "type": "number", "step": "0.01"},
+    "area_acres": {
+        "label": "Area (Acres)", "type": "number", "step": "0.01",
+        "min_value": 0, "min_exclusive": True,
+    },
     "status": {"label": "Status", "type": "select", "choices": Parcel.STATUS_CHOICES},
     "address": {"label": "Address", "type": "textarea"},
     "notes": {"label": "Notes", "type": "textarea"},
@@ -140,7 +144,30 @@ def parcel_edit_field(request, pk):
             return HttpResponseBadRequest("Invalid choice.")
 
     if field_meta["type"] == "number":
-        save_value = None if not new_value else new_value
+        try:
+            if field_meta.get("integer"):
+                save_value = coerce_int(
+                    new_value, field_meta["label"],
+                    min_value=field_meta.get("min_value"),
+                    max_value=field_meta.get("max_value"),
+                )
+            else:
+                save_value = coerce_decimal(
+                    new_value, field_meta["label"],
+                    min_value=field_meta.get("min_value"),
+                    min_exclusive=field_meta.get("min_exclusive", False),
+                )
+        except FieldValidationError as exc:
+            # Re-render the edit form (HTMX swaps it back into #field-X) with the
+            # entered value preserved and a friendly error — never a 500.
+            context = {
+                "parcel": parcel,
+                "field": field,
+                "field_meta": field_meta,
+                "value": new_value,
+                "error": str(exc),
+            }
+            return render(request, "parcels/partials/_field_edit.html", context)
     else:
         save_value = new_value
     setattr(parcel, field, save_value)

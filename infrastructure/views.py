@@ -7,8 +7,10 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
+from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from infrastructure import importer
 from parcels.models import Parcel
 from recharge.models import RechargeSite
@@ -76,26 +78,48 @@ def infrastructure_add(request):
         except Parcel.DoesNotExist:
             parcel = None
 
+    def _error(error_type, message):
+        # Re-render the Add form with a friendly error AND the submitted values +
+        # drawn geometry preserved, so a failed submit never loses the user's work.
+        return render(
+            request,
+            "infrastructure/add.html",
+            _add_context(error_type, error=message, submitted=request.POST),
+        )
+
     if infra_type == "well":
         location = _parse_point(geometry_json)
         if not location:
-            return render(request, "infrastructure/add.html", _add_context("well", error="A point location is required for wells."))
+            return _error("well", "A point location is required for wells.")
+        try:
+            depth_ft = coerce_decimal(request.POST.get("depth_ft"), "Depth (ft)", min_value=0)
+            capacity_gpm = coerce_decimal(request.POST.get("capacity_gpm"), "Capacity (gpm)", min_value=0)
+            year_pumping_began = coerce_int(
+                request.POST.get("year_pumping_began"), "Year Pumping Began",
+                min_value=1850, max_value=timezone.now().year,
+            )
+            casing_diameter_in = coerce_decimal(request.POST.get("casing_diameter_in"), "Casing Diameter (in)", min_value=0)
+            screen_top_ft = coerce_decimal(request.POST.get("screen_top_ft"), "Screen Top (ft)", min_value=0)
+            screen_bottom_ft = coerce_decimal(request.POST.get("screen_bottom_ft"), "Screen Bottom (ft)", min_value=0)
+            tested_yield_gpm = coerce_decimal(request.POST.get("tested_yield_gpm"), "Tested Yield (gpm)", min_value=0)
+        except FieldValidationError as exc:
+            return _error("well", str(exc))
         well = Well.objects.create(
             name=name,
             location=location,
-            depth_ft=request.POST.get("depth_ft") or None,
-            capacity_gpm=request.POST.get("capacity_gpm") or None,
+            depth_ft=depth_ft,
+            capacity_gpm=capacity_gpm,
             status=status,
             owner_name=request.POST.get("owner_name", ""),
-            year_pumping_began=request.POST.get("year_pumping_began") or None,
+            year_pumping_began=year_pumping_began,
             measurement_method=request.POST.get("measurement_method", ""),
             wcr_number=request.POST.get("wcr_number", ""),
             state_well_number=request.POST.get("state_well_number", ""),
-            casing_diameter_in=request.POST.get("casing_diameter_in") or None,
+            casing_diameter_in=casing_diameter_in,
             casing_material=request.POST.get("casing_material", ""),
-            screen_top_ft=request.POST.get("screen_top_ft") or None,
-            screen_bottom_ft=request.POST.get("screen_bottom_ft") or None,
-            tested_yield_gpm=request.POST.get("tested_yield_gpm") or None,
+            screen_top_ft=screen_top_ft,
+            screen_bottom_ft=screen_bottom_ft,
+            tested_yield_gpm=tested_yield_gpm,
             pump_type=request.POST.get("pump_type", ""),
             notes=notes,
         )
@@ -106,13 +130,17 @@ def infrastructure_add(request):
     elif infra_type == "diversion":
         location = _parse_point(geometry_json)
         if not location:
-            return render(request, "infrastructure/add.html", _add_context("diversion", error="A point location is required for diversions."))
+            return _error("diversion", "A point location is required for diversions.")
+        try:
+            max_rate_cfs = coerce_decimal(request.POST.get("max_rate_cfs"), "Max Rate (cfs)", min_value=0)
+        except FieldValidationError as exc:
+            return _error("diversion", str(exc))
         pod = PointOfDiversion.objects.create(
             name=name,
             location=location,
             water_right=None,
             stream_name=request.POST.get("stream_name", ""),
-            max_rate_cfs=request.POST.get("max_rate_cfs") or None,
+            max_rate_cfs=max_rate_cfs,
             status=status,
             notes=notes,
         )
@@ -125,10 +153,17 @@ def infrastructure_add(request):
         geometry = _parse_polygon(geometry_json)
 
         if not location and not geometry:
-            return render(request, "infrastructure/add.html", _add_context(infra_type, error="A location or polygon is required."))
+            return _error(infra_type, "A location or polygon is required.")
 
         if geometry and not location:
             location = geometry.centroid
+
+        try:
+            capacity_acre_feet = coerce_decimal(
+                request.POST.get("capacity_acre_feet"), "Capacity (acre-feet)", min_value=0
+            )
+        except FieldValidationError as exc:
+            return _error(infra_type, str(exc))
 
         site_type = request.POST.get("site_type", "spreading_basin")
         if infra_type == "storage":
@@ -139,14 +174,14 @@ def infrastructure_add(request):
             location=location,
             geometry=geometry,
             site_type=site_type,
-            capacity_acre_feet=request.POST.get("capacity_acre_feet") or None,
+            capacity_acre_feet=capacity_acre_feet,
             status=status,
             operator=request.POST.get("operator", ""),
             notes=notes,
         )
         return redirect("recharge:detail", pk=site.pk)
 
-    return render(request, "infrastructure/add.html", _add_context(infra_type, error="Invalid infrastructure type."))
+    return _error(infra_type, "Invalid infrastructure type.")
 
 
 # ---------------------------------------------------------------------------
