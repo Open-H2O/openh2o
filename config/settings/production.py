@@ -43,6 +43,46 @@ if not ALLOWED_HOSTS:  # noqa: F405
         "(e.g. ALLOWED_HOSTS=water.example.org). See DEPLOY.md."
     )
 
+# -- Logging -----------------------------------------------------------------
+# With DEBUG=False, Django renders the generic 500 page but writes the traceback
+# nowhere by default — an unhandled exception in production leaves zero trace
+# (the signup-500 incident left nothing in `docker compose logs web`). Route the
+# django.request logger to console at ERROR so tracebacks reach container stdout
+# (captured by `docker compose logs web`), plus a catch-all root logger at
+# WARNING. This lives in production.py because local already surfaces tracebacks
+# via DEBUG=True, so this is the minimal correct home.
+#
+# Logs go to stdout only and do NOT survive container restarts. A future
+# follow-up could ship them to a durable volume or an aggregator — out of scope
+# here, and no external logging dependency is added.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+}
+
 # -- Email -------------------------------------------------------------------
 
 EMAIL_BACKEND = env(
