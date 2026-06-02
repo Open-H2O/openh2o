@@ -88,3 +88,83 @@ def test_enforced_non_admin_never_sees_cta(db):
     resp = client.get(DASHBOARD_URL)
     assert resp.status_code == 200
     assert "Start here" not in resp.content.decode()
+
+
+# --------------------------------------------------------------------------
+# Task 2 — station review and bulk-enable at wizard completion
+# --------------------------------------------------------------------------
+
+
+def _source(name="DWR Water Data Library", code="dwr_wdl"):
+    return DataSource.objects.create(name=name, code=code)
+
+
+def _station(source, ext_id, lon, lat, active=False):
+    return MonitoredStation.objects.create(
+        data_source=source,
+        external_station_id=ext_id,
+        station_name=f"Station {ext_id}",
+        location=Point(lon, lat, srid=4326),
+        is_active=active,
+    )
+
+
+def test_station_review_groups_and_counts(db):
+    from setup.services import build_station_review
+
+    boundary = _boundary()
+    wdl = _source("DWR Water Data Library", "dwr_wdl")
+    usgs = _source("US Geological Survey", "usgs")
+    # Two inside the boundary bbox, one active; one outside.
+    _station(wdl, "A1", -119.25, 36.25, active=False)
+    _station(usgs, "B1", -119.10, 36.10, active=True)
+    _station(wdl, "OUT", -118.0, 35.0, active=False)  # outside boundary
+
+    review = build_station_review(boundary)
+    assert review["review_total"] == 2  # OUT excluded by point-in-polygon
+    assert review["review_active"] == 1
+    assert review["review_inactive"] == 1
+    # Grouped by friendly provider name, not the raw code.
+    names = {g["source_name"] for g in review["review_groups"]}
+    assert names == {"DWR Water Data Library", "US Geological Survey"}
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_enable_all_activates_only_boundary_stations(db):
+    boundary = _boundary()
+    wdl = _source()
+    inside = _station(wdl, "IN", -119.25, 36.25, active=False)
+    outside = _station(wdl, "OUT", -118.0, 35.0, active=False)
+
+    client = Client()
+    client.force_login(_admin())
+    session = client.session
+    session["setup_wizard_boundary_id"] = boundary.pk
+    session.save()
+
+    resp = client.post(reverse("setup:activate_stations"))
+    assert resp.status_code == 200
+
+    inside.refresh_from_db()
+    outside.refresh_from_db()
+    assert inside.is_active is True      # enabled
+    assert outside.is_active is False    # untouched — outside the watershed
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_rerun_discovery_does_not_auto_enable(db):
+    """The discovery step creates stations inactive; only the explicit enable
+    step flips them. A re-discovery of an already-present station must not
+    silently activate it."""
+    boundary = _boundary()
+    wdl = _source()
+    station = _station(wdl, "A1", -119.25, 36.25, active=False)
+
+    # Simulate a second discovery pass (get_or_create no-ops on the existing row).
+    MonitoredStation.objects.get_or_create(
+        data_source=wdl,
+        external_station_id="A1",
+        defaults={"station_name": "x", "location": Point(-119.25, 36.25, srid=4326), "is_active": False},
+    )
+    station.refresh_from_db()
+    assert station.is_active is False

@@ -1,0 +1,51 @@
+{% comment %}
+Wizard-completion station review. Lists the monitoring stations inside the
+chosen boundary, grouped by provider (friendly DataSource.name). Each row reuses
+datasync:station_toggle (swaps its own button); "Enable all" posts to
+setup:activate_stations and swaps this whole block. Empty when no stations were
+discovered — the next-steps panel still renders below.
+{% endcomment %}
+<div id="station-review">
+  {% if review_total %}
+  <div class="card-raised" style="margin-bottom: var(--space-lg);">
+    <div class="row-between" style="margin-bottom: var(--space-md); gap: var(--space-md);">
+      <div>
+        <p class="section-header-flush mb-sm">Monitoring stations</p>
+        <p class="text-secondary text-sm" style="margin: 0; max-width: 460px;">
+          {{ review_total }} station{{ review_total|pluralize }} found in your watershed —
+          {{ review_active }} active, {{ review_inactive }} off. Discovered stations
+          start switched off; enable the ones you want to track.
+        </p>
+      </div>
+      {% if review_inactive %}
+      <button
+        hx-post="{% url 'setup:activate_stations' %}"
+        hx-target="#station-review"
+        hx-swap="outerHTML"
+        class="btn-primary"
+        style="white-space: nowrap; align-self: flex-start;"
+      >Enable all {{ review_inactive }} →</button>
+      {% endif %}
+    </div>
+
+    {% for group in review_groups %}
+    <div style="margin-bottom: var(--space-md);">
+      <h3 class="text-sm" style="color: var(--color-text-secondary); font-weight: 600; margin: 0 0 var(--space-sm);">
+        {{ group.source_name }}
+      </h3>
+      <div class="wizard-step-list">
+        {% for station in group.stations %}
+        <div class="row-between" style="padding: var(--space-xs) 0;">
+          <div>
+            <div class="text-sm" style="font-weight: 500;">{{ station.station_name|default:station.external_station_id }}</div>
+            <div class="text-tertiary" style="font-size: 0.75rem;">{{ station.external_station_id }}</div>
+          </div>
+          {% include "datasync/partials/_station_toggle.html" with station=station %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

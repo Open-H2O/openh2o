@@ -71,6 +71,51 @@ def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple:
     return count, errors
 
 
+def build_station_review(boundary: Boundary) -> dict:
+    """Group the monitoring stations inside a boundary for the wizard's
+    review-and-enable step.
+
+    Discovered stations land ``is_active=False`` (see ``_step_stations``), so a
+    fresh run leaves them all switched off. This returns the stations whose point
+    falls within the chosen boundary's geometry — the watershed the operator just
+    set up — grouped by provider under the provider's friendly ``DataSource.name``
+    (never the raw ``dwr_wdl`` code), plus the active/inactive tallies that drive
+    the "Enable all" control.
+
+    Spatial scope (``location__within``) is the plan's "point-in-polygon via the
+    chosen boundary" option, so enabling never reaches a station outside the
+    operator's watershed.
+    """
+    from datasync.models import MonitoredStation
+
+    stations = (
+        MonitoredStation.objects.filter(location__within=boundary.geometry)
+        .select_related("data_source")
+        .order_by("data_source__name", "station_name")
+    )
+
+    groups_map = {}
+    total = 0
+    active = 0
+    for station in stations:
+        total += 1
+        if station.is_active:
+            active += 1
+        groups_map.setdefault(station.data_source, []).append(station)
+
+    review_groups = [
+        {"source_name": ds.name, "stations": sts}
+        for ds, sts in groups_map.items()
+    ]
+
+    return {
+        "review_groups": review_groups,
+        "review_total": total,
+        "review_active": active,
+        "review_inactive": total - active,
+    }
+
+
 def get_boundary_preview_data(boundary: Boundary) -> dict:
     """Return summary stats for the confirmation page."""
     from datasync.models import MonitoredStation

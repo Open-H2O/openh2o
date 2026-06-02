@@ -18,8 +18,14 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
 from core.access import admin_required
+from datasync.models import MonitoredStation
 from geography.models import Boundary
-from setup.services import WIZARD_STEPS, get_boundary_preview_data, run_auto_populate_step
+from setup.services import (
+    WIZARD_STEPS,
+    build_station_review,
+    get_boundary_preview_data,
+    run_auto_populate_step,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +185,43 @@ def setup_progress(request):
         "all_done": step_index >= len(STEP_NAMES),
         "boundary": boundary,
     }
+    # On the final poll, attach the station-review data so completion can offer
+    # the in-flow enable step (discovered stations land inactive).
+    if context["all_done"]:
+        context.update(build_station_review(boundary))
     return render(request, "setup/partials/_progress.html", context)
+
+
+@admin_required
+@login_required
+def setup_activate_stations(request):
+    """HTMX endpoint: bulk-enable every inactive station inside the chosen
+    boundary, then re-render the review partial with the new state.
+
+    A single ``update(is_active=True)`` — no N+1 saves. Scoped to the boundary
+    the session points at, so it never enables a station outside the operator's
+    watershed. Per-station toggles in the review list reuse the existing
+    ``datasync:station_toggle`` endpoint, so this only handles "Enable all".
+    """
+    if request.method != "POST":
+        return HttpResponse("Method not allowed", status=405)
+
+    boundary_id = request.session.get(SESSION_KEY_BOUNDARY)
+    if not boundary_id:
+        return HttpResponse("Session expired.", status=400)
+
+    try:
+        boundary = Boundary.objects.get(pk=boundary_id)
+    except Boundary.DoesNotExist:
+        return HttpResponse("Boundary not found.", status=400)
+
+    MonitoredStation.objects.filter(
+        location__within=boundary.geometry, is_active=False
+    ).update(is_active=True)
+
+    context = build_station_review(boundary)
+    context["boundary"] = boundary
+    return render(request, "setup/partials/_station_review.html", context)
 
 
 # --------------------------------------------------------------------------

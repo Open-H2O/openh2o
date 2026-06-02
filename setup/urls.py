@@ -10,4 +10,5 @@ urlpatterns = [
     path("confirm/", views.setup_confirm, name="confirm"),
     path("run/", views.setup_run, name="run"),
     path("progress/", views.setup_progress, name="progress"),
+    path("activate-stations/", views.setup_activate_stations, name="activate_stations"),
 ]
