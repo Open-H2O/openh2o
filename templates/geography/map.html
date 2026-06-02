@@ -172,7 +172,7 @@ var MAP_CONFIG = {
             swatch: 'line-dash', swatchColor: OH2O.colors.teal
         },
         Object.assign(OH2O.makeLabelLayer('sw-tie-labels', 'tie-lines', 'pod', {
-            minzoom: 13, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '%'],
+            minzoom: 12, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '% SW'],
             layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
         }), { panelHidden: true, group: 'sw-tie-lines', section: 'Surface Water', filter: ['==', ['get', 'source_type'], 'sw'] }),
 
@@ -185,7 +185,7 @@ var MAP_CONFIG = {
             swatch: 'line-dash', swatchColor: OH2O.colors.gold
         },
         Object.assign(OH2O.makeLabelLayer('gw-tie-labels', 'tie-lines', 'well', {
-            minzoom: 13, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '%'],
+            minzoom: 12, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '% GW'],
             layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
         }), { panelHidden: true, group: 'gw-tie-lines', section: 'Infrastructure', filter: ['==', ['get', 'source_type'], 'gw'] }),
         {

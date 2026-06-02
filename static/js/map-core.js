@@ -28,17 +28,17 @@ OH2O.SPRITE = 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm';
    labelField : MapLibre expression for the label text
    labelMin   : zoom at which the label fades in (zoom-dependent labels) */
 OH2O.entities = {
-    well:    { color: OH2O.colors.gold,   rampLo: 3.5, rampHi: 8.5, labelMin: 13,
+    well:    { color: OH2O.colors.gold,   rampLo: 3.5, rampHi: 8.5, labelMin: 12,
                labelField: ['coalesce', ['get','name'], ['get','well_registration_id'], 'Well'] },
-    pod:     { color: OH2O.colors.teal,   rampLo: 3.5, rampHi: 8.5, labelMin: 13,
+    pod:     { color: OH2O.colors.teal,   rampLo: 3.5, rampHi: 8.5, labelMin: 12,
                labelField: ['coalesce', ['get','name'], 'POD'] },
-    station: { color: OH2O.colors.red,    rampLo: 3.5, rampHi: 8.5, labelMin: 12,
-               labelField: ['coalesce', ['get','station_name'], 'Station'] },
-    recharge:{ color: OH2O.colors.purple, rampLo: 4.5, rampHi: 10,  labelMin: 12,
-               labelField: ['coalesce', ['get','name'], 'Recharge'] },
-    parcel:  { color: OH2O.colors.blue,   labelMin: 14,
+    station: { color: OH2O.colors.red,    rampLo: 3.5, rampHi: 8.5, labelMin: 11,
+               labelField: ['coalesce', ['get','station_name'], ['get','external_station_id'], 'Station'] },
+    recharge:{ color: OH2O.colors.purple, rampLo: 4.5, rampHi: 10,  labelMin: 11,
+               labelField: ['coalesce', ['get','name'], ['get','site_type'], 'Recharge'] },
+    parcel:  { color: OH2O.colors.blue,   labelMin: 12,
                labelField: ['get','parcel_number'] },
-    zone:    { color: OH2O.colors.green,  labelMin: 10,
+    zone:    { color: OH2O.colors.green,  labelMin: 9,
                labelField: ['get','name'] },
     boundary:{ color: OH2O.colors.gold,   labelMin: 8,
                labelField: ['get','name'] }
