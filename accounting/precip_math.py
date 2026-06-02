@@ -75,6 +75,13 @@ def effective_precip_inches(
         etf = float(et)
         # TR-21's P**0.824 term is only defined for non-negative rainfall.
         p_pow = math.pow(pf, 0.824) if pf > 0 else 0.0
+        # ISS-032: the TR-21 core is evaluated in binary float (math.pow needs a
+        # fractional power, which Decimal lacks natively) before re-Decimalizing.
+        # The float error here is ~1e-12 relative — orders of magnitude below the
+        # ledger's 1e-4 AF resolution — and the result is hard-capped at min(P, ET)
+        # immediately below, so the float core can never move a billed figure at
+        # ledger precision. The cap + sub-resolution error is the bound that makes
+        # the float route safe; locked by test_usda_scs_stable_at_ledger_resolution.
         pe = sf * (1.25 * p_pow - 2.93) * math.pow(10, 0.000955 * etf)
         pe_d = _dec(pe)
         # Cap at both rainfall and ET, then floor at zero.

@@ -286,6 +286,25 @@ class Command(BaseCommand):
         plan_id = active_plan.id if active_plan else None
         plan_name = active_plan.name if active_plan else ""
 
+        # ISS-032: a clamp_floor configured with expiry_months <= 0 makes a
+        # just-banked credit expire the very month it is deposited
+        # (_add_months(period, 0) == period, and is_expired is `current >=
+        # expires`), silently destroying the surplus it was meant to carry
+        # forward. Reject it at config-validation time — before any row is
+        # written — the same way the finalized-period guard refuses up front.
+        if active_plan is not None:
+            for step in active_plan.steps.filter(
+                enabled=True, step_type="clamp_floor"
+            ):
+                expiry = (step.config or {}).get("expiry_months")
+                if expiry is not None and int(expiry) <= 0:
+                    raise CommandError(
+                        f"clamp_floor step '{step.label}' has expiry_months="
+                        f"{expiry}: a banked credit would expire the month it is "
+                        f"deposited. Use a positive month-count, or leave it blank "
+                        f"to never expire."
+                    )
+
         written = 0
         skipped_no_et = 0
         banked = 0
@@ -296,7 +315,15 @@ class Command(BaseCommand):
             et_step = next(
                 (s for s in breakdown if s["step_type"] == "et_gross"), None
             )
-            has_et = bool(et_step and et_step["detail"].get("rows", 0) > 0)
+            # ISS-025: gate on months_matched (items actually date-matched for THIS
+            # month), NOT rows (the span-row count). A cache row can span the period
+            # yet carry no item dated in it (months_matched==0, rows>0); gating on
+            # rows would file a fabricated 0-AF `calculated` row for a parcel with
+            # no real ET — the silent-zero trap Phase 38 exists to kill.
+            months_matched = (
+                et_step["detail"].get("months_matched", 0) if et_step else 0
+            )
+            has_et = bool(et_step and months_matched > 0)
             if not has_et:
                 skipped_no_et += 1
                 continue
@@ -323,6 +350,17 @@ class Command(BaseCommand):
                 net_af, info = _apply_banking(
                     parcel, period, final_af, breakdown, commit=True
                 )
+                # ISS-025 invariant, explicit at the write site: a `calculated`
+                # row is only ever written for a parcel with real matched ET. The
+                # gate above already guarantees months_matched>0; assert it here so
+                # a future refactor of that gate can never silently resurrect a
+                # filed 0-AF row. A can't-happen guard, not flow control.
+                if months_matched <= 0:  # pragma: no cover - guaranteed by the gate
+                    raise CommandError(
+                        f"internal invariant violated: refusing to write a "
+                        f"`calculated` row for {parcel.parcel_number} {period} "
+                        f"with months_matched={months_matched}"
+                    )
                 ParcelLedger.objects.filter(
                     parcel=parcel,
                     effective_date=eff_date,

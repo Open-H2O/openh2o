@@ -37,7 +37,7 @@ from core.access import admin_required
 from accounting.services import (
     account_balance,
     parse_ledger_csv,
-    parcel_balance,
+    parcel_balance_breakdown,
     zone_balance,
     zone_carryover,
 )
@@ -84,7 +84,12 @@ def dashboard(request):
             reporting_period=selected_period,
         ).exists()
 
-        # Account summaries
+        # Account summaries — the Budget Summary grand totals below roll up ONLY
+        # active accounts (an inactive account is not a live water user), whereas
+        # the Zone Details block sums every parcel in each zone regardless of
+        # account status. The two describe deliberately different populations, so
+        # the dashboard labels this block "Active Water Accounts" to keep the two
+        # columns from being read as one (ISS-032 / F-math-03 stream-2).
         active_accounts = WaterAccount.objects.filter(status="active").order_by("account_number")
         for account in active_accounts:
             bal = account_balance(account, reporting_period=selected_period)
@@ -404,26 +409,22 @@ def account_detail(request, pk):
     # Account-level balance
     balance = account_balance(account, reporting_period=selected_period)
 
-    # Per-parcel breakdown
+    # Per-parcel breakdown. ISS-026: route each parcel through billable_ledger
+    # (via parcel_balance_breakdown) exactly as account_balance does, so a
+    # parcel's gross `et_estimate` row is suppressed wherever its netted
+    # `calculated` twin exists. The per-parcel rows then sum to the account total
+    # instead of showing ~double it. The old raw
+    # ParcelLedger.objects.filter(parcel=p) aggregate summed BOTH ET rows (the
+    # double-count) and also discarded the parcel_balance it had just computed.
     parcel_balances = []
     for assignment in assignments:
         p = assignment.parcel
-        pb = parcel_balance(p, reporting_period=selected_period)
-        # Compute supply/usage per parcel
-        qs = ParcelLedger.objects.filter(parcel=p)
-        if selected_period:
-            qs = qs.filter(reporting_period=selected_period)
-        agg = qs.aggregate(
-            supply=Sum("amount_acre_feet", filter=Q(amount_acre_feet__gt=0)),
-            usage=Sum("amount_acre_feet", filter=Q(amount_acre_feet__lt=0)),
-        )
-        supply = agg["supply"] or Decimal("0")
-        usage = abs(agg["usage"] or Decimal("0"))
+        pb = parcel_balance_breakdown(p, reporting_period=selected_period)
         parcel_balances.append({
             "parcel": p,
-            "supply": supply,
-            "usage": usage,
-            "net": supply - usage,
+            "supply": pb["supply"],
+            "usage": pb["usage"],
+            "net": pb["net"],
         })
 
     context = {

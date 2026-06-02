@@ -547,6 +547,26 @@ def parcel_balance(parcel, reporting_period=None):
     return result["total"] or Decimal("0")
 
 
+def parcel_balance_breakdown(parcel, reporting_period=None):
+    """supply/usage/net for ONE parcel, routed through billable_ledger.
+
+    The per-parcel sibling of account_balance / zone_balance: it walks the SAME
+    filter -> billable_ledger -> _balance_dict path, so a parcel's figures sit on
+    the same billable basis as the account total it rolls up into. Because
+    billable_ledger suppresses per exact (parcel_id, effective_date), partitioning
+    an account's ledger by parcel and summing the per-parcel breakdowns reproduces
+    the account-level breakdown exactly — the per-parcel rows reconcile with the
+    account total instead of showing ~double it (ISS-026: a netted `calculated`
+    row suppresses its gross `et_estimate` twin; no ET double-count).
+
+    Returns the same dict shape as _balance_dict: {total, supply, usage, net}.
+    """
+    qs = ParcelLedger.objects.filter(parcel=parcel)
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+    return _balance_dict(billable_ledger(qs))
+
+
 def _balance_dict(queryset):
     """Compute supply/usage/net from a ParcelLedger queryset.
 

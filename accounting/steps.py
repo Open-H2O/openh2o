@@ -35,17 +35,42 @@ _read_cache_mm honors all of this for BOTH faucets so et_gross and the precip st
 can never drift on the read; getting any string wrong silently zeroes the parcel.
 """
 
+import logging
 from decimal import Decimal
 
 from django.db.models import Sum
 
 from accounting.services import et_mm_to_acre_feet
 
+logger = logging.getLogger(__name__)
+
 
 def _period_year_month(period):
     """Parse a 'YYYY-MM' period string into (year, month) ints."""
     year_str, month_str = period.split("-")
     return int(year_str), int(month_str)
+
+
+def _item_in_span(item_date, start_date, end_date):
+    """Whether an et_data item's 'YYYY-MM' date lies within [start_date, end_date].
+
+    Compared at month granularity: the item's month-first-day must be >= the
+    span start's month-first-day and <= the span end_date. A malformed or
+    unparseable date returns False (treated as out-of-span so it is caught and
+    logged rather than silently summed). See ISS-032 / F-math-03.
+    """
+    import datetime as dt
+
+    parts = item_date.split("-")
+    if len(parts) < 2:
+        return False
+    try:
+        year, month = int(parts[0]), int(parts[1])
+    except ValueError:
+        return False
+    item_first = dt.date(year, month, 1)
+    span_start_first = dt.date(start_date.year, start_date.month, 1)
+    return span_start_first <= item_first <= end_date
 
 
 def _record(step_type, input_af, output_af, detail):
@@ -91,7 +116,28 @@ def _read_cache_mm(parcel, period, variable, model, key):
         for item in row.et_data or []:
             if not isinstance(item, dict):
                 continue
-            if str(item.get("date", "")).startswith(period) and item.get(key) is not None:
+            item_date = str(item.get("date", ""))
+            # F-math-03 (ISS-032): an item whose date falls OUTSIDE its own cache
+            # row's [start_date, end_date] span is malformed data. The period
+            # predicates downstream can only be trusted if each row's items live
+            # within the row's span (surface water matches the DB effective_date,
+            # ET matches this embedded date string — a mismatch could net gross ET
+            # against the wrong surface month). Catch and skip it loudly rather
+            # than let a wrong-month value sum in silently.
+            if item_date and not _item_in_span(
+                item_date, row.start_date, row.end_date
+            ):
+                logger.warning(
+                    "OpenETCache row %s (parcel=%s, span %s..%s) carries item "
+                    "dated %s outside its span — skipping (malformed cache row)",
+                    row.pk,
+                    getattr(parcel, "parcel_number", parcel),
+                    row.start_date,
+                    row.end_date,
+                    item_date,
+                )
+                continue
+            if item_date.startswith(period) and item.get(key) is not None:
                 total_mm += Decimal(str(item[key]))
                 matched += 1
 
