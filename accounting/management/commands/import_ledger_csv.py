@@ -62,6 +62,40 @@ class Command(BaseCommand):
                     f"Reporting period not found: {period_name}"
                 )
 
+        # ISS-029 finalized-period write guard. A finalized ReportingPeriod is a
+        # number already filed with the state; importing into it would silently
+        # rewrite a filed figure. Mirror the run_calculations guard: refuse up
+        # front when the operator explicitly targets a finalized period. dry_run
+        # is never blocked (it writes nothing). When NO period is named, rows
+        # carry reporting_period=None, so instead guard per-row by date below.
+        if (
+            reporting_period is not None
+            and reporting_period.is_finalized
+            and not dry_run
+        ):
+            filed = (
+                f" (filed {reporting_period.finalized_at:%Y-%m-%d})"
+                if reporting_period.finalized_at
+                else ""
+            )
+            raise CommandError(
+                f"Refusing to import into reporting period "
+                f"'{reporting_period.name}': it is finalized{filed}. Importing "
+                f"would overwrite a number already filed with the state."
+            )
+
+        # When no period is named, protect any finalized period by date: a row
+        # whose effective_date falls inside a finalized period is refused (and
+        # reported as a row error), so a re-import can't slip rows into a filed
+        # month. Loaded once; empty list = no per-row check.
+        finalized_spans = []
+        if reporting_period is None and not dry_run:
+            finalized_spans = list(
+                ReportingPeriod.objects.filter(is_finalized=True).values_list(
+                    "start_date", "end_date", "name"
+                )
+            )
+
         # Cache lookups
         parcel_cache = {}
         water_type_cache = {}
@@ -143,6 +177,24 @@ class Command(BaseCommand):
                             f"invalid effective_date: {effective_date_raw}"
                         )
 
+                # ISS-029: refuse a row dated inside a finalized period (only
+                # checked when no explicit --reporting-period was given).
+                if effective_date is not None and finalized_spans:
+                    hit = next(
+                        (
+                            n
+                            for (s, e, n) in finalized_spans
+                            if s <= effective_date <= e
+                        ),
+                        None,
+                    )
+                    if hit:
+                        errors.append(
+                            f"effective_date {effective_date} is inside "
+                            f"finalized period '{hit}'; refusing to write to a "
+                            f"filed period"
+                        )
+
                 # Validate source_type
                 if not source_type:
                     errors.append("missing source_type")
@@ -183,29 +235,61 @@ class Command(BaseCommand):
                 if transaction_date is None:
                     transaction_date = effective_date
 
+                # Quantize to the column's 4dp so the dedup key matches what the
+                # DB stores (a re-run's parsed value lines up with the stored one).
+                amount_q = amount.quantize(Decimal("0.0001"))
+                key = (parcel.id, effective_date, source_type, amount_q)
                 entries_to_create.append(
-                    ParcelLedger(
-                        parcel=parcel,
-                        transaction_date=transaction_date,
-                        effective_date=effective_date,
-                        amount_acre_feet=amount,
-                        water_type=water_type,
-                        source_type=source_type,
-                        description=description,
-                        reporting_period=reporting_period,
+                    (
+                        key,
+                        ParcelLedger(
+                            parcel=parcel,
+                            transaction_date=transaction_date,
+                            effective_date=effective_date,
+                            amount_acre_feet=amount_q,
+                            water_type=water_type,
+                            source_type=source_type,
+                            description=description,
+                            reporting_period=reporting_period,
+                        ),
                     )
                 )
 
-        # Bulk create in batches
-        if not dry_run and entries_to_create:
+        # ISS-029 idempotency (dedup-skip). The ledger is an append-only journal,
+        # not authoritative state for a key, so we never delete — we skip a row
+        # that already exists with the same (parcel, effective_date, source_type,
+        # amount) and collapse exact duplicates within this file. Re-importing the
+        # same CSV writes nothing the second time, while a genuinely corrected
+        # amount (a different key) still lands. Keying on amount is the 44-AUDIT
+        # recommendation. One query loads the existing keys for the file's parcels.
+        skipped_duplicate = 0
+        survivors = []
+        if entries_to_create:
+            parcel_ids = {key[0] for key, _entry in entries_to_create}
+            existing = set(
+                ParcelLedger.objects.filter(
+                    parcel_id__in=parcel_ids
+                ).values_list(
+                    "parcel_id", "effective_date", "source_type", "amount_acre_feet"
+                )
+            )
+            seen = set()
+            for key, entry in entries_to_create:
+                if key in existing or key in seen:
+                    skipped_duplicate += 1
+                    continue
+                seen.add(key)
+                survivors.append(entry)
+
+        # Bulk create the survivors in batches, in one transaction so a mid-import
+        # failure can't leave a half-written ledger.
+        if not dry_run and survivors:
             batch_size = 500
             with transaction.atomic():
-                for i in range(0, len(entries_to_create), batch_size):
-                    batch = entries_to_create[i : i + batch_size]
+                for i in range(0, len(survivors), batch_size):
+                    batch = survivors[i : i + batch_size]
                     ParcelLedger.objects.bulk_create(batch)
-            created_count = len(entries_to_create)
-        else:
-            created_count = len(entries_to_create)
+        created_count = len(survivors)
 
         # Report errors
         for line_num, errs in error_rows:
@@ -219,7 +303,8 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f"{action} {created_count} entries, "
-                f"{skipped_count} skipped with errors"
+                f"{skipped_count} skipped with errors, "
+                f"{skipped_duplicate} skipped as duplicates"
             )
         )
 

@@ -69,6 +69,10 @@ class Command(BaseCommand):
         staged_pending = 0
         staged_duplicate = 0
         staged_error = 0
+        # ISS-030: track the staging rows THIS invocation creates, so promotion
+        # is scoped to this run (never a leftover `pending` row from an aborted
+        # earlier import) and so this run can clear its own scratch afterward.
+        staged_ids = []
 
         try:
             ds = DataSource(file_path)
@@ -126,12 +130,13 @@ class Command(BaseCommand):
                 is_duplicate = Parcel.objects.filter(parcel_number=parcel_number).exists()
                 status = "duplicate" if is_duplicate else "pending"
 
-                ParcelStaging.objects.create(
+                staging_row = ParcelStaging.objects.create(
                     parcel_number=parcel_number,
                     raw_data=raw_data,
                     geometry=geom,
                     status=status,
                 )
+                staged_ids.append(staging_row.id)
 
                 if is_duplicate:
                     staged_duplicate += 1
@@ -149,7 +154,12 @@ class Command(BaseCommand):
         # Promote pending staging records to Parcel table
         imported_count = 0
         if not dry_run:
-            pending_qs = ParcelStaging.objects.filter(status="pending")
+            # ISS-030: promote ONLY the rows this invocation staged — not every
+            # global `pending` row. A leftover `pending` row from an aborted
+            # prior import must never be materialized by an unrelated later run.
+            pending_qs = ParcelStaging.objects.filter(
+                id__in=staged_ids, status="pending"
+            )
             with transaction.atomic():
                 for staging in pending_qs:
                     try:
@@ -176,6 +186,14 @@ class Command(BaseCommand):
                         )
         else:
             imported_count = staged_pending  # Would-be count
+
+        # ISS-030: clear this run's staging scratch so the table can't accumulate
+        # across imports or bleed a leftover row into a later run. Duplicate/error
+        # diagnostics were already written to stdout above. Done for dry-run too —
+        # a dry-run that left `pending` rows behind would be promoted by the next
+        # real import.
+        if staged_ids:
+            ParcelStaging.objects.filter(id__in=staged_ids).delete()
 
         self.stdout.write(
             self.style.SUCCESS(

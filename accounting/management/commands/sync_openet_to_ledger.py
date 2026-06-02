@@ -86,6 +86,11 @@ class Command(BaseCommand):
         }
 
         entries_to_create = []
+        # ISS-030 / F-functional-26: track (parcel_id, month_key) appended in
+        # THIS run. Two OpenETCache rows can overlap and both carry the same
+        # parcel-month; neither has a ledger row yet, so the DB existence check
+        # below passes for both. The seen set makes a parcel-month write once.
+        seen = set()
 
         for cache in cache_qs:
             parcel = cache.parcel
@@ -149,6 +154,15 @@ class Command(BaseCommand):
                 if already_exists:
                     counters["skipped_existing"] += 1
                     continue
+
+                # Intra-run guard: a second overlapping cache row for the same
+                # parcel-month would otherwise append a duplicate (the DB check
+                # above can't see this run's not-yet-written rows).
+                run_key = (parcel.id, month_key)
+                if run_key in seen:
+                    counters["skipped_existing"] += 1
+                    continue
+                seen.add(run_key)
 
                 # Convert mm to acre-feet (negative: ET is consumption)
                 amount_af = et_mm_to_acre_feet(total_et_mm, parcel.area_acres)
