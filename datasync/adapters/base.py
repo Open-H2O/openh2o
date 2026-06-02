@@ -11,6 +11,7 @@ The sync() orchestrator runs the pipeline:
 
 import json
 import logging
+import math
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -24,6 +25,39 @@ from django.utils import timezone
 from datasync.models import DataRecordStaging, DataSource, DataSyncLog, MonitoredStation
 
 logger = logging.getLogger(__name__)
+
+
+# ── CKAN datastore_search_sql safety helpers ────────────────────────────────
+# CKAN's datastore_search_sql HTTP action accepts only a raw SQL string — there
+# is no bound-parameter form over the wire — so values interpolated into the
+# query MUST be escaped/validated here. The endpoint is read-only, but a read-
+# only role still executes whatever SQL it is handed, so an unescaped value is
+# both a correctness bug (an apostrophe in a real site_code silently empties the
+# query) and a read-SQL injection vector.
+
+def sql_str_literal(value):
+    """Render ``value`` as a safe PostgreSQL string literal for interpolation.
+
+    Single quotes are doubled — the standard, injection-safe escaping for a
+    string literal when ``standard_conforming_strings`` is on (the Postgres
+    default; backslash is not special). A real site_code like ``O'Brien`` then
+    produces a correct query (``'O''Brien'``) instead of breaking the literal,
+    and a crafted ``x'; DROP …`` payload stays trapped inside the literal.
+    """
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def sql_float(value):
+    """Coerce ``value`` to a finite float for safe interpolation, else raise.
+
+    Used for bbox coordinates. ``float()`` already rejects non-numeric text;
+    the finiteness check additionally rejects NaN/inf, so a crafted coordinate
+    can neither inject SQL nor build a malformed ``BETWEEN`` clause.
+    """
+    f = float(value)
+    if not math.isfinite(f):
+        raise ValueError(f"non-finite numeric value: {value!r}")
+    return f
 
 
 class BaseAdapter(ABC):

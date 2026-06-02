@@ -16,7 +16,7 @@ Parameters:
 import logging
 
 from datasync.adapters import register_adapter
-from datasync.adapters.base import BaseAdapter
+from datasync.adapters.base import BaseAdapter, sql_float, sql_str_literal
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +36,15 @@ class DWRWDLAdapter(BaseAdapter):
 
     def fetch(self, station, start_date, end_date):
         """Fetch groundwater level data from CNRA Open Data Portal."""
-        # CKAN datastore_search_sql is the most reliable way to filter by date range
+        # CKAN datastore_search_sql is the most reliable way to filter by date
+        # range. Values are escaped via sql_str_literal (no bound-param form over
+        # the wire) — apostrophe-safe and injection-safe. See base.py.
         sql = (
             f"SELECT site_code, msmt_date, gse_gwe "
             f"FROM \"{MEASUREMENTS_RESOURCE_ID}\" "
-            f"WHERE site_code = '{station.external_station_id}' "
-            f"AND msmt_date >= '{start_date.strftime('%Y-%m-%d')}' "
-            f"AND msmt_date <= '{end_date.strftime('%Y-%m-%d')}' "
+            f"WHERE site_code = {sql_str_literal(station.external_station_id)} "
+            f"AND msmt_date >= {sql_str_literal(start_date.strftime('%Y-%m-%d'))} "
+            f"AND msmt_date <= {sql_str_literal(end_date.strftime('%Y-%m-%d'))} "
             f"ORDER BY msmt_date"
         )
         params = {"sql": sql}
@@ -92,11 +94,12 @@ class DWRWDLAdapter(BaseAdapter):
     def discover_stations(self, boundary_geometry, radius_km=50):
         """Discover DWR groundwater wells from CNRA Open Data Portal near a boundary."""
         bbox = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
+        # bbox floats are validated finite before interpolation (sql_float).
         sql = (
             f"SELECT site_code, well_name, latitude, longitude "
             f"FROM \"{STATIONS_RESOURCE_ID}\" "
-            f"WHERE CAST(latitude AS FLOAT) BETWEEN {bbox[1]} AND {bbox[3]} "
-            f"AND CAST(longitude AS FLOAT) BETWEEN {bbox[0]} AND {bbox[2]} "
+            f"WHERE CAST(latitude AS FLOAT) BETWEEN {sql_float(bbox[1])} AND {sql_float(bbox[3])} "
+            f"AND CAST(longitude AS FLOAT) BETWEEN {sql_float(bbox[0])} AND {sql_float(bbox[2])} "
             f"LIMIT 100"
         )
         try:

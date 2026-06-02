@@ -77,11 +77,26 @@ class USGSAdapter(BaseAdapter):
             )
             for values_set in ts.get("values", []):
                 for val in values_set.get("value", []):
+                    raw_val = val.get("value")
+                    if raw_val in (None, ""):
+                        value = None
+                    else:
+                        # Guard the per-value parse: one non-numeric NWIS reading
+                        # (e.g. a text qualifier like "Ice") must drop only that
+                        # record, not raise and sink the whole station batch.
+                        try:
+                            value = float(raw_val)
+                        except (ValueError, TypeError):
+                            logger.warning(
+                                "usgs: dropping non-numeric reading %r for %s on %s",
+                                raw_val, site_code, val.get("dateTime", ""),
+                            )
+                            continue
                     records.append({
                         "station_id": site_code,
                         "observation_date": val.get("dateTime", ""),
                         "parameter_code": var_code,
-                        "value": float(val["value"]) if val.get("value") else None,
+                        "value": value,
                         "unit": unit,
                         "qualifiers": val.get("qualifiers", []),
                     })

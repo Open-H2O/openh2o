@@ -17,7 +17,7 @@ Parameters:
 import logging
 
 from datasync.adapters import register_adapter
-from datasync.adapters.base import BaseAdapter
+from datasync.adapters.base import BaseAdapter, sql_float, sql_str_literal
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +36,15 @@ class DWRSGMAAdapter(BaseAdapter):
 
     def fetch(self, station, start_date, end_date):
         """Fetch SGMA monitoring well data from CNRA Open Data Portal."""
+        # Values escaped via sql_str_literal — apostrophe-safe and injection-safe
+        # (CKAN datastore_search_sql has no bound-param form). See base.py.
         sql = (
             f"SELECT site_code, msmt_date, gse_gwe "
             f"FROM \"{MEASUREMENTS_RESOURCE_ID}\" "
-            f"WHERE site_code = '{station.external_station_id}' "
+            f"WHERE site_code = {sql_str_literal(station.external_station_id)} "
             f"AND monitoring_program = 'SGMA' "
-            f"AND msmt_date >= '{start_date.strftime('%Y-%m-%d')}' "
-            f"AND msmt_date <= '{end_date.strftime('%Y-%m-%d')}' "
+            f"AND msmt_date >= {sql_str_literal(start_date.strftime('%Y-%m-%d'))} "
+            f"AND msmt_date <= {sql_str_literal(end_date.strftime('%Y-%m-%d'))} "
             f"ORDER BY msmt_date"
         )
         params = {"sql": sql}
@@ -92,11 +94,12 @@ class DWRSGMAAdapter(BaseAdapter):
     def discover_stations(self, boundary_geometry, radius_km=50):
         """Discover SGMA monitoring sites from CNRA Open Data Portal near a boundary."""
         bbox = boundary_geometry.extent
+        # bbox floats are validated finite before interpolation (sql_float).
         sql = (
             f"SELECT s.site_code, s.well_name, s.latitude, s.longitude "
             f"FROM \"{STATIONS_RESOURCE_ID}\" s "
-            f"WHERE CAST(s.latitude AS FLOAT) BETWEEN {bbox[1]} AND {bbox[3]} "
-            f"AND CAST(s.longitude AS FLOAT) BETWEEN {bbox[0]} AND {bbox[2]} "
+            f"WHERE CAST(s.latitude AS FLOAT) BETWEEN {sql_float(bbox[1])} AND {sql_float(bbox[3])} "
+            f"AND CAST(s.longitude AS FLOAT) BETWEEN {sql_float(bbox[0])} AND {sql_float(bbox[2])} "
             f"AND EXISTS ("
             f"  SELECT 1 FROM \"{MEASUREMENTS_RESOURCE_ID}\" m "
             f"  WHERE m.site_code = s.site_code AND m.monitoring_program = 'SGMA'"
