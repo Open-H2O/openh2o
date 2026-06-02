@@ -245,10 +245,14 @@ def water_right_detail(request, pk):
 @login_required
 def pods_geojson(request):
     """Return all points of diversion as a GeoJSON FeatureCollection."""
-    data = serialize(
+    raw = serialize(
         "geojson",
         PointOfDiversion.objects.all(),
         geometry_field="location",
         fields=["name", "stream_name", "max_rate_cfs", "status"],
     )
-    return HttpResponse(data, content_type="application/json")
+    data = json.loads(raw)
+    for f in data["features"]:
+        # Inject pk so the full-map popup can link to the POD detail page.
+        f["properties"]["pk"] = f.get("id")
+    return HttpResponse(json.dumps(data), content_type="application/json")

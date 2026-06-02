@@ -527,6 +527,11 @@
         'circle-stroke-color': '#fff'
       }
     });
+    OH2O.addDetailLabel(map, 'station', 'station', { id: 'station-label' });
+    OH2O.attachPopup(map, 'station-point', function (p) {
+      return '<strong>' + (p.station_name || 'Monitoring Station') + '</strong><br>' +
+             'ID: ' + (p.external_station_id || '—');
+    });
   });
 })();
 </script>

@@ -224,6 +224,13 @@
       map.addSource('pods', { type: 'geojson', data: geojson });
       map.addLayer({ id: 'pods-glow', type: 'circle', source: 'pods', paint: OH2O.glowPaint('pod') });
       map.addLayer({ id: 'pods-point', type: 'circle', source: 'pods', paint: OH2O.pointPaint('pod', { 'circle-stroke-width': 2 }) });
+      // Label each POD by name so multiple diversions are tellable apart.
+      OH2O.addDetailLabel(map, 'pods', 'pod', { id: 'pods-label' });
+      OH2O.attachPopup(map, 'pods-point', function (p) {
+        return '<strong>' + (p.name || 'Point of Diversion') + '</strong><br>' +
+               'Stream: ' + (p.stream_name || '—') + '<br>' +
+               'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—');
+      });
 
       // Fit to all POD bounds
       var coords = geojson.features.map(function(f) { return f.geometry.coordinates; });

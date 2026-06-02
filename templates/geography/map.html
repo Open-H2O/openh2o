@@ -269,7 +269,8 @@ var MAP_CONFIG = {
         'pods-points': function(p) {
             return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
                    'Stream: ' + (p.stream_name || '—') + '<br>' +
-                   'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—');
+                   'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—') + '<br>' +
+                   '<a href="/surface/diversion/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         'stations-points': function(p) {
             return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +

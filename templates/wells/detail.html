@@ -210,6 +210,11 @@
       map.addSource('well', { type: 'geojson', data: geojson });
       map.addLayer({ id: 'well-glow', type: 'circle', source: 'well', paint: OH2O.glowPaint('well') });
       map.addLayer({ id: 'well-point', type: 'circle', source: 'well', paint: OH2O.pointPaint('well', { 'circle-stroke-width': 2 }) });
+      OH2O.addDetailLabel(map, 'well', 'well', { id: 'well-label' });
+      OH2O.attachPopup(map, 'well-point', function (p) {
+        return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
+               'Reg ID: ' + (p.well_registration_id || '—');
+      });
     } else {
       // No location: show a placeholder message
       var el = document.createElement('div');

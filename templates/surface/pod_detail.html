@@ -203,6 +203,11 @@
       map.addSource('pod', { type: 'geojson', data: geojson });
       map.addLayer({ id: 'pod-glow', type: 'circle', source: 'pod', paint: OH2O.glowPaint('pod') });
       map.addLayer({ id: 'pod-point', type: 'circle', source: 'pod', paint: OH2O.pointPaint('pod', { 'circle-stroke-width': 2 }) });
+      OH2O.addDetailLabel(map, 'pod', 'pod', { id: 'pod-label' });
+      OH2O.attachPopup(map, 'pod-point', function (p) {
+        return '<strong>' + (p.name || 'Point of Diversion') + '</strong><br>' +
+               'Stream: ' + (p.stream_name || '—');
+      });
     } else {
       var el = document.createElement('div');
       el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d5e6f;font-size:0.875rem;pointer-events:none;';

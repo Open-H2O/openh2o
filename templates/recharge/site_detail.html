@@ -185,6 +185,17 @@
           paint: { 'line-color': OH2O.colors.purple, 'line-width': 2 }
         });
       }
+      var siteLayer = geomType === 'Point' ? 'site-point' : 'site-fill';
+      OH2O.addDetailLabel(map, 'site', 'recharge', {
+        id: 'site-label',
+        anchor: geomType === 'Point' ? 'top' : 'center',
+        offset: geomType === 'Point' ? [0, 1.1] : [0, 0]
+      });
+      OH2O.attachPopup(map, siteLayer, function (p) {
+        return '<strong>' + (p.name || 'Recharge Site') + '</strong><br>' +
+               'Type: ' + (p.site_type || '—') + '<br>' +
+               'Status: ' + (p.status || '—');
+      });
       var bounds = new maplibregl.LngLatBounds();
       var flat = JSON.stringify(geojson.features[0].geometry.coordinates);
       var pairs = flat.match(/-?\d+\.\d+/g);

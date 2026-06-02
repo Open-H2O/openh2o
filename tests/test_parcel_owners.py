@@ -22,7 +22,7 @@ from django.urls import reverse
 
 from core.management.commands.backfill_parcel_owners import KAWEAH_PARCEL_OWNERS
 from parcels.models import Parcel
-from tests.factories import ParcelFactory
+from tests.factories import ParcelFactory, PointOfDiversionFactory
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -58,6 +58,17 @@ def test_parcels_geojson_carries_popup_fields(auth_client):
     for field in ("parcel_number", "owner_name", "area_acres", "status", "pk"):
         assert field in props, f"parcels_geojson missing '{field}'"
     assert props["owner_name"] == "Sierra Vista Ranch"
+
+
+@pytest.mark.django_db
+def test_pods_geojson_injects_pk(auth_client):
+    """The POD full-map popup links to /surface/diversion/<pk>/, so pk must ship."""
+    pod = PointOfDiversionFactory(name="Ivanhoe Ditch Head")
+    resp = auth_client.get(reverse("surface:pods_geojson"))
+    assert resp.status_code == 200
+    data = json.loads(resp.content)
+    feature = data["features"][0]
+    assert feature["properties"]["pk"] == pod.pk
 
 
 @pytest.mark.django_db

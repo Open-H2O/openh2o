@@ -217,6 +217,11 @@
         'line-width': 2
       }
     });
+    OH2O.addDetailLabel(map, 'parcel', 'parcel', { id: 'parcel-label', anchor: 'center', offset: [0, 0] });
+    OH2O.attachPopup(map, 'parcel-fill', function (p) {
+      return '<strong>' + (p.parcel_number || 'Parcel') + '</strong><br>' +
+             'Owner: ' + (p.owner_name || '—');
+    });
 
     // Fit to parcel bounds
     var coords = [];
