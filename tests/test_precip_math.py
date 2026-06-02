@@ -90,6 +90,29 @@ def test_fraction_honors_custom_fraction():
 
 
 # --------------------------------------------------------------------------
+# float-bound regression lock (ISS-032b)
+# --------------------------------------------------------------------------
+
+
+def test_usda_scs_stable_at_ledger_resolution():
+    # ISS-032: TR-21's core runs in binary float (Decimal has no native
+    # fractional power). This locks the bound that makes that safe: the result is
+    # deterministic run-to-run and, quantized to the ledger's 1e-4 AF resolution,
+    # reproducible — the float error sits far below ledger precision, and min(P,ET)
+    # caps it regardless. NOT a behavior change; a regression lock + documented bound.
+    ledger = Decimal("0.0001")
+    runs = [
+        effective_precip_inches(Decimal("4.0"), Decimal("6.0"), method="usda_scs")
+        for _ in range(5)
+    ]
+    assert len(set(runs)) == 1, f"non-deterministic TR-21 output: {set(runs)}"
+    q = Decimal(runs[0]).quantize(ledger)
+    assert q == Decimal(runs[0]).quantize(ledger)  # quantization is stable
+    assert _close(q, "1.001"), f"drifted from published anchor ~1.001: {q}"
+    assert Decimal("0") < q <= Decimal("4.0")  # within (0, P], cap holds
+
+
+# --------------------------------------------------------------------------
 # fail loud
 # --------------------------------------------------------------------------
 

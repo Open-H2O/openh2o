@@ -323,3 +323,124 @@ def test_run_calculations_skips_parcels_without_et():
     rows = ParcelLedger.objects.filter(source_type="calculated")
     assert rows.count() == 1
     assert rows.first().parcel_id == p_with.id
+
+
+# --------------------------------------------------------------------------
+# ISS-025: months_matched (not the span row count) gates the calculated write
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_run_calculations_skips_span_row_with_no_matched_month():
+    """A cache row that SPANS the period but carries no item dated in it must be
+    skipped. Gating on `rows` (the span count) instead of `months_matched` would
+    file a fabricated 0-AF `calculated` row — the silent-zero trap (ISS-025)."""
+    from datasync.models import OpenETCache
+
+    parcel = _parcel("SPAN-NO-MATCH", acres="10")
+    _irrigate(parcel)
+    # Spans Jun–Aug, but carries ONLY a June item — nothing dated 2024-07.
+    OpenETCache.objects.create(
+        parcel=parcel,
+        geometry=_square(),
+        start_date=dt.date(2024, 6, 1),
+        end_date=dt.date(2024, 8, 31),
+        variable="ET",
+        model_name="Ensemble",
+        et_data=[{"et": 170.0, "date": "2024-06", "unit": "mm"}],
+    )
+    call_command("seed_calculation_plan")
+    call_command("run_calculations", "--period", "2024-07")
+
+    # rows=1 (the span matches July) but months_matched=0 (no July item) -> skip.
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated"
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_run_calculations_written_row_has_months_matched_provenance():
+    """A `calculated` row only ever exists when ET was truly matched for the
+    month — its CalculationRun provenance carries months_matched>0 (ISS-025)."""
+    from accounting.models import CalculationRun
+
+    parcel = _parcel("HAS-MATCH", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    call_command("seed_calculation_plan")
+    call_command("run_calculations", "--period", "2024-06")
+
+    row = ParcelLedger.objects.get(parcel=parcel, source_type="calculated")
+    assert row.amount_acre_feet < 0
+    run = CalculationRun.objects.get(parcel=parcel, period="2024-06")
+    et_step = next(s for s in run.breakdown if s["step_type"] == "et_gross")
+    assert et_step["detail"]["months_matched"] > 0
+
+
+# --------------------------------------------------------------------------
+# ISS-032a: malformed cache rows (item dated outside the row span) are caught
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_read_cache_mm_flags_item_outside_row_span(caplog):
+    """F-math-03 (ISS-032): a cache row spanning June that carries a July-dated
+    item is malformed — _read_cache_mm logs a warning and never sums it."""
+    import logging
+
+    from datasync.models import OpenETCache
+
+    from accounting.steps import _read_cache_mm
+
+    parcel = _parcel("SPAN-BAD", acres="10")
+    OpenETCache.objects.create(
+        parcel=parcel,
+        geometry=_square(),
+        start_date=dt.date(2024, 6, 1),
+        end_date=dt.date(2024, 6, 30),  # spans June only
+        variable="ET",
+        model_name="Ensemble",
+        et_data=[{"et": 99.0, "date": "2024-07", "unit": "mm"}],  # July — out of span
+    )
+    with caplog.at_level(logging.WARNING, logger="accounting.steps"):
+        total_mm, matched, row_count = _read_cache_mm(
+            parcel, "2024-06", "ET", "Ensemble", "et"
+        )
+
+    assert matched == 0
+    assert total_mm == Decimal("0")
+    assert row_count == 1
+    assert any("outside its span" in r.getMessage() for r in caplog.records)
+
+
+# --------------------------------------------------------------------------
+# ISS-032c: expiry_months<=0 is rejected at config-validation time
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_run_calculations_rejects_nonpositive_expiry_months():
+    """expiry_months<=0 would expire a credit the month it is banked. Reject it
+    up front, before any ledger row is written (ISS-032)."""
+    from django.core.management.base import CommandError
+
+    parcel = _parcel("EXP-0", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    plan = CalculationPlan.objects.create(name="Bad-expiry", is_active=True)
+    CalculationStep.objects.create(
+        plan=plan, order=1, step_type="et_gross", enabled=True,
+        config={"model": "Ensemble", "variable": "ET"}, label="gross",
+    )
+    CalculationStep.objects.create(
+        plan=plan, order=2, step_type="clamp_floor", enabled=True,
+        config={
+            "floor": 0, "bank": True, "depreciation_rate": 0, "expiry_months": 0,
+        },
+        label="floor",
+    )
+
+    with pytest.raises(CommandError, match="expiry_months"):
+        call_command("run_calculations", "--period", "2024-06")
+    # The guard fired before the parcel loop — nothing was written.
+    assert not ParcelLedger.objects.filter(source_type="calculated").exists()
