@@ -26,6 +26,7 @@ from accounting.models import (
     WaterAccountParcel,
     WaterType,
 )
+from core.management.commands.backfill_parcel_owners import KAWEAH_PARCEL_OWNERS
 from core.models import SiteConfig
 from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, ParcelZone, Zone
@@ -348,11 +349,14 @@ class Command(BaseCommand):
             if parcel_geom.geom_type == 'Polygon':
                 parcel_geom = MultiPolygon(parcel_geom)
 
-            use_desc = props.get('USEDSCRP', '')
+            # The source parcels carry only a land-use class (USEDSCRP); the
+            # crop is recorded on the UsageLocation below. owner_name gets a
+            # realistic demo owner so the map/detail "Owner" reads truthfully.
+            owner = KAWEAH_PARCEL_OWNERS[i % len(KAWEAH_PARCEL_OWNERS)]
 
             p = Parcel.objects.create(
                 parcel_number=f"KAW-APN-{i + 1:03d}",
-                owner_name=use_desc or "Agricultural",
+                owner_name=owner,
                 geometry=parcel_geom, status="active",
             )
             zone = assign_zone(p.geometry.centroid)
