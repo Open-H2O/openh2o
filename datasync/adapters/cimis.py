@@ -40,6 +40,10 @@ class CIMISAdapter(BaseAdapter):
     def _get_api_key(self):
         return os.environ.get("CIMIS_API_KEY", "")
 
+    def missing_required_credential(self):
+        """CIMIS station + data APIs require an appKey (ISS-007)."""
+        return None if self._get_api_key() else "CIMIS appKey (set CIMIS_API_KEY)"
+
     def fetch(self, station, start_date, end_date):
         """Fetch daily data from CIMIS."""
         params = {

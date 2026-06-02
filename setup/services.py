@@ -19,7 +19,7 @@ WIZARD_STEPS = [
     ("basins", "Groundwater Basins", "DWR Bulletin 118 subbasins"),
     ("parcels", "Parcel Boundaries", "LightBox statewide parcels"),
     ("flowlines", "Flowlines", "USGS 3DHP hydrography"),
-    ("stations", "Monitoring Stations", "CDEC, USGS, CIMIS stations"),
+    ("stations", "Monitoring Stations", "Federal and state gauges, wells, and weather stations near your watershed"),
 ]
 
 

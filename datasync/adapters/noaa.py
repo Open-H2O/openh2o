@@ -38,6 +38,10 @@ class NOAAAdapter(BaseAdapter):
     def _get_token(self):
         return os.environ.get("NOAA_CDO_TOKEN", "")
 
+    def missing_required_credential(self):
+        """NOAA CDO Web Services require a token."""
+        return None if self._get_token() else "NOAA CDO token (set NOAA_CDO_TOKEN)"
+
     def _headers(self):
         return {"token": self._get_token()}
 

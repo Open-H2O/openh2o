@@ -99,6 +99,20 @@ class BaseAdapter(ABC):
         station_id, name, latitude, longitude, parameters
         """
 
+    # ── Credential gating ───────────────────────────────────────────────
+
+    def missing_required_credential(self):
+        """Return a short human label for a required, absent API credential, else None.
+
+        Key-free public adapters (USGS, CDEC, both DWR CKAN sources) inherit this
+        default of None and never block. Key-gated adapters (CIMIS, NOAA) override
+        it so a caller can report a clean "skipped — no API key configured"
+        instead of letting an auth failure surface as an opaque empty result or
+        stack trace. Checked by the setup wizard's station-discovery step before
+        it calls discover_stations.
+        """
+        return None
+
     # ── Mock support ────────────────────────────────────────────────────
 
     def fetch_mock(self, station, start_date, end_date):

@@ -6,7 +6,10 @@ Steps:
   basins    — DWR Bulletin 118 groundwater basins (Zone records)
   parcels   — DWR LightBox statewide parcel boundaries (Parcel records)
   flowlines — USGS 3DHP flowlines (Flowline records)
-  stations  — CDEC/USGS/CIMIS monitoring stations (MonitoredStation records)
+  stations  — Live per-boundary station discovery across every discovery-capable
+              provider: USGS, CDEC, DWR WDL, DWR SGMA (key-free) + CIMIS, NOAA
+              (key-gated) + CNRFC (fixture-only). OpenET is excluded by design
+              (geometry-based, not station-based). (MonitoredStation records)
 
 Usage:
   python manage.py auto_populate --boundary "Kaweah Subbasin"
@@ -426,12 +429,33 @@ class Command(BaseCommand):
         return created_total
 
     def _step_stations(self, boundary, dry_run):
-        """Discover monitoring stations from CDEC, USGS, and CIMIS.
+        """Discover monitoring stations across every discovery-capable provider.
+
+        Live, per-boundary discovery from USGS, CDEC, DWR WDL, DWR SGMA (key-free
+        public APIs), CIMIS and NOAA (key-gated — skipped cleanly when no key is
+        configured), and CNRFC (fixture-only; no live discovery API). OpenET is
+        excluded by design — it is geometry-based, not station-based.
 
         Creates inactive MonitoredStation records for user curation.
         Idempotent: skips stations that already exist (data_source + external_station_id).
+        Fail-soft: one provider failing (or lacking a key) never aborts the others.
         """
-        source_codes = ["cdec", "usgs", "cimis"]
+        # Every provider that implements live, per-boundary station discovery.
+        # Key-free public APIs are ordered first so they populate the catalog even
+        # when the key-gated providers skip for lack of a credential.
+        #
+        # Intentionally EXCLUDED — do NOT "fix" by adding here:
+        #   - openet / openet_gee: geometry-based, not station-based. OpenET reads
+        #     parcel polygons directly (datasync/adapters/openet.py:135), so there
+        #     are no stations to discover.
+        #   - cnrfc has no live discovery API (datasync/adapters/cnrfc.py:110); it
+        #     is listed below only so its offline fixture loads in mock mode. Live
+        #     discovery returns [] by design.
+        source_codes = [
+            "usgs", "cdec", "dwr_wdl", "dwr_sgma",  # key-free public APIs
+            "cimis", "noaa",                         # key-gated (skip cleanly without key)
+            "cnrfc",                                 # fixture-only; live discovery returns []
+        ]
         use_mock = getattr(settings, "DATASYNC_MOCK_MODE", False)
         total_created = 0
 
@@ -458,6 +482,22 @@ class Command(BaseCommand):
                 if use_mock:
                     station_list = self._load_mock_stations(code)
                 else:
+                    # Skip key-gated providers cleanly when no credential is set,
+                    # so a missing key reads as a labeled skip rather than an
+                    # opaque empty result. Key-free providers return None here.
+                    missing_credential = adapter.missing_required_credential()
+                    if missing_credential:
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"  {code.upper()}: skipped — no API key "
+                                f"configured ({missing_credential})."
+                            )
+                        )
+                        logger.info(
+                            "Station discovery skipped for %s: %s",
+                            code, missing_credential,
+                        )
+                        continue
                     station_list = adapter.discover_stations(boundary.geometry)
 
                 self.stdout.write(
