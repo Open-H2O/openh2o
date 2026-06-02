@@ -31,6 +31,9 @@ def health_dashboard(request):
         "green_count": green_count,
         "total": total,
         "overall_status": overall_status,
+        # Per-subsystem messages name internals + failure reasons — operator-only
+        # reconnaissance. Anonymous visitors see the aggregate status only.
+        "show_detail": request.user.is_authenticated,
     }
     return render(request, "health/dashboard.html", context)
 
@@ -44,9 +47,23 @@ def health_api(request):
     results = HealthCheckResult.objects.filter(id__in=latest_ids).order_by("category")
 
     if not results.exists():
-        return JsonResponse(
-            {"status": "unknown", "checks": [], "checked_at": None}, status=200
-        )
+        return JsonResponse({"status": "unknown"}, status=200)
+
+    if results.filter(status="red").exists():
+        overall = "unhealthy"
+        http_status = 503
+    elif results.filter(status="yellow").exists():
+        overall = "degraded"
+        http_status = 200
+    else:
+        overall = "healthy"
+        http_status = 200
+
+    # Creds-free liveness ping: anonymous callers get the overall up/down only.
+    # The per-subsystem category/message detail (reconnaissance for a prober) is
+    # withheld unless the caller is authenticated.
+    if not request.user.is_authenticated:
+        return JsonResponse({"status": overall}, status=http_status)
 
     checks = []
     for r in results:
@@ -58,16 +75,6 @@ def health_api(request):
                 "checked_at": r.checked_at.isoformat(),
             }
         )
-
-    if results.filter(status="red").exists():
-        overall = "unhealthy"
-        http_status = 503
-    elif results.filter(status="yellow").exists():
-        overall = "degraded"
-        http_status = 200
-    else:
-        overall = "healthy"
-        http_status = 200
 
     latest_check = results.order_by("-checked_at").first()
     return JsonResponse(

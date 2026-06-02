@@ -36,7 +36,7 @@
             </code>
         </p>
     </div>
-    {% else %}
+    {% elif show_detail %}
     <div class="health-grid">
         {% for result in results %}
         <div class="card-raised">
@@ -60,6 +60,15 @@
             </p>
         </div>
         {% endfor %}
+    </div>
+    {% else %}
+    {# Anonymous visitors get the aggregate liveness status only — no per-subsystem
+       names or failure messages (those are operator-only reconnaissance). #}
+    <div class="card-raised empty-state">
+        <p class="empty-state-text text-secondary" style="text-transform: capitalize;">
+            Overall status: {{ overall_status }}
+        </p>
+        <p class="text-tertiary text-base">Sign in to view per-subsystem detail.</p>
     </div>
     {% endif %}
 </div>

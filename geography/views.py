@@ -325,6 +325,7 @@ def tie_lines_geojson(request):
     return HttpResponse(data, content_type="application/json")
 
 
+@login_required
 def boundaries_geojson(request):
     """Return all boundaries as a GeoJSON FeatureCollection."""
     data = serialize(
@@ -336,6 +337,7 @@ def boundaries_geojson(request):
     return HttpResponse(data, content_type="application/json")
 
 
+@login_required
 def zones_geojson(request):
     """Return all zones as a GeoJSON FeatureCollection."""
     data = serialize(
