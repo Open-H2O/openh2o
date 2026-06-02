@@ -6,7 +6,12 @@ from django.db.models import Count
 
 from parcels.models import ParcelLedger
 from reporting.models import ReportingProfile
-from surface.models import DiversionRecord, PointOfDiversion, WaterRight
+from surface.models import (
+    DiversionRecord,
+    PointOfDiversion,
+    PointOfDiversionParcel,
+    WaterRight,
+)
 from wells.models import Well, WellIrrigatedParcel
 
 
@@ -145,6 +150,31 @@ def validate_report(reporting_period, report_type):
                         ),
                     })
 
+            # ISS-027: a metered parcel with no well link can't be attributed to a
+            # well row. The generator surfaces it as an unallocated [INCOMPLETE]
+            # row rather than dropping the volume — warn so the operator links it.
+            metered_parcel_ids = set(
+                ParcelLedger.objects.filter(
+                    source_type="meter_reading",
+                    effective_date__gte=reporting_period.start_date,
+                    effective_date__lte=reporting_period.end_date,
+                ).values_list("parcel_id", flat=True)
+            )
+            linked_parcel_ids = set(
+                WellIrrigatedParcel.objects.values_list("parcel_id", flat=True)
+            )
+            unlinked = metered_parcel_ids - linked_parcel_ids
+            if unlinked:
+                warnings.append({
+                    "level": "warning",
+                    "message": (
+                        f"{len(unlinked)} metered parcel(s) have no well link — their "
+                        "extraction appears in the GEARS file as an unallocated "
+                        "[INCOMPLETE] row with no registration ID. Link each parcel to "
+                        "its well so the volume is attributed."
+                    ),
+                })
+
         elif report_type == "gears_by_et":
             et_count = ParcelLedger.objects.filter(
                 source_type="et_estimate",
@@ -157,6 +187,30 @@ def validate_report(reporting_period, report_type):
                     "message": (
                         "No ET estimates for this period — GEARS by-ET requires ET-derived "
                         "consumptive-use data."
+                    ),
+                })
+
+            # ISS-031c: a parcel with ET but no recorded acreage leaves a blank Area
+            # cell in the file (never a misleading 0). Name them so they get fixed.
+            null_area_parcels = sorted(
+                set(
+                    ParcelLedger.objects.filter(
+                        source_type__in=["et_estimate", "calculated"],
+                        effective_date__gte=reporting_period.start_date,
+                        effective_date__lte=reporting_period.end_date,
+                        parcel__area_acres__isnull=True,
+                    ).values_list("parcel__parcel_number", flat=True)
+                )
+            )
+            if null_area_parcels:
+                names = ", ".join(null_area_parcels)
+                warnings.append({
+                    "level": "warning",
+                    "message": (
+                        f"{len(null_area_parcels)} parcel(s) with ET have no recorded "
+                        f"acreage ({names}) — the GEARS by-ET file leaves their Area "
+                        "blank rather than reporting a misleading 0. Record acreage for "
+                        "each."
                     ),
                 })
 
@@ -195,18 +249,25 @@ def validate_report(reporting_period, report_type):
                 ),
             })
 
-        # PODs with no linked right are unauthorized-diversion exposure in CalWATRS.
-        pods_no_wr = PointOfDiversion.objects.filter(
-            water_right__isnull=True,
-            diversionrecord__reporting_period=reporting_period,
-        ).distinct().count()
-        if pods_no_wr > 0:
+        # ISS-031b: PODs with no linked right produce a blank Water Right ID. The
+        # generator WITHHOLDS those rows (a blank key is rejected/orphaned by the
+        # portal); name the PODs here so the withheld volume is never lost from
+        # view and the operator knows exactly what to link before filing.
+        pods_no_wr_names = sorted(
+            PointOfDiversion.objects.filter(
+                water_right__isnull=True,
+                diversionrecord__reporting_period=reporting_period,
+            ).distinct().values_list("name", flat=True)
+        )
+        if pods_no_wr_names:
+            names = ", ".join(pods_no_wr_names)
             warnings.append({
                 "level": "warning",
                 "message": (
-                    f"{pods_no_wr} point(s) of diversion have no linked water right — filing "
-                    "these in CalWATRS may be flagged as an unauthorized diversion "
-                    "(Water Code §1846). Link each POD to its right first."
+                    f"{len(pods_no_wr_names)} point(s) of diversion have no linked water "
+                    f"right ({names}) — their rows are withheld from the CalWATRS file "
+                    "(a blank Water Right ID is flagged as an unauthorized diversion, "
+                    "Water Code §1846). Link each POD to its right first."
                 ),
             })
 
@@ -250,5 +311,25 @@ def validate_report(reporting_period, report_type):
                         "diversions you entered."
                     ),
                 })
+
+        # ISS-028: a populated POD whose parcel fractions don't sum to 1.0 is
+        # auto-normalized for the file (so its diversion isn't doubled), but warn
+        # because the raw data is wrong and should be corrected at the source. The
+        # mirror of the by-well fraction-sum warning above.
+        pod_fractions = defaultdict(Decimal)
+        for podp in PointOfDiversionParcel.objects.all():
+            pod_fractions[podp.point_of_diversion_id] += podp.fraction
+        bad_pods = [
+            pid for pid, total in pod_fractions.items()
+            if abs(total - Decimal("1")) > Decimal("0.01")
+        ]
+        if bad_pods:
+            warnings.append({
+                "level": "warning",
+                "message": (
+                    f"{len(bad_pods)} point(s) of diversion have parcel fractions not "
+                    "summing to 1.0 (auto-normalized for the CalWATRS file)."
+                ),
+            })
 
     return warnings

@@ -23,6 +23,27 @@ from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionPa
 from wells.models import Well, WellIrrigatedParcel
 
 
+def _normalize_fractions(raw_by_group):
+    """Scale each group's fractions so they sum to 1.0.
+
+    Input:  ``{group_id: [(member, fraction), ...]}``
+    Output: ``{group_id: [(member, normalized_fraction), ...]}``
+
+    The single source of truth for the double-count guard on BOTH sides — the
+    well↔parcel map and the POD↔parcel map call it — so the GEARS and CalWATRS
+    files can never drift on how a multi-member share is split. A group whose
+    fractions sum to 0 collapses to 0 (no volume attributed) rather than dividing
+    by zero.
+    """
+    normalized = {}
+    for group_id, members in raw_by_group.items():
+        total = sum(frac for _, frac in members)
+        for member, frac in members:
+            norm = frac / total if total > 0 else Decimal("0")
+            normalized.setdefault(group_id, []).append((member, norm))
+    return normalized
+
+
 def build_normalized_well_parcel_map():
     """Return ``{parcel_id: [(well, normalized_fraction), ...]}``.
 
@@ -36,17 +57,32 @@ def build_normalized_well_parcel_map():
     (reporting.services.build_openet_prefill) call it, so they can never drift
     apart on how a multi-parcel well's volume is split.
     """
-    raw_well_fractions = {}
+    raw = {}  # well_id → [(wip, fraction)]
     for wip in WellIrrigatedParcel.objects.select_related("well").all():
-        raw_well_fractions.setdefault(wip.well_id, []).append(wip)
+        raw.setdefault(wip.well_id, []).append((wip, wip.fraction))
 
     well_parcel_map = {}  # parcel_id → [(well, normalized_fraction)]
-    for well_id, wips in raw_well_fractions.items():
-        total_fraction = sum(w.fraction for w in wips)
-        for wip in wips:
-            norm_fraction = wip.fraction / total_fraction if total_fraction > 0 else Decimal("0")
+    for well_id, members in _normalize_fractions(raw).items():
+        for wip, norm_fraction in members:
             well_parcel_map.setdefault(wip.parcel_id, []).append((wip.well, norm_fraction))
     return well_parcel_map
+
+
+def build_normalized_pod_parcel_map():
+    """Return ``{pod_id: [(parcel_id, normalized_fraction), ...]}``.
+
+    The mirror image of build_normalized_well_parcel_map on the surface-water
+    side. PointOfDiversionParcel.fraction also defaults to 1.0, so a POD diverting
+    to N parcels all at 1.0 would have its diverted volume multiplied by N when the
+    CalWATRS CSV splits it across them — the same double-count the well map guards
+    against (ISS-028). Normalize each POD's fractions to sum to 1.0.
+    """
+    raw = {}  # pod_id → [(parcel_id, fraction)]
+    for podp in PointOfDiversionParcel.objects.all():
+        raw.setdefault(podp.point_of_diversion_id, []).append(
+            (podp.parcel_id, podp.fraction)
+        )
+    return _normalize_fractions(raw)
 
 
 def generate_gears_csv(reporting_period, method="by_well"):
@@ -76,19 +112,41 @@ def generate_gears_csv(reporting_period, method="by_well"):
         for entry in entries:
             well_fractions = well_parcel_map.get(entry.parcel_id, [])
             month_str = entry.effective_date.strftime("%Y-%m")
-            for well, fraction in well_fractions:
-                key = (well.pk, month_str)
+            if well_fractions:
+                for well, fraction in well_fractions:
+                    key = (well.pk, month_str)
+                    if key not in rows:
+                        rows[key] = {
+                            "reg_id": well.well_registration_id or "",
+                            "name": str(well),
+                            "lat": well.location.y,
+                            "lon": well.location.x,
+                            "month": month_str,
+                            "volume": Decimal("0"),
+                            "method": "meter_reading",
+                        }
+                    rows[key]["volume"] += abs(entry.amount_acre_feet) * fraction
+            else:
+                # ISS-027: metered extraction on a parcel with no well link. Never
+                # silently drop it — emit a parcel-keyed [INCOMPLETE] row so the
+                # volume stays visible and flagged (mirrors the [INCOMPLETE] holder
+                # convention on the CalWATRS side). validate_report warns so the
+                # operator links the parcel to its well before filing.
+                key = (f"parcel:{entry.parcel_id}", month_str)
                 if key not in rows:
                     rows[key] = {
-                        "reg_id": well.well_registration_id or "",
-                        "name": str(well),
-                        "lat": well.location.y,
-                        "lon": well.location.x,
+                        "reg_id": "",
+                        "name": (
+                            f"[INCOMPLETE] [No well link] "
+                            f"Parcel {entry.parcel.parcel_number}"
+                        ),
+                        "lat": "",
+                        "lon": "",
                         "month": month_str,
                         "volume": Decimal("0"),
                         "method": "meter_reading",
                     }
-                rows[key]["volume"] += abs(entry.amount_acre_feet) * fraction
+                rows[key]["volume"] += abs(entry.amount_acre_feet)
 
         for row in sorted(rows.values(), key=lambda r: (r["reg_id"], r["month"])):
             writer.writerow([
@@ -124,7 +182,14 @@ def generate_gears_csv(reporting_period, method="by_well"):
             if key not in rows:
                 rows[key] = {
                     "parcel_number": entry.parcel.parcel_number,
-                    "area": entry.parcel.area_acres or Decimal("0"),
+                    # ISS-031c: a null acreage becomes a blank cell, never a literal
+                    # 0 — reporting 0 acres beside a real ET volume is self-
+                    # inconsistent to a state reviewer. validate_report flags it.
+                    "area": (
+                        entry.parcel.area_acres
+                        if entry.parcel.area_acres is not None
+                        else ""
+                    ),
                     "month": month_str,
                     "volume": Decimal("0"),
                     "method": entry.source_type,
@@ -162,12 +227,10 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         .order_by("point_of_diversion__water_right__right_id", "month")
     )
 
-    # Build pod→[(parcel_id, fraction)] map from PointOfDiversionParcel
-    pod_parcel_map = {}
-    for podp in PointOfDiversionParcel.objects.all():
-        pod_parcel_map.setdefault(podp.point_of_diversion_id, []).append(
-            (podp.parcel_id, podp.fraction)
-        )
+    # Build pod→[(parcel_id, normalized_fraction)] map. Normalized so a POD with
+    # N parcels all at the default fraction=1.0 reports its diversion ONCE across
+    # them, not N times (ISS-028) — the mirror of the well↔parcel guard.
+    pod_parcel_map = build_normalized_pod_parcel_map()
 
     # Determine combined-use status per parcel: has both GW and SW sources
     gw_parcel_ids = set(
@@ -208,6 +271,12 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
     rows = []
     for key in sorted(raw, key=lambda k: (raw[k]["right_id"], raw[k]["month"])):
         entry = raw[key]
+        if entry["right_id"] == "":
+            # ISS-031b: a blank Water Right ID is a structurally-invalid key the
+            # CalWATRS portal rejects/orphans. Withhold the row from the file;
+            # validate_report surfaces it as a warning naming the POD instead, so
+            # the volume is never lost — it is flagged for the operator to fix.
+            continue
         pod = entry["pod"]
         parcel_fractions = pod_parcel_map.get(pod.pk, [])
 

@@ -606,8 +606,10 @@ class TestGearsWellFractionNormalization:
 @pytest.mark.django_db
 class TestNullWaterRightGuards:
     def test_calwatrs_null_water_right(self):
-        """CalWATRS CSV generates without crashing when POD has no water right.
-        Row shows empty right_id."""
+        """CalWATRS CSV generates without crashing when a POD has no water right,
+        and (ISS-031b) WITHHOLDS the blank Water Right ID row — a blank key is
+        rejected/orphaned by the portal. The volume is surfaced as a
+        validate_report warning instead (see tests/test_state_exports.py)."""
         from reporting.generators import generate_calwatrs_csv
 
         period = ReportingPeriodFactory(
@@ -623,17 +625,11 @@ class TestNullWaterRightGuards:
             diversion_type="direct_use",
         )
 
-        # Must not raise
+        # Must not raise, and must emit header only — no blank-key data row.
         output = generate_calwatrs_csv(period, template_type="a1")
         content = output.read()
-        lines = content.strip().split("\n")
-        # Should have header + 1 data row
-        assert len(lines) == 2
-        # First column (Water Right ID) should be empty string
-        import csv as csv_mod
-        rows = list(csv_mod.reader(lines))
-        assert rows[1][0] == ""  # empty right_id
-        assert "[No water right]" in rows[1][1]  # holder shows pod name
+        lines = [l for l in content.strip().split("\n") if l]
+        assert len(lines) == 1  # header only; the blank-key row is withheld
 
 
 # ---------------------------------------------------------------------------
