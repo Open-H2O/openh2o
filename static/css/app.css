@@ -1827,6 +1827,15 @@ a { color: inherit; }
     color: var(--color-text-tertiary);
 }
 
+.wizard-step--error .wizard-step-icon {
+    background: var(--furnace-400);
+    color: var(--color-base);
+}
+
+.wizard-step--error .wizard-step-count {
+    color: var(--furnace-400);
+}
+
 .wizard-step-body {
     flex: 1;
 }

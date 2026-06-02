@@ -13,8 +13,12 @@ Locks the four first-run smoothing behaviors:
 
 Pinned to config.settings.local (prod settings 301-redirect the test client).
 """
+import json
+
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import MultiPolygon, Point, Polygon
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.template.loader import render_to_string
 from django.test import Client, override_settings
 from django.urls import reverse
 
@@ -24,6 +28,7 @@ from geography.models import Boundary
 User = get_user_model()
 
 DASHBOARD_URL = reverse("accounting:dashboard")
+WIZARD_URL = reverse("setup:wizard")
 
 
 # --------------------------------------------------------------------------
@@ -168,3 +173,71 @@ def test_rerun_discovery_does_not_auto_enable(db):
     )
     station.refresh_from_db()
     assert station.is_active is False
+
+
+# --------------------------------------------------------------------------
+# Task 3 — friendly GeoJSON-upload errors + three-state step feedback
+# --------------------------------------------------------------------------
+
+
+def _upload(client, payload_bytes, name="boundary.geojson"):
+    f = SimpleUploadedFile(name, payload_bytes, content_type="application/geo+json")
+    return client.post(WIZARD_URL, {"action": "upload", "geojson_file": f})
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_upload_non_json_shows_specific_error(db):
+    client = Client()
+    client.force_login(_admin())
+    resp = _upload(client, b"this is not json at all")
+    assert resp.status_code == 200
+    assert "isn't valid JSON" in resp.content.decode()
+    assert not Boundary.objects.exists()
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_upload_wrong_geometry_type_shows_specific_error(db):
+    client = Client()
+    client.force_login(_admin())
+    point = json.dumps({
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [-119.0, 36.0]},
+        "properties": {},
+    })
+    resp = _upload(client, point.encode())
+    assert resp.status_code == 200
+    assert "Polygon or MultiPolygon is required" in resp.content.decode()
+    assert not Boundary.objects.exists()
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_upload_empty_featurecollection_shows_specific_error(db):
+    client = Client()
+    client.force_login(_admin())
+    fc = json.dumps({"type": "FeatureCollection", "features": []})
+    resp = _upload(client, fc.encode())
+    assert resp.status_code == 200
+    assert "FeatureCollection is empty" in resp.content.decode()
+
+
+def test_step_result_failed_is_not_a_green_check(db):
+    failed = {"label": "Parcels", "success": False, "count": 0, "errors": ["API timed out"]}
+    html = render_to_string("setup/partials/_step_result.html", {"result": failed})
+    assert "wizard-step--error" in html
+    assert "Couldn't complete" in html
+    assert "API timed out" in html
+    assert "wizard-step--complete" not in html
+
+
+def test_step_result_empty_success_is_distinct_from_failure(db):
+    empty = {"label": "Stations", "success": True, "count": 0, "errors": []}
+    html = render_to_string("setup/partials/_step_result.html", {"result": empty})
+    assert "wizard-step--complete" in html
+    assert "None found" in html
+    assert "wizard-step--error" not in html
+
+
+def test_step_result_with_data_shows_count(db):
+    ok = {"label": "Basins", "success": True, "count": 3, "errors": []}
+    html = render_to_string("setup/partials/_step_result.html", {"result": ok})
+    assert "3 records created" in html

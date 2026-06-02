@@ -1,0 +1,29 @@
+{% comment %}
+One completed populate step. Three legible states so a non-expert can tell them
+apart at a glance:
+  - succeeded with data  → green ✓, "N records created"
+  - succeeded but empty   → green ✓, "None found ... add later" (not a problem)
+  - failed                → red ! icon + red message (never a green ✓)
+Expects: result (with .label, .success, .count, .errors).
+{% endcomment %}
+{% if result.success %}
+<div class="wizard-step wizard-step--complete">
+  <div class="wizard-step-icon">✓</div>
+  <div class="wizard-step-body">
+    <div class="wizard-step-name">{{ result.label }}</div>
+    <div class="wizard-step-count">
+      {% if result.count %}{{ result.count }} record{{ result.count|pluralize }} created{% else %}None found for this boundary — you can add these later.{% endif %}
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="wizard-step wizard-step--error">
+  <div class="wizard-step-icon">!</div>
+  <div class="wizard-step-body">
+    <div class="wizard-step-name">{{ result.label }}</div>
+    <div class="wizard-step-count">
+      Couldn't complete this step: {% for err in result.errors %}{{ err }}{% if not forloop.last %}; {% endif %}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}

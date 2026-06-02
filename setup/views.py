@@ -61,31 +61,38 @@ def setup_wizard(request):
         elif action == "upload":
             uploaded = request.FILES.get("geojson_file")
             if not uploaded:
-                errors.append("Please select a GeoJSON file.")
+                errors.append("Please choose a GeoJSON file to upload.")
             else:
                 try:
                     raw = uploaded.read().decode("utf-8")
                     geojson = json.loads(raw)
                     geom = _parse_geojson_boundary(geojson)
-                    if geom is None:
-                        errors.append(
-                            "Could not extract a polygon from the uploaded file. "
-                            "Provide a GeoJSON Feature or FeatureCollection with Polygon or MultiPolygon geometry."
-                        )
-                    else:
-                        name = (
-                            geojson.get("name")
-                            or (geojson.get("features", [{}])[0].get("properties", {}) or {}).get("name")
-                            or uploaded.name.rsplit(".", 1)[0]
-                        )
-                        boundary = Boundary.objects.create(
-                            name=name or "Uploaded Boundary",
-                            geometry=geom,
-                        )
-                        request.session[SESSION_KEY_BOUNDARY] = boundary.pk
-                        return redirect("setup:confirm")
+                    name = (
+                        geojson.get("name")
+                        or (geojson.get("features", [{}])[0].get("properties", {}) or {}).get("name")
+                        or uploaded.name.rsplit(".", 1)[0]
+                    )
+                    boundary = Boundary.objects.create(
+                        name=name or "Uploaded Boundary",
+                        geometry=geom,
+                    )
+                    request.session[SESSION_KEY_BOUNDARY] = boundary.pk
+                    return redirect("setup:confirm")
+                except UnicodeDecodeError:
+                    errors.append(
+                        "That file couldn't be read as text. A GeoJSON file is a "
+                        "plain-text file — make sure you exported GeoJSON, not a "
+                        "shapefile or a zip archive."
+                    )
                 except json.JSONDecodeError:
-                    errors.append("The file is not valid JSON.")
+                    errors.append(
+                        "The file isn't valid JSON. A GeoJSON file is text that "
+                        "starts with '{' — check you exported GeoJSON (not a "
+                        "shapefile, KML, or zip)."
+                    )
+                except ValueError as exc:
+                    # Specific, plain-language reason from _parse_geojson_boundary.
+                    errors.append(str(exc))
                 except Exception as exc:
                     logger.exception("GeoJSON upload failed")
                     errors.append(f"Upload failed: {exc}")
@@ -232,32 +239,60 @@ def _parse_geojson_boundary(geojson: dict):
     """
     Extract a MultiPolygon GEOSGeometry from a GeoJSON dict.
     Accepts Feature, FeatureCollection (first feature), or raw geometry.
-    Returns None if no valid polygon can be extracted.
+
+    Raises ``ValueError`` with a specific, plain-language reason when no valid
+    polygon can be extracted, so the wizard can tell the operator exactly what
+    was wrong (empty collection vs. wrong geometry type vs. unreadable
+    coordinates) instead of one generic failure.
     """
-    if geojson.get("type") == "FeatureCollection":
+    if not isinstance(geojson, dict):
+        raise ValueError(
+            "That file isn't a GeoJSON object — expected a Feature, "
+            "FeatureCollection, or geometry."
+        )
+
+    gtype = geojson.get("type")
+    if gtype == "FeatureCollection":
         features = geojson.get("features", [])
         if not features:
-            return None
+            raise ValueError(
+                "The GeoJSON FeatureCollection is empty — it has no features to "
+                "use as a boundary."
+            )
         geom_dict = features[0].get("geometry")
-    elif geojson.get("type") == "Feature":
+    elif gtype == "Feature":
         geom_dict = geojson.get("geometry")
     else:
         geom_dict = geojson  # raw geometry
 
     if geom_dict is None:
-        return None
+        raise ValueError(
+            "No geometry found in the file. Provide a GeoJSON Feature or "
+            "FeatureCollection whose feature has Polygon or MultiPolygon geometry."
+        )
 
     geom_type = geom_dict.get("type", "")
     if geom_type not in ("Polygon", "MultiPolygon"):
-        return None
+        raise ValueError(
+            f"The boundary geometry is a {geom_type or 'unknown type'}, but a "
+            "Polygon or MultiPolygon is required — upload an area outline (your "
+            "district), not a point or line."
+        )
 
     try:
         geos = GEOSGeometry(json.dumps(geom_dict), srid=4326)
-        if isinstance(geos, Polygon):
-            return MultiPolygon(geos, srid=4326)
-        if isinstance(geos, MultiPolygon):
-            return geos
     except Exception:
         logger.exception("GEOSGeometry parse failed")
+        raise ValueError(
+            "The geometry couldn't be read as a valid polygon. Check the "
+            "coordinates are WGS84 longitude/latitude pairs (EPSG:4326)."
+        )
 
-    return None
+    if isinstance(geos, Polygon):
+        return MultiPolygon(geos, srid=4326)
+    if isinstance(geos, MultiPolygon):
+        return geos
+    raise ValueError(
+        f"The geometry parsed as {geos.geom_type}, but a Polygon or "
+        "MultiPolygon is required."
+    )

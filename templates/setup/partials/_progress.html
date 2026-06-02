@@ -3,19 +3,7 @@
 <div id="progress-area">
   <div class="wizard-step-list" style="margin-bottom: var(--space-lg);">
     {% for result in results %}
-    <div class="wizard-step wizard-step--complete">
-      <div class="wizard-step-icon">✓</div>
-      <div class="wizard-step-body">
-        <div class="wizard-step-name">{{ result.label }}</div>
-        <div class="wizard-step-count">
-          {% if result.success %}
-            {{ result.count }} record{{ result.count|pluralize }} created
-          {% else %}
-            {% for err in result.errors %}<span style="color: var(--furnace-400);">{{ err }}</span>{% endfor %}
-          {% endif %}
-        </div>
-      </div>
-    </div>
+      {% include "setup/partials/_step_result.html" %}
     {% endfor %}
   </div>
 
@@ -51,19 +39,10 @@
     {% for step_name, step_label, step_desc in steps %}
     {% with forloop.counter0 as idx %}
     {% if idx < step_index %}
-      {# Completed step — find result #}
+      {# Completed step — find its result and render the shared three-state row #}
       {% for result in results %}
       {% if result.step == step_name %}
-      <div class="wizard-step wizard-step--complete">
-        <div class="wizard-step-icon">✓</div>
-        <div class="wizard-step-body">
-          <div class="wizard-step-name">{{ step_label }}</div>
-          <div class="wizard-step-count">
-            {% if result.success %}{{ result.count }} record{{ result.count|pluralize }} created
-            {% else %}{% for err in result.errors %}{{ err }}{% endfor %}{% endif %}
-          </div>
-        </div>
-      </div>
+        {% include "setup/partials/_step_result.html" %}
       {% endif %}
       {% endfor %}
     {% elif idx == step_index %}
