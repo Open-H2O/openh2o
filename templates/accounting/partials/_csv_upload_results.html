@@ -1,3 +1,16 @@
+{% if form.errors %}
+<div class="card-raised" style="border-left: 3px solid var(--furnace-400);">
+  <h3 class="section-header-sm" style="color: var(--furnace-500);">Upload Error</h3>
+  {% for field in form %}
+    {% for err in field.errors %}
+    <p class="text-base" style="margin: 0; color: var(--furnace-400);">{{ field.label }}: {{ err }}</p>
+    {% endfor %}
+  {% endfor %}
+  {% for err in form.non_field_errors %}
+  <p class="text-base" style="margin: 0; color: var(--furnace-400);">{{ err }}</p>
+  {% endfor %}
+</div>
+{% endif %}
 {% if results %}
 <div class="page-stack">
 

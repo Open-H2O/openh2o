@@ -678,6 +678,11 @@ def csv_upload(request):
             return render(request, "accounting/csv_upload.html", context)
         else:
             context = {"form": form}
+            # An HTMX submit targets #upload-results: return just the results
+            # partial (carrying the form errors), never the full page — grafting
+            # the whole document in would nest a <form> and duplicate IDs.
+            if request.headers.get("HX-Request"):
+                return render(request, "accounting/partials/_csv_upload_results.html", context)
             return render(request, "accounting/csv_upload.html", context)
 
     form = CsvUploadForm()

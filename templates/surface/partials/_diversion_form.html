@@ -7,29 +7,37 @@
   <div class="row-between" style="align-items: flex-start;">
     <h3 class="text-sm font-semibold text-secondary" style="margin: 0;">Add Diversion Record</h3>
   </div>
+  {% if form.non_field_errors %}
+  <div class="text-xs" style="color: var(--furnace-400);">{{ form.non_field_errors|join:", " }}</div>
+  {% endif %}
   <div class="form-row-2col">
     <div class="form-group">
       <label class="field-label" for="id_month">Month</label>
       {{ form.month }}
+      {% if form.month.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.month.errors|join:", " }}</span>{% endif %}
     </div>
     <div class="form-group">
       <label class="field-label" for="id_volume_acre_feet">Volume (AF)</label>
       {{ form.volume_acre_feet }}
+      {% if form.volume_acre_feet.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.volume_acre_feet.errors|join:", " }}</span>{% endif %}
     </div>
   </div>
   <div class="form-row-2col">
     <div class="form-group">
       <label class="field-label" for="id_max_flow_rate_cfs">Max Flow Rate (CFS)</label>
       {{ form.max_flow_rate_cfs }}
+      {% if form.max_flow_rate_cfs.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.max_flow_rate_cfs.errors|join:", " }}</span>{% endif %}
     </div>
     <div class="form-group">
       <label class="field-label" for="id_diversion_type">Diversion Type</label>
       {{ form.diversion_type }}
+      {% if form.diversion_type.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.diversion_type.errors|join:", " }}</span>{% endif %}
     </div>
   </div>
   <div class="form-group">
     <label class="field-label" for="id_notes">Notes</label>
     {{ form.notes }}
+    {% if form.notes.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.notes.errors|join:", " }}</span>{% endif %}
   </div>
   <div class="row-end">
     <button type="submit" class="btn-primary btn-sm">Add Record</button>

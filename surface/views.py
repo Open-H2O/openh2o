@@ -134,20 +134,23 @@ def diversion_record_create(request, pk):
         ).first()
         record.reporting_period = period
         record.save()
+        # Saved cleanly — hand back a blank form for the next entry.
+        form = DiversionRecordForm()
 
-    # Return updated records partial regardless (shows validation errors in form)
+    # On an invalid submit, `form` is still the BOUND form: re-rendering it
+    # preserves the user's typed values and surfaces the field errors, so a
+    # failed save reads as a visible error rather than a silent reset.
     diversion_records = (
         DiversionRecord.objects
         .filter(point_of_diversion=pod)
         .select_related("reporting_period")
         .order_by("-month")
     )
-    new_form = DiversionRecordForm()
 
     return render(request, "surface/partials/_diversion_records.html", {
         "pod": pod,
         "diversion_records": diversion_records,
-        "form": new_form,
+        "form": form,
     })
 
 
