@@ -22,14 +22,21 @@ mapped column.
 import csv
 import io
 import json
+import math
 import os
 import shutil
 import tempfile
 import zipfile
 from decimal import Decimal, InvalidOperation
 
-from django.contrib.gis.gdal import DataSource
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
+from django.contrib.gis.gdal import DataSource, GDALException
+from django.contrib.gis.geos import (
+    GEOSException,
+    GEOSGeometry,
+    MultiPolygon,
+    Point,
+    Polygon,
+)
 from django.db import transaction
 
 from wells.models import (
@@ -43,6 +50,14 @@ GEOMETRY_COL = "__geometry__"
 
 # Hard cap on a single import (preserved from the old infrastructure_upload).
 MAX_ROWS = 500
+
+# Hard byte ceilings so an oversized or zip-bomb upload can't exhaust the small
+# VPS (2-4GB) before MAX_ROWS is even reached — MAX_ROWS is checked only AFTER a
+# full parse, so it is no defense against a 5GB file. MAX_UPLOAD_BYTES bounds the
+# raw uploaded file; MAX_EXTRACTED_BYTES bounds the total uncompressed bytes a
+# zip is allowed to expand to (a small zip can decompress to gigabytes).
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB raw upload
+MAX_EXTRACTED_BYTES = 50 * 1024 * 1024  # 50 MB total extracted from a zip
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +75,15 @@ def parse_upload(file, filename):
     Raises ImportError on: unsupported extension, no rows, or > MAX_ROWS rows.
     """
     name = (filename or "").lower()
+
+    # Reject an oversized file up front, before we stream it to disk or parse it.
+    # (Django's DATA_UPLOAD_MAX_MEMORY_SIZE does not cover file uploads.)
+    size = getattr(file, "size", None)
+    if size is not None and size > MAX_UPLOAD_BYTES:
+        raise ImportError(
+            f"File is too large ({size // (1024 * 1024)} MB); the upload cap is "
+            f"{MAX_UPLOAD_BYTES // (1024 * 1024)} MB. Please split it into smaller files."
+        )
 
     if name.endswith(".csv"):
         rows, columns = _parse_csv(file)
@@ -378,6 +402,14 @@ def _resolve_location(row, mapping, errors):
             point = _point_from_geometry(raw)
             if point is not None:
                 return point
+            # A geometry value was present but unparseable / non-finite /
+            # out-of-range — report it as a row error rather than silently
+            # falling back to lat/lon (or 500-ing downstream on a centroid).
+            errors.append(
+                "geometry is invalid (non-finite or out-of-range coordinates, "
+                "or unparseable)."
+            )
+            return None
 
     lat_col = mapping.get("latitude")
     lon_col = mapping.get("longitude")
@@ -401,23 +433,69 @@ def _resolve_location(row, mapping, errors):
     return None
 
 
+def _coords_within_world(coords):
+    """True iff every leaf [x, y(, z)] in a GeoJSON coordinate array is finite
+    and within world bounds. Rejects NaN/Infinity (which json.loads accepts by
+    default) and absurd extents before they reach GEOS."""
+    if not isinstance(coords, (list, tuple)):
+        return False
+    if coords and isinstance(coords[0], (int, float)) and not isinstance(coords[0], bool):
+        x = coords[0]
+        y = coords[1] if len(coords) > 1 else 0.0
+        if not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
+            return False
+        if not (math.isfinite(x) and math.isfinite(y)):
+            return False
+        return -180.0 <= x <= 180.0 and -90.0 <= y <= 90.0
+    return bool(coords) and all(_coords_within_world(c) for c in coords)
+
+
 def _point_from_geometry(raw):
-    """Best-effort Point from a GeoJSON/WKT geometry string (centroid if area)."""
+    """Best-effort Point from a GeoJSON/WKT geometry string (centroid if area).
+
+    Returns None — never raises and never yields a degenerate point — for
+    NaN/Infinity coords, coords outside world lon/lat bounds, or geometry GEOS
+    cannot build or validate. A crafted feature becomes a skipped row, not a 500.
+    """
+    geom = None
     try:
-        # GeoJSON dict?
         data = json.loads(raw)
-        geom = GEOSGeometry(json.dumps(data), srid=4326)
-    except (json.JSONDecodeError, ValueError, TypeError):
+    except (json.JSONDecodeError, ValueError):
+        data = None
+
+    if isinstance(data, dict):
+        coords = data.get("coordinates")
+        if coords is not None and not _coords_within_world(coords):
+            return None
+        try:
+            geom = GEOSGeometry(json.dumps(data), srid=4326)
+        except (GEOSException, GDALException, ValueError, TypeError):
+            return None
+    if geom is None:
         try:
             geom = GEOSGeometry(raw, srid=4326)  # WKT fallback
-        except (ValueError, TypeError):
+        except (GEOSException, GDALException, ValueError, TypeError):
             return None
+
+    # Reject or repair invalid geometry (self-intersection etc.) before deriving
+    # a point, so a degenerate polygon never persists or 500s on .centroid.
+    try:
+        if not geom.valid:
+            geom = geom.make_valid()
+    except (GEOSException, GDALException, ValueError):
+        return None
+
     if geom.geom_type == "Point":
+        if not (math.isfinite(geom.x) and math.isfinite(geom.y)):
+            return None
         return geom
     try:
-        return geom.centroid
-    except Exception:
+        centroid = geom.centroid
+    except (GEOSException, GDALException, ValueError):
         return None
+    if not (math.isfinite(centroid.x) and math.isfinite(centroid.y)):
+        return None
+    return centroid
 
 
 # ---------------------------------------------------------------------------
@@ -440,15 +518,24 @@ def commit_rows(valid_results, infra_type):
     with transaction.atomic():
         for result in clean:
             data = result["data"]
-            if infra_type == "well":
-                Well.objects.create(**data)
-            elif infra_type == "diversion":
-                PointOfDiversion.objects.create(water_right=None, **data)
-            elif infra_type in ("recharge_site", "storage"):
-                RechargeSite.objects.create(**data)
-            else:
-                continue
-            created += 1
+            try:
+                # Per-row savepoint: a single bad row (e.g. a geometry that
+                # slipped validation) is rolled back and reported, not allowed
+                # to poison the whole batch or surface as a 500.
+                with transaction.atomic():
+                    if infra_type == "well":
+                        Well.objects.create(**data)
+                    elif infra_type == "diversion":
+                        PointOfDiversion.objects.create(water_right=None, **data)
+                    elif infra_type in ("recharge_site", "storage"):
+                        RechargeSite.objects.create(**data)
+                    else:
+                        continue
+                created += 1
+            except Exception:
+                result["errors"].append(
+                    "could not be saved (invalid geometry or data)."
+                )
 
     return created
 
@@ -478,36 +565,63 @@ def _parse_geojson_file(uploaded):
     return features
 
 
+def _validate_zip_entries(zf, dest_dir):
+    """Reject path-traversal entries and enforce a total uncompressed-size cap
+    before extracting (zip-slip + zip-bomb defense).
+
+    Modern CPython's extractall already sanitizes `..`/absolute names (so this
+    was downgraded P1->P2), but we validate explicitly for defense-in-depth and
+    refactor-safety, and so a zip bomb is refused before any bytes hit disk.
+    """
+    dest_root = os.path.realpath(dest_dir)
+    total = 0
+    for info in zf.infolist():
+        name = info.filename
+        parts = name.replace("\\", "/").split("/")
+        if os.path.isabs(name) or ".." in parts:
+            raise ImportError(f"Unsafe path in archive: '{name}'.")
+        resolved = os.path.realpath(os.path.join(dest_dir, name))
+        if resolved != dest_root and not resolved.startswith(dest_root + os.sep):
+            raise ImportError(f"Archive entry escapes the extract directory: '{name}'.")
+        total += info.file_size
+        if total > MAX_EXTRACTED_BYTES:
+            raise ImportError(
+                f"Archive expands to more than {MAX_EXTRACTED_BYTES // (1024 * 1024)} "
+                "MB; refusing to extract (possible zip bomb)."
+            )
+
+
 def _parse_shapefile_zip(uploaded):
     tmp_dir = tempfile.mkdtemp()
     try:
         zip_path = os.path.join(tmp_dir, "upload.zip")
+        written = 0
         with open(zip_path, "wb") as f:
             for chunk in uploaded.chunks():
+                written += len(chunk)
+                if written > MAX_UPLOAD_BYTES:
+                    raise ImportError(
+                        f"Archive exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB "
+                        "upload cap."
+                    )
                 f.write(chunk)
 
         with zipfile.ZipFile(zip_path, "r") as zf:
+            _validate_zip_entries(zf, tmp_dir)
             zf.extractall(tmp_dir)
 
-        shp_files = [f for f in os.listdir(tmp_dir) if f.endswith(".shp")]
-        if not shp_files:
-            for root, dirs, files in os.walk(tmp_dir):
-                for f in files:
-                    if f.endswith(".shp"):
-                        shp_files.append(os.path.join(root, f))
-                        break
-                if shp_files:
-                    break
-
-        if not shp_files:
-            raise ValueError("No .shp file found in archive.")
-
-        shp_path = (
-            shp_files[0]
-            if os.path.isabs(shp_files[0])
-            else os.path.join(tmp_dir, shp_files[0])
+        # Deterministic pick: the first .shp by sorted full path (os.walk order
+        # is filesystem-dependent and was effectively arbitrary before).
+        shp_files = sorted(
+            os.path.join(root, fn)
+            for root, _dirs, files in os.walk(tmp_dir)
+            for fn in files
+            if fn.lower().endswith(".shp")
         )
-        return _extract_features_from_datasource(shp_path)
+        if not shp_files:
+            raise ImportError("No .shp file found in archive.")
+
+        return _extract_features_from_datasource(shp_files[0])
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 

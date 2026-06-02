@@ -148,6 +148,17 @@ STORAGES = {
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# -- Upload limits -----------------------------------------------------------
+# Bound request bodies so a multi-GB or zip-bomb upload can't exhaust the small
+# target VPS (2-4GB). DATA_UPLOAD_MAX_MEMORY_SIZE caps non-file POST bodies (the
+# bulk-import "commit" step re-posts parsed rows as JSON — 10 MB is generous for
+# the 500-row cap while still bounding it). FILE_UPLOAD_MAX_MEMORY_SIZE is the
+# threshold above which an uploaded file spools to a temp file instead of RAM.
+# These do NOT cap the uploaded FILE size itself — that hard ceiling lives in
+# infrastructure.importer (MAX_UPLOAD_BYTES / MAX_EXTRACTED_BYTES).
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB
+
 # -- Default primary key field type ------------------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
