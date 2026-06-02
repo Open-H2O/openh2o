@@ -33,8 +33,11 @@
       <a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>
     </div>
   </div>
-  {% elif not periods.exists %}
-  <!-- Empty state: guide the user -->
+  {% endif %}
+
+  {% if not periods.exists %}
+  {% if not needs_setup %}
+  <!-- Empty state: guide the user (skipped when the Start-here CTA already shows) -->
   <div class="card-raised empty-state">
     <h2 class="section-header-flush mb-sm">Welcome to OpenH2O</h2>
     <p class="text-secondary text-sm mb-lg" style="max-width: 500px; margin-left: auto; margin-right: auto;">
@@ -59,6 +62,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
   {% else %}
 
   <!-- Period selector -->

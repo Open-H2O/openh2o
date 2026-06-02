@@ -83,6 +83,23 @@ def test_populated_install_hides_cta(db):
     assert "Start here" not in resp.content.decode()
 
 
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_cta_is_a_banner_not_a_wall(db):
+    """A deployment with accounting data but no boundary still renders its
+    dashboard — the Start-here CTA is a non-blocking banner above the content,
+    not a replacement for it."""
+    from tests.factories import ReportingPeriodFactory
+
+    ReportingPeriodFactory()
+    client = Client()
+    client.force_login(_admin())
+    resp = client.get(DASHBOARD_URL)
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert "Start here" in body            # CTA shows (no boundary yet)
+    assert "Active Water Accounts" in body  # but the dashboard renders too
+
+
 @override_settings(ACCESS_CONTROL_ENFORCED=True)
 def test_enforced_non_admin_never_sees_cta(db):
     """A read-only operator on an enforced deployment can't run setup, so the
