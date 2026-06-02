@@ -674,6 +674,27 @@ def _mock_station_list(source_code):
     ]
 
 
+def _fake_adapter(stations=None, *, missing=None, raises=None):
+    """Build a stand-in adapter for patching get_adapter in the station step.
+
+    - stations: list returned by discover_stations (defaults to []).
+    - missing: value returned by missing_required_credential() — a truthy label
+      means the step should treat the provider as a clean no-key skip.
+    - raises: an exception instance; discover_stations raises it (fail-soft test).
+    """
+    adapter = MagicMock()
+    adapter.missing_required_credential.return_value = missing
+    if raises is not None:
+        adapter.discover_stations.side_effect = raises
+    else:
+        adapter.discover_stations.return_value = stations or []
+    return adapter
+
+
+# The full set the expanded station step attempts, in declared order.
+LIVE_DISCOVERY_CODES = ("usgs", "cdec", "dwr_wdl", "dwr_sgma", "cimis", "noaa", "cnrfc")
+
+
 @pytest.fixture
 def data_sources():
     """Create DataSource records for CDEC, USGS, and CIMIS."""
@@ -687,6 +708,25 @@ def data_sources():
     return sources
 
 
+@pytest.fixture
+def all_data_sources():
+    """Create DataSource rows for every provider the step touches, plus openet.
+
+    openet is seeded deliberately so a test can prove the step never *attempts*
+    it even when the DataSource exists — the exclusion is in the code, not an
+    accident of a missing row.
+    """
+    codes = (*LIVE_DISCOVERY_CODES, "openet")
+    return {
+        code: DataSource.objects.create(
+            name=code.upper(),
+            code=code,
+            url=f"https://{code}.example.com",
+        )
+        for code in codes
+    }
+
+
 # ---------------------------------------------------------------------------
 # Station step tests
 # ---------------------------------------------------------------------------
@@ -697,10 +737,13 @@ class TestStationsStep:
     @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
     @patch("datasync.adapters.cimis.CIMISAdapter.discover_stations")
     def test_creates_inactive_stations(
-        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources, settings
+        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources, settings,
+        monkeypatch,
     ):
         """Stations step creates inactive MonitoredStation records."""
         settings.DATASYNC_MOCK_MODE = False
+        # CIMIS is key-gated; give it a key so it is queried (not skipped).
+        monkeypatch.setenv("CIMIS_API_KEY", "test-key")
         mock_cdec.return_value = _mock_station_list("cdec")
         mock_usgs.return_value = _mock_station_list("usgs")
         mock_cimis.return_value = _mock_station_list("cimis")
@@ -721,10 +764,12 @@ class TestStationsStep:
     @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
     @patch("datasync.adapters.cimis.CIMISAdapter.discover_stations")
     def test_idempotent(
-        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources, settings
+        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources, settings,
+        monkeypatch,
     ):
         """Running stations step twice creates stations only once."""
         settings.DATASYNC_MOCK_MODE = False
+        monkeypatch.setenv("CIMIS_API_KEY", "test-key")
         mock_cdec.return_value = _mock_station_list("cdec")
         mock_usgs.return_value = _mock_station_list("usgs")
         mock_cimis.return_value = _mock_station_list("cimis")
@@ -766,9 +811,12 @@ class TestStationsStep:
     @patch("datasync.adapters.usgs.USGSAdapter.discover_stations")
     @patch("datasync.adapters.cimis.CIMISAdapter.discover_stations")
     def test_dry_run(
-        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources
+        self, mock_cimis, mock_usgs, mock_cdec, boundary, data_sources, settings,
+        monkeypatch,
     ):
         """Dry run reports counts without creating any records."""
+        settings.DATASYNC_MOCK_MODE = False
+        monkeypatch.setenv("CIMIS_API_KEY", "test-key")
         mock_cdec.return_value = _mock_station_list("cdec")
         mock_usgs.return_value = _mock_station_list("usgs")
         mock_cimis.return_value = _mock_station_list("cimis")
@@ -785,3 +833,182 @@ class TestStationsStep:
         assert MonitoredStation.objects.count() == 0
         output = out.getvalue()
         assert "would create" in output.lower()
+
+    # ── ISS-046: statewide, multi-provider, fail-soft, boundary-driven ──────
+
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_attempts_all_live_providers_never_openet(
+        self, mock_get_adapter, boundary, all_data_sources, settings
+    ):
+        """The step queries every live-discovery provider and never OpenET."""
+        settings.DATASYNC_MOCK_MODE = False
+        mock_get_adapter.side_effect = lambda code: _fake_adapter([])
+
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            stdout=StringIO(),
+        )
+
+        attempted = {call.args[0] for call in mock_get_adapter.call_args_list}
+        assert attempted == set(LIVE_DISCOVERY_CODES)
+        # OpenET is geometry-based — it must never be asked for stations, even
+        # though a DataSource row exists for it.
+        assert "openet" not in attempted
+        assert "openet_gee" not in attempted
+
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_new_providers_create_inactive_stations(
+        self, mock_get_adapter, boundary, all_data_sources, settings
+    ):
+        """The three newly-wired providers create inactive stations."""
+        settings.DATASYNC_MOCK_MODE = False
+        new_codes = {"dwr_wdl", "dwr_sgma", "noaa"}
+        mock_get_adapter.side_effect = lambda code: _fake_adapter(
+            _mock_station_list(code) if code in new_codes else []
+        )
+
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            stdout=StringIO(),
+        )
+
+        for code in new_codes:
+            ds = all_data_sources[code]
+            rows = MonitoredStation.objects.filter(data_source=ds)
+            assert rows.count() == 2, f"{code} should create 2 stations"
+            assert rows.filter(is_active=False).count() == 2
+            assert set(rows.values_list("external_station_id", flat=True)) == {
+                f"{code.upper()}-001",
+                f"{code.upper()}-002",
+            }
+
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_one_provider_failing_is_non_fatal(
+        self, mock_get_adapter, boundary, all_data_sources, settings
+    ):
+        """One provider raising must not blank the catalog (ISS-046 guarantee)."""
+        settings.DATASYNC_MOCK_MODE = False
+
+        def side(code):
+            if code == "usgs":
+                return _fake_adapter(
+                    raises=RuntimeError("simulated outage / network error")
+                )
+            return _fake_adapter(_mock_station_list(code))
+
+        mock_get_adapter.side_effect = side
+
+        out = StringIO()
+        # The raising provider must not propagate out of the command.
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            stdout=out,
+        )
+
+        usgs_ds = all_data_sources["usgs"]
+        assert MonitoredStation.objects.filter(data_source=usgs_ds).count() == 0
+        # The other 6 providers each created their 2 stations.
+        assert MonitoredStation.objects.exclude(data_source=usgs_ds).count() == 12
+        assert "failed" in out.getvalue().lower()
+
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_missing_api_key_is_clean_skip_not_failure(
+        self, mock_get_adapter, boundary, all_data_sources, settings
+    ):
+        """A key-gated provider with no key is a labeled skip, not an error."""
+        settings.DATASYNC_MOCK_MODE = False
+        adapters = {}
+
+        def side(code):
+            if code in ("cimis", "noaa"):
+                adapter = _fake_adapter([], missing="API key (set X)")
+            else:
+                adapter = _fake_adapter(_mock_station_list(code))
+            adapters[code] = adapter
+            return adapter
+
+        mock_get_adapter.side_effect = side
+
+        out = StringIO()
+        call_command(
+            "auto_populate",
+            boundary=str(boundary.pk),
+            steps="stations",
+            stdout=out,
+        )
+
+        output = out.getvalue().lower()
+        assert "no api key configured" in output
+        assert "skipped" in output
+        for code in ("cimis", "noaa"):
+            ds = all_data_sources[code]
+            assert MonitoredStation.objects.filter(data_source=ds).count() == 0
+            # discover_stations must not even be called when the key is missing.
+            adapters[code].discover_stations.assert_not_called()
+        # Key-free providers still populated.
+        assert (
+            MonitoredStation.objects.filter(
+                data_source=all_data_sources["usgs"]
+            ).count()
+            == 2
+        )
+
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_idempotent_across_expanded_set(
+        self, mock_get_adapter, boundary, all_data_sources, settings
+    ):
+        """Re-running across the full provider set creates no duplicates."""
+        settings.DATASYNC_MOCK_MODE = False
+        mock_get_adapter.side_effect = lambda code: _fake_adapter(
+            _mock_station_list(code)
+        )
+
+        for _ in range(2):
+            call_command(
+                "auto_populate",
+                boundary=str(boundary.pk),
+                steps="stations",
+                stdout=StringIO(),
+            )
+
+        # 7 providers x 2 stations, no duplicate rows on the second run.
+        assert MonitoredStation.objects.count() == 14
+
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_non_kaweah_boundary_populates(
+        self, mock_get_adapter, all_data_sources, settings
+    ):
+        """A boundary plainly outside Kaweah populates — proves boundary-driven."""
+        settings.DATASYNC_MOCK_MODE = False
+        # Kaweah sits near (-119.3, 36.3). This bbox is northern California
+        # (Sacramento Valley), unambiguously a different watershed.
+        non_kaweah = Boundary.objects.create(
+            name="Sacramento Valley (non-Kaweah test)",
+            geometry=MultiPolygon(Polygon.from_bbox((-122.0, 38.5, -121.5, 39.0))),
+        )
+        adapters = {}
+
+        def side(code):
+            adapter = _fake_adapter(_mock_station_list(code))
+            adapters[code] = adapter
+            return adapter
+
+        mock_get_adapter.side_effect = side
+
+        call_command(
+            "auto_populate",
+            boundary=str(non_kaweah.pk),
+            steps="stations",
+            stdout=StringIO(),
+        )
+
+        assert MonitoredStation.objects.count() == 14
+        # Discovery ran against THIS boundary's geometry, not a hardcoded one.
+        called_geom = adapters["usgs"].discover_stations.call_args.args[0]
+        assert called_geom.equals(non_kaweah.geometry)
