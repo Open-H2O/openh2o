@@ -349,6 +349,30 @@ def zones_geojson(request):
     return HttpResponse(data, content_type="application/json")
 
 
+@login_required
+def zone_labels_geojson(request):
+    """One label point per zone (point_on_surface).
+
+    Zone geometries are MultiPolygons with many disjoint parts (a GSA is a
+    union of scattered parcels). A symbol layer placed on the polygon source
+    stamps the zone name once *per part* — so "Greater Kaweah GSA" appeared
+    ~16 times across the map. Labeling a single interior point per zone gives
+    exactly one clean, well-placed label.
+    """
+    features = [
+        {
+            "type": "Feature",
+            "geometry": json.loads(zone.geometry.point_on_surface.geojson),
+            "properties": {"name": zone.name},
+        }
+        for zone in Zone.objects.filter(geometry__isnull=False)
+    ]
+    return HttpResponse(
+        json.dumps({"type": "FeatureCollection", "features": features}),
+        content_type="application/json",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Helpers (duplicated from infrastructure/views.py — polygon parsing)
 # ---------------------------------------------------------------------------

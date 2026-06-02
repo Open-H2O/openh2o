@@ -20,9 +20,12 @@ from django.core.management import call_command
 from django.test import Client
 from django.urls import reverse
 
+from django.contrib.gis.geos import MultiPolygon, Polygon
+
 from core.management.commands.backfill_parcel_owners import KAWEAH_PARCEL_OWNERS
+from geography.models import Zone
 from parcels.models import Parcel
-from tests.factories import ParcelFactory, PointOfDiversionFactory
+from tests.factories import ParcelFactory, PointOfDiversionFactory, ZoneFactory
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -69,6 +72,28 @@ def test_pods_geojson_injects_pk(auth_client):
     data = json.loads(resp.content)
     feature = data["features"][0]
     assert feature["properties"]["pk"] == pod.pk
+
+
+@pytest.mark.django_db
+def test_zone_labels_geojson_one_point_per_zone(auth_client):
+    """A multi-part zone must yield exactly ONE label point, not one per part."""
+    # A 3-part MultiPolygon would otherwise stamp the zone name 3x on the map.
+    parts = MultiPolygon(
+        Polygon(((0, 0), (0, 1), (1, 1), (1, 0), (0, 0))),
+        Polygon(((3, 3), (3, 4), (4, 4), (4, 3), (3, 3))),
+        Polygon(((6, 6), (6, 7), (7, 7), (7, 6), (6, 6))),
+    )
+    ZoneFactory(name="Greater Test GSA", geometry=parts)
+    ZoneFactory(name="East Test GSA")  # single-box geometry
+    resp = auth_client.get(reverse("geography:zone_labels_geojson"))
+    assert resp.status_code == 200
+    data = json.loads(resp.content)
+    # Exactly one feature per zone, each a Point.
+    assert len(data["features"]) == Zone.objects.count()
+    names = sorted(f["properties"]["name"] for f in data["features"])
+    assert names == ["East Test GSA", "Greater Test GSA"]
+    for f in data["features"]:
+        assert f["geometry"]["type"] == "Point"
 
 
 @pytest.mark.django_db

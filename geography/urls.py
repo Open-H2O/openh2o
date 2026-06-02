@@ -21,5 +21,6 @@ urlpatterns = [
     # GeoJSON endpoints
     path("boundaries/geojson/", views.boundaries_geojson, name="boundaries_geojson"),
     path("zones/geojson/", views.zones_geojson, name="zones_geojson"),
+    path("zones/labels/geojson/", views.zone_labels_geojson, name="zone_labels_geojson"),
     path("tie-lines/geojson/", views.tie_lines_geojson, name="tie_lines_geojson"),
 ]

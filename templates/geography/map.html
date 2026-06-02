@@ -92,6 +92,7 @@ var MAP_CONFIG = {
     geojsonSources: [
         { id: 'boundaries', url: '{% url "geography:boundaries_geojson" %}' },
         { id: 'zones', url: '{% url "geography:zones_geojson" %}' },
+        { id: 'zone-labels', url: '{% url "geography:zone_labels_geojson" %}' },
         { id: 'parcels', url: '{% url "parcels:geojson" %}' },
         { id: 'wells', url: '{% url "wells:geojson" %}' },
         { id: 'pods', url: '{% url "surface:pods_geojson" %}' },
@@ -128,7 +129,10 @@ var MAP_CONFIG = {
             group: 'zones', groupHidden: true, section: 'Administrative',
             paint: { 'line-color': '#74c69d', 'line-width': 1.5, 'line-dasharray': [4, 3], 'line-opacity': 0.85 }
         },
-        Object.assign(OH2O.makeLabelLayer('zones-label', 'zones', 'zone', { anchor: 'center', offset: [0, 0] }),
+        // One label per zone, placed at a single interior point (zone-labels
+        // source). Labeling the MultiPolygon directly stamped the name once per
+        // disjoint part — 16x for Greater Kaweah.
+        Object.assign(OH2O.makeLabelLayer('zones-label', 'zone-labels', 'zone', { anchor: 'center', offset: [0, 0] }),
             { panelHidden: true, group: 'zones', section: 'Administrative' }),
 
         // ── Land Use ──
@@ -235,10 +239,6 @@ var MAP_CONFIG = {
         'boundary-outline': function(p) {
             return '<strong>' + (p.name || 'Boundary') + '</strong><br>' +
                    (p.area_sq_miles ? parseFloat(p.area_sq_miles).toFixed(1) + ' sq mi' : '');
-        },
-        'zones-fill': function(p) {
-            return '<strong>' + (p.name || 'Zone') + '</strong><br>' +
-                   'Type: ' + (p.zone_type || '—');
         },
         'parcels-fill': function(p) {
             return '<strong>' + (p.parcel_number || 'Unknown') + '</strong><br>' +
