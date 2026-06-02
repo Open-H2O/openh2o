@@ -11,7 +11,7 @@ OpenH2O is licensed under **AGPL-3.0-or-later**. By submitting a contribution yo
 ## Getting set up
 
 ```bash
-git clone https://github.com/vanderoffice/openh2o.git
+git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
 cp .env.example .env        # set SECRET_KEY
 docker compose up -d --build

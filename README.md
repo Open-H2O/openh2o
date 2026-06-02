@@ -38,7 +38,7 @@ It is designed for a single agency per deployment (single-tenant), and it works 
 ### Quick start (local trial)
 
 ```bash
-git clone https://github.com/vanderoffice/openh2o.git
+git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
 cp .env.example .env                 # set SECRET_KEY at minimum
 docker compose up -d --build         # start db + web + caddy

@@ -41,7 +41,7 @@ A first-time deployment to a running, secured, demo-populated instance is a sing
 Follow [DEPLOY.md](../DEPLOY.md) sections 1–6. In short:
 
 ```bash
-git clone https://github.com/vanderoffice/openh2o.git
+git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
 cp .env.example .env
 # edit .env — at minimum set SECRET_KEY and DJANGO_SETTINGS_MODULE=config.settings.production

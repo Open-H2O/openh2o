@@ -40,7 +40,7 @@ sudo usermod -aG docker $USER
 ## 2. Clone the Repository
 
 ```bash
-git clone https://github.com/vanderoffice/openh2o.git
+git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
 ```
 
