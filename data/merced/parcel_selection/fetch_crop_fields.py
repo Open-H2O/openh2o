@@ -39,10 +39,18 @@ BBOX = "-120.97847,37.04449,-120.05146,37.52305"
 OUT_FIELDS = "UniqueID,CLASS1,MAIN_CROP,CROPTYP1,IRR_TYP1PA,ACRES,COUNTY"
 PAGE = 2000
 
-# DWR CLASS1 codes that are NOT irrigated agriculture — drop these so the
-# picker shows only plausible served fields. U=urban, NV/NW/NR/NS/NB=native,
-# E=entryway/other, Z/X=unclassified, S=semi-ag, I handled via crop name.
-NON_AG = {"U", "NV", "NW", "NR", "NS", "NB", "E", "Z", "X", "S", "NC", "W"}
+# The reliable readable crop field is MAIN_CROP (e.g. "D12"=almonds,
+# "P3"=pasture, "V"=vineyard). Its leading letter is the DWR class. CLASS1
+# is unreliable in this extract ("**" for most rows, space-padded letters
+# otherwise), so we key everything off MAIN_CROP's first letter instead.
+CLASS_NAMES = {
+    "G": "Grain & hay", "R": "Rice", "F": "Field crops", "P": "Pasture",
+    "T": "Truck/nursery/berry", "D": "Deciduous fruits & nuts",
+    "C": "Citrus & subtropical", "V": "Vineyard", "I": "Idle",
+    "X": "Fallow/unclassified",
+}
+# Leading letters that are NOT irrigated ag — drop so the picker is clean.
+NON_AG_LETTERS = {"U", ""}  # U=urban; "" = no crop code
 
 
 def fetch_page(offset):
@@ -97,22 +105,21 @@ def main():
     gdf = gpd.clip(gdf, sub.union_all())
     print(f"after subbasin clip: {len(gdf)}")
 
-    # Keep irrigated agriculture only.
-    gdf = gdf[~gdf["CLASS1"].isin(NON_AG)].copy()
+    # Readable crop class from MAIN_CROP's leading letter.
+    gdf["_cls"] = (
+        gdf["MAIN_CROP"].fillna("").astype(str).str.strip().str.upper().str[0]
+    )
+    # Keep irrigated agriculture only (drop urban / no-code).
+    gdf = gdf[~gdf["_cls"].isin(NON_AG_LETTERS)].copy()
     # Drop slivers from the clip (tiny edge fragments).
     gdf = gdf[gdf.to_crs(3310).area > 4000].copy()  # > ~1 acre
     print(f"irrigated-ag fields for picker: {len(gdf)}")
 
-    # Readable crop category from the DWR CLASS1 letter code, so the picker
-    # labels read "Deciduous fruits & nuts" not "D". Satellite + this is
-    # plenty to tell an orchard from a row crop.
-    CLASS_NAMES = {
-        "G": "Grain & hay", "R": "Rice", "F": "Field crops",
-        "P": "Pasture", "T": "Truck/nursery/berry",
-        "D": "Deciduous fruits & nuts", "C": "Citrus & subtropical",
-        "V": "Vineyard", "I": "Idle", "X": "Fallow/unclassified",
-    }
-    gdf["crop_class"] = gdf["CLASS1"].map(CLASS_NAMES).fillna(gdf["CLASS1"])
+    # Readable crop category so the picker labels read "Deciduous fruits &
+    # nuts" not "D". Everything maps to a known name (fallback "Other") so the
+    # categorized renderer never leaves a field uncolored.
+    gdf["crop_class"] = gdf["_cls"].map(CLASS_NAMES).fillna("Other")
+    gdf = gdf.drop(columns=["_cls"])
 
     # Columns Brent fills in. served_by = which diversion feeds this field;
     # water_source = surface (canal only) / groundwater (well only) /

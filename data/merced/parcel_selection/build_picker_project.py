@@ -45,14 +45,16 @@ WATER_SOURCE = [
     {"Groundwater (well only)": "groundwater"},
     {"Conjunctive (canal + well)": "conjunctive"},
 ]
-# Distinct fill per readable crop class.
+# Distinct fill per readable crop class. "Other" catches anything unmapped
+# so the categorized renderer never leaves a field invisible.
 CLASS_COLORS = {
-    "Deciduous fruits & nuts": "#8c6d31", "Field crops": "#c9a227",
+    "Deciduous fruits & nuts": "#c8902f", "Field crops": "#e8c63a",
     "Truck/nursery/berry": "#7fb069", "Grain & hay": "#d4b483",
-    "Pasture": "#5f8d4e", "Vineyard": "#7b2d8e", "Rice": "#3a7ca5",
-    "Citrus & subtropical": "#e07a1f", "Idle": "#777777",
-    "Fallow/unclassified": "#555555",
+    "Pasture": "#5f8d4e", "Vineyard": "#b048c8", "Rice": "#3a9cc5",
+    "Citrus & subtropical": "#e07a1f", "Idle": "#9aa0a6",
+    "Fallow/unclassified": "#c98b6b", "Other": "#8899aa",
 }
+FILL_ALPHA = 155  # opaque enough to read crop color over satellite imagery
 
 
 def vlayer(name, label):
@@ -92,17 +94,16 @@ def main():
     proj.setTitle("Merced Parcel Picker — select fields each diversion serves")
 
     # --- basemap (bottom) ---
-    xyz = (
-        "type=xyz&zmin=0&zmax=19&url=https://server.arcgisonline.com/"
-        "ArcGIS/rest/services/World_Imagery/MapServer/tile/"
-        "%7Bz%7D/%7By%7D/%7Bx%7D"
-    )
-    sat = QgsRasterLayer(xyz, "Satellite (Esri World Imagery)", "wms")
-    # XYZ tile layers often report invalid in offscreen/headless QGIS because
-    # no validation tile can be fetched without the GUI network stack. The
-    # layer renders fine once opened with network, so add it regardless.
+    # Use a GDAL TMS service description, NOT the 'wms'/xyz provider: the wms
+    # provider plugin isn't loaded in the headless build env, so an xyz layer
+    # would be invalid at save time and get dropped on reload (the white-map
+    # bug). The GDAL provider IS available, validates cleanly, and renders the
+    # same Esri World Imagery tiles in the GUI.
+    sat_xml = os.path.join(HERE, "esri_world_imagery.xml")
+    sat = QgsRasterLayer(sat_xml, "Satellite (Esri World Imagery)", "gdal")
     if not sat.isValid():
-        print("note: satellite reports invalid headless (expected) — adding anyway")
+        sys.exit("FATAL: satellite (gdal TMS) invalid: "
+                 + sat.error().summary())
 
     subbasin = vlayer("subbasin", "Merced Subbasin (boundary)")
     canals = vlayer("canals", "Canals & rivers")
@@ -127,14 +128,15 @@ def main():
     cats = []
     for cls, hexcol in CLASS_COLORS.items():
         sym = QgsFillSymbol.createSimple(
-            {"color": _rgba(hexcol, 90), "outline_color": "#e8edf4",
-             "outline_width": "0.18"})
+            {"color": _rgba(hexcol, FILL_ALPHA), "outline_color": "#ffffff",
+             "outline_width": "0.26"})
         cats.append(QgsRendererCategory(cls, sym, cls))
-    # fallback for any unmapped class
-    fallback = QgsFillSymbol.createSimple(
-        {"color": _rgba("#999999", 90), "outline_color": "#e8edf4",
-         "outline_width": "0.18"})
-    cats.append(QgsRendererCategory("", fallback, "other"))
+    # Catch-all for any value not in CLASS_COLORS (empty category value =
+    # QGIS "all other values"), so no field is ever left uncolored.
+    catch = QgsFillSymbol.createSimple(
+        {"color": _rgba("#8899aa", FILL_ALPHA), "outline_color": "#ffffff",
+         "outline_width": "0.26"})
+    cats.append(QgsRendererCategory("", catch, "All other"))
     fields.setRenderer(QgsCategorizedSymbolRenderer("crop_class", cats))
 
     # --- editor dropdowns on the crop layer ---
