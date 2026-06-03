@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Seed the Merced demonstration's OPERATIONAL features onto the real base layer.
 
-WHY this command exists. Phase 50 built a credible Merced canvas (two real
-boundaries, 577 river + 2328 canal segments, recharge basins, stations). This
-command populates it with the features a domain expert actually inspects:
-surface-water diversions, MID-canal headgates, groundwater wells, and farm
-parcels — for BOTH the simple upper-watershed story and the complex lower-
-subbasin story.
+WHY this command exists. Phase 50 built a credible Merced canvas (real
+boundaries, river + canal segments, recharge basins, stations). This command
+populates the LOWER subbasin (the valley floor, where the agencies who will use
+this platform actually do their accounting) with the features a domain expert
+inspects: Merced River diversions, MID-canal headgates, groundwater wells, and
+farm parcels — the complex conjunctive-use story of surface water + groundwater.
+The upper Merced River watershed is intentionally out of scope (see RIGHT_CONFIGS).
 
 The anti-pattern this command exists to KILL: the Kaweah seed hand-types a
 diversion's lon/lat and a ``stream_name`` STRING with no tie to real river
@@ -47,6 +48,7 @@ The base-layer guard below fails fast with that exact instruction if the
 boundaries or their flowlines are missing, rather than silently placing features
 against an empty flowline set.
 """
+import math
 from decimal import Decimal
 
 from django.contrib.gis.geos import Point
@@ -69,9 +71,8 @@ from surface.models import (
 )
 from wells.models import Well, WellIrrigatedParcel, WellType
 
-# Boundary names seeded by seed_merced_base — the spatial canvas this command
-# populates. The guard looks these up by name.
-UPPER_BOUNDARY = "Upper Merced River Watershed"
+# Boundary seeded by seed_merced_base — the spatial canvas this command populates.
+# The demo is the lower subbasin only, so the guard looks up just this boundary.
 LOWER_BOUNDARY = "Merced Subbasin"
 
 # Flowline feature_type values as the USGS 3DHP loader (auto_populate) actually
@@ -88,31 +89,26 @@ BASE_LAYER_HINT = (
     "Base layer missing. Seed it first:\n"
     '  python manage.py seed_merced_base\n'
     '  python manage.py auto_populate --boundary "Merced Subbasin" '
-    "--steps flowlines,stations\n"
-    '  python manage.py auto_populate --boundary "Upper Merced River Watershed" '
-    "--steps flowlines"
+    "--steps flowlines,stations"
 )
 
 # ---------------------------------------------------------------------------
-# Water rights (both stories). right_id is the natural key for update_or_create.
-# Upper = Merced River snowmelt appropriative/pre-1914; lower = MID canal-served
-# appropriative + a few riparian. source_name is the real stream/canal name.
-# (ti = water-right-type index into the types tuple built in _seed: 0=PRE14,
-#  1=POST14, 2=RIP.) Each entry:
+# Water rights — Lower Merced Subbasin ONLY. The upper Merced River watershed was
+# removed by design: in this 3DHP base layer the only free-flowing reaches of the
+# upper river sit high in the Sierra (Yosemite country, the foothill stretch being
+# Lake McClure reservoir), so a district-scale diversion placed there reads as
+# implausible — and the upper watershed adds little for the agencies who will use
+# this platform, whose accounting lives on the valley floor. The demo is the
+# valley story: MID canal-served districts + a couple of Merced River diversions.
+#
+# right_id is the natural key for update_or_create. source_name matches a REAL
+# named canal/river in the base layer (Atwater Canal, Le Grand Canal, Diversion
+# Canal, El Nido Canal, Merced River all exist in the Merced Subbasin flowlines),
+# so the displayed source is truthful to geometry. (ti = water-right-type index:
+# 0=PRE14, 1=POST14, 2=RIP.) Each entry:
 #   right_id, type_idx, holder_name, priority_date(str|None), face_af, source_name, status
 # ---------------------------------------------------------------------------
 RIGHT_CONFIGS = [
-    # --- Upper Merced River watershed (simple, single-source snowmelt) ---
-    ("MER-WR-001", 1, "Merced Irrigation District", "1926-02-15",
-     Decimal("550000"), "Merced River", "active"),
-    ("MER-WR-002", 0, "Merced Falls Ranch", "1901-06-01",
-     Decimal("3500"), "Merced River", "active"),
-    ("MER-WR-003", 2, "Yosemite Foothill Ranch", None,
-     Decimal("900"), "Merced River", "active"),
-    # --- Lower Merced Subbasin (complex: MID canal-served + riparian) ---
-    # source_name matches a REAL named canal/river in the 3DHP base layer (Atwater
-    # Canal, Le Grand Canal, Diversion Canal, El Nido Canal all exist in the
-    # Merced Subbasin flowlines), so the displayed source is truthful to geometry.
     ("MER-WR-004", 1, "Merced Irrigation District", "1930-04-10",
      Decimal("120000"), "Merced River", "active"),
     ("MER-WR-005", 1, "Le Grand-Athlone Water District", "1948-09-01",
@@ -139,19 +135,17 @@ RIGHT_CONFIGS = [
 #
 # `frac` (0..1) walks the named segments west→east so several PODs on the same
 # river land at distinct, plausible reaches rather than stacking on one segment.
+# `story` is "lower" for every diversion now (the upper watershed was removed).
+#
+# Headgates legitimately sit ON the canal — and a canal often runs through the
+# town it is named for, so a headgate near a town is CORRECT. The fields it serves
+# do NOT belong next to the headgate; they live on the open cropland of the
+# service area (see PARCEL_CLUSTER_CONFIGS).
 #
 # Each entry: pod_name, right_id, story, line_name, feature_type, frac, max_rate_cfs.
 # ---------------------------------------------------------------------------
 POD_CONFIGS = [
-    # --- Upper story: Merced River main-stem snowmelt diversions (simple) ---
-    ("MER-POD-001 Merced River Upper Diversion", "MER-WR-001", "upper",
-     "Merced River", RIVER, 0.55, Decimal("1200.0")),
-    ("MER-POD-002 Merced Falls Diversion", "MER-WR-002", "upper",
-     "Merced River", RIVER, 0.12, Decimal("40.0")),
-    ("MER-POD-003 Foothill Riparian Take", "MER-WR-003", "upper",
-     "Merced River", RIVER, 0.35, Decimal("12.0")),
-
-    # --- Lower story: MID canal headgates (complex) + main-stem river diversions ---
+    # MID canal headgates (complex) + two Merced River main-stem diversions.
     ("MER-POD-004 MID Atwater Canal Headgate", "MER-WR-004", "lower",
      "Atwater Canal", CANAL, 0.50, Decimal("900.0")),
     ("MER-POD-005 Le Grand Canal Headgate", "MER-WR-005", "lower",
@@ -166,24 +160,34 @@ POD_CONFIGS = [
      "Merced River", RIVER, 0.15, Decimal("45.0")),
 ]
 
-# Per-POD parcel cluster. Each diversion serves a small cluster of fields placed
-# NEAR its snapped flowline via place_near_flowline (both banks, staggered along
-# the reach). Keep counts legible; ~24 parcels total. Acres are realistic
-# Central-Valley field sizes (~40-160 ac). offset_m keeps fields a plausible
-# distance off the channel (not on it). Each entry:
-#   pod_name, n_parcels, acres, offset_m, story
+# Per-POD parcel cluster, placed on SATELLITE-VERIFIED OPEN CROPLAND.
+#
+# THE FIX (why these are explicit anchors, not an offset off the headgate). The
+# first pass placed each field a fixed distance off its diversion point. But the
+# diversion sits on a canal named for the town it runs through (the Atwater Canal
+# runs through Atwater), so "a few hundred metres off the headgate" dropped farm
+# parcels onto the city. There is no land-use data in the geometry to stop that.
+# So each cluster is anchored to a hand-picked (lon, lat) that was confirmed on
+# the aerial basemap to be open cropland clear of any town — the same satellite
+# check used to site the Phase-50 recharge basins. The field is SERVED BY its
+# diversion (a canal-routed link in _seed), but LOCATED on real farmland in the
+# service area, which is how irrigation actually works.
+#
+# Each entry: pod_name, anchor_lon, anchor_lat, n_parcels, acres.
 PARCEL_CLUSTER_CONFIGS = [
-    # Upper: surface-water fields hugging the Merced River diversions.
-    ("MER-POD-001 Merced River Upper Diversion", 3, 120.0, 800.0, "upper"),
-    ("MER-POD-002 Merced Falls Diversion", 2, 80.0, 600.0, "upper"),
-    ("MER-POD-003 Foothill Riparian Take", 2, 60.0, 500.0, "upper"),
-    # Lower: MID-canal-served + river-served fields on the valley floor.
-    ("MER-POD-004 MID Atwater Canal Headgate", 4, 160.0, 900.0, "lower"),
-    ("MER-POD-005 Le Grand Canal Headgate", 3, 130.0, 800.0, "lower"),
-    ("MER-POD-006 Stevinson Diversion Canal Headgate", 3, 140.0, 800.0, "lower"),
-    ("MER-POD-007 Plainsburg El Nido Canal Headgate", 2, 100.0, 700.0, "lower"),
-    ("MER-POD-008 Crocker-Huffman River Diversion", 3, 150.0, 900.0, "lower"),
-    ("MER-POD-009 Bottomlands Riparian Take", 2, 90.0, 700.0, "lower"),
+    # Atwater Canal (MID): orchards/fields by the approved Cressey-Winton basin.
+    ("MER-POD-004 MID Atwater Canal Headgate", -120.665, 37.345, 4, 150.0),
+    # Le Grand Canal: open field blocks east of Planada.
+    ("MER-POD-005 Le Grand Canal Headgate", -120.270, 37.270, 3, 130.0),
+    # Diversion Canal (Stevinson): Central-Valley crop mosaic near El Nido.
+    ("MER-POD-006 Stevinson Diversion Canal Headgate", -120.520, 37.100, 3, 140.0),
+    # El Nido Canal (Plainsburg): irrigated fields SW of Plainsburg.
+    ("MER-POD-007 Plainsburg El Nido Canal Headgate", -120.475, 37.205, 3, 110.0),
+    # Crocker-Huffman river diversion: valley orchards in the MID service area
+    # (the intake itself is at the foothill edge; the served land is downvalley).
+    ("MER-POD-008 Crocker-Huffman River Diversion", -120.490, 37.420, 3, 150.0),
+    # Bottomlands riparian: river-bottom fields west of Livingston.
+    ("MER-POD-009 Bottomlands Riparian Take", -120.825, 37.375, 2, 90.0),
 ]
 
 # Groundwater wells — LOWER SUBBASIN ONLY (the overdraft story). Each entry sets
@@ -260,6 +264,31 @@ def _nearest_parcels(point, parcels, n):
     return ranked[: min(n, len(ranked))]
 
 
+def _grid_centers(anchor_lon, anchor_lat, n, acres):
+    """``n`` field-centre (lon, lat) pairs in a compact grid around an anchor.
+
+    The cluster is a little block of adjacent fields. Spacing is the field's own
+    side length (from its acreage) plus a small gap, converted to degrees with the
+    cos(lat) longitude correction, so the fields sit next to each other without
+    heavy overlap and the whole cluster stays within ~1-2 km of the verified-ag
+    anchor. Deterministic (row-major, centred on the anchor) — a re-run reproduces
+    identical geometry.
+    """
+    side_m = math.sqrt(float(acres) * 4046.86)      # square field, side in metres
+    step_m = side_m * 1.12                            # adjacent + a thin margin
+    dlat = step_m / 111_320.0
+    dlon = step_m / (111_320.0 * math.cos(math.radians(anchor_lat)))
+    cols = max(1, int(math.ceil(math.sqrt(n))))
+    centers = []
+    for k in range(n):
+        row, col = divmod(k, cols)
+        rows = math.ceil(n / cols)
+        cx = anchor_lon + (col - (cols - 1) / 2.0) * dlon
+        cy = anchor_lat + (row - (rows - 1) / 2.0) * dlat
+        centers.append((cx, cy))
+    return centers
+
+
 class Command(BaseCommand):
     help = (
         "Seed the Merced demonstration's operational features (water rights, "
@@ -277,51 +306,35 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Base-layer guard runs first, BEFORE any flush, so a wrong instance
         # fails fast and leaves existing data untouched.
-        upper, lower = self._check_base_layer()
+        lower = self._check_base_layer()
 
         if options["flush"]:
             self._flush()
 
         with transaction.atomic():
-            self._seed(upper, lower)
+            self._seed(lower)
 
     # ------------------------------------------------------------------
     # Base-layer guard — fail fast with a clear "run auto_populate first".
     # ------------------------------------------------------------------
     def _check_base_layer(self):
-        """Return (upper_boundary, lower_boundary) or raise CommandError.
+        """Return the Merced Subbasin boundary, or raise CommandError.
 
-        Never place against an empty flowline set: both boundaries must exist
-        and carry the flowlines each story needs (upper = river segments,
-        lower = canal AND river segments). We check existence by COUNT rather
-        than materializing the rows — the upper watershed holds ~40k "Channel
-        Line" segments and the seed pulls only the index-nearest handful per
-        diversion, so loading them all here would be pure waste.
+        The demo is the lower subbasin only (the upper watershed was removed), so
+        we require just the Merced Subbasin boundary carrying both canal AND river
+        flowlines. Existence is checked by COUNT rather than materializing rows.
         """
-        upper = Boundary.objects.filter(name=UPPER_BOUNDARY).first()
         lower = Boundary.objects.filter(name=LOWER_BOUNDARY).first()
-        if upper is None or lower is None:
-            missing = [
-                n for n, b in [(UPPER_BOUNDARY, upper), (LOWER_BOUNDARY, lower)]
-                if b is None
-            ]
+        if lower is None:
             raise CommandError(
-                f"Missing Merced boundary/boundaries: {', '.join(missing)}.\n"
-                + BASE_LAYER_HINT
+                f"Missing Merced boundary: {LOWER_BOUNDARY}.\n" + BASE_LAYER_HINT
             )
 
-        n_upper_rivers = Flowline.objects.filter(
-            boundary=upper, feature_type=RIVER).count()
         n_lower_canals = Flowline.objects.filter(
             boundary=lower, feature_type=CANAL).count()
         n_lower_rivers = Flowline.objects.filter(
             boundary=lower, feature_type=RIVER).count()
 
-        if not n_upper_rivers:
-            raise CommandError(
-                f'"{UPPER_BOUNDARY}" has zero "{RIVER}" flowlines — its base '
-                "layer is not loaded.\n" + BASE_LAYER_HINT
-            )
         if not n_lower_canals:
             raise CommandError(
                 f'"{LOWER_BOUNDARY}" has zero "{CANAL}" flowlines — its base '
@@ -334,10 +347,10 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(
-            f"Base layer OK: upper {n_upper_rivers} river segments; lower "
-            f"{n_lower_canals} canal + {n_lower_rivers} river segments."
+            f"Base layer OK: Merced Subbasin {n_lower_canals} canal + "
+            f"{n_lower_rivers} river segments."
         )
-        return upper, lower
+        return lower
 
     # ------------------------------------------------------------------
     # Flush — ONLY MER- operational rows + their links. Base layer + Kaweah /
@@ -419,7 +432,7 @@ class Command(BaseCommand):
         idx = min(int(frac * len(segs)), len(segs) - 1)
         return segs[idx]
 
-    def _seed(self, upper, lower):
+    def _seed(self, lower):
         # --- Water-right types (global lookup rows; same codes as seed_kaweah) ---
         self.stdout.write("Ensuring water-right types...")
         pre14, _ = WaterRightType.objects.get_or_create(
@@ -465,20 +478,19 @@ class Command(BaseCommand):
         # River / a specific MID canal) within the right boundary, so a diversion
         # never lands on the wrong creek and its stream_name is truthful.
         self.stdout.write("Placing points of diversion on named rivers/canals...")
-        boundary_for = {"upper": upper, "lower": lower}
         pods = []
-        pod_river_lines = {}  # pod.pk -> the named Flowline it sits on (reused in Task 3)
+        pod_lines = {}  # pod.pk -> the named Flowline it sits on (for stream_name)
         for name, rid, story, line_name, ftype, frac, max_cfs in POD_CONFIGS:
             # Prefer a free-flowing "Channel Line" reach for a river diversion and
             # a "Canal" segment for a canal headgate, but fall back to any named
             # segment (the lower Merced main stem is all "Waterbody Connector").
             prefer = CANAL if ftype == CANAL else RIVER
-            line = self._named_line(boundary_for[story], line_name, prefer, frac)
+            line = self._named_line(lower, line_name, prefer, frac)
             if line is None:
                 # The named watercourse is missing from the base layer — fail
                 # loudly rather than silently snap the POD onto some other creek.
                 raise CommandError(
-                    f'No "{line_name}" ({ftype}) flowline in the {story} boundary '
+                    f'No "{line_name}" ({ftype}) flowline in the Merced Subbasin '
                     f"for {name}; base layer incomplete or renamed."
                 )
             # Zero perpendicular offset = a point exactly ON the named segment.
@@ -497,36 +509,28 @@ class Command(BaseCommand):
                 },
             )
             pods.append(pod)
-            pod_river_lines[pod.pk] = line
+            pod_lines[pod.pk] = line
         pods_by_name = {p.name: p for p in pods}
-        self.stdout.write(f"  {len(pods)} PODs snapped onto real river/canal segments.")
+        self.stdout.write(f"  {len(pods)} PODs placed on real river/canal segments.")
 
-        # --- Parcels: clusters placed NEAR each POD's snapped flowline ---
-        # place_near_flowline fans fields onto both banks (side=±1), staggered
-        # along the reach, so each field sits a plausible distance off the
-        # channel that serves it — never floating, never on the line. Footprint
-        # = area_accurate_box (true acreage, latitude-corrected), not a fixed box.
-        self.stdout.write("Placing parcels near their source reaches...")
+        # --- Parcels: compact field blocks on satellite-verified cropland ---
+        # Each cluster is laid out as a small adjacent grid around its verified
+        # ag anchor (see PARCEL_CLUSTER_CONFIGS). The fields are SERVED BY their
+        # diversion (the link below) but LOCATED on real farmland in the service
+        # area — decoupled from the headgate so a canal that runs through a town
+        # can no longer drag farm parcels onto the city. Footprint =
+        # area_accurate_box (true acreage, latitude-corrected).
+        self.stdout.write("Placing parcels on verified cropland...")
         parcel_seq = 0
-        # pod.pk -> list of its parcels (drives POD-parcel + right-parcel links)
-        pod_to_parcels = {}
-        lower_parcels = []  # parcels in the lower subbasin (well candidates)
-        for cfg in PARCEL_CLUSTER_CONFIGS:
-            pod_name, n_parcels, acres, offset_m, story = cfg
+        pod_to_parcels = {}  # pod.pk -> its parcels (drives POD/right-parcel links)
+        lower_parcels = []   # every MER parcel (all in the lower subbasin now)
+        for pod_name, anchor_lon, anchor_lat, n_parcels, acres in PARCEL_CLUSTER_CONFIGS:
             pod = pods_by_name[pod_name]
-            line = pod_river_lines[pod.pk]
             cluster = []
-            for j in range(n_parcels):
-                # Stagger along the reach (0.25..0.75) and alternate banks so
-                # the cluster fans deterministically onto both sides.
-                along = 0.25 + (0.5 * j / max(1, n_parcels - 1)) if n_parcels > 1 else 0.5
-                side = 1 if j % 2 == 0 else -1
-                center = place_near_flowline(line, offset_m, along=along, side=side)
-                if center is None:
-                    continue
+            for cx, cy in _grid_centers(anchor_lon, anchor_lat, n_parcels, acres):
                 parcel_seq += 1
                 owner = MER_PARCEL_OWNERS[(parcel_seq - 1) % len(MER_PARCEL_OWNERS)]
-                geom = area_accurate_box(center.x, center.y, acres)
+                geom = area_accurate_box(cx, cy, acres)
                 parcel, _ = Parcel.objects.update_or_create(
                     parcel_number=f"MER-APN-{parcel_seq:03d}",
                     defaults={
@@ -536,15 +540,10 @@ class Command(BaseCommand):
                     },
                 )
                 cluster.append(parcel)
-                if story == "lower":
-                    lower_parcels.append(parcel)
+                lower_parcels.append(parcel)
             pod_to_parcels[pod.pk] = cluster
-        all_parcels = [p for c in pod_to_parcels.values() for p in c]
-        self.stdout.write(
-            f"  {len(all_parcels)} parcels "
-            f"({len(all_parcels) - len(lower_parcels)} upper, "
-            f"{len(lower_parcels)} lower)."
-        )
+        all_parcels = list(lower_parcels)
+        self.stdout.write(f"  {len(all_parcels)} parcels on verified cropland.")
 
         # --- Wells: groundwater wells in the LOWER subbasin only ---
         # The overdraft story lives on the valley floor, so wells sit at lower
@@ -634,13 +633,11 @@ class Command(BaseCommand):
             well_to_parcels[well.pk] = linked
 
         self.stdout.write(self.style.SUCCESS(
-            f"\nMerced operational features seeded:\n"
+            f"\nMerced operational features seeded (lower subbasin):\n"
             f"  {len(rights_by_id)} water rights\n"
             f"  {len(pods)} points of diversion "
             f"({podp_count} POD-parcel links)\n"
-            f"  {len(all_parcels)} parcels "
-            f"({len(all_parcels) - len(lower_parcels)} upper, "
-            f"{len(lower_parcels)} lower)\n"
+            f"  {len(all_parcels)} parcels on verified cropland\n"
             f"  {len(wells)} wells ({wip_count} well-parcel links)\n"
             f"  {wrp_count} water right-parcel links"
         ))
