@@ -65,7 +65,6 @@ from geography.models import Boundary, ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
 from surface.models import (
     CurtailmentOrder,
-    PointOfDiversion,
     PointOfDiversionParcel,
     WaterRight,
     WaterRightParcel,
