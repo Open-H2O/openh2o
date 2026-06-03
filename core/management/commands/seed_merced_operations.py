@@ -121,6 +121,45 @@ RIGHT_CONFIGS = [
      Decimal("9000"), "Main Canal", "active"),
 ]
 
+# ---------------------------------------------------------------------------
+# Points of diversion. THE HEART of the phase: each POD starts from a config
+# lon/lat near the intended reach, then is SNAPPED onto the nearest real
+# flowline of the target type — so its coordinates sit ON an actual river or
+# canal, never in a field. stream_name is read from that flowline, not typed.
+#
+# GEOGRAPHY. Merced city is ~37.30 N, -120.48 W. The Merced River main stem
+# runs roughly west out of the Sierra foothills (~-120.25, snowmelt reaches)
+# down across the valley floor toward the San Joaquin (~-120.75). The MID canal
+# network fans south / southwest of Merced city across the lower subbasin. Start
+# points are chosen in those areas so nearest_flowline finds the right segment;
+# the snap then pulls each POD exactly onto the loaded geometry.
+#
+# Each entry: pod_name, right_id, target_feature_type, start_lon, start_lat, max_rate_cfs.
+# ---------------------------------------------------------------------------
+POD_CONFIGS = [
+    # --- Upper story: Merced River main-stem snowmelt diversions (simple) ---
+    ("MER-POD-001 Merced River Upper Diversion", "MER-WR-001", RIVER,
+     -120.30, 37.52, Decimal("1200.0")),
+    ("MER-POD-002 Merced Falls Diversion", "MER-WR-002", RIVER,
+     -120.18, 37.52, Decimal("40.0")),
+    ("MER-POD-003 Foothill Riparian Take", "MER-WR-003", RIVER,
+     -120.10, 37.55, Decimal("12.0")),
+
+    # --- Lower story: MID canal headgates (complex) + main-stem river diversions ---
+    ("MER-POD-004 MID Main Canal Headgate", "MER-WR-004", CANAL,
+     -120.55, 37.27, Decimal("900.0")),
+    ("MER-POD-005 Le Grand Canal Headgate", "MER-WR-005", CANAL,
+     -120.42, 37.18, Decimal("220.0")),
+    ("MER-POD-006 Stevinson Canal Headgate", "MER-WR-006", CANAL,
+     -120.62, 37.25, Decimal("260.0")),
+    ("MER-POD-007 Plainsburg Canal Headgate", "MER-WR-009", CANAL,
+     -120.40, 37.22, Decimal("130.0")),
+    ("MER-POD-008 Crocker-Huffman River Diversion", "MER-WR-004", RIVER,
+     -120.50, 37.35, Decimal("700.0")),
+    ("MER-POD-009 Bottomlands Riparian Take", "MER-WR-008", RIVER,
+     -120.70, 37.32, Decimal("45.0")),
+]
+
 
 class Command(BaseCommand):
     help = (
@@ -295,7 +334,63 @@ class Command(BaseCommand):
             rights_by_id[rid] = wr
         self.stdout.write(f"  {len(rights_by_id)} water rights.")
 
+        # --- Points of diversion, SNAPPED onto real geometry ---
+        # Upper PODs route through the upper-watershed river segments; lower
+        # canal PODs through the subbasin canals; lower river PODs through the
+        # subbasin river segments. nearest_flowline already filters by
+        # feature_type, but scoping the candidate set per story keeps an upper
+        # POD from snapping to a lower-subbasin river of the same type.
+        self.stdout.write("Snapping points of diversion onto real flowlines...")
+        flowlines_for = {
+            ("upper", RIVER): upper_rivers,
+            ("lower", CANAL): lower_canals,
+            ("lower", RIVER): lower_rivers,
+        }
+        pods = []
+        pod_river_lines = {}  # pod.pk -> the Flowline it snapped onto (reused in Task 3)
+        for name, rid, ftype, lon, lat, max_cfs in POD_CONFIGS:
+            story = "upper" if rid in ("MER-WR-001", "MER-WR-002", "MER-WR-003") else "lower"
+            candidates = flowlines_for[(story, ftype)]
+            start = Point(lon, lat, srid=4326)
+            line = nearest_flowline(start, candidates, feature_type=ftype)
+            if line is None:
+                # Guard already proved each set is non-empty, so this only
+                # fires on a truly degenerate set — fail loudly, never float.
+                raise CommandError(
+                    f"No {ftype} flowline found for {name}; base layer incomplete."
+                )
+            location = snap_to_flowline(start, line)
+            stream_name = self._stream_name(line, ftype)
+            pod, _ = PointOfDiversion.objects.update_or_create(
+                name=name,
+                defaults={
+                    "water_right": rights_by_id[rid],
+                    "location": location,
+                    "stream_name": stream_name,
+                    "max_rate_cfs": max_cfs,
+                    "status": "active",
+                },
+            )
+            pods.append(pod)
+            pod_river_lines[pod.pk] = line
+        self.stdout.write(f"  {len(pods)} PODs snapped onto real river/canal segments.")
+
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced operational features seeded:\n"
-            f"  {len(rights_by_id)} water rights"
+            f"  {len(rights_by_id)} water rights\n"
+            f"  {len(pods)} points of diversion"
         ))
+
+    @staticmethod
+    def _stream_name(line, ftype):
+        """Truthful source name drawn from the real flowline, not hand-typed.
+
+        Uses the flowline's GNIS name when present; otherwise a clear fallback
+        built from the feature type + the segment's source id (e.g.
+        "Canal segment 12345"), so the displayed source is always tied to the
+        geometry the POD actually sits on.
+        """
+        if line.name:
+            return line.name
+        sid = line.source_id or str(line.pk)
+        return f"{ftype.capitalize()} segment {sid}"
