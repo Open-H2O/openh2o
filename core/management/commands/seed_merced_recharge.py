@@ -8,18 +8,23 @@ Valley latitude — about ten times too large for a real spreading basin. A
 basin that swallows half a city is the single most visible tell that makes a
 domain expert stop trusting the rest of the map.
 
-The two basins here are REAL Merced facilities at REAL locations, sized to
-their TRUE acreage via ``recharge.geometry.area_accurate_box`` (which corrects
-for the cos(latitude) longitude compression):
+A recharge basin is an open area — cropland or rangeland — that is FLOODED
+during storm events when water is diverted from a surface-water channel and
+pooled to percolate into the aquifer. So each basin sits on open cropland
+ADJACENT TO A CANAL (the diversion source) and must contain no structures —
+you cannot flood a farmhouse. Central Valley spreading basins span a wide
+range, up to ~120 acres; these two are placed at the larger, realistic end:
 
   - **Cressey-Winton Recharge Basin** — Cressey-Winton area, eastern Merced
-    County (~20 acres; ~25 af/day in wet operations).
-  - **El Nido Recharge Basin** — El Nido area, southern subbasin, fed by
-    Mariposa Creek stormwater (~18 acres; ~18 af/day).
+    County (~110 acres) on open cropland beside an MID canal.
+  - **El Nido Recharge Basin** — El Nido area, southern subbasin (~85 acres)
+    on open cropland beside an MID canal.
 
-(MID's large "incidental" recharge happens via its ~700-mile canal network,
-NOT a giant basin polygon — that belongs to the conceptual/ledger layer later,
-never one enormous footprint.)
+Footprints are sized to TRUE acreage via ``recharge.geometry.area_accurate_box``
+(which corrects for the cos(latitude) longitude compression), NOT a fixed
+degree box. (MID's large "incidental" recharge happens via its ~700-mile canal
+network, NOT a giant basin polygon — that belongs to the conceptual/ledger
+layer later, never one enormous footprint.)
 
 Idempotent: matched by name via ``update_or_create``, so a re-run refreshes the
 location / footprint / attributes in place without duplicating. Additive — it
@@ -34,34 +39,38 @@ from django.core.management.base import BaseCommand
 from recharge.geometry import SQ_M_PER_ACRE, area_accurate_box
 from recharge.models import RechargeSite
 
-# name, lon, lat, acres, capacity (AF, ~5 ft ponded depth × acres), operator
+# name, lon, lat, acres, capacity (AF, ~5 ft ponded depth × acres), operator.
+# Coordinates sit on open cropland beside an MID canal (the diversion source),
+# clear of farmsteads — confirmed against aerial imagery.
 BASIN_CONFIGS = [
     {
         "name": "Cressey-Winton Recharge Basin",
-        "lon": -120.66,
-        "lat": 37.34,
-        "acres": 20.0,
-        "capacity_acre_feet": Decimal("100.0"),
+        "lon": -120.666,
+        "lat": 37.336,
+        "acres": 110.0,
+        "capacity_acre_feet": Decimal("550.0"),
         "operator": "Merced Irrigation District",
         "notes": (
-            "Spreading basin in the Cressey-Winton area of eastern Merced "
-            "County. ~20 surface acres; recharges ~25 acre-feet/day in wet "
-            "operations. Footprint sized to true acreage (area_accurate_box), "
-            "not a fixed-degree box."
+            "Spreading basin on open cropland in the Cressey-Winton area of "
+            "eastern Merced County, beside a Merced Irrigation District canal. "
+            "~110 surface acres; flooded during storm events when water is "
+            "diverted from the canal and pooled to percolate. Footprint sized "
+            "to true acreage (area_accurate_box), not a fixed-degree box."
         ),
     },
     {
         "name": "El Nido Recharge Basin",
-        "lon": -120.49,
-        "lat": 37.13,
-        "acres": 18.0,
-        "capacity_acre_feet": Decimal("90.0"),
+        "lon": -120.498,
+        "lat": 37.125,
+        "acres": 85.0,
+        "capacity_acre_feet": Decimal("425.0"),
         "operator": "Merced Irrigation District",
         "notes": (
-            "Spreading basin in the El Nido area of the southern Merced "
-            "Subbasin, fed by Mariposa Creek stormwater. ~18 surface acres; "
-            "recharges ~18 acre-feet/day. Footprint sized to true acreage "
-            "(area_accurate_box), not a fixed-degree box."
+            "Spreading basin on open cropland in the El Nido area of the "
+            "southern Merced Subbasin, beside a Merced Irrigation District "
+            "canal. ~85 surface acres; flooded during storm events when water "
+            "is diverted from the canal and pooled to percolate. Footprint "
+            "sized to true acreage (area_accurate_box), not a fixed-degree box."
         ),
     },
 ]

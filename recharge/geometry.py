@@ -3,9 +3,10 @@
 
 The naive ``make_box(size=0.008)`` in the Kaweah seed builds a basin footprint
 from a fixed number of DEGREES. At Central Valley latitude (~37 N) that is a
-~0.5-mile square ≈ 150-190 acres — roughly ten times too large for a real
-Merced Irrigation District spreading basin (~18-20 acres). Two things make a
-fixed-degree box wrong:
+~0.5-mile square ≈ 156 acres — applied uniformly regardless of a basin's real
+size, so small basins balloon to "swallow half a city." (Real spreading basins
+span a wide range, tens of acres up to ~120.) Two things make a fixed-degree
+box wrong:
 
   1. It encodes *size in degrees*, not on the ground, so the same number means
      a different acreage everywhere.
