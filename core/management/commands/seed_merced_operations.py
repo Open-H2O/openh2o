@@ -479,7 +479,6 @@ class Command(BaseCommand):
         # never lands on the wrong creek and its stream_name is truthful.
         self.stdout.write("Placing points of diversion on named rivers/canals...")
         pods = []
-        pod_lines = {}  # pod.pk -> the named Flowline it sits on (for stream_name)
         for name, rid, story, line_name, ftype, frac, max_cfs in POD_CONFIGS:
             # Prefer a free-flowing "Channel Line" reach for a river diversion and
             # a "Canal" segment for a canal headgate, but fall back to any named
@@ -509,7 +508,6 @@ class Command(BaseCommand):
                 },
             )
             pods.append(pod)
-            pod_lines[pod.pk] = line
         pods_by_name = {p.name: p for p in pods}
         self.stdout.write(f"  {len(pods)} PODs placed on real river/canal segments.")
 
@@ -556,7 +554,6 @@ class Command(BaseCommand):
         )
         n_wells = min(len(WELL_SPECS), len(lower_parcels))
         wells = []
-        well_to_parcels = {}
         for i in range(n_wells):
             host = lower_parcels[i]
             wname, _wt, depth, cap = WELL_SPECS[i]
@@ -630,7 +627,6 @@ class Command(BaseCommand):
                     defaults={"fraction": fraction},
                 )
                 wip_count += 1
-            well_to_parcels[well.pk] = linked
 
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced operational features seeded (lower subbasin):\n"
