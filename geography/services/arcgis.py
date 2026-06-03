@@ -57,11 +57,19 @@ def query_feature_server(
         if spatial_rel is not None:
             params["spatialRel"] = spatial_rel
 
-        # Retry with exponential backoff
+        # Retry with exponential backoff.
+        #
+        # POST, not GET: the spatial query sends the boundary geometry as a
+        # parameter. A full-resolution boundary (e.g. the Merced Subbasin's
+        # 8,446-vertex polygon) serialized into a GET query string blows past
+        # the server's URL-length limit and returns "414 Request-URI Too
+        # Large", silently yielding zero features. ArcGIS REST /query accepts
+        # the identical parameters form-encoded in a POST body, which has no
+        # such limit, so POST works for boundaries of any size.
         response = None
         for attempt in range(3):
             try:
-                response = requests.get(url, params=params, timeout=60)
+                response = requests.post(url, data=params, timeout=60)
                 response.raise_for_status()
                 break
             except requests.RequestException as exc:

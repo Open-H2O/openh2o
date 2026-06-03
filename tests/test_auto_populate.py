@@ -20,6 +20,7 @@ from geography.services.arcgis import (
     esri_polygon_to_geos,
     esri_polyline_to_geos,
     geos_to_esri_geometry,
+    query_feature_server,
 )
 from parcels.models import Parcel
 
@@ -149,6 +150,45 @@ class TestGeosToEsriGeometry:
 
 
 # ---------------------------------------------------------------------------
+# Transport tests
+# ---------------------------------------------------------------------------
+
+class TestQueryFeatureServerTransport:
+    """The spatial query must POST (geometry in the body), never GET.
+
+    Regression for the 50-02 "414 Request-URI Too Large" bug: a
+    full-resolution boundary (e.g. the Merced Subbasin's 8,446-vertex
+    polygon) serialized into a GET query string exceeds the server's
+    URL-length limit and silently returns zero features. POSTing the same
+    parameters in the request body removes the limit.
+    """
+
+    @patch("geography.services.arcgis.requests.post")
+    def test_uses_post_with_geometry_in_body(self, mock_post):
+        mock_post.return_value = _make_mock_response(_b118_features())
+
+        # A deliberately large geometry payload — the kind that overflows a URL.
+        big_geom = {"rings": [[[(-120.0 + i * 1e-5), 37.0] for i in range(9000)]]}
+
+        pages = list(
+            query_feature_server(
+                "https://example.test/MapServer/0/query",
+                geometry=big_geom,
+                geometry_type="esriGeometryPolygon",
+                spatial_rel="esriSpatialRelIntersects",
+            )
+        )
+
+        assert pages, "expected at least one page of features"
+        mock_post.assert_called()
+        # Parameters (incl. the big geometry) ride in the POST body, not the URL.
+        _args, kwargs = mock_post.call_args
+        assert "data" in kwargs, "params must be sent as the POST body (data=)"
+        assert "geometry" in kwargs["data"]
+        assert "params" not in kwargs, "must not fall back to a GET query string"
+
+
+# ---------------------------------------------------------------------------
 # Command tests
 # ---------------------------------------------------------------------------
 
@@ -164,10 +204,10 @@ class TestAutoPopulateBoundaryLookup:
 
 
 class TestStepBasins:
-    @patch("geography.services.arcgis.requests.get")
-    def test_creates_zones(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_creates_zones(self, mock_post, boundary):
         """B118 step creates Zone records from mocked API response."""
-        mock_get.return_value = _make_mock_response(_b118_features())
+        mock_post.return_value = _make_mock_response(_b118_features())
 
         out = StringIO()
         call_command(
@@ -187,10 +227,10 @@ class TestStepBasins:
         kaweah = zones.get(name="Kaweah")
         assert "5-022.11" in kaweah.description
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_idempotent(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_idempotent(self, mock_post, boundary):
         """Running the basins step twice creates zones only once."""
-        mock_get.return_value = _make_mock_response(_b118_features())
+        mock_post.return_value = _make_mock_response(_b118_features())
 
         call_command(
             "auto_populate",
@@ -201,7 +241,7 @@ class TestStepBasins:
         assert Zone.objects.filter(boundary=boundary).count() == 2
 
         # Run again with the same data
-        mock_get.return_value = _make_mock_response(_b118_features())
+        mock_post.return_value = _make_mock_response(_b118_features())
         call_command(
             "auto_populate",
             boundary=str(boundary.pk),
@@ -210,10 +250,10 @@ class TestStepBasins:
         )
         assert Zone.objects.filter(boundary=boundary).count() == 2
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_dry_run(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_dry_run(self, mock_post, boundary):
         """Dry run reports what would be created but writes nothing."""
-        mock_get.return_value = _make_mock_response(_b118_features())
+        mock_post.return_value = _make_mock_response(_b118_features())
 
         out = StringIO()
         call_command(
@@ -284,10 +324,10 @@ def _lightbox_features():
 # ---------------------------------------------------------------------------
 
 class TestStepParcels:
-    @patch("geography.services.arcgis.requests.get")
-    def test_creates_parcels(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_creates_parcels(self, mock_post, boundary):
         """Parcels step creates Parcel records from mocked API response."""
-        mock_get.return_value = _make_mock_response(_lightbox_features())
+        mock_post.return_value = _make_mock_response(_lightbox_features())
 
         out = StringIO()
         call_command(
@@ -307,10 +347,10 @@ class TestStepParcels:
         assert p.geometry is not None
         assert "123 Main St" in p.address
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_idempotent(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_idempotent(self, mock_post, boundary):
         """Running the parcels step twice creates parcels only once."""
-        mock_get.return_value = _make_mock_response(_lightbox_features())
+        mock_post.return_value = _make_mock_response(_lightbox_features())
 
         call_command(
             "auto_populate",
@@ -320,7 +360,7 @@ class TestStepParcels:
         )
         assert Parcel.objects.count() == 2
 
-        mock_get.return_value = _make_mock_response(_lightbox_features())
+        mock_post.return_value = _make_mock_response(_lightbox_features())
         call_command(
             "auto_populate",
             boundary=str(boundary.pk),
@@ -329,10 +369,10 @@ class TestStepParcels:
         )
         assert Parcel.objects.count() == 2
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_dry_run_parcels(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_dry_run_parcels(self, mock_post, boundary):
         """Dry run reports parcel count but writes nothing."""
-        mock_get.return_value = _make_mock_response(_lightbox_features())
+        mock_post.return_value = _make_mock_response(_lightbox_features())
 
         out = StringIO()
         call_command(
@@ -347,8 +387,8 @@ class TestStepParcels:
         output = out.getvalue()
         assert "would create" in output.lower() or "2" in output
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_skips_empty_apn(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_skips_empty_apn(self, mock_post, boundary):
         """Features with empty or missing APN are skipped."""
         features = _lightbox_features()
         features.append(
@@ -373,7 +413,7 @@ class TestStepParcels:
                 },
             }
         )
-        mock_get.return_value = _make_mock_response(features)
+        mock_post.return_value = _make_mock_response(features)
 
         call_command(
             "auto_populate",
@@ -384,15 +424,15 @@ class TestStepParcels:
 
         assert Parcel.objects.count() == 2
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_pagination(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_pagination(self, mock_post, boundary):
         """Parcels from multiple pages are all created."""
         page1_features = [_lightbox_features()[0]]
         page2_features = [_lightbox_features()[1]]
 
         resp_page1 = _make_mock_response(page1_features, exceeded=True)
         resp_page2 = _make_mock_response(page2_features, exceeded=False)
-        mock_get.side_effect = [resp_page1, resp_page2]
+        mock_post.side_effect = [resp_page1, resp_page2]
 
         call_command(
             "auto_populate",
@@ -503,10 +543,10 @@ def _3dhp_features():
 # ---------------------------------------------------------------------------
 
 class TestStepFlowlines:
-    @patch("geography.services.arcgis.requests.get")
-    def test_creates_flowlines(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_creates_flowlines(self, mock_post, boundary):
         """Flowlines step creates Flowline records from mocked API response."""
-        mock_get.return_value = _make_mock_response(_3dhp_features())
+        mock_post.return_value = _make_mock_response(_3dhp_features())
 
         out = StringIO()
         call_command(
@@ -527,10 +567,10 @@ class TestStepFlowlines:
         assert kaweah.geometry is not None
         assert kaweah.geometry.geom_type == "MultiLineString"
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_idempotent(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_idempotent(self, mock_post, boundary):
         """Running the flowlines step twice creates flowlines only once."""
-        mock_get.return_value = _make_mock_response(_3dhp_features())
+        mock_post.return_value = _make_mock_response(_3dhp_features())
 
         call_command(
             "auto_populate",
@@ -540,7 +580,7 @@ class TestStepFlowlines:
         )
         assert Flowline.objects.filter(boundary=boundary).count() == 2
 
-        mock_get.return_value = _make_mock_response(_3dhp_features())
+        mock_post.return_value = _make_mock_response(_3dhp_features())
         call_command(
             "auto_populate",
             boundary=str(boundary.pk),
@@ -549,10 +589,10 @@ class TestStepFlowlines:
         )
         assert Flowline.objects.filter(boundary=boundary).count() == 2
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_dry_run_flowlines(self, mock_get, boundary):
+    @patch("geography.services.arcgis.requests.post")
+    def test_dry_run_flowlines(self, mock_post, boundary):
         """Dry run reports flowline count but writes nothing."""
-        mock_get.return_value = _make_mock_response(_3dhp_features())
+        mock_post.return_value = _make_mock_response(_3dhp_features())
 
         out = StringIO()
         call_command(
@@ -619,10 +659,10 @@ def _county_features():
 # ---------------------------------------------------------------------------
 
 class TestLoadCounties:
-    @patch("geography.services.arcgis.requests.get")
-    def test_creates_boundaries(self, mock_get):
+    @patch("geography.services.arcgis.requests.post")
+    def test_creates_boundaries(self, mock_post):
         """load_counties creates Boundary records for each county."""
-        mock_get.return_value = _make_mock_response(_county_features())
+        mock_post.return_value = _make_mock_response(_county_features())
 
         out = StringIO()
         call_command("load_counties", stdout=out)
@@ -637,15 +677,15 @@ class TestLoadCounties:
         assert "06107" in tulare.description
         assert tulare.geometry is not None
 
-    @patch("geography.services.arcgis.requests.get")
-    def test_idempotent_counties(self, mock_get):
+    @patch("geography.services.arcgis.requests.post")
+    def test_idempotent_counties(self, mock_post):
         """Running load_counties twice creates counties only once."""
-        mock_get.return_value = _make_mock_response(_county_features())
+        mock_post.return_value = _make_mock_response(_county_features())
 
         call_command("load_counties", stdout=StringIO())
         assert Boundary.objects.filter(name__endswith="County").count() == 2
 
-        mock_get.return_value = _make_mock_response(_county_features())
+        mock_post.return_value = _make_mock_response(_county_features())
         call_command("load_counties", stdout=StringIO())
         assert Boundary.objects.filter(name__endswith="County").count() == 2
 
@@ -838,11 +878,11 @@ class TestStationsStep:
 
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_attempts_all_live_providers_never_openet(
-        self, mock_get_adapter, boundary, all_data_sources, settings
+        self, mock_post_adapter, boundary, all_data_sources, settings
     ):
         """The step queries every live-discovery provider and never OpenET."""
         settings.DATASYNC_MOCK_MODE = False
-        mock_get_adapter.side_effect = lambda code: _fake_adapter([])
+        mock_post_adapter.side_effect = lambda code: _fake_adapter([])
 
         call_command(
             "auto_populate",
@@ -851,7 +891,7 @@ class TestStationsStep:
             stdout=StringIO(),
         )
 
-        attempted = {call.args[0] for call in mock_get_adapter.call_args_list}
+        attempted = {call.args[0] for call in mock_post_adapter.call_args_list}
         assert attempted == set(LIVE_DISCOVERY_CODES)
         # OpenET is geometry-based — it must never be asked for stations, even
         # though a DataSource row exists for it.
@@ -860,12 +900,12 @@ class TestStationsStep:
 
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_new_providers_create_inactive_stations(
-        self, mock_get_adapter, boundary, all_data_sources, settings
+        self, mock_post_adapter, boundary, all_data_sources, settings
     ):
         """The three newly-wired providers create inactive stations."""
         settings.DATASYNC_MOCK_MODE = False
         new_codes = {"dwr_wdl", "dwr_sgma", "noaa"}
-        mock_get_adapter.side_effect = lambda code: _fake_adapter(
+        mock_post_adapter.side_effect = lambda code: _fake_adapter(
             _mock_station_list(code) if code in new_codes else []
         )
 
@@ -888,7 +928,7 @@ class TestStationsStep:
 
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_one_provider_failing_is_non_fatal(
-        self, mock_get_adapter, boundary, all_data_sources, settings
+        self, mock_post_adapter, boundary, all_data_sources, settings
     ):
         """One provider raising must not blank the catalog (ISS-046 guarantee)."""
         settings.DATASYNC_MOCK_MODE = False
@@ -900,7 +940,7 @@ class TestStationsStep:
                 )
             return _fake_adapter(_mock_station_list(code))
 
-        mock_get_adapter.side_effect = side
+        mock_post_adapter.side_effect = side
 
         out = StringIO()
         # The raising provider must not propagate out of the command.
@@ -919,7 +959,7 @@ class TestStationsStep:
 
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_missing_api_key_is_clean_skip_not_failure(
-        self, mock_get_adapter, boundary, all_data_sources, settings
+        self, mock_post_adapter, boundary, all_data_sources, settings
     ):
         """A key-gated provider with no key is a labeled skip, not an error."""
         settings.DATASYNC_MOCK_MODE = False
@@ -933,7 +973,7 @@ class TestStationsStep:
             adapters[code] = adapter
             return adapter
 
-        mock_get_adapter.side_effect = side
+        mock_post_adapter.side_effect = side
 
         out = StringIO()
         call_command(
@@ -961,11 +1001,11 @@ class TestStationsStep:
 
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_idempotent_across_expanded_set(
-        self, mock_get_adapter, boundary, all_data_sources, settings
+        self, mock_post_adapter, boundary, all_data_sources, settings
     ):
         """Re-running across the full provider set creates no duplicates."""
         settings.DATASYNC_MOCK_MODE = False
-        mock_get_adapter.side_effect = lambda code: _fake_adapter(
+        mock_post_adapter.side_effect = lambda code: _fake_adapter(
             _mock_station_list(code)
         )
 
@@ -982,7 +1022,7 @@ class TestStationsStep:
 
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_non_kaweah_boundary_populates(
-        self, mock_get_adapter, all_data_sources, settings
+        self, mock_post_adapter, all_data_sources, settings
     ):
         """A boundary plainly outside Kaweah populates — proves boundary-driven."""
         settings.DATASYNC_MOCK_MODE = False
@@ -999,7 +1039,7 @@ class TestStationsStep:
             adapters[code] = adapter
             return adapter
 
-        mock_get_adapter.side_effect = side
+        mock_post_adapter.side_effect = side
 
         call_command(
             "auto_populate",
@@ -1024,7 +1064,7 @@ class TestStationsStep:
 class TestRunStationProviderStep:
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_runs_exactly_one_provider_and_returns_status(
-        self, mock_get_adapter, boundary, all_data_sources, settings
+        self, mock_post_adapter, boundary, all_data_sources, settings
     ):
         """run_station_provider_step discovers a SINGLE provider and reports its
         outcome status — the per-poll entry point the wizard uses."""
@@ -1038,7 +1078,7 @@ class TestRunStationProviderStep:
             adapters[code] = adapter
             return adapter
 
-        mock_get_adapter.side_effect = side
+        mock_post_adapter.side_effect = side
 
         count, errors, status = run_station_provider_step(boundary, "cdec")
 
@@ -1057,14 +1097,14 @@ class TestRunStationProviderStep:
 
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_failing_provider_returns_failed_status_never_raises(
-        self, mock_get_adapter, boundary, all_data_sources, settings
+        self, mock_post_adapter, boundary, all_data_sources, settings
     ):
         """A provider raising mid-discovery yields ('failed', friendly message),
         not an exception — so a single poll never dies."""
         from setup.services import run_station_provider_step
 
         settings.DATASYNC_MOCK_MODE = False
-        mock_get_adapter.side_effect = lambda code: _fake_adapter(
+        mock_post_adapter.side_effect = lambda code: _fake_adapter(
             raises=RuntimeError("simulated outage")
         )
 
@@ -1077,7 +1117,7 @@ class TestRunStationProviderStep:
 
     @patch("geography.management.commands.auto_populate.get_adapter")
     def test_missing_key_provider_is_clean_skip_status(
-        self, mock_get_adapter, boundary, all_data_sources, settings
+        self, mock_post_adapter, boundary, all_data_sources, settings
     ):
         """A key-gated provider with no credential reports skipped_no_key with no
         error — a clean labeled skip, never discover_stations called."""
@@ -1085,7 +1125,7 @@ class TestRunStationProviderStep:
 
         settings.DATASYNC_MOCK_MODE = False
         adapter = _fake_adapter([], missing="NOAA API token")
-        mock_get_adapter.side_effect = lambda code: adapter
+        mock_post_adapter.side_effect = lambda code: adapter
 
         count, errors, status = run_station_provider_step(boundary, "noaa")
 
