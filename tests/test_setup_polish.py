@@ -345,7 +345,9 @@ def test_stations_phase_polls_one_provider_per_request(db, settings, monkeypatch
     first = responses[0]
     assert "USGS Service" in first
     assert "wizard-step--error" in first
-    assert "Couldn't reach this data provider." in first
+    # The error message renders through a {{ }} variable, so its apostrophe is
+    # HTML-escaped — assert on the apostrophe-free part (cf. the upload tests).
+    assert "reach this data provider." in first
     assert "what's next" not in first.lower()  # still polling, not finished
     assert "Checking" in first                  # spinner names the next provider
 
