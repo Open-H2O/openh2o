@@ -27,7 +27,10 @@ SEQUENCE = [
     ("seed_merced_base", {}),
     ("auto_populate", {"boundary": "Merced Subbasin", "steps": "flowlines,stations"}),
     ("seed_merced_gsas", {}),
-    ("seed_merced_operations", {}),
+    # --flush so a re-run drops rows removed from config (e.g. a retired water
+    # right), not just updates survivors. parcels_from_selection rebuilds the
+    # real parcels/wells right after, so the flush is safe.
+    ("seed_merced_operations", {"flush": True}),
     ("seed_merced_parcels_from_selection", {}),
     ("seed_merced_recharge", {}),
 ]
