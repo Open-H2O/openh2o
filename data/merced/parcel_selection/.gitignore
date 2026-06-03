@@ -9,3 +9,9 @@ _render_check.py
 *.gpkg-shm
 *.gpkg-wal
 *.aux.xml
+_parcels.geojson
+_wells.geojson
+_well_links.geojson
+_render_show.py
+_render_all.png
+_render_turner.png
