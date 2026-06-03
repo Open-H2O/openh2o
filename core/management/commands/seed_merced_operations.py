@@ -49,6 +49,7 @@ against an empty flowline set.
 """
 from decimal import Decimal
 
+from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -75,10 +76,23 @@ from wells.models import Well, WellIrrigatedParcel, WellType
 UPPER_BOUNDARY = "Upper Merced River Watershed"
 LOWER_BOUNDARY = "Merced Subbasin"
 
-# Flowline feature_type values written by the USGS 3DHP loader (auto_populate)
-# for the Merced base layer: 577 "river" segments + 2328 "canal" segments.
-RIVER = "river"
-CANAL = "canal"
+# Flowline feature_type values as the USGS 3DHP loader (auto_populate) actually
+# writes them for the Merced base layer. A natural watercourse — the Merced River
+# main stem we snap river diversions onto — is a "Channel Line"; the MID network
+# is "Canal". This MATCHES the map renderer's split (templates/geography/map.html:
+# a canal is any feature_type containing "Canal", everything else is a river), so
+# a POD's type here renders consistently with how the base layer is drawn.
+RIVER = "Channel Line"
+CANAL = "Canal"
+
+# How many index-nearest candidate flowlines to pull from PostGIS per diversion
+# before the toolkit's exact-metre (EPSG:3310) re-rank + snap. The upper
+# watershed alone has ~40k "Channel Line" segments; transforming every one to
+# 3310 in Python (as nearest_flowline does) would be intolerably slow, so we let
+# the spatial index hand us the local neighborhood first. 30 is far more than
+# enough — the true-nearest line is always in the index-nearest handful at this
+# scale — and keeps the snap deterministic and fast.
+NEAREST_K = 30
 
 # The exact base-layer commands to run first, surfaced in the guard's error.
 BASE_LAYER_HINT = (
@@ -271,24 +285,26 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Base-layer guard runs first, BEFORE any flush, so a wrong instance
         # fails fast and leaves existing data untouched.
-        lower, upper_rivers, lower_canals, lower_rivers = self._check_base_layer()
+        upper, lower = self._check_base_layer()
 
         if options["flush"]:
             self._flush()
 
         with transaction.atomic():
-            self._seed(lower, upper_rivers, lower_canals, lower_rivers)
+            self._seed(upper, lower)
 
     # ------------------------------------------------------------------
     # Base-layer guard — fail fast with a clear "run auto_populate first".
     # ------------------------------------------------------------------
     def _check_base_layer(self):
-        """Return (lower_boundary, upper_rivers, lower_canals, lower_rivers) or raise.
+        """Return (upper_boundary, lower_boundary) or raise CommandError.
 
         Never place against an empty flowline set: both boundaries must exist
         and carry the flowlines each story needs (upper = river segments,
-        lower = canal AND river segments). Returns the loaded Flowline lists so
-        the seed reuses them without re-querying.
+        lower = canal AND river segments). We check existence by COUNT rather
+        than materializing the rows — the upper watershed holds ~40k "Channel
+        Line" segments and the seed pulls only the index-nearest handful per
+        diversion, so loading them all here would be pure waste.
         """
         upper = Boundary.objects.filter(name=UPPER_BOUNDARY).first()
         lower = Boundary.objects.filter(name=LOWER_BOUNDARY).first()
@@ -302,37 +318,34 @@ class Command(BaseCommand):
                 + BASE_LAYER_HINT
             )
 
-        upper_rivers = list(
-            Flowline.objects.filter(boundary=upper, feature_type=RIVER)
-        )
-        lower_canals = list(
-            Flowline.objects.filter(boundary=lower, feature_type=CANAL)
-        )
-        lower_rivers = list(
-            Flowline.objects.filter(boundary=lower, feature_type=RIVER)
-        )
+        n_upper_rivers = Flowline.objects.filter(
+            boundary=upper, feature_type=RIVER).count()
+        n_lower_canals = Flowline.objects.filter(
+            boundary=lower, feature_type=CANAL).count()
+        n_lower_rivers = Flowline.objects.filter(
+            boundary=lower, feature_type=RIVER).count()
 
-        if not upper_rivers:
+        if not n_upper_rivers:
             raise CommandError(
                 f'"{UPPER_BOUNDARY}" has zero "{RIVER}" flowlines — its base '
                 "layer is not loaded.\n" + BASE_LAYER_HINT
             )
-        if not lower_canals:
+        if not n_lower_canals:
             raise CommandError(
                 f'"{LOWER_BOUNDARY}" has zero "{CANAL}" flowlines — its base '
                 "layer is not loaded.\n" + BASE_LAYER_HINT
             )
-        if not lower_rivers:
+        if not n_lower_rivers:
             raise CommandError(
                 f'"{LOWER_BOUNDARY}" has zero "{RIVER}" flowlines — its base '
                 "layer is not loaded.\n" + BASE_LAYER_HINT
             )
 
         self.stdout.write(
-            f"Base layer OK: upper {len(upper_rivers)} rivers; lower "
-            f"{len(lower_canals)} canals + {len(lower_rivers)} rivers."
+            f"Base layer OK: upper {n_upper_rivers} river segments; lower "
+            f"{n_lower_canals} canal + {n_lower_rivers} river segments."
         )
-        return lower, upper_rivers, lower_canals, lower_rivers
+        return upper, lower
 
     # ------------------------------------------------------------------
     # Flush — ONLY MER- operational rows + their links. Base layer + Kaweah /
@@ -386,7 +399,23 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     # Seed
     # ------------------------------------------------------------------
-    def _seed(self, lower, upper_rivers, lower_canals, lower_rivers):
+    def _nearest_line(self, boundary, ftype, start):
+        """The flowline of ``ftype`` in ``boundary`` nearest ``start``, snapped-ready.
+
+        PostGIS hands us the ``NEAREST_K`` index-nearest candidates (fast, KNN on
+        the spatial index — no Python transform of the full ~40k-segment set),
+        then the toolkit re-ranks that handful in exact EPSG:3310 metres. The
+        true-nearest line is always in the index-nearest handful at this scale,
+        so the result is identical to scanning everything, just not glacial.
+        """
+        candidates = list(
+            Flowline.objects.filter(boundary=boundary, feature_type=ftype)
+            .annotate(_d=Distance("geometry", start))
+            .order_by("_d")[:NEAREST_K]
+        )
+        return nearest_flowline(start, candidates, feature_type=ftype)
+
+    def _seed(self, upper, lower):
         # --- Water-right types (global lookup rows; same codes as seed_kaweah) ---
         self.stdout.write("Ensuring water-right types...")
         pre14, _ = WaterRightType.objects.get_or_create(
@@ -434,18 +463,13 @@ class Command(BaseCommand):
         # feature_type, but scoping the candidate set per story keeps an upper
         # POD from snapping to a lower-subbasin river of the same type.
         self.stdout.write("Snapping points of diversion onto real flowlines...")
-        flowlines_for = {
-            ("upper", RIVER): upper_rivers,
-            ("lower", CANAL): lower_canals,
-            ("lower", RIVER): lower_rivers,
-        }
+        boundary_for = {"upper": upper, "lower": lower}
         pods = []
         pod_river_lines = {}  # pod.pk -> the Flowline it snapped onto (reused in Task 3)
         for name, rid, ftype, lon, lat, max_cfs in POD_CONFIGS:
             story = "upper" if rid in ("MER-WR-001", "MER-WR-002", "MER-WR-003") else "lower"
-            candidates = flowlines_for[(story, ftype)]
             start = Point(lon, lat, srid=4326)
-            line = nearest_flowline(start, candidates, feature_type=ftype)
+            line = self._nearest_line(boundary_for[story], ftype, start)
             if line is None:
                 # Guard already proved each set is non-empty, so this only
                 # fires on a truly degenerate set — fail loudly, never float.
