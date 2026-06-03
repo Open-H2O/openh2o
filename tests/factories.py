@@ -3,7 +3,7 @@ import factory
 from datetime import date
 from decimal import Decimal
 
-from django.contrib.gis.geos import MultiPolygon, Point, Polygon
+from django.contrib.gis.geos import LineString, MultiLineString, MultiPolygon, Point, Polygon
 
 
 def _box(cx=-119.5, cy=36.5, size=0.01):
@@ -16,6 +16,13 @@ def _box(cx=-119.5, cy=36.5, size=0.01):
         (cx - half, cy - half),
     ]
     return MultiPolygon(Polygon(ring))
+
+
+def _line(cx=-119.5, cy=36.5, size=0.01):
+    half = size / 2
+    return MultiLineString(
+        LineString((cx - half, cy - half), (cx + half, cy + half))
+    )
 
 
 class BoundaryFactory(factory.django.DjangoModelFactory):
@@ -34,6 +41,17 @@ class ZoneFactory(factory.django.DjangoModelFactory):
     boundary = factory.SubFactory(BoundaryFactory)
     geometry = factory.LazyFunction(_box)
     zone_type = "management_area"
+
+
+class FlowlineFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "geography.Flowline"
+
+    name = factory.Sequence(lambda n: f"Flowline {n}")
+    boundary = factory.SubFactory(BoundaryFactory)
+    feature_type = "Stream/River"
+    stream_order = 3
+    geometry = factory.LazyFunction(_line)
 
 
 class ParcelFactory(factory.django.DjangoModelFactory):
