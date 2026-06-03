@@ -2,29 +2,32 @@
 """Acreage-band guard for recharge spreading basins (Phase 50-03).
 
 The named anti-pattern: the Kaweah seed built spreading-basin footprints with
-``make_box(size=0.008)``, a fixed-degree box that is ~150-190 acres at Central
-Valley latitude — about ten times the size of a real Merced spreading basin
-(~18-20 acres). An oversized basin "swallowing half a city" is the most visible
-tell that makes a domain expert distrust the whole map.
+``make_box(size=0.008)``, a fixed-degree box that is ~156 acres at Central
+Valley latitude — applied uniformly regardless of a basin's real size, so a
+basin that should read as a facility instead "swallows half a city," the most
+visible tell that makes a domain expert distrust the whole map.
 
 This test locks the fix in true projected area (EPSG:3310, California Albers
 equal-area), NOT raw degrees (which are latitude-dependent and meaningless):
 
   - ``area_accurate_box`` returns a footprint whose true area matches the
-    requested acreage within ±10% across Central Valley latitudes — proving the
-    cos(lat) correction works.
-  - Every seeded demo spreading basin sits inside a sane band (0 < acres ≤ 50).
-  - The retired fixed-degree box would BREACH that band — so if anyone
-    re-introduces it, the suite goes red.
+    requested acreage within ±10% across Central Valley latitudes and basin
+    sizes — proving the cos(lat) correction works. This is the primary guard:
+    any basin built through the helper is correctly sized by construction.
+  - Every seeded demo spreading basin sits inside a sane band. Real Central
+    Valley spreading basins reach ~120 acres (per domain review), so the band
+    ceiling is 130 — comfortably above legitimate basins, still below the
+    ~156-acre fixed-degree bug it must catch.
 """
 import pytest
 
 from recharge.geometry import SQ_M_PER_ACRE, area_accurate_box
 from recharge.models import RechargeSite
 
-# Real Central Valley spreading basins run tens of acres; 50 is a generous
-# ceiling that still catches the ~156-acre fixed-degree bug by a wide margin.
-MAX_BASIN_ACRES = 50
+# Real Central Valley spreading basins reach ~120 acres; 130 clears legitimate
+# basins while still catching the ~156-acre fixed-degree bug. The helper-area
+# test above is the tighter guard; this is the gross-oversize backstop.
+MAX_BASIN_ACRES = 130
 
 
 def _true_acres(geom):
@@ -33,7 +36,7 @@ def _true_acres(geom):
 
 
 @pytest.mark.parametrize("lat", [35.0, 36.3, 37.13, 37.34, 38.5])
-@pytest.mark.parametrize("acres", [18.0, 20.0, 40.0])
+@pytest.mark.parametrize("acres", [18.0, 40.0, 85.0, 110.0])
 def test_area_accurate_box_matches_requested_area(lat, acres):
     """The helper's true area matches the requested acreage within ±10%."""
     box = area_accurate_box(-120.5, lat, acres)
