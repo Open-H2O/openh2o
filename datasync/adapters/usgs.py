@@ -153,7 +153,7 @@ class USGSAdapter(BaseAdapter):
                 "parameterCd": config["parameterCd"],
             }
             try:
-                resp = self._request("GET", SITE_URL, params=params)
+                resp = self._discover_request("GET", SITE_URL, params=params)
                 rows = self._parse_rdb(resp.text)
             except Exception as exc:
                 logger.warning(

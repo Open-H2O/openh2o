@@ -67,6 +67,15 @@ class BaseAdapter(ABC):
     rate_limit_seconds: float = 1.0
     max_retries: int = 3
 
+    # Station discovery runs inside the setup wizard's web request, behind a
+    # gunicorn worker that SIGKILLs anything past its ~30s timeout. A single slow
+    # or erroring provider must therefore fail fast — a tight read timeout and a
+    # single attempt with no retry-backoff — so it can never consume the worker
+    # budget and hang the whole first-run flow (ISS-051). The generous data-fetch
+    # path (``_request`` with its defaults) is deliberately left untouched.
+    discovery_timeout: float = 10.0
+    discovery_max_retries: int = 1
+
     def __init__(self):
         self._last_request_time = 0.0
 
@@ -141,28 +150,47 @@ class BaseAdapter(ABC):
             time.sleep(self.rate_limit_seconds - elapsed)
         self._last_request_time = time.time()
 
-    def _request(self, method, url, **kwargs):
+    def _request(self, method, url, timeout=60, max_retries=None, **kwargs):
         """
         HTTP request with rate limiting and retry.
         Returns requests.Response on success, raises on exhausted retries.
+
+        ``timeout`` (seconds) and ``max_retries`` are per-call overrides. They
+        default to the generous data-fetch values (60s, ``self.max_retries``);
+        the discovery path passes tight values via ``_discover_request`` so a
+        slow provider can't blow the web worker's timeout.
         """
+        retries = self.max_retries if max_retries is None else max_retries
         self._rate_limit()
         last_exc = None
-        for attempt in range(1, self.max_retries + 1):
+        for attempt in range(1, retries + 1):
             try:
-                resp = requests.request(method, url, timeout=60, **kwargs)
+                resp = requests.request(method, url, timeout=timeout, **kwargs)
                 resp.raise_for_status()
                 return resp
             except (requests.HTTPError, requests.ConnectionError) as exc:
                 last_exc = exc
-                if attempt < self.max_retries:
+                if attempt < retries:
                     backoff = 2 ** attempt
                     logger.warning(
                         "%s: attempt %d/%d failed (%s), retrying in %ds",
-                        self.source_code, attempt, self.max_retries, exc, backoff,
+                        self.source_code, attempt, retries, exc, backoff,
                     )
                     time.sleep(backoff)
         raise last_exc
+
+    def _discover_request(self, method, url, **kwargs):
+        """Bounded ``_request`` for station discovery: short timeout, no backoff.
+
+        Station discovery happens one provider per HTMX poll inside the setup
+        wizard, behind gunicorn's worker timeout. This caps a single provider's
+        HTTP call to ``discovery_timeout`` seconds with a single attempt
+        (``discovery_max_retries``), so a slow or 404-ing provider fails fast and
+        is reported as a labeled skip rather than killing the worker (ISS-051).
+        Callers still wrap this in try/except and degrade to ``[]`` on failure.
+        """
+        kwargs.setdefault("timeout", self.discovery_timeout)
+        return self._request(method, url, max_retries=self.discovery_max_retries, **kwargs)
 
     # ── Pipeline: stage & publish ───────────────────────────────────────
 

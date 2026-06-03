@@ -136,7 +136,7 @@ class NOAAAdapter(BaseAdapter):
         }
 
         try:
-            resp = self._request(
+            resp = self._discover_request(
                 "GET", f"{BASE_URL}/stations",
                 params=params, headers=self._headers(),
             )

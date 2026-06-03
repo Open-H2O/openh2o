@@ -11,15 +11,18 @@ These cover the data-integrity boundary for live state data:
 """
 
 import importlib
+import logging
 from datetime import date
 from io import StringIO
 from types import SimpleNamespace
 
 import pytest
+import requests
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from datasync.adapters.base import sql_float, sql_str_literal
+from datasync.adapters.cdec import CDECAdapter
 from datasync.adapters.dwr_sgma import DWRSGMAAdapter
 from datasync.adapters.dwr_wdl import DWRWDLAdapter
 from datasync.adapters.usgs import USGSAdapter
@@ -165,6 +168,78 @@ class TestSyncAllExitCode:
     def test_no_active_sources_does_not_raise(self):
         # No sources at all → warning + exit 0 (not a failure).
         call_command("sync_all", stdout=StringIO())
+
+
+# ── (d) discovery is time-bounded per provider (ISS-051) ────────────────────
+
+
+class TestDiscoveryIsTimeBounded:
+    """A single provider's discover_stations must fail fast — a tight timeout
+    and a single attempt — so it can never exceed the gunicorn worker budget and
+    hang the setup wizard. The generous 60s data-fetch path stays untouched.
+    """
+
+    @staticmethod
+    def _bbox():
+        # CDEC discover_stations only needs the boundary's extent.
+        return SimpleNamespace(extent=(-119.5, 36.0, -119.0, 36.5))
+
+    def test_discovery_uses_short_timeout_not_sixty(self, monkeypatch):
+        captured = {}
+
+        def fake_request(method, url, **kwargs):
+            captured.update(kwargs)
+            return SimpleNamespace(
+                text="", headers={}, raise_for_status=lambda: None
+            )
+
+        monkeypatch.setattr(
+            "datasync.adapters.base.requests.request", fake_request
+        )
+        adapter = CDECAdapter()
+
+        result = adapter.discover_stations(self._bbox())
+
+        assert result == []
+        # The discovery call passes the tight timeout, never the 60s budget.
+        assert captured["timeout"] == adapter.discovery_timeout
+        assert captured["timeout"] <= 10
+
+    def test_timeout_fails_fast_returns_empty_and_warns(self, monkeypatch, caplog):
+        calls = {"n": 0}
+
+        def boom(method, url, **kwargs):
+            calls["n"] += 1
+            raise requests.Timeout("read timed out")
+
+        monkeypatch.setattr("datasync.adapters.base.requests.request", boom)
+        adapter = CDECAdapter()
+
+        with caplog.at_level(logging.WARNING):
+            result = adapter.discover_stations(self._bbox())
+
+        assert result == []
+        # Exactly one attempt — no retry-backoff amplifying a slow provider.
+        assert calls["n"] == 1
+        assert "timed out" in caplog.text.lower()
+
+    def test_data_fetch_path_keeps_generous_timeout(self, monkeypatch):
+        """fetch() (the data path) must still use the 60s timeout — only the
+        discovery path is bounded."""
+        captured = {}
+
+        def fake_request(method, url, **kwargs):
+            captured.update(kwargs)
+            return SimpleNamespace(json=lambda: [], raise_for_status=lambda: None)
+
+        monkeypatch.setattr(
+            "datasync.adapters.base.requests.request", fake_request
+        )
+        station = SimpleNamespace(external_station_id="KWH", parameters=["15"])
+
+        CDECAdapter().fetch(station, date(2024, 1, 1), date(2024, 1, 2))
+
+        assert captured["timeout"] == 60
 
 
 # ── Task 2: production request-error logging (ISS-016) ──────────────────────

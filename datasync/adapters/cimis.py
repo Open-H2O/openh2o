@@ -114,7 +114,7 @@ class CIMISAdapter(BaseAdapter):
         """Discover CIMIS stations near a boundary."""
         try:
             params = {"appKey": self._get_api_key()}
-            resp = self._request("GET", STATION_URL, params=params)
+            resp = self._discover_request("GET", STATION_URL, params=params)
             data = resp.json()
         except Exception as exc:
             logger.warning("CIMIS station discovery failed: %s", exc)

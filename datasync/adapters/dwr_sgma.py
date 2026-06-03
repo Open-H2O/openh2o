@@ -107,7 +107,7 @@ class DWRSGMAAdapter(BaseAdapter):
             f"LIMIT 50"
         )
         try:
-            resp = self._request(
+            resp = self._discover_request(
                 "GET", f"{CNRA_BASE}/datastore_search_sql", params={"sql": sql}
             )
             data = resp.json()

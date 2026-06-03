@@ -15,6 +15,8 @@ Parameters:
 import logging
 import re
 
+import requests
+
 from datasync.adapters import register_adapter
 from datasync.adapters.base import BaseAdapter
 
@@ -140,8 +142,12 @@ class CDECAdapter(BaseAdapter):
         xmin, ymin, xmax, ymax = boundary_geometry.extent  # (lon, lat) extent
 
         try:
-            resp = self._request("GET", STATION_URL, params=STATION_SEARCH_PARAMS)
+            resp = self._discover_request("GET", STATION_URL, params=STATION_SEARCH_PARAMS)
             body = resp.text or ""
+        except requests.Timeout as exc:
+            # Bounded discovery timeout fired — fail fast, never hang the wizard.
+            logger.warning("CDEC discovery timed out: %s", exc)
+            return []
         except Exception as exc:
             logger.warning("CDEC station discovery request failed: %s", exc)
             return []
