@@ -19,6 +19,7 @@ from qgis.core import (
     QgsApplication, QgsProject, QgsVectorLayer, QgsRasterLayer,
     QgsCoordinateReferenceSystem, QgsEditorWidgetSetup,
     QgsSymbol, QgsRendererCategory, QgsCategorizedSymbolRenderer,
+    QgsRuleBasedRenderer,
     QgsSingleSymbolRenderer, QgsPalLayerSettings, QgsTextFormat,
     QgsVectorLayerSimpleLabeling, QgsTextBufferSettings, QgsMarkerSymbol,
     QgsLineSymbol, QgsFillSymbol,
@@ -55,6 +56,17 @@ CLASS_COLORS = {
     "Fallow/unclassified": "#c98b6b", "Other": "#8899aa",
 }
 FILL_ALPHA = 155  # opaque enough to read crop color over satellite imagery
+
+# Progress symbology: tagged fields light up by the headgate they serve, so
+# Brent can see what's done and where the gaps are. (code, color, label)
+HEADGATE_STYLE = [
+    ("MER-POD-004", "#ff4d4d", "▣ Atwater Canal (MID)"),
+    ("MER-POD-005", "#ff9e1b", "▣ Le Grand Canal"),
+    ("MER-POD-006", "#ffe14d", "▣ Stevinson — Diversion Canal"),
+    ("MER-POD-007", "#7CFC00", "▣ Plainsburg — El Nido Canal"),
+    ("MER-POD-008", "#23d5e0", "▣ Crocker-Huffman (Merced R.)"),
+    ("MER-POD-009", "#e879f9", "▣ Bottomlands (Merced R.)"),
+]
 
 
 def vlayer(name, label):
@@ -125,19 +137,42 @@ def main():
     diversions.setRenderer(QgsSingleSymbolRenderer(div_sym))
     label_with(diversions, "name", 10, "#ffe98a")
 
-    cats = []
-    for cls, hexcol in CLASS_COLORS.items():
-        sym = QgsFillSymbol.createSimple(
-            {"color": _rgba(hexcol, FILL_ALPHA), "outline_color": "#ffffff",
-             "outline_width": "0.26"})
-        cats.append(QgsRendererCategory(cls, sym, cls))
-    # Catch-all for any value not in CLASS_COLORS (empty category value =
-    # QGIS "all other values"), so no field is ever left uncolored.
-    catch = QgsFillSymbol.createSimple(
-        {"color": _rgba("#8899aa", FILL_ALPHA), "outline_color": "#ffffff",
-         "outline_width": "0.26"})
-    cats.append(QgsRendererCategory("", catch, "All other"))
-    fields.setRenderer(QgsCategorizedSymbolRenderer("crop_class", cats))
+    # Rule-based "progress" symbology. Rules are mutually exclusive so each
+    # field draws once: assigned fields glow in their headgate color with a
+    # bold white edge; groundwater-only fields get their own bucket; untouched
+    # fields fade to faint gray (satellite still shows the crop underneath).
+    Rule = QgsRuleBasedRenderer.Rule
+    root = Rule(None)
+
+    def add_rule(symbol, expr, label):
+        root.appendChild(Rule(symbol, 0, 0, expr, label))
+
+    for code, hexcol, label in HEADGATE_STYLE:
+        s = QgsFillSymbol.createSimple(
+            {"color": _rgba(hexcol, 185), "outline_color": "#ffffff",
+             "outline_width": "0.5"})
+        add_rule(s, f"\"served_by\" = '{code}'", label)
+
+    gw = QgsFillSymbol.createSimple(
+        {"color": _rgba("#39c0ff", 185), "outline_color": "#ffffff",
+         "outline_width": "0.5"})
+    add_rule(
+        gw,
+        "(\"served_by\" IS NULL OR \"served_by\" = '') "
+        "AND \"water_source\" IS NOT NULL AND \"water_source\" <> ''",
+        "▣ Groundwater-only (well)",
+    )
+
+    untouched = QgsFillSymbol.createSimple(
+        {"color": _rgba("#9aa6b2", 38), "outline_color": "#6b7785",
+         "outline_width": "0.1"})
+    add_rule(
+        untouched,
+        "(\"served_by\" IS NULL OR \"served_by\" = '') "
+        "AND (\"water_source\" IS NULL OR \"water_source\" = '')",
+        "· Unassigned field (pick from these)",
+    )
+    fields.setRenderer(QgsRuleBasedRenderer(root))
 
     # --- editor dropdowns on the crop layer ---
     f = fields.fields()
