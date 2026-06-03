@@ -13,6 +13,7 @@ Parameters:
 """
 
 import logging
+import re
 
 from datasync.adapters import register_adapter
 from datasync.adapters.base import BaseAdapter
@@ -20,7 +21,42 @@ from datasync.adapters.base import BaseAdapter
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet"
-STATION_URL = "https://cdec.water.ca.gov/dynamicapp/staMeta"
+
+# CDEC has no station-search JSON endpoint. ``staMeta`` is a human-facing HTML
+# page (calling .json() on it is the ISS-048 crash). The only machine-reachable
+# station list is the ``staSearch`` results table, which renders every station
+# server-side — ID, name, river basin, county, longitude, latitude, elevation,
+# operator — when ``sensor_chk`` is left blank. We fetch it once and filter to
+# the boundary extent ourselves (CDEC's lon/lat params do not filter the table).
+STATION_URL = "https://cdec.water.ca.gov/dynamicapp/staSearch"
+STATION_SEARCH_PARAMS = {
+    "sta_chk": "on",
+    "sensor_chk": "",  # blank (not "on") is what makes staSearch return rows
+    "collect": "NONE SPECIFIED",
+    "dur": "",
+    "active": "",
+    "loc_chk": "on",
+    "lon1": "",
+    "lon2": "",
+    "lat1": "",
+    "lat2": "",
+    "elev1": "-5",
+    "elev2": "99000",
+    "nearby": "",
+    "basin_chk": "on",
+    "basin": "",
+    "hydro": "",
+    "county": "",
+    "agency_num": "",
+    "display": "staSearch",
+}
+
+# Pull each results-table row, then the station_id from its detail link and the
+# plain text of every <td> in row order: [id, name, basin, county, lon, lat, …].
+_ROW_RE = re.compile(r"<tr[^>]*>(.*?)</tr>", re.I | re.S)
+_STATION_ID_RE = re.compile(r"staMeta\?station_id=([A-Za-z0-9]+)", re.I)
+_CELL_RE = re.compile(r"<td[^>]*>(.*?)</td>", re.I | re.S)
+_TAG_RE = re.compile(r"<[^>]+>")
 
 PARAMETER_MAP = {
     "15": {"name": "Reservoir Storage", "unit": "AF"},
@@ -88,51 +124,81 @@ class CDECAdapter(BaseAdapter):
 
     def discover_stations(self, boundary_geometry, radius_km=50):
         """
-        Discover CDEC stations near a boundary.
-        Uses the CDEC station metadata endpoint with bounding box filter.
-        Probes each station to find which parameters actually have data.
-        """
-        bbox = boundary_geometry.extent  # (xmin, ymin, xmax, ymax)
+        Discover CDEC stations within a boundary's extent.
 
-        params = {
-            "north": bbox[3],
-            "south": bbox[1],
-            "east": bbox[2],
-            "west": bbox[0],
-        }
+        Fetches CDEC's ``staSearch`` results table (HTML), parses every station
+        row, and keeps those whose coordinates fall inside the boundary's
+        bounding box. CDEC publishes no station-search JSON, so this is the only
+        machine-reachable list.
+
+        Defensive by contract (ISS-048): any response we can't parse into
+        stations — the human-facing HTML page, an empty body, a changed
+        endpoint — yields [] and ONE clear, greppable warning naming CDEC,
+        never a bare JSONDecodeError and never an unhandled crash. One provider
+        failing must not abort discovery.
+        """
+        xmin, ymin, xmax, ymax = boundary_geometry.extent  # (lon, lat) extent
 
         try:
-            resp = self._request("GET", STATION_URL, params=params)
-            data = resp.json()
+            resp = self._request("GET", STATION_URL, params=STATION_SEARCH_PARAMS)
+            body = resp.text or ""
         except Exception as exc:
-            logger.warning("CDEC station discovery failed: %s", exc)
+            logger.warning("CDEC station discovery request failed: %s", exc)
             return []
 
+        parsed = self._parse_station_table(body)
+        if not parsed:
+            ctype = ""
+            try:
+                ctype = resp.headers.get("Content-Type", "")
+            except Exception:
+                pass
+            logger.warning(
+                "CDEC station discovery: no parseable station table in response "
+                "(endpoint changed?) — %d bytes, content-type=%r",
+                len(body), ctype,
+            )
+            return []
+
+        params_all = list(PARAMETER_MAP.keys())
         stations = []
-        if isinstance(data, list):
-            for item in data:
-                lat = item.get("latitude") or item.get("Latitude")
-                lon = item.get("longitude") or item.get("Longitude")
-                sid = item.get("stationId") or item.get("id", "")
-                name = item.get("stationName") or item.get("name", "")
-                if not (lat and lon and sid):
-                    continue
-
-                # Extract sensor list from metadata if available
-                sensors = item.get("sensorNumbers") or item.get("sensors") or []
-                if sensors:
-                    available = [str(s) for s in sensors if str(s) in PARAMETER_MAP]
-                else:
-                    available = list(PARAMETER_MAP.keys())
-
+        for sid, name, lon, lat in parsed:
+            if xmin <= lon <= xmax and ymin <= lat <= ymax:
                 stations.append({
                     "station_id": sid,
                     "name": name,
-                    "latitude": float(lat),
-                    "longitude": float(lon),
-                    "parameters": available if available else list(PARAMETER_MAP.keys()),
+                    "latitude": lat,
+                    "longitude": lon,
+                    # The table carries no per-station sensor list; the fetch
+                    # step probes which parameters actually return data.
+                    "parameters": params_all,
                 })
         return stations
+
+    @staticmethod
+    def _parse_station_table(html):
+        """Parse a CDEC staSearch results table into (id, name, lon, lat) tuples.
+
+        Returns [] for any body without recognisable station rows (the metadata
+        HTML page, the bare search form, an empty/JSON body), which is what lets
+        ``discover_stations`` degrade to a clean warning instead of crashing.
+        """
+        rows = []
+        for row_html in _ROW_RE.findall(html):
+            id_match = _STATION_ID_RE.search(row_html)
+            if not id_match:
+                continue
+            cells = [_TAG_RE.sub("", c).strip() for c in _CELL_RE.findall(row_html)]
+            # Column order: [id, name, basin, county, longitude, latitude, …].
+            if len(cells) < 6:
+                continue
+            try:
+                lon = float(cells[4].replace(",", ""))
+                lat = float(cells[5].replace(",", ""))
+            except ValueError:
+                continue
+            rows.append((id_match.group(1), cells[1], lon, lat))
+        return rows
 
 
 register_adapter("cdec", CDECAdapter)
