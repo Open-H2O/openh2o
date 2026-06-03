@@ -78,12 +78,21 @@ def test_flowlines_geojson_returns_multilinestring_features(auth_client):
 
 
 @pytest.mark.django_db
-def test_flowlines_geojson_serializes_only_geometry_bearing(auth_client):
-    FlowlineFactory(feature_type="Stream/River")
-    FlowlineFactory(feature_type="Canal/Ditch")
+def test_flowlines_geojson_renders_named_and_canals_skips_unnamed_capillaries(auth_client):
+    """Scale guard (50-02): the map serves significant flowlines only —
+    every canal + every named natural waterway — while unnamed first-order
+    capillaries (the bulk of the real 3DHP upper-watershed data) are dropped
+    so the 30 MB full payload doesn't sink the map."""
+    FlowlineFactory(name="Merced River", feature_type="Channel Line")   # named river -> rendered
+    FlowlineFactory(name="", feature_type="Canal")                       # unnamed canal -> rendered
+    FlowlineFactory(name="", feature_type="Channel Line")                # unnamed capillary -> dropped
     resp = auth_client.get(reverse("geography:flowlines_geojson"))
     assert resp.status_code == 200
 
     data = json.loads(resp.content.decode())
-    assert len(data["features"]) == Flowline.objects.filter(geometry__isnull=False).count()
+    # 2 of the 3 are significant; the unnamed natural capillary is excluded.
     assert len(data["features"]) == 2
+    types = sorted(f["properties"]["feature_type"] for f in data["features"])
+    assert types == ["Canal", "Channel Line"]
+    names = {f["properties"]["name"] for f in data["features"]}
+    assert "Merced River" in names

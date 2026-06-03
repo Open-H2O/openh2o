@@ -339,17 +339,28 @@ def boundaries_geojson(request):
 
 @login_required
 def flowlines_geojson(request):
-    """Return all flowlines (rivers, streams, canals) as a GeoJSON FeatureCollection.
+    """Return the significant flowlines (named waterways + all canals) as GeoJSON.
 
     The hydrography renderer: the map's "Surface Water" layers filter on
-    feature_type (natural channels vs Canal/Ditch) and label on name. All
-    flowlines render — boundary scoping is a future nicety and the demo has one
-    active boundary set. The `geometry__isnull=False` filter mirrors the peer
-    endpoints; Flowline.geometry is non-nullable so it is defensive parity.
+    feature_type (canals vs natural channels) and label on name.
+
+    **Scale guard (50-02):** the USGS 3DHP source is exhaustive — the real
+    Merced data is ~48,700 flowlines (30 MB serialized), most of them tiny
+    unnamed first-order capillaries in the Sierra headwaters of the upper
+    watershed. Serving all of them makes the map payload unusable and buries
+    the canal network in noise. We render the *significant* set: every canal
+    (man-made infrastructure is always relevant) plus every named natural
+    waterway (a GNIS name marks a flowline worth showing). That keeps the full
+    Merced Irrigation District canal mesh and the named Merced River system
+    while dropping the unnamed capillaries — ~7,700 features / 5.7 MB.
+
+    The `geometry__isnull=False` filter mirrors the peer endpoints;
+    Flowline.geometry is non-nullable so it is defensive parity.
     """
+    significant = Q(feature_type__icontains="Canal") | ~Q(name="")
     data = serialize(
         "geojson",
-        Flowline.objects.filter(geometry__isnull=False),
+        Flowline.objects.filter(significant, geometry__isnull=False),
         geometry_field="geometry",
         fields=["name", "feature_type", "stream_order"],
     )

@@ -146,7 +146,11 @@ var MAP_CONFIG = {
         {
             id: 'flowlines-rivers', type: 'line', source: 'flowlines',
             label: 'Rivers & Streams', section: 'Surface Water',
-            filter: ['!=', ['get', 'feature_type'], 'Canal/Ditch'],
+            // A canal is any feature_type containing "Canal" — matches the real
+            // USGS 3DHP label "Canal" AND the legacy/synthetic "Canal/Ditch".
+            // Natural 3DHP types ("Channel Line", "Waterbody Connector", …) do
+            // not contain "Canal", so they fall through to rivers here.
+            filter: ['!', ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']]],
             paint: { 'line-color': OH2O.colors.river,
                      'line-width': ['interpolate', ['linear'], ['zoom'],
                          9,  ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 0.6, 6, 2.0],
@@ -159,7 +163,7 @@ var MAP_CONFIG = {
         {
             id: 'flowlines-canals-casing', type: 'line', source: 'flowlines',
             section: 'Surface Water', group: 'flowlines-canals', panelHidden: true,
-            filter: ['==', ['get', 'feature_type'], 'Canal/Ditch'],
+            filter: ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']],
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: { 'line-color': OH2O.colors.hydroCasing,
                      'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.2, 13, 3.4, 16, 4.5],
@@ -168,7 +172,7 @@ var MAP_CONFIG = {
         {
             id: 'flowlines-canals', type: 'line', source: 'flowlines',
             label: 'Canals & Ditches', section: 'Surface Water', group: 'flowlines-canals',
-            filter: ['==', ['get', 'feature_type'], 'Canal/Ditch'],
+            filter: ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']],
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: { 'line-color': OH2O.colors.canal,
                      'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.0, 13, 1.8, 16, 2.5],
