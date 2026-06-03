@@ -31,7 +31,7 @@ OUT = os.path.join(HERE, "merced_parcel_picker.qgz")
 
 # served_by dropdown: friendly label -> stored POD code (what the ingest reads).
 SERVED_BY = [
-    {"— none / not served —": ""},
+    {"— none (groundwater-only / unserved) —": ""},
     {"Atwater Canal (MID)": "MER-POD-004"},
     {"Le Grand Canal": "MER-POD-005"},
     {"Stevinson — Diversion Canal": "MER-POD-006"},
