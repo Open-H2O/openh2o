@@ -1,0 +1,6 @@
+# Regenerable build artifacts — rebuild with fetch_crop_fields.py +
+# build_picker_project.sh. Brent's actual selection is extracted to
+# ../selected_parcels.geojson (committed), so these binaries stay out of git.
+merced_parcel_picker.gpkg
+merced_parcel_picker.qgz
+_verify_project.py
