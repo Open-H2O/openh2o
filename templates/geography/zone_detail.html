@@ -36,6 +36,14 @@
     <p class="text-secondary text-base" style="margin: 0;">A <strong>management zone</strong> is a sub-area of the district that carries its own <strong>water budget</strong>. Use areas assigned to this zone share its budget, which the platform divides into per-account allocations. <a href="{% url 'glossary' %}" class="text-sm" style="color: var(--color-gold);">Glossary &rarr;</a></p>
   </div>
 
+  {% if is_curtailed %}
+  <div class="alert-warning">
+    <strong>Curtailment in effect.</strong>
+    {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
+    Surface deliveries to the curtailed parcels stop after the curtailment date — the current-year surface budget below is reduced to match, and conjunctive growers substitute groundwater.
+  </div>
+  {% endif %}
+
   <div class="page-grid-2col">
 
     <!-- Left column: Zone Info + Parcels + Budget -->
@@ -98,24 +106,28 @@
         </div>
       </div>
 
-      <!-- Budget card -->
+      <!-- Budget vs. use card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Budget</h2>
-        {% if allocations %}
+        <h2 class="section-header mb-md">Budget vs. Use</h2>
+        {% if budgets %}
         <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Period</th>
               <th>Water Type</th>
-              <th class="th-right">Water Budget (AF)</th>
+              <th class="th-right">Budget (AF)</th>
+              <th class="th-right">Used (AF)</th>
+              <th class="th-right">Remaining (AF)</th>
             </tr>
           </thead>
           <tbody>
-            {% for alloc in allocations %}
+            {% for b in budgets %}
             <tr>
-              <td class="text-secondary">{{ alloc.reporting_period.name }}</td>
-              <td class="text-secondary">{{ alloc.water_type.name }}</td>
-              <td class="td-num">{{ alloc.allocation_acre_feet|floatformat:2 }}</td>
+              <td class="text-secondary">{{ b.period.name }}</td>
+              <td class="text-secondary">{{ b.water_type.name }}</td>
+              <td class="td-num">{{ b.budget|floatformat:2 }}</td>
+              <td class="td-num">{{ b.used|floatformat:2 }} <span class="text-tertiary text-xs">{{ b.used_label }}</span></td>
+              <td class="td-num">{{ b.remaining|floatformat:2 }}</td>
             </tr>
             {% endfor %}
           </tbody>

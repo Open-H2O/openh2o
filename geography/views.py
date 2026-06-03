@@ -1,20 +1,22 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import json
+from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounting.models import AllocationPlan
+from accounting.services import billable_ledger
 from geography.forms import ZoneForm
 from geography.models import Boundary, Flowline, ParcelZone, Zone
-from parcels.models import Parcel
-from surface.models import PointOfDiversionParcel
+from parcels.models import Parcel, ParcelLedger
+from surface.models import CurtailmentOrder, PointOfDiversionParcel, WaterRight
 from wells.models import WellIrrigatedParcel
 
 
@@ -117,6 +119,69 @@ def zone_detail(request, pk):
         .order_by("-reporting_period__start_date")
     )
 
+    # Budget vs. use (Phase 52-02): a budget number alone doesn't tell the story —
+    # an evaluator needs "of X budgeted, Y was used". For each budget, compute the
+    # matching draw against the zone's parcels in that period: groundwater budgets
+    # show metered/estimated PUMPING (the magnitude of the negative extraction
+    # rows); surface budgets show DELIVERED canal water (the surface-delivery rows
+    # only — allocations are excluded so we don't count the grant as a use).
+    zone_parcel_ids = list(parcel_zones.values_list("parcel_id", flat=True))
+    budgets = []
+    for alloc in allocations:
+        period_rows = billable_ledger(
+            ParcelLedger.objects.filter(
+                parcel_id__in=zone_parcel_ids,
+                reporting_period=alloc.reporting_period,
+            )
+        )
+        if (alloc.water_type.code or "").upper() == "GW":
+            used = abs(
+                period_rows.filter(amount_acre_feet__lt=0).aggregate(
+                    s=Sum("amount_acre_feet")
+                )["s"]
+                or Decimal("0")
+            )
+            used_label = "pumped"
+        else:
+            used = (
+                period_rows.filter(source_type="surface_diversion").aggregate(
+                    s=Sum("amount_acre_feet")
+                )["s"]
+                or Decimal("0")
+            )
+            used_label = "delivered"
+        budget = alloc.allocation_acre_feet or Decimal("0")
+        budgets.append({
+            "period": alloc.reporting_period,
+            "water_type": alloc.water_type,
+            "budget": budget,
+            "used": used,
+            "used_label": used_label,
+            "remaining": budget - used,
+        })
+
+    # Curtailment narrative — flag the zone if any of its parcels is served by a
+    # curtailed water right, and surface the matching active order (by priority-
+    # date cutoff). Tells the El Nido story on the district page, not just via the
+    # collapsed open-year budget number.
+    curtailment_orders = []
+    is_curtailed = WaterRight.objects.filter(
+        status="curtailed", water_right_parcels__parcel_id__in=zone_parcel_ids
+    ).exists()
+    if is_curtailed:
+        cutoffs = list(
+            WaterRight.objects.filter(
+                status="curtailed",
+                water_right_parcels__parcel_id__in=zone_parcel_ids,
+                priority_date__isnull=False,
+            ).values_list("priority_date", flat=True)
+        )
+        curtailment_orders = list(
+            CurtailmentOrder.objects.filter(
+                status="active", priority_date_cutoff__in=cutoffs
+            )
+        )
+
     # GeoJSON for the zone map
     zone_geojson = None
     if zone.geometry:
@@ -135,6 +200,9 @@ def zone_detail(request, pk):
         "zone": zone,
         "parcel_zones": parcel_zones,
         "allocations": allocations,
+        "budgets": budgets,
+        "is_curtailed": is_curtailed,
+        "curtailment_orders": curtailment_orders,
         "zone_geojson": zone_geojson,
     }
     return render(request, "geography/zone_detail.html", context)

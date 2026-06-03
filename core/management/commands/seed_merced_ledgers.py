@@ -277,6 +277,11 @@ class Command(BaseCommand):
                     ),
                 },
             )
+            # Link the served parcels to the zone so the zone-detail page lists
+            # them AND can total delivered-vs-budget (zone usage reads ParcelZone).
+            # The flush deletes these zones, which cascades these ParcelZone rows.
+            for p in served:
+                ParcelZone.objects.get_or_create(zone=zone, parcel=p)
             zones[right.right_id] = (zone, right)
         return zones
 
