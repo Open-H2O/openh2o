@@ -16,6 +16,11 @@ Order matters:
                               Brent's QGIS field selection. Needs PODs (4),
                               GSAs (3), and data/merced/selected_parcels.geojson.
   6. seed_merced_recharge   — managed-recharge sites.
+  7. seed_merced_ledgers    — the synthetic accounting layer (reporting periods,
+                              two-authority Water Budgets, accounts, and the full
+                              keyed ParcelLedger). Depends on parcels, wells,
+                              rights, PODs, and the GSA zones all existing, so it
+                              runs LAST.
 
 Each sub-command is idempotent, so re-running is safe. Step 2 is a live
 network fetch (a few minutes); everything else is local.
@@ -33,6 +38,10 @@ SEQUENCE = [
     ("seed_merced_operations", {"flush": True}),
     ("seed_merced_parcels_from_selection", {}),
     ("seed_merced_recharge", {}),
+    # The accounting layer hangs off everything above (parcels, wells, rights,
+    # PODs, GSA zones), so it runs last. It self-flushes its own rows, so a
+    # re-run rebuilds the ledger cleanly.
+    ("seed_merced_ledgers", {}),
 ]
 
 
