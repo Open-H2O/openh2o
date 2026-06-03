@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>CDEC Station Search</title></head>
+  <body>
+    <!-- Trimmed copy of the real cdec.water.ca.gov/dynamicapp/staSearch results
+         table: same column order (ID, Name, River Basin, County, Longitude,
+         Latitude, Elevation, Operator, Map) and same per-cell markup. Three
+         stations sit inside a Kaweah-area bbox (KWT, TRM, LKW); two are far
+         away (SHA in Shasta, BLY in Riverside) so a bbox filter has something
+         to exclude. -->
+    <table id="data">
+      <thead>
+        <tr align=center bgcolor=#e0e0e0 nowrap>
+          <th><font size=2>ID</font></th>
+          <th><font size=2>Station Name</font></th>
+          <th nowrap><font size=2>River Basin</font></th>
+          <th><font size=2>County</font></th>
+          <th><font size=2>Longitude</font></th>
+          <th><font size=2>Latitude</font></th>
+          <th><font size=2>Elevation<br>Feet</br></font></th>
+          <th><font size=2>Operator</font></th>
+          <th><font size=2>Map</font></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="nopad left"><a href='/dynamicapp/staMeta?station_id=KWT'>KWT</a></td>
+          <td class="nopad left">KAWEAH R-TERMINUS DM</td>
+          <td class="nopad left">KAWEAH RIVER</td>
+          <td class="nopad left">TULARE</td>
+          <td class="nopad right">-119.011667</td>
+          <td class="nopad right">36.414167</td>
+          <td class="nopad right"> 475 </td>
+          <td class="nopad left">US Army Corps of Engineers</td>
+          <td class="nopad left" height=40 width=40>
+            <a href="https://cdec.water.ca.gov/webgis/?appid=cdecstation&sta=KWT">
+              <img src="/dynamicapp/maps/imap57.gif" height=40 width=40 border=0 alt=Click to get map>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td class="nopad left"><a href='/dynamicapp/staMeta?station_id=TRM'>TRM</a></td>
+          <td class="nopad left">TERMINUS DAM</td>
+          <td class="nopad left">KAWEAH RIVER</td>
+          <td class="nopad left">TULARE</td>
+          <td class="nopad right">-119.002000</td>
+          <td class="nopad right">36.415000</td>
+          <td class="nopad right"> 715 </td>
+          <td class="nopad left">US Army Corps of Engineers</td>
+          <td class="nopad left" height=40 width=40>
+            <a href="https://cdec.water.ca.gov/webgis/?appid=cdecstation&sta=TRM">
+              <img src="/dynamicapp/maps/imap57.gif" height=40 width=40 border=0 alt=Click to get map>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td class="nopad left"><a href='/dynamicapp/staMeta?station_id=LKW'>LKW</a></td>
+          <td class="nopad left">LAKE KAWEAH WEATHER</td>
+          <td class="nopad left">KAWEAH RIVER</td>
+          <td class="nopad left">TULARE</td>
+          <td class="nopad right">-119.005683</td>
+          <td class="nopad right">36.415883</td>
+          <td class="nopad right"> 694 </td>
+          <td class="nopad left">US Army Corps of Engineers</td>
+          <td class="nopad left" height=40 width=40>
+            <a href="https://cdec.water.ca.gov/webgis/?appid=cdecstation&sta=LKW">
+              <img src="/dynamicapp/maps/imap57.gif" height=40 width=40 border=0 alt=Click to get map>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td class="nopad left"><a href='/dynamicapp/staMeta?station_id=SHA'>SHA</a></td>
+          <td class="nopad left">SHASTA DAM (USBR)</td>
+          <td class="nopad left">SACRAMENTO RIVER</td>
+          <td class="nopad left">SHASTA</td>
+          <td class="nopad right">-122.420000</td>
+          <td class="nopad right">40.718000</td>
+          <td class="nopad right"> 1,067 </td>
+          <td class="nopad left">US Bureau of Reclamation</td>
+          <td class="nopad left" height=40 width=40>
+            <a href="https://cdec.water.ca.gov/webgis/?appid=cdecstation&sta=SHA">
+              <img src="/dynamicapp/maps/imap57.gif" height=40 width=40 border=0 alt=Click to get map>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td class="nopad left"><a href='/dynamicapp/staMeta?station_id=BLY'>BLY</a></td>
+          <td class="nopad left">BLYTHE</td>
+          <td class="nopad left">COLORADO RIVER</td>
+          <td class="nopad left">RIVERSIDE</td>
+          <td class="nopad right">-114.717000</td>
+          <td class="nopad right">33.617000</td>
+          <td class="nopad right"> 390 </td>
+          <td class="nopad left">CA Dept of Forestry and Fire Protection</td>
+          <td class="nopad left" height=40 width=40>
+            <a href="https://cdec.water.ca.gov/webgis/?appid=cdecstation&sta=BLY">
+              <img src="/dynamicapp/maps/imap57.gif" height=40 width=40 border=0 alt=Click to get map>
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>

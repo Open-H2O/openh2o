@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CDEC Station Metadata</title>
+  </head>
+  <body>
+    <!-- Stand-in for cdec.water.ca.gov/dynamicapp/staMeta: a human-facing HTML
+         page with NO station-search results table. Calling resp.json() on this
+         is exactly the ISS-048 failure (JSONDecodeError: Expecting value: line
+         2 column 1). The adapter must return [] with a clear warning, not a
+         bare decoder traceback, and must not mistake this for a station list. -->
+    <h1>Station Metadata</h1>
+    <p>Select a station to view its metadata, or use the search form.</p>
+    <form action="/dynamicapp/staSearch" method="get">
+      <input type="text" name="sta" />
+      <input type="submit" value="Search" />
+    </form>
+  </body>
+</html>
