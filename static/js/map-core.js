@@ -16,10 +16,11 @@ var OH2O = window.OH2O = window.OH2O || {};
 OH2O.colors = {
     gold: '#E4A317', teal: '#4ECDC4', purple: '#7B68EE', red: '#FF6B6B',
     blue: '#1B7FAF', blueBright: '#3DB4E0', green: '#52b788', boundary: '#E4A317',
-    // Hydrography stroke: a saturated water-azure, deliberately distinct from the
-    // parcel blueBright outline so rivers don't muddy against parcels, and bright
-    // enough to read over the aerial (satellite) basemap.
-    river: '#1FB6E8'
+    // Hydrography strokes — the GIS hydrology house style (Pit River ACP / NHD
+    // maps): cyan natural channels, mint-green man-made canals, both solid, width
+    // carrying stream order. Bright solid lines read over the aerial basemap and
+    // against the muted translucent green GSA zone fills.
+    river: '#45d0e8', canal: '#7ee8a0'
 };
 
 OH2O.FONT = ['Noto Sans Regular'];

@@ -210,9 +210,10 @@
         var beforeId = map.getLayer('pod-glow') ? 'pod-glow' : undefined;
         map.addLayer({
           id: 'flowlines-line', type: 'line', source: 'flowlines',
-          paint: { 'line-color': OH2O.colors.river,
-                   'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 16, 2.2],
-                   'line-opacity': 0.9 }
+          paint: { 'line-color': ['match', ['get', 'feature_type'],
+                       'Canal/Ditch', OH2O.colors.canal, OH2O.colors.river],
+                   'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 16, 2.5],
+                   'line-opacity': 0.85 }
         }, beforeId);
       });
 

@@ -140,25 +140,28 @@ var MAP_CONFIG = {
         // Placed early in the array so the river/canal lines DRAW beneath parcels
         // and points (MapLibre renders in array order). Tagged section 'Surface
         // Water' so they group in the panel with the PODs/allocation links below.
-        // Natural channels render solid; man-made Canal/Ditch renders dashed so a
-        // domain expert can tell MID's canal network from the Merced River itself.
+        // Symbology follows the GIS hydrology house style: natural channels in
+        // cyan with width by stream order, man-made canals in mint green — color,
+        // not dash, tells MID's canal network from the Merced River itself.
         {
             id: 'flowlines-rivers', type: 'line', source: 'flowlines',
             label: 'Rivers & Streams', section: 'Surface Water',
             filter: ['!=', ['get', 'feature_type'], 'Canal/Ditch'],
             paint: { 'line-color': OH2O.colors.river,
-                     'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 16, 2.2],
-                     'line-opacity': 0.9 },
+                     'line-width': ['interpolate', ['linear'], ['zoom'],
+                         9,  ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 0.6, 6, 2.0],
+                         16, ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 1.6, 6, 4.5]],
+                     'line-opacity': 0.85 },
             swatch: 'line', swatchColor: OH2O.colors.river
         },
         {
             id: 'flowlines-canals', type: 'line', source: 'flowlines',
             label: 'Canals & Ditches', section: 'Surface Water',
             filter: ['==', ['get', 'feature_type'], 'Canal/Ditch'],
-            paint: { 'line-color': OH2O.colors.river,
-                     'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.6, 16, 1.6],
-                     'line-opacity': 0.9, 'line-dasharray': [4, 3] },
-            swatch: 'line-dash', swatchColor: OH2O.colors.river
+            paint: { 'line-color': OH2O.colors.canal,
+                     'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.0, 13, 1.8, 16, 2.5],
+                     'line-opacity': 0.85 },
+            swatch: 'line', swatchColor: OH2O.colors.canal
         },
         Object.assign(OH2O.makeLabelLayer('flowlines-label', 'flowlines', 'hydrography', {
             layout: { 'symbol-placement': 'line', 'text-size': 11 }
