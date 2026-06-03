@@ -82,7 +82,7 @@
       >
         <option value="" {% if not source %}selected{% endif %}>All Sources</option>
         {% for ds in data_sources %}
-          <option value="{{ ds.code }}" {% if source == ds.code %}selected{% endif %}>{{ ds.code|upper }}</option>
+          <option value="{{ ds.code }}" {% if source == ds.code %}selected{% endif %}>{{ ds.name }}</option>
         {% endfor %}
       </select>
     </div>

@@ -41,8 +41,7 @@
             font-size: 0.75rem;
             font-weight: 600;
             color: var(--color-text-secondary);
-            font-family: var(--font-mono);
-          ">{{ item.station.data_source.code|upper }}</span>
+          ">{{ item.station.data_source.name }}</span>
         </td>
         <td class="text-secondary text-sm">
           {% if item.station.last_data_at %}
