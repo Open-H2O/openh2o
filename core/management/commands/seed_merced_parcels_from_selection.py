@@ -47,6 +47,25 @@ FIXTURE = os.path.join(
 )
 GROUNDWATER_SOURCES = {"groundwater", "conjunctive"}
 
+# Demo operators (parcel owner_name) so account-level accounting has real
+# groups to roll up. A shared well belongs to one grower (they own all its
+# fields); each canal district and the scattered groundwater fields get one too.
+OWNER_BY_WELLGROUP = {
+    "TI-W-1": "Turner Island Farms LLC",
+    "TI-W-2": "Sandy Mush Growers",
+}
+OWNER_BY_POD = {
+    "MER-POD-004": "Atwater Ranch Partners",
+    "MER-POD-005": "Le Grand Orchards Inc.",
+    "MER-POD-006": "Stevinson Land & Cattle",
+    "MER-POD-007": "Plainsburg Ag Holdings",
+    "MER-POD-008": "Crocker Bottoms Farming",
+    "MER-POD-009": "San Joaquin Bottomlands Ranch",
+}
+GW_SOLO_OWNERS = [
+    "Merced Valley Farms LLC", "Cressey Family Farms", "Snelling Ranch Co.",
+]
+
 
 class Command(BaseCommand):
     help = (
@@ -104,7 +123,7 @@ class Command(BaseCommand):
         pod_to_parcels = {}     # pod.pk -> [parcels]
         wells = []
         well_members = {}       # well_group key -> [(parcel, geom)]
-        seq = well_seq = gsa_links = 0
+        seq = well_seq = gsa_links = gw_solo_i = 0
         for ft in features:
             seq += 1
             props = ft["properties"]
@@ -113,15 +132,24 @@ class Command(BaseCommand):
                 geom = MultiPolygon(geom)
             served = (props.get("served_by") or "").strip()
             source = (props.get("water_source") or "").strip().lower()
+            wg = (props.get("well_group") or "").strip()
             crop = props.get("MAIN_CROP") or props.get("crop_class") or "?"
             note = (
                 f"DWR field {props.get('UniqueID', '?')} | {props.get('crop_class', '')}"
                 f" ({crop}) | {props.get('COUNTY', '')} | source={source or 'n/a'}"
             )
+            # Operator/owner (drives account-level accounting).
+            if wg in OWNER_BY_WELLGROUP:
+                owner = OWNER_BY_WELLGROUP[wg]
+            elif served:
+                owner = OWNER_BY_POD.get(served, "")
+            else:
+                owner = GW_SOLO_OWNERS[gw_solo_i % len(GW_SOLO_OWNERS)]
+                gw_solo_i += 1
             parcel, _ = Parcel.objects.update_or_create(
                 parcel_number=f"MER-APN-{seq:03d}",
                 defaults={
-                    "owner_name": "",
+                    "owner_name": owner,
                     "geometry": geom,
                     "status": "active",
                     "notes": note,
@@ -147,7 +175,6 @@ class Command(BaseCommand):
             # high-capacity well irrigating many parcels); ungrouped fields get
             # their own well.
             if source in GROUNDWATER_SOURCES:
-                wg = (props.get("well_group") or "").strip()
                 well_members.setdefault(wg or f"solo-{seq}", []).append((parcel, geom))
 
         # --- Wells: one per well_group (shared) or per ungrouped field. A

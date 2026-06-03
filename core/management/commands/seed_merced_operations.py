@@ -115,12 +115,16 @@ RIGHT_CONFIGS = [
      Decimal("18000"), "Le Grand Canal", "active"),
     ("MER-WR-006", 1, "Stevinson Water District", "1955-03-20",
      Decimal("22000"), "Diversion Canal", "active"),
-    ("MER-WR-007", 0, "Merced Subbasin Riparian Holders", "1908-07-15",
-     Decimal("6000"), "Merced River", "curtailed"),
     ("MER-WR-008", 2, "San Joaquin Bottomlands Ranch", None,
      Decimal("4000"), "Merced River", "active"),
+    # Junior right (newest priority date) → first to be curtailed in a drought,
+    # which is how California priority works. Its El Nido service area (POD-007)
+    # is the curtailment story: surface deliveries are cut, conjunctive growers
+    # fall back on groundwater, and surface-only growers simply go short. (A
+    # former empty pre-1914 MER-WR-007 was removed — a curtailed right with no
+    # parcels demonstrated nothing.)
     ("MER-WR-009", 1, "Plainsburg Irrigation District", "1962-05-05",
-     Decimal("9000"), "El Nido Canal", "active"),
+     Decimal("9000"), "El Nido Canal", "curtailed"),
 ]
 
 # ---------------------------------------------------------------------------
