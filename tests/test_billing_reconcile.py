@@ -245,8 +245,10 @@ class TestGearsByEtReconcile:
         return header, [r for r in reader if r]
 
     def test_by_et_uses_calculated_and_falls_back(self):
-        """Calculated parcel reports its NET volume + method 'calculated';
-        fallback parcel reports gross + method 'et_estimate'; no duplicate row."""
+        """Calculated parcel reports its NET volume; fallback parcel reports
+        gross; no duplicate row. (Both carry the state method label
+        'Unmetered/Estimated' since ISS-047a — the net-vs-gross distinction is
+        proven by the volume column, not the method string.)"""
         period = self._period()
         p_calc = ParcelFactory()
         p_fallback = ParcelFactory()
@@ -263,11 +265,11 @@ class TestGearsByEtReconcile:
         assert len(rows) == 2  # exactly one row per parcel — no duplicate
 
         calc_row = by_parcel[p_calc.parcel_number]
-        assert calc_row[4] == "calculated"
+        assert calc_row[4] == "Unmetered/Estimated"
         assert Decimal(calc_row[3]) == Decimal("9")  # net, not gross 11
 
         fb_row = by_parcel[p_fallback.parcel_number]
-        assert fb_row[4] == "et_estimate"
+        assert fb_row[4] == "Unmetered/Estimated"
         assert Decimal(fb_row[3]) == Decimal("14")
 
     def test_by_et_calculated_gross_not_duplicated(self):
@@ -280,5 +282,5 @@ class TestGearsByEtReconcile:
         content = generate_gears_csv(period, method="by_et").read()
         _, rows = self._rows(content)
         assert len(rows) == 1
-        assert rows[0][4] == "calculated"
+        assert rows[0][4] == "Unmetered/Estimated"
         assert Decimal(rows[0][3]) == Decimal("9")
