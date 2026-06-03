@@ -91,6 +91,7 @@ var MAP_CONFIG = {
     fitBoundsPadding: 40,
     geojsonSources: [
         { id: 'boundaries', url: '{% url "geography:boundaries_geojson" %}' },
+        { id: 'flowlines', url: '{% url "geography:flowlines_geojson" %}' },
         { id: 'zones', url: '{% url "geography:zones_geojson" %}' },
         { id: 'zone-labels', url: '{% url "geography:zone_labels_geojson" %}' },
         { id: 'parcels', url: '{% url "parcels:geojson" %}' },
@@ -134,6 +135,34 @@ var MAP_CONFIG = {
         // disjoint part — 16x for Greater Kaweah.
         Object.assign(OH2O.makeLabelLayer('zones-label', 'zone-labels', 'zone', { anchor: 'center', offset: [0, 0] }),
             { panelHidden: true, group: 'zones', section: 'Administrative' }),
+
+        // ── Surface Water (hydrography) ──
+        // Placed early in the array so the river/canal lines DRAW beneath parcels
+        // and points (MapLibre renders in array order). Tagged section 'Surface
+        // Water' so they group in the panel with the PODs/allocation links below.
+        // Natural channels render solid; man-made Canal/Ditch renders dashed so a
+        // domain expert can tell MID's canal network from the Merced River itself.
+        {
+            id: 'flowlines-rivers', type: 'line', source: 'flowlines',
+            label: 'Rivers & Streams', section: 'Surface Water',
+            filter: ['!=', ['get', 'feature_type'], 'Canal/Ditch'],
+            paint: { 'line-color': OH2O.colors.river,
+                     'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 16, 2.2],
+                     'line-opacity': 0.9 },
+            swatch: 'line', swatchColor: OH2O.colors.river
+        },
+        {
+            id: 'flowlines-canals', type: 'line', source: 'flowlines',
+            label: 'Canals & Ditches', section: 'Surface Water',
+            filter: ['==', ['get', 'feature_type'], 'Canal/Ditch'],
+            paint: { 'line-color': OH2O.colors.river,
+                     'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.6, 16, 1.6],
+                     'line-opacity': 0.9, 'line-dasharray': [4, 3] },
+            swatch: 'line-dash', swatchColor: OH2O.colors.river
+        },
+        Object.assign(OH2O.makeLabelLayer('flowlines-label', 'flowlines', 'hydrography', {
+            layout: { 'symbol-placement': 'line', 'text-size': 11 }
+        }), { panelHidden: true, section: 'Surface Water' }),
 
         // ── Land Use ──
         {
@@ -226,6 +255,16 @@ var MAP_CONFIG = {
         Object.assign(OH2O.makeLabelLayer('stations-label', 'stations', 'station', {}), { panelHidden: true, section: 'Monitoring' })
     ],
     popups: {
+        'flowlines-rivers': function(p) {
+            return '<strong>' + (p.name || p.feature_type || 'Waterway') + '</strong><br>' +
+                   'Type: ' + (p.feature_type || '—') + '<br>' +
+                   'Stream order: ' + (p.stream_order != null ? p.stream_order : '—');
+        },
+        'flowlines-canals': function(p) {
+            return '<strong>' + (p.name || p.feature_type || 'Waterway') + '</strong><br>' +
+                   'Type: ' + (p.feature_type || '—') + '<br>' +
+                   'Stream order: ' + (p.stream_order != null ? p.stream_order : '—');
+        },
         'gw-tie-lines': function(p) {
             var pct = Math.round((p.fraction || 0) * 100);
             return '<strong>Well ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +

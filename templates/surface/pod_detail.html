@@ -199,6 +199,23 @@
   map.on('load', function() {
     map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
     OH2O.mountBasemapToggle(map, 'aerial');
+    // Hydrography substrate: show the river/canal this diversion sits on. One
+    // combined line layer is enough on a detail map; inserted beneath the POD
+    // glow so the diversion point stays on top.
+    fetch('{% url "geography:flowlines_geojson" %}')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (fc) {
+        if (!fc || !fc.features || !fc.features.length) return;
+        map.addSource('flowlines', { type: 'geojson', data: fc });
+        var beforeId = map.getLayer('pod-glow') ? 'pod-glow' : undefined;
+        map.addLayer({
+          id: 'flowlines-line', type: 'line', source: 'flowlines',
+          paint: { 'line-color': OH2O.colors.river,
+                   'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 16, 2.2],
+                   'line-opacity': 0.9 }
+        }, beforeId);
+      });
+
     if (geojson) {
       map.addSource('pod', { type: 'geojson', data: geojson });
       map.addLayer({ id: 'pod-glow', type: 'circle', source: 'pod', paint: OH2O.glowPaint('pod') });

@@ -15,7 +15,11 @@ var OH2O = window.OH2O = window.OH2O || {};
 /* ── Entity color palette ─────────────────────────────────────────────── */
 OH2O.colors = {
     gold: '#E4A317', teal: '#4ECDC4', purple: '#7B68EE', red: '#FF6B6B',
-    blue: '#1B7FAF', blueBright: '#3DB4E0', green: '#52b788', boundary: '#E4A317'
+    blue: '#1B7FAF', blueBright: '#3DB4E0', green: '#52b788', boundary: '#E4A317',
+    // Hydrography stroke: a saturated water-azure, deliberately distinct from the
+    // parcel blueBright outline so rivers don't muddy against parcels, and bright
+    // enough to read over the aerial (satellite) basemap.
+    river: '#1FB6E8'
 };
 
 OH2O.FONT = ['Noto Sans Regular'];
@@ -41,7 +45,9 @@ OH2O.entities = {
     zone:    { color: OH2O.colors.green,  labelMin: 9,
                labelField: ['get','name'] },
     boundary:{ color: OH2O.colors.gold,   labelMin: 8,
-               labelField: ['get','name'] }
+               labelField: ['get','name'] },
+    hydrography:{ color: OH2O.colors.river, labelMin: 11,
+               labelField: ['coalesce', ['get','name'], ['get','feature_type'], 'Waterway'] }
 };
 
 /* zoom-interpolated radius for point markers */
