@@ -185,6 +185,13 @@ def _build_multi_basin_world():
         right_id="DEMO-A012345", well_reg="WCR-2024000",
         recharge_name="Demo North Spreading Basin",
         station_ext="DEMO-ST-1", station_source="usgs", gw=gw, prior=prior)
+    # A Kaweah gauge in the foothills ABOVE the subbasin — outside the boundary
+    # polygon, so only the explicit-ID sweep can remove it. Regression guard for
+    # the out-of-polygon station bug found on the live Butler teardown.
+    cdec = DataSource.objects.get(code="cdec")
+    MonitoredStation.objects.create(
+        data_source=cdec, external_station_id="TRM",
+        station_name="Terminus Dam", location=Point(-118.98, 36.42))
     _build_basin(
         boundary_name="Merced Subbasin", cx=-120.5, cy=37.2,
         parcel_numbers=["MER-APN-001", "MER-APN-002"], acct_number="MER-ACCT-001",
@@ -242,6 +249,8 @@ def test_inv1_kaweah_fully_removed():
     assert WellMeter.objects.filter(well_id__in=well_ids).count() == 0
     assert not RechargeSite.objects.filter(name="Kaweah Delta Spreading Grounds").exists()
     assert not MonitoredStation.objects.filter(station_name="Kaweah Subbasin Station").exists()
+    # The foothill gauge outside the polygon must go too (explicit-ID sweep).
+    assert not MonitoredStation.objects.filter(external_station_id="TRM").exists()
 
 
 # --------------------------------------------------------------------------

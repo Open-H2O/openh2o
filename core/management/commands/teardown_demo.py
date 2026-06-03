@@ -66,6 +66,13 @@ BASINS = {
         "well_prefix": "KAW-W-",
         "account_prefix": "KAW-ACCT-",
         "right_prefix": "KAW-WR-",
+        # Stations the Kaweah seed placed ABOVE the subbasin (Terminus Dam,
+        # Three Rivers) sit outside the boundary polygon, so the spatial sweep
+        # alone misses them. List them explicitly (mirrors seed_kaweah._flush).
+        "station_ext_ids": [
+            "TRM", "KWR", "VIS", "11210100", "11208730", "54",
+            "KAW-GWL-01", "KAW-GWL-02",
+        ],
     },
     "fresno": {
         "label": "Demo Valley (Fresno)",
@@ -74,6 +81,7 @@ BASINS = {
         "well_prefix": None,
         "account_prefix": "DEMO-",
         "right_prefix": "DEMO-",
+        "station_ext_ids": ["CHW", "11253500", "MDR"],
     },
 }
 
@@ -171,17 +179,25 @@ class Command(BaseCommand):
                 zone_id__in=zone_ids).values_list("id", flat=True))
             if zone_ids else []
         )
-        # Monitoring stations sit inside the basin polygon — a spatial sweep
-        # catches every one (seeded or later discovered), so none linger on the
-        # map. Basins are far apart, so this never reaches another basin.
-        station_ids = (
-            list(MonitoredStation.objects.filter(
+        # Monitoring stations: a spatial sweep of the polygon catches every
+        # station inside it (seeded OR later discovered), and the explicit seed
+        # IDs catch the ones the seed placed in the foothills ABOVE the basin
+        # (outside the polygon). Union the two so none linger on the map. The
+        # explicit list also lets a re-run clear stragglers after the boundary
+        # is already gone.
+        station_id_set = set()
+        if boundary is not None:
+            station_id_set.update(MonitoredStation.objects.filter(
                 location__within=boundary.geometry).values_list("id", flat=True))
-            if boundary is not None else []
-        )
+        if cfg.get("station_ext_ids"):
+            station_id_set.update(MonitoredStation.objects.filter(
+                external_station_id__in=cfg["station_ext_ids"]
+            ).values_list("id", flat=True))
+        station_ids = list(station_id_set)
 
-        if not any([boundary, parcel_ids, well_ids, account_ids, right_ids]):
-            self.stdout.write(f"    (already absent — no-op)")
+        if not any([boundary, parcel_ids, well_ids, account_ids, right_ids,
+                    recharge_ids, station_ids]):
+            self.stdout.write("    (already absent — no-op)")
             return counts
 
         # --- Delete children -> parents (the seed _flush cascade order) ---
