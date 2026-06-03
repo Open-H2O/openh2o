@@ -34,6 +34,7 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from geography.models import ParcelZone, Zone
 from parcels.models import Parcel
 from surface.models import (
     PointOfDiversion, PointOfDiversionParcel, WaterRight, WaterRightParcel,
@@ -91,11 +92,18 @@ class Command(BaseCommand):
             defaults={"description": "Agricultural irrigation well"},
         )
 
+        # GSA zones (groundwater authority). Every parcel falls in exactly one.
+        gsa_zones = list(Zone.objects.filter(
+            zone_type="management_area", basin_code="5-022.04"))
+        if not gsa_zones:
+            raise CommandError(
+                "No Merced GSA zones found. Run seed_merced_gsas first.")
+
         # --- Parcels (real geometry) + per-POD grouping for fractions ---
         parcels = []
         pod_to_parcels = {}     # pod.pk -> [parcels]
         wells = []
-        seq = well_seq = 0
+        seq = well_seq = gsa_links = 0
         for ft in features:
             seq += 1
             props = ft["properties"]
@@ -119,6 +127,17 @@ class Command(BaseCommand):
                 },
             )
             parcels.append(parcel)
+
+            # GSA association: every parcel sits in one GSA (groundwater
+            # authority), independent of any surface-water delivery.
+            gsa = self._gsa_for(geom, gsa_zones)
+            if gsa is not None:
+                ParcelZone.objects.update_or_create(parcel=parcel, zone=gsa)
+                gsa_links += 1
+
+            # Surface delivery (POD link) is created ONLY for fields a canal
+            # actually serves — surface + conjunctive carry served_by;
+            # groundwater fields had their canal tag cleared, so they get none.
             if served:
                 pod_to_parcels.setdefault(pods_by_code[served].pk, []).append(parcel)
 
@@ -174,10 +193,20 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced parcels rebuilt from QGIS selection:\n"
             f"  {len(parcels)} parcels (real DWR field geometry)\n"
-            f"  {podp} POD-parcel links across {len(pod_to_parcels)} diversions\n"
-            f"  {wrp} water-right-parcel links\n"
-            f"  {len(wells)} wells (groundwater/conjunctive fields)"
+            f"  SURFACE DISTRICT — {podp} POD-parcel deliveries across "
+            f"{len(pod_to_parcels)} diversions; {wrp} water-right-parcel links\n"
+            f"  GSA (groundwater) — {len(wells)} wells; "
+            f"{gsa_links} parcels assigned to their GSA"
         ))
+
+    @staticmethod
+    def _gsa_for(geom, zones):
+        """The GSA management area containing this parcel (nearest as fallback)."""
+        c = geom.centroid
+        for z in zones:
+            if z.geometry.contains(c):
+                return z
+        return min(zones, key=lambda z: z.geometry.distance(c)) if zones else None
 
     @staticmethod
     def _flush():
