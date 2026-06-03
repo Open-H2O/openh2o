@@ -178,10 +178,10 @@ PARCEL_CLUSTER_CONFIGS = [
     ("MER-POD-002 Merced Falls Diversion", 2, 80.0, 600.0, "upper"),
     ("MER-POD-003 Foothill Riparian Take", 2, 60.0, 500.0, "upper"),
     # Lower: MID-canal-served + river-served fields on the valley floor.
-    ("MER-POD-004 MID Main Canal Headgate", 4, 160.0, 900.0, "lower"),
+    ("MER-POD-004 MID Atwater Canal Headgate", 4, 160.0, 900.0, "lower"),
     ("MER-POD-005 Le Grand Canal Headgate", 3, 130.0, 800.0, "lower"),
-    ("MER-POD-006 Stevinson Canal Headgate", 3, 140.0, 800.0, "lower"),
-    ("MER-POD-007 Plainsburg Canal Headgate", 2, 100.0, 700.0, "lower"),
+    ("MER-POD-006 Stevinson Diversion Canal Headgate", 3, 140.0, 800.0, "lower"),
+    ("MER-POD-007 Plainsburg El Nido Canal Headgate", 2, 100.0, 700.0, "lower"),
     ("MER-POD-008 Crocker-Huffman River Diversion", 3, 150.0, 900.0, "lower"),
     ("MER-POD-009 Bottomlands Riparian Take", 2, 90.0, 700.0, "lower"),
 ]
