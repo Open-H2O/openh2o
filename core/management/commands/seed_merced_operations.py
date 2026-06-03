@@ -160,6 +160,99 @@ POD_CONFIGS = [
      -120.70, 37.32, Decimal("45.0")),
 ]
 
+# Per-POD parcel cluster. Each diversion serves a small cluster of fields placed
+# NEAR its snapped flowline via place_near_flowline (both banks, staggered along
+# the reach). Keep counts legible; ~24 parcels total. Acres are realistic
+# Central-Valley field sizes (~40-160 ac). offset_m keeps fields a plausible
+# distance off the channel (not on it). Each entry:
+#   pod_name, n_parcels, acres, offset_m, story
+PARCEL_CLUSTER_CONFIGS = [
+    # Upper: surface-water fields hugging the Merced River diversions.
+    ("MER-POD-001 Merced River Upper Diversion", 3, 120.0, 800.0, "upper"),
+    ("MER-POD-002 Merced Falls Diversion", 2, 80.0, 600.0, "upper"),
+    ("MER-POD-003 Foothill Riparian Take", 2, 60.0, 500.0, "upper"),
+    # Lower: MID-canal-served + river-served fields on the valley floor.
+    ("MER-POD-004 MID Main Canal Headgate", 4, 160.0, 900.0, "lower"),
+    ("MER-POD-005 Le Grand Canal Headgate", 3, 130.0, 800.0, "lower"),
+    ("MER-POD-006 Stevinson Canal Headgate", 3, 140.0, 800.0, "lower"),
+    ("MER-POD-007 Plainsburg Canal Headgate", 2, 100.0, 700.0, "lower"),
+    ("MER-POD-008 Crocker-Huffman River Diversion", 3, 150.0, 900.0, "lower"),
+    ("MER-POD-009 Bottomlands Riparian Take", 2, 90.0, 700.0, "lower"),
+]
+
+# Groundwater wells — LOWER SUBBASIN ONLY (the overdraft story). Each entry sets
+# the share of lower parcels that host a well and the well's physical attributes.
+# Wells sit at a lower parcel's centroid + a small deterministic offset, inside
+# the Merced Subbasin. Each entry: name_suffix, well_type_name, depth_ft,
+# capacity_gpm. The count (9) is matched to lower parcels in _seed.
+WELL_SPECS = [
+    ("Le Grand Ag Well", "Agricultural", Decimal("420"), Decimal("1600")),
+    ("Plainsburg Ag Well", "Agricultural", Decimal("380"), Decimal("1450")),
+    ("Stevinson Ag Well", "Agricultural", Decimal("510"), Decimal("2100")),
+    ("El Nido Ag Well", "Agricultural", Decimal("460"), Decimal("1800")),
+    ("Athlone Ag Well", "Agricultural", Decimal("400"), Decimal("1500")),
+    ("Cressey Ag Well", "Agricultural", Decimal("350"), Decimal("1350")),
+    ("Snelling Road Ag Well", "Agricultural", Decimal("440"), Decimal("1700")),
+    ("Sandy Mush Ag Well", "Agricultural", Decimal("530"), Decimal("2300")),
+    ("Bottomlands Ag Well", "Agricultural", Decimal("300"), Decimal("1200")),
+]
+
+# Small deterministic well offset off the parcel centroid, in degrees. A fixed
+# table indexed by well number — NOT random — so a re-run reproduces it exactly.
+# ~0.0015 deg ≈ 130 m at this latitude: the well sits at the edge of its field.
+_WELL_OFFSETS = [
+    (0.0015, 0.0010), (-0.0012, 0.0014), (0.0011, -0.0013),
+    (-0.0015, -0.0009), (0.0013, 0.0012), (-0.0010, 0.0015),
+    (0.0014, -0.0011), (-0.0013, 0.0010), (0.0009, -0.0014),
+]
+
+# Realistic demo OPERATOR / owner names (NOT a crop — the 47-02 lesson: the
+# "Owner" column must read like a farm operator, not "Almonds"). Cycled by index.
+MER_PARCEL_OWNERS = [
+    "Merced Valley Farms LLC",
+    "Snelling Ranch Co.",
+    "Le Grand Orchards Inc.",
+    "Stevinson Land & Cattle",
+    "El Nido Growers",
+    "Athlone Farming Partners",
+    "Cressey Ag Holdings",
+    "Sandy Mush Family Farm",
+    "Plainsburg Field Co.",
+    "Bear Creek Bottomlands LLC",
+    "Foothill River Ranch",
+    "Yosemite Gateway Farms",
+]
+
+MER_WELL_OWNERS = [
+    "Le Grand Orchards Inc.",
+    "Plainsburg Field Co.",
+    "Stevinson Land & Cattle",
+    "El Nido Growers",
+    "Athlone Farming Partners",
+    "Cressey Ag Holdings",
+    "Snelling Ranch Co.",
+    "Sandy Mush Family Farm",
+    "Bear Creek Bottomlands LLC",
+]
+
+
+def _dist_sq(a, b):
+    """Squared planar (degree) distance — fine for RANKING nearby parcels."""
+    dx = a.x - b.x
+    dy = a.y - b.y
+    return dx * dx + dy * dy
+
+
+def _nearest_parcels(point, parcels, n):
+    """The ``n`` parcels whose centroid is closest to ``point`` (deterministic).
+
+    Degree-space ranking is adequate here: we only need a stable nearest-first
+    order over a small local cluster, not a true-metre distance. No randomness,
+    so a re-run links the same well to the same parcel(s).
+    """
+    ranked = sorted(parcels, key=lambda p: _dist_sq(point, p.geometry.centroid))
+    return ranked[: min(n, len(ranked))]
+
 
 class Command(BaseCommand):
     help = (
@@ -178,19 +271,19 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Base-layer guard runs first, BEFORE any flush, so a wrong instance
         # fails fast and leaves existing data untouched.
-        upper_rivers, lower_canals, lower_rivers = self._check_base_layer()
+        lower, upper_rivers, lower_canals, lower_rivers = self._check_base_layer()
 
         if options["flush"]:
             self._flush()
 
         with transaction.atomic():
-            self._seed(upper_rivers, lower_canals, lower_rivers)
+            self._seed(lower, upper_rivers, lower_canals, lower_rivers)
 
     # ------------------------------------------------------------------
     # Base-layer guard — fail fast with a clear "run auto_populate first".
     # ------------------------------------------------------------------
     def _check_base_layer(self):
-        """Return (upper_rivers, lower_canals, lower_rivers) or raise.
+        """Return (lower_boundary, upper_rivers, lower_canals, lower_rivers) or raise.
 
         Never place against an empty flowline set: both boundaries must exist
         and carry the flowlines each story needs (upper = river segments,
@@ -239,7 +332,7 @@ class Command(BaseCommand):
             f"Base layer OK: upper {len(upper_rivers)} rivers; lower "
             f"{len(lower_canals)} canals + {len(lower_rivers)} rivers."
         )
-        return upper_rivers, lower_canals, lower_rivers
+        return lower, upper_rivers, lower_canals, lower_rivers
 
     # ------------------------------------------------------------------
     # Flush — ONLY MER- operational rows + their links. Base layer + Kaweah /
@@ -293,7 +386,7 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     # Seed
     # ------------------------------------------------------------------
-    def _seed(self, upper_rivers, lower_canals, lower_rivers):
+    def _seed(self, lower, upper_rivers, lower_canals, lower_rivers):
         # --- Water-right types (global lookup rows; same codes as seed_kaweah) ---
         self.stdout.write("Ensuring water-right types...")
         pre14, _ = WaterRightType.objects.get_or_create(
@@ -373,12 +466,151 @@ class Command(BaseCommand):
             )
             pods.append(pod)
             pod_river_lines[pod.pk] = line
+        pods_by_name = {p.name: p for p in pods}
         self.stdout.write(f"  {len(pods)} PODs snapped onto real river/canal segments.")
+
+        # --- Parcels: clusters placed NEAR each POD's snapped flowline ---
+        # place_near_flowline fans fields onto both banks (side=±1), staggered
+        # along the reach, so each field sits a plausible distance off the
+        # channel that serves it — never floating, never on the line. Footprint
+        # = area_accurate_box (true acreage, latitude-corrected), not a fixed box.
+        self.stdout.write("Placing parcels near their source reaches...")
+        parcel_seq = 0
+        # pod.pk -> list of its parcels (drives POD-parcel + right-parcel links)
+        pod_to_parcels = {}
+        lower_parcels = []  # parcels in the lower subbasin (well candidates)
+        for cfg in PARCEL_CLUSTER_CONFIGS:
+            pod_name, n_parcels, acres, offset_m, story = cfg
+            pod = pods_by_name[pod_name]
+            line = pod_river_lines[pod.pk]
+            cluster = []
+            for j in range(n_parcels):
+                # Stagger along the reach (0.25..0.75) and alternate banks so
+                # the cluster fans deterministically onto both sides.
+                along = 0.25 + (0.5 * j / max(1, n_parcels - 1)) if n_parcels > 1 else 0.5
+                side = 1 if j % 2 == 0 else -1
+                center = place_near_flowline(line, offset_m, along=along, side=side)
+                if center is None:
+                    continue
+                parcel_seq += 1
+                owner = MER_PARCEL_OWNERS[(parcel_seq - 1) % len(MER_PARCEL_OWNERS)]
+                geom = area_accurate_box(center.x, center.y, acres)
+                parcel, _ = Parcel.objects.update_or_create(
+                    parcel_number=f"MER-APN-{parcel_seq:03d}",
+                    defaults={
+                        "owner_name": owner,
+                        "geometry": geom,
+                        "status": "active",
+                    },
+                )
+                cluster.append(parcel)
+                if story == "lower":
+                    lower_parcels.append(parcel)
+            pod_to_parcels[pod.pk] = cluster
+        all_parcels = [p for c in pod_to_parcels.values() for p in c]
+        self.stdout.write(
+            f"  {len(all_parcels)} parcels "
+            f"({len(all_parcels) - len(lower_parcels)} upper, "
+            f"{len(lower_parcels)} lower)."
+        )
+
+        # --- Wells: groundwater wells in the LOWER subbasin only ---
+        # The overdraft story lives on the valley floor, so wells sit at lower
+        # parcels' centroids + a small deterministic offset, and we verify each
+        # falls inside the Merced Subbasin polygon before saving.
+        self.stdout.write("Placing groundwater wells in the lower subbasin...")
+        ag_well_type, _ = WellType.objects.get_or_create(
+            name="Agricultural",
+            defaults={"description": "Agricultural irrigation well"},
+        )
+        n_wells = min(len(WELL_SPECS), len(lower_parcels))
+        wells = []
+        well_to_parcels = {}
+        for i in range(n_wells):
+            host = lower_parcels[i]
+            wname, _wt, depth, cap = WELL_SPECS[i]
+            centroid = host.geometry.centroid
+            dx, dy = _WELL_OFFSETS[i % len(_WELL_OFFSETS)]
+            loc = Point(centroid.x + dx, centroid.y + dy, srid=4326)
+            # Keep the well inside the subbasin; if the offset pushed it out,
+            # fall back to the parcel centroid (always inside its own field).
+            if not lower.geometry.contains(loc):
+                loc = Point(centroid.x, centroid.y, srid=4326)
+            well, _ = Well.objects.update_or_create(
+                well_registration_id=f"MER-W-{i + 1:03d}",
+                defaults={
+                    "name": wname,
+                    "well_type": ag_well_type,
+                    "location": loc,
+                    "depth_ft": depth,
+                    "capacity_gpm": cap,
+                    "status": "active",
+                    "owner_name": MER_WELL_OWNERS[i % len(MER_WELL_OWNERS)],
+                },
+            )
+            wells.append(well)
+        self.stdout.write(f"  {len(wells)} wells (lower subbasin).")
+
+        # --- Physical links ---
+        # PointOfDiversionParcel: each POD serves its own cluster, fraction
+        # normalized to sum 1.0 across the cluster.
+        self.stdout.write("Linking PODs, rights, and wells to parcels...")
+        podp_count = 0
+        for pod in pods:
+            cluster = pod_to_parcels.get(pod.pk, [])
+            if not cluster:
+                continue
+            fraction = Decimal(str(round(1.0 / len(cluster), 4)))
+            for parcel in cluster:
+                PointOfDiversionParcel.objects.update_or_create(
+                    point_of_diversion=pod, parcel=parcel,
+                    defaults={"fraction": fraction},
+                )
+                podp_count += 1
+
+        # WaterRightParcel: a right serves the union of its PODs' parcels.
+        wrp_count = 0
+        right_to_parcels = {}
+        for pod in pods:
+            wr_id = pod.water_right_id
+            right_to_parcels.setdefault(wr_id, [])
+            for parcel in pod_to_parcels.get(pod.pk, []):
+                if parcel not in right_to_parcels[wr_id]:
+                    right_to_parcels[wr_id].append(parcel)
+        for wr in rights_by_id.values():
+            for parcel in right_to_parcels.get(wr.pk, []):
+                WaterRightParcel.objects.update_or_create(
+                    water_right=wr, parcel=parcel,
+                )
+                wrp_count += 1
+
+        # WellIrrigatedParcel: each lower well irrigates its nearest parcel(s),
+        # fraction normalized. Deterministic nearest-by-centroid (no random).
+        wip_count = 0
+        for i, well in enumerate(wells):
+            n_links = 1 + (i % 2)  # 1 or 2 parcels, deterministic
+            linked = _nearest_parcels(well.location, lower_parcels, n_links)
+            if not linked:
+                continue
+            fraction = Decimal(str(round(1.0 / len(linked), 4)))
+            for parcel in linked:
+                WellIrrigatedParcel.objects.update_or_create(
+                    well=well, parcel=parcel,
+                    defaults={"fraction": fraction},
+                )
+                wip_count += 1
+            well_to_parcels[well.pk] = linked
 
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced operational features seeded:\n"
             f"  {len(rights_by_id)} water rights\n"
-            f"  {len(pods)} points of diversion"
+            f"  {len(pods)} points of diversion "
+            f"({podp_count} POD-parcel links)\n"
+            f"  {len(all_parcels)} parcels "
+            f"({len(all_parcels) - len(lower_parcels)} upper, "
+            f"{len(lower_parcels)} lower)\n"
+            f"  {len(wells)} wells ({wip_count} well-parcel links)\n"
+            f"  {wrp_count} water right-parcel links"
         ))
 
     @staticmethod
