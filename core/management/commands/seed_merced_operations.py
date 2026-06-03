@@ -391,22 +391,29 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     # Seed
     # ------------------------------------------------------------------
-    def _named_line(self, boundary, name, ftype, frac):
+    def _named_line(self, boundary, name, prefer_type, frac):
         """A real flowline named ``name`` (e.g. "Merced River") at fraction ``frac``.
 
         The base layer splits each watercourse into many short 3DHP segments, so
-        "Merced River" is ~dozens of rows. We order those segments deterministically
-        west→east (centroid x, then y, then pk) and pick the one at ``frac`` of the
-        way along — so two PODs on the Merced River at frac 0.12 and 0.88 land on
-        genuinely different reaches, not the same segment. Returns ``None`` if no
-        segment carries that name (caught by the caller as a placement error).
+        "Merced River" is dozens of rows — and crucially a single watercourse
+        carries MIXED feature_types: the Merced main stem is mostly "Waterbody
+        Connector" (wide/ponded reaches) with only its free-flowing stretches as
+        "Channel Line", and a named canal has both "Canal" and "Waterbody
+        Connector" segments. So we anchor on the NAME and treat ``prefer_type`` as
+        a soft preference: use the segments of that type if any exist (a river
+        diversion prefers a flowing "Channel Line" reach; a canal headgate prefers
+        a "Canal" segment so it renders as a canal), otherwise fall back to every
+        named segment. Segments are ordered deterministically west→east so two
+        PODs on the same river at frac 0.15 and 0.88 land on distinct reaches.
+        Returns ``None`` if no segment carries that name.
         """
-        segs = list(
-            Flowline.objects.filter(
-                boundary=boundary, feature_type=ftype, name__iexact=name)
-        )
+        segs = list(Flowline.objects.filter(boundary=boundary, name__iexact=name))
         if not segs:
             return None
+        if prefer_type:
+            typed = [s for s in segs if prefer_type in (s.feature_type or "")]
+            if typed:
+                segs = typed
         segs.sort(key=lambda f: (
             f.geometry.centroid.x, f.geometry.centroid.y, f.pk))
         idx = min(int(frac * len(segs)), len(segs) - 1)
@@ -462,7 +469,11 @@ class Command(BaseCommand):
         pods = []
         pod_river_lines = {}  # pod.pk -> the named Flowline it sits on (reused in Task 3)
         for name, rid, story, line_name, ftype, frac, max_cfs in POD_CONFIGS:
-            line = self._named_line(boundary_for[story], line_name, ftype, frac)
+            # Prefer a free-flowing "Channel Line" reach for a river diversion and
+            # a "Canal" segment for a canal headgate, but fall back to any named
+            # segment (the lower Merced main stem is all "Waterbody Connector").
+            prefer = CANAL if ftype == CANAL else RIVER
+            line = self._named_line(boundary_for[story], line_name, prefer, frac)
             if line is None:
                 # The named watercourse is missing from the base layer — fail
                 # loudly rather than silently snap the POD onto some other creek.
