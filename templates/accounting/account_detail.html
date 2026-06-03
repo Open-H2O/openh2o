@@ -25,6 +25,14 @@
     </a>
   </div>
 
+  {% if is_curtailed %}
+  <div class="alert-warning">
+    <strong>Curtailment in effect.</strong>
+    {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
+    Surface deliveries to this account's curtailed parcels stop after the curtailment date; conjunctive growers fall back on groundwater to make up the shortfall.
+  </div>
+  {% endif %}
+
   <div class="page-grid-2col">
 
     <!-- Left column: Account Info -->

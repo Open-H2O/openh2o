@@ -43,6 +43,7 @@ from accounting.services import (
 )
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
+from surface.models import CurtailmentOrder, WaterRight
 
 
 # Methodology tuning is an administrator's job, gated by the shared, switch-aware
@@ -389,8 +390,9 @@ def account_detail(request, pk):
         .select_related("parcel", "reporting_period")
         .order_by("-added_date")
     )
+    acct_parcel_ids = list(assignments.values_list("parcel_id", flat=True))
 
-    # Period selector: default to most recent non-finalized, or all-time
+    # Period selector
     period_id = request.GET.get("period", "").strip()
     periods = ReportingPeriod.objects.order_by("-start_date")
     selected_period = None
@@ -401,10 +403,27 @@ def account_detail(request, pk):
         except ReportingPeriod.DoesNotExist:
             pass
     elif not request.GET:
-        # Auto-select most recent non-finalized period if available
-        default_period = periods.filter(is_finalized=False).first()
-        if default_period:
-            selected_period = default_period
+        # Land on the period where THIS account actually has activity, so the
+        # page never opens on an allocation-only (or empty) year that hides the
+        # supply/usage story — the simple-vs-complex contrast is invisible when
+        # usage reads 0 everywhere. Prefer the most recent period carrying real
+        # transactions (deliveries / extraction / calculated usage) for the
+        # account's parcels; fall back to the most recent open period.
+        activity_period_id = (
+            ParcelLedger.objects.filter(
+                parcel_id__in=acct_parcel_ids, reporting_period__isnull=False
+            )
+            .exclude(source_type="allocation")
+            .order_by("-reporting_period__start_date")
+            .values_list("reporting_period_id", flat=True)
+            .first()
+        )
+        if activity_period_id:
+            selected_period = ReportingPeriod.objects.filter(
+                pk=activity_period_id
+            ).first()
+        else:
+            selected_period = periods.filter(is_finalized=False).first()
 
     # Account-level balance
     balance = account_balance(account, reporting_period=selected_period)
@@ -427,6 +446,28 @@ def account_detail(request, pk):
             "net": pb["net"],
         })
 
+    # Curtailment narrative (ISS / Phase 52-02): surface the cut as a story, not
+    # just lower numbers. An account is "curtailed" when any of its parcels is
+    # served by a water right under a curtailment order. Match the active order to
+    # the right by priority-date cutoff (the same date the right carries).
+    curtailment_orders = []
+    is_curtailed = WaterRight.objects.filter(
+        status="curtailed", water_right_parcels__parcel_id__in=acct_parcel_ids
+    ).exists()
+    if is_curtailed:
+        cutoffs = list(
+            WaterRight.objects.filter(
+                status="curtailed",
+                water_right_parcels__parcel_id__in=acct_parcel_ids,
+                priority_date__isnull=False,
+            ).values_list("priority_date", flat=True)
+        )
+        curtailment_orders = list(
+            CurtailmentOrder.objects.filter(
+                status="active", priority_date_cutoff__in=cutoffs
+            )
+        )
+
     context = {
         "account": account,
         "assignments": assignments,
@@ -434,6 +475,8 @@ def account_detail(request, pk):
         "parcel_balances": parcel_balances,
         "periods": periods,
         "selected_period": selected_period,
+        "is_curtailed": is_curtailed,
+        "curtailment_orders": curtailment_orders,
     }
 
     if request.headers.get("HX-Request") and "period" in request.GET:
