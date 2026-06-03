@@ -21,6 +21,7 @@ import logging
 from collections import OrderedDict
 from pathlib import Path
 
+import requests
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand, CommandError
@@ -53,6 +54,25 @@ THREEDHP_FLOWLINES_URL = (
     "https://hydro.nationalmap.gov/arcgis/rest/services/"
     "3DHP_all/MapServer/50/query"
 )
+
+# Every provider that implements live, per-boundary station discovery, in the
+# order the station step attempts them. Module-level so the setup wizard's
+# service layer can iterate the SAME list one provider per HTMX poll (ISS-051)
+# without redefining it. Key-free public APIs are ordered first so they populate
+# the catalog even when the key-gated providers skip for lack of a credential.
+#
+# Intentionally EXCLUDED — do NOT "fix" by adding here:
+#   - openet / openet_gee: geometry-based, not station-based. OpenET reads parcel
+#     polygons directly (datasync/adapters/openet.py:135), so there are no
+#     stations to discover.
+#   - cnrfc has no live discovery API (datasync/adapters/cnrfc.py:110); it is
+#     listed below only so its offline fixture loads in mock mode. Live discovery
+#     returns [] by design.
+STATION_SOURCE_CODES = [
+    "usgs", "cdec", "dwr_wdl", "dwr_sgma",  # key-free public APIs
+    "cimis", "noaa",                         # key-gated (skip cleanly without key)
+    "cnrfc",                                 # fixture-only; live discovery returns []
+]
 
 
 class Command(BaseCommand):
@@ -439,124 +459,131 @@ class Command(BaseCommand):
         Creates inactive MonitoredStation records for user curation.
         Idempotent: skips stations that already exist (data_source + external_station_id).
         Fail-soft: one provider failing (or lacking a key) never aborts the others.
+
+        Each provider's work lives in ``_discover_provider`` so the setup wizard
+        can discover one provider per short HTMX poll (ISS-051); this command path
+        simply loops the full ``STATION_SOURCE_CODES`` list and sums the results.
         """
-        # Every provider that implements live, per-boundary station discovery.
-        # Key-free public APIs are ordered first so they populate the catalog even
-        # when the key-gated providers skip for lack of a credential.
-        #
-        # Intentionally EXCLUDED — do NOT "fix" by adding here:
-        #   - openet / openet_gee: geometry-based, not station-based. OpenET reads
-        #     parcel polygons directly (datasync/adapters/openet.py:135), so there
-        #     are no stations to discover.
-        #   - cnrfc has no live discovery API (datasync/adapters/cnrfc.py:110); it
-        #     is listed below only so its offline fixture loads in mock mode. Live
-        #     discovery returns [] by design.
-        source_codes = [
-            "usgs", "cdec", "dwr_wdl", "dwr_sgma",  # key-free public APIs
-            "cimis", "noaa",                         # key-gated (skip cleanly without key)
-            "cnrfc",                                 # fixture-only; live discovery returns []
-        ]
-        use_mock = getattr(settings, "DATASYNC_MOCK_MODE", False)
         total_created = 0
+        for code in STATION_SOURCE_CODES:
+            created_count, _status = self._discover_provider(boundary, code, dry_run)
+            total_created += created_count
+        return total_created
 
-        for code in source_codes:
-            try:
-                ds = DataSource.objects.filter(code=code).first()
-                if ds is None:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"  DataSource '{code}' not found, skipping."
-                        )
-                    )
-                    continue
+    def _discover_provider(self, boundary, code, dry_run):
+        """Discover stations from ONE provider. Returns ``(created_count, status)``.
 
-                adapter = get_adapter(code)
-                if adapter is None:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"  No adapter registered for '{code}', skipping."
-                        )
-                    )
-                    continue
+        This is the single source of truth for per-provider discovery, shared by
+        the all-providers command loop (``_step_stations``) and the setup wizard's
+        one-provider-per-poll service (``run_station_provider_step``). It never
+        raises — a failing provider is reported via ``status`` and the stdout
+        messages below, so one bad provider never aborts the others (fail-soft).
 
-                if use_mock:
-                    station_list = self._load_mock_stations(code)
-                else:
-                    # Skip key-gated providers cleanly when no credential is set,
-                    # so a missing key reads as a labeled skip rather than an
-                    # opaque empty result. Key-free providers return None here.
-                    missing_credential = adapter.missing_required_credential()
-                    if missing_credential:
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"  {code.upper()}: skipped — no API key "
-                                f"configured ({missing_credential})."
-                            )
-                        )
-                        logger.info(
-                            "Station discovery skipped for %s: %s",
-                            code, missing_credential,
-                        )
-                        continue
-                    station_list = adapter.discover_stations(boundary.geometry)
-
+        ``status`` is one of: ``created`` (ran, made 0+ stations), ``skipped_no_key``
+        (key-gated provider with no credential), ``skipped_no_source`` (no
+        DataSource row), ``skipped_no_adapter`` (no adapter registered),
+        ``timed_out`` (discovery exceeded the bounded timeout), or ``failed``
+        (any other error).
+        """
+        use_mock = getattr(settings, "DATASYNC_MOCK_MODE", False)
+        try:
+            ds = DataSource.objects.filter(code=code).first()
+            if ds is None:
                 self.stdout.write(
-                    f"  {code.upper()}: found {len(station_list)} station(s)."
+                    self.style.WARNING(f"  DataSource '{code}' not found, skipping.")
                 )
+                return 0, "skipped_no_source"
 
-                created_count = 0
-                for stn in station_list:
-                    ext_id = str(stn.get("station_id", "")).strip()
-                    if not ext_id:
-                        continue
-
-                    lat = stn.get("latitude")
-                    lon = stn.get("longitude")
-                    if lat is None or lon is None:
-                        continue
-
-                    if dry_run:
-                        exists = MonitoredStation.objects.filter(
-                            data_source=ds, external_station_id=ext_id
-                        ).exists()
-                        if not exists:
-                            created_count += 1
-                        continue
-
-                    _, created = MonitoredStation.objects.get_or_create(
-                        data_source=ds,
-                        external_station_id=ext_id,
-                        defaults={
-                            "station_name": stn.get("name", ""),
-                            "location": Point(
-                                float(lon), float(lat), srid=4326
-                            ),
-                            "parameters": stn.get("parameters", []),
-                            "is_active": False,
-                        },
+            adapter = get_adapter(code)
+            if adapter is None:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  No adapter registered for '{code}', skipping."
                     )
-                    if created:
-                        created_count += 1
+                )
+                return 0, "skipped_no_adapter"
+
+            if use_mock:
+                station_list = self._load_mock_stations(code)
+            else:
+                # Skip key-gated providers cleanly when no credential is set, so a
+                # missing key reads as a labeled skip rather than an opaque empty
+                # result. Key-free providers return None here.
+                missing_credential = adapter.missing_required_credential()
+                if missing_credential:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  {code.upper()}: skipped — no API key "
+                            f"configured ({missing_credential})."
+                        )
+                    )
+                    logger.info(
+                        "Station discovery skipped for %s: %s",
+                        code, missing_credential,
+                    )
+                    return 0, "skipped_no_key"
+                station_list = adapter.discover_stations(boundary.geometry)
+
+            self.stdout.write(
+                f"  {code.upper()}: found {len(station_list)} station(s)."
+            )
+
+            created_count = 0
+            for stn in station_list:
+                ext_id = str(stn.get("station_id", "")).strip()
+                if not ext_id:
+                    continue
+
+                lat = stn.get("latitude")
+                lon = stn.get("longitude")
+                if lat is None or lon is None:
+                    continue
 
                 if dry_run:
-                    self.stdout.write(
-                        f"  {code.upper()}: would create {created_count} station(s)."
-                    )
-                else:
-                    self.stdout.write(
-                        f"  {code.upper()}: {created_count} station(s) created."
-                    )
-                total_created += created_count
+                    exists = MonitoredStation.objects.filter(
+                        data_source=ds, external_station_id=ext_id
+                    ).exists()
+                    if not exists:
+                        created_count += 1
+                    continue
 
-            except Exception as exc:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"  {code.upper()} station discovery failed: {exc}"
-                    )
+                _, created = MonitoredStation.objects.get_or_create(
+                    data_source=ds,
+                    external_station_id=ext_id,
+                    defaults={
+                        "station_name": stn.get("name", ""),
+                        "location": Point(float(lon), float(lat), srid=4326),
+                        "parameters": stn.get("parameters", []),
+                        "is_active": False,
+                    },
                 )
-                logger.exception("Station discovery failed for %s", code)
+                if created:
+                    created_count += 1
 
-        return total_created
+            if dry_run:
+                self.stdout.write(
+                    f"  {code.upper()}: would create {created_count} station(s)."
+                )
+            else:
+                self.stdout.write(
+                    f"  {code.upper()}: {created_count} station(s) created."
+                )
+            return created_count, "created"
+
+        except requests.Timeout as exc:
+            self.stdout.write(
+                self.style.ERROR(f"  {code.upper()} station discovery timed out.")
+            )
+            logger.warning("Station discovery timed out for %s: %s", code, exc)
+            return 0, "timed_out"
+        except Exception as exc:
+            self.stdout.write(
+                self.style.ERROR(
+                    f"  {code.upper()} station discovery failed: {exc}"
+                )
+            )
+            logger.exception("Station discovery failed for %s", code)
+            return 0, "failed"
 
     def _load_mock_stations(self, source_code):
         """Load station list from fixture file for mock mode."""

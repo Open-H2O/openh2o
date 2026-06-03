@@ -1012,3 +1012,84 @@ class TestStationsStep:
         # Discovery ran against THIS boundary's geometry, not a hardcoded one.
         called_geom = adapters["usgs"].discover_stations.call_args.args[0]
         assert called_geom.equals(non_kaweah.geometry)
+
+
+# ---------------------------------------------------------------------------
+# Per-provider entry point (49-02 / ISS-051): the wizard discovers one provider
+# per HTMX poll via run_station_provider_step, which reuses _discover_provider —
+# the same logic the all-providers command path loops over (locked above).
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+class TestRunStationProviderStep:
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_runs_exactly_one_provider_and_returns_status(
+        self, mock_get_adapter, boundary, all_data_sources, settings
+    ):
+        """run_station_provider_step discovers a SINGLE provider and reports its
+        outcome status — the per-poll entry point the wizard uses."""
+        from setup.services import run_station_provider_step
+
+        settings.DATASYNC_MOCK_MODE = False
+        adapters = {}
+
+        def side(code):
+            adapter = _fake_adapter(_mock_station_list(code))
+            adapters[code] = adapter
+            return adapter
+
+        mock_get_adapter.side_effect = side
+
+        count, errors, status = run_station_provider_step(boundary, "cdec")
+
+        assert status == "created"
+        assert count == 2
+        assert errors == []
+        # Only cdec was touched — not the whole provider set.
+        assert set(adapters) == {"cdec"}
+        assert (
+            MonitoredStation.objects.filter(
+                data_source=all_data_sources["cdec"]
+            ).count()
+            == 2
+        )
+        assert MonitoredStation.objects.count() == 2
+
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_failing_provider_returns_failed_status_never_raises(
+        self, mock_get_adapter, boundary, all_data_sources, settings
+    ):
+        """A provider raising mid-discovery yields ('failed', friendly message),
+        not an exception — so a single poll never dies."""
+        from setup.services import run_station_provider_step
+
+        settings.DATASYNC_MOCK_MODE = False
+        mock_get_adapter.side_effect = lambda code: _fake_adapter(
+            raises=RuntimeError("simulated outage")
+        )
+
+        count, errors, status = run_station_provider_step(boundary, "usgs")
+
+        assert status == "failed"
+        assert count == 0
+        assert errors  # a friendly, non-empty operator message
+        assert MonitoredStation.objects.count() == 0
+
+    @patch("geography.management.commands.auto_populate.get_adapter")
+    def test_missing_key_provider_is_clean_skip_status(
+        self, mock_get_adapter, boundary, all_data_sources, settings
+    ):
+        """A key-gated provider with no credential reports skipped_no_key with no
+        error — a clean labeled skip, never discover_stations called."""
+        from setup.services import run_station_provider_step
+
+        settings.DATASYNC_MOCK_MODE = False
+        adapter = _fake_adapter([], missing="NOAA API token")
+        mock_get_adapter.side_effect = lambda code: adapter
+
+        count, errors, status = run_station_provider_step(boundary, "noaa")
+
+        assert status == "skipped_no_key"
+        assert count == 0
+        assert errors == []
+        adapter.discover_stations.assert_not_called()
