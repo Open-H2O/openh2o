@@ -113,6 +113,22 @@ def test_account_default_period_has_more_usage_than_open_year(seeded_site):
     assert default_usage > open_year_usage
 
 
+@pytest.mark.django_db
+def test_dashboard_defaults_to_activity_period_with_nonzero_usage(seeded_site):
+    """The Budget Summary tiles must roll up a period that has real use, not the
+    open year that holds only allocations (which showed total usage 0)."""
+    resp = seeded_site.get("/accounting/dashboard/")
+    assert resp.status_code == 200
+    selected = resp.context["selected_period"]
+    assert selected is not None and selected.name == PRIOR_WY, (
+        f"dashboard should open on the activity year {PRIOR_WY}, got "
+        f"{getattr(selected, 'name', None)}"
+    )
+    assert resp.context["grand_usage"] > Decimal("0"), (
+        "dashboard total usage should be > 0, not the empty open year"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Fix #2 — district service-area zones carry ParcelZone links
 # ---------------------------------------------------------------------------

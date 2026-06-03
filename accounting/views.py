@@ -71,7 +71,24 @@ def dashboard(request):
         except ReportingPeriod.DoesNotExist:
             pass
     if selected_period is None and periods.exists():
-        selected_period = periods.first()
+        # Default to the most recent period that has REAL activity (deliveries /
+        # extraction / calculated usage), not the open year that holds only
+        # allocations — otherwise the Budget Summary tiles show total usage 0 even
+        # though a full year of use sits in the prior period. Mirrors the
+        # account_detail default so every overview opens where the data is.
+        activity_period_id = (
+            ParcelLedger.objects.filter(reporting_period__isnull=False)
+            .exclude(source_type="allocation")
+            .order_by("-reporting_period__start_date")
+            .values_list("reporting_period_id", flat=True)
+            .first()
+        )
+        if activity_period_id:
+            selected_period = ReportingPeriod.objects.filter(
+                pk=activity_period_id
+            ).first()
+        else:
+            selected_period = periods.first()
 
     account_summaries = []
     zone_summaries = []
