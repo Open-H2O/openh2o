@@ -1,10 +1,12 @@
 {% comment %}
-One completed populate step. Three legible states so a non-expert can tell them
-apart at a glance:
-  - succeeded with data  → green ✓, "N records created"
-  - succeeded but empty   → green ✓, "None found ... add later" (not a problem)
-  - failed                → red ! icon + red message (never a green ✓)
-Expects: result (with .label, .success, .count, .errors).
+One completed populate step. Legible states so a non-expert can tell them apart
+at a glance:
+  - succeeded with data   → green ✓, "N records created"
+  - succeeded but empty    → green ✓, "None found ... add later" (not a problem)
+  - clean skip (.note set) → green ✓, the skip note (e.g. "no API key configured")
+  - failed                 → red ! icon + red message (never a green ✓)
+Expects: result (with .label, .success, .count, .errors; optional .note for a
+clean per-provider skip).
 {% endcomment %}
 {% if result.success %}
 <div class="wizard-step wizard-step--complete">
@@ -12,7 +14,7 @@ Expects: result (with .label, .success, .count, .errors).
   <div class="wizard-step-body">
     <div class="wizard-step-name">{{ result.label }}</div>
     <div class="wizard-step-count">
-      {% if result.count %}{{ result.count }} record{{ result.count|pluralize }} created{% else %}None found for this boundary — you can add these later.{% endif %}
+      {% if result.note %}{{ result.note }}{% elif result.count %}{{ result.count }} record{{ result.count|pluralize }} created{% else %}None found for this boundary — you can add these later.{% endif %}
     </div>
   </div>
 </div>

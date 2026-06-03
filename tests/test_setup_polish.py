@@ -267,6 +267,112 @@ def test_step_result_with_data_shows_count(db):
 # --------------------------------------------------------------------------
 
 
+# --------------------------------------------------------------------------
+# 49-02 — per-provider station discovery polling (ISS-051)
+# --------------------------------------------------------------------------
+
+from unittest.mock import MagicMock  # noqa: E402
+
+PROGRESS_URL = reverse("setup:progress")
+
+
+def _discovery_adapter(code, *, raises=False):
+    """Stand-in adapter: returns one in-bbox station, or raises (fail-soft test)."""
+    a = MagicMock()
+    a.missing_required_credential.return_value = None
+    if raises:
+        a.discover_stations.side_effect = RuntimeError("simulated provider outage")
+    else:
+        a.discover_stations.return_value = [{
+            "station_id": f"{code.upper()}-1",
+            "name": f"{code} station",
+            "latitude": 36.25,
+            "longitude": -119.25,  # inside the _boundary bbox
+            "parameters": ["p"],
+        }]
+    return a
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_stations_phase_polls_one_provider_per_request(db, settings, monkeypatch):
+    """The wizard advances ONE provider per stations-phase poll, renders a labeled
+    row for each (a clean error row for one that raises), and reaches completion
+    with the station review attached — never a single all-providers request that
+    can outlast the worker timeout (ISS-051)."""
+    from geography.management.commands import auto_populate as ap
+    from setup.services import STATION_PROVIDERS
+
+    settings.DATASYNC_MOCK_MODE = False
+    for code in STATION_PROVIDERS:
+        DataSource.objects.create(name=f"{code.upper()} Service", code=code)
+    boundary = _boundary()
+
+    # usgs (first provider) raises; every other provider discovers one station.
+    monkeypatch.setattr(
+        ap, "get_adapter",
+        lambda code: _discovery_adapter(code, raises=(code == "usgs")),
+    )
+
+    client = Client()
+    client.force_login(_admin())
+    # Start the run already at the stations phase — the three geographic steps
+    # call external ArcGIS services and are covered elsewhere.
+    session = client.session
+    session["setup_wizard_boundary_id"] = boundary.pk
+    session["setup_wizard_step_index"] = 3  # stations is index 3
+    session["setup_wizard_provider_index"] = 0
+    session["setup_wizard_results"] = [
+        {"step": "basins", "label": "Groundwater Basins", "count": 1, "errors": [], "success": True},
+        {"step": "parcels", "label": "Parcel Boundaries", "count": 1, "errors": [], "success": True},
+        {"step": "flowlines", "label": "Flowlines", "count": 1, "errors": [], "success": True},
+    ]
+    session.save()
+
+    n = len(STATION_PROVIDERS)  # 7
+    # DB count after each poll proves one provider advances per request: usgs
+    # raises (0 created), then each subsequent provider adds exactly one.
+    expected_counts = [0, 1, 2, 3, 4, 5, 6]
+    responses = []
+    for i in range(n):
+        resp = client.post(PROGRESS_URL)
+        assert resp.status_code == 200
+        assert MonitoredStation.objects.count() == expected_counts[i], (
+            f"after poll {i + 1} expected {expected_counts[i]} stations"
+        )
+        responses.append(resp.content.decode())
+
+    # Poll 1 — usgs raised → a clean labeled ERROR row, the run keeps going.
+    first = responses[0]
+    assert "USGS Service" in first
+    assert "wizard-step--error" in first
+    assert "Couldn't reach this data provider." in first
+    assert "what's next" not in first.lower()  # still polling, not finished
+    assert "Checking" in first                  # spinner names the next provider
+
+    # Final poll — completion panel + station review attached for the 6 stations.
+    final = responses[-1]
+    assert "what's next" in final.lower()
+    assert "Monitoring stations" in final       # build_station_review attached
+    assert "Enable all 6" in final              # 6 inactive in-boundary stations
+
+
+def test_step_result_skip_note_is_a_clean_row_not_an_error(db):
+    """A provider's clean skip (e.g. no API key) renders its note on a green row,
+    not a red error and not the generic 'None found' empty-success text."""
+    skipped = {
+        "label": "NOAA Weather Stations",
+        "success": True,
+        "count": 0,
+        "errors": [],
+        "note": "Skipped — no API key configured. You can add one later.",
+    }
+    html = render_to_string("setup/partials/_step_result.html", {"result": skipped})
+    assert "wizard-step--complete" in html
+    assert "no API key configured" in html
+    assert "wizard-step--error" not in html
+    assert "None found" not in html  # the note replaces the empty-success text
+
+
 def test_completion_panel_routes_to_next_steps(db):
     boundary = _boundary()
     ctx = {

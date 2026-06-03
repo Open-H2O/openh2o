@@ -21,10 +21,13 @@ from core.access import admin_required
 from datasync.models import MonitoredStation
 from geography.models import Boundary
 from setup.services import (
+    STATION_PROVIDERS,
     WIZARD_STEPS,
     build_station_review,
     get_boundary_preview_data,
     run_auto_populate_step,
+    run_station_provider_step,
+    station_provider_label,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,9 +35,18 @@ logger = logging.getLogger(__name__)
 SESSION_KEY_BOUNDARY = "setup_wizard_boundary_id"
 SESSION_KEY_STEP_INDEX = "setup_wizard_step_index"
 SESSION_KEY_RESULTS = "setup_wizard_results"
+SESSION_KEY_PROVIDER_INDEX = "setup_wizard_provider_index"
 
 # Ordered step names (must match WIZARD_STEPS order)
 STEP_NAMES = [s[0] for s in WIZARD_STEPS]
+
+# Plain-language note shown for a provider's clean (non-failure) skip outcomes.
+# created/timed_out/failed are NOT here — they render via count / the error row.
+PROVIDER_SKIP_NOTES = {
+    "skipped_no_key": "Skipped — no API key configured. You can add one later.",
+    "skipped_no_source": "Skipped — this data source isn't configured.",
+    "skipped_no_adapter": "Skipped — no connector available for this provider.",
+}
 
 
 @admin_required
@@ -123,6 +135,7 @@ def setup_confirm(request):
         # Reset step tracking and go to run page
         request.session[SESSION_KEY_STEP_INDEX] = 0
         request.session[SESSION_KEY_RESULTS] = []
+        request.session[SESSION_KEY_PROVIDER_INDEX] = 0
         return redirect("setup:run")
 
     preview = get_boundary_preview_data(boundary)
@@ -167,34 +180,68 @@ def setup_progress(request):
 
     step_index = request.session.get(SESSION_KEY_STEP_INDEX, 0)
     results = request.session.get(SESSION_KEY_RESULTS, [])
+    provider_index = request.session.get(SESSION_KEY_PROVIDER_INDEX, 0)
 
     all_done = step_index >= len(STEP_NAMES)
 
     if not all_done:
         step_name = STEP_NAMES[step_index]
-        count, errors = run_auto_populate_step(boundary, step_name)
-        results.append({
-            "step": step_name,
-            "label": WIZARD_STEPS[step_index][1],
-            "count": count,
-            "errors": errors,
-            "success": len(errors) == 0,
-        })
-        step_index += 1
+        if step_name == "stations":
+            # Stations is split into one short request per provider (ISS-051): a
+            # slow/failing provider becomes an isolated, labeled row instead of a
+            # synchronous all-providers call that can outlast the worker timeout.
+            code = STATION_PROVIDERS[provider_index]
+            count, errors, status = run_station_provider_step(boundary, code)
+            results.append({
+                "step": "stations",
+                "label": station_provider_label(code),
+                "count": count,
+                "errors": errors,
+                "success": status not in ("failed", "timed_out"),
+                "status": status,
+                "note": PROVIDER_SKIP_NOTES.get(status),
+            })
+            provider_index += 1
+            if provider_index >= len(STATION_PROVIDERS):
+                # Every provider polled — the stations step is complete.
+                step_index += 1
+                provider_index = 0
+            request.session[SESSION_KEY_PROVIDER_INDEX] = provider_index
+        else:
+            count, errors = run_auto_populate_step(boundary, step_name)
+            results.append({
+                "step": step_name,
+                "label": WIZARD_STEPS[step_index][1],
+                "count": count,
+                "errors": errors,
+                "success": len(errors) == 0,
+            })
+            step_index += 1
         request.session[SESSION_KEY_STEP_INDEX] = step_index
         request.session[SESSION_KEY_RESULTS] = results
         request.session.modified = True
+
+    all_done = step_index >= len(STEP_NAMES)
+
+    # While the stations phase runs, label the spinner with the provider the next
+    # poll will query, so the operator sees progress one provider at a time.
+    active_provider_label = None
+    if not all_done and STEP_NAMES[step_index] == "stations":
+        active_provider_label = station_provider_label(
+            STATION_PROVIDERS[provider_index]
+        )
 
     context = {
         "results": results,
         "steps": WIZARD_STEPS,
         "step_index": step_index,
-        "all_done": step_index >= len(STEP_NAMES),
+        "all_done": all_done,
         "boundary": boundary,
+        "active_provider_label": active_provider_label,
     }
     # On the final poll, attach the station-review data so completion can offer
     # the in-flow enable step (discovered stations land inactive).
-    if context["all_done"]:
+    if all_done:
         context.update(build_station_review(boundary))
     return render(request, "setup/partials/_progress.html", context)
 

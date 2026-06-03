@@ -52,7 +52,33 @@
   <div class="wizard-step-list">
     {% for step_name, step_label, step_desc in steps %}
     {% with forloop.counter0 as idx %}
-    {% if idx < step_index %}
+    {% if step_name == "stations" %}
+      {# Stations runs one provider per poll: render every provider finished so
+         far, then a spinner for the one the next poll will query. #}
+      {% if idx == step_index %}
+        {% for result in results %}
+        {% if result.step == "stations" %}
+          {% include "setup/partials/_step_result.html" %}
+        {% endif %}
+        {% endfor %}
+        <div class="wizard-step wizard-step--active">
+          <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
+          <div class="wizard-step-body">
+            <div class="wizard-step-name">{{ step_label }}</div>
+            <div class="wizard-step-count" style="color: var(--color-gold);">{% if active_provider_label %}Checking {{ active_provider_label }}…{% else %}{{ step_desc }}{% endif %}</div>
+          </div>
+        </div>
+      {% else %}
+        {# Earlier steps still running — stations is waiting its turn. #}
+        <div class="wizard-step wizard-step--pending">
+          <div class="wizard-step-icon">·</div>
+          <div class="wizard-step-body">
+            <div class="wizard-step-name">{{ step_label }}</div>
+            <div class="wizard-step-count">Waiting</div>
+          </div>
+        </div>
+      {% endif %}
+    {% elif idx < step_index %}
       {# Completed step — find its result and render the shared three-state row #}
       {% for result in results %}
       {% if result.step == step_name %}
