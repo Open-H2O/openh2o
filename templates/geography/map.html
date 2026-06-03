@@ -158,7 +158,7 @@ var MAP_CONFIG = {
         // fields. Shares the 'flowlines-canals' group → one panel toggle hides both.
         {
             id: 'flowlines-canals-casing', type: 'line', source: 'flowlines',
-            section: 'Surface Water', group: 'flowlines-canals', groupHidden: true,
+            section: 'Surface Water', group: 'flowlines-canals', panelHidden: true,
             filter: ['==', ['get', 'feature_type'], 'Canal/Ditch'],
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: { 'line-color': OH2O.colors.hydroCasing,
