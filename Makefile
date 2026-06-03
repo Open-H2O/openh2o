@@ -9,8 +9,8 @@ EXEC    = $(COMPOSE) exec web python manage.py
 .PHONY: help up down build logs shell dbshell migrate makemigrations \
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
-        seed-well-types demo flush-demo kaweah flush-kaweah merced check test fresh \
-        verify-clean install-cron show-cron sync
+        seed-well-types demo flush-demo kaweah flush-kaweah merced teardown-demo \
+        check test fresh verify-clean install-cron show-cron sync
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -103,6 +103,9 @@ flush-kaweah: ## Delete and reload Kaweah data
 merced: ## Load the full Merced Subbasin demo (boundary, hydrography, GSAs, rights/PODs, selected parcels, recharge)
 	$(EXEC) seed_merced
 
+teardown-demo: ## Remove ALL Kaweah + Demo-Valley demo data (keeps Merced + shared reference data)
+	$(EXEC) teardown_demo
+
 # ---------------------------------------------------------------------------
 # Health & Maintenance
 # ---------------------------------------------------------------------------
@@ -127,14 +130,13 @@ sync: ## Run sync_all manually (syncs all active data sources)
 # Composite Targets
 # ---------------------------------------------------------------------------
 
-fresh: down ## Full reset: destroy volumes, rebuild, migrate, seed, demo
+fresh: down ## Full reset: destroy volumes, rebuild, migrate, seed, Merced demo
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build
 	@echo "Waiting for database to be healthy..."
 	@sleep 5
 	$(EXEC) migrate
 	$(EXEC) seed_data
-	$(EXEC) seed_demo_data
-	$(EXEC) seed_kaweah
+	$(EXEC) seed_merced
 	@echo ""
-	@echo "Fresh environment ready. Run 'make createsuperuser' to create an admin."
+	@echo "Fresh environment ready (Merced Subbasin demo). Run 'make createsuperuser' to create an admin."
