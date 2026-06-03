@@ -20,7 +20,9 @@ OH2O.colors = {
     // maps): cyan natural channels, mint-green man-made canals, both solid, width
     // carrying stream order. Bright solid lines read over the aerial basemap and
     // against the muted translucent green GSA zone fills.
-    river: '#45d0e8', canal: '#7ee8a0'
+    river: '#45d0e8', canal: '#7ee8a0',
+    // Dark casing drawn beneath the mint canal so it lifts off green farm fields.
+    hydroCasing: '#06140e'
 };
 
 OH2O.FONT = ['Noto Sans Regular'];

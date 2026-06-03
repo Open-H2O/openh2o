@@ -154,13 +154,25 @@ var MAP_CONFIG = {
                      'line-opacity': 0.85 },
             swatch: 'line', swatchColor: OH2O.colors.river
         },
+        // Dark casing drawn first (underneath) so the mint canal lifts off green
+        // fields. Shares the 'flowlines-canals' group → one panel toggle hides both.
+        {
+            id: 'flowlines-canals-casing', type: 'line', source: 'flowlines',
+            section: 'Surface Water', group: 'flowlines-canals', groupHidden: true,
+            filter: ['==', ['get', 'feature_type'], 'Canal/Ditch'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
+            paint: { 'line-color': OH2O.colors.hydroCasing,
+                     'line-width': ['interpolate', ['linear'], ['zoom'], 9, 2.2, 13, 3.4, 16, 4.5],
+                     'line-opacity': 0.8 }
+        },
         {
             id: 'flowlines-canals', type: 'line', source: 'flowlines',
-            label: 'Canals & Ditches', section: 'Surface Water',
+            label: 'Canals & Ditches', section: 'Surface Water', group: 'flowlines-canals',
             filter: ['==', ['get', 'feature_type'], 'Canal/Ditch'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: { 'line-color': OH2O.colors.canal,
                      'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.0, 13, 1.8, 16, 2.5],
-                     'line-opacity': 0.85 },
+                     'line-opacity': 0.95 },
             swatch: 'line', swatchColor: OH2O.colors.canal
         },
         Object.assign(OH2O.makeLabelLayer('flowlines-label', 'flowlines', 'hydrography', {
