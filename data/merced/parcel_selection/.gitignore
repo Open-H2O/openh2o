@@ -6,3 +6,6 @@ merced_parcel_picker.qgz
 _verify_project.py
 _render_check.png
 _render_check.py
+*.gpkg-shm
+*.gpkg-wal
+*.aux.xml
