@@ -30,7 +30,12 @@ def map_view(request):
     center_lat = 37.5
     zoom = 6
 
-    boundary = Boundary.objects.first()
+    # Default the map to the Merced Subbasin (the v1.9 demonstration area).
+    # Fall back to any boundary so a fresh / non-Merced install still frames.
+    boundary = (
+        Boundary.objects.filter(name="Merced Subbasin").first()
+        or Boundary.objects.first()
+    )
     if boundary and boundary.geometry:
         centroid = boundary.geometry.centroid
         center_lng = centroid.x

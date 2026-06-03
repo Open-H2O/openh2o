@@ -1,24 +1,25 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Seed the two real Merced boundaries that form the v1.9 demonstration's
+Seed the real Merced boundary that forms the v1.9 demonstration's
 spatial canvas:
 
   - **Merced Subbasin** — DWR Bulletin 118 basin 5-022.04 ("San Joaquin
     Valley - Merced"). The complex, critically-overdrafted valley floor.
-  - **Upper Merced River Watershed** — the Merced River surface-water
-    drainage ABOVE Lake McClure (New Exchequer Dam). An analytical
-    construct, NOT a Bulletin 118 basin — the simple, snowmelt-driven
-    contrast to the lower subbasin.
 
-Both geometries are committed under ``data/merced/`` as EPSG:4326 GeoJSON
+The upper Merced River watershed was REMOVED from the demonstration: its
+only free-flowing reaches sit high in the Sierra (the foothill stretch is
+Lake McClure reservoir), so a district-scale diversion there is
+geographically honest but operationally implausible. The simple-vs-complex
+contrast now lives entirely within the valley floor. Do not re-add it.
+
+The geometry is committed under ``data/merced/`` as EPSG:4326 GeoJSON
 so the demo is reproducible from authoritative public sources (the same
 doctrine as ``data/kaweah/``). Provenance lives in ``data/merced/README.md``.
 
-This command loads ONLY the boundaries. Rivers, canals, and stations are
+This command loads ONLY the boundary. Rivers, canals, and stations are
 populated separately by driving the platform's own loaders:
 
     python manage.py auto_populate --boundary "Merced Subbasin" --steps flowlines,stations
-    python manage.py auto_populate --boundary "Upper Merced River Watershed" --steps flowlines
 
 Idempotent: re-running updates the existing boundary's geometry and
 attributes in place (matched by name), so a refreshed fixture re-seeds
@@ -56,28 +57,13 @@ BOUNDARY_CONFIGS = [
             "Merced demonstration."
         ),
     },
-    {
-        "filename": "upper_merced_watershed.geojson",
-        "name": "Upper Merced River Watershed",
-        "basin_code": "",  # intentionally blank — this is NOT a B118 basin
-        "huc": "18040008",
-        "area_sq_miles": Decimal("1033"),
-        "description": (
-            "Analytical watershed construct — NOT a DWR Bulletin 118 "
-            "groundwater basin. The Merced River surface-water drainage above "
-            "Lake McClure (New Exchequer Dam), delineated from the USGS "
-            "Network-Linked Data Index (NLDI) upstream-basin navigation. "
-            "Sierra/foothill, snowmelt-driven, single-source. The simple "
-            "'upper' contrast to the complex lower subbasin."
-        ),
-    },
 ]
 
 
 class Command(BaseCommand):
     help = (
-        "Seed the two real Merced boundaries (lower subbasin 5-022.04 + "
-        "upper Merced River watershed) from committed public-source GeoJSON. "
+        "Seed the real Merced Subbasin boundary (5-022.04) from "
+        "committed public-source GeoJSON. "
         "Idempotent; additive (does not touch Kaweah or Demo Valley)."
     )
 
