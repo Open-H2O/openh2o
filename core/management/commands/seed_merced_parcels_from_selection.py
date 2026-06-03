@@ -103,6 +103,7 @@ class Command(BaseCommand):
         parcels = []
         pod_to_parcels = {}     # pod.pk -> [parcels]
         wells = []
+        well_members = {}       # well_group key -> [(parcel, geom)]
         seq = well_seq = gsa_links = 0
         for ft in features:
             seq += 1
@@ -141,25 +142,37 @@ class Command(BaseCommand):
             if served:
                 pod_to_parcels.setdefault(pods_by_code[served].pk, []).append(parcel)
 
-            # Groundwater / conjunctive fields get their own well at centroid.
+            # Collect groundwater/conjunctive fields for well assignment after
+            # the loop. Fields sharing a well_group share ONE well (a single
+            # high-capacity well irrigating many parcels); ungrouped fields get
+            # their own well.
             if source in GROUNDWATER_SOURCES:
-                well_seq += 1
-                c = geom.centroid
-                well, _ = Well.objects.update_or_create(
-                    well_registration_id=f"MER-W-{well_seq:03d}",
-                    defaults={
-                        "name": f"Ag well on {parcel.parcel_number}",
-                        "well_type": ag_well_type,
-                        "location": c,
-                        "status": "active",
-                    },
-                )
-                # one well, one parcel, full fraction
+                wg = (props.get("well_group") or "").strip()
+                well_members.setdefault(wg or f"solo-{seq}", []).append((parcel, geom))
+
+        # --- Wells: one per well_group (shared) or per ungrouped field. A
+        # shared well sits at the centroid of the parcels it irrigates; each
+        # member gets an equal share (fractions sum to 1.0 per well). ---
+        for key, members in well_members.items():
+            well_seq += 1
+            union = members[0][1]
+            for _, gm in members[1:]:
+                union = union.union(gm)
+            centroid = union.centroid
+            shared = len(members) > 1
+            name = (f"Shared ag well ({key}) — {len(members)} parcels"
+                    if shared else f"Ag well on {members[0][0].parcel_number}")
+            well, _ = Well.objects.update_or_create(
+                well_registration_id=f"MER-W-{well_seq:03d}",
+                defaults={"name": name, "well_type": ag_well_type,
+                          "location": centroid, "status": "active"},
+            )
+            frac = Decimal(str(round(1.0 / len(members), 4)))
+            for parcel, _g in members:
                 WellIrrigatedParcel.objects.update_or_create(
-                    well=well, parcel=parcel,
-                    defaults={"fraction": Decimal("1.0")},
+                    well=well, parcel=parcel, defaults={"fraction": frac},
                 )
-                wells.append(well)
+            wells.append(well)
 
         # --- POD -> parcel links, fraction normalized within each POD ---
         podp = 0
@@ -195,8 +208,9 @@ class Command(BaseCommand):
             f"  {len(parcels)} parcels (real DWR field geometry)\n"
             f"  SURFACE DISTRICT — {podp} POD-parcel deliveries across "
             f"{len(pod_to_parcels)} diversions; {wrp} water-right-parcel links\n"
-            f"  GSA (groundwater) — {len(wells)} wells; "
-            f"{gsa_links} parcels assigned to their GSA"
+            f"  GSA (groundwater) — {len(wells)} wells "
+            f"({sum(1 for m in well_members.values() if len(m) > 1)} shared "
+            f"across multiple parcels); {gsa_links} parcels in their GSA"
         ))
 
     @staticmethod

@@ -126,6 +126,9 @@ def main():
     # conjunctive (both) — this is the within-valley simple-vs-complex story.
     gdf["served_by"] = ""
     gdf["water_source"] = ""
+    # well_group: fields given the same group id share ONE well (one
+    # high-capacity well irrigating several parcels). Blank = its own well.
+    gdf["well_group"] = ""
     gdf = gdf.reset_index(drop=True)
 
     out = f"{HERE}/merced_parcel_picker.gpkg"

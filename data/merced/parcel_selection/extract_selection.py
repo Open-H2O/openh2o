@@ -13,12 +13,15 @@ import geopandas as gpd
 
 HERE = "/Users/slate/GitHub/openh2o/data/merced/parcel_selection"
 OUT = "/Users/slate/GitHub/openh2o/data/merced/selected_parcels.geojson"
-KEEP = ["served_by", "water_source", "MAIN_CROP", "crop_class",
+KEEP = ["served_by", "water_source", "well_group", "MAIN_CROP", "crop_class",
         "COUNTY", "ACRES", "UniqueID", "geometry"]
 
 g = gpd.read_file(f"{HERE}/merced_parcel_picker.gpkg", layer="crop_fields")
 g["served_by"] = g["served_by"].fillna("")
 g["water_source"] = g["water_source"].fillna("")
+if "well_group" not in g.columns:
+    g["well_group"] = ""
+g["well_group"] = g["well_group"].fillna("")
 tagged = g[(g["served_by"] != "") | (g["water_source"] != "")].copy()
 tagged = tagged[[c for c in KEEP if c in tagged.columns]].to_crs("EPSG:4326")
 tagged.to_file(OUT, driver="GeoJSON")

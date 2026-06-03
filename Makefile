@@ -9,7 +9,7 @@ EXEC    = $(COMPOSE) exec web python manage.py
 .PHONY: help up down build logs shell dbshell migrate makemigrations \
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
-        seed-well-types demo flush-demo kaweah flush-kaweah check test fresh \
+        seed-well-types demo flush-demo kaweah flush-kaweah merced check test fresh \
         verify-clean install-cron show-cron sync
 
 help: ## Show this help message
@@ -99,6 +99,9 @@ kaweah: ## Load Kaweah Subbasin demo data (real basin data)
 
 flush-kaweah: ## Delete and reload Kaweah data
 	$(EXEC) seed_kaweah --flush
+
+merced: ## Load the full Merced Subbasin demo (boundary, hydrography, GSAs, rights/PODs, selected parcels, recharge)
+	$(EXEC) seed_merced
 
 # ---------------------------------------------------------------------------
 # Health & Maintenance
