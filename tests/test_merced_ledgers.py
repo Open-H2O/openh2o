@@ -374,14 +374,27 @@ def test_shared_well_extraction_splits_by_fraction_and_sums_to_total(seeded):
                 by_month[key][ln.parcel_id] = (
                     by_month[key].get(ln.parcel_id, Decimal("0")) + abs(r.amount_acre_feet))
         assert by_month, f"{well.well_registration_id} produced no extraction rows"
+        frac_sum = sum(frac_of.values())  # 1/N rounded to 4dp may sum to 0.9999
         for key, shares in by_month.items():
-            total = sum(shares.values())
+            # Every member is represented — none dropped.
+            assert set(shares.keys()) == set(frac_of.keys()), (
+                f"{well.well_registration_id} {key}: a member parcel was dropped")
+            group_total = sum(shares.values())
+            # Reconstruct the well's true monthly total from the stored fractions,
+            # so the check is robust to the 1/N rounding residual (3 x 0.3333 != 1).
+            implied_well_total = group_total / frac_sum
             for pid, frac in frac_of.items():
-                got = shares.get(pid, Decimal("0")).quantize(QUANT)
-                want = (total * frac).quantize(QUANT)
-                assert got == want, (
-                    f"{well.well_registration_id} {key}: parcel {pid} got {got}, "
-                    f"expected fraction {frac} of well total {total} = {want}")
+                share = shares[pid]
+                expected = implied_well_total * frac
+                assert abs(share - expected) <= Decimal("0.0002"), (
+                    f"{well.well_registration_id} {key}: parcel {pid} got {share}, "
+                    f"expected its stored fraction {frac} of the well total "
+                    f"({implied_well_total:.4f}) = {expected:.4f}")
+                # No single parcel double-counts the whole well.
+                if len(frac_of) > 1:
+                    assert share < group_total, (
+                        f"{well.well_registration_id} {key}: parcel {pid} took the "
+                        "whole well total")
 
 
 # --------------------------------------------------------------------------
