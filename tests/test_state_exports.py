@@ -252,3 +252,65 @@ class TestGearsByEtNullArea:
         )
         assert "acreage" in messages.lower()
         assert parcel.parcel_number in messages
+
+
+# ---------------------------------------------------------------------------
+# ISS-047a — GEARS measurement-method crosswalk to the state vocabulary
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestGearsMeasurementMethodVocab:
+    """The "Measurement Method" column must emit the GEARS controlled value
+    ("Metered" / "Unmetered/Estimated"), never our internal source_type code.
+    State vocabulary confirmed from an Accepted GEARS report (WY2018), which
+    prints "Unmetered/Estimated"; the fee schedule splits metered vs unmetered.
+    """
+
+    def test_by_well_metered_emits_metered_label(self):
+        period = _period()
+        parcel = ParcelFactory()
+        well = WellFactory()
+        WellIrrigatedParcelFactory(
+            well=well, parcel=parcel, fraction=Decimal("1.0000")
+        )
+        ParcelLedgerFactory(
+            parcel=parcel,
+            source_type="meter_reading",
+            effective_date=date(2024, 6, 15),
+            amount_acre_feet=Decimal("-30.0000"),
+        )
+
+        rows = _data_rows(generate_gears_csv(period, method="by_well").read())
+        assert len(rows) == 1
+        # Columns: reg_id, name, lat, lon, month, volume, method
+        assert rows[0][6] == "Metered"
+        assert "meter_reading" not in rows[0][6]
+
+    def test_by_et_estimate_emits_unmetered_label(self):
+        period = _period()
+        ParcelLedgerFactory(
+            parcel=ParcelFactory(area_acres=Decimal("10.0")),
+            source_type="et_estimate",
+            effective_date=date(2024, 6, 15),
+            amount_acre_feet=Decimal("-12.0000"),
+        )
+
+        rows = _data_rows(generate_gears_csv(period, method="by_et").read())
+        assert len(rows) == 1
+        # Columns: Parcel Number, Area, Month, ET Volume (AF), Measurement Method
+        assert rows[0][4] == "Unmetered/Estimated"
+        assert rows[0][4] not in ("et_estimate", "calculated")
+
+    def test_by_et_calculated_emits_unmetered_label(self):
+        period = _period()
+        ParcelLedgerFactory(
+            parcel=ParcelFactory(area_acres=Decimal("10.0")),
+            source_type="calculated",
+            effective_date=date(2024, 6, 15),
+            amount_acre_feet=Decimal("-12.0000"),
+        )
+
+        rows = _data_rows(generate_gears_csv(period, method="by_et").read())
+        assert len(rows) == 1
+        assert rows[0][4] == "Unmetered/Estimated"

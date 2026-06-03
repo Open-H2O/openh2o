@@ -23,6 +23,32 @@ from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionPa
 from wells.models import Well, WellIrrigatedParcel
 
 
+# GEARS "Extraction volume measurement method" controlled vocabulary (ISS-047a).
+# The GEARS portal prints this field as a fixed label, not our internal code.
+# Source: a SWRCB Groundwater Extraction Report with Report Status "Accepted"
+# (Extractor 25226 / Well 6895, Water Year 2018) prints the value
+# "Unmetered/Estimated"; the same report's fee schedule splits the field into
+# metered vs unmetered. We crosswalk our ParcelLedger.source_type codes onto the
+# two state-facing labels here rather than leaking the internal code into the
+# filing. (UCUM is deliberately NOT used — it targets the v1.3 open-data
+# exports, not these state CSVs; see ISS-047d.)
+GEARS_METHOD = {
+    "meter_reading": "Metered",
+    "et_estimate": "Unmetered/Estimated",
+    "calculated": "Unmetered/Estimated",
+}
+
+
+def gears_method(source_type):
+    """Crosswalk an internal source_type to the GEARS measurement-method label.
+
+    An unknown code passes through unchanged so a newly-added source_type is
+    visible in the file (and catchable by validate_report) rather than being
+    silently relabeled to a wrong state value.
+    """
+    return GEARS_METHOD.get(source_type, source_type)
+
+
 def _normalize_fractions(raw_by_group):
     """Scale each group's fractions so they sum to 1.0.
 
@@ -151,7 +177,7 @@ def generate_gears_csv(reporting_period, method="by_well"):
         for row in sorted(rows.values(), key=lambda r: (r["reg_id"], r["month"])):
             writer.writerow([
                 row["reg_id"], row["name"], row["lat"], row["lon"],
-                row["month"], row["volume"], row["method"],
+                row["month"], row["volume"], gears_method(row["method"]),
             ])
 
     elif method == "by_et":
@@ -199,7 +225,7 @@ def generate_gears_csv(reporting_period, method="by_well"):
         for row in sorted(rows.values(), key=lambda r: (r["parcel_number"], r["month"])):
             writer.writerow([
                 row["parcel_number"], row["area"], row["month"],
-                row["volume"], row["method"],
+                row["volume"], gears_method(row["method"]),
             ])
 
     output.seek(0)
