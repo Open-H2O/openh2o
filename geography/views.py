@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 
 from accounting.models import AllocationPlan
 from geography.forms import ZoneForm
-from geography.models import Boundary, ParcelZone, Zone
+from geography.models import Boundary, Flowline, ParcelZone, Zone
 from parcels.models import Parcel
 from surface.models import PointOfDiversionParcel
 from wells.models import WellIrrigatedParcel
@@ -333,6 +333,25 @@ def boundaries_geojson(request):
         Boundary.objects.filter(geometry__isnull=False),
         geometry_field="geometry",
         fields=["name", "description", "area_sq_miles"],
+    )
+    return HttpResponse(data, content_type="application/json")
+
+
+@login_required
+def flowlines_geojson(request):
+    """Return all flowlines (rivers, streams, canals) as a GeoJSON FeatureCollection.
+
+    The hydrography renderer: the map's "Surface Water" layers filter on
+    feature_type (natural channels vs Canal/Ditch) and label on name. All
+    flowlines render — boundary scoping is a future nicety and the demo has one
+    active boundary set. The `geometry__isnull=False` filter mirrors the peer
+    endpoints; Flowline.geometry is non-nullable so it is defensive parity.
+    """
+    data = serialize(
+        "geojson",
+        Flowline.objects.filter(geometry__isnull=False),
+        geometry_field="geometry",
+        fields=["name", "feature_type", "stream_order"],
     )
     return HttpResponse(data, content_type="application/json")
 
