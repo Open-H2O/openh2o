@@ -53,8 +53,7 @@
     {% for step_name, step_label, step_desc in steps %}
     {% with forloop.counter0 as idx %}
     {% if step_name == "stations" %}
-      {# Stations runs one provider per poll: render every provider finished so
-         far, then a spinner for the one the next poll will query. #}
+      {% comment %}Stations runs one provider per poll: render every provider finished so far, then a spinner for the one the next poll will query.{% endcomment %}
       {% if idx == step_index %}
         {% for result in results %}
         {% if result.step == "stations" %}
