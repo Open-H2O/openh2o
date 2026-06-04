@@ -73,6 +73,24 @@ class ParcelZoneFactory(factory.django.DjangoModelFactory):
     zone = factory.SubFactory(ZoneFactory)
 
 
+class CropTypeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "parcels.CropType"
+
+    name = factory.Sequence(lambda n: f"Crop {n}")
+    code = factory.Sequence(lambda n: f"CR{n}")
+
+
+class UsageLocationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "parcels.UsageLocation"
+
+    parcel = factory.SubFactory(ParcelFactory)
+    name = factory.Sequence(lambda n: f"Usage {n}")
+    crop_type = factory.SubFactory(CropTypeFactory)
+    area_acres = Decimal("40.00")
+
+
 class WellTypeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "wells.WellType"
