@@ -38,10 +38,13 @@ from core.access import admin_required
 from core.models import SiteConfig
 from accounting.services import (
     account_balance,
+    account_consumptive_balance,
+    parcel_consumptive_balance,
     parse_ledger_csv,
     parcel_balance_breakdown,
     zone_balance,
     zone_carryover,
+    zone_consumptive_balance,
 )
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
@@ -94,8 +97,15 @@ def dashboard(request):
 
     account_summaries = []
     zone_summaries = []
-    grand_supply = Decimal("0")
-    grand_usage = Decimal("0")
+    # v1.10 lens: the grand totals roll up MEASURED CONSUMPTIVE USE (gross ET) as
+    # the demand line and the three SUPPLIES that met it (surface + groundwater +
+    # precip). grand_consumptive_use replaces the old grand_usage (which only ever
+    # counted groundwater); grand_supply_total replaces grand_supply.
+    grand_consumptive_use = Decimal("0")
+    grand_supply_total = Decimal("0")
+    grand_supply_surface = Decimal("0")
+    grand_supply_groundwater = Decimal("0")
+    grand_supply_precip = Decimal("0")
 
     has_allocations = False
 
@@ -112,7 +122,7 @@ def dashboard(request):
         # columns from being read as one (ISS-032 / F-math-03 stream-2).
         active_accounts = WaterAccount.objects.filter(status="active").order_by("account_number")
         for account in active_accounts:
-            bal = account_balance(account, reporting_period=selected_period)
+            cu = account_consumptive_balance(account, reporting_period=selected_period)
 
             if has_allocations:
                 # Allocation: pro-rated by account's parcel count in each zone.
@@ -141,21 +151,33 @@ def dashboard(request):
                             * Decimal(account_parcels_in_zone)
                             / Decimal(total_parcels_in_zone)
                         )
-                remaining = allocation - bal["usage"]
+                # Budget basis (57-02): a budget is consumed by measured
+                # consumptive use (gross ET), NOT by the old groundwater-only
+                # "usage". net-of-rainfall is a secondary display, not the budget
+                # basis. Allocation/carryover logic itself is unchanged — only the
+                # quantity subtracted.
+                remaining = allocation - cu["consumptive_use_gross"]
             else:
                 allocation = None
                 remaining = None
 
             account_summaries.append({
                 "account": account,
-                "supply": bal["supply"],
-                "usage": bal["usage"],
-                "net": bal["net"],
+                "consumptive_use_gross": cu["consumptive_use_gross"],
+                "consumptive_use_net": cu["consumptive_use_net"],
+                "surface": cu["supplies"]["surface"],
+                "groundwater": cu["supplies"]["groundwater"],
+                "precip": cu["supplies"]["precip"],
+                "supply_total": cu["supply_total"],
+                "net_vs_supply": cu["net_vs_supply"],
                 "allocation": allocation,
                 "remaining": remaining,
             })
-            grand_supply += bal["supply"]
-            grand_usage += bal["usage"]
+            grand_consumptive_use += cu["consumptive_use_gross"]
+            grand_supply_total += cu["supply_total"]
+            grand_supply_surface += cu["supplies"]["surface"]
+            grand_supply_groundwater += cu["supplies"]["groundwater"]
+            grand_supply_precip += cu["supplies"]["precip"]
 
         # Water year of the selected period, so we can pull the carry-over that
         # rolled INTO it from the prior year (labelled by the year it ends in,
@@ -165,7 +187,7 @@ def dashboard(request):
 
         # Zone summaries
         for zone in Zone.objects.order_by("name"):
-            zbal = zone_balance(zone, reporting_period=selected_period)
+            zcu = zone_consumptive_balance(zone, reporting_period=selected_period)
             if has_allocations:
                 zone_allocation = AllocationPlan.objects.filter(
                     zone=zone,
@@ -180,30 +202,39 @@ def dashboard(request):
                 zone_available = available_with_carryover(
                     zone_allocation, zone_carryover_af
                 )
-                zone_remaining = zone_available - zbal["usage"]
+                # Same budget basis as accounts: subtract measured consumptive use.
+                zone_remaining = zone_available - zcu["consumptive_use_gross"]
             else:
                 zone_allocation = None
                 zone_carryover_af = None
                 zone_remaining = None
             zone_summaries.append({
                 "zone": zone,
-                "supply": zbal["supply"],
-                "usage": zbal["usage"],
-                "net": zbal["net"],
+                "consumptive_use_gross": zcu["consumptive_use_gross"],
+                "consumptive_use_net": zcu["consumptive_use_net"],
+                "surface": zcu["supplies"]["surface"],
+                "groundwater": zcu["supplies"]["groundwater"],
+                "precip": zcu["supplies"]["precip"],
+                "supply_total": zcu["supply_total"],
+                "net_vs_supply": zcu["net_vs_supply"],
                 "allocation": zone_allocation,
                 "carryover": zone_carryover_af,
                 "remaining": zone_remaining,
             })
 
-    grand_net = grand_supply - grand_usage
+    # Bottom-line: supplies minus measured consumptive use.
+    grand_net = grand_supply_total - grand_consumptive_use
 
     context = {
         "periods": periods,
         "selected_period": selected_period,
         "account_summaries": account_summaries,
         "zone_summaries": zone_summaries,
-        "grand_supply": grand_supply,
-        "grand_usage": grand_usage,
+        "grand_consumptive_use": grand_consumptive_use,
+        "grand_supply_total": grand_supply_total,
+        "grand_supply_surface": grand_supply_surface,
+        "grand_supply_groundwater": grand_supply_groundwater,
+        "grand_supply_precip": grand_supply_precip,
         "grand_net": grand_net,
         "has_allocations": has_allocations,
     }
