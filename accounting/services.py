@@ -828,6 +828,134 @@ def parcel_mass_balance(parcel, reporting_period=None):
 
 
 # ---------------------------------------------------------------------------
+# Consumptive-use balance read (Phase 57-01, the corrected v1.10 lens)
+# ---------------------------------------------------------------------------
+#
+# The platform was built backwards: it framed surface water as "supply" and
+# groundwater as "usage". The corrected v1.10 thesis is that OpenET MEASURES
+# consumptive use for any field regardless of source, and that measured use is
+# the spine — met by whatever supplies the parcel drew on (surface delivery,
+# pumped groundwater, effective precipitation). This read reframes a parcel /
+# account / zone in those terms WITHOUT mutating the billable primitive.
+#
+# It is a NEW read over the SAME rows: the groundwater supply IS the
+# ``_balance_dict`` usage term and the surface supply IS the mass balance's
+# surface term, so this lens can never disagree with the billable ledger or the
+# closing mass balance. ``_balance_dict`` is deliberately left untouched — it
+# feeds ``parcel_mass_balance`` (its ``gw_recovered`` term) and the dashboard's
+# budget math, and mutating its shape would ripple into both. Presentation
+# (57-02 dashboard reframe, 57-03 per-parcel summary + report) chooses the
+# framing; the service computes gross ET, net consumptive use, AND the three
+# supplies once, here.
+
+
+def consumptive_use_balance(parcel_ids, reporting_period=None):
+    """Measured consumptive use vs. the supplies that met it, for a parcel set.
+
+    Frames a collection of parcels as **consumptive use (gross ET and net CU)
+    against surface + groundwater + precipitation supplies** — the corrected
+    v1.10 lens. Every term is sourced from an EXISTING helper so this read can
+    never drift from the billable ledger or the mass balance:
+
+    * ``supplies["groundwater"]`` == ``_balance_dict(billable_ledger(qs))["usage"]``
+      for the parcels — the pumped/extracted magnitude, identical to the mass
+      balance's ``gw_recovered``. Not recomputed from raw rows.
+    * ``supplies["surface"]`` == magnitude of billable ``surface_diversion`` rows
+      (stored negative; a canal delivery is a supply), the same surface term
+      ``parcel_mass_balance`` uses.
+    * ``consumptive_use_gross`` / ``consumptive_use_net`` / ``supplies["precip"]``
+      summed from each parcel's CalculationRuns over the period (via
+      ``_calculation_runs_for_period``, mirroring ``parcel_net_consumptive_use``;
+      None-safe → 0).
+
+    ``reporting_period=None`` aggregates across all of each parcel's runs and
+    ledger rows.
+
+    Args:
+        parcel_ids: iterable of Parcel primary keys.
+        reporting_period: optional ReportingPeriod to scope to.
+
+    Returns:
+        dict::
+
+            {"consumptive_use_gross": Decimal,   # Σ CalculationRun.gross_et_af
+             "consumptive_use_net":   Decimal,   # Σ CalculationRun.net_consumptive_use_af
+             "supplies": {"surface": Decimal, "groundwater": Decimal,
+                          "precip": Decimal},
+             "supply_total": Decimal,            # surface + groundwater + precip
+             "net_vs_supply": Decimal}           # supply_total − consumptive_use_gross
+    """
+    parcel_ids = list(parcel_ids)
+
+    # Ledger-sourced supplies, on the SAME billable basis as the mass balance.
+    qs = ParcelLedger.objects.filter(parcel_id__in=parcel_ids)
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+    billable = billable_ledger(qs)
+
+    groundwater = _balance_dict(billable)["usage"]
+    surface = abs(
+        billable.filter(source_type="surface_diversion").aggregate(
+            s=Sum("amount_acre_feet")
+        )["s"]
+        or Decimal("0")
+    )
+
+    # CalculationRun-sourced consumptive-use terms, summed per parcel-month.
+    gross = Decimal("0")
+    net = Decimal("0")
+    precip = Decimal("0")
+    for parcel in Parcel.objects.filter(id__in=parcel_ids):
+        for run in _calculation_runs_for_period(parcel, reporting_period):
+            gross += run.gross_et_af or Decimal("0")
+            net += run.net_consumptive_use_af or Decimal("0")
+            precip += run.effective_precip_af or Decimal("0")
+
+    supply_total = surface + groundwater + precip
+    return {
+        "consumptive_use_gross": gross,
+        "consumptive_use_net": net,
+        "supplies": {
+            "surface": surface,
+            "groundwater": groundwater,
+            "precip": precip,
+        },
+        "supply_total": supply_total,
+        "net_vs_supply": supply_total - gross,
+    }
+
+
+def parcel_consumptive_balance(parcel, reporting_period=None):
+    """Consumptive-use balance for ONE parcel (the single-parcel wrapper)."""
+    return consumptive_use_balance([parcel.id], reporting_period)
+
+
+def account_consumptive_balance(water_account, reporting_period=None):
+    """Consumptive-use balance across a water account's active parcels.
+
+    Uses the same active-assignment selection as ``account_balance``
+    (``removed_date`` is null), so the consumptive lens rolls up the identical
+    parcel set the billable balance does.
+    """
+    parcel_ids = WaterAccountParcel.objects.filter(
+        water_account=water_account,
+        removed_date__isnull=True,
+    ).values_list("parcel_id", flat=True)
+    return consumptive_use_balance(list(parcel_ids), reporting_period)
+
+
+def zone_consumptive_balance(zone, reporting_period=None):
+    """Consumptive-use balance across a zone's parcels.
+
+    Uses the same ParcelZone selection as ``zone_balance``.
+    """
+    parcel_ids = ParcelZone.objects.filter(zone=zone).values_list(
+        "parcel_id", flat=True
+    )
+    return consumptive_use_balance(list(parcel_ids), reporting_period)
+
+
+# ---------------------------------------------------------------------------
 # Multi-year carry-over support (Phase 39-02)
 # ---------------------------------------------------------------------------
 #

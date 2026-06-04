@@ -60,6 +60,7 @@ def _run(parcel, period, *, gross_et, net_cu, precip):
         gross_et_af=Decimal(str(gross_et)),
         net_consumptive_use_af=Decimal(str(net_cu)),
         effective_precip_af=Decimal(str(precip)),
+        final_af=Decimal("0"),  # non-null; not read by the consumptive lens.
     )
 
 
