@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Delivery Settings - Open Water Accounting Platform{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'index' %}">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Delivery Settings</span>
+  </nav>
+  <p class="page-description">How the platform shares surface deliveries across farms, and what happens to a district's unused water at year-end. Set once for the whole agency.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  {% include "partials/_messages.html" %}
+
+  <!-- Intro + learn-more -->
+  <div class="card-raised">
+    <p class="text-secondary text-base" style="margin: 0;">These two settings apply to every district. An analyst sets them once; a single district can differ from the default where it needs to (set that on the district's own page). <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-gold);">Learn more &rarr;</a></p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="form-error-box mb-md">
+      <p class="text-sm text-furnace">{{ form.non_field_errors|striptags }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Setting 1: efficiency -->
+    <div class="card-raised">
+      <h2 class="section-header">{{ form.efficiency_percent.label }}</h2>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.efficiency_percent.help_text }}</p>
+      <div class="field-group" style="display: flex; align-items: center; gap: var(--space-sm);">
+        {{ form.efficiency_percent }}
+        <span class="text-secondary text-base">%</span>
+      </div>
+      {% if form.efficiency_percent.errors %}<p class="text-sm text-furnace">{{ form.efficiency_percent.errors|striptags }}</p>{% endif %}
+    </div>
+
+    <!-- Setting 2: year-end unused water -->
+    <div class="card-raised">
+      <h2 class="section-header">{{ form.recovery_horizon.label }}</h2>
+      <div class="field-group" style="margin-top: var(--space-sm);">
+        {% for radio in form.recovery_horizon %}
+        <label style="display: flex; align-items: flex-start; gap: var(--space-sm); margin-bottom: var(--space-sm); cursor: pointer;">
+          <span style="margin-top: 0.15rem;">{{ radio.tag }}</span>
+          <span class="text-secondary text-base">{{ radio.choice_label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {% if form.recovery_horizon.errors %}<p class="text-sm text-furnace">{{ form.recovery_horizon.errors|striptags }}</p>{% endif %}
+    </div>
+
+    <div class="row-start">
+      <button type="submit" class="btn-primary">Save settings</button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+from decimal import Decimal, InvalidOperation
+
 from allauth.account.models import EmailAddress
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 
-from core.models import User
+from core.constants import RECOVERY_HORIZON_CHOICES
+from core.models import SiteConfig, User
 
 
 class ProfileForm(forms.ModelForm):
@@ -119,3 +122,75 @@ class UserCreateForm(forms.ModelForm):
                 defaults={"user": user, "verified": True, "primary": True},
             )
         return user
+
+
+class DeliverySettingsForm(forms.Form):
+    """Agency-wide delivery accounting policy, in plain language (Phase 55-03).
+
+    Edits the two SiteConfig fields Plans 01-02 added:
+    ``default_irrigation_efficiency`` and ``default_recovery_horizon``. Both are
+    phrased as plain questions a non-coder analyst can answer once for the whole
+    agency — no internal jargon. Efficiency is SHOWN as a whole-number percent
+    (75) but STORED on the model as a Decimal fraction (0.750), so this form
+    converts in both directions.
+
+    SiteConfig is a singleton; the view loads the one row and passes it in as
+    ``instance``. The form never creates a second row.
+    """
+
+    efficiency_percent = forms.IntegerField(
+        min_value=1,
+        max_value=100,
+        label="Share of delivered water the crop actually consumes",
+        help_text="The rest soaks back into the aquifer as recharge. Typical: 75%.",
+        widget=forms.NumberInput(
+            attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
+        ),
+    )
+    recovery_horizon = forms.ChoiceField(
+        choices=RECOVERY_HORIZON_CHOICES,
+        label=(
+            "When a district doesn't use its full surface-water allotment by the "
+            "end of the water year:"
+        ),
+        widget=forms.RadioSelect,
+    )
+
+    def __init__(self, *args, instance=None, **kwargs):
+        self.instance = instance
+        if instance is not None and "initial" not in kwargs:
+            kwargs["initial"] = {
+                # 0.750 (fraction) -> 75 (percent), rounded to a whole number.
+                "efficiency_percent": int(
+                    (instance.default_irrigation_efficiency * 100).to_integral_value()
+                ),
+                "recovery_horizon": instance.default_recovery_horizon,
+            }
+        super().__init__(*args, **kwargs)
+        # Plain-language radio labels — these are what the manager reads, NOT the
+        # model's choice labels. Option order matches RECOVERY_HORIZON_CHOICES.
+        self.fields["recovery_horizon"].choices = [
+            ("carry_forward", "Carry it forward as a credit toward next year"),
+            ("same_water_year", "Let it expire (use-it-or-lose-it)"),
+        ]
+
+    def clean_efficiency_percent(self):
+        percent = self.cleaned_data["efficiency_percent"]
+        # Percent (75) -> Decimal fraction (0.750), the stored convention.
+        try:
+            return (Decimal(percent) / Decimal("100")).quantize(Decimal("0.001"))
+        except InvalidOperation:
+            raise forms.ValidationError("Enter a whole number between 1 and 100.")
+
+    def save(self):
+        """Write the two fields back onto the singleton SiteConfig instance."""
+        config = self.instance
+        config.default_irrigation_efficiency = self.cleaned_data["efficiency_percent"]
+        config.default_recovery_horizon = self.cleaned_data["recovery_horizon"]
+        config.save(
+            update_fields=[
+                "default_irrigation_efficiency",
+                "default_recovery_horizon",
+            ]
+        )
+        return config

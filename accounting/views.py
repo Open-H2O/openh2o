@@ -4,6 +4,7 @@ from decimal import Decimal
 import csv as csv_module
 import io
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -34,6 +35,7 @@ from accounting.models import (
 )
 from accounting.carryover_math import available_with_carryover, water_year_of
 from core.access import admin_required
+from core.models import SiteConfig
 from accounting.services import (
     account_balance,
     parse_ledger_csv,
@@ -908,6 +910,47 @@ def calculation_run_detail(request, parcel_id, period):
         "methodology_plan_name": run.methodology_plan_name,
     }
     return render(request, "accounting/calculation_run_detail.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Delivery Settings — agency-wide efficiency + year-end-unused-water policy (55-03)
+# ---------------------------------------------------------------------------
+#
+# Plans 01-02 put two agency-wide knobs on the SiteConfig singleton
+# (default_irrigation_efficiency + default_recovery_horizon). This staff-only
+# page is their plain-language home: two questions a non-coder analyst answers
+# once for the whole agency. Mirrors methodology_settings' @login_required +
+# @admin_required gate.
+
+
+@login_required
+@admin_required
+def delivery_settings(request):
+    """Staff-only agency delivery-policy page (efficiency + year-end policy).
+
+    GET renders the current SiteConfig values through DeliverySettingsForm
+    (efficiency shown as a percent, stored as a Decimal fraction). POST validates
+    and writes them back onto the one SiteConfig row, then redirects with a
+    success message. SiteConfig is a singleton: we get_or_create the single row so
+    a fresh install (no SiteConfig yet) still renders rather than 500-ing, and we
+    never create a second row.
+    """
+    from core.forms import DeliverySettingsForm
+
+    config, _ = SiteConfig.objects.get_or_create(
+        defaults={"agency_name": "Agency"}
+    )
+
+    if request.method == "POST":
+        form = DeliverySettingsForm(request.POST, instance=config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Delivery settings saved.")
+            return redirect("accounting:delivery_settings")
+    else:
+        form = DeliverySettingsForm(instance=config)
+
+    return render(request, "accounting/delivery_settings.html", {"form": form})
 
 
 # ---------------------------------------------------------------------------

@@ -51,6 +51,8 @@ urlpatterns = [
         views.calculation_run_detail,
         name="calculation_run_detail",
     ),
+    # Delivery Settings (staff-only agency efficiency + year-end policy, 55-03)
+    path("delivery-settings/", views.delivery_settings, name="delivery_settings"),
     # Methodology Settings (staff-only self-serve methodology tuning, 38-07)
     path("methodology/", views.methodology_settings, name="methodology_settings"),
     path(
