@@ -51,7 +51,6 @@ from accounting.recharge_policy import recharge_routes_to_personal
 from accounting.services import INCIDENTAL_RECHARGE_POOL, deposit_to_basin_pool
 from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
-from wells.models import WellIrrigatedParcel
 
 PERIOD_RE = re.compile(r"^\d{4}-\d{2}$")
 
@@ -103,7 +102,7 @@ def _parcel_pool_zone(parcel):
     return pz.zone if pz else None
 
 
-def _apply_banking(parcel, period, final_af, breakdown, *, commit):
+def _apply_banking(parcel, period, final_af, breakdown, *, routes_personal, commit):
     """Deposit a wet-month surplus and draw credits down in a deficit month.
 
     Reads the clamp_floor record from `breakdown` for the surplus + credit levers,
@@ -118,6 +117,14 @@ def _apply_banking(parcel, period, final_af, breakdown, *, commit):
 
     MUST be called inside the per-parcel transaction.atomic() block when committing.
     """
+    # 54-01: WaterCredit banking (deposit AND draw) is a CONJUNCTIVE-only
+    # mechanism — a personal, drawable credit only makes sense for a parcel with a
+    # well to pump it back. A no-well parcel banks/draws nothing: no undrawable
+    # credit is minted and delta_storage stays 0. (Flood-MAR basin recharge for a
+    # no-well parcel is handled separately at the write site and is unaffected.)
+    if not routes_personal:
+        return final_af, {"deposited": Decimal("0"), "drawn": Decimal("0")}
+
     clamp = next(
         (s for s in breakdown if s["step_type"] == "clamp_floor"), None
     )
@@ -321,27 +328,33 @@ class Command(BaseCommand):
                     f"no parcel with parcel_number={options['parcel']!r}"
                 )
 
-        # --unmetered-only: restrict to parcels served by an unmetered well that
-        # carry no authoritative meter_reading for this period. The Merced demo
-        # (and any real GSA) meters some wells and ET-estimates the rest; the
-        # engine must compute only the estimated side, never a metered parcel, or
-        # it would double-count the meter. Intersect with --parcel (the filter
-        # composes with, not replaces, the parcel selection). Default behavior
-        # (flag absent) is unchanged.
+        # 54-01: the engine runs on ALL parcels by default, with a METERED-SKIP. A
+        # parcel that carries an authoritative meter_reading row for this period is
+        # excluded — its reading is the truth, and a `calculated` row would
+        # double-count it. This unconditional skip replaces the old
+        # --unmetered-only narrowing (a framing crutch that hid the
+        # groundwater-residual model's garbage for non-well parcels). Intersects
+        # with --parcel (the skip composes with, not replaces, the selection).
+        metered_row_ids = set(
+            ParcelLedger.objects.filter(
+                source_type="meter_reading",
+                effective_date__year=year,
+                effective_date__month=month,
+            ).values_list("parcel_id", flat=True)
+        )
+        parcels = parcels.exclude(id__in=metered_row_ids)
+
+        # --unmetered-only is now a deprecated alias: the metered-skip default +
+        # the 54-01 residual reframe (no-well → unmet demand, never a phantom GW
+        # row) make it redundant. Accept it, warn, and otherwise change nothing.
         if options.get("unmetered_only"):
-            unmetered_ids = set(
-                WellIrrigatedParcel.objects.filter(
-                    well__measurement_method="unmetered_estimate"
-                ).values_list("parcel_id", flat=True)
+            self.stderr.write(
+                self.style.WARNING(
+                    "--unmetered-only is deprecated; the engine now runs on all "
+                    "parcels with a metered-skip by default and resolves no-well "
+                    "residuals as unmet demand. The flag changes nothing."
+                )
             )
-            metered_row_ids = set(
-                ParcelLedger.objects.filter(
-                    source_type="meter_reading",
-                    effective_date__year=year,
-                    effective_date__month=month,
-                ).values_list("parcel_id", flat=True)
-            )
-            parcels = parcels.filter(id__in=(unmetered_ids - metered_row_ids))
 
         reporting_period = ReportingPeriod.objects.filter(
             start_date__lte=eff_date, end_date__gte=eff_date
@@ -460,7 +473,8 @@ class Command(BaseCommand):
 
             if dry_run:
                 net_af, info = _apply_banking(
-                    parcel, period, final_af, breakdown, commit=False
+                    parcel, period, final_af, breakdown,
+                    routes_personal=routes_personal, commit=False,
                 )
                 extra = ""
                 if info["deposited"] > 0:
@@ -481,7 +495,8 @@ class Command(BaseCommand):
 
             with transaction.atomic():
                 net_af, info = _apply_banking(
-                    parcel, period, final_af, breakdown, commit=True
+                    parcel, period, final_af, breakdown,
+                    routes_personal=routes_personal, commit=True,
                 )
                 # ISS-025 invariant, explicit at the write site: a `calculated`
                 # row is only ever written for a parcel with real matched ET. The
