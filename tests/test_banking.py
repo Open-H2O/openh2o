@@ -26,11 +26,31 @@ from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 
 from accounting.banking_math import depreciated_value
-from accounting.models import WaterCredit, WaterCreditDraw
-from accounting.services import et_mm_to_acre_feet
+from accounting.models import AllocationCarryover, WaterCredit, WaterCreditDraw
+from accounting.services import INCIDENTAL_RECHARGE_POOL, et_mm_to_acre_feet
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
+from tests.factories import ParcelZoneFactory, ZoneFactory
 
 Q = Decimal("0.0001")
+
+
+def _zone_for(parcel):
+    """Put the parcel in a management-area GSA zone (where its basin pool lives)."""
+    zone = ZoneFactory(zone_type="management_area")
+    ParcelZoneFactory(parcel=parcel, zone=zone)
+    return zone
+
+
+def _incidental_pool_total(zone):
+    return sum(
+        (
+            r.amount_af
+            for r in AllocationCarryover.objects.filter(
+                zone=zone, origin=INCIDENTAL_RECHARGE_POOL
+            )
+        ),
+        Decimal("0"),
+    )
 
 
 def _square(x=0.0):
@@ -97,13 +117,14 @@ def _calc_row(parcel, period):
 
 
 @pytest.mark.django_db
-def test_surface_overdelivery_credits_recharge_not_a_watercredit():
-    """ISS-052: surface delivered beyond crop ET is deep-percolation recharge
-    credited to groundwater — NOT a bankable precip WaterCredit. Under usda_scs
-    (Pe capped at ET) the whole over-delivery routes to recharge, banking is 0."""
+def test_surface_overdelivery_pools_recharge_not_a_watercredit():
+    """ISS-052/053: surface delivered beyond crop ET is deep-percolation recharge
+    — NOT a bankable precip WaterCredit. On a NO-WELL parcel it cannot be pumped
+    back, so it deposits to the GSA basin pool, not a personal recharge row."""
     parcel = _parcel("BANK-DEP", acres="10")
     _et_cache(parcel, period="2024-02", et_mm=100.0)  # ~3.28 AF gross
-    _irrigate(parcel)
+    _irrigate(parcel)  # crop, no well -> FLOOD_MAR -> pool
+    zone = _zone_for(parcel)
     _surface_row(parcel, "2024-02", af=5)  # 5 AF delivered > 3.28 AF ET
     call_command("seed_calculation_plan")
 
@@ -111,14 +132,13 @@ def test_surface_overdelivery_credits_recharge_not_a_watercredit():
 
     # Nothing banked — the over-delivery is not a conservation credit.
     assert WaterCredit.objects.filter(parcel=parcel).count() == 0
-    # It is a positive groundwater recharge ledger row instead.
+    # No personal recharge ledger row (the ISS-053 phantom is gone).
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge"
+    ).exists()
+    # The over-delivery landed in the zone's incidental basin pool instead.
     over_delivery = (Decimal("5") - _gross_af()).quantize(Q)
-    recharge = ParcelLedger.objects.get(
-        parcel=parcel, effective_date=dt.date(2024, 2, 1), source_type="recharge"
-    )
-    assert recharge.amount_acre_feet.quantize(Q) == over_delivery
-    assert recharge.water_type.code == "GW"
-    assert recharge.description.startswith("Incidental recharge")
+    assert _incidental_pool_total(zone).quantize(Q) == over_delivery
     # The billable row is clamped to 0 (surface covered all the crop's ET).
     assert _calc_row(parcel, "2024-02").amount_acre_feet == Decimal("0.0000")
 

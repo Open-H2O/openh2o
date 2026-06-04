@@ -115,14 +115,18 @@ def recharge_event_create(request, pk):
         created = create_recharge_ledger_entries(event)
         count = len(created)
         if count:
+            # Personal-credit path: the event was tied to a has-well parcel.
             ledger_msg = (
-                f"Created {count} ledger "
-                f"entr{'y' if count == 1 else 'ies'} across zone parcels."
+                f"Created {count} personal recharge ledger "
+                f"entr{'y' if count == 1 else 'ies'}."
             )
         else:
+            # Default path (52.6-02): the recharge infiltrates the shared aquifer,
+            # so it was deposited to the GSA basin recharge pool for the zone —
+            # not smeared across individual parcels.
             ledger_msg = (
-                "Event saved. The site's zone has no parcels, so no ledger "
-                "entries were generated."
+                "Event saved. Recharge deposited to the GSA basin pool for the "
+                "site's zone."
             )
     except ValueError:
         ledger_msg = (

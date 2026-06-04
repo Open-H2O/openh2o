@@ -6,7 +6,10 @@ from decimal import Decimal
 import pytest
 from django.db import IntegrityError
 
+from accounting.models import AllocationCarryover
+from parcels.models import ParcelLedger
 from accounting.services import (
+    BASIN_RECHARGE_POOL,
     _balance_dict,
     account_balance,
     create_diversion_ledger_entry,
@@ -268,9 +271,25 @@ class TestCreateDiversionLedgerEntry:
 
 
 class TestCreateRechargeLedgerEntries:
-    def test_explicit_zone(self):
-        """Two parcels with 100 and 300 acres get 25/75 area-weighted split."""
-        zone = ZoneFactory()
+    """52.6-02 (ISS-053): managed recharge pools at the GSA level instead of being
+    smeared area-weighted across every parcel (which invented recoverable credits
+    on surface-only, no-well parcels). The area-weighted distribution is gone."""
+
+    def _pool_total(self, zone):
+        return sum(
+            (
+                r.amount_af
+                for r in AllocationCarryover.objects.filter(
+                    zone=zone, origin=BASIN_RECHARGE_POOL
+                )
+            ),
+            Decimal("0"),
+        )
+
+    def test_pools_full_volume_to_basin_pool_not_per_parcel(self):
+        """The whole event volume lands in ONE basin-pool row; the parcels in the
+        zone get NO recharge ledger rows."""
+        zone = ZoneFactory(zone_type="management_area")
         p1 = ParcelFactory(area_acres=Decimal("100.00"))
         p2 = ParcelFactory(area_acres=Decimal("300.00"))
         ParcelZoneFactory(parcel=p1, zone=zone)
@@ -279,78 +298,71 @@ class TestCreateRechargeLedgerEntries:
         event = RechargeEventFactory(volume_acre_feet=Decimal("100.0000"))
         entries = create_recharge_ledger_entries(event, zone=zone)
 
-        assert len(entries) == 2
-        amounts = sorted(e.amount_acre_feet for e in entries)
-        assert amounts[0] == Decimal("25.0000")
-        assert amounts[1] == Decimal("75.0000")
-        assert all(e.source_type == "recharge" for e in entries)
+        assert entries == []  # no per-parcel smear
+        assert self._pool_total(zone) == Decimal("100.0000")
+        assert ParcelLedger.objects.filter(source_type="recharge").count() == 0
 
-    def test_area_weighted_three_parcels(self):
-        """Three parcels with 10, 20, 70 acres get 10/20/70% split."""
-        zone = ZoneFactory()
-        p1 = ParcelFactory(area_acres=Decimal("10.00"))
-        p2 = ParcelFactory(area_acres=Decimal("20.00"))
-        p3 = ParcelFactory(area_acres=Decimal("70.00"))
-        ParcelZoneFactory(parcel=p1, zone=zone)
-        ParcelZoneFactory(parcel=p2, zone=zone)
-        ParcelZoneFactory(parcel=p3, zone=zone)
+    def test_multiple_events_accumulate_in_one_pool_row(self):
+        """Two events to the same zone/year sum into a single basin-pool row."""
+        zone = ZoneFactory(zone_type="management_area")
+        ParcelZoneFactory(parcel=ParcelFactory(), zone=zone)
 
-        event = RechargeEventFactory(volume_acre_feet=Decimal("100.0000"))
-        entries = create_recharge_ledger_entries(event, zone=zone)
+        create_recharge_ledger_entries(
+            RechargeEventFactory(volume_acre_feet=Decimal("60.0000")), zone=zone
+        )
+        create_recharge_ledger_entries(
+            RechargeEventFactory(volume_acre_feet=Decimal("40.0000")), zone=zone
+        )
 
-        assert len(entries) == 3
-        amounts = sorted(e.amount_acre_feet for e in entries)
-        assert amounts[0] == Decimal("10.0000")
-        assert amounts[1] == Decimal("20.0000")
-        assert amounts[2] == Decimal("70.0000")
+        rows = AllocationCarryover.objects.filter(
+            zone=zone, origin=BASIN_RECHARGE_POOL
+        )
+        assert rows.count() == 1
+        assert rows.first().amount_af == Decimal("100.0000")
 
-    def test_area_weighted_residual(self):
-        """Entries always sum exactly to input volume (no rounding loss)."""
-        zone = ZoneFactory()
-        p1 = ParcelFactory(area_acres=Decimal("33.00"))
-        p2 = ParcelFactory(area_acres=Decimal("33.00"))
-        p3 = ParcelFactory(area_acres=Decimal("34.00"))
-        ParcelZoneFactory(parcel=p1, zone=zone)
-        ParcelZoneFactory(parcel=p2, zone=zone)
-        ParcelZoneFactory(parcel=p3, zone=zone)
-
-        event = RechargeEventFactory(volume_acre_feet=Decimal("100.0000"))
-        entries = create_recharge_ledger_entries(event, zone=zone)
-
-        assert len(entries) == 3
-        total = sum(e.amount_acre_feet for e in entries)
-        assert total == Decimal("100.0000")
-
-    def test_null_area_fallback(self):
-        """Parcels with no area_acres fall back to equal distribution."""
-        zone = ZoneFactory()
-        p1 = ParcelFactory(area_acres=None, geometry=None)
-        p2 = ParcelFactory(area_acres=None, geometry=None)
-        ParcelZoneFactory(parcel=p1, zone=zone)
-        ParcelZoneFactory(parcel=p2, zone=zone)
-
-        event = RechargeEventFactory(volume_acre_feet=Decimal("100.0000"))
-        entries = create_recharge_ledger_entries(event, zone=zone)
-
-        assert len(entries) == 2
-        total = sum(e.amount_acre_feet for e in entries)
-        assert total == Decimal("100.0000")
-        amounts = sorted(e.amount_acre_feet for e in entries)
-        assert amounts[0] == Decimal("50.0000")
-        assert amounts[1] == Decimal("50.0000")
-
-    def test_from_fk(self):
-        zone = ZoneFactory()
-        parcel = ParcelFactory()
+    def test_personal_path_for_a_has_well_parcel(self):
+        """When tied to a conjunctive (has-well) parcel, the event writes ONE
+        personal recharge row and pools nothing."""
+        zone = ZoneFactory(zone_type="management_area")
+        parcel = ParcelFactory(area_acres=Decimal("40.00"))
         ParcelZoneFactory(parcel=parcel, zone=zone)
+        WellIrrigatedParcelFactory(parcel=parcel)  # has well -> CONJUNCTIVE
+
+        event = RechargeEventFactory(volume_acre_feet=Decimal("80.0000"))
+        entries = create_recharge_ledger_entries(event, zone=zone, parcel=parcel)
+
+        assert len(entries) == 1
+        assert entries[0].amount_acre_feet == Decimal("80.0000")
+        assert entries[0].source_type == "recharge"
+        assert self._pool_total(zone) == Decimal("0")
+
+    def test_no_well_parcel_arg_still_pools(self):
+        """A no-well parcel passed explicitly does NOT get a personal credit — it
+        has no well to recover it, so the volume still pools (the ISS-053 guard)."""
+        zone = ZoneFactory(zone_type="management_area")
+        parcel = ParcelFactory()  # no well
+        ParcelZoneFactory(parcel=parcel, zone=zone)
+
+        event = RechargeEventFactory(volume_acre_feet=Decimal("50.0000"))
+        entries = create_recharge_ledger_entries(event, zone=zone, parcel=parcel)
+
+        assert entries == []
+        assert self._pool_total(zone) == Decimal("50.0000")
+        assert not ParcelLedger.objects.filter(
+            parcel=parcel, source_type="recharge"
+        ).exists()
+
+    def test_from_fk_pools_to_site_zone(self):
+        """No zone arg falls back to the site's zone, and pools there."""
+        zone = ZoneFactory(zone_type="management_area")
         site = RechargeSiteFactory(zone=zone)
         event = RechargeEventFactory(
             recharge_site=site, volume_acre_feet=Decimal("80.0000")
         )
 
         entries = create_recharge_ledger_entries(event)
-        assert len(entries) == 1
-        assert entries[0].amount_acre_feet == Decimal("80.0000")
+        assert entries == []
+        assert self._pool_total(zone) == Decimal("80.0000")
 
     def test_no_zone_raises(self):
         site = RechargeSiteFactory(zone=None)

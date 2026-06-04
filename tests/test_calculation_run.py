@@ -25,13 +25,15 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from accounting.models import (
+    AllocationCarryover,
     CalculationPlan,
     CalculationRun,
     CalculationStep,
     ReportingPeriod,
 )
-from accounting.services import et_mm_to_acre_feet
+from accounting.services import INCIDENTAL_RECHARGE_POOL, et_mm_to_acre_feet
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
+from tests.factories import ParcelZoneFactory, WellIrrigatedParcelFactory, ZoneFactory
 
 Q = Decimal("0.0001")
 
@@ -112,6 +114,25 @@ def _calc_row(parcel, period):
 
 def _run(parcel, period):
     return CalculationRun.objects.get(parcel=parcel, period=period)
+
+
+def _zone_for(parcel):
+    """Put the parcel in a management-area GSA zone (where its basin pool lives)."""
+    zone = ZoneFactory(zone_type="management_area")
+    ParcelZoneFactory(parcel=parcel, zone=zone)
+    return zone
+
+
+def _incidental_pool_total(zone):
+    return sum(
+        (
+            r.amount_af
+            for r in AllocationCarryover.objects.filter(
+                zone=zone, origin=INCIDENTAL_RECHARGE_POOL
+            )
+        ),
+        Decimal("0"),
+    )
 
 
 def _finalized_period(period="2024-06", name="WY2024 June"):
@@ -397,13 +418,14 @@ def test_config_hash_ignores_labels_but_tracks_enabled_set():
 
 
 @pytest.mark.django_db
-def test_surface_overdelivery_becomes_incidental_recharge_not_a_credit():
-    """ISS-052: surface delivered beyond crop ET is deep-percolation recharge
-    credited to groundwater — NOT a precip credit banked and drawn down later
-    (which masked real summer pumping). Under the production usda_scs plan, Pe is
-    capped at ET, so the whole over-delivery routes to recharge and banking is 0."""
+def test_no_well_overdelivery_routes_to_basin_pool_not_a_personal_credit():
+    """ISS-052/053: surface delivered beyond crop ET is deep-percolation recharge.
+    On a NO-WELL parcel it cannot be recovered, so it deposits to the GSA basin
+    pool — NOT a personal recharge row (the MER-APN-031 phantom) and NOT a precip
+    credit drawn down later (which masked real summer pumping)."""
     parcel = _parcel("RUN-RECHARGE", acres="10")
-    _irrigate(parcel)
+    _irrigate(parcel)  # crop, no well -> FLOOD_MAR -> pool
+    zone = _zone_for(parcel)
     # "Wet" month: surface (5 AF) exceeds gross ET (~3.28 AF) by ~1.72 AF.
     _et_cache(parcel, period="2024-02", et_mm=100.0)
     _surface_row(parcel, "2024-02", af=5)
@@ -428,16 +450,12 @@ def test_surface_overdelivery_becomes_incidental_recharge_not_a_credit():
         == over_delivery
     )
 
-    # A positive GW recharge ledger row was written for the over-delivery.
-    recharge = ParcelLedger.objects.get(
-        parcel=parcel,
-        effective_date=dt.date(2024, 2, 1),
-        source_type="recharge",
-    )
-    assert recharge.amount_acre_feet > 0
-    assert recharge.amount_acre_feet.quantize(Q) == over_delivery
-    assert recharge.water_type.code == "GW"
-    assert recharge.description.startswith("Incidental recharge")
+    # NO personal recharge ledger row — the phantom credit is gone.
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge"
+    ).exists()
+    # The over-delivery landed in the zone's incidental basin pool instead.
+    assert _incidental_pool_total(zone).quantize(Q) == over_delivery
 
     # The next month draws NOTHING (no phantom credit) -> real pumping is billed.
     draw_run = _run(parcel, "2024-03")
@@ -447,11 +465,39 @@ def test_surface_overdelivery_becomes_incidental_recharge_not_a_credit():
 
 
 @pytest.mark.django_db
-def test_incidental_recharge_row_is_idempotent_across_reruns():
-    """Re-running a period replaces only the engine's own incidental recharge row
-    (delete-then-insert by description prefix) — no duplication, no drift."""
-    parcel = _parcel("RUN-RECHARGE-IDEM", acres="10")
+def test_has_well_parcel_keeps_personal_incidental_recharge_row():
+    """A CONJUNCTIVE (has-well) parcel CAN pump its own recharge, so its incidental
+    over-delivery stays a personal GW ledger row and nothing goes to the pool."""
+    parcel = _parcel("RUN-CONJUNCTIVE", acres="10")
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # has well -> CONJUNCTIVE
+    _zone_for(parcel)  # zone present, but the personal path wins for has-well
+    _et_cache(parcel, period="2024-02", et_mm=100.0)
+    _surface_row(parcel, "2024-02", af=5)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-02")
+
+    over_delivery = (Decimal("5") - _gross_af()).quantize(Q)
+    recharge = ParcelLedger.objects.get(
+        parcel=parcel, effective_date=dt.date(2024, 2, 1), source_type="recharge"
+    )
+    assert recharge.amount_acre_feet.quantize(Q) == over_delivery
+    assert recharge.water_type.code == "GW"
+    assert recharge.description.startswith("Incidental recharge")
+    # A has-well parcel never feeds the basin pool.
+    assert not AllocationCarryover.objects.filter(
+        origin=INCIDENTAL_RECHARGE_POOL
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_no_well_incidental_pool_is_idempotent_across_reruns():
+    """Re-running a period leaves the basin pool unchanged — the engine deposits a
+    signed delta (new − prior), so a no-well parcel's incidental never double-counts."""
+    parcel = _parcel("RUN-RECHARGE-IDEM", acres="10")
+    _irrigate(parcel)  # no well -> pool
+    zone = _zone_for(parcel)
     _et_cache(parcel, period="2024-02", et_mm=100.0)
     _surface_row(parcel, "2024-02", af=5)
     call_command("seed_calculation_plan")
@@ -459,11 +505,12 @@ def test_incidental_recharge_row_is_idempotent_across_reruns():
     call_command("run_calculations", "--period", "2024-02")
     call_command("run_calculations", "--period", "2024-02")  # re-run
 
-    rows = ParcelLedger.objects.filter(
-        parcel=parcel, source_type="recharge", effective_date=dt.date(2024, 2, 1)
-    )
-    assert rows.count() == 1
-    assert rows.first().water_type.code == "GW"
+    over_delivery = (Decimal("5") - _gross_af()).quantize(Q)
+    # No personal row, and the pool holds the amount ONCE (not doubled).
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge"
+    ).exists()
+    assert _incidental_pool_total(zone).quantize(Q) == over_delivery
 
 
 @pytest.mark.django_db

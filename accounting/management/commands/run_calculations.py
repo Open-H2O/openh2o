@@ -34,6 +34,7 @@ from django.db.models import Sum
 
 from accounting.banking_math import depreciated_value, is_expired, periods_between
 from accounting.calculation import evaluate_chain, plan_config_hash
+from accounting.carryover_math import water_year_of
 from accounting.models import (
     CalculationPlan,
     CalculationRun,
@@ -42,6 +43,9 @@ from accounting.models import (
     WaterCreditDraw,
     WaterType,
 )
+from accounting.recharge_policy import recharge_routes_to_personal
+from accounting.services import INCIDENTAL_RECHARGE_POOL, deposit_to_basin_pool
+from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 from wells.models import WellIrrigatedParcel
 
@@ -75,6 +79,24 @@ def _incidental_recharge_af(breakdown):
     if clamp is None:
         return Decimal("0")
     return Decimal(str(clamp["detail"].get("incidental_recharge_af", "0")))
+
+
+def _parcel_pool_zone(parcel):
+    """The parcel's GSA management-area zone — where its basin pool lives (ISS-053).
+
+    A no-well parcel's incidental recharge is deposited to this zone's basin pool
+    rather than the parcel's own ledger. Mirrors the zone managed recharge pools
+    into (``seed_merced_recharge_events`` resolves the basin's management_area
+    zone the same way). Returns the first management-area zone, or None.
+    """
+    pz = (
+        ParcelZone.objects.filter(
+            parcel=parcel, zone__zone_type="management_area"
+        )
+        .select_related("zone")
+        .first()
+    )
+    return pz.zone if pz else None
 
 
 def _apply_banking(parcel, period, final_af, breakdown, *, commit):
@@ -399,6 +421,24 @@ class Command(BaseCommand):
 
             gross_af = Decimal(et_step["output_af"]) if et_step else Decimal("0")
 
+            # ISS-053: a parcel's incidental (deep-percolation) recharge becomes a
+            # PERSONAL groundwater credit only if it has a well to pump it back
+            # (CONJUNCTIVE). A no-well parcel's over-delivery still percolates, but
+            # it cannot recover it, so that recharge belongs to the GSA basin pool.
+            # Capture the PRIOR incidental from the existing CalculationRun before
+            # _persist_calculation_run overwrites it, so the no-well pool deposit
+            # can be a signed delta (new − prior) and a re-run never double-counts.
+            routes_personal = recharge_routes_to_personal(parcel)
+            pool_zone = None if routes_personal else _parcel_pool_zone(parcel)
+            prior_run = CalculationRun.objects.filter(
+                parcel=parcel, period=period
+            ).first()
+            prior_incidental = (
+                _incidental_recharge_af(prior_run.breakdown)
+                if prior_run
+                else Decimal("0")
+            )
+
             if dry_run:
                 net_af, info = _apply_banking(
                     parcel, period, final_af, breakdown, commit=False
@@ -459,28 +499,46 @@ class Command(BaseCommand):
                     parcel, period, gross_af, net_af, breakdown, info,
                     plan_id, plan_name, plan_hash,
                 )
-                # ISS-052: write surface-over-delivery as a positive groundwater
-                # recharge row (deep percolation), credited to the aquifer rather
-                # than banked as a phantom precip credit. Delete-then-insert,
-                # scoped by the incidental description prefix, so a re-run replaces
-                # only its own rows and never disturbs managed-basin recharge.
+                # ISS-052/053: surface-over-delivery is deep-percolation recharge,
+                # credited to the aquifer rather than banked as a phantom precip
+                # credit. WHERE it lands depends on the parcel's archetype. The
+                # delete-by-prefix always runs first so a re-run (or an archetype
+                # flip) clears any stale PERSONAL row before re-deciding.
                 ParcelLedger.objects.filter(
                     parcel=parcel,
                     effective_date=eff_date,
                     source_type="recharge",
                     description__startswith=INCIDENTAL_RECHARGE_DESC,
                 ).delete()
-                if incidental_af > 0:
-                    ParcelLedger.objects.create(
-                        parcel=parcel,
-                        transaction_date=dt.date.today(),
-                        effective_date=eff_date,
-                        amount_acre_feet=incidental_af.quantize(Decimal("0.0001")),
-                        source_type="recharge",
-                        description=INCIDENTAL_RECHARGE_DESC,
-                        reporting_period=reporting_period,
-                        water_type=gw_water_type,
-                    )
+                if routes_personal:
+                    # CONJUNCTIVE (has well): a personal, recoverable GW credit.
+                    if incidental_af > 0:
+                        ParcelLedger.objects.create(
+                            parcel=parcel,
+                            transaction_date=dt.date.today(),
+                            effective_date=eff_date,
+                            amount_acre_feet=incidental_af.quantize(
+                                Decimal("0.0001")
+                            ),
+                            source_type="recharge",
+                            description=INCIDENTAL_RECHARGE_DESC,
+                            reporting_period=reporting_period,
+                            water_type=gw_water_type,
+                        )
+                elif pool_zone is not None:
+                    # No well: the recharge belongs to the GSA basin pool, not the
+                    # parcel. Deposit a signed delta (new − prior) so re-running the
+                    # period leaves the pool unchanged (idempotent). Covers the
+                    # removal case too (incidental fell to 0 → delta subtracts).
+                    delta = incidental_af - prior_incidental
+                    if delta != 0:
+                        deposit_to_basin_pool(
+                            pool_zone,
+                            gw_water_type,
+                            water_year_of(period),
+                            delta,
+                            origin=INCIDENTAL_RECHARGE_POOL,
+                        )
             extra = ""
             if info["deposited"] > 0:
                 extra += f"; banked {info['deposited']} AF"
