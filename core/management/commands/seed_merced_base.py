@@ -112,7 +112,45 @@ class Command(BaseCommand):
                     f"  Updated existing: {cfg['name']}"
                 )
 
+        self._ensure_site_config()
+
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced base geography seeded: {created} created, "
             f"{updated} updated."
         ))
+
+    def _ensure_site_config(self):
+        """Own the single-tenant agency identity for the Merced demo.
+
+        The platform is single-tenant: exactly one SiteConfig names the deployed
+        agency (and the singleton's save() refuses a second row). Only the
+        retired seeds (seed_kaweah / seed_demo_data) ever created one, so a fresh
+        ``make fresh`` → ``seed_merced`` rebuild would have NO identity, and a
+        post-teardown server still carries the retired-basin name. Create it if
+        absent, or rename it off a retired demo identity — but never clobber an
+        operator's own custom agency name.
+        """
+        from core.models import SiteConfig
+
+        merced_name = "Merced Subbasin GSA"
+        retired_names = {"Kaweah Subbasin GSA", "Demo Valley GSA"}
+
+        sc = SiteConfig.objects.first()
+        if sc is None:
+            SiteConfig.objects.create(
+                agency_name=merced_name,
+                timezone="America/Los_Angeles",
+                native_srid=4326,
+                contact_email="info@mercedsubbasingsa.example.com",
+            )
+            self.stdout.write(self.style.SUCCESS(
+                f"  Created SiteConfig: {merced_name}"))
+        elif sc.agency_name in retired_names:
+            old = sc.agency_name
+            sc.agency_name = merced_name
+            sc.save()
+            self.stdout.write(
+                f"  Renamed SiteConfig: {old} -> {merced_name}")
+        else:
+            self.stdout.write(
+                f"  SiteConfig kept (custom agency name): {sc.agency_name}")
