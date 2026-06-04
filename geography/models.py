@@ -2,6 +2,8 @@
 from django.contrib.gis.db import models as gis_models
 from django.db import models
 
+from core.constants import RECOVERY_HORIZON_CHOICES
+
 
 class Boundary(models.Model):
     name = models.CharField(max_length=200)
@@ -48,6 +50,18 @@ class Zone(models.Model):
         max_length=20,
         blank=True,
         help_text='DWR Bulletin 118 subbasin number this zone maps to, e.g. "5-022.11".',
+    )
+    # Per-district override of the agency-wide recovery horizon (Phase 55-02).
+    # A surface district is its own zone, so this is where "this district's
+    # unused water expires at year-end" lives. Blank = inherit the SiteConfig
+    # default, so an admin only sets the exceptions.
+    recovery_horizon = models.CharField(
+        max_length=16,
+        choices=RECOVERY_HORIZON_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Override the agency default for this district. "
+        "Blank = use the agency default.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

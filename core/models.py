@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+from decimal import Decimal
+
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+
+from core.constants import RECOVERY_HORIZON_CHOICES
 
 
 class User(AbstractUser):
@@ -53,6 +57,29 @@ class SiteConfig(models.Model):
     contact_phone = models.CharField(max_length=20, blank=True)
     logo = models.ImageField(upload_to="logos/", blank=True, null=True)
     allow_google_oauth = models.BooleanField(default=False)
+
+    # --- Agency-wide delivery accounting policy (Phase 55-02) ---
+    # Efficiency is agronomic, not per-right: one agency-wide figure. Lifts the
+    # hardcoded seed constant IRRIGATION_EFFICIENCY out of code so an agency can
+    # tune it from a screen (the settings UI lands in Plan 03).
+    default_irrigation_efficiency = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        default=Decimal("0.750"),
+        help_text="Share of delivered water the crop actually consumes; the rest "
+        "returns to the aquifer as recharge.",
+    )
+    # The agency-wide default for what happens to an unused water budget at
+    # year-end. A district may override it on its Zone; this default must always
+    # resolve to a concrete value (never null), so existing rollover behavior is
+    # preserved on migrate (carry_forward = the historic behavior).
+    default_recovery_horizon = models.CharField(
+        max_length=16,
+        choices=RECOVERY_HORIZON_CHOICES,
+        default="carry_forward",
+        help_text="What happens to a district's unused water budget at year-end "
+        "(agency-wide default; a district may override it).",
+    )
 
     def save(self, *args, **kwargs):
         if self.pk is None and SiteConfig.objects.exists():
