@@ -737,6 +737,24 @@ def parcel_net_consumptive_use(parcel, reporting_period=None):
     return total
 
 
+def parcel_run_periods(parcel, reporting_period=None):
+    """The distinct ``"YYYY-MM"`` months a parcel has a CalculationRun for.
+
+    The per-parcel audit drill-down (57-03): each month a parcel was engine-run
+    has its own gross→net waterfall at ``accounting:calculation_run_detail``
+    (keyed on the stable ``(parcel_id, period)``). This returns the sorted list
+    of those month strings within ``reporting_period`` so the parcel balance card
+    can link each one to its audit page. Empty list when the parcel has no runs
+    (the surface-only ISS-054 case — nothing to audit yet). Reuses
+    ``_calculation_runs_for_period`` so it scopes identically to the balance read.
+    """
+    return sorted(
+        _calculation_runs_for_period(parcel, reporting_period)
+        .values_list("period", flat=True)
+        .distinct()
+    )
+
+
 def parcel_mass_balance(parcel, reporting_period=None):
     """The closing water mass balance for one parcel over a reporting period.
 

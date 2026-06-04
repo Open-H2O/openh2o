@@ -10,6 +10,12 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
+from accounting.models import ReportingPeriod
+from accounting.services import (
+    parcel_consumptive_balance,
+    parcel_mass_balance,
+    parcel_run_periods,
+)
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from parcels.models import Parcel, ParcelLedger
 
@@ -71,6 +77,34 @@ def parcel_detail(request, pk):
         "-effective_date", "-created_at"
     )[:10]
 
+    # Resolve the period the same way the account page does: the most recent
+    # period carrying REAL (non-allocation) activity for THIS parcel, so the
+    # balance card opens where the data is and never on an empty open year.
+    # Fall back to the most recent period overall when the parcel has no
+    # billable rows yet. Mirrors accounting.views.account_detail's default.
+    balance_period = None
+    activity_period_id = (
+        ParcelLedger.objects.filter(parcel=parcel, reporting_period__isnull=False)
+        .exclude(source_type="allocation")
+        .order_by("-reporting_period__start_date")
+        .values_list("reporting_period_id", flat=True)
+        .first()
+    )
+    if activity_period_id:
+        balance_period = ReportingPeriod.objects.filter(pk=activity_period_id).first()
+    else:
+        balance_period = ReportingPeriod.objects.order_by("-start_date").first()
+
+    # The corrected v1.10 lens (57-01) + the closing identity (52.6-03), both
+    # read from the same source fields so the card is internally consistent.
+    consumptive_balance = parcel_consumptive_balance(parcel, balance_period)
+    mass_balance = parcel_mass_balance(parcel, balance_period)
+    # Months this parcel was engine-run — each links to its own audit waterfall
+    # (Task 2). Empty when ET was never computed (surface-only ISS-054 case),
+    # which the template renders as an honest "ET not yet computed" state rather
+    # than a scary red residual.
+    run_periods = parcel_run_periods(parcel, balance_period)
+
     geojson = None
     if parcel.geometry:
         geojson = json.loads(
@@ -99,6 +133,10 @@ def parcel_detail(request, pk):
         "zone_memberships": zone_memberships,
         "related_wells": related_wells,
         "recent_ledger": recent_ledger,
+        "balance_period": balance_period,
+        "consumptive_balance": consumptive_balance,
+        "mass_balance": mass_balance,
+        "run_periods": run_periods,
         "editable_fields": EDITABLE_FIELDS,
         "editable_fields_with_values": editable_fields_with_values,
         # Pass the Python object (or None); the template escapes it via
