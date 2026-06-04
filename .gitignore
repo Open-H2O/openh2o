@@ -39,6 +39,10 @@ tailwindcss-*
 media/
 .claude/
 
+# Production guard marker — present only in the live deployment checkout, never
+# committed. The Makefile's destructive targets refuse to run when this exists.
+.production-lock
+
 # Internal planning / build scaffolding (not for public repo)
 .planning/
 .env.*

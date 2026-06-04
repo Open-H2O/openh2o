@@ -10,7 +10,7 @@ EXEC    = $(COMPOSE) exec web python manage.py
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo kaweah flush-kaweah merced teardown-demo \
-        check test fresh verify-clean install-cron show-cron sync
+        check test fresh verify-clean install-cron show-cron sync guard-prod
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -130,7 +130,24 @@ sync: ## Run sync_all manually (syncs all active data sources)
 # Composite Targets
 # ---------------------------------------------------------------------------
 
-fresh: down ## Full reset: destroy volumes, rebuild, migrate, seed, Merced demo
+# Safety guard: destructive resets refuse to run in a checkout that carries a
+# .production-lock marker (placed only in the live deployment). This is a human-
+# error backstop on top of the real protection — prod and staging are separate
+# compose projects with separate database volumes, so a reset can only ever wipe
+# the data of the checkout it runs in. To intentionally reset a locked checkout,
+# remove .production-lock, run the command, then recreate the marker.
+guard-prod:
+	@if [ -f .production-lock ]; then \
+		echo ""; \
+		echo "  REFUSING: this is a PROTECTED (production) checkout."; \
+		echo "  '$(MAKECMDGOALS)' destroys the database — it would wipe live data and log out users."; \
+		echo "  Run it on the staging checkout instead (~/openh2o-staging)."; \
+		echo "  To override here on purpose: rm .production-lock  (then recreate it after)."; \
+		echo ""; \
+		exit 1; \
+	fi
+
+fresh: guard-prod down ## Full reset: destroy volumes, rebuild, migrate, seed, Merced demo
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --build
 	@echo "Waiting for database to be healthy..."
