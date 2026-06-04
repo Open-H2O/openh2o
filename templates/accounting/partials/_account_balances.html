@@ -1,27 +1,35 @@
-<!-- Summary row: Supply / Usage / Net -->
-<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-lg);">
+<!-- Summary row: Consumptive Use (ET) / Total Supplies / Net (the v1.10 lens) -->
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
   <div class="inset-card">
-    <div class="stat-card-label">Supply</div>
-    <div class="stat-card-value-sm text-supply">
-      {{ balance.supply|floatformat:2 }}
-    </div>
-    <div class="stat-card-unit">AF</div>
-  </div>
-  <div class="inset-card">
-    <div class="stat-card-label">Usage</div>
+    <div class="stat-card-label">Consumptive Use (ET)</div>
     <div class="stat-card-value-sm text-usage">
-      {{ balance.usage|floatformat:2 }}
+      {{ balance.consumptive_use_gross|floatformat:2 }}
     </div>
     <div class="stat-card-unit">AF</div>
   </div>
   <div class="inset-card">
-    <div class="stat-card-label">Net {% include "partials/_help_tooltip.html" with label="Net" text="Supply minus usage to date. Positive means more water was supplied than used; negative means usage has exceeded supply." %}</div>
-    <div class="stat-card-value-sm {% if balance.net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-      {{ balance.net|floatformat:2 }}
+    <div class="stat-card-label">Total Supplies</div>
+    <div class="stat-card-value-sm text-supply">
+      {{ balance.supply_total|floatformat:2 }}
+    </div>
+    <div class="stat-card-unit">AF</div>
+  </div>
+  <div class="inset-card">
+    <div class="stat-card-label">Supplies − Consumptive Use {% include "partials/_help_tooltip.html" with label="Net" text="The supplies that met this account's measured consumptive use, minus that use. Positive means recorded supplies covered measured use; negative means use exceeded them." %}</div>
+    <div class="stat-card-value-sm {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+      {{ balance.net_vs_supply|floatformat:2 }}
     </div>
     <div class="stat-card-unit">AF</div>
   </div>
 </div>
+
+<!-- Supplies breakdown: what met the consumptive use (dense, not hidden) -->
+<p class="text-tertiary text-sm" style="margin: 0 0 var(--space-lg);">
+  Supplies that met it:
+  <span class="text-supply">surface {{ balance.supplies.surface|floatformat:2 }}</span> ·
+  <span class="text-supply">groundwater {{ balance.supplies.groundwater|floatformat:2 }}</span> ·
+  <span class="text-supply">precip {{ balance.supplies.precip|floatformat:2 }}</span> AF
+</p>
 
 <!-- Per-parcel breakdown -->
 {% if parcel_balances %}
@@ -30,8 +38,11 @@
   <thead>
     <tr>
       <th>Parcel</th>
-      <th class="th-right">Supply</th>
-      <th class="th-right">Usage</th>
+      <th class="th-right">Consumptive Use</th>
+      <th class="th-right">Surface</th>
+      <th class="th-right">Groundwater</th>
+      <th class="th-right">Precip</th>
+      <th class="th-right">Supplies</th>
       <th class="th-right">Net</th>
     </tr>
   </thead>
@@ -43,14 +54,23 @@
           {{ pb.parcel.parcel_number }}
         </a>
       </td>
-      <td class="td-num text-supply">
-        {{ pb.supply|floatformat:2 }}
-      </td>
       <td class="td-num text-usage">
-        {{ pb.usage|floatformat:2 }}
+        {{ pb.consumptive_use_gross|floatformat:2 }}
       </td>
-      <td class="td-num-bold {% if pb.net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-        {{ pb.net|floatformat:2 }}
+      <td class="td-num text-supply">
+        {{ pb.surface|floatformat:2 }}
+      </td>
+      <td class="td-num text-supply">
+        {{ pb.groundwater|floatformat:2 }}
+      </td>
+      <td class="td-num text-supply">
+        {{ pb.precip|floatformat:2 }}
+      </td>
+      <td class="td-num-bold text-supply">
+        {{ pb.supply_total|floatformat:2 }}
+      </td>
+      <td class="td-num-bold {% if pb.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+        {{ pb.net_vs_supply|floatformat:2 }}
       </td>
     </tr>
     {% endfor %}

@@ -37,12 +37,9 @@ from accounting.carryover_math import available_with_carryover, water_year_of
 from core.access import admin_required
 from core.models import SiteConfig
 from accounting.services import (
-    account_balance,
     account_consumptive_balance,
     parcel_consumptive_balance,
     parse_ledger_csv,
-    parcel_balance_breakdown,
-    zone_balance,
     zone_carryover,
     zone_consumptive_balance,
 )
@@ -475,25 +472,32 @@ def account_detail(request, pk):
         else:
             selected_period = periods.filter(is_finalized=False).first()
 
-    # Account-level balance
-    balance = account_balance(account, reporting_period=selected_period)
+    # Account-level balance, in the corrected v1.10 lens: measured consumptive
+    # use (gross ET) against the surface / groundwater / precip supplies that met
+    # it (57-02). account_consumptive_balance selects the SAME active assignments
+    # account_balance did, so the roll-up partitions identically.
+    balance = account_consumptive_balance(account, reporting_period=selected_period)
 
-    # Per-parcel breakdown. ISS-026: route each parcel through billable_ledger
-    # (via parcel_balance_breakdown) exactly as account_balance does, so a
-    # parcel's gross `et_estimate` row is suppressed wherever its netted
-    # `calculated` twin exists. The per-parcel rows then sum to the account total
-    # instead of showing ~double it. The old raw
-    # ParcelLedger.objects.filter(parcel=p) aggregate summed BOTH ET rows (the
-    # double-count) and also discarded the parcel_balance it had just computed.
+    # Per-parcel breakdown, same consumptive lens. parcel_consumptive_balance
+    # reuses the billable primitive (groundwater supply == _balance_dict usage),
+    # so per-parcel rows sum to the account total (57-01 case #5 proves the helper
+    # is additive) and the page stays internally consistent. The conjunctive-vs-
+    # surface-only story is now VISIBLE: a canal-district parcel shows real
+    # consumptive use met entirely by surface; a conjunctive parcel shows surface +
+    # groundwater.
     parcel_balances = []
     for assignment in assignments:
         p = assignment.parcel
-        pb = parcel_balance_breakdown(p, reporting_period=selected_period)
+        pcb = parcel_consumptive_balance(p, reporting_period=selected_period)
         parcel_balances.append({
             "parcel": p,
-            "supply": pb["supply"],
-            "usage": pb["usage"],
-            "net": pb["net"],
+            "consumptive_use_gross": pcb["consumptive_use_gross"],
+            "consumptive_use_net": pcb["consumptive_use_net"],
+            "surface": pcb["supplies"]["surface"],
+            "groundwater": pcb["supplies"]["groundwater"],
+            "precip": pcb["supplies"]["precip"],
+            "supply_total": pcb["supply_total"],
+            "net_vs_supply": pcb["net_vs_supply"],
         })
 
     # Curtailment narrative (ISS / Phase 52-02): surface the cut as a story, not
