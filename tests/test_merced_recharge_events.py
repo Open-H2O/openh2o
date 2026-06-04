@@ -1,19 +1,22 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Spec for seed_merced_recharge_events (Phase 52.5-03).
+"""Spec for seed_merced_recharge_events (Phase 52.6-02, ISS-053).
 
-The managed-recharge half of an honest groundwater budget: wet-season
-RechargeEvent rows on the Merced spreading basins, distributed as GROUNDWATER
-credits across the overlying GSA's parcels. These tests prove the invariants:
+The managed-recharge half of an honest groundwater budget. As of 52.6-02 the
+event volume NO LONGER smears area-weighted across every parcel in the zone (the
+ISS-053 phantom: a recoverable credit on surface-only parcels that have no well).
+Instead the whole volume deposits to the zone's GSA basin recharge pool — an
+``AllocationCarryover`` row, origin ``basin_recharge_pool``. These prove:
 
-  - GW credit — rows are source_type="recharge", POSITIVE, water_type code "GW".
-  - Conservative — per-event distributed amounts sum exactly to the event volume
-    (no rounding drift); the season totals one basin capacity.
-  - Period-attributed — rows carry the WY 2024-2025 ReportingPeriod (so the
-    dashboard, which filters supply by period, counts them), NOT the service's
-    default null.
-  - Idempotent — re-running reproduces identical rows, no duplication.
-  - Distinct from incidental — the self-flush leaves the engine's "Incidental
-    recharge" rows untouched (the two recharge kinds never collide).
+  - Pooled — the season's full capacity lands in ONE basin-pool row (GW, the
+    event water-year), not spread across parcels.
+  - No smear — ZERO per-parcel ``source_type="recharge"`` ledger rows are
+    written for the managed event; the phantom parcel (MER-APN-031, no well)
+    receives nothing.
+  - Idempotent — re-running resets the seed's pool slice and re-deposits, so the
+    pool total is unchanged (no double-count).
+  - Distinct from incidental — the self-flush keys on the managed origin /
+    "Recharge from <basin>" description, so the engine's separate incidental pool
+    and its "Incidental recharge" ledger rows survive untouched.
 
 Runs in the Butler web container (needs the DB).
 """
@@ -23,6 +26,8 @@ from decimal import Decimal
 import pytest
 from django.core.management import call_command
 
+from accounting.models import AllocationCarryover, WaterType
+from accounting.services import BASIN_RECHARGE_POOL, INCIDENTAL_RECHARGE_POOL
 from parcels.models import ParcelLedger
 from recharge.models import RechargeEvent
 from tests.factories import (
@@ -30,15 +35,20 @@ from tests.factories import (
     ParcelZoneFactory,
     ReportingPeriodFactory,
     RechargeSiteFactory,
+    WaterTypeFactory,
     ZoneFactory,
 )
 
 Q = Decimal("0.0001")
 BASIN = "Cressey-Winton Recharge Basin"
+# Events span Dec 2024 – Mar 2025 → all water year 2025 (Oct–Sep, named by end).
+EVENT_WY = 2025
 
 
 def _fixture(capacity="100.0000", areas=("40", "30", "30")):
-    """A GSA zone with parcels + one named basin (zone FK set) + the WY period."""
+    """A GSA zone with parcels (incl. the phantom MER-APN-031, no well) + one named
+    basin (zone FK set) + the WY period + a GW water type."""
+    WaterTypeFactory(code="GW", name="Groundwater")
     period = ReportingPeriodFactory(
         name="WY 2024-2025",
         start_date=date(2024, 10, 1),
@@ -46,8 +56,11 @@ def _fixture(capacity="100.0000", areas=("40", "30", "30")):
     )
     zone = ZoneFactory(zone_type="management_area")
     parcels = []
-    for i, acres in enumerate(areas):
-        p = ParcelFactory(parcel_number=f"MER-APN-{i:06d}", area_acres=Decimal(acres))
+    # MER-APN-031 is the ISS-053 phantom: a surface-only, no-well parcel that the
+    # old smear handed a groundwater recharge credit it cannot pump.
+    numbers = ["MER-APN-031", "MER-APN-040", "MER-APN-041"]
+    for number, acres in zip(numbers, areas):
+        p = ParcelFactory(parcel_number=number, area_acres=Decimal(acres))
         ParcelZoneFactory(parcel=p, zone=zone)
         parcels.append(p)
     basin = RechargeSiteFactory(
@@ -56,66 +69,87 @@ def _fixture(capacity="100.0000", areas=("40", "30", "30")):
     return period, zone, parcels, basin
 
 
-@pytest.mark.django_db
-def test_managed_recharge_rows_are_positive_gw_credits():
-    _fixture()
-    call_command("seed_merced_recharge_events")
-
-    rows = ParcelLedger.objects.filter(source_type="recharge")
-    assert rows.exists()
-    assert all(r.amount_acre_feet > 0 for r in rows)
-    assert all(r.water_type and r.water_type.code == "GW" for r in rows)
-    assert all(r.description.startswith("Recharge from") for r in rows)
-
-
-@pytest.mark.django_db
-def test_each_event_distributes_exactly_to_its_volume():
-    _, _, _, basin = _fixture(capacity="100.0000")
-    call_command("seed_merced_recharge_events")
-
-    # Four wet-season events; each event's rows must sum to that event's volume.
-    for event in RechargeEvent.objects.filter(recharge_site=basin):
-        rows = ParcelLedger.objects.filter(
-            source_type="recharge", effective_date=event.start_date
-        )
-        assert sum((r.amount_acre_feet for r in rows), Decimal("0")) == (
-            event.volume_acre_feet
-        )
-    # Whole season totals one basin capacity (0.20+0.30+0.30+0.20 = 1.00).
-    total = sum(
-        (r.amount_acre_feet for r in ParcelLedger.objects.filter(
-            source_type="recharge")),
+def _pool_total(zone, origin=BASIN_RECHARGE_POOL):
+    return sum(
+        (
+            r.amount_af
+            for r in AllocationCarryover.objects.filter(zone=zone, origin=origin)
+        ),
         Decimal("0"),
     )
-    assert total.quantize(Q) == Decimal("100.0000")
 
 
 @pytest.mark.django_db
-def test_rows_are_attributed_to_the_reporting_period():
-    period, _, _, _ = _fixture()
+def test_managed_recharge_pools_at_gsa_level_not_per_parcel():
+    _, zone, _, _ = _fixture(capacity="100.0000")
     call_command("seed_merced_recharge_events")
-    rows = ParcelLedger.objects.filter(source_type="recharge")
-    assert rows.exists()
-    assert all(r.reporting_period_id == period.id for r in rows)
+
+    rows = AllocationCarryover.objects.filter(
+        zone=zone, origin=BASIN_RECHARGE_POOL, water_year=EVENT_WY
+    )
+    assert rows.count() == 1  # one pool row, not a per-parcel spread
+    pool = rows.first()
+    assert pool.water_type.code == "GW"
+    # Whole season totals one basin capacity (0.20+0.30+0.30+0.20 = 1.00).
+    assert pool.amount_af.quantize(Q) == Decimal("100.0000")
 
 
 @pytest.mark.django_db
-def test_seed_is_idempotent():
+def test_no_per_parcel_recharge_ledger_rows_are_written():
+    """The managed event writes NO ParcelLedger recharge rows — the area-weighted
+    smear is gone."""
     _fixture()
     call_command("seed_merced_recharge_events")
-    first = ParcelLedger.objects.filter(source_type="recharge").count()
-    events_first = RechargeEvent.objects.count()
-    call_command("seed_merced_recharge_events")
-    assert ParcelLedger.objects.filter(source_type="recharge").count() == first
-    assert RechargeEvent.objects.count() == events_first
-    assert first > 0
+    assert ParcelLedger.objects.filter(source_type="recharge").count() == 0
 
 
 @pytest.mark.django_db
-def test_flush_leaves_engine_incidental_recharge_untouched():
-    """The self-flush keys on the 'Recharge from <basin>' description, so the
-    engine's 'Incidental recharge' rows (same source_type) survive."""
+def test_phantom_parcel_receives_zero_recharge():
+    """MER-APN-031 (no well) gets zero recharge ledger AF from the managed event —
+    the ISS-053 phantom is dead at the source."""
     _, _, parcels, _ = _fixture()
+    call_command("seed_merced_recharge_events")
+    phantom = parcels[0]
+    assert phantom.parcel_number == "MER-APN-031"
+    assert not ParcelLedger.objects.filter(
+        parcel=phantom, source_type="recharge"
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_seed_is_idempotent_no_double_count():
+    _, zone, _, _ = _fixture(capacity="100.0000")
+    call_command("seed_merced_recharge_events")
+    first_total = _pool_total(zone)
+    events_first = RechargeEvent.objects.count()
+
+    call_command("seed_merced_recharge_events")  # re-run
+    assert _pool_total(zone).quantize(Q) == first_total.quantize(Q)
+    assert _pool_total(zone).quantize(Q) == Decimal("100.0000")
+    assert RechargeEvent.objects.count() == events_first
+    assert (
+        AllocationCarryover.objects.filter(
+            zone=zone, origin=BASIN_RECHARGE_POOL
+        ).count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
+def test_flush_leaves_engine_incidental_pool_and_rows_untouched():
+    """The self-flush touches only the MANAGED origin / 'Recharge from <basin>'
+    rows, so the engine's incidental pool AND its 'Incidental recharge' ledger
+    rows survive a re-seed."""
+    _, zone, parcels, _ = _fixture()
+    # An engine-style incidental pool row (separate origin) + a personal-credit
+    # incidental ledger row, both pre-existing.
+    AllocationCarryover.objects.create(
+        zone=zone,
+        water_type=WaterType.objects.get(code="GW"),
+        water_year=EVENT_WY,
+        amount_af=Decimal("7.5000"),
+        origin=INCIDENTAL_RECHARGE_POOL,
+    )
     incidental = ParcelLedger.objects.create(
         parcel=parcels[0],
         transaction_date=date(2025, 7, 1),
@@ -124,9 +158,11 @@ def test_flush_leaves_engine_incidental_recharge_untouched():
         source_type="recharge",
         description="Incidental recharge — deep percolation from surface over-delivery",
     )
+
     call_command("seed_merced_recharge_events")
-    call_command("seed_merced_recharge_events")  # re-run: flush must spare it
+    call_command("seed_merced_recharge_events")  # re-run: flush must spare both
+
     assert ParcelLedger.objects.filter(pk=incidental.pk).exists()
-    assert ParcelLedger.objects.filter(
-        source_type="recharge", description__startswith="Incidental"
-    ).count() == 1
+    assert _pool_total(zone, origin=INCIDENTAL_RECHARGE_POOL).quantize(Q) == Decimal(
+        "7.5000"
+    )

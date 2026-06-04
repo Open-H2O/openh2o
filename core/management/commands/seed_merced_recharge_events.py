@@ -27,8 +27,8 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from accounting.models import ReportingPeriod, WaterType
-from accounting.services import create_recharge_ledger_entries
+from accounting.models import AllocationCarryover, ReportingPeriod, WaterType
+from accounting.services import BASIN_RECHARGE_POOL, create_recharge_ledger_entries
 from geography.models import Zone
 from parcels.models import ParcelLedger
 from recharge.models import RechargeEvent, RechargeSite
@@ -80,8 +80,9 @@ class Command(BaseCommand):
             )
             return
 
-        # Self-flush: drop this seed's prior events + ledger rows for these basins
-        # (matched by the service's "Recharge from <basin>" description), leaving
+        # Self-flush: drop this seed's prior events (idempotency). Also clear any
+        # LEGACY per-parcel "Recharge from <basin>" ledger rows left by the old
+        # area-weighted smear — the rewritten service writes none — while leaving
         # the engine's "Incidental recharge" rows untouched.
         RechargeEvent.objects.filter(recharge_site__in=basins).delete()
         for basin in basins:
@@ -90,9 +91,20 @@ class Command(BaseCommand):
                 description__startswith=f"Recharge from {basin.name}",
             ).delete()
 
-        total_rows = 0
+        # Managed recharge now deposits to each zone's basin pool (an
+        # AllocationCarryover row, origin=basin_recharge_pool) instead of smearing
+        # ledger rows. Reset THIS seed's pool slice for the involved zones before
+        # re-depositing so a re-run is idempotent — and only the MANAGED origin, so
+        # the engine's separate incidental-recharge pool survives untouched.
+        zone_by_basin = {basin.pk: self._resolve_zone(basin) for basin in basins}
+        reset_zone_ids = {z.pk for z in zone_by_basin.values() if z is not None}
+        AllocationCarryover.objects.filter(
+            zone_id__in=reset_zone_ids, origin=BASIN_RECHARGE_POOL
+        ).delete()
+
+        total_events = 0
         for basin in basins:
-            zone = self._resolve_zone(basin)
+            zone = zone_by_basin[basin.pk]
             if zone is None:
                 self.stderr.write(
                     self.style.WARNING(
@@ -116,24 +128,19 @@ class Command(BaseCommand):
                         "physical source is diverted surface/storm water."
                     ),
                 )
-                rows = create_recharge_ledger_entries(event, zone=zone)
-                # The service writes reporting_period=None; attribute these to the
-                # WY 2024-2025 period so the dashboard (which filters supply by
-                # reporting period) counts them as groundwater supply.
-                if rows:
-                    ParcelLedger.objects.filter(
-                        pk__in=[r.pk for r in rows]
-                    ).update(reporting_period=period)
-                total_rows += len(rows)
+                # No parcel arg -> the whole event volume pools to the zone's GSA
+                # basin pool; no per-parcel ledger rows (kills the ISS-053 smear).
+                create_recharge_ledger_entries(event, zone=zone)
+                total_events += 1
             self.stdout.write(
                 f"  {basin.name}: {capacity} AF over {len(WET_SEASON)} "
-                f"wet-season events -> GW recharge across zone '{zone.name}'"
+                f"wet-season events -> basin pool for zone '{zone.name}'"
             )
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Seeded managed recharge: {total_rows} GW ledger row(s) across "
-                f"{len(basins)} basin(s)."
+                f"Seeded managed recharge: {total_events} event(s) deposited to "
+                f"the basin pool across {len(basins)} basin(s)."
             )
         )
 

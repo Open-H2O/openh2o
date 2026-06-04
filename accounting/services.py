@@ -205,21 +205,37 @@ def create_diversion_ledger_entry(diversion_record, parcel=None):
     return entries[0] if entries else None
 
 
-def create_recharge_ledger_entries(recharge_event, zone=None):
-    """Create positive ledger entries distributing recharge volume across parcels in a zone.
+def create_recharge_ledger_entries(recharge_event, zone=None, parcel=None):
+    """Route a managed recharge event to the GSA basin pool — or one has-well parcel.
+
+    The old behaviour smeared the event volume area-weighted across EVERY parcel
+    in the zone, inventing a recoverable groundwater credit on surface-only
+    parcels that have no well to pump it back (the ISS-053 phantom — MER-APN-031's
+    12.57 AF). The water physically infiltrates the shared aquifer, so by default
+    the WHOLE event volume is deposited to the zone's managed basin recharge pool
+    (an ``AllocationCarryover`` row, origin ``basin_recharge_pool``) and NO
+    per-parcel ledger rows are written.
+
+    The single per-parcel personal-credit path is the conjunctive case: when a
+    caller ties the event to a specific has-well parcel, that parcel CAN recover
+    its recharge, so it gets one personal groundwater ledger row instead of
+    pooling. (The Merced demo never passes a parcel, so it always pools.)
 
     Args:
         recharge_event: A recharge.models.RechargeEvent instance.
-        zone: Optional Zone instance. If None, falls back to
-            recharge_event.recharge_site.zone.
+        zone: Zone to pool into. If None, falls back to
+            ``recharge_event.recharge_site.zone``.
+        parcel: Optional has-well Parcel the event is tied to (personal path).
 
     Returns:
-        List of created ParcelLedger entries, or an empty list if the zone has
-        no parcels.
+        ``[the one personal ParcelLedger row]`` on the personal path, else ``[]``
+        — the pool deposit is an AllocationCarryover row, not a ledger row.
 
     Raises:
-        ValueError: If no zone supplied and recharge site has no zone FK set.
+        ValueError: If no zone supplied and the recharge site has no zone FK set.
     """
+    from accounting.recharge_policy import recharge_routes_to_personal
+
     if zone is None:
         zone = recharge_event.recharge_site.zone
         if zone is None:
@@ -227,83 +243,41 @@ def create_recharge_ledger_entries(recharge_event, zone=None):
                 f"No zone supplied and recharge site "
                 f"'{recharge_event.recharge_site.name}' has no zone set"
             )
-    parcel_ids = ParcelZone.objects.filter(zone=zone).values_list(
-        "parcel_id", flat=True
-    )
-    parcels = list(Parcel.objects.filter(pk__in=parcel_ids))
 
-    if not parcels:
-        return []
-
-    today = timezone.now().date()
-    total_volume = recharge_event.volume_acre_feet
-    total_area = sum(p.area_acres or Decimal("0") for p in parcels)
-    entries = []
-
-    if total_area == 0:
-        # Fallback: equal distribution when no parcels have area data
-        logger.warning(
-            "All %d parcels in zone '%s' have null/zero area_acres; "
-            "distributing recharge equally",
-            len(parcels),
-            zone.name,
+    water_type = recharge_event.water_type
+    if water_type is None:
+        water_type, _ = WaterType.objects.get_or_create(
+            code="GW", defaults={"name": "Groundwater"}
         )
-        distributed = Decimal("0")
-        for i, parcel in enumerate(parcels):
-            if i == len(parcels) - 1:
-                amount = total_volume - distributed
-            else:
-                amount = (total_volume / Decimal(str(len(parcels)))).quantize(
-                    Decimal("0.0001")
-                )
-                distributed += amount
-            entries.append(
-                ParcelLedger(
-                    parcel=parcel,
-                    transaction_date=today,
-                    effective_date=recharge_event.start_date,
-                    amount_acre_feet=amount,
-                    source_type="recharge",
-                    description=(
-                        f"Recharge from {recharge_event.recharge_site.name}: "
-                        f"{total_volume} AF distributed equally "
-                        f"across {len(parcels)} parcels"
-                    ),
-                    reporting_period=None,
-                    water_type=recharge_event.water_type,
-                )
-            )
-    else:
-        # Area-weighted distribution with rounding residual on last entry
-        distributed = Decimal("0")
-        for i, parcel in enumerate(parcels):
-            area = parcel.area_acres or Decimal("0")
-            if i == len(parcels) - 1:
-                # Last entry gets residual to ensure exact sum
-                amount = total_volume - distributed
-            else:
-                amount = (area / total_area * total_volume).quantize(
-                    Decimal("0.0001")
-                )
-                distributed += amount
-            entries.append(
-                ParcelLedger(
-                    parcel=parcel,
-                    transaction_date=today,
-                    effective_date=recharge_event.start_date,
-                    amount_acre_feet=amount,
-                    source_type="recharge",
-                    description=(
-                        f"Recharge from {recharge_event.recharge_site.name}: "
-                        f"{total_volume} AF area-weighted "
-                        f"across {len(parcels)} parcels"
-                    ),
-                    reporting_period=None,
-                    water_type=recharge_event.water_type,
-                )
-            )
+    volume = recharge_event.volume_acre_feet
 
-    return ParcelLedger.objects.bulk_create(entries)
+    # Personal path: a conjunctive (has-well) parcel tied to this event recovers
+    # its own recharge, so it gets one personal groundwater credit, not the pool.
+    if parcel is not None and recharge_routes_to_personal(parcel):
+        entry = ParcelLedger.objects.create(
+            parcel=parcel,
+            transaction_date=timezone.now().date(),
+            effective_date=recharge_event.start_date,
+            amount_acre_feet=volume,
+            source_type="recharge",
+            description=(
+                f"Recharge from {recharge_event.recharge_site.name}: "
+                f"{volume} AF personal credit (has-well parcel)"
+            ),
+            reporting_period=None,
+            water_type=water_type,
+        )
+        return [entry]
+
+    # Default basin/GSA path: the whole event infiltrates the shared aquifer, so
+    # it deposits to the zone's managed basin pool and writes NO per-parcel rows.
+    water_year = water_year_of(
+        f"{recharge_event.start_date.year}-{recharge_event.start_date.month:02d}"
+    )
+    deposit_to_basin_pool(
+        zone, water_type, water_year, volume, origin=BASIN_RECHARGE_POOL
+    )
+    return []
 
 
 # ---------------------------------------------------------------------------
