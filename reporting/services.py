@@ -30,9 +30,12 @@ Three rules keep this honest — they are the whole reason the feature exists:
 from decimal import Decimal
 
 from parcels.models import ParcelLedger
-from surface.models import PointOfDiversionParcel
+from surface.models import PointOfDiversion
 
-from reporting.generators import build_normalized_well_parcel_map
+from reporting.generators import (
+    build_normalized_pod_parcel_map,
+    build_normalized_well_parcel_map,
+)
 
 # The provenance label that MUST appear on every pre-filled value. Tested for
 # exact-string equality (tests/test_reporting_prefill.py) because it is the
@@ -94,9 +97,10 @@ def _prefill_by_well(reporting_period):
     """Per well: parcel ET attributed to wells via the normalized fraction map.
 
     Reuses build_normalized_well_parcel_map() — the SAME allocation the GEARS
-    by-well CSV uses — so a multi-parcel well is never double-counted.
+    by-well CSV uses — so a multi-parcel well is never double-counted, and the
+    pre-fill follows the same measurement-first ET-demand split as the filing.
     """
-    well_parcel_map = build_normalized_well_parcel_map()
+    well_parcel_map = build_normalized_well_parcel_map(reporting_period)
     acc = {}  # well_id → {"well": well, "months": {month: Decimal}}
     for entry in _et_estimate_entries(reporting_period):
         month = _month_key(entry.effective_date)
@@ -140,28 +144,40 @@ def _prefill_by_parcel(reporting_period):
 
 
 def _prefill_calwatrs(reporting_period):
-    """Per Point of Diversion: parcel ET attributed to PODs via PointOfDiversionParcel.
+    """Per Point of Diversion: parcel ET attributed to PODs via the 56 kernel.
 
-    Mirrors generate_calwatrs_csv's parcel→POD fraction handling (raw fractions,
-    no extra normalization). ET is a consumptive-use estimate, not a diverted
-    volume — the label makes that explicit; this is a starting figure to reconcile.
+    Now routes through generate_calwatrs_csv's SAME period-aware map
+    (build_normalized_pod_parcel_map) instead of its own raw-fraction map, so the
+    pre-fill and the CalWATRS filing split a shared POD identically — hand-set
+    share wins, else the volume follows ET demand for the period. ET is a
+    consumptive-use estimate, not a diverted volume — the label makes that
+    explicit; this is a starting figure to reconcile.
     """
-    pod_parcel_map = {}  # parcel_id → [(pod, fraction)]
-    for podp in PointOfDiversionParcel.objects.select_related(
-        "point_of_diversion__water_right"
-    ):
-        pod_parcel_map.setdefault(podp.parcel_id, []).append(
-            (podp.point_of_diversion, podp.fraction)
-        )
+    pod_parcel_map = build_normalized_pod_parcel_map(reporting_period)
+    pods_by_id = {
+        pod.pk: pod
+        for pod in PointOfDiversion.objects.filter(
+            pk__in=pod_parcel_map.keys()
+        ).select_related("water_right")
+    }
+    # Invert {pod_id: [(parcel_id, weight)]} → {parcel_id: [(pod, weight)]} so the
+    # per-parcel ET entries can be attributed to each POD they feed.
+    parcel_pod_map = {}  # parcel_id → [(pod, weight)]
+    for pod_id, weighted_parcels in pod_parcel_map.items():
+        pod = pods_by_id.get(pod_id)
+        if pod is None:
+            continue
+        for parcel_id, weight in weighted_parcels:
+            parcel_pod_map.setdefault(parcel_id, []).append((pod, weight))
 
     acc = {}  # pod_id → {"pod": pod, "months": {month: Decimal}}
     for entry in _et_estimate_entries(reporting_period):
         month = _month_key(entry.effective_date)
-        for pod, fraction in pod_parcel_map.get(entry.parcel_id, []):
+        for pod, weight in parcel_pod_map.get(entry.parcel_id, []):
             slot = acc.setdefault(pod.pk, {"pod": pod, "months": {}})
             slot["months"][month] = (
                 slot["months"].get(month, Decimal("0"))
-                + abs(entry.amount_acre_feet) * fraction
+                + abs(entry.amount_acre_feet) * weight
             )
 
     entities = [

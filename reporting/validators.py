@@ -110,20 +110,26 @@ def validate_report(reporting_period, report_type):
                     ),
                 })
 
-            # Warn if any well's fractions don't sum to 1.0 (auto-normalized for the file).
-            well_fractions = defaultdict(Decimal)
+            # Warn ONLY on a genuine hand-set inconsistency. Under derive-at-read-
+            # time (Phase 56), an untouched well leaves every parcel at the default
+            # 1.0 sentinel and the kernel splits it correctly — that is NOT an error,
+            # so it must stay silent (else every shared well warns noisily). A well is
+            # "hand-set" once any parcel's fraction is nudged off 1.0; only then does a
+            # split that doesn't add up to 100% mean a real data-entry mistake.
+            well_fractions = defaultdict(list)
             for wip in WellIrrigatedParcel.objects.all():
-                well_fractions[wip.well_id] += wip.fraction
+                well_fractions[wip.well_id].append(wip.fraction)
             bad_wells = [
-                wid for wid, total in well_fractions.items()
-                if abs(total - Decimal("1")) > Decimal("0.01")
+                wid for wid, fracs in well_fractions.items()
+                if any(f != Decimal("1.0") for f in fracs)
+                and abs(sum(fracs) - Decimal("1")) > Decimal("0.01")
             ]
             if bad_wells:
                 warnings.append({
                     "level": "warning",
                     "message": (
-                        f"{len(bad_wells)} well(s) have parcel fractions not summing to 1.0 "
-                        "(auto-normalized for the GEARS file)."
+                        f"{len(bad_wells)} well(s) have a hand-set parcel split that doesn't "
+                        "add up to 100% — check those entries (the file normalizes it anyway)."
                     ),
                 })
 
@@ -312,23 +318,27 @@ def validate_report(reporting_period, report_type):
                     ),
                 })
 
-        # ISS-028: a populated POD whose parcel fractions don't sum to 1.0 is
-        # auto-normalized for the file (so its diversion isn't doubled), but warn
-        # because the raw data is wrong and should be corrected at the source. The
+        # ISS-028, reconciled for Phase 56: warn ONLY on a genuine hand-set
+        # inconsistency. An untouched POD leaves every parcel at the 1.0 sentinel and
+        # the kernel splits it correctly at read time — silent. A POD is "hand-set"
+        # once any parcel's fraction is nudged off 1.0; only then does a deliberate
+        # split that doesn't add up to 100% signal a real data-entry mistake. The
         # mirror of the by-well fraction-sum warning above.
-        pod_fractions = defaultdict(Decimal)
+        pod_fractions = defaultdict(list)
         for podp in PointOfDiversionParcel.objects.all():
-            pod_fractions[podp.point_of_diversion_id] += podp.fraction
+            pod_fractions[podp.point_of_diversion_id].append(podp.fraction)
         bad_pods = [
-            pid for pid, total in pod_fractions.items()
-            if abs(total - Decimal("1")) > Decimal("0.01")
+            pid for pid, fracs in pod_fractions.items()
+            if any(f != Decimal("1.0") for f in fracs)
+            and abs(sum(fracs) - Decimal("1")) > Decimal("0.01")
         ]
         if bad_pods:
             warnings.append({
                 "level": "warning",
                 "message": (
-                    f"{len(bad_pods)} point(s) of diversion have parcel fractions not "
-                    "summing to 1.0 (auto-normalized for the CalWATRS file)."
+                    f"{len(bad_pods)} point(s) of diversion have a hand-set parcel split "
+                    "that doesn't add up to 100% — check those entries (the file "
+                    "normalizes it anyway)."
                 ),
             })
 

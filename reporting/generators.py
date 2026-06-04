@@ -17,6 +17,10 @@ import csv
 import io
 from decimal import Decimal
 
+from django.db.models import Sum
+
+from accounting.allocation_math import apportion_shared_supply
+from accounting.models import CalculationRun
 from accounting.services import billable_ledger
 from parcels.models import ParcelLedger
 from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
@@ -70,45 +74,104 @@ def _normalize_fractions(raw_by_group):
     return normalized
 
 
-def build_normalized_well_parcel_map():
-    """Return ``{parcel_id: [(well, normalized_fraction), ...]}``.
+def _period_demand_by_parcel(reporting_period):
+    """Return ``{parcel_id: net_consumptive_use_af}`` summed over a period's runs.
+
+    The per-parcel ET demand signal that the apportionment kernel weights a shared
+    source against (rung 3). One grouped query — a Sum annotation over the period's
+    ``CalculationRun`` rows, NOT a per-parcel loop (Architecture Gate: no N+1). A
+    parcel with no run is simply absent from the map; callers treat that as demand
+    0. ``reporting_period is None`` returns an empty map, so every parcel reads as
+    demand 0 — that is what makes a no-period call reproduce today's static split.
+
+    CalculationRun.period is a "YYYY-MM" string; matching ``parcel_net_consumptive_use``
+    in accounting.services, we select the parcel-months by a lexical string range
+    from the period's start month to its end month.
+    """
+    if reporting_period is None:
+        return {}
+    start = f"{reporting_period.start_date.year}-{reporting_period.start_date.month:02d}"
+    end = f"{reporting_period.end_date.year}-{reporting_period.end_date.month:02d}"
+    rows = (
+        CalculationRun.objects.filter(period__gte=start, period__lte=end)
+        .values("parcel_id")
+        .annotate(demand=Sum("net_consumptive_use_af"))
+    )
+    return {r["parcel_id"]: (r["demand"] or Decimal("0")) for r in rows}
+
+
+def build_normalized_well_parcel_map(reporting_period=None):
+    """Return ``{parcel_id: [(well, weight), ...]}`` split by the 56 kernel.
 
     WellIrrigatedParcel.fraction defaults to 1.0 (correct for single-well parcels).
-    Without normalization, a well irrigating N parcels all at fraction=1.0 would
-    have its volume multiplied by N — a double-counting bug. Normalize each well's
-    fractions so they always sum to 1.0 across the parcels it irrigates.
+    Without apportionment, a well irrigating N parcels all at fraction=1.0 would
+    have its volume multiplied by N — a double-counting bug. Each well's parcels
+    are split through ``apportion_shared_supply`` (the measurement-first ladder),
+    so the weights always sum to exactly 1.0 across the parcels it irrigates:
+
+      - a district's hand-set fractions win (rung 2);
+      - absent any hand-set fraction, the volume follows measured ET demand for the
+        ``reporting_period`` — the thirsty crop gets the larger share (rung 3);
+      - absent ET demand (or no period passed), an even 1/N split (rung 4).
+
+    Passing no ``reporting_period`` gives every parcel demand 0, so the kernel
+    falls through to fractions/even — i.e. exactly today's static behavior.
 
     This is the single source of truth for the well↔parcel allocation: both the
     GEARS by-well CSV (generate_gears_csv) and the OpenET pre-fill
     (reporting.services.build_openet_prefill) call it, so they can never drift
     apart on how a multi-parcel well's volume is split.
     """
-    raw = {}  # well_id → [(wip, fraction)]
-    for wip in WellIrrigatedParcel.objects.select_related("well").all():
-        raw.setdefault(wip.well_id, []).append((wip, wip.fraction))
+    demand_by_parcel = _period_demand_by_parcel(reporting_period)
 
-    well_parcel_map = {}  # parcel_id → [(well, normalized_fraction)]
-    for well_id, members in _normalize_fractions(raw).items():
-        for wip, norm_fraction in members:
-            well_parcel_map.setdefault(wip.parcel_id, []).append((wip.well, norm_fraction))
+    wips_by_well = {}  # well_id → [wip]
+    for wip in WellIrrigatedParcel.objects.select_related("well").all():
+        wips_by_well.setdefault(wip.well_id, []).append(wip)
+
+    well_parcel_map = {}  # parcel_id → [(well, weight)]
+    for well_id, wips in wips_by_well.items():
+        # Key the kernel by the link's pk (unique) so two links can never collide;
+        # re-key to parcel_id on the way out to preserve the caller's shape.
+        members = [
+            (wip.pk, wip.fraction, demand_by_parcel.get(wip.parcel_id, Decimal("0")))
+            for wip in wips
+        ]
+        weights = apportion_shared_supply(members)
+        wip_by_pk = {wip.pk: wip for wip in wips}
+        for wip_pk, weight in weights.items():
+            wip = wip_by_pk[wip_pk]
+            well_parcel_map.setdefault(wip.parcel_id, []).append((wip.well, weight))
     return well_parcel_map
 
 
-def build_normalized_pod_parcel_map():
-    """Return ``{pod_id: [(parcel_id, normalized_fraction), ...]}``.
+def build_normalized_pod_parcel_map(reporting_period=None):
+    """Return ``{pod_id: [(parcel_id, weight), ...]}`` split by the 56 kernel.
 
     The mirror image of build_normalized_well_parcel_map on the surface-water
     side. PointOfDiversionParcel.fraction also defaults to 1.0, so a POD diverting
     to N parcels all at 1.0 would have its diverted volume multiplied by N when the
     CalWATRS CSV splits it across them — the same double-count the well map guards
-    against (ISS-028). Normalize each POD's fractions to sum to 1.0.
+    against (ISS-028). Each POD's parcels run through the SAME measurement-first
+    ``apportion_shared_supply`` ladder (hand-set wins, else ET demand for the
+    ``reporting_period``, else even), so the weights sum to exactly 1.0. Passing no
+    ``reporting_period`` reproduces today's static split.
     """
-    raw = {}  # pod_id → [(parcel_id, fraction)]
+    demand_by_parcel = _period_demand_by_parcel(reporting_period)
+
+    members_by_pod = {}  # pod_id → [(parcel_id, fraction, demand)]
     for podp in PointOfDiversionParcel.objects.all():
-        raw.setdefault(podp.point_of_diversion_id, []).append(
-            (podp.parcel_id, podp.fraction)
+        members_by_pod.setdefault(podp.point_of_diversion_id, []).append(
+            (
+                podp.parcel_id,
+                podp.fraction,
+                demand_by_parcel.get(podp.parcel_id, Decimal("0")),
+            )
         )
-    return _normalize_fractions(raw)
+
+    return {
+        pod_id: list(apportion_shared_supply(members).items())
+        for pod_id, members in members_by_pod.items()
+    }
 
 
 def generate_gears_csv(reporting_period, method="by_well"):
@@ -130,9 +193,11 @@ def generate_gears_csv(reporting_period, method="by_well"):
             .select_related("parcel")
         )
 
-        # Build well→parcel map with per-well fraction normalization. Shared with
-        # the OpenET pre-fill so the double-count guard can never drift between them.
-        well_parcel_map = build_normalized_well_parcel_map()
+        # Build well→parcel map split by the measurement-first kernel for THIS
+        # period (hand-set share wins; else the thirsty crop's well carries the
+        # larger slice via ET demand). Shared with the OpenET pre-fill so the
+        # double-count guard and the demand split can never drift between them.
+        well_parcel_map = build_normalized_well_parcel_map(reporting_period)
 
         rows = {}
         for entry in entries:
@@ -253,10 +318,11 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         .order_by("point_of_diversion__water_right__right_id", "month")
     )
 
-    # Build pod→[(parcel_id, normalized_fraction)] map. Normalized so a POD with
-    # N parcels all at the default fraction=1.0 reports its diversion ONCE across
-    # them, not N times (ISS-028) — the mirror of the well↔parcel guard.
-    pod_parcel_map = build_normalized_pod_parcel_map()
+    # Build pod→[(parcel_id, weight)] map split by the measurement-first kernel for
+    # THIS period. Sums to 1.0 across the POD's parcels so its diversion is reported
+    # ONCE, not N times (ISS-028); where no share is hand-set the split follows ET
+    # demand so the thirsty crop carries the larger slice — the mirror of the well guard.
+    pod_parcel_map = build_normalized_pod_parcel_map(reporting_period)
 
     # Determine combined-use status per parcel: has both GW and SW sources
     gw_parcel_ids = set(
