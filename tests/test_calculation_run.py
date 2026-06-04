@@ -529,6 +529,7 @@ def test_genuine_rain_surplus_still_banks_under_raw_precip():
     surface here -> no incidental recharge row, banking only."""
     parcel = _parcel("RUN-RAINBANK", acres="10")
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: banking is well-gated
     _et_cache(parcel, period="2024-02", et_mm=100.0)          # ~3.28 AF ET
     _precip_cache(parcel, period="2024-02", precip_mm=250.0)  # ~8.2 AF rain >> ET
     _et_cache(parcel, period="2024-03", et_mm=100.0)          # dry: ET only
