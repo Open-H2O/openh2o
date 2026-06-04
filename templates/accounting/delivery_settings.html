@@ -23,7 +23,7 @@
     <p class="text-secondary text-base" style="margin: 0;">These two settings apply to every district. An analyst sets them once; a single district can differ from the default where it needs to (set that on the district's own page). <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-gold);">Learn more &rarr;</a></p>
   </div>
 
-  <form method="post">
+  <form method="post" class="page-stack">
     {% csrf_token %}
 
     {% if form.non_field_errors %}
