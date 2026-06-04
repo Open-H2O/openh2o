@@ -235,10 +235,119 @@ class TestAccountDetailBillableLedger:
         pbs = response.context["parcel_balances"]
         match = [b for b in pbs if b["parcel"] == parcel]
         assert len(match) == 1
-        # billable: the calculated row only -> usage 10, NOT 10 + 10 = 20.
-        assert match[0]["usage"] == Decimal("10.0000")
+        # 57-02: under the consumptive lens the groundwater SUPPLY is the billable
+        # _balance_dict usage term, so the suppression still shows here: the
+        # calculated row only -> groundwater 10, NOT 10 + 10 = 20.
+        assert match[0]["groundwater"] == Decimal("10.0000")
         # And the per-parcel figure reconciles with the account-level total.
-        assert response.context["balance"]["usage"] == Decimal("10.0000")
+        assert response.context["balance"]["supplies"]["groundwater"] == Decimal(
+            "10.0000"
+        )
+
+
+class TestAccountDetailConsumptiveLens:
+    """57-02: the account-detail page reads in the corrected v1.10 lens —
+    measured consumptive use (gross ET) vs. the surface/groundwater/precip
+    supplies that met it. The headline correction: a canal/surface-only account
+    that delivers a full year of water now shows real Consumptive Use where the
+    old supply/usage framing reported Usage 0 (surface counted as supply, only
+    groundwater counted as use)."""
+
+    def test_canal_district_account_shows_consumptive_use_not_zero(self, auth_client):
+        from datetime import date
+        from decimal import Decimal
+
+        from accounting.models import CalculationRun
+
+        period = ReportingPeriodFactory(
+            start_date=date(2023, 10, 1), end_date=date(2024, 9, 30)
+        )
+        account = WaterAccountFactory()
+        parcel = ParcelFactory(parcel_number="MER-APN-031")
+        WaterAccountParcelFactory(water_account=account, parcel=parcel)
+
+        # Surface-only: a full year of canal delivery (stored NEGATIVE) and NO
+        # groundwater extraction. Under the OLD model this account read Usage 0.
+        ParcelLedgerFactory(
+            parcel=parcel,
+            reporting_period=period,
+            source_type="surface_diversion",
+            effective_date=date(2024, 6, 1),
+            amount_acre_feet=Decimal("-50.0000"),
+        )
+        # The engine measured the crop's consumptive use (gross ET) regardless of
+        # source — the spine quantity the corrected lens surfaces.
+        CalculationRun.objects.create(
+            parcel=parcel,
+            period="2024-06",
+            gross_et_af=Decimal("48.0000"),
+            net_consumptive_use_af=Decimal("45.0000"),
+            effective_precip_af=Decimal("3.0000"),
+            final_af=Decimal("0"),
+        )
+
+        response = auth_client.get(
+            reverse("accounting:account_detail", kwargs={"pk": account.pk})
+            + f"?period={period.pk}"
+        )
+        assert response.status_code == 200
+
+        balance = response.context["balance"]
+        # The correction: consumptive use is now VISIBLE (was Usage 0).
+        assert balance["consumptive_use_gross"] == Decimal("48.0000")
+        # Met entirely by surface — no phantom groundwater on a no-well parcel.
+        assert balance["supplies"]["surface"] == Decimal("50.0000")
+        assert balance["supplies"]["groundwater"] == Decimal("0")
+        assert balance["supplies"]["precip"] == Decimal("3.0000")
+
+    def test_per_parcel_rows_sum_to_account_total(self, auth_client):
+        from datetime import date
+        from decimal import Decimal
+
+        from accounting.models import CalculationRun
+
+        period = ReportingPeriodFactory(
+            start_date=date(2023, 10, 1), end_date=date(2024, 9, 30)
+        )
+        account = WaterAccountFactory()
+
+        # Two parcels with different supply mixes so the sum is a real check.
+        p1 = ParcelFactory()
+        WaterAccountParcelFactory(water_account=account, parcel=p1)
+        ParcelLedgerFactory(
+            parcel=p1, reporting_period=period, source_type="surface_diversion",
+            effective_date=date(2024, 6, 1), amount_acre_feet=Decimal("-10.0000"),
+        )
+        CalculationRun.objects.create(
+            parcel=p1, period="2024-06", gross_et_af=Decimal("12.0000"),
+            net_consumptive_use_af=Decimal("10.0000"),
+            effective_precip_af=Decimal("2.0000"), final_af=Decimal("0"),
+        )
+
+        p2 = ParcelFactory()
+        WaterAccountParcelFactory(water_account=account, parcel=p2)
+        ParcelLedgerFactory(
+            parcel=p2, reporting_period=period, source_type="calculated",
+            effective_date=date(2024, 7, 1), amount_acre_feet=Decimal("-7.0000"),
+        )
+        CalculationRun.objects.create(
+            parcel=p2, period="2024-07", gross_et_af=Decimal("9.0000"),
+            net_consumptive_use_af=Decimal("8.0000"),
+            effective_precip_af=Decimal("1.0000"), final_af=Decimal("0"),
+        )
+
+        response = auth_client.get(
+            reverse("accounting:account_detail", kwargs={"pk": account.pk})
+            + f"?period={period.pk}"
+        )
+        assert response.status_code == 200
+
+        balance = response.context["balance"]
+        pbs = response.context["parcel_balances"]
+        for key in ("consumptive_use_gross", "supply_total"):
+            assert sum(b[key] for b in pbs) == balance[key]
+        for key in ("surface", "groundwater", "precip"):
+            assert sum(b[key] for b in pbs) == balance["supplies"][key]
 
 
 class TestDashboardActiveAccountScope:

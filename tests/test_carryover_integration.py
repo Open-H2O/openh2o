@@ -306,7 +306,7 @@ class TestDashboardCarryover:
             allocation_acre_feet=Decimal("1000"),
         )
         # Usage of 200 inside the selected period. Set reporting_period so the
-        # dashboard's period-filtered zone_balance counts it (current-year usage).
+        # dashboard's period-filtered balance counts it (current-year usage).
         usage_row(
             parcel,
             date(2026, 1, 1),
@@ -314,6 +314,20 @@ class TestDashboardCarryover:
             source_type="meter_reading",
             water_type=gw,
             reporting_period=period,
+        )
+        # 57-02 budget basis: the dashboard's zone "remaining" is now consumed by
+        # measured CONSUMPTIVE USE (gross ET from CalculationRuns), not the pumped
+        # row alone. Record 200 AF of ET in a month inside the period so remaining
+        # = budget(+carryover) − 200, exactly as the assertions below expect.
+        from accounting.models import CalculationRun
+
+        CalculationRun.objects.create(
+            parcel=parcel,
+            period="2026-01",
+            gross_et_af=Decimal("200"),
+            net_consumptive_use_af=Decimal("200"),
+            effective_precip_af=Decimal("0"),
+            final_af=Decimal("0"),
         )
         if carryover_af is not None:
             AllocationCarryover.objects.create(
@@ -336,7 +350,7 @@ class TestDashboardCarryover:
         client.force_login(UserFactory())
         resp = client.get(reverse("accounting:dashboard"), {"period": period.id})
         row = self._zone_row(resp, zone)
-        # remaining = allocation 1000 + carryover 300 - usage 200 = 1100
+        # remaining = allocation 1000 + carryover 300 - consumptive use 200 = 1100
         assert row["carryover"] == Decimal("300.0000")
         assert row["remaining"] == Decimal("1100.0000")
 
@@ -347,7 +361,7 @@ class TestDashboardCarryover:
         client.force_login(UserFactory())
         resp = client.get(reverse("accounting:dashboard"), {"period": period.id})
         row = self._zone_row(resp, zone)
-        # remaining = allocation 1000 + carryover (-400) - usage 200 = 400
+        # remaining = allocation 1000 + carryover (-400) - consumptive use 200 = 400
         assert row["carryover"] == Decimal("-400.0000")
         assert row["remaining"] == Decimal("400.0000")
         # The carried-forward column renders in the HTML with a minus sign.

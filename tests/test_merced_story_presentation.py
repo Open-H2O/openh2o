@@ -25,7 +25,7 @@ from django.core.management import call_command
 from django.test import Client
 
 from accounting.models import ReportingPeriod, WaterAccount, WaterAccountParcel
-from accounting.services import account_balance
+from accounting.services import account_consumptive_balance
 from geography.models import ParcelZone, Zone
 from surface.models import PointOfDiversion, PointOfDiversionParcel, WaterRight
 
@@ -94,29 +94,36 @@ def test_account_detail_defaults_to_activity_period_not_empty_open_year(seeded_s
         f"expected the activity year {PRIOR_WY}, got {selected.name} "
         "(the open year shows allocations only — usage would read 0 everywhere)"
     )
-    # And the balance on that default page actually shows usage (the story lands).
-    assert resp.context["balance"]["usage"] > Decimal("0"), (
-        "default account page should show non-zero usage, not an empty open year"
+    # And the balance on that default page actually shows supplies (the story
+    # lands). 57-02: the page now reads the consumptive lens, so we proxy "real
+    # activity" with the supplies total — non-zero in the activity year, zero in
+    # the allocation-only open year. (Consumptive use itself reads 0 in this
+    # engine-less fixture until Phase 58 runs the engine.)
+    assert resp.context["balance"]["supply_total"] > Decimal("0"), (
+        "default account page should show non-zero supplies, not an empty open year"
     )
 
 
 @pytest.mark.django_db
 def test_account_default_period_has_more_usage_than_open_year(seeded_site):
-    """Guard the regression directly: the open year shows ~zero usage; the default
-    must not be the open year."""
+    """Guard the regression directly: the open year shows ~zero activity; the
+    default must not be the open year (measured by the supplies total under the
+    57-02 consumptive lens)."""
     account = _curtailed_account()
-    open_year_usage = account_balance(
+    open_year_supply = account_consumptive_balance(
         account, reporting_period=ReportingPeriod.objects.get(name=OPEN_WY)
-    )["usage"]
+    )["supply_total"]
     resp = seeded_site.get(f"/accounting/accounts/{account.pk}/")
-    default_usage = resp.context["balance"]["usage"]
-    assert default_usage > open_year_usage
+    default_supply = resp.context["balance"]["supply_total"]
+    assert default_supply > open_year_supply
 
 
 @pytest.mark.django_db
 def test_dashboard_defaults_to_activity_period_with_nonzero_usage(seeded_site):
-    """The Budget Summary tiles must roll up a period that has real use, not the
-    open year that holds only allocations (which showed total usage 0)."""
+    """The Budget Summary tiles must roll up a period that has real activity, not
+    the open year that holds only allocations. 57-02: under the consumptive lens
+    the proxy is grand_supply_total (the surface + groundwater supplies), non-zero
+    only in the activity year."""
     resp = seeded_site.get("/accounting/dashboard/")
     assert resp.status_code == 200
     selected = resp.context["selected_period"]
@@ -124,8 +131,8 @@ def test_dashboard_defaults_to_activity_period_with_nonzero_usage(seeded_site):
         f"dashboard should open on the activity year {PRIOR_WY}, got "
         f"{getattr(selected, 'name', None)}"
     )
-    assert resp.context["grand_usage"] > Decimal("0"), (
-        "dashboard total usage should be > 0, not the empty open year"
+    assert resp.context["grand_supply_total"] > Decimal("0"), (
+        "dashboard total supplies should be > 0, not the empty open year"
     )
 
 
