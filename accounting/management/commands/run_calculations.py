@@ -42,6 +42,7 @@ from accounting.models import (
     WaterCreditDraw,
 )
 from parcels.models import Parcel, ParcelLedger
+from wells.models import WellIrrigatedParcel
 
 PERIOD_RE = re.compile(r"^\d{4}-\d{2}$")
 
@@ -212,6 +213,15 @@ class Command(BaseCommand):
             help="Limit to a single parcel by parcel_number.",
         )
         parser.add_argument(
+            "--unmetered-only",
+            action="store_true",
+            help="Compute only for parcels served by an UNMETERED well "
+            "(measurement_method='unmetered_estimate') that have no meter_reading "
+            "row for the period. A metered well's reading is authoritative — this "
+            "keeps the engine from overwriting or double-counting it. Intersects "
+            "with --parcel.",
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Print the per-parcel result without writing ledger rows.",
@@ -239,6 +249,28 @@ class Command(BaseCommand):
                 raise CommandError(
                     f"no parcel with parcel_number={options['parcel']!r}"
                 )
+
+        # --unmetered-only: restrict to parcels served by an unmetered well that
+        # carry no authoritative meter_reading for this period. The Merced demo
+        # (and any real GSA) meters some wells and ET-estimates the rest; the
+        # engine must compute only the estimated side, never a metered parcel, or
+        # it would double-count the meter. Intersect with --parcel (the filter
+        # composes with, not replaces, the parcel selection). Default behavior
+        # (flag absent) is unchanged.
+        if options.get("unmetered_only"):
+            unmetered_ids = set(
+                WellIrrigatedParcel.objects.filter(
+                    well__measurement_method="unmetered_estimate"
+                ).values_list("parcel_id", flat=True)
+            )
+            metered_row_ids = set(
+                ParcelLedger.objects.filter(
+                    source_type="meter_reading",
+                    effective_date__year=year,
+                    effective_date__month=month,
+                ).values_list("parcel_id", flat=True)
+            )
+            parcels = parcels.filter(id__in=(unmetered_ids - metered_row_ids))
 
         reporting_period = ReportingPeriod.objects.filter(
             start_date__lte=eff_date, end_date__gte=eff_date
