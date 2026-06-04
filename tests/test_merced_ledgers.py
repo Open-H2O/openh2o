@@ -38,9 +38,11 @@ from accounting.models import (
     WaterAccount,
     WaterType,
 )
+from core.models import SiteConfig
 from geography.models import Boundary, ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
 from surface.models import (
+    DiversionRecord,
     PointOfDiversion,
     PointOfDiversionParcel,
     WaterRight,
@@ -191,6 +193,21 @@ def _build_physical_merced():
     shared_well([
         make_parcel("groundwater", gsa_list[2], "Turner Island Farms LLC") for _ in range(3)
     ])
+
+    # Normalize each POD's parcel fractions to sum to ~1.0 (1/N), exactly as the
+    # real seed_merced_operations / parcels_from_selection do. The 55-03 seed splits
+    # a recorded district total across served parcels; with no ET cache here the
+    # platform service uses the static fraction fallback, which only sums to the
+    # district total when the fractions sum to 1 — so the fixture must mirror the
+    # real per-POD normalization rather than leaving every link at 1.0.
+    for pod in PointOfDiversion.objects.all():
+        links = list(PointOfDiversionParcel.objects.filter(point_of_diversion=pod))
+        if not links:
+            continue
+        frac = Decimal(str(round(1.0 / len(links), 4)))
+        for ln in links:
+            ln.fraction = frac
+            ln.save(update_fields=["fraction"])
 
 
 @pytest.fixture
@@ -517,42 +534,116 @@ def test_second_seed_run_does_not_change_counts():
 
 
 # --------------------------------------------------------------------------
-# ISS-052: demand-aware surface sizing (pure helper — Django-free, no DB)
-# These prove the sizing math directly; the live demand-vs-fallback behavior is
-# exercised end-to-end on Butler (the fixture above carries no ET cache, so it
-# correctly uses the face-value fallback path and its assertions are unchanged).
+# Group 6 — surface deliveries are produced by the PLATFORM allocation service
+#
+# Phase 55-03 retired the seed's private surface-sizing helpers
+# (_demand_aware_deliveries / _net_demand_af) and wired the seed to
+# surface.services.allocate_district_delivery. The unit tests for the deleted
+# helpers are gone; the kernel's own math is covered by tests/test_allocation_math.py
+# and the service by tests/test_surface_allocation.py. These tests prove the SEED
+# now calls the service: it records a district total per POD/month and the
+# service splits that total across served parcels (demand-weighted on Butler;
+# static-fraction fallback here, where the fixture carries no ET cache), summing
+# back to the recorded diversions.
 # --------------------------------------------------------------------------
-
-from core.management.commands.seed_merced_ledgers import (  # noqa: E402
-    _demand_aware_deliveries,
-)
-
-_EFF = Decimal("0.75")
-_ND = {5: Decimal("12.3"), 6: Decimal("8.5"), 7: Decimal("15.0"), 8: Decimal("14.0")}
-
-
-def test_demand_aware_ample_right_delivers_demand_over_efficiency():
-    """A right covering full demand-supply: every month = demand/efficiency, and
-    NO month exceeds it — the pre-052 over-delivery spikes are gone."""
-    out = _demand_aware_deliveries(_ND, annual_envelope=Decimal("100"), efficiency=_EFF)
-    for m, d in _ND.items():
-        assert out[m] == d / _EFF
-        assert out[m] <= d / _EFF  # the physical cap is never exceeded
+@pytest.mark.django_db
+def test_seed_records_a_diversion_per_served_pod(seeded):
+    """The seed synthesizes DiversionRecords — the recorded district total the
+    service splits — for each MER POD that serves parcels."""
+    pods_with_parcels = PointOfDiversion.objects.filter(
+        water_right__right_id__startswith="MER-WR-",
+        pod_parcels__isnull=False,
+    ).distinct()
+    assert pods_with_parcels.exists(), "fixture should have PODs serving parcels"
+    for pod in pods_with_parcels:
+        assert DiversionRecord.objects.filter(point_of_diversion=pod).exists(), (
+            f"{pod.name} serves parcels but has no recorded diversion")
 
 
-def test_demand_aware_short_right_distributes_envelope_by_demand():
-    """A conjunctive parcel whose right is short of full demand: the envelope is
-    distributed by demand shape (sums to the envelope) and never exceeds
-    demand/efficiency — the parcel pumps the shortfall as groundwater."""
-    env = Decimal("30")
-    out = _demand_aware_deliveries(_ND, annual_envelope=env, efficiency=_EFF)
-    assert abs(sum(out.values(), Decimal("0")) - env) < Decimal("0.0001")
-    for m, d in _ND.items():
-        assert out[m] <= d / _EFF
+@pytest.mark.django_db
+def test_seed_sets_agency_irrigation_efficiency_on_siteconfig(seeded):
+    """The seed installs the demo's agency-wide efficiency (0.750) on the
+    SiteConfig singleton, which the allocation service reads."""
+    config = SiteConfig.objects.get()
+    assert config.default_irrigation_efficiency == Decimal("0.750")
 
 
-def test_demand_aware_no_demand_returns_empty_for_fallback():
-    """No net demand at all -> empty mapping; the seed then falls back to
-    face-value seasonal sizing (local dev without an ET cache)."""
-    assert _demand_aware_deliveries({}, Decimal("50"), _EFF) == {}
-    assert _demand_aware_deliveries({1: Decimal("0")}, Decimal("50"), _EFF) == {}
+@pytest.mark.django_db
+def test_seed_surface_rows_sum_to_recorded_diversions_per_pod(seeded):
+    """The per-parcel surface_diversion magnitudes the service wrote sum (per POD,
+    per month) to the recorded DiversionRecord total — the demand-weighted /
+    fraction-split allocation conserves the metered district delivery."""
+    pods = PointOfDiversion.objects.filter(
+        water_right__right_id__startswith="MER-WR-",
+        pod_parcels__isnull=False,
+    ).distinct()
+    checked = 0
+    for pod in pods:
+        served_ids = list(
+            PointOfDiversionParcel.objects.filter(point_of_diversion=pod)
+            .values_list("parcel_id", flat=True)
+        )
+        for rec in DiversionRecord.objects.filter(point_of_diversion=pod):
+            delivered = ParcelLedger.objects.filter(
+                parcel_id__in=served_ids,
+                source_type="surface_diversion",
+                effective_date=rec.month,
+            )
+            # surface_diversion is stored NEGATIVE; magnitude = recorded total.
+            total = sum((abs(r.amount_acre_feet) for r in delivered), Decimal("0"))
+            assert abs(total - rec.volume_acre_feet) <= Decimal("0.001"), (
+                f"{pod.name} {rec.month}: split sums to {total}, "
+                f"recorded {rec.volume_acre_feet}")
+            checked += 1
+    assert checked > 0, "expected at least one POD-month to verify"
+
+
+@pytest.mark.django_db
+def test_seed_surface_split_is_demand_weighted_when_calculations_exist(seeded):
+    """With per-parcel ET demand present (CalculationRun rows), the service splits a
+    short delivery by demand weight — the thirstier parcel gets the larger share.
+
+    Proves the seed routes through the demand-weighted path, not just the fallback:
+    we add CalculationRun demand for two parcels on one POD, re-run the seed, and
+    assert the higher-demand parcel received more of that month's delivery."""
+    from django.db.models import Sum
+
+    from accounting.models import CalculationRun
+
+    pod = PointOfDiversion.objects.filter(
+        water_right__right_id=NORMAL_RIGHT, pod_parcels__isnull=False
+    ).distinct().first()
+    assert pod is not None
+    served = list(
+        PointOfDiversionParcel.objects.filter(point_of_diversion=pod)
+        .select_related("parcel").order_by("id")
+    )
+    assert len(served) >= 2, "need at least two served parcels to compare shares"
+    thirsty, modest = served[0].parcel, served[1].parcel
+
+    # A June 2025 (prior WY) month with sharply different demand. The recorded
+    # district total is fixed; a SHORT delivery (demand-supply exceeds it) forces
+    # the demand-weighted branch so the larger-demand parcel wins.
+    month = "2025-06"
+    CalculationRun.objects.create(
+        parcel=thirsty, period=month,
+        gross_et_af=Decimal("90"), net_consumptive_use_af=Decimal("90"),
+        final_af=Decimal("0"))
+    CalculationRun.objects.create(
+        parcel=modest, period=month,
+        gross_et_af=Decimal("10"), net_consumptive_use_af=Decimal("10"),
+        final_af=Decimal("0"))
+
+    call_command("seed_merced_ledgers")
+
+    jun = date(2025, 6, 15)
+
+    def delivered(parcel):
+        return abs(
+            ParcelLedger.objects.filter(
+                parcel=parcel, source_type="surface_diversion", effective_date=jun
+            ).aggregate(s=Sum("amount_acre_feet"))["s"] or Decimal("0")
+        )
+
+    assert delivered(thirsty) > delivered(modest), (
+        "demand-weighted split should give the thirstier parcel the larger share")

@@ -61,14 +61,18 @@ from accounting.models import (
     WaterAccountParcel,
     WaterType,
 )
+from core.models import SiteConfig
 from geography.models import Boundary, ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
 from surface.models import (
     CurtailmentOrder,
+    DiversionRecord,
+    PointOfDiversion,
     PointOfDiversionParcel,
     WaterRight,
     WaterRightParcel,
 )
+from surface.services import allocate_district_delivery
 from wells.models import Well, WellIrrigatedParcel
 
 MER_PARCEL_PREFIX = "MER-APN-"
@@ -86,11 +90,11 @@ SEASONAL_WEIGHTS = {
 SURFACE_RATE = 2.2          # canal delivery to a surface/conjunctive parcel
 GW_RATE = 1.8               # groundwater pumped by a parcel's well(s)
 
-# Irrigation efficiency — to meet net crop demand D a parcel must be DELIVERED
-# D / efficiency, since ~25% of applied surface water is lost to deep percolation
-# (which the engine credits back to the aquifer as incidental recharge, ISS-052).
-# Used by demand-aware surface sizing when real ET is available.
-IRRIGATION_EFFICIENCY = Decimal("0.75")
+# Agency-wide irrigation efficiency the seed installs on the SiteConfig singleton
+# (55-03). The per-parcel surface split is now produced by
+# surface.services.allocate_district_delivery, which READS efficiency from
+# SiteConfig — so the seed sets it here rather than carrying its own constant.
+SEED_IRRIGATION_EFFICIENCY = Decimal("0.750")
 GSA_SUSTAINABLE_RATE = 2.0  # GSA groundwater budget — SGMA sustainable-yield proxy
 GSA_BUDGET_FLOOR = Decimal("500.0")   # a GSA with no demo parcels still gets a budget
 SURFACE_BUDGET_FRACTION = Decimal("0.9")    # district surface budget ~ 90% of face
@@ -112,75 +116,6 @@ def _q(value):
 def _jitter(seq):
     """Deterministic ±6% factor keyed on an index — varies volumes without random."""
     return Decimal("1") + (Decimal(seq % 7) - Decimal("3")) * Decimal("0.02")
-
-
-def _demand_aware_deliveries(net_demand_by_month, annual_envelope, efficiency):
-    """Map month -> surface delivery (AF) that tracks real crop net demand.
-
-    Pure arithmetic (no DB) so it is unit-testable in plain Python — the same
-    Django-free split the calc engine uses for its contested math.
-
-    Args:
-        net_demand_by_month: {month_num: net_demand_af} where net demand is gross
-            ET minus effective precip for that parcel-month (>= 0).
-        annual_envelope: the parcel's available-right ceiling for the year (AF).
-        efficiency: irrigation efficiency (e.g. 0.75); meeting demand D needs a
-            delivery of D / efficiency.
-
-    Returns:
-        {month_num: delivery_af}. If the right covers full demand-supply, every
-        month gets demand/efficiency (a surface-served parcel: ~0 GW + a small
-        deep-percolation excess). If the right is SHORT (a conjunctive parcel),
-        the envelope is distributed across months by demand shape so the parcel
-        pumps the shortfall as groundwater. No month ever exceeds demand/efficiency,
-        which is what kills the pre-052 over-delivery spikes. Empty dict when there
-        is no net demand at all (the caller then falls back to face-value sizing).
-    """
-    eff = Decimal(str(efficiency))
-    total_net = sum(net_demand_by_month.values(), Decimal("0"))
-    if total_net <= 0:
-        return {}
-    demand_supply = {m: d / eff for m, d in net_demand_by_month.items()}
-    total_supply = sum(demand_supply.values(), Decimal("0"))
-    if annual_envelope >= total_supply:
-        return demand_supply
-    # Right is short (conjunctive): distribute the envelope by demand weight. Each
-    # month stays <= demand/efficiency because envelope < total_supply.
-    return {
-        m: annual_envelope * (d / total_net)
-        for m, d in net_demand_by_month.items()
-    }
-
-
-def _net_demand_af(parcel, period, area):
-    """Net crop demand (AF) for a parcel-month = gross ET - effective precip.
-
-    Reads the SAME OpenETCache rows the calc engine reads (via the shared
-    _read_cache_mm helper) and applies the SAME usda_scs effective-precip math,
-    so demand-aware deliveries can never drift from what the engine later
-    subtracts. Returns None when there is no ET for the month (the caller treats
-    that as "no demand data" and may fall back to face-value sizing).
-    """
-    from accounting.precip_math import effective_precip_inches
-    from accounting.services import et_mm_to_acre_feet
-    from accounting.steps import _read_cache_mm
-
-    et_mm, matched, _ = _read_cache_mm(parcel, period, "ET", "Ensemble", "et")
-    if matched == 0:
-        return None
-    precip_mm, _, _ = _read_cache_mm(parcel, period, "precip", "GRIDMET", "precip")
-    mm_per_in = Decimal("25.4")
-    pe_in = effective_precip_inches(
-        precip_mm / mm_per_in,
-        et_mm / mm_per_in,
-        method="usda_scs",
-        soil_storage_in=Decimal("3.0"),
-    )
-    pe_mm = pe_in * mm_per_in
-    et_af = abs(et_mm_to_acre_feet(et_mm, area))
-    pe_af = abs(et_mm_to_acre_feet(pe_mm, area))
-    net = et_af - pe_af
-    return net if net > 0 else Decimal("0")
 
 
 class Command(BaseCommand):
@@ -210,6 +145,13 @@ class Command(BaseCommand):
     def _flush(self):
         ParcelLedger.objects.filter(
             parcel__parcel_number__startswith=MER_PARCEL_PREFIX
+        ).delete()
+
+        # DiversionRecords this seed synthesizes as the recorded district total per
+        # MER POD/month (the source of truth the allocation service splits). Keyed
+        # to MER- rights so the flush never touches Kaweah / base-layer records.
+        DiversionRecord.objects.filter(
+            point_of_diversion__water_right__right_id__startswith="MER-WR-"
         ).delete()
 
         acct_ids = list(
@@ -255,6 +197,12 @@ class Command(BaseCommand):
         gw, _ = WaterType.objects.get_or_create(code="GW", defaults={"name": "Groundwater"})
         sw, _ = WaterType.objects.get_or_create(code="SW", defaults={"name": "Surface Water"})
 
+        # The per-parcel surface split is produced by the platform service, which
+        # reads irrigation efficiency from the SiteConfig singleton (55-03). Set the
+        # demo's agency-wide efficiency here so a fresh demo install has it; respect
+        # an operator who has already tuned it to a non-default value.
+        self._ensure_efficiency()
+
         # --- Reporting periods (global, agency-agnostic; shared with Kaweah) ---
         prior, _ = ReportingPeriod.objects.get_or_create(
             name="WY 2024-2025",
@@ -293,15 +241,20 @@ class Command(BaseCommand):
         # --- Curtailment order (audit provenance for the El Nido cut) ---
         self._build_curtailment_order()
 
-        # --- The ledger: allocations, surface deliveries, groundwater extraction ---
+        # --- The ledger: allocations + groundwater extraction (bulk-created here) ---
         entries = []
         entries += self._allocation_rows(parcels, surface_parcel_ids, gw, sw, periods)
-        entries += self._surface_rows(parcels, surface_parcel_ids, curtailed_parcel_ids, sw, prior)
         entries += self._groundwater_rows(parcels, curtailed_parcel_ids, gw, prior)
         ParcelLedger.objects.bulk_create(entries, batch_size=500)
 
+        # --- Surface deliveries: synthesize the recorded district total per POD, then
+        # let the PLATFORM service split it across served parcels by ET demand. The
+        # service writes the negative surface_diversion rows itself (its own
+        # delete-then-insert), so they are NOT part of the bulk_create above. ---
+        surface_rows = self._surface_deliveries(parcels, curtailed_parcel_ids, prior)
+
         self._summary(parcels, district_zones, surface_parcel_ids,
-                      curtailed_parcel_ids, entries)
+                      curtailed_parcel_ids, entries, surface_rows)
 
     # ------------------------------------------------------------------
     # Surface-district service-area zones
@@ -507,86 +460,114 @@ class Command(BaseCommand):
             schedule.append((date(yr, mn, 15), mn))
         return schedule
 
-    def _surface_rows(self, parcels, surface_parcel_ids, curtailed_parcel_ids, sw, prior):
-        """Monthly surface deliveries for surface + conjunctive parcels.
+    def _ensure_efficiency(self):
+        """Install the demo's agency-wide irrigation efficiency on SiteConfig.
 
-        Stored NEGATIVE — the production convention the calc engine's
-        ``subtract_surface_water`` step and the CSV importer share (a delivered
-        magnitude as a negative number). A delivery is still a SUPPLY to the
-        parcel (the dashboard counts its magnitude as supply, see
-        accounting.services._balance_dict); the negative sign is purely the
-        storage convention so the demo round-trips through CSV and reads
-        correctly in the engine.
-
-        **Demand-aware sizing (ISS-052).** When real ET is in the OpenETCache,
-        each month's delivery tracks the parcel's net crop demand (gross ET minus
-        effective precip) divided by irrigation efficiency, capped so no month is
-        delivered more than the crop can physically use plus its deep-percolation
-        fraction. The parcel's annual ``area × SURFACE_RATE × jitter`` envelope is
-        kept as the available-right CEILING: a parcel whose right covers full
-        demand gets demand/efficiency every month (a surface-served parcel that
-        pumps ~0 GW, its small excess routed to incidental recharge by the engine);
-        a conjunctive parcel whose right is short gets the envelope distributed by
-        demand shape and pumps the shortfall as groundwater. This replaces the
-        pre-052 ``annual × generic-seasonal-curve`` sizing that ignored crop demand
-        and produced physically implausible 2-3× over-deliveries.
-
-        **Fallback.** With no ET cache for a parcel (local dev without GEE), revert
-        to the original face-value × seasonal-weight sizing so the demo is still
-        coherent off-Butler. Requires the ET/precip sync to have run first on
-        Butler (it persists across ledger re-seeds; see seed_merced.py ordering).
-
-        Curtailed-right parcels get NO delivery after June 2025 — the curtailment cut.
+        The per-parcel surface split is now produced by
+        ``surface.services.allocate_district_delivery``, which reads efficiency
+        from the SiteConfig singleton. So the seed sets it here (0.750) rather than
+        carrying its own constant — closing the loop the 55-03 settings UI opens.
+        Idempotent: it only writes a fresh row's default, leaving an operator's
+        tuned value in place on re-runs of an already-configured install.
         """
-        rows = []
-        schedule = self._month_schedule()
-        used_demand = 0
-        used_fallback = 0
-        for seq, p in enumerate(parcels):
-            if p.id not in surface_parcel_ids:
-                continue
-            area = Decimal(str(p.area_acres or 40))
-            annual = area * Decimal(str(SURFACE_RATE)) * _jitter(seq)
-            curtailed = p.id in curtailed_parcel_ids
-
-            # Net crop demand per month from the cache (engine-consistent).
-            net_demand_by_month = {}
-            for _md, mn in schedule:
-                period = f"{_md.year:04d}-{_md.month:02d}"
-                nd = _net_demand_af(p, period, area)
-                if nd is not None and nd > 0:
-                    net_demand_by_month[mn] = nd
-
-            deliveries = _demand_aware_deliveries(
-                net_demand_by_month, annual, IRRIGATION_EFFICIENCY
+        config = SiteConfig.objects.first()
+        if config is None:
+            SiteConfig.objects.create(
+                agency_name="Merced Subbasin GSA",
+                default_irrigation_efficiency=SEED_IRRIGATION_EFFICIENCY,
             )
-            if deliveries:
-                used_demand += 1
-            else:
-                # No ET demand data — fall back to face-value seasonal sizing.
-                used_fallback += 1
-                deliveries = {
-                    mn: annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
-                    for _md, mn in schedule
-                }
+        elif not config.default_irrigation_efficiency:
+            config.default_irrigation_efficiency = SEED_IRRIGATION_EFFICIENCY
+            config.save(update_fields=["default_irrigation_efficiency"])
 
+    def _surface_deliveries(self, parcels, curtailed_parcel_ids, prior):
+        """Surface deliveries, produced by the PLATFORM allocation service.
+
+        This is the 55-03 wiring: the seed no longer sizes each parcel's delivery
+        with its own private math. Instead it does what a real district does —
+        records the MONTHLY DISTRICT TOTAL that left each point of diversion (a
+        ``DiversionRecord``, the source of truth) — then calls
+        ``surface.services.allocate_district_delivery`` to split that total across
+        the served parcels. The service weights the split by each parcel's measured
+        ET demand for the month (the 54-01 spine) when calculations have run, and
+        falls back to the static ``PointOfDiversionParcel.fraction`` split when they
+        have not (e.g. local dev with no ET cache). Either way it writes the NEGATIVE
+        ``surface_diversion`` rows the calc engine consumes — the SAME tested path
+        the app uses, so the seed and the app can never drift.
+
+        The recorded district total per POD/month is the sum of its served parcels'
+        synthetic envelopes (``area × SURFACE_RATE × jitter × seasonal weight``) —
+        the same overall volume the old per-parcel sizing produced, now expressed at
+        the district grain the platform actually meters. Curtailed PODs record NO
+        diversion after June 2025 — the El Nido cut — so the service produces no
+        post-curtailment deliveries for their parcels.
+
+        Returns the list of ``ParcelLedger`` surface rows the service wrote (for the
+        summary count); the service has already persisted them.
+        """
+        schedule = self._month_schedule()
+        seq_of = {p.id: i for i, p in enumerate(parcels)}
+
+        # MER PODs that serve MER parcels (skip PODs with no served parcels — the
+        # service would write nothing for them anyway).
+        pods = (
+            PointOfDiversion.objects.filter(
+                water_right__right_id__startswith="MER-WR-",
+                pod_parcels__parcel__in=parcels,
+            )
+            .distinct()
+            .order_by("name")
+        )
+
+        written = []
+        for pod in pods:
+            curtailed = (
+                pod.water_right is not None and pod.water_right.status == "curtailed"
+            )
+            served = [
+                link.parcel
+                for link in PointOfDiversionParcel.objects.filter(
+                    point_of_diversion=pod
+                ).select_related("parcel")
+            ]
+
+            # Record the monthly DISTRICT TOTAL that left this POD = the sum of its
+            # served parcels' synthetic envelopes for the month. This is the metered
+            # truth the platform splits; idempotent via update_or_create on the
+            # (POD, month, type) unique key.
             for month_date, mn in schedule:
                 if curtailed and month_date > CURTAILMENT_LAST_DELIVERY:
-                    continue  # deliveries stop once the junior right is curtailed
-                vol = _q(deliveries.get(mn, Decimal("0")))
-                if vol <= 0:
+                    continue  # no diversion recorded once the junior right is cut
+                total = Decimal("0")
+                for p in served:
+                    area = Decimal(str(p.area_acres or 40))
+                    annual = area * Decimal(str(SURFACE_RATE)) * _jitter(
+                        seq_of.get(p.id, 0)
+                    )
+                    total += annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
+                total = _q(total)
+                if total <= 0:
                     continue
-                rows.append(ParcelLedger(
-                    parcel=p, transaction_date=month_date, effective_date=month_date,
-                    amount_acre_feet=-vol, water_type=sw, source_type="surface_diversion",
-                    description="Monthly surface-water delivery",
-                    reporting_period=prior,
-                ))
+                DiversionRecord.objects.update_or_create(
+                    point_of_diversion=pod,
+                    month=month_date,
+                    diversion_type="direct_use",
+                    defaults={
+                        "reporting_period": prior,
+                        "volume_acre_feet": total,
+                    },
+                )
+
+            # Let the platform service split the recorded totals across parcels by
+            # ET demand (or the static fraction fallback) and write the negative
+            # surface_diversion rows. Same path the app uses.
+            written.extend(allocate_district_delivery(pod, prior))
+
         self.stdout.write(
-            f"    surface deliveries: {used_demand} parcel(s) demand-aware "
-            f"(real ET), {used_fallback} face-value fallback (no ET cache)"
+            f"    surface deliveries: {len(written)} row(s) written by "
+            f"allocate_district_delivery across {pods.count()} POD(s)"
         )
-        return rows
+        return written
 
     def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior):
         """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
@@ -670,9 +651,10 @@ class Command(BaseCommand):
 
     # ------------------------------------------------------------------
     def _summary(self, parcels, district_zones, surface_parcel_ids,
-                 curtailed_parcel_ids, entries):
+                 curtailed_parcel_ids, entries, surface_rows):
         gsa_count = Zone.objects.filter(
             zone_type="management_area", basin_code=GSA_BASIN_CODE).count()
+        total_rows = len(entries) + len(surface_rows)
         self.stdout.write(self.style.SUCCESS(
             "\nMerced synthetic accounting layer seeded:\n"
             f"  {len(parcels)} parcels keyed off water source "
@@ -684,7 +666,7 @@ class Command(BaseCommand):
             "water accounts (one per owner)\n"
             f"  {AllocationPlan.objects.filter(name__startswith='MER Surface Service Area').count()} "
             "surface budgets + GSA groundwater budgets, both periods\n"
-            f"  {len(entries)} ledger rows "
-            "(allocations + surface deliveries + groundwater extraction)\n"
+            f"  {total_rows} ledger rows ({len(entries)} allocations + groundwater, "
+            f"{len(surface_rows)} surface deliveries via allocate_district_delivery)\n"
             "  2 reporting periods (WY 2024-2025 finalized, WY 2025-2026 open)"
         ))
