@@ -152,6 +152,7 @@ def _seed_finalized_parcel(number, period="2024-06"):
     parcel = _parcel(number, acres="10")
     _et_cache(parcel, period=period, et_mm=100.0)
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: a calculated GW row needs a well
     call_command("seed_calculation_plan")
     _finalized_period(period)
     return parcel
@@ -212,6 +213,7 @@ def test_calculated_parcel_gets_exactly_one_run():
     parcel = _parcel("RUN-ONE", acres="10")
     _et_cache(parcel, period="2024-06", et_mm=100.0)
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: a calculated GW row needs a well
     call_command("seed_calculation_plan")
 
     call_command("run_calculations", "--period", "2024-06")
@@ -249,6 +251,7 @@ def test_run_reconstructs_the_billable_value():
     parcel = _parcel("RUN-RECON", acres="10")
     _et_cache(parcel, period="2024-06", et_mm=100.0)  # ~3.28 AF gross
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: a calculated GW row needs a well
     _surface_row(parcel, "2024-06", af=1)  # partial offset -> positive bill remains
     call_command("seed_calculation_plan")
 
@@ -457,11 +460,17 @@ def test_no_well_overdelivery_routes_to_basin_pool_not_a_personal_credit():
     # The over-delivery landed in the zone's incidental basin pool instead.
     assert _incidental_pool_total(zone).quantize(Q) == over_delivery
 
-    # The next month draws NOTHING (no phantom credit) -> real pumping is billed.
+    # The next month draws NOTHING (no phantom credit). With no well, the real
+    # shortfall is recorded as unmet demand on the run — NOT a phantom groundwater
+    # row (54-01); the run still carries the full ET as final_af.
     draw_run = _run(parcel, "2024-03")
     assert draw_run.drawn_af == Decimal("0.0000")
     assert draw_run.final_af == _gross_af().quantize(Q)
-    assert draw_run.final_af == -_calc_row(parcel, "2024-03").amount_acre_feet
+    assert draw_run.residual_disposition == "unmet_demand"
+    assert draw_run.unmet_demand_af == draw_run.final_af
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated"
+    ).exists()
 
 
 @pytest.mark.django_db

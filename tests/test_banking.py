@@ -29,7 +29,11 @@ from accounting.banking_math import depreciated_value
 from accounting.models import AllocationCarryover, WaterCredit, WaterCreditDraw
 from accounting.services import INCIDENTAL_RECHARGE_POOL, et_mm_to_acre_feet
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
-from tests.factories import ParcelZoneFactory, ZoneFactory
+from tests.factories import (
+    ParcelZoneFactory,
+    WellIrrigatedParcelFactory,
+    ZoneFactory,
+)
 
 Q = Decimal("0.0001")
 
@@ -139,8 +143,16 @@ def test_surface_overdelivery_pools_recharge_not_a_watercredit():
     # The over-delivery landed in the zone's incidental basin pool instead.
     over_delivery = (Decimal("5") - _gross_af()).quantize(Q)
     assert _incidental_pool_total(zone).quantize(Q) == over_delivery
-    # The billable row is clamped to 0 (surface covered all the crop's ET).
-    assert _calc_row(parcel, "2024-02").amount_acre_feet == Decimal("0.0000")
+    # 54-01: a no-well parcel gets NO `calculated` groundwater row — over-delivered,
+    # so the run records unmet demand of 0 (the residual was fully covered).
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated"
+    ).exists()
+    from accounting.models import CalculationRun
+
+    run = CalculationRun.objects.get(parcel=parcel, period="2024-02")
+    assert run.residual_disposition == "unmet_demand"
+    assert run.unmet_demand_af == Decimal("0.0000")
 
 
 @pytest.mark.django_db
@@ -148,6 +160,7 @@ def test_normal_extraction_month_banks_nothing():
     parcel = _parcel("BANK-NONE", acres="10")
     _et_cache(parcel, period="2024-06", et_mm=100.0)
     _irrigate(parcel)  # ET present, no surface water -> positive net, no surplus
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: banking is well-gated
     call_command("seed_calculation_plan")
 
     call_command("run_calculations", "--period", "2024-06")
@@ -177,6 +190,7 @@ def test_deficit_month_draws_depreciated_credit_and_reduces_bill():
     parcel = _parcel("BANK-DRAW", acres="10")
     _et_cache(parcel, period="2024-03", et_mm=100.0)  # ~3.28 AF deficit
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: draw is well-gated
     # Credit 2 AF @ 10%/mo from 2024-01; two months later it is worth 2*0.81=1.62.
     _seed_prior_credit(parcel, amount="2", rate="0.10", origin="2024-01")
     call_command("seed_calculation_plan")
@@ -199,6 +213,7 @@ def test_expired_credit_is_not_drawn_and_deficit_bills_in_full():
     parcel = _parcel("BANK-EXP", acres="10")
     _et_cache(parcel, period="2024-03", et_mm=100.0)
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: draw is well-gated
     # Expires 2024-02, which is <= the 2024-03 draw period -> dead.
     _seed_prior_credit(parcel, amount="5", rate="0", origin="2024-01", expires="2024-02")
     call_command("seed_calculation_plan")
@@ -214,6 +229,7 @@ def test_oldest_credit_is_consumed_first():
     parcel = _parcel("BANK-FIFO", acres="10")
     _et_cache(parcel, period="2024-03", et_mm=100.0)  # ~3.28 AF deficit
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: draw is well-gated
     older = _seed_prior_credit(parcel, amount="5", rate="0", origin="2024-01")
     newer = _seed_prior_credit(parcel, amount="5", rate="0", origin="2024-02")
     call_command("seed_calculation_plan")
@@ -237,6 +253,7 @@ def test_rerunning_a_deficit_period_is_identical_no_drift():
     parcel = _parcel("BANK-IDEM", acres="10")
     _et_cache(parcel, period="2024-03", et_mm=100.0)
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: draw is well-gated
     _seed_prior_credit(parcel, amount="2", rate="0.10", origin="2024-01")
     call_command("seed_calculation_plan")
 

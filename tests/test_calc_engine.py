@@ -20,6 +20,7 @@ from accounting.models import CalculationPlan, CalculationStep
 from accounting.services import et_mm_to_acre_feet
 from accounting.steps import STEP_REGISTRY, clamp_floor, facility_only_zero
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
+from tests.factories import WellIrrigatedParcelFactory
 
 
 def _square(x=0.0):
@@ -352,6 +353,7 @@ def test_run_calculations_writes_one_negative_row_and_is_idempotent():
     for p in (p1, p2):
         _et_cache(p, period="2024-06", et_mm=100.0)
         _irrigate(p)
+        WellIrrigatedParcelFactory(parcel=p)  # 54-01: a calculated GW row needs a well
     call_command("seed_calculation_plan")
 
     call_command("run_calculations", "--period", "2024-06")
@@ -366,7 +368,7 @@ def test_run_calculations_writes_one_negative_row_and_is_idempotent():
             Decimal("0.0001")
         )
         assert row.amount_acre_feet == expected
-        assert "Derived extraction estimate" in row.description
+        assert "groundwater extraction estimate" in row.description
 
     # Idempotent: second run leaves identical count + amounts (no double-count).
     before = {r.parcel_id: r.amount_acre_feet for r in rows}
@@ -382,6 +384,7 @@ def test_run_calculations_skips_parcels_without_et():
     p_with = _parcel("HAS-ET", acres="10")
     _et_cache(p_with, period="2024-06", et_mm=100.0)
     _irrigate(p_with)
+    WellIrrigatedParcelFactory(parcel=p_with)  # 54-01: a calculated GW row needs a well
     _parcel("NO-ET", acres="10")  # no ET cache -> should be skipped
     call_command("seed_calculation_plan")
 
@@ -433,6 +436,7 @@ def test_run_calculations_written_row_has_months_matched_provenance():
     parcel = _parcel("HAS-MATCH", acres="10")
     _et_cache(parcel, period="2024-06", et_mm=100.0)
     _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # 54-01: a calculated GW row needs a well
     call_command("seed_calculation_plan")
     call_command("run_calculations", "--period", "2024-06")
 

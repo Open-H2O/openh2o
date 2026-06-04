@@ -20,8 +20,13 @@ import pytest
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 
-from accounting.models import CalculationRun, CalculationStep
-from accounting.services import parcel_net_consumptive_use
+from accounting.models import AllocationCarryover, CalculationRun, CalculationStep
+from accounting.services import (
+    _balance_dict,
+    billable_ledger,
+    parcel_net_consumptive_use,
+)
+from geography.models import Boundary, ParcelZone, Zone
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
 from wells.models import Well, WellIrrigatedParcel, WellType
 
@@ -191,3 +196,121 @@ def test_net_consumptive_use_idempotent_across_rerun():
     assert CalculationRun.objects.filter(parcel=parcel, period=PERIOD).count() == 1
     second = CalculationRun.objects.get(parcel=parcel, period=PERIOD).net_consumptive_use_af
     assert first == second
+
+
+def _pool_zone(name):
+    boundary = Boundary.objects.create(name=f"B-{name}", geometry=_square())
+    return Zone.objects.create(
+        name=name, boundary=boundary, geometry=_square(),
+        zone_type="management_area")
+
+
+# --- Task 2: residual → groundwater only where a well exists; unmet demand;
+#     flood-MAR basin pool preserved -------------------------------------------
+
+@pytest.mark.django_db
+def test_well_parcel_residual_becomes_calculated_groundwater_row():
+    """(a) CONJUNCTIVE parcel (well), residual > 0 → a `calculated` GW row IS
+    written; disposition="groundwater", unmet_demand_af=0, water_type=GW, and the
+    GW water_type is balance-neutral (_balance_dict keys on sign+source_type)."""
+    parcel = _parcel("R-WELL")
+    _et_cache(parcel, et_mm=140.0)  # ~4.6 AF gross, no precip/surface → residual > 0
+    _irrigate(parcel)
+    _well(parcel)
+    call_command("seed_calculation_plan")
+    call_command("run_calculations", "--period", PERIOD, "--parcel", "R-WELL")
+
+    row = ParcelLedger.objects.get(parcel=parcel, source_type="calculated")
+    assert row.amount_acre_feet < 0
+    assert row.water_type is not None and row.water_type.code == "GW"
+    run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
+    assert run.residual_disposition == "groundwater"
+    assert run.unmet_demand_af == Decimal("0")
+    billable = billable_ledger(ParcelLedger.objects.filter(parcel=parcel))
+    assert _balance_dict(billable)["usage"] == abs(row.amount_acre_feet)
+
+
+@pytest.mark.django_db
+def test_no_well_under_irrigation_records_unmet_demand_not_groundwater():
+    """(b) NO-WELL parcel, under-irrigated (ET − precip − surface > 0) → NO
+    `calculated` row; a run STILL exists carrying net CU; disposition=="unmet_demand"
+    and unmet_demand_af == the positive shortfall; _balance_dict GW usage == 0."""
+    parcel = _parcel("R-NOWELL-SHORT")
+    _et_cache(parcel, et_mm=140.0)  # ~4.6 AF
+    _irrigate(parcel)
+    _surface(parcel, af="-2")  # 2 AF surface → residual ~2.6 AF > 0
+    call_command("seed_calculation_plan")
+    call_command("run_calculations", "--period", PERIOD, "--parcel", "R-NOWELL-SHORT")
+
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated").exists()
+    run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
+    assert run.residual_disposition == "unmet_demand"
+    assert run.unmet_demand_af == run.final_af
+    assert run.unmet_demand_af > 0
+    assert run.net_consumptive_use_af > 0  # spine still recorded
+    billable = billable_ledger(ParcelLedger.objects.filter(parcel=parcel))
+    assert _balance_dict(billable)["usage"] == Decimal("0")
+
+
+@pytest.mark.django_db
+def test_no_well_over_delivery_preserves_flood_mar_basin_pool():
+    """(c) NO-WELL parcel, OVER-delivered → the incidental deep-percolation routes
+    to the GSA basin pool UNCHANGED (origin incidental_recharge_pool); NO personal
+    recharge row; NO calculated row; disposition=="unmet_demand", unmet=0."""
+    zone = _pool_zone("flood-pool")
+    parcel = _parcel("R-NOWELL-FLOOD")
+    _et_cache(parcel, et_mm=40.0)  # ~1.3 AF ET
+    _irrigate(parcel)
+    _surface(parcel, af="-5")  # 5 AF surface → over-delivery (deep percolation)
+    ParcelZone.objects.create(parcel=parcel, zone=zone)
+    call_command("seed_calculation_plan")
+    call_command("run_calculations", "--period", PERIOD, "--parcel", "R-NOWELL-FLOOD")
+
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated").exists()
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge").exists()
+    pool = AllocationCarryover.objects.filter(
+        zone=zone, origin="incidental_recharge_pool")
+    assert pool.exists()
+    assert pool.first().amount_af > 0
+    run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
+    assert run.residual_disposition == "unmet_demand"
+    assert run.unmet_demand_af == Decimal("0")  # over-delivered → no shortfall
+
+
+@pytest.mark.django_db
+def test_no_well_residual_disposition_is_idempotent():
+    """(d) Running the under-irrigated and over-delivered no-well cases twice
+    leaves identical rows and an unchanged basin pool."""
+    zone = _pool_zone("idem-pool")
+    flood = _parcel("R-IDEM-FLOOD")
+    _et_cache(flood, et_mm=40.0)
+    _irrigate(flood)
+    _surface(flood, af="-5")
+    ParcelZone.objects.create(parcel=flood, zone=zone)
+    short = _parcel("R-IDEM-SHORT")
+    _et_cache(short, et_mm=140.0)
+    _irrigate(short)
+    _surface(short, af="-2")
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-FLOOD")
+    call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-SHORT")
+    pool_after_one = AllocationCarryover.objects.get(
+        zone=zone, origin="incidental_recharge_pool").amount_af
+    short_unmet_one = CalculationRun.objects.get(
+        parcel=short, period=PERIOD).unmet_demand_af
+
+    call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-FLOOD")
+    call_command("run_calculations", "--period", PERIOD, "--parcel", "R-IDEM-SHORT")
+    assert AllocationCarryover.objects.filter(
+        zone=zone, origin="incidental_recharge_pool").count() == 1
+    assert AllocationCarryover.objects.get(
+        zone=zone, origin="incidental_recharge_pool").amount_af == pool_after_one
+    assert CalculationRun.objects.filter(parcel=short, period=PERIOD).count() == 1
+    assert CalculationRun.objects.get(
+        parcel=short, period=PERIOD).unmet_demand_af == short_unmet_one
+    assert not ParcelLedger.objects.filter(
+        parcel__in=[flood, short], source_type="calculated").exists()
