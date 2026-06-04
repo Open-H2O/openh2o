@@ -11,8 +11,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounting.models import ReportingPeriod
+from parcels.models import ParcelLedger
 from reporting.forms import ReportGenerateForm
-from reporting.generators import generate_calwatrs_csv, generate_gears_csv
+from reporting.generators import (
+    SHARED_SUPPLY_DIVERGENCE_THRESHOLD,
+    build_shared_supply_comparison,
+    generate_calwatrs_csv,
+    generate_gears_csv,
+)
 from reporting.models import ReportingProfile, ReportSubmission, ReportTemplate
 from reporting.services import PREFILL_METHOD_BY_REPORT_TYPE, build_openet_prefill
 from reporting.validators import validate_report
@@ -152,6 +159,47 @@ def report_detail(request, pk):
         "profile": ReportingProfile.objects.first(),
     }
     return render(request, "reporting/report_detail.html", context)
+
+
+@login_required
+def shared_supply_check(request):
+    """ISS-056: stored split vs. ET-implied split reasonableness check.
+
+    Lists every hand-set shared well / point of diversion with the human split
+    beside the split measured ET demand would imply, flagging large divergences
+    as a likely data-entry tell. Display only — never writes a fraction back.
+    Defaults to the most recent period carrying real activity (where the ET
+    signal lives), with a period selector; ``?period=`` overrides.
+    """
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    period_id = request.GET.get("period", "").strip()
+    selected_period = None
+    if period_id:
+        selected_period = ReportingPeriod.objects.filter(pk=period_id).first()
+    if selected_period is None:
+        activity_period_id = (
+            ParcelLedger.objects.filter(reporting_period__isnull=False)
+            .exclude(source_type="allocation")
+            .order_by("-reporting_period__start_date")
+            .values_list("reporting_period_id", flat=True)
+            .first()
+        )
+        if activity_period_id:
+            selected_period = ReportingPeriod.objects.filter(
+                pk=activity_period_id
+            ).first()
+        elif periods.exists():
+            selected_period = periods.first()
+
+    groups = build_shared_supply_comparison(selected_period)
+    context = {
+        "periods": periods,
+        "selected_period": selected_period,
+        "groups": groups,
+        "flagged_count": sum(1 for g in groups if g["any_flag"]),
+        "divergence_points": int(SHARED_SUPPLY_DIVERGENCE_THRESHOLD * 100),
+    }
+    return render(request, "reporting/shared_supply_check.html", context)
 
 
 @login_required

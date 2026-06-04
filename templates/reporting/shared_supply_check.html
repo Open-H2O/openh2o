@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Shared-supply check - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Shared-Supply Check{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'reporting:report_list' %}">Compliance</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'reporting:report_list' %}">Reports</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Shared-supply check</span>
+  </nav>
+  <p class="page-description">
+    For every shared well or point of diversion whose split was set by hand, this
+    compares the entered split against the split that measured ET (crop water use)
+    would imply. A large gap is flagged as a likely data-entry tell. This view
+    never changes a split — it only points out where to look.
+  </p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack">
+
+  <!-- Period selector + summary -->
+  <div class="card-raised">
+    <form method="get" class="row-between" style="gap: var(--space-md); flex-wrap: wrap;">
+      <div class="row-start" style="gap: var(--space-sm);">
+        <label for="period" class="text-secondary text-sm">Reporting period</label>
+        <select id="period" name="period" onchange="this.form.submit()" class="form-input" style="width: auto;">
+          {% for p in periods %}
+          <option value="{{ p.pk }}" {% if selected_period and p.pk == selected_period.pk %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="text-tertiary text-sm">
+        {{ groups|length }} hand-set shared source{{ groups|length|pluralize }} ·
+        {% if flagged_count %}
+          <span class="text-deficit">{{ flagged_count }} flagged</span>
+        {% else %}
+          none flagged
+        {% endif %}
+        · gap threshold {{ divergence_points }} points
+      </div>
+    </form>
+  </div>
+
+  {% for group in groups %}
+  <div class="card-raised">
+    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+      <h2 class="section-header-flush">
+        {{ group.kind }}: {{ group.source_name }}
+      </h2>
+      {% if group.any_flag %}
+      <span class="badge badge-orange">Divergence flagged</span>
+      {% elif group.has_et_signal %}
+      <span class="badge badge-green">Splits agree</span>
+      {% else %}
+      <span class="badge badge-grey">No ET signal</span>
+      {% endif %}
+    </div>
+
+    {% if not group.has_et_signal %}
+    <p class="text-tertiary text-sm" style="margin: 0 0 var(--space-md);">
+      No measured ET demand for these use areas in this period, so there is no
+      ET-implied split to compare against yet (it will appear once the engine runs
+      for them). The entered split is shown for reference.
+    </p>
+    {% endif %}
+
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th>Use area</th>
+          <th class="th-right">Your share</th>
+          <th class="th-right">ET-implied share</th>
+          <th class="th-right">Gap</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in group.rows %}
+        <tr>
+          <td>
+            <a href="{% url 'parcels:detail' row.parcel_id %}" class="data-table-link">{{ row.parcel_number }}</a>
+          </td>
+          <td class="td-num">{{ row.your_weight|floatformat:4 }}</td>
+          <td class="td-num">
+            {% if row.et_weight is not None %}{{ row.et_weight|floatformat:4 }}{% else %}<span class="text-tertiary">—</span>{% endif %}
+          </td>
+          <td class="td-num">
+            {% if row.divergence is not None %}{{ row.divergence|floatformat:4 }}{% else %}<span class="text-tertiary">—</span>{% endif %}
+          </td>
+          <td class="th-right">
+            {% if row.flag %}<span class="badge badge-orange">check</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% empty %}
+  <div class="card-raised">
+    <p class="text-tertiary text-base" style="margin: 0;">
+      No hand-set shared sources. Every shared well and point of diversion in this
+      period uses an untouched (even / demand-driven) split, so there is nothing to
+      reconcile.
+    </p>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

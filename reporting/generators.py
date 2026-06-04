@@ -22,9 +22,16 @@ from django.db.models import Sum
 from accounting.allocation_math import apportion_shared_supply
 from accounting.models import CalculationRun
 from accounting.services import billable_ledger
-from parcels.models import ParcelLedger
+from parcels.models import Parcel, ParcelLedger
 from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
 from wells.models import Well, WellIrrigatedParcel
+
+
+# ISS-056 soft divergence flag: a parcel whose stored weight and ET-implied
+# weight differ by this much (absolute weight, i.e. 15 percentage points) is
+# worth a second look — a likely data-entry tell. Display-only; nothing is
+# auto-corrected.
+SHARED_SUPPLY_DIVERGENCE_THRESHOLD = Decimal("0.15")
 
 
 # GEARS "Extraction volume measurement method" controlled vocabulary (ISS-047a).
@@ -172,6 +179,140 @@ def build_normalized_pod_parcel_map(reporting_period=None):
         pod_id: list(apportion_shared_supply(members).items())
         for pod_id, members in members_by_pod.items()
     }
+
+
+def _compare_split(links, demand_by_parcel, parcel_names):
+    """Build one shared source's stored-vs-ET-implied comparison rows.
+
+    ``links`` is ``[(parcel_id, stored_fraction), ...]`` for the parcels one
+    shared source serves. Returns ``{"has_et_signal", "rows", "any_flag"}``.
+
+    * ``your_weight`` — ``apportion_shared_supply`` with the STORED fractions
+      (rung 2, the human split).
+    * ``et_weight``  — the same call with every fraction forced to the
+      ``Decimal("1.0")`` sentinel, which drops to rung 3 (pure ET demand). When
+      the source's parcels have zero total measured demand it is undefined
+      (``None`` → "no ET signal"), NOT a misleading even split, and the flag is
+      suppressed. This is the demo state until Phase 58 re-runs the engine.
+    """
+    your_split = apportion_shared_supply(
+        [(pid, frac, demand_by_parcel.get(pid, Decimal("0"))) for pid, frac in links]
+    )
+    total_demand = sum(
+        (demand_by_parcel.get(pid, Decimal("0")) for pid, _ in links), Decimal("0")
+    )
+    has_et = total_demand > 0
+    et_split = (
+        apportion_shared_supply(
+            [(pid, Decimal("1.0"), demand_by_parcel.get(pid, Decimal("0"))) for pid, _ in links]
+        )
+        if has_et
+        else {}
+    )
+
+    rows = []
+    any_flag = False
+    for pid, _ in links:
+        your_w = your_split.get(pid, Decimal("0"))
+        if has_et:
+            et_w = et_split.get(pid, Decimal("0"))
+            divergence = abs(your_w - et_w)
+            flag = divergence >= SHARED_SUPPLY_DIVERGENCE_THRESHOLD
+        else:
+            et_w = None
+            divergence = None
+            flag = False
+        any_flag = any_flag or flag
+        rows.append(
+            {
+                "parcel_id": pid,
+                "parcel_number": parcel_names.get(pid, str(pid)),
+                "your_weight": your_w,
+                "et_weight": et_w,
+                "divergence": divergence,
+                "flag": flag,
+            }
+        )
+    return {"has_et_signal": has_et, "rows": rows, "any_flag": any_flag}
+
+
+def build_shared_supply_comparison(reporting_period=None):
+    """ISS-056: stored split vs. ET-implied split for each hand-set shared source.
+
+    A *shared source* is a well or point of diversion serving more than one
+    parcel. A source is *hand-set* when a district nudged any member's link
+    ``fraction`` off the ``Decimal("1.0")`` sentinel — rung 2 of
+    ``apportion_shared_supply``, where the human split wins over ET demand.
+
+    For every hand-set shared source this surfaces a two-column reasonableness
+    check — the stored split a human entered beside the split measured ET demand
+    would imply — with a soft per-parcel flag where the two diverge by >= 15
+    points. **Display only**: a hand-set share is never auto-overwritten.
+
+    A pure demand-split (all fractions untouched) is excluded — its two columns
+    are identical by construction, so there is nothing to compare. Single-parcel
+    sources are excluded — there is no split.
+
+    Returns a list of group dicts ordered by source name::
+
+        {"kind": "Well" | "Point of diversion", "source_name": str,
+         "has_et_signal": bool, "any_flag": bool,
+         "rows": [{"parcel_number", "your_weight", "et_weight" (Decimal|None),
+                   "divergence" (Decimal|None), "flag": bool}, ...]}
+    """
+    demand_by_parcel = _period_demand_by_parcel(reporting_period)
+
+    # Gather candidate hand-set shared sources from both link tables.
+    candidates = []  # (kind, source_name, [(parcel_id, fraction), ...])
+
+    wips_by_well = {}
+    for wip in WellIrrigatedParcel.objects.select_related("well").all():
+        wips_by_well.setdefault(wip.well, []).append(wip)
+    for well, wips in wips_by_well.items():
+        if len(wips) < 2:
+            continue
+        if not any(wip.fraction != Decimal("1.0") for wip in wips):
+            continue  # untouched fractions → not hand-set, nothing to compare
+        candidates.append(
+            ("Well", well.name, [(wip.parcel_id, wip.fraction) for wip in wips])
+        )
+
+    podps_by_pod = {}
+    for podp in PointOfDiversionParcel.objects.select_related("point_of_diversion").all():
+        podps_by_pod.setdefault(podp.point_of_diversion, []).append(podp)
+    for pod, podps in podps_by_pod.items():
+        if len(podps) < 2:
+            continue
+        if not any(podp.fraction != Decimal("1.0") for podp in podps):
+            continue
+        candidates.append(
+            (
+                "Point of diversion",
+                pod.name,
+                [(podp.parcel_id, podp.fraction) for podp in podps],
+            )
+        )
+
+    # One query for every parcel number we will display (no N+1).
+    parcel_ids = {pid for _, _, links in candidates for pid, _ in links}
+    parcel_names = dict(
+        Parcel.objects.filter(id__in=parcel_ids).values_list("id", "parcel_number")
+    )
+
+    groups = []
+    for kind, source_name, links in candidates:
+        comparison = _compare_split(links, demand_by_parcel, parcel_names)
+        groups.append(
+            {
+                "kind": kind,
+                "source_name": source_name,
+                "has_et_signal": comparison["has_et_signal"],
+                "any_flag": comparison["any_flag"],
+                "rows": comparison["rows"],
+            }
+        )
+    groups.sort(key=lambda g: (g["kind"], g["source_name"]))
+    return groups
 
 
 def generate_gears_csv(reporting_period, method="by_well"):
