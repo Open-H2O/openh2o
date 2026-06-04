@@ -41,6 +41,7 @@ from accounting.carryover_math import water_year_of
 from accounting.models import (
     AllocationCarryover,
     AllocationPlan,
+    CalculationRun,
     ReportingPeriod,
     WaterAccountParcel,
     WaterType,
@@ -674,6 +675,137 @@ def zone_balance(zone, reporting_period=None):
         qs = qs.filter(reporting_period=reporting_period)
 
     return _balance_dict(billable_ledger(qs))
+
+
+# ---------------------------------------------------------------------------
+# Per-parcel closing mass balance (52.6-03, ISS-053)
+# ---------------------------------------------------------------------------
+
+#: Decimal tolerance for "the books close" — absorbs 4-dp ledger rounding.
+MASS_BALANCE_TOLERANCE = Decimal("0.01")
+
+
+def _incidental_recharge_af(breakdown):
+    """Read deep-percolation recharge (AF) off a CalculationRun.breakdown.
+
+    Mirrors the engine's reader (run_calculations._incidental_recharge_af): the
+    clamp_floor step records ``incidental_recharge_af`` — the surface/precip
+    over-delivery that percolated to the aquifer (ISS-052). Duplicated here as a
+    few lines rather than imported, to keep services.py free of an import cycle
+    with the management command (which imports from services). Returns a
+    non-negative Decimal; 0 when no clamp_floor step ran.
+    """
+    for step in breakdown or []:
+        if step.get("step_type") == "clamp_floor":
+            detail = step.get("detail") or {}
+            return Decimal(str(detail.get("incidental_recharge_af", "0")))
+    return Decimal("0")
+
+
+def _calculation_runs_for_period(parcel, reporting_period):
+    """CalculationRun rows for a parcel within a reporting period.
+
+    CalculationRun.period is a "YYYY-MM" string; ReportingPeriod spans dates.
+    "YYYY-MM" sorts lexically, so a string range from the period's start month
+    to its end month selects the right parcel-months. ``reporting_period=None``
+    returns every run for the parcel.
+    """
+    runs = CalculationRun.objects.filter(parcel=parcel)
+    if reporting_period is not None:
+        start = f"{reporting_period.start_date.year}-{reporting_period.start_date.month:02d}"
+        end = f"{reporting_period.end_date.year}-{reporting_period.end_date.month:02d}"
+        runs = runs.filter(period__gte=start, period__lte=end)
+    return runs
+
+
+def parcel_mass_balance(parcel, reporting_period=None):
+    """The closing water mass balance for one parcel over a reporting period.
+
+    Proves the per-parcel books close (ISS-053): every unit of water flowing in
+    is accounted for flowing out, with no phantom credit left on a parcel that
+    cannot use it. The named identity is::
+
+        surface + precip + gw_recovered = et + recharge + runoff + delta_storage
+
+    Term sourcing — deliberately REUSING the existing billable/balance helpers
+    so this never drifts from ``parcel_balance_breakdown``:
+
+    * ``surface`` (input): magnitude of ``surface_diversion`` ledger rows (stored
+      negative; a canal delivery is supply). Taken from the same billable
+      queryset the breakdown uses.
+    * ``precip`` (input): ``CalculationRun.effective_precip_af`` summed over the
+      period's parcel-months.
+    * ``gw_recovered`` (input): the billable groundwater usage — literally the
+      ``_balance_dict`` usage term, so the two can never disagree. Credit-draw
+      timing is carried by ``delta_storage`` (banked − drawn), not double-counted
+      here.
+    * ``et`` (output): ``CalculationRun.gross_et_af`` (gross actual ET).
+    * ``recharge`` (output): deep-percolation that left the parcel, read from
+      each month's engine breakdown (``incidental_recharge_af``). For a no-well
+      parcel this water routes to the GSA basin pool, NOT a personal credit — the
+      ISS-053 invariant — but it is still a real output of this parcel's balance.
+    * ``runoff`` (output): an explicit bookkeeping term, always Decimal("0") under
+      the "no real hydrology" boundary (CONTEXT). Named, never silently dropped.
+    * ``delta_storage`` (output): change in banked credit over the period
+      (``banked_af − drawn_af`` netted). The closure term that absorbs the timing
+      between banking surplus in a wet month and recovering it later.
+
+    Where no CalculationRun exists for a parcel-month, its ET/precip/recharge/
+    storage terms are simply absent (0); surface always comes from the ledger.
+
+    Args:
+        parcel: A parcels.Parcel instance.
+        reporting_period: Optional ReportingPeriod to scope to.
+
+    Returns:
+        dict: ``{"inputs": {surface, precip, gw_recovered},
+        "outputs": {et, recharge, runoff, delta_storage}, "residual_af": Decimal,
+        "closes": bool}``. ``residual_af = sum(inputs) − sum(outputs)``;
+        ``closes`` iff ``abs(residual_af) <= MASS_BALANCE_TOLERANCE``.
+    """
+    # Ledger-sourced terms, on the SAME billable basis as parcel_balance_breakdown.
+    qs = ParcelLedger.objects.filter(parcel=parcel)
+    if reporting_period is not None:
+        qs = qs.filter(reporting_period=reporting_period)
+    billable = billable_ledger(qs)
+
+    gw_recovered = _balance_dict(billable)["usage"]
+    surface = abs(
+        billable.filter(source_type="surface_diversion").aggregate(
+            s=Sum("amount_acre_feet")
+        )["s"]
+        or Decimal("0")
+    )
+
+    # CalculationRun-sourced terms: ET, effective precip, banking, percolation.
+    precip = Decimal("0")
+    et = Decimal("0")
+    recharge = Decimal("0")
+    delta_storage = Decimal("0")
+    for run in _calculation_runs_for_period(parcel, reporting_period):
+        et += run.gross_et_af or Decimal("0")
+        precip += run.effective_precip_af or Decimal("0")
+        delta_storage += (run.banked_af or Decimal("0")) - (
+            run.drawn_af or Decimal("0")
+        )
+        recharge += _incidental_recharge_af(run.breakdown)
+
+    runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.
+
+    inputs = {"surface": surface, "precip": precip, "gw_recovered": gw_recovered}
+    outputs = {
+        "et": et,
+        "recharge": recharge,
+        "runoff": runoff,
+        "delta_storage": delta_storage,
+    }
+    residual = sum(inputs.values()) - sum(outputs.values())
+    return {
+        "inputs": inputs,
+        "outputs": outputs,
+        "residual_af": residual,
+        "closes": abs(residual) <= MASS_BALANCE_TOLERANCE,
+    }
 
 
 # ---------------------------------------------------------------------------
