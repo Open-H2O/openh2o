@@ -427,6 +427,7 @@ class Command(BaseCommand):
         )
 
         written = 0
+        unmet = 0
         skipped_no_et = 0
         banked = 0
         drew = 0
@@ -486,11 +487,22 @@ class Command(BaseCommand):
                         f"; would credit recharge "
                         f"{incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
                     )
-                self.stdout.write(
-                    f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                    f"net {net_af} AF (would write {-net_af} AF){extra}"
-                )
-                written += 1
+                if routes_personal:
+                    self.stdout.write(
+                        f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+                        f"net {net_af} AF (would write {-net_af} AF GW){extra}"
+                    )
+                    written += 1
+                else:
+                    unmet_preview = max(Decimal("0"), net_af).quantize(
+                        Decimal("0.0001")
+                    )
+                    self.stdout.write(
+                        f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+                        f"net {net_af} AF (no well — would record {unmet_preview} AF "
+                        f"unmet demand, no GW row){extra}"
+                    )
+                    unmet += 1
                 continue
 
             with transaction.atomic():
@@ -606,17 +618,25 @@ class Command(BaseCommand):
             if incidental_af > 0:
                 extra += f"; recharge {incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
                 recharged += 1
-            self.stdout.write(
-                f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                f"net {net_af} AF ({'would write' if dry_run else 'wrote'} "
-                f"{-net_af} AF){extra}"
-            )
-            written += 1
+            if routes_personal:
+                self.stdout.write(
+                    f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+                    f"net {net_af} AF (wrote {-net_af} AF GW){extra}"
+                )
+                written += 1
+            else:
+                self.stdout.write(
+                    f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+                    f"net {net_af} AF (no well — recorded {unmet_demand_af} AF "
+                    f"unmet demand, no GW row){extra}"
+                )
+                unmet += 1
 
         verb = "Would write" if dry_run else "Wrote"
         self.stdout.write(
             self.style.SUCCESS(
-                f"{verb} {written} calculated row(s) for {period}; "
+                f"{verb} {written} calculated GW row(s) for {period}; "
+                f"{unmet} no-well parcel(s) recorded as unmet demand; "
                 f"{skipped_no_et} parcel(s) skipped (no ET data); "
                 f"{banked} banked, {drew} drew, {recharged} credited recharge."
             )
