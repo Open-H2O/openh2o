@@ -48,6 +48,47 @@ from accounting.models import (
 
 logger = logging.getLogger(__name__)
 
+# Basin-pool origins on AllocationCarryover (52.6-02, ISS-053). Managed and
+# incidental recharge are tracked as separate pool rows so each contributor can
+# reset its own slice idempotently; they are summed for display/recovery.
+BASIN_RECHARGE_POOL = "basin_recharge_pool"
+INCIDENTAL_RECHARGE_POOL = "incidental_recharge_pool"
+
+
+def deposit_to_basin_pool(
+    zone, water_type, water_year, amount_af, origin=BASIN_RECHARGE_POOL
+):
+    """Add ``amount_af`` to the GSA basin recharge pool for a (zone, water_type, year).
+
+    The basin pool is an ``AllocationCarryover`` row marked with a pool ``origin``
+    (default ``basin_recharge_pool`` for managed recharge; the engine passes
+    ``incidental_recharge_pool`` for deep-percolation). Recharge that infiltrates
+    the shared aquifer but belongs to no single parcel accumulates here instead of
+    being smeared onto surface-only parcels (the ISS-053 phantom).
+
+    Upserts on ``(zone, water_type, water_year, origin)`` and increments
+    ``amount_af`` by ``amount_af`` (additive — two deposits to the same key SUM
+    into one row). ``amount_af`` is normally positive, but the engine passes a
+    signed *delta* to keep a re-run idempotent, so a negative value is honoured.
+    ``select_for_update`` inside a transaction serialises the read-modify-write so
+    the engine's per-parcel loop can deposit many times for one key without losing
+    an increment. Returns the pool row.
+    """
+    amount = Decimal(str(amount_af))
+    with transaction.atomic():
+        row, _created = (
+            AllocationCarryover.objects.select_for_update().get_or_create(
+                zone=zone,
+                water_type=water_type,
+                water_year=water_year,
+                origin=origin,
+                defaults={"amount_af": Decimal("0")},
+            )
+        )
+        row.amount_af = (row.amount_af + amount).quantize(Decimal("0.0001"))
+        row.save(update_fields=["amount_af"])
+        return row
+
 
 def create_diversion_ledger_entries(diversion_record, parcel=None):
     """Create negative ledger entries for a surface water diversion.

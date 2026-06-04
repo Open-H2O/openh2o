@@ -264,9 +264,33 @@ class AllocationCarryover(models.Model):
     carryover_math.available_with_carryover (which delegates to banking_math).
 
     Idempotent like the rest of the engine: rollover_allocations does
-    delete-then-insert per ``(zone, water_type, water_year)`` so re-running never
-    double-banks. The unique_together makes a stray duplicate impossible.
+    delete-then-insert per ``(zone, water_type, water_year, origin)`` so
+    re-running never double-banks. The unique_together makes a stray duplicate
+    impossible.
+
+    ``origin`` (Phase 52.6-02, ISS-053) marks what KIND of row this is. The
+    historic rollover rows are ``allocation_carryover`` (the default, so existing
+    rows keep their meaning). The GSA-level *basin recharge pool* — recharge that
+    physically infiltrates the shared aquifer but belongs to no single parcel —
+    lands here too, split by source so each contributor can reset its own slice
+    idempotently without clobbering the other's:
+
+    * ``basin_recharge_pool`` — managed recharge from a spreading basin (the
+      seeder owns it: it deletes-then-redeposits its rows each run).
+    * ``incidental_recharge_pool`` — deep-percolation from surface over-delivery
+      on a no-well parcel (the calc engine owns it: per-parcel-month delta so a
+      re-run never double-increments).
+
+    The two pool origins are summed for display/recovery; keeping them as
+    separate rows is purely so re-seeding managed recharge can't wipe the
+    engine's incidental total (and vice-versa).
     """
+
+    ORIGIN_CHOICES = [
+        ("allocation_carryover", "Allocation carryover"),
+        ("basin_recharge_pool", "Basin recharge pool (managed)"),
+        ("incidental_recharge_pool", "Basin recharge pool (incidental)"),
+    ]
 
     zone = models.ForeignKey("geography.Zone", on_delete=models.CASCADE)
     water_type = models.ForeignKey(WaterType, on_delete=models.CASCADE)
@@ -300,11 +324,20 @@ class AllocationCarryover(models.Model):
         help_text="Month at/after which the carried surplus is dead, as YYYY-MM. "
         "Null = never expires.",
     )
+    origin = models.CharField(
+        max_length=24,
+        choices=ORIGIN_CHOICES,
+        default="allocation_carryover",
+        help_text="What kind of row this is: a year-end allocation carryover, or "
+        "a GSA basin recharge pool (managed / incidental).",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-water_year", "zone", "water_type"]
-        unique_together = [("zone", "water_type", "water_year")]
+        # ``origin`` is part of the key so a zone-year can hold BOTH a rollover
+        # carryover AND its basin-pool rows without colliding (52.6-02).
+        unique_together = [("zone", "water_type", "water_year", "origin")]
         verbose_name = "Allocation carryover"
         verbose_name_plural = "Allocation carryovers"
 
