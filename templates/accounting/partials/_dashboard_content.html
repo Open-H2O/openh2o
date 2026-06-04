@@ -12,23 +12,23 @@
 <h2 class="content-section-label">Budget Summary</h2>
 <div class="stat-grid-3col">
 
-  <!-- Total Supply -->
+  <!-- Total Supplies -->
   <div class="card-raised stat-card stat-card-accent-supply">
-    <div class="stat-card-label">Total Supply</div>
-    <div class="stat-card-value text-supply">{{ grand_supply|floatformat:2 }}</div>
+    <div class="stat-card-label">Total Supplies (surface + groundwater + precip)</div>
+    <div class="stat-card-value text-supply">{{ grand_supply_total|floatformat:2 }}</div>
     <div class="stat-card-unit">acre-feet</div>
   </div>
 
-  <!-- Total Usage -->
+  <!-- Consumptive Use (ET) -->
   <div class="card-raised stat-card stat-card-accent-usage">
-    <div class="stat-card-label">Total Usage</div>
-    <div class="stat-card-value">{{ grand_usage|floatformat:2 }}</div>
+    <div class="stat-card-label">Consumptive Use (ET)</div>
+    <div class="stat-card-value">{{ grand_consumptive_use|floatformat:2 }}</div>
     <div class="stat-card-unit">acre-feet</div>
   </div>
 
-  <!-- Net Balance -->
+  <!-- Supplies − Consumptive Use -->
   <div class="card-raised stat-card stat-card-accent-balance">
-    <div class="stat-card-label">Net Balance</div>
+    <div class="stat-card-label">Supplies − Consumptive Use</div>
     <div class="stat-card-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
       {{ grand_net|floatformat:2 }}
     </div>
@@ -37,11 +37,11 @@
 
 </div>
 
-<!-- Balance-sheet explainer -->
+<!-- Consumptive-use model explainer -->
 <div class="card-raised card-inset">
   <p class="text-tertiary text-sm" style="margin: 0;">
-    <strong class="text-secondary">How the ledger works:</strong>
-    It's a balance sheet. <span class="text-supply">Water Budget</span> entries are positive (water assigned to an area). Usage entries are negative (water consumed by extraction or evapotranspiration). The running balance is budget minus usage.
+    <strong class="text-secondary">How the budget works:</strong>
+    <span class="text-supply">Consumptive use</span> — the water crops actually consumed, measured from satellite evapotranspiration (ET) — is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. The columns below show each area's consumptive use beside the supplies that met it; the budget remaining is the water budget minus consumptive use.
   </p>
 </div>
 
@@ -65,9 +65,12 @@
     <thead>
       <tr>
         <th>Account</th>
-        <th class="th-right">Supply (AF)</th>
-        <th class="th-right">Usage (AF)</th>
-        <th class="th-right">Net (AF)</th>
+        <th class="th-right">Consumptive Use (AF) {% include "partials/_help_tooltip.html" with label="Consumptive Use" text="Measured consumptive use (gross ET) — the water crops actually consumed, from satellite evapotranspiration. This is the demand the supplies must meet." %}</th>
+        <th class="th-right">Surface (AF)</th>
+        <th class="th-right">Groundwater (AF)</th>
+        <th class="th-right">Precip (AF)</th>
+        <th class="th-right">Supplies (AF)</th>
+        <th class="th-right">Net (AF) {% include "partials/_help_tooltip.html" with label="Net" text="Supplies minus consumptive use. Positive means the recorded supplies covered measured use; negative means use exceeded them." %}</th>
         {% if has_allocations %}
         <th class="th-right">Water Budget (AF)</th>
         <th class="th-right">Remaining (AF)</th>
@@ -85,14 +88,23 @@
           <span class="text-secondary ml-xs">{{ row.account.name }}</span>
           {% endif %}
         </td>
-        <td class="td-num text-supply">
-          {{ row.supply|floatformat:2 }}
-        </td>
         <td class="td-num text-usage">
-          {{ row.usage|floatformat:2 }}
+          {{ row.consumptive_use_gross|floatformat:2 }}
         </td>
-        <td class="td-num-bold {% if row.net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.net|floatformat:2 }}
+        <td class="td-num text-supply">
+          {{ row.surface|floatformat:2 }}
+        </td>
+        <td class="td-num text-supply">
+          {{ row.groundwater|floatformat:2 }}
+        </td>
+        <td class="td-num text-supply">
+          {{ row.precip|floatformat:2 }}
+        </td>
+        <td class="td-num-bold text-supply">
+          {{ row.supply_total|floatformat:2 }}
+        </td>
+        <td class="td-num-bold {% if row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+          {{ row.net_vs_supply|floatformat:2 }}
         </td>
         {% if has_allocations %}
         <td class="td-num">
@@ -123,13 +135,16 @@
     <thead>
       <tr>
         <th>Zone</th>
-        <th class="th-right">Supply (AF)</th>
-        <th class="th-right">Usage (AF)</th>
-        <th class="th-right">Net (AF) {% include "partials/_help_tooltip.html" with label="Net" text="Supply minus usage for the zone. Negative means usage has exceeded supply." %}</th>
+        <th class="th-right">Consumptive Use (AF) {% include "partials/_help_tooltip.html" with label="Consumptive Use" text="Measured consumptive use (gross ET) for the zone — the water its crops actually consumed, from satellite evapotranspiration." %}</th>
+        <th class="th-right">Surface (AF)</th>
+        <th class="th-right">Groundwater (AF)</th>
+        <th class="th-right">Precip (AF)</th>
+        <th class="th-right">Supplies (AF)</th>
+        <th class="th-right">Net (AF) {% include "partials/_help_tooltip.html" with label="Net" text="Supplies minus consumptive use for the zone. Negative means consumptive use exceeded the recorded supplies." %}</th>
         {% if has_allocations %}
         <th class="th-right">Water Budget (AF)</th>
         <th class="th-right">Carried fwd (AF) {% include "partials/_help_tooltip.html" with label="Carried forward" text="Surplus (+) or debt (−) rolled in from the prior water year." %}</th>
-        <th class="th-right">Remaining (AF) {% include "partials/_help_tooltip.html" with label="Remaining" text="Water budget plus any carried-forward balance, minus usage. A negative Remaining is an overdraft." %}</th>
+        <th class="th-right">Remaining (AF) {% include "partials/_help_tooltip.html" with label="Remaining" text="Water budget plus any carried-forward balance, minus consumptive use. A negative Remaining is an overdraft." %}</th>
         {% endif %}
       </tr>
     </thead>
@@ -137,14 +152,23 @@
       {% for row in zone_summaries %}
       <tr>
         <td class="font-semibold">{{ row.zone.name }}</td>
-        <td class="td-num text-supply">
-          {{ row.supply|floatformat:2 }}
-        </td>
         <td class="td-num text-usage">
-          {{ row.usage|floatformat:2 }}
+          {{ row.consumptive_use_gross|floatformat:2 }}
         </td>
-        <td class="td-num-bold {% if row.net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.net|floatformat:2 }}
+        <td class="td-num text-supply">
+          {{ row.surface|floatformat:2 }}
+        </td>
+        <td class="td-num text-supply">
+          {{ row.groundwater|floatformat:2 }}
+        </td>
+        <td class="td-num text-supply">
+          {{ row.precip|floatformat:2 }}
+        </td>
+        <td class="td-num-bold text-supply">
+          {{ row.supply_total|floatformat:2 }}
+        </td>
+        <td class="td-num-bold {% if row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+          {{ row.net_vs_supply|floatformat:2 }}
         </td>
         {% if has_allocations %}
         <td class="td-num">
