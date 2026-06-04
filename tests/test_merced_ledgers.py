@@ -514,3 +514,45 @@ def test_second_seed_run_does_not_change_counts():
     second = counts()
     assert first == second, f"seed is not idempotent: {first} != {second}"
     assert first["ledger"] > 0 and first["accounts"] > 0 and first["budgets"] > 0
+
+
+# --------------------------------------------------------------------------
+# ISS-052: demand-aware surface sizing (pure helper — Django-free, no DB)
+# These prove the sizing math directly; the live demand-vs-fallback behavior is
+# exercised end-to-end on Butler (the fixture above carries no ET cache, so it
+# correctly uses the face-value fallback path and its assertions are unchanged).
+# --------------------------------------------------------------------------
+
+from core.management.commands.seed_merced_ledgers import (  # noqa: E402
+    _demand_aware_deliveries,
+)
+
+_EFF = Decimal("0.75")
+_ND = {5: Decimal("12.3"), 6: Decimal("8.5"), 7: Decimal("15.0"), 8: Decimal("14.0")}
+
+
+def test_demand_aware_ample_right_delivers_demand_over_efficiency():
+    """A right covering full demand-supply: every month = demand/efficiency, and
+    NO month exceeds it — the pre-052 over-delivery spikes are gone."""
+    out = _demand_aware_deliveries(_ND, annual_envelope=Decimal("100"), efficiency=_EFF)
+    for m, d in _ND.items():
+        assert out[m] == d / _EFF
+        assert out[m] <= d / _EFF  # the physical cap is never exceeded
+
+
+def test_demand_aware_short_right_distributes_envelope_by_demand():
+    """A conjunctive parcel whose right is short of full demand: the envelope is
+    distributed by demand shape (sums to the envelope) and never exceeds
+    demand/efficiency — the parcel pumps the shortfall as groundwater."""
+    env = Decimal("30")
+    out = _demand_aware_deliveries(_ND, annual_envelope=env, efficiency=_EFF)
+    assert abs(sum(out.values(), Decimal("0")) - env) < Decimal("0.0001")
+    for m, d in _ND.items():
+        assert out[m] <= d / _EFF
+
+
+def test_demand_aware_no_demand_returns_empty_for_fallback():
+    """No net demand at all -> empty mapping; the seed then falls back to
+    face-value seasonal sizing (local dev without an ET cache)."""
+    assert _demand_aware_deliveries({}, Decimal("50"), _EFF) == {}
+    assert _demand_aware_deliveries({1: Decimal("0")}, Decimal("50"), _EFF) == {}

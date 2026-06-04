@@ -85,6 +85,12 @@ SEASONAL_WEIGHTS = {
 # Synthetic per-acre rates (acre-feet per acre per year). NOT crop-ET-derived.
 SURFACE_RATE = 2.2          # canal delivery to a surface/conjunctive parcel
 GW_RATE = 1.8               # groundwater pumped by a parcel's well(s)
+
+# Irrigation efficiency — to meet net crop demand D a parcel must be DELIVERED
+# D / efficiency, since ~25% of applied surface water is lost to deep percolation
+# (which the engine credits back to the aquifer as incidental recharge, ISS-052).
+# Used by demand-aware surface sizing when real ET is available.
+IRRIGATION_EFFICIENCY = Decimal("0.75")
 GSA_SUSTAINABLE_RATE = 2.0  # GSA groundwater budget — SGMA sustainable-yield proxy
 GSA_BUDGET_FLOOR = Decimal("500.0")   # a GSA with no demo parcels still gets a budget
 SURFACE_BUDGET_FRACTION = Decimal("0.9")    # district surface budget ~ 90% of face
@@ -106,6 +112,75 @@ def _q(value):
 def _jitter(seq):
     """Deterministic ±6% factor keyed on an index — varies volumes without random."""
     return Decimal("1") + (Decimal(seq % 7) - Decimal("3")) * Decimal("0.02")
+
+
+def _demand_aware_deliveries(net_demand_by_month, annual_envelope, efficiency):
+    """Map month -> surface delivery (AF) that tracks real crop net demand.
+
+    Pure arithmetic (no DB) so it is unit-testable in plain Python — the same
+    Django-free split the calc engine uses for its contested math.
+
+    Args:
+        net_demand_by_month: {month_num: net_demand_af} where net demand is gross
+            ET minus effective precip for that parcel-month (>= 0).
+        annual_envelope: the parcel's available-right ceiling for the year (AF).
+        efficiency: irrigation efficiency (e.g. 0.75); meeting demand D needs a
+            delivery of D / efficiency.
+
+    Returns:
+        {month_num: delivery_af}. If the right covers full demand-supply, every
+        month gets demand/efficiency (a surface-served parcel: ~0 GW + a small
+        deep-percolation excess). If the right is SHORT (a conjunctive parcel),
+        the envelope is distributed across months by demand shape so the parcel
+        pumps the shortfall as groundwater. No month ever exceeds demand/efficiency,
+        which is what kills the pre-052 over-delivery spikes. Empty dict when there
+        is no net demand at all (the caller then falls back to face-value sizing).
+    """
+    eff = Decimal(str(efficiency))
+    total_net = sum(net_demand_by_month.values(), Decimal("0"))
+    if total_net <= 0:
+        return {}
+    demand_supply = {m: d / eff for m, d in net_demand_by_month.items()}
+    total_supply = sum(demand_supply.values(), Decimal("0"))
+    if annual_envelope >= total_supply:
+        return demand_supply
+    # Right is short (conjunctive): distribute the envelope by demand weight. Each
+    # month stays <= demand/efficiency because envelope < total_supply.
+    return {
+        m: annual_envelope * (d / total_net)
+        for m, d in net_demand_by_month.items()
+    }
+
+
+def _net_demand_af(parcel, period, area):
+    """Net crop demand (AF) for a parcel-month = gross ET - effective precip.
+
+    Reads the SAME OpenETCache rows the calc engine reads (via the shared
+    _read_cache_mm helper) and applies the SAME usda_scs effective-precip math,
+    so demand-aware deliveries can never drift from what the engine later
+    subtracts. Returns None when there is no ET for the month (the caller treats
+    that as "no demand data" and may fall back to face-value sizing).
+    """
+    from accounting.precip_math import effective_precip_inches
+    from accounting.services import et_mm_to_acre_feet
+    from accounting.steps import _read_cache_mm
+
+    et_mm, matched, _ = _read_cache_mm(parcel, period, "ET", "Ensemble", "et")
+    if matched == 0:
+        return None
+    precip_mm, _, _ = _read_cache_mm(parcel, period, "precip", "GRIDMET", "precip")
+    mm_per_in = Decimal("25.4")
+    pe_in = effective_precip_inches(
+        precip_mm / mm_per_in,
+        et_mm / mm_per_in,
+        method="usda_scs",
+        soil_storage_in=Decimal("3.0"),
+    )
+    pe_mm = pe_in * mm_per_in
+    et_af = abs(et_mm_to_acre_feet(et_mm, area))
+    pe_af = abs(et_mm_to_acre_feet(pe_mm, area))
+    net = et_af - pe_af
+    return net if net > 0 else Decimal("0")
 
 
 class Command(BaseCommand):
@@ -443,20 +518,62 @@ class Command(BaseCommand):
         storage convention so the demo round-trips through CSV and reads
         correctly in the engine.
 
+        **Demand-aware sizing (ISS-052).** When real ET is in the OpenETCache,
+        each month's delivery tracks the parcel's net crop demand (gross ET minus
+        effective precip) divided by irrigation efficiency, capped so no month is
+        delivered more than the crop can physically use plus its deep-percolation
+        fraction. The parcel's annual ``area × SURFACE_RATE × jitter`` envelope is
+        kept as the available-right CEILING: a parcel whose right covers full
+        demand gets demand/efficiency every month (a surface-served parcel that
+        pumps ~0 GW, its small excess routed to incidental recharge by the engine);
+        a conjunctive parcel whose right is short gets the envelope distributed by
+        demand shape and pumps the shortfall as groundwater. This replaces the
+        pre-052 ``annual × generic-seasonal-curve`` sizing that ignored crop demand
+        and produced physically implausible 2-3× over-deliveries.
+
+        **Fallback.** With no ET cache for a parcel (local dev without GEE), revert
+        to the original face-value × seasonal-weight sizing so the demo is still
+        coherent off-Butler. Requires the ET/precip sync to have run first on
+        Butler (it persists across ledger re-seeds; see seed_merced.py ordering).
+
         Curtailed-right parcels get NO delivery after June 2025 — the curtailment cut.
         """
         rows = []
         schedule = self._month_schedule()
+        used_demand = 0
+        used_fallback = 0
         for seq, p in enumerate(parcels):
             if p.id not in surface_parcel_ids:
                 continue
             area = Decimal(str(p.area_acres or 40))
             annual = area * Decimal(str(SURFACE_RATE)) * _jitter(seq)
             curtailed = p.id in curtailed_parcel_ids
+
+            # Net crop demand per month from the cache (engine-consistent).
+            net_demand_by_month = {}
+            for _md, mn in schedule:
+                period = f"{_md.year:04d}-{_md.month:02d}"
+                nd = _net_demand_af(p, period, area)
+                if nd is not None and nd > 0:
+                    net_demand_by_month[mn] = nd
+
+            deliveries = _demand_aware_deliveries(
+                net_demand_by_month, annual, IRRIGATION_EFFICIENCY
+            )
+            if deliveries:
+                used_demand += 1
+            else:
+                # No ET demand data — fall back to face-value seasonal sizing.
+                used_fallback += 1
+                deliveries = {
+                    mn: annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
+                    for _md, mn in schedule
+                }
+
             for month_date, mn in schedule:
                 if curtailed and month_date > CURTAILMENT_LAST_DELIVERY:
                     continue  # deliveries stop once the junior right is curtailed
-                vol = _q(annual * Decimal(str(SEASONAL_WEIGHTS[mn])))
+                vol = _q(deliveries.get(mn, Decimal("0")))
                 if vol <= 0:
                     continue
                 rows.append(ParcelLedger(
@@ -465,6 +582,10 @@ class Command(BaseCommand):
                     description="Monthly surface-water delivery",
                     reporting_period=prior,
                 ))
+        self.stdout.write(
+            f"    surface deliveries: {used_demand} parcel(s) demand-aware "
+            f"(real ET), {used_fallback} face-value fallback (no ET cache)"
+        )
         return rows
 
     def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior):
