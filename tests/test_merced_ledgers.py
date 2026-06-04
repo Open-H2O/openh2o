@@ -207,6 +207,20 @@ def _curtailed_parcels():
     return list(Parcel.objects.filter(id__in=ids))
 
 
+def _parcel_has_metered_well(parcel):
+    """Whether a parcel is served by at least one CERTIFIED-METER well (after the
+    seed has set each well's measurement_method).
+
+    Since 52.5-01, only metered wells carry synthetic seed groundwater rows —
+    unmetered wells are engine-owned (their `calculated` rows land in Plan 02), so
+    they write none. This oracle tells the keying tests which parcels to expect a
+    seed extraction row for.
+    """
+    return WellIrrigatedParcel.objects.filter(
+        parcel=parcel, well__measurement_method="certified_meter"
+    ).exists()
+
+
 # --------------------------------------------------------------------------
 # Group 1 — water_source keying / two-authority separation
 # --------------------------------------------------------------------------
@@ -218,9 +232,17 @@ def test_groundwater_parcel_has_no_surface_delivery(seeded):
         assert not ParcelLedger.objects.filter(
             parcel=p, source_type="surface_diversion").exists(), (
             f"{p.parcel_number} is groundwater-only but has a surface delivery")
-        assert ParcelLedger.objects.filter(
-            parcel=p, source_type__in=GW_EXTRACTION_SOURCES).exists(), (
-            f"{p.parcel_number} is groundwater-only but has no extraction row")
+        # Seed extraction now exists ONLY for metered-well parcels (52.5-01); an
+        # unmetered-well parcel is engine-owned and carries no seed extraction.
+        has_extraction = ParcelLedger.objects.filter(
+            parcel=p, source_type__in=GW_EXTRACTION_SOURCES).exists()
+        if _parcel_has_metered_well(p):
+            assert has_extraction, (
+                f"{p.parcel_number} is on a metered well but has no extraction row")
+        else:
+            assert not has_extraction, (
+                f"{p.parcel_number} is on an unmetered well but has a seed "
+                "extraction row (its groundwater is engine-owned)")
 
 
 @pytest.mark.django_db
@@ -250,18 +272,65 @@ def test_surface_parcel_has_no_groundwater_extraction(seeded):
 
 @pytest.mark.django_db
 def test_conjunctive_parcel_has_both_surface_and_groundwater(seeded):
-    seen = 0
+    """A conjunctive parcel always has a surface delivery; its groundwater
+    extraction is seeded only when its well is metered (an unmetered conjunctive
+    parcel's groundwater is engine-owned — Plan 02)."""
+    seen_metered = 0
     for p in Parcel.objects.filter(parcel_number__startswith="MER-APN-"):
         if _source_of(p) != "conjunctive":
             continue
-        seen += 1
         assert ParcelLedger.objects.filter(
             parcel=p, source_type="surface_diversion").exists(), (
             f"{p.parcel_number} is conjunctive but has no surface delivery")
-        assert ParcelLedger.objects.filter(
-            parcel=p, source_type__in=GW_EXTRACTION_SOURCES).exists(), (
-            f"{p.parcel_number} is conjunctive but has no groundwater extraction")
-    assert seen >= 1, "fixture should contain conjunctive parcels"
+        has_extraction = ParcelLedger.objects.filter(
+            parcel=p, source_type__in=GW_EXTRACTION_SOURCES).exists()
+        if _parcel_has_metered_well(p):
+            seen_metered += 1
+            assert has_extraction, (
+                f"{p.parcel_number} is conjunctive on a metered well but has no "
+                "groundwater extraction")
+        else:
+            assert not has_extraction, (
+                f"{p.parcel_number} is conjunctive on an unmetered well but has a "
+                "seed groundwater extraction (engine-owned)")
+    assert seen_metered >= 1, "fixture should contain a metered conjunctive parcel"
+
+
+@pytest.mark.django_db
+def test_unmetered_wells_write_no_seed_groundwater_rows(seeded):
+    """52.5-01 reconciliation: an UNMETERED well's groundwater is engine-owned
+    (Plan 02 `calculated` rows), so the synthetic seed writes NONE of its
+    extraction — otherwise the engine would double-count. Metered wells keep
+    their authoritative `meter_reading` rows; the old `et_estimate` synthetic
+    source is gone entirely.
+    """
+    wells = list(Well.objects.filter(well_registration_id__startswith="MER-W-"))
+    unmetered = [w for w in wells if w.measurement_method == "unmetered_estimate"]
+    metered = [w for w in wells if w.measurement_method == "certified_meter"]
+    assert unmetered and metered, "fixture should exercise both metering methods"
+
+    # The unmetered synthetic source (et_estimate) is gone for the whole demo.
+    assert not ParcelLedger.objects.filter(
+        parcel__parcel_number__startswith="MER-APN-", source_type="et_estimate"
+    ).exists(), "unmetered seed groundwater rows (et_estimate) must be gone"
+
+    # Each unmetered well's parcels carry NO seed extraction row.
+    for w in unmetered:
+        for ln in WellIrrigatedParcel.objects.filter(well=w):
+            assert not ParcelLedger.objects.filter(
+                parcel_id=ln.parcel_id, source_type__in=GW_EXTRACTION_SOURCES
+            ).exists(), (
+                f"{w.well_registration_id} is unmetered but its parcel "
+                f"{ln.parcel_id} has a seed extraction row")
+
+    # Each metered well's parcels carry meter_reading rows (authoritative, kept).
+    for w in metered:
+        for ln in WellIrrigatedParcel.objects.filter(well=w):
+            assert ParcelLedger.objects.filter(
+                parcel_id=ln.parcel_id, source_type="meter_reading"
+            ).exists(), (
+                f"{w.well_registration_id} is metered but its parcel "
+                f"{ln.parcel_id} has no meter_reading row")
 
 
 # --------------------------------------------------------------------------
@@ -350,13 +419,17 @@ def test_curtailed_conjunctive_parcels_substitute_groundwater(seeded):
         acres = sum(Decimal(str(p.area_acres or 0)) for p in parcels) or Decimal("1")
         return total / acres
 
+    # Only metered conjunctive parcels carry seed groundwater now (52.5-01); an
+    # unmetered conjunctive parcel's substitution emerges from the engine in
+    # Plan 02, not the seed. Compare like with like — metered vs metered.
     conjunctive = [
         p for p in Parcel.objects.filter(parcel_number__startswith="MER-APN-")
-        if _source_of(p) == "conjunctive"
+        if _source_of(p) == "conjunctive" and _parcel_has_metered_well(p)
     ]
     curtailed_conj = [p for p in conjunctive if p.id in curtailed_ids]
     normal_conj = [p for p in conjunctive if p.id not in curtailed_ids]
-    assert curtailed_conj and normal_conj, "need both curtailed and normal conjunctive parcels"
+    assert curtailed_conj and normal_conj, (
+        "need both curtailed and normal METERED conjunctive parcels")
 
     assert post_curtailment_gw(curtailed_conj) > post_curtailment_gw(normal_conj) * Decimal("1.2"), (
         "curtailed conjunctive parcels should show a clear groundwater-substitution bump")
@@ -367,13 +440,18 @@ def test_curtailed_conjunctive_parcels_substitute_groundwater(seeded):
 # --------------------------------------------------------------------------
 @pytest.mark.django_db
 def test_shared_well_extraction_splits_by_fraction_and_sums_to_total(seeded):
-    # Wells that irrigate more than one parcel are the shared groups.
+    # Shared groups that ALSO write seed extraction are the METERED multi-parcel
+    # wells (52.5-01: unmetered wells write no seed rows, so apportionment is only
+    # observable for the metered ones).
     shared = []
-    for well in Well.objects.filter(well_registration_id__startswith="MER-W-"):
+    for well in Well.objects.filter(
+        well_registration_id__startswith="MER-W-",
+        measurement_method="certified_meter",
+    ):
         links = list(WellIrrigatedParcel.objects.filter(well=well))
         if len(links) > 1:
             shared.append((well, links))
-    assert shared, "fixture should contain shared wells"
+    assert shared, "fixture should contain a metered shared well"
 
     for well, links in shared:
         # month -> {parcel_id: summed |extraction|}

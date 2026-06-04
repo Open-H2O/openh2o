@@ -468,13 +468,29 @@ class Command(BaseCommand):
         return rows
 
     def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior):
-        """Monthly groundwater extraction (NEGATIVE), driven by WELLS so a shared
-        well's monthly total splits across its parcels by the stored fraction.
+        """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
 
-        A well serving a curtailed (conjunctive) parcel pumps MORE in the dry
-        post-curtailment months — the substitution story — and because the bump is
-        applied to the well total before apportionment, the per-parcel shares still
-        sum back to the well total (no double-count).
+        The metering split is the 52-01 dual-source invariant: wells alternate
+        metered / unmetered. The two halves are now handled differently (52.5-01
+        reconciliation):
+
+        - A METERED well's reading is authoritative. The seed writes its
+          ``meter_reading`` rows here exactly as before — driven by the well so a
+          shared well's monthly total splits across its parcels by the stored
+          fraction (summing back to the well total, no double-count), with the
+          curtailed-conjunctive substitution bump applied to the well total BEFORE
+          apportionment.
+
+        - An UNMETERED well writes NO synthetic groundwater rows. Its parcels'
+          groundwater will be computed by the REAL calc engine (``calculated``
+          rows, Plan 02); writing an ``et_estimate`` row here too would
+          double-count against the engine's output. The well still gets
+          ``measurement_method='unmetered_estimate'`` so Task 3's
+          ``--unmetered-only`` filter and the metered/unmetered story survive —
+          only the synthetic ledger rows go away. The substitution story for these
+          parcels then EMERGES from the engine itself: surface deliveries stop
+          after curtailment, so the engine subtracts less surface → more net
+          groundwater in the dry months.
         """
         parcel_by_id = {p.id: p for p in parcels}
         # well -> [WellIrrigatedParcel links] for MER wells irrigating MER parcels.
@@ -492,13 +508,17 @@ class Command(BaseCommand):
             links = links_by_well.get(well.id)
             if not links:
                 continue
-            # Metering: alternate so the demo exercises BOTH source types. A metered
-            # well writes meter_reading rows; an unmetered well writes et_estimate.
+            # Alternate metered / unmetered so the demo exercises both stories.
             metered = (wseq % 2 == 0)
-            source_type = "meter_reading" if metered else "et_estimate"
             method = "certified_meter" if metered else "unmetered_estimate"
             if well.measurement_method != method:
                 Well.objects.filter(pk=well.pk).update(measurement_method=method)
+
+            # Unmetered wells are engine-owned: the method is set (above) but the
+            # seed writes no synthetic extraction, so the engine's `calculated`
+            # rows (Plan 02) never double-count.
+            if not metered:
+                continue
 
             served_acres = sum(
                 Decimal(str(parcel_by_id[ln.parcel_id].area_acres or 40)) * ln.fraction
@@ -520,11 +540,9 @@ class Command(BaseCommand):
                     p = parcel_by_id[ln.parcel_id]
                     rows.append(ParcelLedger(
                         parcel=p, transaction_date=month_date, effective_date=month_date,
-                        amount_acre_feet=-share, water_type=gw, source_type=source_type,
-                        description=(
-                            "Monthly metered groundwater extraction" if metered
-                            else "Monthly groundwater extraction (ET estimate)"
-                        ),
+                        amount_acre_feet=-share, water_type=gw,
+                        source_type="meter_reading",
+                        description="Monthly metered groundwater extraction",
                         reporting_period=prior,
                     ))
         return rows
