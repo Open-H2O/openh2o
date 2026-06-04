@@ -24,7 +24,17 @@ Order matters:
                               two-authority Water Budgets, accounts, and the full
                               keyed ParcelLedger). Depends on parcels, wells,
                               rights, PODs, and the GSA zones all existing, so it
-                              runs LAST.
+                              runs after them.
+  9. seed_merced_recharge_events — wet-season managed-recharge events on the two
+                              basins, distributed as GROUNDWATER credits across the
+                              overlying GSA's parcels. Sits ON TOP of the accounting
+                              layer (needs the WY 2024-2025 ReportingPeriod + parcels
+                              from step 8), so it runs LAST.
+
+Note: demand-aware surface sizing in step 8 reads the OpenETCache, so on Butler
+run ``sync_openet_parcels``/``sync_precip_parcels`` (and ``run_calculations`` for
+the groundwater + incidental-recharge rows) around this sequence; without an ET
+cache, step 8 falls back to face-value sizing and the demo is still coherent.
 
 Each sub-command is idempotent, so re-running is safe. Step 2 is a live
 network fetch (a few minutes); everything else is local.
@@ -47,9 +57,12 @@ SEQUENCE = [
     # need crop land use first. Idempotent; MER-keyed.
     ("seed_merced_cropland", {}),
     # The accounting layer hangs off everything above (parcels, wells, rights,
-    # PODs, GSA zones), so it runs last. It self-flushes its own rows, so a
-    # re-run rebuilds the ledger cleanly.
+    # PODs, GSA zones). It self-flushes its own rows, so a re-run rebuilds the
+    # ledger cleanly. Surface deliveries are demand-aware when an ET cache exists.
     ("seed_merced_ledgers", {}),
+    # Managed recharge sits ON TOP of the accounting layer (needs the WY 2024-2025
+    # ReportingPeriod + parcels), so it runs last. Credits groundwater; idempotent.
+    ("seed_merced_recharge_events", {}),
 ]
 
 
