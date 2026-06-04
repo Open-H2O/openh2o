@@ -29,7 +29,13 @@ from django.db.models import Sum
 
 from accounting.carryover_math import net_carryover
 from accounting.models import AllocationCarryover, AllocationPlan, WaterType
-from accounting.services import water_year_periods, water_year_usage_by_type
+from accounting.services import (
+    resolve_recovery_horizon,
+    water_year_periods,
+    water_year_usage_by_type,
+)
+from core.constants import CARRY_FORWARD, SAME_WATER_YEAR
+from core.models import SiteConfig
 from geography.models import Zone
 
 
@@ -119,13 +125,30 @@ class Command(BaseCommand):
             net = net_carryover(allocation, usage)
             results.append((zone, water_type, allocation, usage, net))
 
+        # Resolve the agency-wide default recovery horizon ONCE; a district may
+        # override it on its Zone (55-02). A SURPLUS in a "same_water_year"
+        # (expire) district is use-it-or-lose-it and is NOT carried; a DEBT is
+        # ALWAYS carried, because an overdraw is a real obligation that does not
+        # vanish on a policy that only governs surplus recovery.
+        cfg = SiteConfig.objects.first()
+        agency_default = cfg.default_recovery_horizon if cfg else CARRY_FORWARD
+
+        decided = []
+        for zone, water_type, allocation, usage, net in results:
+            horizon = resolve_recovery_horizon(zone, agency_default=agency_default)
+            expires_surplus = horizon == SAME_WATER_YEAR and net > 0
+            decided.append(
+                (zone, water_type, allocation, usage, net, expires_surplus)
+            )
+
         verb = "Would write" if dry_run else "Wrote"
         if not dry_run:
             with transaction.atomic():
                 # Delete-then-insert the rows THIS command owns (the target year).
                 # Only source_wy = target_wy - 1 can produce target_wy, so the
                 # target-year rows are exactly this command's output — clearing
-                # them makes a re-run identical (idempotent, no duplicates).
+                # them makes a re-run identical (idempotent, no duplicates). The
+                # contract is unchanged; expire districts just insert FEWER rows.
                 AllocationCarryover.objects.filter(water_year=target_wy).delete()
                 AllocationCarryover.objects.bulk_create(
                     [
@@ -136,21 +159,36 @@ class Command(BaseCommand):
                             source_water_year=source_wy,
                             amount_af=net,
                         )
-                        for zone, water_type, _alloc, _usage, net in results
+                        for zone, water_type, _alloc, _usage, net, expires in decided
+                        if not expires
                     ]
                 )
 
-        for zone, water_type, allocation, usage, net in results:
-            kind = "surplus" if net > 0 else ("debt" if net < 0 else "even")
-            self.stdout.write(
-                f"  {zone.name} {water_type.code}: "
-                f"alloc {allocation} - usage {usage} = {net} AF ({kind}) "
-                f"-> WY{target_wy}"
-            )
+        written = 0
+        skipped = 0
+        for zone, water_type, allocation, usage, net, expires in decided:
+            if expires:
+                skipped += 1
+                self.stdout.write(
+                    f"  {zone.name} {water_type.code}: "
+                    f"alloc {allocation} - usage {usage} = {net} AF (surplus) "
+                    f"-> EXPIRES — not carried, per district policy"
+                )
+            else:
+                written += 1
+                kind = "surplus" if net > 0 else ("debt" if net < 0 else "even")
+                self.stdout.write(
+                    f"  {zone.name} {water_type.code}: "
+                    f"alloc {allocation} - usage {usage} = {net} AF ({kind}) "
+                    f"-> WY{target_wy}"
+                )
 
+        suffix = (
+            f" ({skipped} expiring surplus not carried)" if skipped else ""
+        )
         self.stdout.write(
             self.style.SUCCESS(
-                f"{verb} {len(results)} carry-over row(s) from WY{source_wy} "
-                f"into WY{target_wy}."
+                f"{verb} {written} carry-over row(s) from WY{source_wy} "
+                f"into WY{target_wy}.{suffix}"
             )
         )

@@ -37,6 +37,8 @@ from django.utils import timezone
 from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 
+from core.constants import CARRY_FORWARD
+
 from accounting.carryover_math import water_year_of
 from accounting.models import (
     AllocationCarryover,
@@ -913,3 +915,25 @@ def zone_carryover(zone, water_year):
     return AllocationCarryover.objects.filter(
         zone=zone, water_year=water_year
     ).aggregate(total=Sum("amount_af"))["total"] or Decimal("0")
+
+
+def resolve_recovery_horizon(zone, *, agency_default=None):
+    """A zone's effective recovery horizon: its own override, else the agency default.
+
+    A surface district is its own Zone (seed_merced_ledgers DISTRICT_ZONE_PREFIX),
+    so the per-district choice lives on ``Zone.recovery_horizon``. A blank/null
+    override means "inherit the agency-wide ``SiteConfig.default_recovery_horizon``".
+    Pass ``agency_default`` to resolve it once for a whole rollover sweep without
+    re-querying SiteConfig per zone; omitted, it reads SiteConfig directly (and
+    falls back to ``CARRY_FORWARD`` when the platform has no SiteConfig yet, so an
+    unconfigured install keeps the historic carry-forward behavior).
+    """
+    override = getattr(zone, "recovery_horizon", None)
+    if override:
+        return override
+    if agency_default is not None:
+        return agency_default
+    from core.models import SiteConfig
+
+    cfg = SiteConfig.objects.first()
+    return cfg.default_recovery_horizon if cfg else CARRY_FORWARD
