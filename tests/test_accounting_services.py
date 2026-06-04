@@ -31,6 +31,7 @@ from tests.factories import (
     WaterAccountParcelFactory,
     WaterRightFactory,
     WaterRightParcelFactory,
+    WaterTypeFactory,
     WellFactory,
     WellIrrigatedParcelFactory,
     ZoneFactory,
@@ -136,6 +137,38 @@ class TestZoneBalance:
         assert result["supply"] == Decimal("0")
         assert result["usage"] == Decimal("0")
         assert result["net"] == Decimal("0")
+
+    @pytest.mark.django_db
+    def test_gw_recharge_credit_raises_supply_and_lowers_net_depletion(self):
+        """ISS-052 regression: a groundwater recharge credit (managed OR
+        incidental) reaches the groundwater budget — it raises a zone's supply
+        and reduces net depletion by its full magnitude, rather than hiding in a
+        separate bucket. Guards the reconciliation that closed Phase 52.5."""
+        gw = WaterTypeFactory(code="GW", name="Groundwater")
+        zone = ZoneFactory()
+        parcel = ParcelFactory(area_acres=Decimal("100"))
+        ParcelZoneFactory(parcel=parcel, zone=zone)
+        # The parcel pumps 30 AF of groundwater (negative = usage).
+        ParcelLedgerFactory(
+            parcel=parcel,
+            amount_acre_feet=Decimal("-30.0000"),
+            source_type="calculated",
+        )
+        before = zone_balance(zone)
+
+        # Credit 20 AF of GW recharge (positive, water_type GW).
+        ParcelLedgerFactory(
+            parcel=parcel,
+            amount_acre_feet=Decimal("20.0000"),
+            source_type="recharge",
+            water_type=gw,
+        )
+        after = zone_balance(zone)
+
+        assert after["supply"] == before["supply"] + Decimal("20.0000")
+        # Net depletion is reduced by the recharge (net moves toward zero).
+        assert after["net"] == before["net"] + Decimal("20.0000")
+        assert after["usage"] == before["usage"]  # recharge is supply, not usage
 
 
 # ---------------------------------------------------------------------------
