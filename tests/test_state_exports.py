@@ -149,8 +149,9 @@ class TestCalwatrsPodNormalization:
         assert sum(Decimal(r[7]) for r in rows) == Decimal("40")
 
     def test_validate_report_warns_when_pod_fractions_do_not_sum_to_one(self):
-        """A populated POD whose fractions sum ≠ 1.0 (here a single parcel at 0.5)
-        raises a warning — the 1.0 fallback only covered the no-parcels case."""
+        """A POD with a HAND-SET split that doesn't add up to 100% (here a single
+        parcel at 0.5 — off the 1.0 sentinel) raises a warning. Phase 56 reconciled
+        this so untouched defaults stay silent but a real data-entry slip warns."""
         period = _period()
         pod = PointOfDiversionFactory(water_right=WaterRightFactory())
         PointOfDiversionParcelFactory(
@@ -167,7 +168,7 @@ class TestCalwatrsPodNormalization:
         messages = " ".join(
             w["message"] for w in validate_report(period, "calwatrs_a1")
         )
-        assert "not summing to 1.0" in messages
+        assert "doesn't add up to 100%" in messages
 
 
 # ---------------------------------------------------------------------------

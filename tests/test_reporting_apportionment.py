@@ -215,6 +215,7 @@ def test_calwatrs_splits_pod_volume_by_demand_total_preserved():
     _run(b, "15")
     DiversionRecordFactory(
         point_of_diversion=pod,
+        reporting_period=rp,
         month=JAN,
         volume_acre_feet=Decimal("100.0000"),
         diversion_type="direct_use",
@@ -240,6 +241,7 @@ def test_calwatrs_honors_handset_split_over_demand():
     _run(b, "15")
     DiversionRecordFactory(
         point_of_diversion=pod,
+        reporting_period=rp,
         month=JAN,
         volume_acre_feet=Decimal("100.0000"),
         diversion_type="direct_use",
