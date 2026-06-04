@@ -16,7 +16,11 @@ Order matters:
                               Brent's QGIS field selection. Needs PODs (4),
                               GSAs (3), and data/merced/selected_parcels.geojson.
   6. seed_merced_recharge   — managed-recharge sites.
-  7. seed_merced_ledgers    — the synthetic accounting layer (reporting periods,
+  7. seed_merced_cropland   — a crop-type UsageLocation per irrigated parcel, so
+                              the calc engine's facility_only_zero step does not
+                              zero every parcel. Land use is a prerequisite for
+                              the accounting layer, so it runs BEFORE the ledgers.
+  8. seed_merced_ledgers    — the synthetic accounting layer (reporting periods,
                               two-authority Water Budgets, accounts, and the full
                               keyed ParcelLedger). Depends on parcels, wells,
                               rights, PODs, and the GSA zones all existing, so it
@@ -38,6 +42,10 @@ SEQUENCE = [
     ("seed_merced_operations", {"flush": True}),
     ("seed_merced_parcels_from_selection", {}),
     ("seed_merced_recharge", {}),
+    # Land use BEFORE the accounting layer: the engine's facility_only_zero step
+    # zeros any parcel with no crop_type UsageLocation, so the ledgers' parcels
+    # need crop land use first. Idempotent; MER-keyed.
+    ("seed_merced_cropland", {}),
     # The accounting layer hangs off everything above (parcels, wells, rights,
     # PODs, GSA zones), so it runs last. It self-flushes its own rows, so a
     # re-run rebuilds the ledger cleanly.
