@@ -231,13 +231,25 @@ def _persist_calculation_run(
             str(surface_step["detail"]["surface_water_af"])
         ).quantize(quant)
 
+    # Net consumptive use is the source-agnostic spine: gross ET minus effective
+    # precip ONLY (never surface). It is recorded for every ET-bearing parcel
+    # regardless of supply source or whether a well exists, so it is never NULL —
+    # a chain with no precip step treats effective precip as 0. Computed from the
+    # quantized gross + precip the run also stores, so net CU == gross − precip
+    # holds exactly at 4dp.
+    gross_q = gross_af.quantize(quant)
+    net_consumptive_use_af = (
+        gross_q - (effective_precip_af or Decimal("0"))
+    ).quantize(quant)
+
     CalculationRun.objects.filter(parcel=parcel, period=period).delete()
     CalculationRun.objects.create(
         parcel=parcel,
         period=period,
-        gross_et_af=gross_af.quantize(quant),
+        gross_et_af=gross_q,
         effective_precip_af=effective_precip_af,
         surface_water_af=surface_water_af,
+        net_consumptive_use_af=net_consumptive_use_af,
         banked_af=info["deposited"],
         drawn_af=info["drawn"],
         final_af=net_af.quantize(quant),

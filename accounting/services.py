@@ -718,6 +718,23 @@ def _calculation_runs_for_period(parcel, reporting_period):
     return runs
 
 
+def parcel_net_consumptive_use(parcel, reporting_period=None):
+    """Sum a parcel's net consumptive use over a reporting period (Decimal AF).
+
+    Net consumptive use (gross ET − effective precip) is the source-agnostic
+    spine quantity recorded on every ET-bearing CalculationRun, independent of
+    supply source or whether a well exists (54-01). This reader sums
+    ``net_consumptive_use_af`` across the period's runs — the readable per-parcel
+    demand signal that Phase 55 ET-demand allocation weights against.
+    ``reporting_period=None`` sums every run for the parcel. Returns Decimal("0")
+    when the parcel has no runs.
+    """
+    total = Decimal("0")
+    for run in _calculation_runs_for_period(parcel, reporting_period):
+        total += run.net_consumptive_use_af or Decimal("0")
+    return total
+
+
 def parcel_mass_balance(parcel, reporting_period=None):
     """The closing water mass balance for one parcel over a reporting period.
 

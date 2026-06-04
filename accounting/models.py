@@ -395,6 +395,14 @@ class CalculationRun(models.Model):
         blank=True,
         help_text="Surface water subtracted (AF); null if no surface-water step ran.",
     )
+    net_consumptive_use_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Net consumptive use = gross ET − effective precip (positive AF). "
+        "The source-agnostic spine quantity, recorded for every parcel with ET "
+        "regardless of supply source or whether a well exists.",
+    )
     banked_af = models.DecimalField(
         max_digits=12,
         decimal_places=4,
