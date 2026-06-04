@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
-from config.views import about, index, getting_started, glossary, budgets_allocations, profile
+from config.views import about, index, getting_started, glossary, budgets_allocations, surface_deliveries, profile
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -24,6 +24,7 @@ urlpatterns = [
     path("help/getting-started/", getting_started, name="getting_started"),
     path("help/glossary/", glossary, name="glossary"),
     path("help/budgets-allocations/", budgets_allocations, name="budgets_allocations"),
+    path("help/surface-deliveries/", surface_deliveries, name="surface_deliveries"),
     path("profile/", profile, name="profile"),
     path("", index, name="index"),
 ]

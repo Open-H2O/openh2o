@@ -49,6 +49,12 @@ def budgets_allocations(request):
 
 
 @login_required
+def surface_deliveries(request):
+    """Explainer: the two agency delivery settings, in plain language."""
+    return render(request, "help/surface_deliveries.html")
+
+
+@login_required
 def glossary(request):
     """Glossary of water accounting terms used throughout the platform."""
     terms = {
@@ -60,6 +66,7 @@ def glossary(request):
         "CFS (Cubic Feet per Second)": "A rate of flow used for surface water diversions; a point of diversion popup shows a rate like \"50.00 cfs.\" One CFS is about 1.9835 acre-feet per day.",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
         "Curtailment": "A State Water Board order to reduce or stop diverting under a water right, usually during drought. A right's curtailment status appears on its water-right detail card.",
+        "Delivery Settings": "Two agency-wide settings that shape how surface-water deliveries are counted: how much of a delivery the crop actually uses (the rest recharges the aquifer), and what happens to a district's unused water at year-end (carry it forward or let it expire). Set by the analyst on the Delivery Settings page. See Help > Surface Delivery Settings.",
         "Data Source": "An external agency or API that provides hydrologic measurements.",
         "ET (Evapotranspiration)": "The water consumed by crops — evaporation from the soil plus transpiration through the plants. The methodology's first step estimates groundwater use from ET. (OpenET is the satellite data source; ET is the quantity it measures.)",
         "GEARS": "Groundwater Extraction Annual Report System, the State Water Board reporting format for per-well extraction.",

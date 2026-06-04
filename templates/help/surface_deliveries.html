@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Surface Delivery Settings - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Surface Delivery Settings{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'getting_started' %}">Help</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Surface Delivery Settings</span>
+  </nav>
+  <p class="page-description">Two agency-wide settings that shape how surface-water deliveries are counted. Set once, by the analyst.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <div class="card-raised">
+    <h2 class="section-header">The short version</h2>
+    <p class="text-secondary text-base">When a district delivers canal water to its farms, two questions decide how the platform books that water. First: of the water that reaches a field, how much does the crop actually drink, and how much soaks back down into the aquifer? Second: if a district doesn&rsquo;t use all the surface water it was entitled to in a year, does the leftover carry into next year or disappear? You answer both once, on the <a href="{% url 'accounting:delivery_settings' %}" class="text-sm" style="color: var(--color-gold);">Delivery Settings page</a>, and they apply to every district.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Setting 1 &mdash; how much of a delivery the crop uses</h2>
+    <p class="text-secondary text-base">Not every drop delivered to a field is &ldquo;used up.&rdquo; A crop drinks part of the water; the rest sinks past the roots and recharges the aquifer underneath. This setting is that share &mdash; the percentage of delivered water the crop actually consumes. A typical figure is <strong>75%</strong>, meaning three-quarters is taken up by the plants and the remaining quarter returns to the groundwater as recharge.</p>
+    <p class="text-secondary text-base">Why it matters: the platform splits a district&rsquo;s total monthly delivery across its farms by how thirsty each crop is that month. A field growing a thirsty summer crop pulls a larger share than a fallow or low-water field next door. This percentage caps how much any one field can be credited with using, so a delivery is shared sensibly instead of split evenly regardless of what&rsquo;s growing.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Setting 2 &mdash; what happens to unused water at year-end</h2>
+    <p class="text-secondary text-base">A district has a surface-water allotment for the water year. If it doesn&rsquo;t use the whole thing by the time the year closes, you choose what the platform does with the leftover:</p>
+    <ul class="text-secondary text-base" style="margin: var(--space-sm) 0; padding-left: var(--space-lg);">
+      <li style="margin-bottom: var(--space-sm);"><strong>Carry it forward as a credit toward next year.</strong> The unused amount opens next year as extra water the district can draw on. This is the default.</li>
+      <li><strong>Let it expire (use-it-or-lose-it).</strong> The leftover simply disappears at year-end; next year starts fresh with no bonus.</li>
+    </ul>
+    <p class="text-secondary text-base">One thing that doesn&rsquo;t change either way: if a district <em>overdraws</em> &mdash; uses more than its allotment &mdash; that shortfall always carries into next year as an obligation. An overdraw is a real debt; only a surplus is affected by this choice.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Who sets these &mdash; and when</h2>
+    <p class="text-secondary text-base">These are agency policy, not farmer entry. An analyst or administrator sets them once during setup and revisits them rarely &mdash; for example, if the agency adopts a different efficiency assumption, or its board changes the year-end rule. A farmer never touches them. Because they steer every future delivery calculation, change them deliberately, the same way you would the methodology.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">When one district needs to differ</h2>
+    <p class="text-secondary text-base">The year-end rule is set agency-wide, but a single district can be flipped to a different choice without changing everyone else. Open that district&rsquo;s page and use the <strong>Year-end unused water</strong> control: leave it on &ldquo;Use agency default&rdquo; for the common case, or set it to carry-forward or expire just for that district. Switching it back to the agency default means that district will follow along automatically if you later change the agency-wide rule.</p>
+    <a href="{% url 'geography:zone_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Zones &rarr;</a>
+    <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
+    <a href="{% url 'accounting:delivery_settings' %}" class="text-sm" style="color: var(--color-gold);">Go to Delivery Settings &rarr;</a>
+  </div>
+
+</div>
+{% endblock %}
