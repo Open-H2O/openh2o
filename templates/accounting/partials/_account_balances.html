@@ -15,7 +15,7 @@
     <div class="stat-card-unit">AF</div>
   </div>
   <div class="inset-card">
-    <div class="stat-card-label">Supplies − Consumptive Use {% include "partials/_help_tooltip.html" with label="Net" text="The supplies that met this account's measured consumptive use, minus that use. Positive means recorded supplies covered measured use; negative means use exceeded them." %}</div>
+    <div class="stat-card-label">Supplies − Consumptive Use</div>
     <div class="stat-card-value-sm {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
       {{ balance.net_vs_supply|floatformat:2 }}
     </div>

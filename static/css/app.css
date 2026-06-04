@@ -841,6 +841,19 @@ a { color: inherit; }
     padding: 0;
 }
 
+/* Dashboard section rhythm: each section label (Budget Summary / Account Details
+   / Zone Details) needs clear air above it so it never presses into the card or
+   explainer that precedes it. The label keeps its tight margin-bottom to its own
+   card; only the gap ABOVE each section grows. The first label hugs the period
+   selector. Scoped to the dashboard so the help pages are untouched. */
+#dashboard-content > .content-section-label {
+    margin-top: var(--space-xl);
+}
+
+#dashboard-content > .content-section-label:first-child {
+    margin-top: 0;
+}
+
 /* -- Stat cards ---------------------------------------------------------- */
 
 .stat-card {
@@ -1070,6 +1083,14 @@ a { color: inherit; }
 /* -- Table header alignment ---------------------------------------------- */
 
 .th-right {
+    text-align: right;
+}
+
+/* A bare `.th-right` loses to the `.data-table th` (class + element) base rule,
+   which forces text-align:left — so right-aligned headers silently fell back to
+   left while the `.td-num` data cells stayed right-aligned, and a column header
+   never lined up over its numbers. Re-assert at matching specificity. */
+.data-table th.th-right {
     text-align: right;
 }
 

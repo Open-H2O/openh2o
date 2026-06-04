@@ -55,7 +55,7 @@
 {% endif %}
 
 <h2 class="content-section-label">Account Details</h2>
-<div class="card-raised mb-md">
+<div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Active Water Accounts</h2>
     <span class="text-tertiary text-xs">Active accounts only — each groups parcels under one water user; zone totals below cover all parcels</span>
@@ -65,12 +65,12 @@
     <thead>
       <tr>
         <th>Account</th>
-        <th class="th-right">Consumptive Use (AF) {% include "partials/_help_tooltip.html" with label="Consumptive Use" text="Measured consumptive use (gross ET) — the water crops actually consumed, from satellite evapotranspiration. This is the demand the supplies must meet." %}</th>
+        <th class="th-right">Consumptive Use (AF)</th>
         <th class="th-right">Surface (AF)</th>
         <th class="th-right">Groundwater (AF)</th>
         <th class="th-right">Precip (AF)</th>
         <th class="th-right">Supplies (AF)</th>
-        <th class="th-right">Net (AF) {% include "partials/_help_tooltip.html" with label="Net" text="Supplies minus consumptive use. Positive means the recorded supplies covered measured use; negative means use exceeded them." %}</th>
+        <th class="th-right">Net (AF)</th>
         {% if has_allocations %}
         <th class="th-right">Water Budget (AF)</th>
         <th class="th-right">Remaining (AF)</th>
@@ -135,16 +135,16 @@
     <thead>
       <tr>
         <th>Zone</th>
-        <th class="th-right">Consumptive Use (AF) {% include "partials/_help_tooltip.html" with label="Consumptive Use" text="Measured consumptive use (gross ET) for the zone — the water its crops actually consumed, from satellite evapotranspiration." %}</th>
+        <th class="th-right">Consumptive Use (AF)</th>
         <th class="th-right">Surface (AF)</th>
         <th class="th-right">Groundwater (AF)</th>
         <th class="th-right">Precip (AF)</th>
         <th class="th-right">Supplies (AF)</th>
-        <th class="th-right">Net (AF) {% include "partials/_help_tooltip.html" with label="Net" text="Supplies minus consumptive use for the zone. Negative means consumptive use exceeded the recorded supplies." %}</th>
+        <th class="th-right">Net (AF)</th>
         {% if has_allocations %}
         <th class="th-right">Water Budget (AF)</th>
-        <th class="th-right">Carried fwd (AF) {% include "partials/_help_tooltip.html" with label="Carried forward" text="Surplus (+) or debt (−) rolled in from the prior water year." %}</th>
-        <th class="th-right">Remaining (AF) {% include "partials/_help_tooltip.html" with label="Remaining" text="Water budget plus any carried-forward balance, minus consumptive use. A negative Remaining is an overdraft." %}</th>
+        <th class="th-right">Carried fwd (AF)</th>
+        <th class="th-right">Remaining (AF)</th>
         {% endif %}
       </tr>
     </thead>
