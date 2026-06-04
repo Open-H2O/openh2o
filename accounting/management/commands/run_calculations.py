@@ -40,6 +40,7 @@ from accounting.models import (
     ReportingPeriod,
     WaterCredit,
     WaterCreditDraw,
+    WaterType,
 )
 from parcels.models import Parcel, ParcelLedger
 from wells.models import WellIrrigatedParcel
@@ -52,6 +53,28 @@ def _add_months(period, months):
     year, month = int(period[:4]), int(period[5:7])
     idx = year * 12 + (month - 1) + int(months)
     return f"{idx // 12:04d}-{idx % 12 + 1:02d}"
+
+
+# ISS-052: incidental-recharge ledger rows the engine writes are tagged with this
+# description prefix so a re-run replaces only its OWN rows (delete-then-insert)
+# and never touches managed-basin recharge (which uses a "Managed ..." prefix).
+INCIDENTAL_RECHARGE_DESC = (
+    "Incidental recharge — deep percolation from surface over-delivery"
+)
+
+
+def _incidental_recharge_af(breakdown):
+    """Read the deep-percolation recharge magnitude off the clamp_floor step.
+
+    Returns the positive incidental_recharge_af signalled by clamp_floor (ISS-052),
+    or Decimal('0') when the step is absent or predates the surplus split.
+    """
+    clamp = next(
+        (s for s in breakdown if s["step_type"] == "clamp_floor"), None
+    )
+    if clamp is None:
+        return Decimal("0")
+    return Decimal(str(clamp["detail"].get("incidental_recharge_af", "0")))
 
 
 def _apply_banking(parcel, period, final_af, breakdown, *, commit):
@@ -77,7 +100,14 @@ def _apply_banking(parcel, period, final_af, breakdown, *, commit):
 
     detail = clamp["detail"]
     bank = bool(detail.get("bank", False))
-    surplus_af = Decimal(str(detail.get("surplus_af", "0")))
+    # ISS-052: bank ONLY the genuine rain-surplus portion of the below-floor
+    # amount. Surface water delivered beyond crop demand is deep-percolation
+    # recharge (written separately as a GW recharge row), NOT a drawable credit —
+    # banking it masked real summer pumping. Fall back to the old lumped
+    # surplus_af for breakdowns produced before the split existed.
+    surplus_af = Decimal(
+        str(detail.get("precip_surplus_af", detail.get("surplus_af", "0")))
+    )
     rate = Decimal(str(detail.get("depreciation_rate", 0) or 0))
     expiry_months = detail.get("expiry_months", None)
 
@@ -337,12 +367,19 @@ class Command(BaseCommand):
                         f"to never expire."
                     )
 
+        # GW water type for incidental-recharge rows (ISS-052); resolved once.
+        gw_water_type, _ = WaterType.objects.get_or_create(
+            code="GW", defaults={"name": "Groundwater"}
+        )
+
         written = 0
         skipped_no_et = 0
         banked = 0
         drew = 0
+        recharged = 0
         for parcel in parcels:
             final_af, breakdown = evaluate_chain(parcel, period)
+            incidental_af = _incidental_recharge_af(breakdown)
 
             et_step = next(
                 (s for s in breakdown if s["step_type"] == "et_gross"), None
@@ -371,6 +408,11 @@ class Command(BaseCommand):
                     extra += f"; would bank {info['deposited']} AF"
                 if info["drawn"] > 0:
                     extra += f"; would draw {info['drawn']} AF"
+                if incidental_af > 0:
+                    extra += (
+                        f"; would credit recharge "
+                        f"{incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
+                    )
                 self.stdout.write(
                     f"  {parcel.parcel_number}: gross {gross_af} AF -> "
                     f"net {net_af} AF (would write {-net_af} AF){extra}"
@@ -417,6 +459,28 @@ class Command(BaseCommand):
                     parcel, period, gross_af, net_af, breakdown, info,
                     plan_id, plan_name, plan_hash,
                 )
+                # ISS-052: write surface-over-delivery as a positive groundwater
+                # recharge row (deep percolation), credited to the aquifer rather
+                # than banked as a phantom precip credit. Delete-then-insert,
+                # scoped by the incidental description prefix, so a re-run replaces
+                # only its own rows and never disturbs managed-basin recharge.
+                ParcelLedger.objects.filter(
+                    parcel=parcel,
+                    effective_date=eff_date,
+                    source_type="recharge",
+                    description__startswith=INCIDENTAL_RECHARGE_DESC,
+                ).delete()
+                if incidental_af > 0:
+                    ParcelLedger.objects.create(
+                        parcel=parcel,
+                        transaction_date=dt.date.today(),
+                        effective_date=eff_date,
+                        amount_acre_feet=incidental_af.quantize(Decimal("0.0001")),
+                        source_type="recharge",
+                        description=INCIDENTAL_RECHARGE_DESC,
+                        reporting_period=reporting_period,
+                        water_type=gw_water_type,
+                    )
             extra = ""
             if info["deposited"] > 0:
                 extra += f"; banked {info['deposited']} AF"
@@ -424,9 +488,13 @@ class Command(BaseCommand):
             if info["drawn"] > 0:
                 extra += f"; drew {info['drawn']} AF"
                 drew += 1
+            if incidental_af > 0:
+                extra += f"; recharge {incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
+                recharged += 1
             self.stdout.write(
                 f"  {parcel.parcel_number}: gross {gross_af} AF -> "
-                f"net {net_af} AF (wrote {-net_af} AF){extra}"
+                f"net {net_af} AF ({'would write' if dry_run else 'wrote'} "
+                f"{-net_af} AF){extra}"
             )
             written += 1
 
@@ -435,6 +503,6 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f"{verb} {written} calculated row(s) for {period}; "
                 f"{skipped_no_et} parcel(s) skipped (no ET data); "
-                f"{banked} banked, {drew} drew."
+                f"{banked} banked, {drew} drew, {recharged} credited recharge."
             )
         )

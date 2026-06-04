@@ -183,6 +183,72 @@ def test_clamp_floor_passes_value_above_floor():
 
 
 # --------------------------------------------------------------------------
+# ISS-052: clamp_floor splits a below-floor surplus into genuine rain surplus
+# (bankable) vs. surface over-delivery (deep-percolation recharge).
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_clamp_floor_routes_surface_overdelivery_to_incidental_recharge():
+    """When surface water (not rain) drove the chain below the floor, the surplus
+    is deep percolation — all incidental recharge, nothing to bank (ISS-052)."""
+    parcel = _parcel("CL-SW")
+    # ET 3.28 AF, no effective rain, surface over-delivery pushed running to -1.72.
+    ctx = {"et_gross_af": Decimal("3.28"), "effective_precip_af": Decimal("0")}
+    new, record = clamp_floor(
+        Decimal("-1.72"), parcel, "2024-06", ctx, {"floor": 0, "bank": True}
+    )
+    d = record["detail"]
+    assert new == Decimal("0")
+    assert Decimal(d["surplus_af"]) == Decimal("1.72")            # total below floor
+    assert Decimal(d["precip_surplus_af"]) == Decimal("0")        # nothing banks
+    assert Decimal(d["incidental_recharge_af"]) == Decimal("1.72")  # all recharge
+
+
+@pytest.mark.django_db
+def test_clamp_floor_banks_only_rain_surplus_routes_surface_excess():
+    """Rain beyond ET banks; surface delivered on top of that is recharge."""
+    parcel = _parcel("CL-RAIN")
+    # ET 3.28, Pe 5.0 (rain beats ET by 1.72), plus 2.0 surface -> running -3.72.
+    ctx = {"et_gross_af": Decimal("3.28"), "effective_precip_af": Decimal("5.0")}
+    _, record = clamp_floor(
+        Decimal("-3.72"), parcel, "2024-02", ctx, {"floor": 0, "bank": True}
+    )
+    d = record["detail"]
+    assert Decimal(d["precip_surplus_af"]) == Decimal("1.72")       # rain - ET banks
+    assert Decimal(d["incidental_recharge_af"]) == Decimal("2.00")  # surface recharge
+
+
+@pytest.mark.django_db
+def test_clamp_floor_caps_rain_surplus_at_total_below_floor():
+    """A parcel forced to the floor by an earlier step (running already 0) must
+    not bank a phantom rain credit even if Pe>ET — the genuine portion is capped
+    at the actual below-floor amount (here zero)."""
+    parcel = _parcel("CL-CAP")
+    ctx = {"et_gross_af": Decimal("3.28"), "effective_precip_af": Decimal("5.0")}
+    _, record = clamp_floor(
+        Decimal("0"), parcel, "2024-02", ctx, {"floor": 0, "bank": True}
+    )
+    d = record["detail"]
+    assert Decimal(d["surplus_af"]) == Decimal("0")
+    assert Decimal(d["precip_surplus_af"]) == Decimal("0")
+    assert Decimal(d["incidental_recharge_af"]) == Decimal("0")
+
+
+@pytest.mark.django_db
+def test_clamp_floor_without_ctx_falls_back_to_all_precip():
+    """No ctx (legacy/no-precip plan or isolated call): the whole surplus is
+    treated as precip and incidental recharge is zero — pre-052 behavior."""
+    parcel = _parcel("CL-FALLBACK")
+    _, record = clamp_floor(
+        Decimal("-2"), parcel, "2024-06", {}, {"floor": 0, "bank": True}
+    )
+    d = record["detail"]
+    assert Decimal(d["precip_surplus_af"]) == Decimal("2")
+    assert Decimal(d["incidental_recharge_af"]) == Decimal("0")
+
+
+# --------------------------------------------------------------------------
 # Evaluator
 # --------------------------------------------------------------------------
 

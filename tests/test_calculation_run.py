@@ -68,6 +68,22 @@ def _et_cache(parcel, period="2024-06", et_mm=100.0):
     )
 
 
+def _precip_cache(parcel, period="2024-02", precip_mm=150.0):
+    """A GRIDMET precip cache row in the live shape (value keyed "precip")."""
+    from datasync.models import OpenETCache
+
+    year, month = int(period[:4]), int(period[5:7])
+    return OpenETCache.objects.create(
+        parcel=parcel,
+        geometry=_square(),
+        start_date=dt.date(year, month, 1),
+        end_date=dt.date(year, month, 28),
+        variable="precip",
+        model_name="GRIDMET",
+        et_data=[{"precip": precip_mm, "date": period, "unit": "mm"}],
+    )
+
+
 def _surface_row(parcel, period, af):
     """A surface_diversion ledger row (stored NEGATIVE, like the live data)."""
     year, month = int(period[:4]), int(period[5:7])
@@ -381,30 +397,112 @@ def test_config_hash_ignores_labels_but_tracks_enabled_set():
 
 
 @pytest.mark.django_db
-def test_banking_activity_is_captured_on_the_run():
-    parcel = _parcel("RUN-BANK", acres="10")
+def test_surface_overdelivery_becomes_incidental_recharge_not_a_credit():
+    """ISS-052: surface delivered beyond crop ET is deep-percolation recharge
+    credited to groundwater — NOT a precip credit banked and drawn down later
+    (which masked real summer pumping). Under the production usda_scs plan, Pe is
+    capped at ET, so the whole over-delivery routes to recharge and banking is 0."""
+    parcel = _parcel("RUN-RECHARGE", acres="10")
     _irrigate(parcel)
-    # Wet month: surface water (5 AF) exceeds gross ET (~3.28 AF) -> surplus banked.
+    # "Wet" month: surface (5 AF) exceeds gross ET (~3.28 AF) by ~1.72 AF.
     _et_cache(parcel, period="2024-02", et_mm=100.0)
     _surface_row(parcel, "2024-02", af=5)
-    # Dry month: ET only, a ~3.28 AF deficit that draws the banked credit down.
+    # Following month: ET only, no surface.
     _et_cache(parcel, period="2024-03", et_mm=100.0)
     call_command("seed_calculation_plan")
 
-    call_command("run_calculations", "--period", "2024-02")  # deposit
-    call_command("run_calculations", "--period", "2024-03")  # draw
+    call_command("run_calculations", "--period", "2024-02")
+    call_command("run_calculations", "--period", "2024-03")
+
+    over_delivery = (Decimal("5") - _gross_af()).quantize(Q)  # ~1.72 AF
+
+    deposit_run = _run(parcel, "2024-02")
+    # Nothing banked (no genuine rain surplus); surface covered all ET, bill 0.
+    assert deposit_run.banked_af == Decimal("0.0000")
+    assert deposit_run.final_af == Decimal("0.0000")
+    clamp = next(
+        s for s in deposit_run.breakdown if s["step_type"] == "clamp_floor"
+    )
+    assert (
+        Decimal(clamp["detail"]["incidental_recharge_af"]).quantize(Q)
+        == over_delivery
+    )
+
+    # A positive GW recharge ledger row was written for the over-delivery.
+    recharge = ParcelLedger.objects.get(
+        parcel=parcel,
+        effective_date=dt.date(2024, 2, 1),
+        source_type="recharge",
+    )
+    assert recharge.amount_acre_feet > 0
+    assert recharge.amount_acre_feet.quantize(Q) == over_delivery
+    assert recharge.water_type.code == "GW"
+    assert recharge.description.startswith("Incidental recharge")
+
+    # The next month draws NOTHING (no phantom credit) -> real pumping is billed.
+    draw_run = _run(parcel, "2024-03")
+    assert draw_run.drawn_af == Decimal("0.0000")
+    assert draw_run.final_af == _gross_af().quantize(Q)
+    assert draw_run.final_af == -_calc_row(parcel, "2024-03").amount_acre_feet
+
+
+@pytest.mark.django_db
+def test_incidental_recharge_row_is_idempotent_across_reruns():
+    """Re-running a period replaces only the engine's own incidental recharge row
+    (delete-then-insert by description prefix) — no duplication, no drift."""
+    parcel = _parcel("RUN-RECHARGE-IDEM", acres="10")
+    _irrigate(parcel)
+    _et_cache(parcel, period="2024-02", et_mm=100.0)
+    _surface_row(parcel, "2024-02", af=5)
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-02")
+    call_command("run_calculations", "--period", "2024-02")  # re-run
+
+    rows = ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge", effective_date=dt.date(2024, 2, 1)
+    )
+    assert rows.count() == 1
+    assert rows.first().water_type.code == "GW"
+
+
+@pytest.mark.django_db
+def test_genuine_rain_surplus_still_banks_under_raw_precip():
+    """Banking still works for REAL rain surplus: under method="raw" effective
+    precip can exceed ET, so a wet month banks a credit a dry month draws. No
+    surface here -> no incidental recharge row, banking only."""
+    parcel = _parcel("RUN-RAINBANK", acres="10")
+    _irrigate(parcel)
+    _et_cache(parcel, period="2024-02", et_mm=100.0)          # ~3.28 AF ET
+    _precip_cache(parcel, period="2024-02", precip_mm=250.0)  # ~8.2 AF rain >> ET
+    _et_cache(parcel, period="2024-03", et_mm=100.0)          # dry: ET only
+    plan = CalculationPlan.objects.create(name="Raw-precip", is_active=True)
+    CalculationStep.objects.create(
+        plan=plan, order=1, step_type="et_gross", enabled=True,
+        config={"model": "Ensemble", "variable": "ET"}, label="gross",
+    )
+    CalculationStep.objects.create(
+        plan=plan, order=2, step_type="subtract_effective_precip", enabled=True,
+        config={"method": "raw"}, label="precip raw",
+    )
+    CalculationStep.objects.create(
+        plan=plan, order=3, step_type="clamp_floor", enabled=True,
+        config={"floor": 0, "bank": True, "depreciation_rate": 0,
+                "expiry_months": None},
+        label="floor",
+    )
+
+    call_command("run_calculations", "--period", "2024-02")
+    call_command("run_calculations", "--period", "2024-03")
 
     deposit_run = _run(parcel, "2024-02")
     draw_run = _run(parcel, "2024-03")
 
-    surplus = (Decimal("5") - _gross_af()).quantize(Q)
-    # Deposit month: banked the surplus, drew nothing, billed nothing.
-    assert deposit_run.banked_af == surplus
-    assert deposit_run.drawn_af == Decimal("0.0000")
-    assert deposit_run.final_af == Decimal("0.0000")
-    # Draw month: drew the (undepreciated) credit, banked nothing.
-    assert draw_run.drawn_af == surplus
-    assert draw_run.banked_af == Decimal("0.0000")
-    # The draw reduced the bill: final = gross deficit - drawn.
-    assert draw_run.final_af == (_gross_af() - surplus).quantize(Q)
-    assert draw_run.final_af == -_calc_row(parcel, "2024-03").amount_acre_feet
+    # Genuine rain surplus banked; no surface -> NO incidental recharge row.
+    assert deposit_run.banked_af > 0
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="recharge"
+    ).exists()
+    # Dry month draws the banked credit down, reducing the bill below gross ET.
+    assert draw_run.drawn_af > 0
+    assert draw_run.final_af < _gross_af().quantize(Q)
