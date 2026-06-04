@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Run the calculation engine for a period, writing idempotent `calculated` rows.
+"""Run the calculation engine for a period over satellite-measured consumptive use.
 
 For each in-scope parcel that has gross-ET data for the period, evaluate the
-active CalculationPlan and write exactly ONE ParcelLedger row with
-source_type="calculated". The write is delete-then-insert per
-(parcel, month, "calculated") inside one transaction, so re-running is
-idempotent: running twice yields identical balances (no drift, no double-count).
+active CalculationPlan and record its net consumptive use on a CalculationRun.
+The `ET − precip − surface` residual then resolves by archetype (54-01): a parcel
+WITH a well gets exactly ONE ParcelLedger row with source_type="calculated" (its
+groundwater extraction estimate); a no-well parcel gets NO calculated row — its
+residual is recorded as `unmet_demand_af` on the run, never a phantom groundwater
+extraction. Both the calculated row and the run are delete-then-insert per
+(parcel, month) inside one transaction, so re-running is idempotent: running twice
+yields identical balances (no drift, no double-count).
 
 38-04 folds WaterCredit banking into this same per-parcel transaction. In a wet
 month the chain nets below the floor; clamp_floor surfaces that surplus and we
@@ -198,7 +202,8 @@ def _apply_banking(parcel, period, final_af, breakdown, *, commit):
 
 
 def _persist_calculation_run(
-    parcel, period, gross_af, net_af, breakdown, info, plan_id, plan_name, plan_hash
+    parcel, period, gross_af, net_af, breakdown, info, plan_id, plan_name, plan_hash,
+    *, residual_disposition, unmet_demand_af,
 ):
     """Write the one CalculationRun for this (parcel, period) — the audit trail.
 
@@ -250,6 +255,8 @@ def _persist_calculation_run(
         effective_precip_af=effective_precip_af,
         surface_water_af=surface_water_af,
         net_consumptive_use_af=net_consumptive_use_af,
+        residual_disposition=residual_disposition,
+        unmet_demand_af=unmet_demand_af,
         banked_af=info["deposited"],
         drawn_af=info["drawn"],
         final_af=net_af.quantize(quant),
@@ -487,29 +494,52 @@ class Command(BaseCommand):
                         f"`calculated` row for {parcel.parcel_number} {period} "
                         f"with months_matched={months_matched}"
                     )
+                # 54-01: the residual (ET − precip − surface, surfaced as net_af)
+                # resolves to a `calculated` GROUNDWATER row ONLY where the parcel
+                # has a well to pump it (routes_personal, the has-well discriminator
+                # reused from the recharge routing). A no-well parcel's residual is
+                # not pumped groundwater — it is unmet demand (under-irrigation or a
+                # bad surface number), recorded explicitly on the run, NEVER written
+                # as a phantom groundwater row. Always delete the stale calculated
+                # row first so an archetype flip (well → no-well) clears it.
                 ParcelLedger.objects.filter(
                     parcel=parcel,
                     effective_date=eff_date,
                     source_type="calculated",
                 ).delete()
-                ParcelLedger.objects.create(
-                    parcel=parcel,
-                    transaction_date=dt.date.today(),
-                    effective_date=eff_date,
-                    amount_acre_feet=(-net_af).quantize(Decimal("0.0001")),
-                    source_type="calculated",
-                    description="Derived extraction estimate (calculation engine)",
-                    reporting_period=reporting_period,
-                    water_type=None,
-                )
+                if routes_personal:
+                    residual_disposition = "groundwater"
+                    unmet_demand_af = Decimal("0")
+                    ParcelLedger.objects.create(
+                        parcel=parcel,
+                        transaction_date=dt.date.today(),
+                        effective_date=eff_date,
+                        amount_acre_feet=(-net_af).quantize(Decimal("0.0001")),
+                        source_type="calculated",
+                        description=(
+                            "Derived groundwater extraction estimate "
+                            "(calculation engine)"
+                        ),
+                        reporting_period=reporting_period,
+                        water_type=gw_water_type,
+                    )
+                else:
+                    residual_disposition = "unmet_demand"
+                    unmet_demand_af = max(Decimal("0"), net_af).quantize(
+                        Decimal("0.0001")
+                    )
                 # 38-05: persist the reconstructable audit record in the SAME
-                # transaction, delete-then-insert per (parcel, period) so re-runs
-                # stay 1:1 with the calculated row and never drift. Input
-                # magnitudes are pulled off the breakdown the command already has
-                # (no re-derivation); steps absent from the chain store NULL.
+                # transaction, delete-then-insert per (parcel, period). For a well
+                # parcel it stays 1:1 with the calculated row; for a no-well parcel
+                # it is the ONLY record of the parcel-month (consumptive use + unmet
+                # demand, no groundwater row). Input magnitudes are pulled off the
+                # breakdown the command already has (no re-derivation); steps absent
+                # from the chain store NULL.
                 _persist_calculation_run(
                     parcel, period, gross_af, net_af, breakdown, info,
                     plan_id, plan_name, plan_hash,
+                    residual_disposition=residual_disposition,
+                    unmet_demand_af=unmet_demand_af,
                 )
                 # ISS-052/053: surface-over-delivery is deep-percolation recharge,
                 # credited to the aquifer rather than banked as a phantom precip

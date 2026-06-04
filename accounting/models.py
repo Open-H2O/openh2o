@@ -351,10 +351,14 @@ class AllocationCarryover(models.Model):
 class CalculationRun(models.Model):
     """The reconstructable audit record for one `calculated` ledger row (38-05).
 
-    Persisted once per (parcel, period) by run_calculations, in the SAME
-    transaction that writes the calculated ParcelLedger row, so the 1:1 invariant
-    holds: every calculated row has exactly one run; a parcel skipped for no ET
-    gets neither. It captures the gross-ET starting magnitude, what each
+    Persisted once per (parcel, period) by run_calculations for every ET-bearing
+    parcel. As of 54-01 it is NO LONGER 1:1 with a calculated ledger row: a parcel
+    WITH a well still gets both (run + a calculated groundwater row), but a no-well
+    parcel gets a run with NO calculated row — its residual is recorded as
+    ``unmet_demand_af`` with ``residual_disposition="unmet_demand"`` instead of a
+    phantom groundwater extraction. A parcel skipped for no ET still gets neither.
+    The run captures net consumptive use (the source-agnostic spine), the gross-ET
+    starting magnitude, what each
     subtraction step removed (effective precip, surface water), the WaterCredit
     banking activity folded into the bill (deposited/drawn), the final billable
     magnitude, and ``breakdown`` — the evaluate_chain per-step list stored VERBATIM
@@ -402,6 +406,25 @@ class CalculationRun(models.Model):
         help_text="Net consumptive use = gross ET − effective precip (positive AF). "
         "The source-agnostic spine quantity, recorded for every parcel with ET "
         "regardless of supply source or whether a well exists.",
+    )
+    residual_disposition = models.CharField(
+        max_length=20,
+        choices=[
+            ("groundwater", "Groundwater extraction"),
+            ("unmet_demand", "Unmet demand / unallocated"),
+        ],
+        default="groundwater",
+        help_text="How the ET − precip − surface residual was resolved: written as "
+        "a calculated groundwater extraction (the parcel has a well) or recorded as "
+        "unmet demand (no well — under-irrigation or a surface-allocation error).",
+    )
+    unmet_demand_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Positive shortfall (ET − precip − surface) on a parcel with no "
+        "well: under-irrigation or a surface-allocation error. Recorded explicitly, "
+        "NEVER written as a calculated groundwater row.",
     )
     banked_af = models.DecimalField(
         max_digits=12,
