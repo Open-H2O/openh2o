@@ -42,6 +42,23 @@ LAST parcel by deterministic ``str(key)`` order, mirroring the
 ``create_diversion_ledger_entries`` last-parcel-residual convention so the two
 layers agree to the cent. Keys may be ints (parcel ids) or Parcel instances;
 sorting by ``str(key)`` keeps the function agnostic to key type.
+
+``apportion_shared_supply`` (Phase 56) is the sibling splitter: where
+``allocate_by_demand`` splits a delivery TOTAL into volumes, this splits a single
+SHARED source (one well or point-of-diversion serving several parcels) into
+normalized weights that sum to exactly 1.0000. It follows a measurement-first
+ladder so the platform's stored numbers always beat the ET reference layer:
+
+  RUNG 2 — if a district hand-set ANY member's fraction away from the default
+    ``Decimal("1.0")`` sentinel, the whole group is treated as hand-set: the raw
+    fractions are normalized and ET demand is ignored. The human split wins.
+  RUNG 3 — if every fraction is still the untouched sentinel AND some ET demand
+    exists, normalize by demand so the thirsty crop gets the larger share.
+  RUNG 4 — all fractions untouched and zero total demand: no signal at all, so
+    fall back to an even 1/N split.
+
+The same Decimal-only, 4dp-quantized, last-key-residual conventions apply, so a
+shared-supply split agrees with the rest of the ledger to the cent.
 """
 
 from decimal import Decimal
@@ -57,6 +74,21 @@ def _dec(value):
 def _q(value):
     """Quantize to the ledger's 4 decimal places."""
     return _dec(value).quantize(_Q)
+
+
+def _place_residual(shares, target):
+    """Force ``shares`` to sum to EXACTLY ``target`` after 4dp quantization.
+
+    Quantizing each share independently leaves a rounding residual
+    (``target - sum``). Drop it on the LAST key by sorted ``str(key)`` — the same
+    last-key-residual convention as ``create_diversion_ledger_entries`` — so this
+    layer and the ledger agree to the cent. Mutates and returns ``shares``.
+    """
+    residual = _dec(target) - sum(shares.values(), Decimal("0"))
+    if residual != 0:
+        last_key = sorted(shares, key=str)[-1]
+        shares[last_key] = _q(shares[last_key] + residual)
+    return shares
 
 
 def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
@@ -126,8 +158,74 @@ def allocate_by_demand(delivery_total, demand_by_parcel, efficiency):
     # then place the rounding residual on the last parcel by sorted str(key) so the
     # result sums EXACTLY to delivery_total with no Decimal drift.
     shares = {key: _q(total * (demand[key] / total_demand)) for key in caps}
-    residual = total - sum(shares.values(), Decimal("0"))
-    if residual != 0:
-        last_key = sorted(shares, key=str)[-1]
-        shares[last_key] = _q(shares[last_key] + residual)
-    return shares
+    return _place_residual(shares, total)
+
+
+def apportion_shared_supply(members):
+    """Split ONE shared well / point-of-diversion across its parcels, weighted.
+
+    The measurement-first ladder (see the module docstring): a district's
+    hand-set fractions win; absent any hand-set fraction, split by measured ET
+    demand; absent demand, split evenly. The result is a set of normalized
+    weights summing to EXACTLY ``1.0000`` — the caller multiplies the shared
+    source's recorded volume by these to get each parcel's slice.
+
+    Args:
+        members: an iterable of ``(key, fraction, demand)`` triples for the
+            parcels served by one shared source.
+
+            * ``key`` — parcel id (int) or Parcel instance.
+            * ``fraction`` — the stored ``PointOfDiversionParcel`` /
+              ``WellIrrigatedParcel`` ``.fraction`` for this link (Decimal). The
+              default ``Decimal("1.0")`` is the "untouched" sentinel; any other
+              value is a deliberate human entry.
+            * ``demand`` — this parcel's measured ET demand for the period
+              (Decimal, ``>= 0``); ``0`` means "no ET signal for this parcel".
+
+    Returns:
+        ``{key: weight}`` quantized to 4dp and summing to exactly ``1.0000``
+        (rounding residual on the last key by sorted ``str(key)``), or ``{}`` for
+        empty input. A lone member always maps to ``Decimal("1.0000")``.
+
+    Raises:
+        ValueError: any negative fraction or negative demand (fail closed).
+    """
+    members = list(members)
+    if not members:
+        return {}
+
+    fractions = {}
+    demands = {}
+    for key, fraction, demand in members:
+        f = _dec(fraction)
+        d = _dec(demand)
+        if f < 0:
+            raise ValueError(f"fraction for {key!r} must be >= 0, got {fraction!r}")
+        if d < 0:
+            raise ValueError(f"demand for {key!r} must be >= 0, got {demand!r}")
+        fractions[key] = f
+        demands[key] = d
+
+    # RUNG 2: any fraction nudged off the 1.0 sentinel makes the WHOLE group
+    # hand-set — the district decided the split, so ET demand is ignored.
+    if any(f != Decimal("1.0") for f in fractions.values()):
+        weights = dict(fractions)
+    else:
+        total_demand = sum(demands.values(), Decimal("0"))
+        if total_demand > 0:
+            weights = dict(demands)              # RUNG 3: ET demand split
+        else:
+            weights = {key: Decimal("1") for key in fractions}  # RUNG 4: even
+
+    # Total weight is only zero if rung 2 fractions are all 0 (deliberate, but
+    # un-normalizable) — fall back to an even split rather than divide by zero,
+    # mirroring _normalize_fractions' total>0 guard.
+    total_weight = sum(weights.values(), Decimal("0"))
+    if total_weight <= 0:
+        weights = {key: Decimal("1") for key in fractions}
+        total_weight = sum(weights.values(), Decimal("0"))
+
+    # Normalize to 1.0, quantize, then place the rounding residual on the last
+    # key by sorted str(key) so the weights sum to EXACTLY 1.0000.
+    shares = {key: _q(w / total_weight) for key, w in weights.items()}
+    return _place_residual(shares, Decimal("1.0000"))
