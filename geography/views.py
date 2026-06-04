@@ -143,7 +143,10 @@ def zone_detail(request, pk):
             )
             used_label = "pumped"
         else:
-            used = (
+            # surface_diversion is stored NEGATIVE (production convention); the
+            # delivered magnitude is its absolute value, so remaining =
+            # budget − delivered reads correctly.
+            used = abs(
                 period_rows.filter(source_type="surface_diversion").aggregate(
                     s=Sum("amount_acre_feet")
                 )["s"]

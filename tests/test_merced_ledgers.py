@@ -224,6 +224,18 @@ def test_groundwater_parcel_has_no_surface_delivery(seeded):
 
 
 @pytest.mark.django_db
+def test_surface_deliveries_stored_negative(seeded):
+    """Surface deliveries follow the production convention: stored NEGATIVE, so
+    they round-trip through the CSV importer and read correctly in the calc
+    engine (which expects negative surface_diversion). The dashboard still counts
+    them as supply — see test_accounting_services.TestSurfaceWaterCountsAsSupply."""
+    rows = ParcelLedger.objects.filter(source_type="surface_diversion")
+    assert rows.exists(), "fixture should produce surface deliveries"
+    assert all(r.amount_acre_feet < 0 for r in rows), (
+        "surface_diversion rows must be stored negative (production convention)")
+
+
+@pytest.mark.django_db
 def test_surface_parcel_has_no_groundwater_extraction(seeded):
     for p in Parcel.objects.filter(parcel_number__startswith="MER-APN-"):
         if _source_of(p) != "surface":

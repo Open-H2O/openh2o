@@ -1008,7 +1008,11 @@ class Command(BaseCommand):
                     parcel=p,
                     transaction_date=month_date,
                     effective_date=month_date,
-                    amount_acre_feet=div_amount,
+                    # Stored NEGATIVE — production convention shared by the calc
+                    # engine and CSV importer. A delivery is still supply (the
+                    # dashboard counts its magnitude as supply); the sign is the
+                    # storage convention so the data round-trips through CSV.
+                    amount_acre_feet=-div_amount,
                     water_type=sw, source_type="surface_diversion",
                     description="Surface water delivery",
                     reporting_period=wy2025,

@@ -433,7 +433,15 @@ class Command(BaseCommand):
         return schedule
 
     def _surface_rows(self, parcels, surface_parcel_ids, curtailed_parcel_ids, sw, prior):
-        """Monthly surface deliveries (POSITIVE) for surface + conjunctive parcels.
+        """Monthly surface deliveries for surface + conjunctive parcels.
+
+        Stored NEGATIVE — the production convention the calc engine's
+        ``subtract_surface_water`` step and the CSV importer share (a delivered
+        magnitude as a negative number). A delivery is still a SUPPLY to the
+        parcel (the dashboard counts its magnitude as supply, see
+        accounting.services._balance_dict); the negative sign is purely the
+        storage convention so the demo round-trips through CSV and reads
+        correctly in the engine.
 
         Curtailed-right parcels get NO delivery after June 2025 — the curtailment cut.
         """
@@ -453,7 +461,7 @@ class Command(BaseCommand):
                     continue
                 rows.append(ParcelLedger(
                     parcel=p, transaction_date=month_date, effective_date=month_date,
-                    amount_acre_feet=vol, water_type=sw, source_type="surface_diversion",
+                    amount_acre_feet=-vol, water_type=sw, source_type="surface_diversion",
                     description="Monthly surface-water delivery",
                     reporting_period=prior,
                 ))

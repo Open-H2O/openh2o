@@ -572,31 +572,41 @@ def _balance_dict(queryset):
 
     Returns:
         dict with keys: total (alias for net), supply, usage, net.
-        - supply: sum of positive entries (Decimal, always >= 0)
-        - usage: absolute value of sum of negative entries (Decimal, always >= 0)
+        - supply: positive entries + surface-water delivered (Decimal, >= 0)
+        - usage: absolute value of negative groundwater entries (Decimal, >= 0)
         - net: supply - usage (can be negative if usage exceeds supply)
         - total: alias for net
 
+    Sign convention vs. semantics. Most rows split by sign: positive is supply
+    (allocation, recharge), negative is usage (groundwater extraction —
+    meter_reading / et_estimate / calculated). The ONE exception is
+    ``surface_diversion``: it is stored NEGATIVE (the production convention the
+    calc engine and CSV importer share — a delivered magnitude as a negative
+    number), but a canal delivery is a SUPPLY to the parcel that offsets
+    groundwater need, NOT consumption. So its magnitude is counted as supply
+    regardless of stored sign. This keeps the dashboard's supply/usage story
+    correct while the ledger stores the production-canonical negative sign.
+
     Edge cases:
         - Empty queryset: supply=0, usage=0, net=0
-        - All-positive entries: usage=0
-        - All-negative entries: supply=0
-        - Zero-amount entries (amount=0) are excluded from both supply (gt=0)
-          and usage (lt=0). This is correct: zero entries don't affect balance.
+        - Zero-amount entries (amount=0) are excluded from both supply and usage.
     """
     agg = queryset.aggregate(
-        supply=Sum(
+        supply_pos=Sum(
             "amount_acre_feet",
-            filter=Q(amount_acre_feet__gt=0),
+            filter=Q(amount_acre_feet__gt=0) & ~Q(source_type="surface_diversion"),
         ),
-        usage=Sum(
+        usage_neg=Sum(
             "amount_acre_feet",
-            filter=Q(amount_acre_feet__lt=0),
+            filter=Q(amount_acre_feet__lt=0) & ~Q(source_type="surface_diversion"),
+        ),
+        surface=Sum(
+            "amount_acre_feet",
+            filter=Q(source_type="surface_diversion"),
         ),
     )
-    supply = agg["supply"] or Decimal("0")
-    usage_raw = agg["usage"] or Decimal("0")
-    usage = abs(usage_raw)
+    supply = (agg["supply_pos"] or Decimal("0")) + abs(agg["surface"] or Decimal("0"))
+    usage = abs(agg["usage_neg"] or Decimal("0"))
     net = supply - usage
     return {
         "total": net,

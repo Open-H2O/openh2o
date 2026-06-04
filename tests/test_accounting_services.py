@@ -337,6 +337,45 @@ class TestCreateRechargeLedgerEntries:
 # ---------------------------------------------------------------------------
 
 
+class TestSurfaceWaterCountsAsSupply:
+    """surface_diversion is stored NEGATIVE (production convention — the calc
+    engine and CSV importer expect it), but it is a SUPPLY to the parcel: a
+    delivery that offsets groundwater need, NOT consumption. The balance summary
+    must count its magnitude as supply, never as usage."""
+
+    @pytest.mark.django_db
+    def test_negative_surface_diversion_is_supply_not_usage(self):
+        account = WaterAccountFactory()
+        parcel = ParcelFactory()
+        WaterAccountParcelFactory(water_account=account, parcel=parcel)
+        ParcelLedgerFactory(
+            parcel=parcel, amount_acre_feet=Decimal("-12.0000"),
+            source_type="surface_diversion")
+        result = account_balance(account)
+        assert result["supply"] == Decimal("12.0000")
+        assert result["usage"] == Decimal("0")
+        assert result["net"] == Decimal("12.0000")
+
+    @pytest.mark.django_db
+    def test_surface_supply_alongside_groundwater_usage(self):
+        account = WaterAccountFactory()
+        parcel = ParcelFactory()
+        WaterAccountParcelFactory(water_account=account, parcel=parcel)
+        ParcelLedgerFactory(
+            parcel=parcel, amount_acre_feet=Decimal("100.0000"),
+            source_type="allocation")              # budget → supply
+        ParcelLedgerFactory(
+            parcel=parcel, amount_acre_feet=Decimal("-30.0000"),
+            source_type="surface_diversion")       # delivery → supply
+        ParcelLedgerFactory(
+            parcel=parcel, amount_acre_feet=Decimal("-20.0000"),
+            source_type="meter_reading")           # pumping → usage
+        result = account_balance(account)
+        assert result["supply"] == Decimal("130.0000")  # allocation + |surface|
+        assert result["usage"] == Decimal("20.0000")    # groundwater only
+        assert result["net"] == Decimal("110.0000")
+
+
 class TestParseLedgerCsv:
     def _csv_file(self, text):
         return io.BytesIO(text.encode("utf-8"))
@@ -411,6 +450,29 @@ class TestParseLedgerCsv:
         result = parse_ledger_csv(self._csv_file(csv_text))
         assert result["created_count"] == 1
         assert result["error_count"] == 0
+
+    def test_csv_negative_surface_diversion_accepted(self):
+        """Exported demo surface deliveries (stored negative) re-import cleanly —
+        this is the CSV round-trip the demo's old positive sign broke."""
+        ParcelFactory(parcel_number="P-SURF-1")
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-SURF-1,2025-05-15,-2.5,surface_diversion\n"
+        )
+        result = parse_ledger_csv(self._csv_file(csv_text))
+        assert result["created_count"] == 1
+        assert result["error_count"] == 0
+
+    def test_csv_positive_surface_diversion_rejected(self):
+        """A positive surface_diversion violates the stored-negative convention."""
+        ParcelFactory(parcel_number="P-SURF-2")
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-SURF-2,2025-05-15,2.5,surface_diversion\n"
+        )
+        result = parse_ledger_csv(self._csv_file(csv_text))
+        assert result["error_count"] == 1
+        assert "positive amount" in result["errors"][0]["messages"][0]
 
     def test_csv_positive_recharge_accepted(self):
         """Positive amount for a supply source_type (recharge) is accepted."""
