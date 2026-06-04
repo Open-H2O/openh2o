@@ -16,6 +16,11 @@ urlpatterns = [
     path("zones/<int:pk>/assign/", views.zone_parcel_assign, name="zone_parcel_assign"),
     path("zones/<int:pk>/remove/<int:pz_pk>/", views.zone_parcel_remove, name="zone_parcel_remove"),
     path("zones/<int:pk>/parcels/", views.zone_parcel_search, name="zone_parcel_search"),
+    path(
+        "zones/<int:pk>/year-end-policy/",
+        views.zone_recovery_horizon,
+        name="zone_recovery_horizon",
+    ),
     path("zones/<int:pk>/geojson/", views.zone_geojson_single, name="zone_geojson_single"),
 
     # GeoJSON endpoints

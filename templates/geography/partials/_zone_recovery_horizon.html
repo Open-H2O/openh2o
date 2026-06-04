@@ -1,0 +1,43 @@
+{% comment %}
+Per-district year-end-unused-water control (Phase 55-03). HTMX swap target:
+zone_recovery_horizon returns this same partial so the line + buttons re-render
+in place. "Dense, not hidden": the resolved policy reads as one quiet line, with
+the change-for-this-district buttons right beside it. The active choice is
+highlighted; "Use agency default" clears the override to NULL.
+{% endcomment %}
+<div id="zone-recovery-horizon">
+  <p class="text-secondary text-base" style="margin: 0 0 var(--space-sm) 0;">
+    Year-end unused water:
+    {% if rh_override %}
+      <strong style="color: var(--color-text-primary);">Set for this district ({{ rh_effective_phrase }})</strong>
+    {% else %}
+      <strong style="color: var(--color-text-primary);">Using agency default ({{ rh_agency_phrase }})</strong>
+    {% endif %}
+  </p>
+  <p class="text-tertiary text-sm" style="margin: 0 0 var(--space-sm) 0;">
+    What happens to this district's unused surface-water allotment at the end of the water year. Change it just for this district, or leave it on the agency default.
+  </p>
+  <div class="flex" style="gap: var(--space-xs); flex-wrap: wrap;">
+    <button type="button"
+            class="btn-xs {% if not rh_override %}btn-primary{% else %}btn-secondary{% endif %}"
+            hx-post="{% url 'geography:zone_recovery_horizon' zone.pk %}"
+            hx-vars="recovery_horizon: 'default'"
+            hx-target="#zone-recovery-horizon" hx-swap="outerHTML">
+      Use agency default
+    </button>
+    <button type="button"
+            class="btn-xs {% if rh_override == 'carry_forward' %}btn-primary{% else %}btn-secondary{% endif %}"
+            hx-post="{% url 'geography:zone_recovery_horizon' zone.pk %}"
+            hx-vars="recovery_horizon: 'carry_forward'"
+            hx-target="#zone-recovery-horizon" hx-swap="outerHTML">
+      Carry it forward as a credit
+    </button>
+    <button type="button"
+            class="btn-xs {% if rh_override == 'same_water_year' %}btn-primary{% else %}btn-secondary{% endif %}"
+            hx-post="{% url 'geography:zone_recovery_horizon' zone.pk %}"
+            hx-vars="recovery_horizon: 'same_water_year'"
+            hx-target="#zone-recovery-horizon" hx-swap="outerHTML">
+      Let it expire (use-it-or-lose-it)
+    </button>
+  </div>
+</div>

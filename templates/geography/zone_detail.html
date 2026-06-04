@@ -70,6 +70,10 @@
         </div>
         {% endif %}
 
+        <div class="field-group">
+          {% include "geography/partials/_zone_recovery_horizon.html" %}
+        </div>
+
         <div class="border-separator">
           <div class="text-tertiary text-xs">
             Created {{ zone.created_at|date:"M d, Y" }} &middot; Updated {{ zone.updated_at|date:"M d, Y" }}

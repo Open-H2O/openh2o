@@ -13,6 +13,9 @@ from django.views.decorators.http import require_POST
 
 from accounting.models import AllocationPlan
 from accounting.services import billable_ledger
+from core.access import admin_required
+from core.constants import RECOVERY_HORIZON_CHOICES
+from core.models import SiteConfig
 from geography.forms import ZoneForm
 from geography.models import Boundary, Flowline, ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
@@ -208,7 +211,80 @@ def zone_detail(request, pk):
         "curtailment_orders": curtailment_orders,
         "zone_geojson": zone_geojson,
     }
+    context.update(_recovery_horizon_context(zone))
     return render(request, "geography/zone_detail.html", context)
+
+
+# ---------------------------------------------------------------------------
+# Per-district year-end-unused-water override (Phase 55-03)
+# ---------------------------------------------------------------------------
+#
+# A surface district IS its own Zone, so the per-district override of the
+# agency-wide year-end policy lives on Zone.recovery_horizon. "Dense, not
+# hidden": the resolved policy is always shown as one quiet line; the control to
+# change it for this one district sits right beside it. Clearing the override
+# sets the field back to NULL — never the literal default — so a later change to
+# the agency default still flows through to this district.
+
+# Plain-language phrasings (no internal jargon). The short phrase appears inside
+# the "Using agency default (...)" line; the action label is on the buttons.
+_HORIZON_PHRASE = {
+    "carry_forward": "carry forward",
+    "same_water_year": "expire at year-end",
+}
+
+
+def _recovery_horizon_context(zone):
+    """Context for the per-district year-end-unused-water control.
+
+    Resolves the effective policy (override else agency default), and reports
+    whether THIS district is on the default or carries its own override, so the
+    template can render the "Using agency default (...)" line vs. an explicit
+    override and highlight the active choice.
+    """
+    from accounting.services import resolve_recovery_horizon
+
+    agency_default = SiteConfig.objects.first()
+    agency_value = (
+        agency_default.default_recovery_horizon if agency_default else "carry_forward"
+    )
+    override = zone.recovery_horizon or None
+    effective = resolve_recovery_horizon(zone)
+    return {
+        "zone": zone,
+        "rh_override": override,  # None => using the agency default
+        "rh_effective": effective,
+        "rh_effective_phrase": _HORIZON_PHRASE.get(effective, effective),
+        "rh_agency_phrase": _HORIZON_PHRASE.get(agency_value, agency_value),
+    }
+
+
+@login_required
+@admin_required
+@require_POST
+def zone_recovery_horizon(request, pk):
+    """Set or clear this district's year-end-unused-water override, HTMX-inline.
+
+    The posted ``recovery_horizon`` is either one of the two choice strings (set
+    an override) or empty / ``"default"`` (clear it). CLEARING stores NULL, not
+    the agency default literal — that null is what lets a later agency-default
+    change flow through to this district. Re-renders the one-line control in place
+    (mirrors methodology_step_toggle's partial-swap pattern).
+    """
+    zone = get_object_or_404(Zone, pk=pk)
+    choice = (request.POST.get("recovery_horizon") or "").strip()
+    valid = {c[0] for c in RECOVERY_HORIZON_CHOICES}
+    if choice in valid:
+        zone.recovery_horizon = choice
+    else:
+        # "default" / blank / anything else => inherit the agency default (NULL).
+        zone.recovery_horizon = None
+    zone.save(update_fields=["recovery_horizon"])
+    return render(
+        request,
+        "geography/partials/_zone_recovery_horizon.html",
+        _recovery_horizon_context(zone),
+    )
 
 
 @login_required
