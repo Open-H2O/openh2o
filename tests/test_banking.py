@@ -8,10 +8,15 @@ non-expired credits oldest-first (depreciated) and folds the draw into the singl
 `calculated` row, expiry is respected, and re-runs / dry-runs never double-bank,
 double-draw, or write phantom rows.
 
-A bankable surplus requires the chain to net BELOW the floor. The usda_scs
-effective-precip step caps its credit at ET, so netting alone bottoms out at 0;
-the surplus in these tests therefore comes from surface-water delivery exceeding
-net ET. Runs in the Butler web container (needs the DB).
+The draw/expiry/FIFO/idempotency tests seed WaterCredits directly and exercise
+the unchanged draw machinery. The DEPOSIT story changed with ISS-052: under
+usda_scs the effective-precip credit is capped at ET, so the only way the chain
+nets below the floor is surface-water delivery exceeding crop ET — and that
+over-delivery is now correctly treated as deep-percolation RECHARGE credited to
+groundwater, NOT a bankable precip WaterCredit (which masked summer pumping). So
+the deposit test asserts the recharge outcome; genuine rain-surplus banking
+(which needs Pe>ET, only possible under method=raw) is covered in
+test_calculation_run.py. Runs in the Butler web container (needs the DB).
 """
 import datetime as dt
 from decimal import Decimal
@@ -92,8 +97,10 @@ def _calc_row(parcel, period):
 
 
 @pytest.mark.django_db
-def test_surplus_month_banks_one_watercredit():
-    """Surface water exceeds gross ET -> chain nets below 0 -> banks the surplus."""
+def test_surface_overdelivery_credits_recharge_not_a_watercredit():
+    """ISS-052: surface delivered beyond crop ET is deep-percolation recharge
+    credited to groundwater — NOT a bankable precip WaterCredit. Under usda_scs
+    (Pe capped at ET) the whole over-delivery routes to recharge, banking is 0."""
     parcel = _parcel("BANK-DEP", acres="10")
     _et_cache(parcel, period="2024-02", et_mm=100.0)  # ~3.28 AF gross
     _irrigate(parcel)
@@ -102,14 +109,17 @@ def test_surplus_month_banks_one_watercredit():
 
     call_command("run_calculations", "--period", "2024-02")
 
-    credits = WaterCredit.objects.filter(parcel=parcel)
-    assert credits.count() == 1
-    credit = credits.first()
-    assert credit.origin == "precip_surplus"
-    assert credit.origin_period == "2024-02"
-    expected_surplus = (Decimal("5") - _gross_af()).quantize(Q)
-    assert credit.amount_af == expected_surplus
-    # The billable row is clamped to 0 (the surplus went to the bank, not the bill).
+    # Nothing banked — the over-delivery is not a conservation credit.
+    assert WaterCredit.objects.filter(parcel=parcel).count() == 0
+    # It is a positive groundwater recharge ledger row instead.
+    over_delivery = (Decimal("5") - _gross_af()).quantize(Q)
+    recharge = ParcelLedger.objects.get(
+        parcel=parcel, effective_date=dt.date(2024, 2, 1), source_type="recharge"
+    )
+    assert recharge.amount_acre_feet.quantize(Q) == over_delivery
+    assert recharge.water_type.code == "GW"
+    assert recharge.description.startswith("Incidental recharge")
+    # The billable row is clamped to 0 (surface covered all the crop's ET).
     assert _calc_row(parcel, "2024-02").amount_acre_feet == Decimal("0.0000")
 
 
