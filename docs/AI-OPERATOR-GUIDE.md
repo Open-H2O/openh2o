@@ -110,7 +110,46 @@ docker compose exec web python manage.py sync_source usgs
 docker compose exec web python manage.py check_conformance   # registry is publish-clean
 ```
 
-✋ **Checkpoint:** the monitoring page shows at least one source returning fresh data.
+### Curate the monitoring stations (do this for every new basin)
+
+Station discovery (`auto_populate`'s station step) casts a **wide net** — it pulls
+every gauge and well the public APIs report anywhere near the basin's bounding box,
+created inactive. Many will never return data: a stream gauge that's been
+decommissioned, a CDEC sensor that only posts event-duration readings, a
+groundwater well whose last real measurement was a decade ago. If you leave them
+on the map, the district's monitoring view reads as a field of dead red markers
+and looks broken. So **analyse what actually reports, then prune the rest** before
+handover.
+
+1. **Sync every active source with the right window.** Daily gauges (cdec, usgs)
+   are fine on the default 7-day window, but periodic groundwater (`dwr_wdl`,
+   `dwr_sgma`) and lagging climate (`noaa`) report only every few months — sync
+   them with a multi-year `--start` so each station lands a real history, not a
+   single dot:
+   ```bash
+   docker compose exec web python manage.py sync_source cdec
+   docker compose exec web python manage.py sync_source usgs
+   docker compose exec web python manage.py sync_source dwr_sgma --start 2020-06-01
+   docker compose exec web python manage.py sync_source dwr_wdl  --start 2020-06-01
+   docker compose exec web python manage.py sync_source noaa     --start 2020-06-01
+   ```
+   Note any gauge whose source returns nothing — that station is dead at the
+   source, not misconfigured.
+
+2. **Eliminate the stations that carry no usable data.** This deletes (not just
+   hides) any active station without enough readings to chart, plus the entire
+   inactive discovery net (which carries no data by definition):
+   ```bash
+   docker compose exec web python manage.py prune_dataless_stations --delete --purge-inactive --dry-run
+   docker compose exec web python manage.py prune_dataless_stations --delete --purge-inactive
+   ```
+   `--dry-run` first to see what goes. The default keeps any station with ≥2
+   published readings; raise `--min-records` if you want a leaner map. Re-run this
+   any time after a from-scratch re-seed — discovery re-creates the wide net, and
+   one command clears it again.
+
+✋ **Checkpoint:** the monitoring map is mostly green/amber (stations with recent
+data), not a field of red, and every visible marker has a real reading behind it.
 
 ---
 
