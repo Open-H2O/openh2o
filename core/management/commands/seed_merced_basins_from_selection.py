@@ -68,10 +68,11 @@ MID_OPERATOR = "Merced Irrigation District"
 # prefix so a removed basin never leaves an orphan intake behind. Distinct from
 # the operational MER-POD-### diversions, which this command never deletes.
 BASIN_POD_PREFIX = "MER-BPOD-"
-# Capacity convention: ~5 ft ponded depth × footprint acres, matching the prior
-# two basins exactly (110 ac → 550 AF, 85 ac → 425 AF). Managed/storm recharge
-# pools to the GSA basin pool, so this sizes the pool, NOT the closure headline.
-PONDED_DEPTH_FT = Decimal("5.0")
+# Capacity convention: ~2 ft active ponded depth × footprint acres (Brent, 62-02
+# — dialed down from the prior basins' 5 ft because these hand-picked parcels are
+# large, so the operationally ponded fraction is shallower). Managed/storm
+# recharge pools to the GSA basin pool, so this sizes the pool, NOT the closure.
+PONDED_DEPTH_FT = Decimal("2.0")
 MERCED_BOUNDARY = "Merced Subbasin"
 GSA_BASIN_CODE = "5-022.04"
 # The existing Merced River diversion the Flood-MAR cropland is served by.
