@@ -1,5 +1,7 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
+<p align="center"><img src="static/img/logo.png" alt="OpenH2O" width="340"></p>
+
 # OpenH2O — Open Water Accounting Platform
 
 **A production-ready water accounting platform that a California water agency can stand up on a $15/month server — with an AI agent doing the deployment.**
