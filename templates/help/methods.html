@@ -23,21 +23,83 @@
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">Turning a satellite measurement into a number you can stand behind is a <strong>chain of subtractions.</strong> Start from what the crops actually used &mdash; the one thing we can measure for every field, from space. Then take away what rain covered, and what the canals delivered. Whatever use is still left unexplained is, on a field with a well, the groundwater figure. No single clever formula; just honest bookkeeping, one supply at a time.</p>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">If the idea of <em>measured use vs. supplies</em> is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a> &mdash; this page picks up where that one leaves off and walks the actual arithmetic.</p>
+    <p class="text-secondary text-base">Turning a satellite measurement into a number you can stand behind is a <strong>chain of subtractions.</strong> Start from what the crops actually used &mdash; the one thing we can measure for every field, from space. Then take away what rain covered, and what the canals delivered. Whatever use is still left unexplained is, on a field with a well, the groundwater figure.</p>
+
+    <div class="concept-equation">
+      <div class="card-raised stat-card stat-card-accent-usage">
+        <div class="stat-card-label">Start</div>
+        <div class="stat-card-value-sm">Gross ET</div>
+        <div class="stat-card-unit">what the crops used</div>
+      </div>
+      <div class="concept-op" aria-hidden="true">&minus;</div>
+      <div class="card-raised stat-card stat-card-accent-supply">
+        <div class="stat-card-label">Rain</div>
+        <div class="stat-card-value-sm">Effective precip</div>
+        <div class="stat-card-unit">met for free</div>
+      </div>
+      <div class="concept-op" aria-hidden="true">&minus;</div>
+      <div class="card-raised stat-card stat-card-accent-supply">
+        <div class="stat-card-label">Canals</div>
+        <div class="stat-card-value-sm">Surface water</div>
+        <div class="stat-card-unit">district deliveries</div>
+      </div>
+      <div class="concept-op" aria-hidden="true">&minus;</div>
+      <div class="card-raised stat-card stat-card-accent-usage">
+        <div class="stat-card-label">Adjust</div>
+        <div class="stat-card-value-sm">Edge cases</div>
+        <div class="stat-card-unit">most fields: none</div>
+      </div>
+      <div class="concept-op" aria-hidden="true">=</div>
+      <div class="card-raised stat-card stat-card-accent-balance">
+        <div class="stat-card-label">Result</div>
+        <div class="stat-card-value-sm">Billable groundwater</div>
+        <div class="stat-card-unit">well-only</div>
+      </div>
+    </div>
+    <p class="text-tertiary text-sm" style="margin: 0;">No single clever formula &mdash; just honest bookkeeping, one supply at a time. If &ldquo;measured use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page picks up where that one leaves off and walks the actual arithmetic.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Step by step</h2>
-    <p class="text-secondary text-base">Every field runs through the same ordered chain. Each step removes one supply we can account for, and the order matters &mdash; you subtract the free water (rain) and the delivered water (canals) before asking what groundwater had to make up the difference.</p>
+    <p class="text-secondary text-base">Every field runs through the same ordered chain. Each step removes one supply we can account for &mdash; and the order matters: you subtract the free water (rain) and the delivered water (canals) before asking what groundwater had to make up the difference.</p>
 
-    <ol class="concept-list text-secondary text-base" style="margin: var(--space-md) 0;">
-      <li><strong>Start with gross ET.</strong> The total water the crops consumed that month, measured from satellites &mdash; <a class="prose-link" href="{{ glossary_url }}">evapotranspiration</a>. This is the demand the field had to meet, whatever the source.</li>
-      <li><strong>Subtract effective precipitation.</strong> Rain that actually soaked in and was available to the crop &mdash; not every drop that fell, just the share the plants could use. That much demand was met for free.</li>
-      <li><strong>Subtract surface-water deliveries.</strong> Canal water the district delivered to the field. What the crop drank from that delivery comes off the demand next.</li>
-      <li><strong>Subtract edge cases.</strong> Optional adjustments an agency may configure &mdash; a floor that prevents a negative result, banked wet-month surplus, and the like. Most fields never need these.</li>
-      <li><strong>What remains is billable groundwater</strong> &mdash; but only on a field that has a well. The platform writes that leftover as a groundwater figure where a well exists, and as <em>unmet demand</em> (the crop wanted more than it got) where one doesn&rsquo;t. It never invents pumping out of a missing meter.</li>
-    </ol>
+    <div style="margin: var(--space-md) 0;">
+      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
+        <div class="step-number">1</div>
+        <div class="step-body">
+          <strong style="color: var(--color-text-primary);">Start with gross ET</strong>
+          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">The total water the crops consumed that month, measured from satellites &mdash; <a class="prose-link" href="{{ glossary_url }}">evapotranspiration</a>. This is the demand the field had to meet, whatever the source.</p>
+        </div>
+      </div>
+      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
+        <div class="step-number">2</div>
+        <div class="step-body">
+          <strong style="color: var(--color-text-primary);">Subtract effective precipitation</strong>
+          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Rain that actually soaked in and was available to the crop &mdash; not every drop that fell, just the share the plants could use. That much demand was met for free.</p>
+        </div>
+      </div>
+      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
+        <div class="step-number">3</div>
+        <div class="step-body">
+          <strong style="color: var(--color-text-primary);">Subtract surface-water deliveries</strong>
+          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Canal water the district delivered to the field. What the crop drank from that delivery comes off the demand next.</p>
+        </div>
+      </div>
+      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
+        <div class="step-number">4</div>
+        <div class="step-body">
+          <strong style="color: var(--color-text-primary);">Subtract edge cases</strong>
+          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Optional adjustments an agency may configure &mdash; a floor that prevents a negative result, banked wet-month surplus, and the like. Most fields never need these.</p>
+        </div>
+      </div>
+      <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); border-left-color: var(--color-gold);">
+        <div class="step-number">5</div>
+        <div class="step-body">
+          <strong style="color: var(--color-text-primary);">What remains is billable groundwater</strong> <span class="badge badge-pill badge-gold">the result</span>
+          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">But only on a field that has a well. The platform writes that leftover as a groundwater figure where a well exists, and as <em>unmet demand</em> (the crop wanted more than it got) where one doesn&rsquo;t. It never invents pumping out of a missing meter.</p>
+        </div>
+      </div>
+    </div>
 
     <p class="text-secondary text-base">This chain isn&rsquo;t hard-coded &mdash; an agency tunes it on the <a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a> page, where these exact steps appear as a reorderable, switch-on/switch-off list. The help text here and that settings screen describe the <em>same</em> chain, so what you read matches what you configure. Because every future calculation flows through it, change it deliberately.</p>
 
@@ -47,7 +109,18 @@
   <div class="card-raised">
     <h2 class="section-header">Sharing one delivery across many fields</h2>
     <p class="text-secondary text-base">Here is the problem that makes this platform necessary. A water district holds <em>one</em> water right and delivers canal water to dozens of farms &mdash; but the canal isn&rsquo;t metered field by field. All the district knows is the total it sent down the ditch. So how much of that total belongs to each farm?</p>
-    <p class="text-secondary text-base">You can&rsquo;t split it evenly. A vineyard and an alfalfa field next door don&rsquo;t drink the same amount, and a fallow field drinks almost nothing. Crediting each field an equal share would hand water to fields that never used it and starve the ones that did. So the platform splits the district&rsquo;s total <strong>in proportion to each field&rsquo;s measured ET demand</strong> &mdash; the thirsty summer crop draws the larger share, the fallow field draws almost none. Each field&rsquo;s share is also capped, so no field can be credited with consuming more than it physically could.</p>
+
+    <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
+      <div class="concept-panel concept-panel-use">
+        <div class="concept-panel-title">Split it evenly <span class="badge badge-pill badge-red">the wrong way</span></div>
+        <p class="text-secondary text-base" style="margin: 0;">Every field gets the same share, no matter what&rsquo;s growing. A fallow field is credited the same as a thirsty vineyard &mdash; so water lands on fields that never used it, and the fields that did go short.</p>
+      </div>
+      <div class="concept-panel concept-panel-supply">
+        <div class="concept-panel-title">Split by ET demand <span class="badge badge-pill badge-green">how it works</span></div>
+        <p class="text-secondary text-base" style="margin: 0;">Each field&rsquo;s share tracks what its crop actually drank that month. The thirsty summer crop draws the larger share; the fallow field draws almost none. Each share is also capped, so no field is credited with using more than it physically could.</p>
+      </div>
+    </div>
+
     <a class="prose-link" href="{{ surface_url }}">Read the Surface Delivery Settings &rarr;</a>
 
     {% include "partials/_deep_dive.html" with label="The measurement-first ladder and where the cap comes from" body="<p>When the platform has to choose a number, it follows a strict priority ladder &mdash; <strong>measurement first, estimate last:</strong></p><ol class='concept-list'><li>A per-field <strong>direct measurement</strong> wins over everything &mdash; if someone metered this field, that&rsquo;s the truth.</li><li>A district&rsquo;s <strong>hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li>An <strong>even split</strong> is the last resort, used only when there&rsquo;s no better signal at all.</li></ol><p>A district&rsquo;s recorded total is always honored as-is; ET only decides how to split the <em>unmeasured per-field breakdown</em> of that total. The cap on each field&rsquo;s share is its demand divided by an efficiency factor &mdash; because not all delivered water is consumed (some sinks past the roots and recharges the aquifer). That efficiency, typically around 75%, is an agency setting; the Surface Delivery Settings page explains it in plain language.</p>" %}
@@ -56,7 +129,11 @@
   <div class="card-raised">
     <h2 class="section-header">Sharing a well or a headgate</h2>
     <p class="text-secondary text-base">The same logic settles a smaller, thornier case: when two or more fields share a single well or a single headgate, and only the combined pumping or diversion is known. The old shortcut was to split it 50/50 (or evenly among however many fields). That&rsquo;s the same mistake as the canal &mdash; it ignores what was actually growing.</p>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">Instead, a shared well serving a vineyard and an alfalfa field is apportioned <strong>by each field&rsquo;s measured ET demand</strong>, not by headcount. If the vineyard consumed twice what the alfalfa did that month, it carries twice the share of the pumping. The total always reconciles back to what the well or headgate actually produced &mdash; the demand weights only decide how that known total is divided.</p>
+
+    <div class="callout-rule">
+      <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">By demand, not by headcount</div>
+      <p class="text-secondary text-base" style="margin: 0;">A shared well serving a vineyard and an alfalfa field is apportioned by each field&rsquo;s measured ET demand. If the vineyard consumed twice what the alfalfa did that month, it carries twice the share of the pumping. The total always reconciles back to what the well or headgate actually produced &mdash; the demand weights only decide how that known total is divided.</p>
+    </div>
   </div>
 
   <div class="card-raised">
