@@ -36,9 +36,26 @@ re-runs reproduce identical rows. The command ALWAYS flushes its OWN rows first
 (the synthesized district zones, its Water Budgets, its accounts, and the
 ParcelLedger rows on MER- parcels) then rebuilds, so a bare re-run leaves counts
 unchanged. It NEVER touches Kaweah / Demo / base-layer rows, nor the three GSA
-management-area zones (those belong to seed_merced_gsas). Synthetic volumes are
-``area × rate × seasonal weight`` (NOT crop-ET-derived — the proven Kaweah engine
-never needed crop ET), so CropType and well capacity stay out of scope.
+management-area zones (those belong to seed_merced_gsas).
+
+SIZING — measured-ET-derived (58-03, the corrected v1.10 model). The DELIVERED
+supply — surface deliveries AND meter readings — is now sized to each parcel's
+MEASURED net consumptive-use demand (gross ET − effective precip), read from the
+``CalculationRun`` rows the FIRST ``run_calculations`` pass of
+``refresh_merced_accounting`` writes for EVERY parcel (54-01 spine + the 58-03
+metered reference run). Supply tracks that demand within a realistic loss band
+with modest per-source scatter, so per-parcel residuals land small and realistic
+instead of the basin-wide ~50% under-supply 58-02 diagnosed (ISS-057). A surface
+delivery over-delivers slightly; the over-delivery percolates as incidental
+recharge (the engine's ``clamp_floor`` step), so a surface parcel's books close to
+~0. A meter reading pumps slightly MORE than the crop consumed; that loss/return
+flow has no recharge sink, so a metered parcel carries a small POSITIVE residual
+(supplied a little more than consumed — never a deficit, never alarming). The flat
+``area × rate × seasonal`` envelope is RETIRED as the sizing basis; ``SURFACE_RATE``
+/ ``GW_RATE`` / ``SEASONAL_WEIGHTS`` survive ONLY as a fail-soft fallback for a
+parcel-month that genuinely has no CalculationRun (should not happen inside the
+two-pass refresh). Do NOT "restore" the flat rates — they undersupply measured ET.
+CropType and well capacity stay out of scope for the sizing itself.
 
 Prerequisite (the physical demo must already exist on this instance)::
 
@@ -79,16 +96,38 @@ MER_PARCEL_PREFIX = "MER-APN-"
 GSA_BASIN_CODE = "5-022.04"
 DISTRICT_ZONE_PREFIX = "MER Surface Service Area"
 
-# Seasonal irrigation weights across the California water year (Oct..Sep). Same
-# shape as seed_kaweah's so the two demos read alike. Sums to 1.0.
+# 58-03: DELIVERED supply (surface deliveries + meter readings) is no longer sized
+# from these flat rates — it tracks each parcel's MEASURED net ET demand (see the
+# module docstring), because the flat rates undersupply measured ET (ISS-057). The
+# rates survive for two narrow, legitimate uses ONLY: (1) a fail-soft fallback when
+# a parcel-month genuinely has no CalculationRun (should not happen inside the
+# two-pass refresh); (2) the paper ALLOCATION rows (`_allocation_rows`), which are
+# budget CEILINGS (area × rate, the face-value water-budget grant), not delivered
+# volumes — a separate concern from the delivered envelope. Do NOT re-route the
+# delivered supply back through these.
 SEASONAL_WEIGHTS = {
     10: 0.05, 11: 0.03, 12: 0.02, 1: 0.02, 2: 0.02, 3: 0.04,
     4: 0.08, 5: 0.14, 6: 0.16, 7: 0.16, 8: 0.15, 9: 0.13,
 }
+SURFACE_RATE = 2.2          # AF/acre/yr — allocation ceiling + delivery fallback
+GW_RATE = 1.8               # AF/acre/yr — allocation ceiling + meter fallback
 
-# Synthetic per-acre rates (acre-feet per acre per year). NOT crop-ET-derived.
-SURFACE_RATE = 2.2          # canal delivery to a surface/conjunctive parcel
-GW_RATE = 1.8               # groundwater pumped by a parcel's well(s)
+# Measured-ET supply bands (58-03). Each is a per-source multiple of a parcel's
+# measured net consumptive-use demand, deterministic by parcel index so re-runs
+# are stable and parcels scatter instead of tracking ET identically.
+#
+# SURFACE: lean generous (a canal district over-delivers; the surplus percolates
+#   as incidental recharge → the parcel's books close to ~0 regardless of the
+#   exact over-delivery). Always ≥ 1.0 so a non-curtailed surface parcel never
+#   shows a deficit — the ONLY surface deficits in the demo come from the
+#   intentional El Nido curtailment.
+# METER: pumps a little MORE than the crop consumed (on-farm loss / return flow).
+#   Always ≥ 1.0 so a metered farm never reads as "in trouble"; the small excess
+#   is its positive, non-alarming residual (no recharge sink for a meter reading).
+SURFACE_SUPPLY_LO = Decimal("1.02")   # surface over-delivery band [1.02, 1.16]
+SURFACE_SUPPLY_SPAN = Decimal("0.14")
+METER_SUPPLY_LO = Decimal("1.05")     # meter over-pump band [1.05, 1.18]
+METER_SUPPLY_SPAN = Decimal("0.13")
 
 # Agency-wide irrigation efficiency the seed installs on the SiteConfig singleton
 # (55-03). The per-parcel surface split is now produced by
@@ -116,6 +155,21 @@ def _q(value):
 def _jitter(seq):
     """Deterministic ±6% factor keyed on an index — varies volumes without random."""
     return Decimal("1") + (Decimal(seq % 7) - Decimal("3")) * Decimal("0.02")
+
+
+def _supply_ratio(seq, lo, span):
+    """A deterministic supply-to-demand multiple in ``[lo, lo + span]`` (58-03).
+
+    Keyed on a parcel/POD index across 8 buckets so the supply scatters parcel to
+    parcel (no two track measured ET identically) yet re-runs reproduce identical
+    rows. ``lo``/``span`` are the per-source bands defined above.
+    """
+    return lo + (Decimal(seq % 8) / Decimal("7")) * span
+
+
+def _period_str(month_date):
+    """The ``YYYY-MM`` CalculationRun period key for a schedule month."""
+    return f"{month_date.year:04d}-{month_date.month:02d}"
 
 
 class Command(BaseCommand):
@@ -241,17 +295,25 @@ class Command(BaseCommand):
         # --- Curtailment order (audit provenance for the El Nido cut) ---
         self._build_curtailment_order()
 
+        # 58-03: each parcel-month's MEASURED net consumptive-use demand
+        # (gross ET − effective precip), read from the CalculationRuns the first
+        # run_calculations pass wrote. Supply (surface + meter) is sized to THIS,
+        # so the seed sizes against the SAME ET the mass balance later checks.
+        net_cu = self._net_cu_by_parcel_month(parcels)
+
         # --- The ledger: allocations + groundwater extraction (bulk-created here) ---
         entries = []
         entries += self._allocation_rows(parcels, surface_parcel_ids, gw, sw, periods)
-        entries += self._groundwater_rows(parcels, curtailed_parcel_ids, gw, prior)
+        entries += self._groundwater_rows(
+            parcels, curtailed_parcel_ids, gw, prior, net_cu)
         ParcelLedger.objects.bulk_create(entries, batch_size=500)
 
         # --- Surface deliveries: synthesize the recorded district total per POD, then
         # let the PLATFORM service split it across served parcels by ET demand. The
         # service writes the negative surface_diversion rows itself (its own
         # delete-then-insert), so they are NOT part of the bulk_create above. ---
-        surface_rows = self._surface_deliveries(parcels, curtailed_parcel_ids, prior)
+        surface_rows = self._surface_deliveries(
+            parcels, curtailed_parcel_ids, prior, net_cu)
 
         self._summary(parcels, district_zones, surface_parcel_ids,
                       curtailed_parcel_ids, entries, surface_rows)
@@ -480,7 +542,28 @@ class Command(BaseCommand):
             config.default_irrigation_efficiency = SEED_IRRIGATION_EFFICIENCY
             config.save(update_fields=["default_irrigation_efficiency"])
 
-    def _surface_deliveries(self, parcels, curtailed_parcel_ids, prior):
+    def _net_cu_by_parcel_month(self, parcels):
+        """Map ``(parcel_id, "YYYY-MM") -> measured net consumptive-use demand``.
+
+        Reads the ``CalculationRun`` rows the first ``run_calculations`` pass wrote
+        for every parcel (54-01 spine + 58-03 metered reference run), scoped to the
+        prior water year's months. ``net_consumptive_use_af`` is gross ET minus
+        effective precip — the demand the supply must meet — and is stable across
+        the two passes (it never depends on surface or meter readings), so sizing
+        supply against it guarantees the seed and the mass balance use the SAME ET.
+        """
+        from accounting.models import CalculationRun
+
+        parcel_ids = [p.id for p in parcels]
+        periods = [_period_str(d) for d, _ in self._month_schedule()]
+        out = {}
+        for run in CalculationRun.objects.filter(
+            parcel_id__in=parcel_ids, period__in=periods
+        ).values_list("parcel_id", "period", "net_consumptive_use_af"):
+            out[(run[0], run[1])] = run[2] or Decimal("0")
+        return out
+
+    def _surface_deliveries(self, parcels, curtailed_parcel_ids, prior, net_cu):
         """Surface deliveries, produced by the PLATFORM allocation service.
 
         This is the 55-03 wiring: the seed no longer sizes each parcel's delivery
@@ -491,16 +574,23 @@ class Command(BaseCommand):
         the served parcels. The service weights the split by each parcel's measured
         ET demand for the month (the 54-01 spine) when calculations have run, and
         falls back to the static ``PointOfDiversionParcel.fraction`` split when they
-        have not (e.g. local dev with no ET cache). Either way it writes the NEGATIVE
-        ``surface_diversion`` rows the calc engine consumes — the SAME tested path
-        the app uses, so the seed and the app can never drift.
+        have not. Either way it writes the NEGATIVE ``surface_diversion`` rows the
+        calc engine consumes — the SAME tested path the app uses, so the seed and
+        the app can never drift.
 
-        The recorded district total per POD/month is the sum of its served parcels'
-        synthetic envelopes (``area × SURFACE_RATE × jitter × seasonal weight``) —
-        the same overall volume the old per-parcel sizing produced, now expressed at
-        the district grain the platform actually meters. Curtailed PODs record NO
-        diversion after June 2025 — the El Nido cut — so the service produces no
-        post-curtailment deliveries for their parcels.
+        58-03 sizing: the recorded district total per POD/month is the sum over its
+        served parcels of each parcel's MEASURED net consumptive-use demand
+        (``net_cu``, from the first run_calc pass) times a per-POD surface
+        over-delivery ratio (always ≥ 1.0). The measured ET already carries real
+        seasonality, so no synthetic seasonal weight is applied — the monthly total
+        IS that month's measured demand, lifted by the loss band. The over-delivery
+        percolates as incidental recharge, so served parcels close to ~0. A
+        parcel-month with no run (should not happen inside the two-pass refresh)
+        fails soft to the retired flat ``area × SURFACE_RATE × jitter × seasonal``.
+        Curtailed PODs record NO diversion after June 2025 — the El Nido cut — so
+        the service produces no post-curtailment deliveries for their parcels; the
+        resulting summer shortfall on their surface-only parcels is the intentional
+        scarcity demonstration, not a sizing error.
 
         Returns the list of ``ParcelLedger`` surface rows the service wrote (for the
         summary count); the service has already persisted them.
@@ -520,7 +610,7 @@ class Command(BaseCommand):
         )
 
         written = []
-        for pod in pods:
+        for pod_seq, pod in enumerate(pods):
             curtailed = (
                 pod.water_right is not None and pod.water_right.status == "curtailed"
             )
@@ -530,21 +620,30 @@ class Command(BaseCommand):
                     point_of_diversion=pod
                 ).select_related("parcel")
             ]
+            surface_ratio = _supply_ratio(
+                pod_seq, SURFACE_SUPPLY_LO, SURFACE_SUPPLY_SPAN)
 
             # Record the monthly DISTRICT TOTAL that left this POD = the sum of its
-            # served parcels' synthetic envelopes for the month. This is the metered
-            # truth the platform splits; idempotent via update_or_create on the
-            # (POD, month, type) unique key.
+            # served parcels' MEASURED net ET demand for the month, lifted by the
+            # over-delivery band. This is the metered truth the platform splits;
+            # idempotent via update_or_create on the (POD, month, type) unique key.
             for month_date, mn in schedule:
                 if curtailed and month_date > CURTAILMENT_LAST_DELIVERY:
                     continue  # no diversion recorded once the junior right is cut
+                period = _period_str(month_date)
                 total = Decimal("0")
                 for p in served:
-                    area = Decimal(str(p.area_acres or 40))
-                    annual = area * Decimal(str(SURFACE_RATE)) * _jitter(
-                        seq_of.get(p.id, 0)
-                    )
-                    total += annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
+                    demand = net_cu.get((p.id, period))
+                    if demand is not None and demand > 0:
+                        total += demand * surface_ratio
+                    else:
+                        # Fail-soft fallback (no run this parcel-month).
+                        area = Decimal(str(p.area_acres or 40))
+                        total += (
+                            area * Decimal(str(SURFACE_RATE))
+                            * _jitter(seq_of.get(p.id, 0))
+                            * Decimal(str(SEASONAL_WEIGHTS[mn]))
+                        )
                 total = _q(total)
                 if total <= 0:
                     continue
@@ -569,30 +668,32 @@ class Command(BaseCommand):
         )
         return written
 
-    def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior):
+    def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior, net_cu):
         """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
 
         The metering split is the 52-01 dual-source invariant: wells alternate
-        metered / unmetered. The two halves are now handled differently (52.5-01
-        reconciliation):
+        metered / unmetered. The two halves are handled differently:
 
-        - A METERED well's reading is authoritative. The seed writes its
-          ``meter_reading`` rows here exactly as before — driven by the well so a
-          shared well's monthly total splits across its parcels by the stored
-          fraction (summing back to the well total, no double-count), with the
-          curtailed-conjunctive substitution bump applied to the well total BEFORE
-          apportionment.
+        - A METERED well's reading is authoritative. 58-03 re-sizes its monthly
+          total to the sum over its served parcels of each parcel's MEASURED net ET
+          demand (``net_cu``, from the first run_calc pass) times the meter
+          over-pump band — so a metered farm's pumping tracks its measured ET within
+          the loss band instead of a flat per-acre rate (the 1,611-vs-3,055-AF gap
+          58-02 found). The well total still splits across its parcels by the stored
+          fraction (summing back to the well total, no double-count). Readings are
+          stored NEGATIVE (production convention). With measured ET driving the
+          monthly shape, NO synthetic substitution bump is applied on the ET path —
+          summer ET is already high, so a curtailed-conjunctive metered farm's
+          pumping rises in summer on its own. The bump survives ONLY on the fallback
+          path (a parcel-month with no run), to preserve the hermetic demo story.
 
         - An UNMETERED well writes NO synthetic groundwater rows. Its parcels'
-          groundwater will be computed by the REAL calc engine (``calculated``
-          rows, Plan 02); writing an ``et_estimate`` row here too would
-          double-count against the engine's output. The well still gets
-          ``measurement_method='unmetered_estimate'`` so Task 3's
-          ``--unmetered-only`` filter and the metered/unmetered story survive —
-          only the synthetic ledger rows go away. The substitution story for these
-          parcels then EMERGES from the engine itself: surface deliveries stop
-          after curtailment, so the engine subtracts less surface → more net
-          groundwater in the dry months.
+          groundwater is computed by the REAL calc engine (``calculated`` rows); a
+          synthetic row here would double-count. The well still gets
+          ``measurement_method='unmetered_estimate'`` so the metered/unmetered story
+          survives. The substitution story for these parcels EMERGES from the engine:
+          surface deliveries stop after curtailment, so the engine subtracts less
+          surface → more net groundwater in the dry months.
         """
         parcel_by_id = {p.id: p for p in parcels}
         # well -> [WellIrrigatedParcel links] for MER wells irrigating MER parcels.
@@ -618,25 +719,48 @@ class Command(BaseCommand):
 
             # Unmetered wells are engine-owned: the method is set (above) but the
             # seed writes no synthetic extraction, so the engine's `calculated`
-            # rows (Plan 02) never double-count.
+            # rows never double-count.
             if not metered:
                 continue
 
+            meter_ratio = _supply_ratio(
+                wseq, METER_SUPPLY_LO, METER_SUPPLY_SPAN)
+            substitutes = any(ln.parcel_id in curtailed_parcel_ids for ln in links)
+            # Fallback basis (used only for a parcel-month with no CalculationRun).
             served_acres = sum(
                 Decimal(str(parcel_by_id[ln.parcel_id].area_acres or 40)) * ln.fraction
                 for ln in links
             )
             well_annual = served_acres * Decimal(str(GW_RATE)) * _jitter(wseq)
-            substitutes = any(ln.parcel_id in curtailed_parcel_ids for ln in links)
 
             for month_date, mn in schedule:
-                well_monthly = well_annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
-                if substitutes and mn in POST_CURTAILMENT_MONTHS:
-                    well_monthly *= SUBSTITUTION_MULTIPLIER
-                if well_monthly <= 0:
-                    continue
+                period = _period_str(month_date)
+                # ET path: size EACH served parcel's reading by its OWN measured
+                # demand × the over-pump band, so every metered parcel pumps a touch
+                # more than it consumed (a small positive residual, never a deficit)
+                # — even on a shared well, where splitting a combined total by a
+                # static fraction could under-meter a thirsty parcel into deficit.
+                # The shared-well total is then just the sum of those readings.
+                # Fallback (no run this parcel-month): the flat seasonal envelope
+                # split by fraction, with the curtailment substitution bump.
+                demands = {
+                    ln.parcel_id: net_cu.get((ln.parcel_id, period)) for ln in links
+                }
+                has_demand = any(d is not None and d > 0 for d in demands.values())
+                if has_demand:
+                    shares = {
+                        ln.parcel_id: _q((demands[ln.parcel_id] or Decimal("0")) * meter_ratio)
+                        for ln in links
+                    }
+                else:
+                    well_monthly = well_annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
+                    if substitutes and mn in POST_CURTAILMENT_MONTHS:
+                        well_monthly *= SUBSTITUTION_MULTIPLIER
+                    shares = {
+                        ln.parcel_id: _q(well_monthly * ln.fraction) for ln in links
+                    }
                 for ln in links:
-                    share = _q(well_monthly * ln.fraction)
+                    share = shares[ln.parcel_id]
                     if share <= 0:
                         continue
                     p = parcel_by_id[ln.parcel_id]
