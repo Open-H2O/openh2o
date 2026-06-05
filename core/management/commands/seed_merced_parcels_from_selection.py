@@ -34,6 +34,7 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from datasync.models import OpenETCache
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel
 from surface.models import (
@@ -102,7 +103,19 @@ class Command(BaseCommand):
         # below, becoming formal places of use under MER-POD-009.
         features = features + self._river_features()
 
-        self._flush()
+        # ISS-058: snapshot existing MER parcel geometry BEFORE the rebuild so we
+        # can tell an unchanged field (keep its PK → keep its cached OpenET ET +
+        # precip) from a moved one (must drop the now-stale cache). A full delete
+        # used to cascade the whole OpenETCache away, forcing sync_openet_parcels
+        # to re-fetch every parcel from Google Earth Engine — paid compute even
+        # for the ~74 fields whose footprints never changed.
+        existing_geoms = {
+            p.parcel_number: p.geometry
+            for p in Parcel.objects.filter(parcel_number__startswith="MER-APN-")
+        }
+
+        # Clear links + wells (rebuilt below) but NOT the parcels themselves.
+        self._flush_links()
 
         # Resolve PODs by their code prefix once.
         pods_by_code = {}
@@ -160,8 +173,16 @@ class Command(BaseCommand):
             else:
                 owner = GW_SOLO_OWNERS[gw_solo_i % len(GW_SOLO_OWNERS)]
                 gw_solo_i += 1
+            parcel_number = f"MER-APN-{seq:03d}"
+            # ISS-058: a parcel that kept its number but MOVED has cached ET keyed
+            # to the old footprint (the GEE adapter matches the cache by parcel_id
+            # only, never by geometry), so its stale ET must be dropped to force a
+            # re-fetch. update_or_create keeps the PK for an unchanged number, so a
+            # same-footprint re-seed preserves the cache untouched.
+            prior_geom = existing_geoms.get(parcel_number)
+            geometry_changed = prior_geom is not None and not prior_geom.equals(geom)
             parcel, _ = Parcel.objects.update_or_create(
-                parcel_number=f"MER-APN-{seq:03d}",
+                parcel_number=parcel_number,
                 defaults={
                     "owner_name": owner,
                     "geometry": geom,
@@ -169,6 +190,10 @@ class Command(BaseCommand):
                     "notes": note,
                 },
             )
+            if geometry_changed:
+                # OpenETCache holds BOTH ET (variable="ET") and precip
+                # (variable="precip") rows for the parcel — drop all of them.
+                OpenETCache.objects.filter(parcel=parcel).delete()
             parcels.append(parcel)
 
             # GSA association: every parcel sits in one GSA (groundwater
@@ -244,6 +269,17 @@ class Command(BaseCommand):
                 )
                 wrp += 1
 
+        # ISS-058 prune: any MER parcel whose number is no longer produced above
+        # (a field dropped from the selection) is removed now, AFTER the keepers
+        # are rebuilt. Its OpenETCache cascades away with it — correct, the parcel
+        # no longer exists. Keepers retain their PK and therefore their cached ET.
+        current_numbers = {p.parcel_number for p in parcels}
+        stale = Parcel.objects.filter(
+            parcel_number__startswith="MER-APN-"
+        ).exclude(parcel_number__in=current_numbers)
+        pruned = stale.count()
+        stale.delete()
+
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced parcels rebuilt from QGIS selection:\n"
             f"  {len(parcels)} parcels (real DWR field geometry)\n"
@@ -251,7 +287,9 @@ class Command(BaseCommand):
             f"{len(pod_to_parcels)} diversions; {wrp} water-right-parcel links\n"
             f"  GSA (groundwater) — {len(wells)} wells "
             f"({sum(1 for m in well_members.values() if len(m) > 1)} shared "
-            f"across multiple parcels); {gsa_links} parcels in their GSA"
+            f"across multiple parcels); {gsa_links} parcels in their GSA\n"
+            f"  ISS-058 — prune-only: kept unchanged parcels' OpenET cache; "
+            f"{pruned} dropped parcel(s) pruned"
         ))
 
     @staticmethod
@@ -296,8 +334,19 @@ class Command(BaseCommand):
         return min(zones, key=lambda z: z.geometry.distance(c)) if zones else None
 
     @staticmethod
-    def _flush():
-        """Remove prior MER parcels/wells and their links (keep rights+PODs)."""
+    def _flush_links():
+        """Clear MER parcels' links + wells so the rebuild starts clean, WITHOUT
+        deleting the parcels themselves (keep rights+PODs too).
+
+        ISS-058: the parcels are deliberately kept. Each parcel's PK anchors its
+        cached OpenET ET + precip (OpenETCache.parcel, on_delete=CASCADE), so a
+        full parcel delete cascaded the cache and forced sync_openet_parcels to
+        re-fetch every field from Google Earth Engine — paid compute even for the
+        unchanged ones. The loop rebuilds the parcels via update_or_create (PK
+        preserved for an unchanged number) and these links from scratch; parcels
+        dropped from the selection are pruned at the end of handle(). Clearing the
+        links here (including ParcelZone) keeps a kept parcel from carrying a
+        stale GSA/POD/well association across the re-seed."""
         parcel_ids = list(
             Parcel.objects.filter(parcel_number__startswith="MER-APN-")
             .values_list("id", flat=True)
@@ -310,5 +359,5 @@ class Command(BaseCommand):
         WellIrrigatedParcel.objects.filter(parcel_id__in=parcel_ids).delete()
         PointOfDiversionParcel.objects.filter(parcel_id__in=parcel_ids).delete()
         WaterRightParcel.objects.filter(parcel_id__in=parcel_ids).delete()
+        ParcelZone.objects.filter(parcel_id__in=parcel_ids).delete()
         Well.objects.filter(id__in=well_ids).delete()
-        Parcel.objects.filter(id__in=parcel_ids).delete()
