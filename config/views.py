@@ -55,6 +55,12 @@ def surface_deliveries(request):
 
 
 @login_required
+def water_balances(request):
+    """Conceptual explainer: ET as measured use, supplies reconciled against it."""
+    return render(request, "help/water_balances.html")
+
+
+@login_required
 def glossary(request):
     """Glossary of water accounting terms used throughout the platform."""
     terms = {

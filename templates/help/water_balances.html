@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}How Water Balances Work - Open Water Accounting Platform{% endblock %}
+{% block page_title %}How Water Balances Work{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'getting_started' %}">Help</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">How Water Balances Work</span>
+  </nav>
+  <p class="page-description">The one idea behind every number on this platform: measure what the crops used, then match it against the water that supplied them.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <div class="card-raised">
+    <h2 class="section-header">The short version</h2>
+    <p class="text-secondary text-base">A water balance answers a deceptively hard question: <em>who used what?</em> &mdash; in a place where almost nobody is metering. Out of everything a field involves, there is exactly one quantity we can measure for every field, from space, whether its water came from a canal, a well, or rain: the water the crops actually drank. That measured amount &mdash; evapotranspiration <span class="explainer-popout"><button type="button" class="explainer-icon" aria-label="Explain: Evapotranspiration (ET)">?</button><span class="explainer-panel" role="tooltip"><span class="explainer-title">Evapotranspiration (ET)</span><span class="explainer-text">The water a field consumes &mdash; taken up by plants and evaporated from soil. Satellites measure it directly for any field, which is why it works where meters don&rsquo;t.</span></span></span> is the anchor. Everything else &mdash; surface deliveries, groundwater pumping, rainfall &mdash; is a <strong>supply</strong> we line up against that anchor to see whether it adds up.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Use vs. supply</h2>
+    <p class="text-secondary text-base">The whole model rests on one distinction. The <strong>use</strong> is the water the crops consumed &mdash; the measured evapotranspiration (ET). It&rsquo;s the demand side, and satellites give it to us directly.</p>
+    <p class="text-secondary text-base">The <strong>supplies</strong> are everything that could have covered that use: surface water delivered through canals, groundwater pumped from wells, and rainfall that fell on the field. A water balance simply lays the supplies alongside the use and asks whether they match. If a field drank 100 acre-feet and we can account for 100 acre-feet of supply, the books close. When they don&rsquo;t match, the gap is telling us something &mdash; and the next section is about reading that gap honestly.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Reconciling to a closing balance</h2>
+    <p class="text-secondary text-base">Reconciling is just supplies minus use. Start with the measured use, subtract the supplies we already know about &mdash; surface deliveries first, then rain &mdash; and look at what&rsquo;s left unexplained.</p>
+    <p class="text-secondary text-base">What that leftover <em>means</em> depends on the field. Where a well exists, the unexplained use is almost certainly groundwater the farmer pumped but nobody metered &mdash; so the platform books it as groundwater. But where there is <strong>no well</strong>, that same leftover is <em>not</em> phantom pumping: it&rsquo;s either unmet demand (the crop wanted more water than it got) or a surface number that&rsquo;s off. The platform refuses to invent groundwater out of a missing meter. That single rule &mdash; residual becomes groundwater only where a well actually exists &mdash; is what keeps the numbers honest.</p>
+    {% include "partials/_deep_dive.html" with label="How a value gets chosen, and why deliveries are never split evenly" body="<p>When the platform has to pick a number, it follows a strict priority ladder &mdash; measurement first, estimate last:</p><ol><li><strong>A per-field direct measurement</strong> wins over everything. If someone metered this field, that&rsquo;s the truth.</li><li><strong>A district&rsquo;s hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li><strong>An even split</strong> is the last resort, used only when there is no better signal at all.</li></ol><p>This ladder also governs the hardest part of the whole problem: a water district holds <em>one</em> water right but delivers unmetered canal water to many parcels &mdash; growing different crops with different thirsts. You cannot split that delivery equally, because a vineyard and an alfalfa field next door do not drink the same amount. The platform allocates the district&rsquo;s delivery to each parcel <em>in proportion to that parcel&rsquo;s measured ET demand</em>, so the thirsty crop draws the larger share. Splitting evenly would credit water to fields that never used it and starve the ones that did.</p>" %}
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Why ET, why satellites</h2>
+    <p class="text-secondary text-base">All of this exists to solve one stubborn problem: most water diversions in California are not metered. Reporting is sparse, self-reported, and exempt below certain thresholds &mdash; so for the vast majority of fields, nobody knows how much water actually moved.</p>
+    <p class="text-secondary text-base">Evapotranspiration measured from space is the answer to that missing-meter problem. <strong>OpenET</strong> &mdash; built by NASA, the Desert Research Institute (DRI), the Environmental Defense Fund (EDF), and Google &mdash; turns satellite imagery into a consumptive-use figure for any field, no meter required. That&rsquo;s what makes a credible balance possible where one was never possible before. For the precise definitions of these terms, see the <a href="{% url 'glossary' %}" class="text-sm" style="color: var(--color-gold);">Glossary</a> &mdash; including OpenET, ET, and Use Area.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">See it in action</h2>
+    <p class="text-secondary text-base">Now that the idea is clear, here is where to watch it work and where to dig deeper:</p>
+    <a href="{% url 'accounting:dashboard' %}" class="text-sm" style="color: var(--color-gold);">Go to the Dashboard &rarr;</a>
+    <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
+    {# TODO(60-02): replace "#" with {% url 'methods' %} once the "Methods Behind the Numbers" page exists. #}
+    <a href="#" class="text-sm" style="color: var(--color-gold);">Methods Behind the Numbers &rarr;</a>
+    <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
+    <a href="{% url 'glossary' %}" class="text-sm" style="color: var(--color-gold);">Open the Glossary &rarr;</a>
+  </div>
+
+</div>
+{% endblock %}
