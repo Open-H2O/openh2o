@@ -226,11 +226,27 @@
 {% block extra_scripts %}
 <script>
 (function() {
+  // Auto-expand advanced filters when one is active on load.
   var hasAdvanced = {{ source_type|yesno:"true,false" }} || {{ water_type_id|yesno:"true,false" }} || {{ start_date|yesno:"true,false" }} || {{ end_date|yesno:"true,false" }};
   if (hasAdvanced) {
     document.getElementById('advanced-filters').removeAttribute('hidden');
     document.getElementById('toggle-filters').textContent = 'Fewer Filters';
   }
+
+  // Pin the table header flush under the sticky filter bar. The bar's height
+  // changes when the advanced filters expand, so we measure it (not a fixed px)
+  // and publish it as --ledger-header-offset, which .data-table thead th reads
+  // for its sticky `top`. Re-measure on resize, after each HTMX swap, and when
+  // the advanced filters toggle (via window.syncLedgerHeaderOffset in onclick).
+  window.syncLedgerHeaderOffset = function() {
+    var bar = document.getElementById('ledger-filters');
+    if (!bar) return;
+    document.documentElement.style.setProperty(
+      '--ledger-header-offset', bar.offsetHeight + 'px');
+  };
+  window.syncLedgerHeaderOffset();
+  window.addEventListener('resize', window.syncLedgerHeaderOffset);
+  document.body.addEventListener('htmx:afterSwap', window.syncLedgerHeaderOffset);
 })();
 </script>
 {% endblock %}

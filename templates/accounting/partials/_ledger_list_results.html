@@ -5,15 +5,54 @@
   Choose &ldquo;All Periods&rdquo; in the filter to see every entry.
 </p>
 {% endif %}
-<div class="card-raised" style="padding: 0; overflow: hidden;">
+{# overflow:hidden removed deliberately — it would clip the sticky <thead> (Phase 63). #}
+<div class="card-raised" style="padding: 0;">
   <table class="data-table">
     <thead>
       <tr>
-        <th>Date</th>
-        <th>Parcel</th>
-        <th class="th-right">Amount (AF)</th>
-        <th>Source</th>
-        <th>Water Type</th>
+        {# Sortable columns re-request the partial carrying the full filter state
+           (hx-include=#ledger-filters) with a toggled direction. ▲/▼ marks the
+           active column; Date also shows ▼ in the default newest-first state. #}
+        <th class="th-sortable" role="button" tabindex="0"
+            hx-get="{% url 'accounting:ledger_list' %}"
+            hx-target="#ledger-results"
+            hx-include="#ledger-filters"
+            hx-trigger="click, keyup[key=='Enter']"
+            hx-vals='{"sort": "date", "dir": "{% if sort == "date" and direction == "asc" %}desc{% else %}asc{% endif %}"}'>
+          Date{% if sort == "date" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% elif not sort %} &#9660;{% endif %}
+        </th>
+        <th class="th-sortable" role="button" tabindex="0"
+            hx-get="{% url 'accounting:ledger_list' %}"
+            hx-target="#ledger-results"
+            hx-include="#ledger-filters"
+            hx-trigger="click, keyup[key=='Enter']"
+            hx-vals='{"sort": "parcel", "dir": "{% if sort == "parcel" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
+          Parcel{% if sort == "parcel" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+        </th>
+        <th class="th-right th-sortable" role="button" tabindex="0"
+            hx-get="{% url 'accounting:ledger_list' %}"
+            hx-target="#ledger-results"
+            hx-include="#ledger-filters"
+            hx-trigger="click, keyup[key=='Enter']"
+            hx-vals='{"sort": "amount", "dir": "{% if sort == "amount" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
+          Amount (AF){% if sort == "amount" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+        </th>
+        <th class="th-sortable" role="button" tabindex="0"
+            hx-get="{% url 'accounting:ledger_list' %}"
+            hx-target="#ledger-results"
+            hx-include="#ledger-filters"
+            hx-trigger="click, keyup[key=='Enter']"
+            hx-vals='{"sort": "source", "dir": "{% if sort == "source" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
+          Source{% if sort == "source" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+        </th>
+        <th class="th-sortable" role="button" tabindex="0"
+            hx-get="{% url 'accounting:ledger_list' %}"
+            hx-target="#ledger-results"
+            hx-include="#ledger-filters"
+            hx-trigger="click, keyup[key=='Enter']"
+            hx-vals='{"sort": "water_type", "dir": "{% if sort == "water_type" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
+          Water Type{% if sort == "water_type" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+        </th>
         <th>Description</th>
       </tr>
     </thead>
@@ -61,19 +100,28 @@
 {% if page_obj.has_other_pages %}
 <div class="pagination-row">
   {% if page_obj.has_previous %}
-  <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}"
-     class="btn-secondary btn-sm">
+  {# HTMX paging swaps just the results, carrying sort+filters+page_size via the form. #}
+  <button type="button" class="btn-secondary btn-sm"
+          hx-get="{% url 'accounting:ledger_list' %}"
+          hx-target="#ledger-results"
+          hx-include="#ledger-filters"
+          hx-vals='{"page": {{ page_obj.previous_page_number }}}'
+          hx-push-url="true">
     &larr; Previous
-  </a>
+  </button>
   {% endif %}
   <span class="pagination-label text-tertiary text-sm">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
-  <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}"
-     class="btn-secondary btn-sm">
+  <button type="button" class="btn-secondary btn-sm"
+          hx-get="{% url 'accounting:ledger_list' %}"
+          hx-target="#ledger-results"
+          hx-include="#ledger-filters"
+          hx-vals='{"page": {{ page_obj.next_page_number }}}'
+          hx-push-url="true">
     Next &rarr;
-  </a>
+  </button>
   {% endif %}
 </div>
 {% endif %}

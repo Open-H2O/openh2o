@@ -421,6 +421,41 @@ a { color: inherit; }
     border-radius: 2px;
 }
 
+/* -- Sticky filter bar + sortable headers (Phase 63) --------------------- */
+/* The scroll container is .app-content (overflow-y:auto), so position:sticky
+   pins relative to it. The filter form pins at the top; the table header pins
+   directly under it. --ledger-header-offset is set by JS to the rendered filter
+   height so the header sits flush even when the advanced filters expand. */
+.ledger-filters-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background-color: var(--color-card);
+}
+
+.data-table thead th {
+    position: sticky;
+    top: var(--ledger-header-offset, 0);
+    z-index: 10;
+    /* th already carries an opaque var(--color-card) background so rows can't
+       bleed through; add depth on the stuck header. */
+    box-shadow: 0 2px 4px rgba(4, 6, 8, 0.45);
+}
+
+.th-sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.th-sortable:hover {
+    color: var(--color-text-primary);
+}
+
+.th-sortable:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: -2px;
+}
+
 .back-link:focus-visible,
 .breadcrumb a:focus-visible {
     outline: 2px solid var(--color-gold);
