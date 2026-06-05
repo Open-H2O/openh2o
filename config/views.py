@@ -61,6 +61,18 @@ def water_balances(request):
 
 
 @login_required
+def methods(request):
+    """Explainer: the calculation chain and the two ET-demand allocation services."""
+    return render(request, "help/methods.html")
+
+
+@login_required
+def settings_explained(request):
+    """Explainer: every agency-wide configuration knob, what it does and when to change it."""
+    return render(request, "help/settings_explained.html")
+
+
+@login_required
 def glossary(request):
     """Glossary of water accounting terms used throughout the platform."""
     terms = {
