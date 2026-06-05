@@ -211,5 +211,24 @@
     <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-gold);">Read: Surface Delivery Settings &rarr;</a>
   </div>
 
+  <div class="card-raised">
+    <h2 class="section-header">Learn how it works</h2>
+    <p class="text-secondary text-base">The platform measures the water your crops consumed and reconciles it against the water that supplied them. These three guides explain the idea, the arithmetic, and every setting that shapes the numbers &mdash; one click each.</p>
+    <div class="card-grid">
+      <a href="{% url 'water_balances' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: measured use vs. supplies.</p>
+      </a>
+      <a href="{% url 'methods' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">The calculation chain and how shared deliveries and wells are split.</p>
+      </a>
+      <a href="{% url 'settings_explained' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings, explained</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">Every agency-wide knob: what it does, who sets it, when to change it.</p>
+      </a>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
