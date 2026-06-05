@@ -301,19 +301,26 @@ class Command(BaseCommand):
         # so the seed sizes against the SAME ET the mass balance later checks.
         net_cu = self._net_cu_by_parcel_month(parcels)
 
-        # --- The ledger: allocations + groundwater extraction (bulk-created here) ---
-        entries = []
-        entries += self._allocation_rows(parcels, surface_parcel_ids, gw, sw, periods)
-        entries += self._groundwater_rows(
-            parcels, curtailed_parcel_ids, gw, prior, net_cu)
+        # --- Paper allocation (budget-ceiling) rows ---
+        entries = self._allocation_rows(parcels, surface_parcel_ids, gw, sw, periods)
         ParcelLedger.objects.bulk_create(entries, batch_size=500)
 
-        # --- Surface deliveries: synthesize the recorded district total per POD, then
-        # let the PLATFORM service split it across served parcels by ET demand. The
-        # service writes the negative surface_diversion rows itself (its own
-        # delete-then-insert), so they are NOT part of the bulk_create above. ---
+        # --- Surface deliveries FIRST: synthesize the recorded district total per
+        # POD, then let the PLATFORM service split it across served parcels by ET
+        # demand. The service writes the negative surface_diversion rows itself. ---
         surface_rows = self._surface_deliveries(
             parcels, curtailed_parcel_ids, prior, net_cu)
+
+        # --- Meter readings AFTER surface: a metered parcel's groundwater covers
+        # only the ET demand its surface delivery did NOT meet (the same residual the
+        # engine computes for an UNMETERED conjunctive parcel), so a parcel with both
+        # sources is never double-supplied. Sized from the surface actually
+        # delivered, within the over-pump band. ---
+        surface_by_pm = self._surface_by_parcel_month(parcels)
+        gw_rows = self._groundwater_rows(
+            parcels, curtailed_parcel_ids, gw, prior, net_cu, surface_by_pm)
+        ParcelLedger.objects.bulk_create(gw_rows, batch_size=500)
+        entries = entries + gw_rows  # combined ledger count for the summary
 
         self._summary(parcels, district_zones, surface_parcel_ids,
                       curtailed_parcel_ids, entries, surface_rows)
@@ -563,6 +570,22 @@ class Command(BaseCommand):
             out[(run[0], run[1])] = run[2] or Decimal("0")
         return out
 
+    def _surface_by_parcel_month(self, parcels):
+        """Map ``(parcel_id, "YYYY-MM") -> delivered surface magnitude (positive AF)``.
+
+        Reads the negative ``surface_diversion`` rows the allocation service just
+        wrote, summed per parcel-month, so the meter sizing can subtract the surface
+        a parcel already received and bill groundwater only for the residual.
+        """
+        parcel_ids = [p.id for p in parcels]
+        out = {}
+        for row in ParcelLedger.objects.filter(
+            parcel_id__in=parcel_ids, source_type="surface_diversion"
+        ).values_list("parcel_id", "effective_date", "amount_acre_feet"):
+            key = (row[0], f"{row[1].year:04d}-{row[1].month:02d}")
+            out[key] = out.get(key, Decimal("0")) + abs(row[2] or Decimal("0"))
+        return out
+
     def _surface_deliveries(self, parcels, curtailed_parcel_ids, prior, net_cu):
         """Surface deliveries, produced by the PLATFORM allocation service.
 
@@ -668,24 +691,27 @@ class Command(BaseCommand):
         )
         return written
 
-    def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior, net_cu):
+    def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior, net_cu,
+                          surface_by_pm):
         """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
 
         The metering split is the 52-01 dual-source invariant: wells alternate
         metered / unmetered. The two halves are handled differently:
 
-        - A METERED well's reading is authoritative. 58-03 re-sizes its monthly
-          total to the sum over its served parcels of each parcel's MEASURED net ET
-          demand (``net_cu``, from the first run_calc pass) times the meter
-          over-pump band — so a metered farm's pumping tracks its measured ET within
-          the loss band instead of a flat per-acre rate (the 1,611-vs-3,055-AF gap
-          58-02 found). The well total still splits across its parcels by the stored
-          fraction (summing back to the well total, no double-count). Readings are
-          stored NEGATIVE (production convention). With measured ET driving the
-          monthly shape, NO synthetic substitution bump is applied on the ET path —
-          summer ET is already high, so a curtailed-conjunctive metered farm's
-          pumping rises in summer on its own. The bump survives ONLY on the fallback
-          path (a parcel-month with no run), to preserve the hermetic demo story.
+        - A METERED well's reading is authoritative. 58-03 sizes each served
+          parcel's monthly reading to the RESIDUAL groundwater it actually needed —
+          its MEASURED net ET demand (``net_cu``, from the first run_calc pass) MINUS
+          the surface already delivered to it that month — times the meter over-pump
+          band. This mirrors exactly what the engine computes for an UNMETERED
+          conjunctive parcel (``ET − precip − surface``), so a parcel with BOTH a
+          meter and a surface delivery is never double-supplied: its meter reads ~0
+          when surface covered its ET, and rises (the substitution story) when
+          surface is curtailed. A groundwater-only metered parcel (no surface) reads
+          its full demand × the band. Readings are stored NEGATIVE (production
+          convention). NO synthetic substitution bump is applied on the ET path —
+          surface curtailment lifts the residual on its own. The bump + the
+          fraction-split well total survive ONLY on the fallback path (a parcel-month
+          with no run), to preserve the hermetic demo story.
 
         - An UNMETERED well writes NO synthetic groundwater rows. Its parcels'
           groundwater is computed by the REAL calc engine (``calculated`` rows); a
@@ -735,12 +761,12 @@ class Command(BaseCommand):
 
             for month_date, mn in schedule:
                 period = _period_str(month_date)
-                # ET path: size EACH served parcel's reading by its OWN measured
-                # demand × the over-pump band, so every metered parcel pumps a touch
-                # more than it consumed (a small positive residual, never a deficit)
-                # — even on a shared well, where splitting a combined total by a
-                # static fraction could under-meter a thirsty parcel into deficit.
-                # The shared-well total is then just the sum of those readings.
+                # ET path: size EACH served parcel's reading to its RESIDUAL
+                # groundwater need = measured net ET demand MINUS the surface already
+                # delivered that month, times the over-pump band. A parcel fully met
+                # by surface reads ~0; a groundwater-only parcel (no surface) reads
+                # its full demand × the band — always a small positive residual,
+                # never a deficit, no double-supply for a conjunctive parcel.
                 # Fallback (no run this parcel-month): the flat seasonal envelope
                 # split by fraction, with the curtailment substitution bump.
                 demands = {
@@ -748,10 +774,14 @@ class Command(BaseCommand):
                 }
                 has_demand = any(d is not None and d > 0 for d in demands.values())
                 if has_demand:
-                    shares = {
-                        ln.parcel_id: _q((demands[ln.parcel_id] or Decimal("0")) * meter_ratio)
-                        for ln in links
-                    }
+                    shares = {}
+                    for ln in links:
+                        demand = demands[ln.parcel_id] or Decimal("0")
+                        surf = surface_by_pm.get((ln.parcel_id, period), Decimal("0"))
+                        gw_need = demand - surf
+                        if gw_need < 0:
+                            gw_need = Decimal("0")
+                        shares[ln.parcel_id] = _q(gw_need * meter_ratio)
                 else:
                     well_monthly = well_annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
                     if substitutes and mn in POST_CURTAILMENT_MONTHS:
