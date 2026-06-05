@@ -12,8 +12,9 @@ Output: merced_basin_picker.gpkg with layers
   candidate_basins : the 74 selected parcels + empty editable columns
                      (name, operator, capacity_acre_feet, feeds_via) — Brent
                      tags the parcels that become recharge basins
-  canals           : the 2,328-segment canal/lateral network (reference)
+  canals           : the named canal/lateral network (reference, labelled)
   rivers           : named NHD river flowlines (reference, labelled)
+  diversions       : existing surface diversion headgates (reference, gold stars)
   existing_basins  : the v1.9 RechargeSite footprints (reference; wiped + repicked)
   subbasin         : the Merced Subbasin outline (reference)
 
@@ -56,6 +57,7 @@ def main():
     refs = {
         "canals": f"{PARCEL_SEL}/merced_canals.geojson",
         "rivers": f"{HERE}/merced_river_flowlines.geojson",
+        "diversions": f"{HERE}/merced_diversions.geojson",
         "existing_basins": f"{HERE}/merced_existing_basins.geojson",
         "subbasin": f"{PARCEL_SEL}/merced_subbasin.geojson",
     }

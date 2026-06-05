@@ -27,8 +27,11 @@ this picker captures the human judgment the 62-02 seed hangs on it.
 2. **Pick basins** — open `merced_basin_picker.qgz` in QGIS:
    - The **Candidate basins** layer (the 74 crop-field footprints) is on top,
      semi-transparent over satellite. Canals (cyan) and named rivers (blue) are
-     labelled; the **Existing v1.9 basins** show as magenta dashed outlines for
-     reference only (they're being replaced).
+     labelled; **Diversion headgates** (gold stars) mark where each surface
+     right pulls water off its waterway; the **Existing v1.9 basins** show as
+     magenta dashed outlines for reference only (they're being replaced).
+   - A basin plausibly sits on a flat parcel a labelled canal or river can
+     flood — usually near one of the gold headgates or along a named canal.
    - Toggle editing on the Candidate basins layer (pencil icon), click a parcel
      that should become a recharge basin, and in the form set:
      - **name** — the basin name
@@ -53,6 +56,7 @@ this picker captures the human judgment the 62-02 seed hangs on it.
 | `build_picker_project.py` / `.sh` | assemble the QGIS project | committed |
 | `_export_reference_layers.py` | dump river flowlines + existing basins from the DB | committed |
 | `merced_river_flowlines.geojson` | named NHD rivers (feed options, reference) | committed |
+| `merced_diversions.geojson` | existing diversion headgates (reference) | committed |
 | `merced_existing_basins.geojson` | v1.9 basins (reference only) | committed |
 | `esri_world_imagery.xml` | satellite basemap definition (GDAL TMS) | committed |
 | `merced_basin_picker.gpkg` / `.qgz` | the picker (regenerable) | ignored |

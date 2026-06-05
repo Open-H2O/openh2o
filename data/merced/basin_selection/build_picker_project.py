@@ -27,7 +27,7 @@ from qgis.core import (
     QgsRuleBasedRenderer,
     QgsSingleSymbolRenderer, QgsPalLayerSettings, QgsTextFormat,
     QgsVectorLayerSimpleLabeling, QgsTextBufferSettings,
-    QgsLineSymbol, QgsFillSymbol,
+    QgsLineSymbol, QgsFillSymbol, QgsMarkerSymbol,
 )
 from qgis.PyQt.QtGui import QColor, QFont
 
@@ -88,6 +88,7 @@ def main():
     subbasin = vlayer("subbasin", "Merced Subbasin (boundary)")
     canals = vlayer("canals", "Canals (feed option — read the name)")
     rivers = vlayer("rivers", "Rivers (feed option — read the name)")
+    diversions = vlayer("diversions", "Diversion headgates (where surface water is pulled)")
     existing = vlayer("existing_basins", "Existing v1.9 basins (reference — being replaced)")
     cand = vlayer("candidate_basins", "Candidate basins — CLICK TO TAG")
 
@@ -103,6 +104,15 @@ def main():
     river_sym = QgsLineSymbol.createSimple({"color": "#5b8def", "width": "0.9"})
     rivers.setRenderer(QgsSingleSymbolRenderer(river_sym))
     label_with(rivers, "name", 8, "#bcd0ff")
+
+    # Diversion headgates: gold stars marking where each surface right pulls
+    # water off its canal/river. A basin plausibly sits where a labelled canal
+    # or river (ideally near one of these takes) can flood it.
+    div_sym = QgsMarkerSymbol.createSimple(
+        {"name": "star", "color": "#ffd400", "outline_color": "#000000",
+         "size": "5"})
+    diversions.setRenderer(QgsSingleSymbolRenderer(div_sym))
+    label_with(diversions, "stream_name", 9, "#ffe98a")
 
     # Existing basins: hollow magenta dashed outline so they read as "reference,
     # not a choice" against the candidate footprints.
@@ -129,7 +139,7 @@ def main():
     cand.setRenderer(QgsRuleBasedRenderer(root))
 
     # --- add bottom-up; candidate_basins last so it sits on top & is clickable ---
-    for lyr in (sat, subbasin, canals, rivers, existing, cand):
+    for lyr in (sat, subbasin, canals, rivers, diversions, existing, cand):
         proj.addMapLayer(lyr)
 
     proj.write(OUT)

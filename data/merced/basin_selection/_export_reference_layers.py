@@ -19,6 +19,7 @@ import json
 
 from geography.models import Flowline
 from recharge.models import RechargeSite
+from surface.models import PointOfDiversion
 
 RIVER_TYPES = ["Channel Line", "Waterbody Connector"]
 
@@ -74,3 +75,22 @@ for s in RechargeSite.objects.all():
 with open("/tmp/merced_existing_basins.geojson", "w") as fh:
     json.dump(_fc(basins), fh)
 print(f"existing basins: {len(basins)}")
+
+# --- existing diversion headgates (reference: where surface water is pulled) ---
+pods = []
+for p in PointOfDiversion.objects.all():
+    if not p.location:
+        continue
+    pods.append(
+        {
+            "type": "Feature",
+            "properties": {
+                "name": p.name,
+                "stream_name": p.stream_name or "",
+            },
+            "geometry": json.loads(p.location.geojson),
+        }
+    )
+with open("/tmp/merced_diversions.geojson", "w") as fh:
+    json.dump(_fc(pods), fh)
+print(f"diversion headgates: {len(pods)}")
