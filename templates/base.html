@@ -18,13 +18,16 @@
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <!-- App layout and component styles -->
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=16">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=17">
 
     <!-- MapLibre GL JS (available in map pages via block) -->
     {% block map_styles %}{% endblock %}
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous" defer></script>
+
+    <!-- Explainer pop-out positioning (escapes the content scroll box) -->
+    <script src="{% static 'js/explainer-popout.js' %}?v=1" defer></script>
 
     {# Umami analytics: renders only when UMAMI_WEBSITE_ID is set (self-host clones leave it blank). #}
     {% if umami_website_id %}

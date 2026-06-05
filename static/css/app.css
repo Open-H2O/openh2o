@@ -693,11 +693,14 @@ a { color: inherit; }
     color: var(--color-text-secondary);
 }
 
+/* The panel is position:fixed (coordinates set by explainer-popout.js) so it
+   escapes the .app-content scroll box, which would clip an absolutely-positioned
+   panel near the top of the page. Visibility is toggled via .is-open by the same
+   script, which also flips it above/below the icon and clamps it to the viewport. */
 .explainer-panel {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
+    top: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
@@ -710,8 +713,7 @@ a { color: inherit; }
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s;
-    z-index: 50;
-    margin-bottom: var(--space-xs);
+    z-index: 1000;
     box-shadow: var(--shadow-pop-sm);
     text-align: left;
     /* Reset casing/spacing — the pop-out may sit inside an uppercase heading
@@ -721,21 +723,7 @@ a { color: inherit; }
     letter-spacing: normal;
 }
 
-/* Invisible bridge across the gap between the "?" icon and the panel above
-   it, so moving the cursor up into the panel doesn't cross a dead zone that
-   drops the hover and closes it. Inert until the panel is shown (it inherits
-   the panel's pointer-events). */
-.explainer-panel::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    height: var(--space-sm);
-}
-
-.explainer-popout:hover .explainer-panel,
-.explainer-popout:focus-within .explainer-panel {
+.explainer-panel.is-open {
     opacity: 1;
     pointer-events: auto;
 }
