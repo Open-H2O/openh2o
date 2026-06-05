@@ -70,6 +70,20 @@
           <div class="field-value">{{ site.operator|default:"—" }}</div>
         </div>
 
+        {% if pod_links %}
+        <div class="field-group">
+          <div class="field-label">Filled by</div>
+          <div class="field-value">
+            {% for link in pod_links %}
+            <div{% if not forloop.first %} style="margin-top: var(--space-xs);"{% endif %}>
+              <a href="{% url 'surface:pod_detail' link.point_of_diversion.pk %}" class="data-table-link">{{ link.point_of_diversion.name }}</a>
+              <span class="text-secondary">on {{ link.point_of_diversion.source_flowline.name|default:link.point_of_diversion.stream_name|default:"—" }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
         {% if site.notes %}
         <div class="field-group">
           <div class="field-label">Notes</div>

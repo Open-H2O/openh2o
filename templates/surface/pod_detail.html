@@ -121,6 +121,8 @@
                 <div class="field-label">Status</div>
                 <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
               </div>
+            {% elif basin_links %}
+              <p class="text-secondary text-sm">Recharge diversion — water is taken during high-flow / storm events for managed aquifer recharge, which does not require a consumptive water right.</p>
             {% else %}
               <p class="text-secondary text-sm">No water right linked. This diversion point operates without a formal water right permit.</p>
               <p class="text-tertiary text-xs" style="margin-top: var(--space-xs);">CalWATRS reports will flag this diversion as [INCOMPLETE].</p>
@@ -169,6 +171,36 @@
           <p class="text-tertiary text-sm">No parcels linked to this diversion point.</p>
         {% endif %}
       </div>
+
+      <!-- Recharge Areas Filled card (Phase 62) -->
+      {% if basin_links %}
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Recharge Areas Filled</h2>
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Recharge Area</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for link in basin_links %}
+            <tr>
+              <td>
+                <a href="{% url 'recharge:detail' link.recharge_site.pk %}" class="data-table-link">
+                  {{ link.recharge_site.name }}
+                </a>
+              </td>
+              <td class="text-secondary">{{ link.recharge_site.get_site_type_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="text-tertiary text-xs" style="margin-top: var(--space-sm);">
+          This diversion fills the recharge area(s) above &mdash; for dual-purpose cropland, during storm events.
+        </p>
+      </div>
+      {% endif %}
 
     </div>
   </div>

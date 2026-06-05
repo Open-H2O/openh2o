@@ -53,6 +53,15 @@ def recharge_site_detail(request, pk):
         "water_type"
     ).order_by("-start_date")
 
+    # The diversion(s) that fill this basin (Phase 62): each link names the POD
+    # and, through it, the real waterway it sits on. A data field on this page,
+    # not a flow line on the map.
+    pod_links = (
+        site.pod_links.select_related(
+            "point_of_diversion", "point_of_diversion__source_flowline"
+        ).order_by("point_of_diversion__name")
+    )
+
     recent_measurements = RechargeMeasurement.objects.filter(
         recharge_site=site
     ).order_by("-measurement_date")[:10]
@@ -74,6 +83,7 @@ def recharge_site_detail(request, pk):
     context = {
         "site": site,
         "events": events,
+        "pod_links": pod_links,
         "recent_measurements": recent_measurements,
         "event_form": RechargeEventForm(),
         # Python object (or None); template escapes it via json_script.

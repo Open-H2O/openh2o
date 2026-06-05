@@ -86,6 +86,15 @@ def pod_detail(request, pk):
         .order_by("parcel__parcel_number")
     )
 
+    # Recharge areas this diversion fills (Phase 62). For a dual-purpose Merced
+    # River diversion this lists the Flood-MAR areas it floods, right next to the
+    # cropland it irrigates above.
+    basin_links = (
+        pod.basin_links
+        .select_related("recharge_site")
+        .order_by("recharge_site__name")
+    )
+
     # Water right info (may be None)
     water_right = pod.water_right
 
@@ -110,6 +119,7 @@ def pod_detail(request, pk):
         "pod": pod,
         "diversion_records": diversion_records,
         "pod_parcels": pod_parcels,
+        "basin_links": basin_links,
         "water_right": water_right,
         "form": form,
         "pod_geojson": pod_geojson,
