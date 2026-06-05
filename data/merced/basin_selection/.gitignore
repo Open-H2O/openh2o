@@ -1,0 +1,10 @@
+# Regenerable build artifacts — rebuild with build_basin_gpkg.py +
+# build_picker_project.sh. Brent's actual selection is extracted to
+# ../selected_basins.geojson (committed), so these binaries stay out of git.
+merced_basin_picker.gpkg
+merced_basin_picker.qgz
+*.gpkg-shm
+*.gpkg-wal
+*.aux.xml
+_render_*.png
+_render_*.py
