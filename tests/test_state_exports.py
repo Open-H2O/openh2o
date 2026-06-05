@@ -25,8 +25,12 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.contrib.auth.hashers import make_password
+from django.test import Client
 
+from core.models import SiteConfig
 from reporting.generators import generate_calwatrs_csv, generate_gears_csv
+from reporting.models import ReportSubmission, ReportTemplate
 from reporting.validators import validate_report
 from tests.factories import (
     DiversionRecordFactory,
@@ -315,3 +319,129 @@ class TestGearsMeasurementMethodVocab:
         rows = _data_rows(generate_gears_csv(period, method="by_et").read())
         assert len(rows) == 1
         assert rows[0][4] == "Unmetered/Estimated"
+        assert rows[0][4] not in ("et_estimate", "calculated")
+
+
+# ---------------------------------------------------------------------------
+# Phase 53-02 — Demonstration framing (flag-gated, default-off)
+# ---------------------------------------------------------------------------
+
+DEMO_BANNER = "DEMONSTRATION — NOT SUBMITTABLE"
+DEMO_FILE_PREFIX = "DEMONSTRATION-NOT-SUBMITTABLE"
+
+
+def _login():
+    """A logged-in client (the report views require authentication)."""
+    from core.models import User
+
+    user = User.objects.create(
+        username="reporter",
+        email="reporter@example.com",
+        password=make_password("testpass123"),
+        is_active=True,
+    )
+    client = Client()
+    client.force_login(user)
+    return client
+
+
+def _gears_template():
+    return ReportTemplate.objects.create(
+        name="GEARS by ET", report_type="gears_by_et", is_active=True,
+    )
+
+
+def _et_period_with_activity():
+    """A period plus one et_estimate ledger row so the generated CSV is non-empty."""
+    period = _period()
+    ParcelLedgerFactory(
+        parcel=ParcelFactory(area_acres=Decimal("10.0")),
+        source_type="et_estimate",
+        effective_date=date(2024, 6, 15),
+        amount_acre_feet=Decimal("-12.0000"),
+    )
+    return period
+
+
+@pytest.mark.django_db
+class TestDemonstrationFramingFile:
+    """The generated/stored filename carries the demo stamp iff demonstration_mode
+    is on. The prefix is the format-safe disclaimer that survives download (a
+    leading '#' CSV row could corrupt a strict GEARS/CalWATRS parser)."""
+
+    def _generate(self):
+        client = _login()
+        template = _gears_template()
+        period = _et_period_with_activity()
+        resp = client.post(
+            "/reporting/reports/generate/",
+            {"report_template": template.pk, "reporting_period": period.pk},
+        )
+        # On success the view redirects to the detail page.
+        assert resp.status_code == 302
+        return ReportSubmission.objects.latest("created_at")
+
+    def test_filename_stamped_when_demo_mode_on(self):
+        SiteConfig.objects.create(agency_name="Demo GSA", demonstration_mode=True)
+        submission = self._generate()
+        assert DEMO_FILE_PREFIX in submission.generated_file
+
+    def test_filename_clean_when_demo_mode_off(self):
+        SiteConfig.objects.create(agency_name="Real GSA", demonstration_mode=False)
+        submission = self._generate()
+        assert DEMO_FILE_PREFIX not in submission.generated_file
+
+    def test_filename_clean_when_no_site_config(self):
+        # A bare install with no SiteConfig must not stamp filings.
+        submission = self._generate()
+        assert DEMO_FILE_PREFIX not in submission.generated_file
+
+
+@pytest.mark.django_db
+class TestDemonstrationFramingScreens:
+    """The loud demo banner renders on both report surfaces iff demonstration_mode
+    is on (the context processor injects site_config into every template)."""
+
+    def test_generate_screen_shows_banner_when_demo_mode_on(self):
+        SiteConfig.objects.create(agency_name="Demo GSA", demonstration_mode=True)
+        client = _login()
+        resp = client.get("/reporting/reports/generate/")
+        assert resp.status_code == 200
+        assert DEMO_BANNER in resp.content.decode()
+
+    def test_generate_screen_hides_banner_when_demo_mode_off(self):
+        SiteConfig.objects.create(agency_name="Real GSA", demonstration_mode=False)
+        client = _login()
+        resp = client.get("/reporting/reports/generate/")
+        assert resp.status_code == 200
+        assert DEMO_BANNER not in resp.content.decode()
+
+    def _make_submission(self):
+        template = _gears_template()
+        period = _period()
+        return ReportSubmission.objects.create(
+            report_template=template,
+            reporting_period=period,
+            status="draft",
+        )
+
+    def test_detail_screen_shows_banner_when_demo_mode_on(self):
+        SiteConfig.objects.create(agency_name="Demo GSA", demonstration_mode=True)
+        submission = self._make_submission()
+        client = _login()
+        resp = client.get(f"/reporting/reports/{submission.pk}/")
+        assert resp.status_code == 200
+        body = resp.content.decode()
+        assert DEMO_BANNER in body
+        # The existing "who files" gold-box disclaimer must remain intact.
+        assert "OpenH2O prepares your filing." in body
+
+    def test_detail_screen_hides_banner_when_demo_mode_off(self):
+        SiteConfig.objects.create(agency_name="Real GSA", demonstration_mode=False)
+        submission = self._make_submission()
+        client = _login()
+        resp = client.get(f"/reporting/reports/{submission.pk}/")
+        assert resp.status_code == 200
+        body = resp.content.decode()
+        assert DEMO_BANNER not in body
+        assert "OpenH2O prepares your filing." in body

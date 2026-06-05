@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounting.models import ReportingPeriod
+from core.models import SiteConfig
 from parcels.models import ParcelLedger
 from reporting.forms import ReportGenerateForm
 from reporting.generators import (
@@ -92,10 +93,22 @@ def report_generate(request):
             os.makedirs(media_dir, exist_ok=True)
             timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
 
+            # Demo framing on the FILE itself (Phase 53-02). A leading "#" row
+            # could corrupt the strict GEARS/CalWATRS parsers, so the disclaimer
+            # rides the filename instead: it's format-safe and survives download
+            # (report_download reuses the stored name). Flag-gated so a real
+            # agency deployment ships clean filenames.
+            site_config = SiteConfig.objects.first()
+            demo_prefix = (
+                "DEMONSTRATION-NOT-SUBMITTABLE_"
+                if site_config and site_config.demonstration_mode
+                else ""
+            )
+
             if report_type in ("gears_by_well", "gears_by_et"):
                 method = "by_well" if report_type == "gears_by_well" else "by_et"
                 csv_output = generate_gears_csv(period, method=method)
-                filename = f"{report_type}_{period.name}_{timestamp}.csv"
+                filename = f"{demo_prefix}{report_type}_{period.name}_{timestamp}.csv"
                 filepath = os.path.join(media_dir, filename)
                 with open(filepath, "w") as f:
                     f.write(csv_output.getvalue())
@@ -103,7 +116,7 @@ def report_generate(request):
             elif report_type in ("calwatrs_a1", "calwatrs_a2"):
                 ttype = "a1" if report_type == "calwatrs_a1" else "a2"
                 csv_output = generate_calwatrs_csv(period, template_type=ttype)
-                filename = f"{report_type}_{period.name}_{timestamp}.csv"
+                filename = f"{demo_prefix}{report_type}_{period.name}_{timestamp}.csv"
                 filepath = os.path.join(media_dir, filename)
                 with open(filepath, "w") as f:
                     f.write(csv_output.getvalue())

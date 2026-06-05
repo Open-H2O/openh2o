@@ -57,6 +57,12 @@ class SiteConfig(models.Model):
     contact_phone = models.CharField(max_length=20, blank=True)
     logo = models.ImageField(upload_to="logos/", blank=True, null=True)
     allow_google_oauth = models.BooleanField(default=False)
+    demonstration_mode = models.BooleanField(
+        default=False,
+        help_text="When on, every report surface and generated file is stamped "
+        "'demonstration — not submittable'. Off for a real agency deployment; "
+        "the Merced demo seed turns it on.",
+    )
 
     # --- Agency-wide delivery accounting policy (Phase 55-02) ---
     # Efficiency is agronomic, not per-right: one agency-wide figure. Lifts the

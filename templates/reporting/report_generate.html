@@ -18,6 +18,17 @@
 {% block content %}
 <div class="page-stack" style="max-width: 600px;">
 
+  {% if site_config.demonstration_mode %}
+  <div class="card-raised card-inset" style="border-left: 4px solid var(--color-error);">
+    <p style="margin: 0; color: var(--color-error); font-weight: 700; letter-spacing: 0.02em;">
+      DEMONSTRATION — NOT SUBMITTABLE
+    </p>
+    <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0;">
+      In-development demo data. Not a valid state filing. Do not submit to the Water Board.
+    </p>
+  </div>
+  {% endif %}
+
   <p class="text-secondary text-sm" style="margin: 0;">
     Select a report type and period. The system validates data quality before generating.
   </p>

@@ -142,12 +142,18 @@ class Command(BaseCommand):
                 timezone="America/Los_Angeles",
                 native_srid=4326,
                 contact_email="info@mercedsubbasingsa.example.com",
+                # The seed owns this identity, so it's a demonstration: stamp
+                # every report surface + file "not submittable" (Phase 53-02).
+                demonstration_mode=True,
             )
             self.stdout.write(self.style.SUCCESS(
                 f"  Created SiteConfig: {merced_name}"))
         elif sc.agency_name in retired_names:
             old = sc.agency_name
             sc.agency_name = merced_name
+            # Renaming off a retired demo identity → still the seed's demo;
+            # turn on demonstration_mode alongside the name (53-02).
+            sc.demonstration_mode = True
             sc.save()
             self.stdout.write(
                 f"  Renamed SiteConfig: {old} -> {merced_name}")

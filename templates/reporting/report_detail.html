@@ -24,6 +24,18 @@
     <span class="text-secondary text-sm">{{ submission.report_template.name }}</span>
   </div>
 
+  {% if site_config.demonstration_mode %}
+  <!-- DEMO framing (about the DATA): louder than the gold "who files" box below -->
+  <div class="card-raised card-inset" style="border-left: 6px solid var(--color-error);">
+    <p style="margin: 0; color: var(--color-error); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.03em;">
+      DEMONSTRATION — NOT SUBMITTABLE
+    </p>
+    <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0;">
+      In-development demo data. Not a valid state filing. Do not submit to the Water Board.
+    </p>
+  </div>
+  {% endif %}
+
   <!-- How filing actually works (persistent, plain-language) -->
   <div class="card-raised" style="border-left: 3px solid var(--color-gold);">
     <p class="text-secondary text-sm" style="margin: 0;">
