@@ -1,29 +1,42 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Hermetic proof that the per-parcel books close after the two-pass refresh.
+"""Hermetic proof that the per-parcel books stay within a REALISTIC residual band.
 
-This is the v1.10 capstone invariant (Phase 58-01, ISS-054): after the corrected
-accounting refresh runs — ``run_calculations`` (populate net consumptive use) ->
-``allocate_district_delivery`` (demand-weighted surface) -> ``run_calculations``
-(recompute residual + recharge) — ``parcel_mass_balance(...).closes`` is True for
-every archetype the Merced demo exercises:
+This is the v1.10 capstone invariant (Phase 58-03, ISS-057 / ISS-054), rewritten
+from 58-01's strict-closure form to the CORRECTED acceptance bar (58-02, Brent's
+domain input): real water accounting never closes to zero — deficit irrigation,
+salt-flush flooding, shallow-groundwater / stream-adjacent rootzone supplement, and
+conveyance loss all leave a nonzero residual in BOTH directions. The bar a demo
+must meet is therefore "residuals small, realistic, and never alarming," NOT
+"residual == 0." A strict-closure test would now be a FALSE specification — it would
+force the seed back to perfect-supply sizing that makes the demo look fake.
+
+After the corrected refresh runs — ``run_calculations`` (populate net consumptive
+use on EVERY parcel, incl. a metered reference run) -> ``allocate_district_delivery``
+(demand-weighted surface) -> ``run_calculations`` (recompute residual + recharge) —
+``abs(parcel_mass_balance(...).residual_af) <= BAND * gross_et`` for every archetype
+the Merced demo exercises:
 
   * **Surface-only** (POD, no well, ample delivery) — the ISS-054 / MER-APN-031
-    case. The over-delivery percolates as incidental recharge; the books close
-    with ZERO pumped groundwater and NO phantom ``calculated`` row (54-01).
+    case. Supply over-delivers slightly; the surplus percolates as incidental
+    recharge, so the residual is ~0 — ZERO pumped groundwater, NO phantom
+    ``calculated`` row (54-01).
   * **Conjunctive** (well + POD, short delivery) — the MER-APN-016 case. The
-    surface shortfall is met by pumped groundwater; the books close on the
-    ``calculated`` groundwater term.
+    surface shortfall is met by engine-estimated pumped groundwater, so the residual
+    is ~0 on the ``calculated`` groundwater term.
   * **Basin / flood-MAR** (no well, ample delivery, in a GSA management zone) —
-    the over-delivery's incidental recharge routes to the GSA basin POOL, with NO
-    positive personal recharge credit the parcel could never pump (the ISS-053
-    invariant); the books still close.
+    the over-delivery's incidental recharge routes to the GSA basin POOL with NO
+    personal credit the parcel could never pump (ISS-053); residual ~0.
+  * **Metered** (well + authoritative ``meter_reading``, 58-03) — the meter owns
+    the groundwater (NO ``calculated`` row); the run is the ET reference value. The
+    meter is sized to pump a little MORE than the crop consumed (the on-farm
+    loss / return flow), so the parcel carries a small POSITIVE residual within the
+    band — never a deficit, never alarming.
 
 The closing identity (52.6-03) is
-``surface + precip + gw_recovered = et + recharge + runoff + delta_storage``.
-Closure is exercised on the engine's OWN output (not hand-seeded run rows), so a
-non-zero residual here is a real calibration disagreement between the seed
-envelope, the allocation efficiency, and the engine's recharge step — exactly
-what this plan exists to lock down.
+``surface + precip + gw_recovered = et + recharge + runoff + delta_storage``; the
+residual is ``sum(inputs) - sum(outputs)``. It is exercised on the engine's OWN
+output (not hand-seeded run rows), so the band proves the seed's measured-ET sizing
+lands supply realistically against the SAME ET the balance checks.
 
 Hermetic ORM fixtures (no network): OpenETCache rows mirror the live GEE shape —
 ET rows ``variable="ET"/model="Ensemble"`` keyed ``"et"``, precip rows
@@ -31,7 +44,7 @@ ET rows ``variable="ET"/model="Ensemble"`` keyed ``"et"``, precip rows
 gross ET well above effective precip per month, so net consumptive use stays
 positive and ``clamp_floor`` parks the whole surface over-delivery in
 ``incidental_recharge_af`` (a no-well parcel banks nothing, so any bankable
-precip-surplus would otherwise vanish and break closure).
+precip-surplus would otherwise vanish).
 """
 import datetime as dt
 from decimal import Decimal
@@ -57,6 +70,21 @@ pytestmark = pytest.mark.django_db
 
 PERIOD = "2024-01"  # inside the default ReportingPeriodFactory span (WY 2023-2024)
 EFF = Decimal("0.750")  # the demo's agency-wide irrigation efficiency (55-03)
+
+# The realistic-residual ceiling (58-03). The seed sizes a meter reading to pump up
+# to ~18% MORE than the crop consumed (METER_SUPPLY band [1.05, 1.18] in
+# seed_merced_ledgers) — the on-farm loss / return flow, which has no recharge sink,
+# so a metered parcel's residual is at most ~18% of its net demand (≤18% of gross
+# ET). Surface / conjunctive / basin parcels close to ~0 (their over-delivery
+# percolates to recharge / their shortfall is pumped). BAND gives that worst case
+# headroom; a residual beyond it would mean supply genuinely diverged from measured
+# ET, which is what this test guards against.
+BAND = Decimal("0.22")
+
+# Meter over-pump multiple used in the metered-archetype fixture: the meter reads a
+# bit above measured consumption (inside the seed's METER_SUPPLY band), so the
+# residual is small and POSITIVE. Held below BAND with headroom.
+METER_OVER_PUMP = Decimal("1.12")
 
 
 # --- hermetic builders (mirrors tests/test_consumptive_use_spine.py) --------
@@ -102,16 +130,30 @@ def _irrigate(parcel):
     UsageLocation.objects.create(parcel=parcel, name="field", crop_type=crop)
 
 
-def _well(parcel):
+def _well(parcel, method="unmetered_estimate"):
     wt, _ = WellType.objects.get_or_create(name="Agricultural")
     well = Well.objects.create(
         well_registration_id=f"W-{parcel.parcel_number}",
         name=f"well {parcel.parcel_number}", well_type=wt,
         location=parcel.geometry.centroid, status="active",
-        measurement_method="unmetered_estimate")
+        measurement_method=method)
     WellIrrigatedParcel.objects.create(
         well=well, parcel=parcel, fraction=Decimal("1.0000"))
     return well
+
+
+def _meter_reading(parcel, af, rp, period=PERIOD):
+    """An authoritative NEGATIVE meter_reading row (production sign convention).
+
+    Stamped with the reporting period so the period-scoped mass balance counts it.
+    """
+    year, month = int(period[:4]), int(period[5:7])
+    d = dt.date(year, month, 15)
+    return ParcelLedger.objects.create(
+        parcel=parcel, transaction_date=d, effective_date=d,
+        amount_acre_feet=Decimal(str(af)), source_type="meter_reading",
+        description="Monthly metered groundwater extraction",
+        reporting_period=rp)
 
 
 def _pool_zone(name):
@@ -182,7 +224,7 @@ def test_surface_only_parcel_mass_balance_closes():
     _two_pass_refresh([pod], rp)
 
     balance = parcel_mass_balance(parcel, rp)
-    assert balance["closes"] is True, balance
+    assert abs(balance["residual_af"]) <= BAND * balance["outputs"]["et"], balance
     assert balance["inputs"]["gw_recovered"] == Decimal("0")
     assert balance["outputs"]["recharge"] > 0  # over-delivery percolated
     # 54-01 invariant: a no-well parcel writes NO phantom groundwater row.
@@ -203,7 +245,7 @@ def test_conjunctive_parcel_mass_balance_closes():
     _two_pass_refresh([pod], rp)
 
     balance = parcel_mass_balance(parcel, rp)
-    assert balance["closes"] is True, balance
+    assert abs(balance["residual_af"]) <= BAND * balance["outputs"]["et"], balance
     assert balance["inputs"]["gw_recovered"] > 0  # shortfall pumped
     assert balance["outputs"]["recharge"] == Decimal("0")  # no over-delivery
     row = ParcelLedger.objects.get(parcel=parcel, source_type="calculated")
@@ -228,7 +270,7 @@ def test_basin_parcel_mass_balance_closes_with_pooled_recharge():
     _two_pass_refresh([pod], rp)
 
     balance = parcel_mass_balance(parcel, rp)
-    assert balance["closes"] is True, balance
+    assert abs(balance["residual_af"]) <= BAND * balance["outputs"]["et"], balance
     assert balance["inputs"]["gw_recovered"] == Decimal("0")
     assert balance["outputs"]["recharge"] > 0
     # ISS-053: the over-delivery recharge pooled to the GSA basin, NOT a personal
@@ -241,3 +283,48 @@ def test_basin_parcel_mass_balance_closes_with_pooled_recharge():
     # And no phantom groundwater row (no well to pump it).
     assert not ParcelLedger.objects.filter(
         parcel=parcel, source_type="calculated").exists()
+
+
+def test_metered_parcel_mass_balance_within_band():
+    """Metered (well + authoritative meter reading, 58-03): the engine writes an ET
+    reference run with disposition "metered" and NO calculated GW row — the meter
+    owns the groundwater. The meter is sized to pump a little MORE than the crop
+    consumed (on-farm loss / return flow), so the parcel carries a small POSITIVE
+    residual within the realistic band — never a deficit, never alarming. This locks
+    the Task-1 engine path behaviorally, on the engine's OWN output."""
+    rp = _setup_period()
+    parcel = _parcel("MER-APN-METER")
+    _et_cache(parcel, et_mm=140.0)
+    _precip_cache(parcel, precip_mm=40.0)
+    _irrigate(parcel)
+    # Starts unmetered so PASS 1 computes the net consumptive-use demand the meter
+    # will be sized to (no meter row yet → treated as conjunctive this pass).
+    well = _well(parcel)
+    call_command("run_calculations", "--period", PERIOD)
+    net_cu = CalculationRun.objects.get(
+        parcel=parcel, period=PERIOD).net_consumptive_use_af
+    assert net_cu > 0
+
+    # Size the meter to that measured demand within the over-pump band, make it
+    # authoritative, and re-run — now the parcel is metered (the seed's two passes
+    # mirror this: run_calc -> size supply from the run -> run_calc).
+    meter_af = (net_cu * METER_OVER_PUMP).quantize(Decimal("0.0001"))
+    _meter_reading(parcel, af=-meter_af, rp=rp)
+    Well.objects.filter(pk=well.pk).update(measurement_method="certified_meter")
+    call_command("run_calculations", "--period", PERIOD)
+
+    run = CalculationRun.objects.get(parcel=parcel, period=PERIOD)
+    assert run.gross_et_af > 0  # the ET reference value is computed
+    assert run.residual_disposition == "metered"
+    # The meter is authoritative — NO calculated groundwater row.
+    assert not ParcelLedger.objects.filter(
+        parcel=parcel, source_type="calculated").exists()
+    # The meter reading itself is untouched.
+    assert ParcelLedger.objects.filter(
+        parcel=parcel, source_type="meter_reading").count() == 1
+
+    balance = parcel_mass_balance(parcel, rp)
+    # Pumped a touch more than consumed → a small POSITIVE residual, within band.
+    assert balance["inputs"]["gw_recovered"] > 0  # the meter reading is the GW input
+    assert balance["residual_af"] > 0, balance
+    assert abs(balance["residual_af"]) <= BAND * balance["outputs"]["et"], balance
