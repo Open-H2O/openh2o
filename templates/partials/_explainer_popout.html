@@ -1,0 +1,28 @@
+{% comment %}
+Explainer pop-out — the richer sibling of _help_tooltip.html.
+
+Same accessibility shape (a button trigger + a role="tooltip" panel revealed on
+hover/focus-within), but a wider panel with a bold title line and an optional
+gold cross-link footer. Use this for conceptual numbers that need a sentence or
+two of explanation; the terse "?" tooltip (_help_tooltip.html) stays for short
+field hints.
+
+Usage:
+  {% include "partials/_explainer_popout.html" with title="Net consumptive use" text="The water the crops actually drank, measured from satellites." link="/help/water-balances/" link_label="How water balances work" %}
+
+Context variables:
+  title       (required) — bold heading inside the panel; also the button's aria-label.
+  text        (required) — explanatory body text.
+  link        (optional) — href for a cross-link footer.
+  link_label  (optional) — visible text for that cross-link (defaults to "Learn more").
+{% endcomment %}
+<span class="explainer-popout">
+  <button type="button" class="explainer-icon" aria-label="Explain: {{ title }}">?</button>
+  <span class="explainer-panel" role="tooltip">
+    <span class="explainer-title">{{ title }}</span>
+    <span class="explainer-text">{{ text }}</span>
+    {% if link %}
+    <a href="{{ link }}" class="explainer-link">{{ link_label|default:"Learn more" }} &rarr;</a>
+    {% endif %}
+  </span>
+</span>

@@ -612,6 +612,136 @@ a { color: inherit; }
     pointer-events: auto;
 }
 
+/* -- Deep Dive ----------------------------------------------------------- */
+
+.deep-dive {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-elevated, var(--color-elevated));
+    padding: var(--space-sm) var(--space-md);
+    margin-top: var(--space-md);
+}
+
+.deep-dive-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    transition: color 150ms;
+}
+
+.deep-dive-summary::-webkit-details-marker {
+    display: none;
+}
+
+.deep-dive-summary:hover {
+    color: var(--color-text-primary);
+}
+
+.deep-dive-caret {
+    color: var(--color-gold);
+    font-size: 0.75rem;
+    transition: transform 150ms;
+}
+
+.deep-dive[open] .deep-dive-caret {
+    transform: rotate(90deg);
+}
+
+.deep-dive-body {
+    margin-top: var(--space-sm);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+}
+
+/* -- Explainer pop-out --------------------------------------------------- */
+
+.explainer-popout {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.explainer-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: none;
+    color: var(--color-text-tertiary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: help;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: border-color 150ms, color 150ms;
+}
+
+.explainer-popout:hover .explainer-icon,
+.explainer-popout:focus-within .explainer-icon {
+    border-color: var(--color-gold);
+    color: var(--color-text-secondary);
+}
+
+.explainer-panel {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    background: var(--color-surface-elevated, var(--color-elevated));
+    border: 1px solid var(--color-border);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    width: max-content;
+    max-width: 340px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 50;
+    margin-bottom: var(--space-xs);
+    box-shadow: var(--shadow-pop-sm);
+    text-align: left;
+}
+
+.explainer-popout:hover .explainer-panel,
+.explainer-popout:focus-within .explainer-panel {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.explainer-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.explainer-text {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    white-space: normal;
+}
+
+.explainer-link {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-gold);
+    text-decoration: none;
+    margin-top: var(--space-xs);
+}
+
 /* -- Help Pages ---------------------------------------------------------- */
 
 .step-card {

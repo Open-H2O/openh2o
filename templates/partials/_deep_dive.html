@@ -1,0 +1,22 @@
+{% comment %}
+Deep-dive disclosure — a novice/advanced progressive disclosure.
+
+The novice "short version" stays OUTSIDE this partial (always visible). This
+partial holds ONLY the advanced layer, collapsed by default via a zero-JS
+<details>/<summary> (built-in keyboard + screen-reader support).
+
+Usage:
+  {% include "partials/_deep_dive.html" with label="How this is calculated" body=advanced_html %}
+
+Context variables:
+  label  (optional) — summary text after "Advanced ▸ ". Defaults to
+                       "How this is calculated".
+  body   (required) — safe HTML string rendered inside the disclosure.
+{% endcomment %}
+<details class="deep-dive">
+  <summary class="deep-dive-summary">
+    <span class="deep-dive-caret" aria-hidden="true">&#9656;</span>
+    <span class="deep-dive-label">Advanced &middot; {{ label|default:"How this is calculated" }}</span>
+  </summary>
+  <div class="deep-dive-body text-secondary text-base">{{ body|safe }}</div>
+</details>
