@@ -26,6 +26,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The web service declares `env_file: .env` in docker-compose.yml. That
+      # file is gitignored (it holds real secrets) and never exists on a clean
+      # CI checkout, so `docker compose run web` aborts before migrate. Write a
+      # throwaway one here with the same non-secret CI values used above. CI only.
+      - name: Write throwaway CI .env
+        run: |
+          cat > .env <<'EOF'
+          SECRET_KEY=ci-clean-install-guard-not-a-secret
+          DJANGO_SETTINGS_MODULE=config.settings.local
+          POSTGRES_DB=openh2o
+          POSTGRES_USER=openh2o
+          POSTGRES_PASSWORD=openh2o
+          EOF
+
       - name: Start PostGIS database
         run: docker compose up -d --wait db
 
