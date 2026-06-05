@@ -742,6 +742,90 @@ a { color: inherit; }
     margin-top: var(--space-xs);
 }
 
+/* -- Explainer page (How Water Balances Work) ---------------------------- */
+
+/* Inline research link inside prose — visibly a link, opens references. */
+.prose-link {
+    color: var(--color-gold);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    transition: text-decoration-thickness 120ms;
+}
+
+.prose-link:hover {
+    text-decoration-thickness: 2px;
+}
+
+/* "Supplies − Use = Balance" equation row, colour-keyed to the stat-card accents. */
+.concept-equation {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    margin: var(--space-lg) 0 var(--space-sm);
+}
+
+.concept-equation .stat-card {
+    flex: 1 1 160px;
+    padding: var(--space-md);
+}
+
+.concept-op {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-display);
+}
+
+/* Two-panel "use vs. supply" comparison. */
+.concept-panel {
+    background: var(--color-inset);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    border-top: 3px solid var(--color-border);
+}
+
+.concept-panel-use {
+    border-top-color: var(--color-text-tertiary);
+}
+
+.concept-panel-supply {
+    border-top-color: var(--forest-400);
+}
+
+.concept-panel-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.concept-list {
+    margin: var(--space-sm) 0 0;
+    padding-left: var(--space-lg);
+}
+
+.concept-list li {
+    margin-bottom: var(--space-xs);
+}
+
+/* Highlighted "the rule" callout. */
+.callout-rule {
+    background: var(--color-inset);
+    border-left: 3px solid var(--color-gold);
+    border-radius: var(--radius-sm);
+    padding: var(--space-md) var(--space-lg);
+    margin: var(--space-lg) 0 var(--space-xs);
+}
+
 /* -- Help Pages ---------------------------------------------------------- */
 
 .step-card {
