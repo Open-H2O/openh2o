@@ -1,14 +1,18 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""TDD spec for the run_calculations DEFAULT metered-skip selection (Phase 54-01).
+"""TDD spec for the run_calculations DEFAULT per-archetype selection (54-01 / 58-03).
 
-The engine runs on ALL parcels by default. The only parcels it skips are those
-that carry an authoritative ``meter_reading`` ledger row for the period — a
-metered reading is the truth, and a `calculated` row would double-count it. This
-replaces the 52.5-01 ``--unmetered-only`` framing crutch, which existed only to
-hide the garbage the old groundwater-residual model produced for non-well
-parcels. ``--unmetered-only`` is kept as a deprecated alias: it warns and runs the
-default. No-well parcels now follow 54-01 (no calculated row; an unmet-demand run)
-and never bank a personal WaterCredit they have no well to draw against.
+The engine runs on EVERY parcel by default and resolves each residual by archetype:
+
+  * **metered** (58-03) — a parcel carrying an authoritative ``meter_reading`` row
+    is no longer SKIPPED (it was, in 54-01). It gets an ET-bearing reference
+    CalculationRun (the district reference value) but NO ``calculated`` groundwater
+    row — the meter reading owns the groundwater, and a calculated row would
+    double-count it — with ``residual_disposition="metered"``.
+  * **groundwater** — a well, no meter: the residual is its calculated GW row.
+  * **unmet_demand** — no well: no calculated row; the residual is recorded on the
+    run (54-01), and the parcel never banks a personal WaterCredit it cannot pump.
+
+``--unmetered-only`` is kept as a deprecated alias: it warns and runs the default.
 
 Hermetic ORM fixtures, no network.
 """
@@ -117,12 +121,22 @@ def mixed_parcels():
     return metered, unmetered, surface_only
 
 
-# --- (a) DEFAULT path skips a parcel with an authoritative meter reading -------
+# --- (a) DEFAULT path gives a metered parcel an ET reference run, no GW row -----
 
 @pytest.mark.django_db
-def test_default_skips_metered_parcel(mixed_parcels):
+def test_metered_parcel_gets_reference_run_no_gw_row(mixed_parcels):
+    """58-03: a metered parcel is NO LONGER skipped. It gets an ET-bearing
+    reference CalculationRun (the district reference value — gross ET / net CU),
+    but NO calculated groundwater row (the meter reading owns its groundwater), and
+    disposition "metered". The meter reading itself is untouched."""
     metered, _, _ = mixed_parcels
     call_command("run_calculations", "--period", PERIOD)
+
+    run = CalculationRun.objects.get(parcel=metered, period=PERIOD)
+    assert run.gross_et_af > 0  # the reference ET value is now computed
+    assert run.net_consumptive_use_af > 0
+    assert run.residual_disposition == "metered"
+    # The meter is authoritative — no calculated groundwater row is written.
     assert not ParcelLedger.objects.filter(
         parcel=metered, source_type="calculated").exists()
     # Its authoritative meter reading is untouched.

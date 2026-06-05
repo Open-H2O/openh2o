@@ -412,11 +412,14 @@ class CalculationRun(models.Model):
         choices=[
             ("groundwater", "Groundwater extraction"),
             ("unmet_demand", "Unmet demand / unallocated"),
+            ("metered", "Metered extraction (authoritative)"),
         ],
         default="groundwater",
         help_text="How the ET − precip − surface residual was resolved: written as "
-        "a calculated groundwater extraction (the parcel has a well) or recorded as "
-        "unmet demand (no well — under-irrigation or a surface-allocation error).",
+        "a calculated groundwater extraction (the parcel has a well), recorded as "
+        "unmet demand (no well — under-irrigation or a surface-allocation error), or "
+        "marked metered (the parcel carries an authoritative meter reading that owns "
+        "its groundwater — the run is an ET reference value, no calculated row).",
     )
     unmet_demand_af = models.DecimalField(
         max_digits=12,

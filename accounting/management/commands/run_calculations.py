@@ -3,11 +3,14 @@
 
 For each in-scope parcel that has gross-ET data for the period, evaluate the
 active CalculationPlan and record its net consumptive use on a CalculationRun.
-The `ET − precip − surface` residual then resolves by archetype (54-01): a parcel
-WITH a well gets exactly ONE ParcelLedger row with source_type="calculated" (its
-groundwater extraction estimate); a no-well parcel gets NO calculated row — its
-residual is recorded as `unmet_demand_af` on the run, never a phantom groundwater
-extraction. Both the calculated row and the run are delete-then-insert per
+The `ET − precip − surface` residual then resolves by archetype (54-01 / 58-03):
+a parcel WITH a well (no meter) gets exactly ONE ParcelLedger row with
+source_type="calculated" (its groundwater extraction estimate); a no-well parcel
+gets NO calculated row — its residual is recorded as `unmet_demand_af` on the run,
+never a phantom groundwater extraction; a METERED parcel also gets NO calculated
+row (its meter reading is the authoritative groundwater record — a calculated row
+would double-count it) and its run is kept purely as the ET reference value, with
+disposition "metered". Both the calculated row and the run are delete-then-insert per
 (parcel, month) inside one transaction, so re-running is idempotent: running twice
 yields identical balances (no drift, no double-count).
 
@@ -328,13 +331,16 @@ class Command(BaseCommand):
                     f"no parcel with parcel_number={options['parcel']!r}"
                 )
 
-        # 54-01: the engine runs on ALL parcels by default, with a METERED-SKIP. A
+        # 58-03: the engine now runs on EVERY parcel — including metered ones. A
         # parcel that carries an authoritative meter_reading row for this period is
-        # excluded — its reading is the truth, and a `calculated` row would
-        # double-count it. This unconditional skip replaces the old
-        # --unmetered-only narrowing (a framing crutch that hid the
-        # groundwater-residual model's garbage for non-well parcels). Intersects
-        # with --parcel (the skip composes with, not replaces, the selection).
+        # NO LONGER skipped (it was, in 54-01). Instead it gets an ET-bearing
+        # reference CalculationRun (what the crop actually consumed, the district
+        # reference value for the dashboard + reports) but NO calculated groundwater
+        # row — the meter reading already measured that groundwater, so a calculated
+        # row would double-count it (the same 54-01 reasoning, now expressed as a
+        # disposition instead of an exclusion). `metered_row_ids` is still the
+        # authoritative-reading detector; we carry it INTO the loop as a per-parcel
+        # `is_metered` flag rather than dropping those parcels up front.
         metered_row_ids = set(
             ParcelLedger.objects.filter(
                 source_type="meter_reading",
@@ -342,17 +348,17 @@ class Command(BaseCommand):
                 effective_date__month=month,
             ).values_list("parcel_id", flat=True)
         )
-        parcels = parcels.exclude(id__in=metered_row_ids)
 
-        # --unmetered-only is now a deprecated alias: the metered-skip default +
-        # the 54-01 residual reframe (no-well → unmet demand, never a phantom GW
-        # row) make it redundant. Accept it, warn, and otherwise change nothing.
+        # --unmetered-only is now a deprecated alias: the engine runs on ALL
+        # parcels by default and resolves each by archetype (well → calculated GW
+        # row; no-well → unmet demand; metered → ET reference run, no GW row). The
+        # flag is redundant. Accept it, warn, and otherwise change nothing.
         if options.get("unmetered_only"):
             self.stderr.write(
                 self.style.WARNING(
                     "--unmetered-only is deprecated; the engine now runs on all "
-                    "parcels with a metered-skip by default and resolves no-well "
-                    "residuals as unmet demand. The flag changes nothing."
+                    "parcels by default and resolves each residual by archetype "
+                    "(well, no-well, or metered). The flag changes nothing."
                 )
             )
 
@@ -428,11 +434,13 @@ class Command(BaseCommand):
 
         written = 0
         unmet = 0
+        metered = 0
         skipped_no_et = 0
         banked = 0
         drew = 0
         recharged = 0
         for parcel in parcels:
+            is_metered = parcel.id in metered_row_ids
             final_af, breakdown = evaluate_chain(parcel, period)
             incidental_af = _incidental_recharge_af(breakdown)
 
@@ -487,7 +495,14 @@ class Command(BaseCommand):
                         f"; would credit recharge "
                         f"{incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
                     )
-                if routes_personal:
+                if is_metered:
+                    self.stdout.write(
+                        f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+                        f"net {net_af} AF (metered — ET reference run, meter "
+                        f"authoritative, no GW row){extra}"
+                    )
+                    metered += 1
+                elif routes_personal:
                     self.stdout.write(
                         f"  {parcel.parcel_number}: gross {gross_af} AF -> "
                         f"net {net_af} AF (would write {-net_af} AF GW){extra}"
@@ -521,20 +536,30 @@ class Command(BaseCommand):
                         f"`calculated` row for {parcel.parcel_number} {period} "
                         f"with months_matched={months_matched}"
                     )
-                # 54-01: the residual (ET − precip − surface, surfaced as net_af)
-                # resolves to a `calculated` GROUNDWATER row ONLY where the parcel
-                # has a well to pump it (routes_personal, the has-well discriminator
-                # reused from the recharge routing). A no-well parcel's residual is
-                # not pumped groundwater — it is unmet demand (under-irrigation or a
-                # bad surface number), recorded explicitly on the run, NEVER written
-                # as a phantom groundwater row. Always delete the stale calculated
-                # row first so an archetype flip (well → no-well) clears it.
+                # 54-01 / 58-03: the residual (ET − precip − surface, surfaced as
+                # net_af) resolves by archetype. Always delete the stale calculated
+                # row first so an archetype flip (well → no-well, or → metered)
+                # clears it, THEN decide:
+                #   * metered  — the parcel carries an authoritative meter_reading;
+                #     the meter OWNS its groundwater, so the engine writes NO
+                #     calculated row (that would double-count the meter). The run is
+                #     kept purely as the ET reference value (gross ET / net CU) for
+                #     the dashboard + reports. This branch wins FIRST.
+                #   * groundwater — has a well, no meter: the residual is its pumped
+                #     groundwater estimate, written as the one `calculated` row.
+                #   * unmet_demand — no well: the residual is under-irrigation or a
+                #     bad surface number, recorded on the run, NEVER a phantom GW row.
                 ParcelLedger.objects.filter(
                     parcel=parcel,
                     effective_date=eff_date,
                     source_type="calculated",
                 ).delete()
-                if routes_personal:
+                if is_metered:
+                    residual_disposition = "metered"
+                    unmet_demand_af = Decimal("0")
+                    # No calculated row: the meter reading is the authoritative
+                    # groundwater record. The reference run is still persisted below.
+                elif routes_personal:
                     residual_disposition = "groundwater"
                     unmet_demand_af = Decimal("0")
                     ParcelLedger.objects.create(
@@ -618,7 +643,14 @@ class Command(BaseCommand):
             if incidental_af > 0:
                 extra += f"; recharge {incidental_af.quantize(Decimal('0.0001'))} AF (GW)"
                 recharged += 1
-            if routes_personal:
+            if is_metered:
+                self.stdout.write(
+                    f"  {parcel.parcel_number}: gross {gross_af} AF -> "
+                    f"net {net_af} AF (metered — ET reference run, meter "
+                    f"authoritative, no GW row){extra}"
+                )
+                metered += 1
+            elif routes_personal:
                 self.stdout.write(
                     f"  {parcel.parcel_number}: gross {gross_af} AF -> "
                     f"net {net_af} AF (wrote {-net_af} AF GW){extra}"
@@ -637,6 +669,8 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f"{verb} {written} calculated GW row(s) for {period}; "
                 f"{unmet} no-well parcel(s) recorded as unmet demand; "
+                f"{metered} metered parcel(s) given an ET reference run "
+                f"(meter authoritative, no GW row); "
                 f"{skipped_no_et} parcel(s) skipped (no ET data); "
                 f"{banked} banked, {drew} drew, {recharged} credited recharge."
             )
