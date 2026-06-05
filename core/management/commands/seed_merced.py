@@ -13,9 +13,14 @@ Order matters:
   4. seed_merced_operations — water rights + points of diversion (the surface
                               district). Needs the flowlines from step 2.
   5. seed_merced_parcels_from_selection — parcels + canal/well/GSA links from
-                              Brent's QGIS field selection. Needs PODs (4),
-                              GSAs (3), and data/merced/selected_parcels.geojson.
-  6. seed_merced_recharge   — managed-recharge sites.
+                              Brent's QGIS field selection (incl. the 2 Merced
+                              River dual-purpose parcels). Needs PODs (4), GSAs
+                              (3), and data/merced/selected_parcels.geojson.
+  6. seed_merced_basins_from_selection — recharge AREAS from Brent's QGIS pick:
+                              El Nido Canal spreading basins (new canal intakes)
+                              + Merced River Flood-MAR cropland (linked to the
+                              existing MER-POD-009). Needs the PODs (4) + parcels
+                              (5). Replaces the old hardcoded seed_merced_recharge.
   7. seed_merced_cropland   — a crop-type UsageLocation per irrigated parcel, so
                               the calc engine's facility_only_zero step does not
                               zero every parcel. Land use is a prerequisite for
@@ -51,7 +56,10 @@ SEQUENCE = [
     # real parcels/wells right after, so the flush is safe.
     ("seed_merced_operations", {"flush": True}),
     ("seed_merced_parcels_from_selection", {}),
-    ("seed_merced_recharge", {}),
+    # Recharge AREAS from the QGIS pick (El Nido pure-recharge basins + Merced
+    # River Flood-MAR cropland). Replaces the hardcoded two-square seed; runs
+    # after parcels (needs MER-POD-009) and before the recharge events.
+    ("seed_merced_basins_from_selection", {}),
     # Land use BEFORE the accounting layer: the engine's facility_only_zero step
     # zeros any parcel with no crop_type UsageLocation, so the ledgers' parcels
     # need crop land use first. Idempotent; MER-keyed.

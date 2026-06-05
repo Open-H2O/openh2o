@@ -45,6 +45,14 @@ FIXTURE = os.path.join(
     os.path.dirname(__file__), "..", "..", "..",
     "data", "merced", "selected_parcels.geojson",
 )
+# Phase 62: the Merced River dual-purpose (Flood-MAR) parcels. These are ordinary
+# ag parcels here — crops + Merced River surface delivery, served by MER-POD-009
+# (their formal place of use). Their recharge half (the storm-flooded Flood-MAR
+# RechargeSite on the same footprint) is added by seed_merced_basins_from_selection.
+RIVER_FIXTURE = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..",
+    "data", "merced", "selected_river_ag_parcels.geojson",
+)
 GROUNDWATER_SOURCES = {"groundwater", "conjunctive"}
 
 # Demo operators (parcel owner_name) so account-level accounting has real
@@ -87,6 +95,12 @@ class Command(BaseCommand):
             features = json.load(f)["features"]
         if not features:
             raise CommandError("Selection fixture has no features.")
+
+        # Phase 62: append the Merced River dual-purpose parcels as surface-served
+        # ag parcels (no well → FLOOD_MAR archetype, so their storm over-delivery
+        # recharges the shared aquifer). They flow through the SAME link logic
+        # below, becoming formal places of use under MER-POD-009.
+        features = features + self._river_features()
 
         self._flush()
 
@@ -239,6 +253,38 @@ class Command(BaseCommand):
             f"({sum(1 for m in well_members.values() if len(m) > 1)} shared "
             f"across multiple parcels); {gsa_links} parcels in their GSA"
         ))
+
+    @staticmethod
+    def _river_features():
+        """The Merced River Flood-MAR parcels, normalized to the selection schema.
+
+        Returns [] if the fixture is absent (the 74-field demo still seeds). Each
+        is marked surface-served (no well) so it routes recharge to the GSA pool,
+        and carries served_by=MER-POD-009 so the link logic makes it a place of
+        use under the Merced River diversion.
+        """
+        if not os.path.exists(RIVER_FIXTURE):
+            return []
+        with open(RIVER_FIXTURE) as f:
+            raw = json.load(f)["features"]
+        normalized = []
+        for ft in raw:
+            p = ft["properties"]
+            normalized.append({
+                "type": "Feature",
+                "geometry": ft["geometry"],
+                "properties": {
+                    "served_by": (p.get("served_by") or "").strip(),
+                    "water_source": "surface",   # no well → Flood-MAR archetype
+                    "well_group": "",
+                    "MAIN_CROP": "Cropland (Merced River, dual-purpose Flood-MAR)",
+                    "crop_class": "irrigated",
+                    "COUNTY": "Merced",
+                    "UniqueID": p.get("APN", "?"),
+                    "ACRES": p.get("GIS_ACRES"),
+                },
+            })
+        return normalized
 
     @staticmethod
     def _gsa_for(geom, zones):

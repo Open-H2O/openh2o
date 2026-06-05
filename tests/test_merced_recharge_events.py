@@ -63,8 +63,11 @@ def _fixture(capacity="100.0000", areas=("40", "30", "30")):
         p = ParcelFactory(parcel_number=number, area_acres=Decimal(acres))
         ParcelZoneFactory(parcel=p, zone=zone)
         parcels.append(p)
+    # operator + spreading_basin are how seed_merced_recharge_events now finds the
+    # Merced recharge areas (by operator, not hardcoded names — Phase 62).
     basin = RechargeSiteFactory(
-        name=BASIN, zone=zone, capacity_acre_feet=Decimal(capacity)
+        name=BASIN, zone=zone, capacity_acre_feet=Decimal(capacity),
+        operator="Merced Irrigation District", site_type="spreading_basin",
     )
     return period, zone, parcels, basin
 

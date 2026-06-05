@@ -1,13 +1,18 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Seed managed-recharge EVENTS on the two Merced spreading basins (Phase 52.5-03).
+"""Seed managed/storm recharge EVENTS on the Merced recharge areas (Phase 52.5-03).
 
-``seed_merced_recharge`` creates the two MID spreading basins (Cressey-Winton,
-El Nido) as ``RechargeSite`` rows but gives them no events, so no managed recharge
-ever reaches the ledger. This command adds wet-season ``RechargeEvent`` rows for
-WY 2024-2025 and distributes each as a GROUNDWATER credit across the overlying
-GSA's parcels — the *managed* half of an honest groundwater budget. (The
-*incidental* deep-percolation half — surface delivered beyond crop demand — is
-written separately by the calc engine; see run_calculations / ISS-052.)
+``seed_merced_basins_from_selection`` creates the Merced Irrigation District
+recharge areas (El Nido Canal spreading basins + Merced River Flood-MAR cropland,
+Phase 62) as ``RechargeSite`` rows but gives them no events, so no managed
+recharge ever reaches the ledger. This command adds wet-season ``RechargeEvent``
+rows for WY 2024-2025 and deposits each to the overlying GSA's basin pool — the
+*managed* half of an honest groundwater budget. (The *incidental* deep-percolation
+half — surface delivered beyond crop demand — is written separately by the calc
+engine; see run_calculations / ISS-052.)
+
+Basins are selected by ``operator`` (Merced Irrigation District) so this picks up
+whatever the current hand-pick produced without hardcoding basin names, and never
+touches Kaweah/Demo recharge sites.
 
 Decision (Brent, 2026-06-03): recharge credits **Groundwater (GW)**. The physical
 source water (storm/surface runoff diverted to the basin) is preserved in the
@@ -43,7 +48,9 @@ WET_SEASON = [
     (date(2025, 2, 15), Decimal("0.30")),
     (date(2025, 3, 15), Decimal("0.20")),
 ]
-BASIN_NAMES = ["Cressey-Winton Recharge Basin", "El Nido Recharge Basin"]
+# Merced recharge areas all carry this operator (set by the basin seed); the
+# single readable key that finds them without hardcoding names or hitting Kaweah.
+MID_OPERATOR = "Merced Irrigation District"
 REPORTING_PERIOD_NAME = "WY 2024-2025"
 
 
@@ -70,12 +77,16 @@ class Command(BaseCommand):
             )
             return
 
-        basins = list(RechargeSite.objects.filter(name__in=BASIN_NAMES))
+        basins = list(
+            RechargeSite.objects.filter(
+                operator=MID_OPERATOR, site_type="spreading_basin"
+            )
+        )
         if not basins:
             self.stderr.write(
                 self.style.ERROR(
-                    "No Merced recharge basins found — run seed_merced_recharge "
-                    "first."
+                    "No Merced recharge areas found — run "
+                    "seed_merced_basins_from_selection first."
                 )
             )
             return

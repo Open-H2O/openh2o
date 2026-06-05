@@ -507,6 +507,10 @@ class Command(BaseCommand):
                     "water_right": rights_by_id[rid],
                     "location": location,
                     "stream_name": stream_name,
+                    # Provenance FK (Phase 62): the real waterway segment this
+                    # diversion sits on. stream_name stays the descriptive label;
+                    # source_flowline is the structured tie to hydrography.
+                    "source_flowline": line,
                     "max_rate_cfs": max_cfs,
                     "status": "active",
                 },
