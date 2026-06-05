@@ -106,11 +106,14 @@
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span style="color: var(--color-gold);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Plain-language definitions for every term on this page.</p>
       </a>
-      {# TODO(60-02): when the "Methods Behind the Numbers" page exists, convert this to <a href="{% url 'methods' %}" class="card-raised card-link"> and drop the muted styling + badge. #}
-      <div class="card-raised" style="opacity: 0.55;" aria-disabled="true">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span class="badge badge-pill badge-grey">Coming soon</span></div>
-        <p class="text-tertiary text-sm" style="margin: 0;">The step-by-step calculation, from satellite ET to a closing balance &mdash; arriving in the next update.</p>
-      </div>
+      <a href="{% url 'methods' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">The step-by-step calculation, from satellite ET to a closing balance.</p>
+      </a>
+      <a href="{% url 'settings_explained' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">Every agency-wide knob that shapes these numbers &mdash; what it does and when to touch it.</p>
+      </a>
     </div>
   </div>
 

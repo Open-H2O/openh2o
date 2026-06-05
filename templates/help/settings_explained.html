@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Configs &amp; Settings, explained - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Configs &amp; Settings, explained{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'getting_started' %}">Help</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Configs &amp; Settings, explained</span>
+  </nav>
+  <p class="page-description">The operator&rsquo;s map to every agency-wide knob &mdash; what it does, who sets it, and when it&rsquo;s worth touching.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+{% url 'accounting:methodology_settings' as methodology_url %}
+{% url 'accounting:delivery_settings' as delivery_url %}
+{% url 'surface_deliveries' as surface_help_url %}
+{% url 'geography:zone_list' as zones_url %}
+{% url 'methods' as methods_url %}
+{% url 'water_balances' as water_balances_url %}
+{% url 'glossary' as glossary_url %}
+<div class="page-stack page-medium">
+
+  <div class="card-raised">
+    <h2 class="section-header">The short version</h2>
+    <p class="text-secondary text-base">A handful of settings shape how every number on this platform is calculated. They&rsquo;re <strong>agency policy, not daily data entry</strong> &mdash; an analyst or administrator sets them once during setup and revisits them rarely. A farmer never touches them. This page is the reference for each one: what it controls, who owns it, and when a change is actually warranted. The deeper detail sits under each &ldquo;Advanced&rdquo; toggle for when you need it.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">The methodology / calculation plan</h2>
+    <p class="text-secondary text-base">This is the ordered chain of subtractions the platform runs on every field &mdash; gross ET, minus effective rain, minus surface deliveries, minus any edge cases &mdash; to arrive at a billable groundwater figure. You can reorder the steps, switch any of them off, or tune how a step behaves (for example, how &ldquo;effective&rdquo; rainfall is estimated).</p>
+    <p class="text-secondary text-base"><strong>Who sets it:</strong> an administrator, on the <a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a> page.<br>
+    <strong>When to change it:</strong> rarely, and deliberately. Every calculation the platform produces flows through this chain, so a change re-shapes past and future numbers alike. Treat it like amending a policy, not flipping a switch &mdash; the step-by-step walkthrough is on <a class="prose-link" href="{{ methods_url }}">Methods Behind the Numbers</a>.</p>
+
+    {% include "partials/_deep_dive.html" with label="What the configurable steps actually are" body="<p>Each step in the chain has its own knobs. The two with the most options:</p><ul class='concept-list'><li><strong>Effective precipitation</strong> &mdash; choose how to estimate the share of rain the crop could use: a flat fraction of total rainfall, or a soil-storage model (USDA-SCS / TR-21). This decides how much rain is credited before groundwater is.</li><li><strong>Floor / banking</strong> (an edge-case step) &mdash; a floor keeps a result from going negative, and an optional bank carries a wet-month surplus forward against later dry months. Most agencies leave these at their defaults.</li></ul><p>The order matters: the platform subtracts free water (rain) and delivered water (canals) before asking what groundwater had to make up the difference. Reordering changes which supply gets &ldquo;credited&rdquo; first.</p>" %}
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Surface delivery settings</h2>
+    <p class="text-secondary text-base">Two agency-wide settings govern how canal deliveries are counted: <strong>how much of a delivery the crop actually consumes</strong> (the rest sinks past the roots and recharges the aquifer &mdash; typically around 75%), and <strong>what happens to a district&rsquo;s unused water at year-end</strong> (carry it forward as a credit, or let it expire). Together they decide how a district&rsquo;s total monthly delivery is split across its farms and what a leftover allotment is worth.</p>
+    <p class="text-secondary text-base"><strong>Who sets it:</strong> the analyst, on the <a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a> page.<br>
+    <strong>When to change it:</strong> when the agency adopts a different efficiency assumption, or its board changes the year-end rule.</p>
+    <p class="text-secondary text-base" style="margin-bottom: 0;">These two have their own dedicated walkthrough, so this page won&rsquo;t repeat it. <a class="prose-link" href="{{ surface_help_url }}">Read the full Surface Delivery Settings page &rarr;</a></p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Recovery horizon</h2>
+    <p class="text-secondary text-base">This is the per-district control over that year-end question: when a district doesn&rsquo;t use its full surface-water allotment, does the leftover <strong>carry forward</strong> as a credit it can draw on next year, or <strong>expire</strong> at year-end (use-it-or-lose-it)? The agency sets one default for everyone on the Delivery Settings page; the recovery horizon lets any single district depart from that default without affecting the rest.</p>
+    <p class="text-secondary text-base"><strong>Who sets it:</strong> an analyst, on an individual district&rsquo;s page (under <a class="prose-link" href="{{ zones_url }}">Zones</a>), using the &ldquo;Year-end unused water&rdquo; control.<br>
+    <strong>When to change it:</strong> when one district&rsquo;s rules genuinely differ &mdash; otherwise leave it on &ldquo;Use agency default,&rdquo; so a later agency-wide change flows through automatically.</p>
+    <p class="text-secondary text-base" style="margin-bottom: 0;">One thing this setting never changes: an <em>overdraw</em> &mdash; using more than the allotment &mdash; always carries forward as a debt. Only a surplus is governed by the carry-forward-or-expire choice.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Access control</h2>
+    <p class="text-secondary text-base">One system-level switch decides whether the platform&rsquo;s front door is open or locked. For this demonstration it is deliberately <strong>off</strong> &mdash; the front door is open so anyone can look around. Flipping it on is the &ldquo;go-live&rdquo; step a real agency takes when it&rsquo;s ready to restrict the platform to its own staff, and it&rsquo;s intentionally deferred until the demo has been evaluated. Most readers never need to touch this; the detail is below if you do.</p>
+
+    {% include "partials/_deep_dive.html" with label="What flipping access control on actually does" body="<p>The switch is a single setting (<code>ACCESS_CONTROL_ENFORCED</code>). While it&rsquo;s <strong>off</strong>, public sign-up is open and the setup wizard is reachable &mdash; the right state for a demo anyone should be able to explore.</p><p>Turning it <strong>on</strong> closes public sign-up and limits the platform to provisioned users: new accounts must be created and verified by an administrator rather than self-registered, and the open setup paths close. This is the <strong>go-live cutover</strong> &mdash; the deliberate step from &ldquo;open demonstration&rdquo; to &ldquo;the agency&rsquo;s working system.&rdquo; It&rsquo;s held until the demonstration has survived real-world evaluation, because once it&rsquo;s on, the easy open-door access that makes the demo useful goes away by design.</p>" %}
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Jump to a settings page</h2>
+    <p class="text-secondary text-base">Each knob lives on its own live page &mdash; here are the ones described above.</p>
+    <div class="card-grid">
+      <a href="{{ methodology_url }}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methodology Settings</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">Reorder and tune the calculation chain.</p>
+      </a>
+      <a href="{{ delivery_url }}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Delivery Settings</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">Crop-use share and the agency year-end rule.</p>
+      </a>
+      <a href="{{ zones_url }}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Zones</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">Set a single district&rsquo;s recovery horizon.</p>
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
