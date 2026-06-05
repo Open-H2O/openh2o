@@ -714,6 +714,24 @@ a { color: inherit; }
     margin-bottom: var(--space-xs);
     box-shadow: var(--shadow-pop-sm);
     text-align: left;
+    /* Reset casing/spacing — the pop-out may sit inside an uppercase heading
+       (e.g. "Budget Summary", "Water Balance") whose text-transform would
+       otherwise leak into the panel body. */
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* Invisible bridge across the gap between the "?" icon and the panel above
+   it, so moving the cursor up into the panel doesn't cross a dead zone that
+   drops the hover and closes it. Inert until the panel is shown (it inherits
+   the panel's pointer-events). */
+.explainer-panel::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: var(--space-sm);
 }
 
 .explainer-popout:hover .explainer-panel,
