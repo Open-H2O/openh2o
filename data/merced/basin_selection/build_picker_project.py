@@ -9,9 +9,9 @@ merced_basin_picker.gpkg (built first by build_basin_gpkg.py), with bottom→top
   - Merced Subbasin outline
   - canals (cyan, labelled) + named rivers (blue, labelled) — the feed options
   - existing v1.9 basins (magenta dashed outline, labelled) — reference only
-  - candidate_basins on top: the full DWR crop-field canvas, colored by crop,
-    semi-transparent over satellite, click-to-tag. Tag the fields that become
-    recharge basins with:
+  - agriculture: cropland as a faint red "avoid" wash (basins don't go on fields)
+  - candidate_basins on top: the open non-ag parcels (teal), click-to-tag. Tag
+    the parcels that become recharge basins with:
       name      -> basin name
       operator  -> operating district/GSA (optional)
       capacity_acre_feet -> design capacity hint (optional)
@@ -35,17 +35,6 @@ from qgis.PyQt.QtGui import QColor, QFont
 HERE = os.path.dirname(os.path.abspath(__file__))
 GPKG = os.path.join(HERE, "merced_basin_picker.gpkg")
 OUT = os.path.join(HERE, "merced_basin_picker.qgz")
-
-# Same crop palette as the parcel picker, so the candidate canvas reads the way
-# the crop pick did. Untagged fields show their crop color; tagged ones glow gold.
-CLASS_COLORS = {
-    "Deciduous fruits & nuts": "#c8902f", "Field crops": "#e8c63a",
-    "Truck/nursery/berry": "#7fb069", "Grain & hay": "#d4b483",
-    "Pasture": "#5f8d4e", "Vineyard": "#b048c8", "Rice": "#3a9cc5",
-    "Citrus & subtropical": "#e07a1f", "Idle": "#9aa0a6",
-    "Fallow/unclassified": "#c98b6b", "Other": "#8899aa",
-}
-FILL_ALPHA = 150  # opaque enough to read crop color over satellite imagery
 
 
 def vlayer(name, label):
@@ -98,16 +87,24 @@ def main():
         sys.exit("FATAL: satellite (gdal TMS) invalid: " + sat.error().summary())
 
     subbasin = vlayer("subbasin", "Merced Subbasin (boundary)")
+    agri = vlayer("agriculture", "Agriculture — basins do NOT go here")
     canals = vlayer("canals", "Canals (feed option — read the name)")
     rivers = vlayer("rivers", "Rivers (feed option — read the name)")
     diversions = vlayer("diversions", "Diversion headgates (where surface water is pulled)")
     existing = vlayer("existing_basins", "Existing v1.9 basins (reference — being replaced)")
-    cand = vlayer("candidate_basins", "Candidate basins — CLICK TO TAG")
+    cand = vlayer("candidate_basins", "Open non-ag parcels — CLICK TO TAG")
 
     # --- styling ---
     sub_sym = QgsFillSymbol.createSimple(
         {"color": "0,0,0,0", "outline_color": "#ffd400", "outline_width": "0.8"})
     subbasin.setRenderer(QgsSingleSymbolRenderer(sub_sym))
+
+    # Agriculture overlay — a faint red wash marking cropland (basins do NOT go
+    # here). Translucent so the satellite + parcel edges still read underneath.
+    ag_sym = QgsFillSymbol.createSimple(
+        {"color": _rgba("#d2424a", 70), "outline_color": "#d2424a",
+         "outline_width": "0.05"})
+    agri.setRenderer(QgsSingleSymbolRenderer(ag_sym))
 
     canal_sym = QgsLineSymbol.createSimple({"color": "#23b5d3", "width": "0.7"})
     canals.setRenderer(QgsSingleSymbolRenderer(canal_sym))
@@ -134,34 +131,25 @@ def main():
     existing.setRenderer(QgsSingleSymbolRenderer(ex_sym))
     label_with(existing, "name", 9, "#f5c2ff")
 
-    # Candidate footprints, rule-based so each field draws once: a TAGGED field
-    # (feeds_via set) glows gold with a bold white edge; every other field shows
-    # its crop color (semi-transparent over satellite) so the whole pickable
-    # canvas is visible — exactly the quilt the crop pick presented.
+    # Candidate parcels, rule-based so each draws once: a TAGGED parcel
+    # (feeds_via set) glows gold with a bold white edge; every untagged open
+    # parcel is a bright translucent teal so the pickable land is obvious over
+    # satellite (and clearly distinct from the red cropland).
     Rule = QgsRuleBasedRenderer.Rule
     root = Rule(None)
     tagged = QgsFillSymbol.createSimple(
-        {"color": _rgba("#ffd400", 200), "outline_color": "#ffffff",
+        {"color": _rgba("#ffd400", 205), "outline_color": "#ffffff",
          "outline_width": "0.8"})
     root.appendChild(Rule(tagged, 0, 0, "\"feeds_via\" IS NOT NULL AND \"feeds_via\" <> ''",
                           "▣ Tagged as recharge basin"))
-    for cls, hexcol in CLASS_COLORS.items():
-        sym = QgsFillSymbol.createSimple(
-            {"color": _rgba(hexcol, FILL_ALPHA), "outline_color": "#1a1d21",
-             "outline_width": "0.1"})
-        root.appendChild(Rule(
-            sym, 0, 0,
-            f"(\"feeds_via\" IS NULL OR \"feeds_via\" = '') AND \"crop_class\" = '{cls}'",
-            cls))
-    # Catch-all so a field with an unmapped crop_class still draws (never invisible).
-    other = QgsFillSymbol.createSimple(
-        {"color": _rgba("#8899aa", FILL_ALPHA), "outline_color": "#1a1d21",
-         "outline_width": "0.1"})
-    root.appendChild(Rule(other, 0, 0, "ELSE", "Other crop"))
+    pick = QgsFillSymbol.createSimple(
+        {"color": _rgba("#2bd4c4", 130), "outline_color": "#eafffb",
+         "outline_width": "0.3"})
+    root.appendChild(Rule(pick, 0, 0, "ELSE", "Open non-ag parcel (pick basins here)"))
     cand.setRenderer(QgsRuleBasedRenderer(root))
 
     # --- add bottom-up; candidate_basins last so it sits on top & is clickable ---
-    for lyr in (sat, subbasin, canals, rivers, diversions, existing, cand):
+    for lyr in (sat, subbasin, agri, canals, rivers, diversions, existing, cand):
         proj.addMapLayer(lyr)
 
     proj.write(OUT)

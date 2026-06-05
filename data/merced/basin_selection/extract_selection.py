@@ -20,7 +20,7 @@ import geopandas as gpd
 HERE = "/Users/slate/GitHub/openh2o/data/merced/basin_selection"
 OUT = "/Users/slate/GitHub/openh2o/data/merced/selected_basins.geojson"
 KEEP = ["name", "operator", "capacity_acre_feet", "feeds_via",
-        "UniqueID", "ACRES", "geometry"]
+        "APN", "GIS_ACRES", "geometry"]
 
 
 def main():
