@@ -18,6 +18,7 @@
             hx-target="#ledger-results"
             hx-include="#ledger-filters"
             hx-trigger="click, keyup[key=='Enter']"
+            hx-push-url="true"
             hx-vals='{"sort": "date", "dir": "{% if sort == "date" and direction == "asc" %}desc{% else %}asc{% endif %}"}'>
           Date{% if sort == "date" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% elif not sort %} &#9660;{% endif %}
         </th>
@@ -26,6 +27,7 @@
             hx-target="#ledger-results"
             hx-include="#ledger-filters"
             hx-trigger="click, keyup[key=='Enter']"
+            hx-push-url="true"
             hx-vals='{"sort": "parcel", "dir": "{% if sort == "parcel" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
           Parcel{% if sort == "parcel" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
         </th>
@@ -34,6 +36,7 @@
             hx-target="#ledger-results"
             hx-include="#ledger-filters"
             hx-trigger="click, keyup[key=='Enter']"
+            hx-push-url="true"
             hx-vals='{"sort": "amount", "dir": "{% if sort == "amount" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
           Amount (AF){% if sort == "amount" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
         </th>
@@ -42,6 +45,7 @@
             hx-target="#ledger-results"
             hx-include="#ledger-filters"
             hx-trigger="click, keyup[key=='Enter']"
+            hx-push-url="true"
             hx-vals='{"sort": "source", "dir": "{% if sort == "source" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
           Source{% if sort == "source" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
         </th>
@@ -50,6 +54,7 @@
             hx-target="#ledger-results"
             hx-include="#ledger-filters"
             hx-trigger="click, keyup[key=='Enter']"
+            hx-push-url="true"
             hx-vals='{"sort": "water_type", "dir": "{% if sort == "water_type" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
           Water Type{% if sort == "water_type" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
         </th>
@@ -125,3 +130,18 @@
   {% endif %}
 </div>
 {% endif %}
+
+{# The active sort lives in hidden inputs in the OUTER #ledger-filters form,
+   which HTMX never re-renders on a results-only swap. This re-runs on every
+   swap and writes the current sort/dir back into those inputs, so a later
+   filter change carries the active sort instead of resetting it. #}
+<script>
+(function () {
+  var form = document.getElementById("ledger-filters");
+  if (!form) return;
+  var s = form.querySelector("input[name='sort']");
+  var d = form.querySelector("input[name='dir']");
+  if (s) s.value = "{{ sort|escapejs }}";
+  if (d) d.value = "{{ direction|escapejs }}";
+})();
+</script>
