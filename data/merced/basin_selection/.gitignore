@@ -8,3 +8,8 @@ merced_basin_picker.qgz
 *.aux.xml
 _render_*.png
 _render_*.py
+RechargeParcels_*
+AgParcels_*
+_selected*
+*.qmd
+merced_ag_parcels.geojson

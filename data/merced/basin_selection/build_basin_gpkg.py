@@ -56,11 +56,18 @@ def main():
     cand.to_file(OUT, layer="candidate_basins", driver="GPKG")
     print(f"candidate_basins: {len(cand)} parcels")
 
-    # --- agriculture overlay (the "avoid" layer): the DWR crop fields ---
-    ag = gpd.read_file(CROP_FIELDS_GPKG, layer="crop_fields").to_crs("EPSG:4326")
-    ag = ag[["geometry"]].copy()
-    ag.to_file(OUT, layer="agriculture", driver="GPKG")
-    print(f"agriculture (avoid): {len(ag)} fields")
+    # --- agricultural parcels: the cropland (orange). Doubles as the "avoid"
+    # context for the basin pick AND the SELECTABLE set for the surface-delivery
+    # scenario (Merced River Diversion -> ag parcels). Same editable columns so a
+    # selected batch can be tagged the same way. ---
+    ag = gpd.read_file(f"{HERE}/merced_ag_parcels.geojson").to_crs("EPSG:4326")
+    ag = ag[[c for c in KEEP_CONTEXT if c in ag.columns] + ["geometry"]].copy()
+    ag["name"] = ""
+    ag["operator"] = ""
+    ag["capacity_acre_feet"] = ""
+    ag["feeds_via"] = ""
+    ag.to_file(OUT, layer="ag_parcels", driver="GPKG")
+    print(f"ag_parcels (cropland / surface-delivery candidates): {len(ag)}")
 
     # --- reference layers (read-only context) ---
     refs = {

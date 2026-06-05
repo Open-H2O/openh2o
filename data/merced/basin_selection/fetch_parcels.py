@@ -37,6 +37,7 @@ OUT_FIELDS = "OBJECTID,APN,NAME,GIS_ACRES"
 PAGE = 2000
 MIN_ACRES = 10.0       # a recharge basin needs real room; drop residential lots
 AG_FRAC_MAX = 0.25     # <= this share covered by crop = "non-agricultural"
+AG_FRAC_MIN = 0.50     # >= this share covered by crop = "agricultural" (delivery)
 
 
 def fetch_page(offset):
@@ -98,12 +99,20 @@ def main():
     inter = p3310.geometry.intersection(crop_union).area
     p3310["ag_frac"] = (inter / areas).fillna(0.0).round(3)
 
-    nonag = p3310[p3310["ag_frac"] <= AG_FRAC_MAX].copy().to_crs("EPSG:4326")
-    nonag = nonag[["APN", "NAME", "GIS_ACRES", "ag_frac", "geometry"]]
+    cols = ["APN", "NAME", "GIS_ACRES", "ag_frac", "geometry"]
+    nonag = p3310[p3310["ag_frac"] <= AG_FRAC_MAX].copy().to_crs("EPSG:4326")[cols]
     out = f"{HERE}/merced_candidate_parcels.geojson"
     nonag.to_file(out, driver="GeoJSON")
     print(f"wrote {out}: {len(nonag)} non-agricultural candidate parcels "
           f"(ag_frac <= {AG_FRAC_MAX})")
+
+    # Also emit the AGRICULTURAL parcels (majority cropped) — the selectable set
+    # for the surface-delivery scenario (a diversion serving cropland, e.g. the
+    # Merced River Diversion → ag parcels).
+    ag = p3310[p3310["ag_frac"] >= AG_FRAC_MIN].copy().to_crs("EPSG:4326")[cols]
+    out_ag = f"{HERE}/merced_ag_parcels.geojson"
+    ag.to_file(out_ag, driver="GeoJSON")
+    print(f"wrote {out_ag}: {len(ag)} agricultural parcels (ag_frac >= {AG_FRAC_MIN})")
 
 
 if __name__ == "__main__":

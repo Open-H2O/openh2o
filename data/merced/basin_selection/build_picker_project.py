@@ -87,7 +87,7 @@ def main():
         sys.exit("FATAL: satellite (gdal TMS) invalid: " + sat.error().summary())
 
     subbasin = vlayer("subbasin", "Merced Subbasin (boundary)")
-    agri = vlayer("agriculture", "Agriculture — basins do NOT go here")
+    agri = vlayer("ag_parcels", "Ag parcels (cropland) — select for Merced River delivery")
     canals = vlayer("canals", "Canals (feed option — read the name)")
     rivers = vlayer("rivers", "Rivers (feed option — read the name)")
     diversions = vlayer("diversions", "Diversion headgates (where surface water is pulled)")
@@ -99,11 +99,12 @@ def main():
         {"color": "0,0,0,0", "outline_color": "#ffd400", "outline_width": "0.8"})
     subbasin.setRenderer(QgsSingleSymbolRenderer(sub_sym))
 
-    # Agriculture overlay — a faint red wash marking cropland (basins do NOT go
-    # here). Translucent so the satellite + parcel edges still read underneath.
+    # Ag parcels — translucent orange cropland. Reads as "avoid" for the basin
+    # pick, and is the SELECTABLE set for the Merced River surface-delivery
+    # scenario (select the served parcels, Export -> Save Selected Features As).
     ag_sym = QgsFillSymbol.createSimple(
-        {"color": _rgba("#d2424a", 70), "outline_color": "#d2424a",
-         "outline_width": "0.05"})
+        {"color": _rgba("#e07a1f", 85), "outline_color": "#f0a050",
+         "outline_width": "0.15"})
     agri.setRenderer(QgsSingleSymbolRenderer(ag_sym))
 
     canal_sym = QgsLineSymbol.createSimple({"color": "#23b5d3", "width": "0.7"})
