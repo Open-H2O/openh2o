@@ -85,13 +85,50 @@ Variables:
 
         map.on('click', '{{ map_id }}-dots', function(e) {
           var p = e.features[0].properties;
-          var hrs = p.hours_since_data ? Math.round(p.hours_since_data) + 'h ago' : 'no data';
-          new maplibregl.Popup({ closeButton: false })
+
+          // Relative age in human units (hours under a day, else days).
+          var age;
+          if (p.hours_since_data == null) {
+            age = 'no reading yet';
+          } else if (p.hours_since_data < 48) {
+            age = Math.round(p.hours_since_data) + ' h ago';
+          } else {
+            age = Math.round(p.hours_since_data / 24) + ' days ago';
+          }
+
+          // Plain-English freshness + the matching dot colour.
+          var freshMeta = {
+            fresh: { label: 'Up to date', color: '#22c55e' },
+            stale: { label: 'Slightly behind', color: '#f59e0b' },
+            dead:  { label: 'No recent data', color: '#ef4444' }
+          }[p.freshness] || { label: p.freshness, color: '#8899aa' };
+
+          // The actual latest measurement, when we have one.
+          var readingLine;
+          if (p.latest_value != null) {
+            var unit = p.latest_unit ? ' ' + p.latest_unit : '';
+            var param = p.latest_parameter ? ' &middot; ' + p.latest_parameter : '';
+            readingLine =
+              '<div style="font-size:15px;font-weight:600;margin:2px 0 4px;">' +
+              Number(p.latest_value).toLocaleString() + unit +
+              '<span style="color:#8899aa;font-size:12px;font-weight:400;">' + param + '</span></div>';
+          } else {
+            readingLine = '<div style="color:#8899aa;margin:2px 0 4px;">No published reading</div>';
+          }
+
+          new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
             .setLngLat(e.lngLat)
             .setHTML(
-              '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:8px 12px;border-radius:6px;font-size:12px;">' +
-              '<strong>' + p.station_name + '</strong><br>' +
-              '<span style="color:#8899aa;">' + p.data_source_code + ' &middot; ' + p.freshness + ' &middot; ' + hrs + '</span>' +
+              '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+              '<div style="font-weight:600;font-size:13px;">' + p.station_name + '</div>' +
+              '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' +
+                (p.data_source_code || '').toUpperCase() + ' &middot; ' + p.external_station_id + '</div>' +
+              readingLine +
+              '<div style="display:flex;align-items:center;gap:6px;">' +
+                '<span style="width:8px;height:8px;border-radius:50%;background:' + freshMeta.color + ';display:inline-block;"></span>' +
+                '<span style="color:#8899aa;">' + freshMeta.label + ' &middot; ' + age + '</span></div>' +
+              '<a href="/datasync/stations/' + p.pk + '/" ' +
+                'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View station &rarr;</a>' +
               '</div>'
             )
             .addTo(map);

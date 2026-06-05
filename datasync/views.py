@@ -549,6 +549,20 @@ def stations_freshness_geojson(request):
         is_active=True, location__isnull=False
     ).select_related("data_source")
 
+    # Latest published reading (value/unit/parameter) per station, so the map
+    # popup shows the actual measurement — not just a freshness colour. Ordered
+    # newest-first; the first row seen per station is its latest.
+    latest_reading: dict = {}
+    reading_rows = (
+        DataRecordStaging.objects
+        .filter(station__in=stations, status="published")
+        .order_by("station_id", "-observation_date")
+        .values("station_id", "value", "unit", "parameter_code")
+    )
+    for row in reading_rows:
+        if row["station_id"] not in latest_reading:
+            latest_reading[row["station_id"]] = row
+
     features = []
     for s in stations:
         fresh_class = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
@@ -556,6 +570,20 @@ def stations_freshness_geojson(request):
             (now - s.last_data_at).total_seconds() / 3600
             if s.last_data_at else None
         )
+
+        reading = latest_reading.get(s.pk)
+        latest_value = None
+        latest_unit = ""
+        latest_param = ""
+        if reading and reading["value"] is not None:
+            try:
+                latest_value = round(float(reading["value"]), 2)
+            except (ValueError, TypeError):
+                latest_value = None
+            latest_unit = reading["unit"] or ""
+            latest_param = get_parameter_label(
+                s.data_source.code, reading["parameter_code"]
+            )
 
         features.append({
             "type": "Feature",
@@ -571,6 +599,9 @@ def stations_freshness_geojson(request):
                 "freshness": fresh_class,
                 "hours_since_data": round(hours_since, 1) if hours_since is not None else None,
                 "last_data_at": s.last_data_at.isoformat() if s.last_data_at else None,
+                "latest_value": latest_value,
+                "latest_unit": latest_unit,
+                "latest_parameter": latest_param,
             },
         })
 
