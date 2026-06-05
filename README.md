@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
-<p align="center"><img src="static/img/droplet-icon.png" alt="OpenH2O" width="120"></p>
+<p align="center"><img src="static/img/favicon-192.png" alt="OpenH2O" width="110"></p>
 
 # OpenH2O — Open Water Accounting Platform
 
