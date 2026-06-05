@@ -12,8 +12,8 @@
 #                    logs to a writable path, alerts via ntfy on failure if
 #                    OPENH2O_NTFY_URL is set).
 #                    Live gauges (CDEC, USGS) run hourly for near-real-time flow;
-#                    slower sources (ET, groundwater, forecasts, climate) run
-#                    once daily because they only publish daily/periodically.
+#                    slower sources (groundwater, climate) run once daily
+#                    because they only publish daily/periodically.
 #   run_health_checks - Check database, disk, SSL, migrations, and sync freshness
 #   prune_old_data    - Delete staging records and logs older than retention thresholds
 
@@ -23,8 +23,9 @@ OPENH2O_LOG_DIR=/opt/openh2o-logs
 # Hourly: live stream / reservoir telemetry (near-real-time flow & stage)
 0 * * * * $OPENH2O_DIR/scripts/run-sync.sh cdec usgs
 
-# Daily 2:00 AM: slower sources — ET, groundwater, river forecasts, climate
-0 2 * * * $OPENH2O_DIR/scripts/run-sync.sh cimis cnrfc dwr_wdl dwr_sgma noaa openet
+# Daily 2:00 AM: slower periodic sources — groundwater (DWR WDL/SGMA) and climate (NOAA)
+# (cimis/cnrfc/openet dropped 59-01: deactivated sources, no useful markers — see seed_data_sources.py)
+0 2 * * * $OPENH2O_DIR/scripts/run-sync.sh dwr_wdl dwr_sgma noaa
 
 # Health checks every 6 hours
 0 */6 * * * cd $OPENH2O_DIR && docker compose exec -T web python manage.py run_health_checks >> $OPENH2O_LOG_DIR/health.log 2>&1
