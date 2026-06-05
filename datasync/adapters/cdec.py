@@ -75,21 +75,32 @@ class CDECAdapter(BaseAdapter):
     source_code = "cdec"
     rate_limit_seconds = 0.5
 
+    # CDEC sensors post at different durations: reservoirs report a Daily value,
+    # but most river/stream gauges only publish Hourly or Event ("E", ~15-min)
+    # readings and return NOTHING for a daily-duration query. Querying "D" alone
+    # left every flow gauge looking dead (59-02). Try coarsest→finest and stop at
+    # the first duration that returns rows, so reservoirs stay compact (daily) while
+    # flow gauges still land their native-cadence data. The staging unique key
+    # (station, parameter_code, observation_date) dedups sub-daily rows on re-sync.
+    DURATION_CODES = ("D", "H", "E")
+
     def fetch(self, station, start_date, end_date):
-        """Fetch data from CDEC JSON API."""
+        """Fetch data from CDEC JSON API, falling back across sensor durations."""
         records = []
         for param_code in station.parameters or ["15"]:
-            params = {
-                "Stations": station.external_station_id,
-                "SensorNums": param_code,
-                "dur_code": "D",
-                "Start": start_date.strftime("%Y-%m-%d"),
-                "End": end_date.strftime("%Y-%m-%d"),
-            }
-            resp = self._request("GET", BASE_URL, params=params)
-            data = resp.json()
-            if isinstance(data, list):
-                records.extend(data)
+            for dur_code in self.DURATION_CODES:
+                params = {
+                    "Stations": station.external_station_id,
+                    "SensorNums": param_code,
+                    "dur_code": dur_code,
+                    "Start": start_date.strftime("%Y-%m-%d"),
+                    "End": end_date.strftime("%Y-%m-%d"),
+                }
+                resp = self._request("GET", BASE_URL, params=params)
+                data = resp.json()
+                if isinstance(data, list) and data:
+                    records.extend(data)
+                    break  # got this sensor's data at its native duration
         return records
 
     def parse(self, raw_data):
