@@ -456,6 +456,30 @@ a { color: inherit; }
     outline-offset: -2px;
 }
 
+/* Sticky only works if .app-content is a real bounded scroll container. The
+   global shell uses min-height:100vh, so on a long page it GROWS and the whole
+   document scrolls — .app-content never scrolls internally and the sticky bar
+   has no scrollport to pin against. On the ledger we lock the shell to the
+   viewport so .app-content scrolls inside, and zero its top padding (re-added on
+   .page-stack) so rows can't peek through the gap above the pinned bar. Scoped
+   with :has() so no other page's scroll behavior changes. */
+.app-shell:has(#ledger-filters) {
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-shell:has(#ledger-filters) .app-main {
+    min-height: 0;
+}
+
+.app-content:has(#ledger-filters) {
+    padding-top: 0;
+}
+
+.app-content:has(#ledger-filters) > .page-stack {
+    padding-top: var(--space-lg);
+}
+
 .back-link:focus-visible,
 .breadcrumb a:focus-visible {
     outline: 2px solid var(--color-gold);
