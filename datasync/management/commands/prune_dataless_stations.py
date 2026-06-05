@@ -35,12 +35,23 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--dry-run", action="store_true",
-            help="Report what would be deactivated without changing anything",
+            help="Report what would change without touching anything",
+        )
+        parser.add_argument(
+            "--delete", action="store_true",
+            help="DELETE the dataless active stations instead of just deactivating them",
+        )
+        parser.add_argument(
+            "--purge-inactive", action="store_true",
+            help="Also DELETE every currently-inactive station (the wide discovery net). "
+                 "Inactive stations carry no published data, so this loses nothing but the roster clutter.",
         )
 
     def handle(self, *args, **options):
         min_records = options["min_records"]
         dry_run = options["dry_run"]
+        delete = options["delete"]
+        purge_inactive = options["purge_inactive"]
 
         # Count only PUBLISHED staging rows per active station.
         stations = (
@@ -53,19 +64,26 @@ class Command(BaseCommand):
             )
             .select_related("data_source")
         )
-
         to_prune = [s for s in stations if s.published_count < min_records]
 
-        if not to_prune:
+        # The wide discovery net: inactive stations (none carry published data).
+        inactive_qs = MonitoredStation.objects.filter(is_active=False)
+        inactive_count = inactive_qs.count() if purge_inactive else 0
+
+        if not to_prune and not inactive_count:
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"No active stations below {min_records} published records. Nothing to prune."
+                    f"Nothing to prune: no active stations below {min_records} "
+                    "published records" + (" and no inactive stations." if purge_inactive else ".")
                 )
             )
             return
 
         for s in to_prune:
-            verb = "would deactivate" if dry_run else "deactivated"
+            if dry_run:
+                verb = "would delete" if delete else "would deactivate"
+            else:
+                verb = "deleted" if delete else "deactivated"
             self.stdout.write(
                 f"  {verb}: {s.data_source.code} {s.external_station_id} "
                 f"({s.station_name}) — {s.published_count} records"
@@ -73,13 +91,34 @@ class Command(BaseCommand):
 
         if not dry_run:
             ids = [s.pk for s in to_prune]
-            MonitoredStation.objects.filter(pk__in=ids).update(is_active=False)
+            if delete:
+                # Cascades to that station's DataRecordStaging rows (there are few/none).
+                MonitoredStation.objects.filter(pk__in=ids).delete()
+            else:
+                MonitoredStation.objects.filter(pk__in=ids).update(is_active=False)
+            if purge_inactive:
+                inactive_qs.delete()
 
-        action = "Would deactivate" if dry_run else "Deactivated"
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"{action} {len(to_prune)} dataless station(s) "
-                f"(< {min_records} published records). "
-                f"{MonitoredStation.objects.filter(is_active=True).count()} active stations remain."
+        if to_prune:
+            if delete:
+                action = "Would delete" if dry_run else "Deleted"
+            else:
+                action = "Would deactivate" if dry_run else "Deactivated"
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"{action} {len(to_prune)} dataless active station(s) "
+                    f"(< {min_records} published records)."
+                )
             )
+        if purge_inactive and inactive_count:
+            action = "Would delete" if dry_run else "Deleted"
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"{action} {inactive_count} inactive (wide-net) station(s)."
+                )
+            )
+
+        self.stdout.write(
+            f"{MonitoredStation.objects.filter(is_active=True).count()} active / "
+            f"{MonitoredStation.objects.count()} total stations remain."
         )

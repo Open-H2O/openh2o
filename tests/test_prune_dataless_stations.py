@@ -92,3 +92,43 @@ def test_only_published_records_count(source):
     call_command("prune_dataless_stations", stdout=StringIO())
     s.refresh_from_db()
     assert s.is_active is False
+
+
+def test_delete_flag_removes_dataless_station(source):
+    empty = _station(source, "EMPTY", "Empty Gauge")
+    rich = _station(source, "RICH", "Rich Gauge"); _publish(rich, 5)
+
+    call_command("prune_dataless_stations", "--delete", stdout=StringIO())
+
+    assert not MonitoredStation.objects.filter(pk=empty.pk).exists()  # gone, not hidden
+    assert MonitoredStation.objects.filter(pk=rich.pk, is_active=True).exists()
+
+
+def test_purge_inactive_deletes_inactive_keeps_active(source):
+    inactive = _station(source, "OLD", "Wide-net Gauge"); inactive.is_active = False; inactive.save()
+    rich = _station(source, "RICH", "Rich Gauge"); _publish(rich, 5)
+
+    call_command("prune_dataless_stations", "--purge-inactive", stdout=StringIO())
+
+    assert not MonitoredStation.objects.filter(pk=inactive.pk).exists()
+    assert MonitoredStation.objects.filter(pk=rich.pk, is_active=True).exists()
+
+
+def test_chart_data_only_offers_measured_parameters(source):
+    """The chart dropdown must not offer a declared sensor the site never reports."""
+    from django.test import Client
+    from core.models import User
+
+    # Declared for two sensors, but only publishes one of them.
+    s = _station(source, "SWA", "Reservoir Gauge")
+    s.parameters = ["15", "76"]  # 15=storage (measured), 76=inflow (declared, never measured)
+    s.save()
+    _publish(s, 3)  # _publish writes parameter_code "20"... set to the declared 15 instead
+    DataRecordStaging.objects.filter(station=s).update(parameter_code="15")
+
+    user = User.objects.create_user("p", "p@example.com", "pw12345")
+    c = Client(); c.force_login(user)
+    resp = c.get(f"/datasync/stations/{s.pk}/chart-data/")
+    codes = {p["code"] for p in resp.json()["parameters"]}
+    assert "15" in codes
+    assert "76" not in codes  # declared-but-unmeasured sensor is NOT offered
