@@ -112,31 +112,32 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced recharge areas rebuilt from QGIS selection:\n"
-            f"  EL NIDO (pure recharge) — {n_basins} spreading basins, each fed by "
-            f"a recharge intake on the El Nido Canal ({n_intakes} intakes placed)\n"
+            f"  EL NIDO (pure recharge) — {n_basins} spreading basins fed by "
+            f"{n_intakes} shared intake on the El Nido Canal\n"
             f"  MERCED RIVER (Flood-MAR) — {n_floodmar} dual-purpose recharge areas "
             f"on cropland served by {RIVER_POD_CODE}"
         ))
 
     # ------------------------------------------------------------------
-    # El Nido Canal — pure recharge basins, each on its own canal intake
+    # El Nido Canal — pure recharge basins fed by ONE shared canal intake
     # ------------------------------------------------------------------
     def _seed_el_nido(self, features, boundary, gsa_zones):
-        n_basins = n_intakes = 0
-        for idx, ft in enumerate(features, start=1):
+        # One shared MID turnout off the El Nido Canal feeds the whole recharge
+        # complex (not a separate intake per basin). Build the basins first, then
+        # place the single intake and link every basin to it.
+        sites = []
+        feeds_via = ""
+        for ft in features:
             props = ft["properties"]
             geom = self._multipolygon(ft["geometry"])
-            name = props["name"]
-            feeds_via = (props.get("feeds_via") or "").strip()
-            capacity = self._capacity(props, geom)
-
+            feeds_via = (props.get("feeds_via") or "").strip() or feeds_via
             site, _ = RechargeSite.objects.update_or_create(
-                name=name,
+                name=props["name"],
                 defaults={
                     "site_type": "spreading_basin",
                     "location": geom.centroid,
                     "geometry": geom,
-                    "capacity_acre_feet": capacity,
+                    "capacity_acre_feet": self._capacity(props, geom),
                     "status": "active",
                     "operator": MID_OPERATOR,
                     "zone": self._gsa_for(geom, gsa_zones),
@@ -148,37 +149,45 @@ class Command(BaseCommand):
                     ),
                 },
             )
-            n_basins += 1
+            sites.append((site, geom))
+        if not sites:
+            return 0, 0
 
-            # The intake: a recharge-only POD snapped ONTO the named canal nearest
-            # this basin (never a geometric offset — RESEARCH Pitfall 3).
-            line = self._named_flowline(boundary, feeds_via, geom.centroid)
-            if line is None:
-                raise CommandError(
-                    f'No "{feeds_via}" flowline in {MERCED_BOUNDARY} for {name}; '
-                    "base layer incomplete or feeds_via misspelled."
-                )
-            pod, _ = PointOfDiversion.objects.update_or_create(
-                name=f"{BASIN_POD_PREFIX}{idx:03d} {name} Intake",
-                defaults={
-                    "water_right": None,  # storm/high-flow recharge take, no consumptive right
-                    "location": snap_to_flowline(geom.centroid, line),
-                    "stream_name": line.name,        # read FROM the flowline
-                    "source_flowline": line,
-                    "status": "active",
-                    "notes": (
-                        f"Recharge intake on the {line.name}, feeding {name}. "
-                        f"Operated during high-flow/storm events to divert water "
-                        f"for managed aquifer recharge."
-                    ),
-                },
+        # The shared intake: a recharge-only POD snapped ONTO the named canal at
+        # the point nearest the basin cluster (never a geometric offset — RESEARCH
+        # Pitfall 3). The cluster centroid is the union of the basin footprints.
+        cluster = sites[0][1]
+        for _, g in sites[1:]:
+            cluster = cluster.union(g)
+        centroid = cluster.centroid
+        line = self._named_flowline(boundary, feeds_via, centroid)
+        if line is None:
+            raise CommandError(
+                f'No "{feeds_via}" flowline in {MERCED_BOUNDARY}; base layer '
+                "incomplete or feeds_via misspelled."
             )
-            n_intakes += 1
+        pod, _ = PointOfDiversion.objects.update_or_create(
+            name=f"{BASIN_POD_PREFIX}001 El Nido Canal Recharge Intake",
+            defaults={
+                "water_right": None,  # storm/high-flow recharge take, no consumptive right
+                "location": snap_to_flowline(centroid, line),
+                "stream_name": line.name,        # read FROM the flowline
+                "source_flowline": line,
+                "status": "active",
+                "notes": (
+                    f"Shared recharge intake on the {line.name}, feeding the "
+                    f"{len(sites)} El Nido spreading basins. Operated during "
+                    f"high-flow/storm events to divert water for managed aquifer "
+                    f"recharge."
+                ),
+            },
+        )
+        for site, _g in sites:
             RechargeSitePOD.objects.update_or_create(
                 recharge_site=site, point_of_diversion=pod,
-                defaults={"notes": f"{name} is filled from the {line.name}."},
+                defaults={"notes": f"{site.name} is filled from the {line.name}."},
             )
-        return n_basins, n_intakes
+        return len(sites), 1
 
     # ------------------------------------------------------------------
     # Merced River — dual-purpose Flood-MAR on cropland (MER-POD-009)
