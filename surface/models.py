@@ -68,6 +68,15 @@ class PointOfDiversion(models.Model):
     name = models.CharField(max_length=200)
     location = models.PointField(srid=4326)
     stream_name = models.CharField(max_length=200, blank=True)
+    source_flowline = models.ForeignKey(
+        "geography.Flowline",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="diversions",
+        help_text="The real NHD/canal waterway this diversion sits on "
+        "(provenance). stream_name stays the human-readable eWRIMS label.",
+    )
     max_rate_cfs = models.DecimalField(
         max_digits=10, decimal_places=4, null=True, blank=True
     )
