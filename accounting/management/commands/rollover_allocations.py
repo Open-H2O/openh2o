@@ -149,7 +149,12 @@ class Command(BaseCommand):
                 # target-year rows are exactly this command's output — clearing
                 # them makes a re-run identical (idempotent, no duplicates). The
                 # contract is unchanged; expire districts just insert FEWER rows.
-                AllocationCarryover.objects.filter(water_year=target_wy).delete()
+                # ISS-055: scope the delete to this command's OWN origin so a
+                # basin_recharge_pool deposit that lands in the target year (the
+                # Phase 62 re-seed) is never collateral damage of the rollover.
+                AllocationCarryover.objects.filter(
+                    water_year=target_wy, origin="allocation_carryover"
+                ).delete()
                 AllocationCarryover.objects.bulk_create(
                     [
                         AllocationCarryover(
