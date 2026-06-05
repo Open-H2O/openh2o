@@ -635,6 +635,21 @@ def parcel_search_for_assignment(request, pk):
 # Ledger
 # ---------------------------------------------------------------------------
 
+# Whitelist of sortable columns → ORM fields. An unbounded order_by() fed from a
+# GET param is a 500 / injection vector, so we map a small set of safe keys and
+# fail closed to the newest-first default for anything else (Phase 63).
+LEDGER_SORTABLE = {
+    "date": "effective_date",
+    "parcel": "parcel__parcel_number",
+    "amount": "amount_acre_feet",
+    "source": "source_type",
+    "water_type": "water_type__name",
+}
+
+# Page-size options offered in the ledger toolbar. 100 is the at-scale default
+# (replaces the historic hardcoded 50); anything outside the set falls back to 100.
+LEDGER_PAGE_SIZES = (25, 100, 500)
+
 
 @login_required
 def ledger_list(request):
@@ -650,12 +665,26 @@ def ledger_list(request):
     start_date = request.GET.get("start_date", "").strip()
     end_date = request.GET.get("end_date", "").strip()
 
+    # Phase 63 navigation params: sort column + direction, Zone facet, page size.
+    sort = request.GET.get("sort", "").strip()
+    direction = request.GET.get("dir", "desc").strip()
+    if direction not in ("asc", "desc"):
+        direction = "desc"
+    zone_id = request.GET.get("zone", "").strip()
+    try:
+        page_size = int(request.GET.get("page_size", 100))
+    except (TypeError, ValueError):
+        page_size = 100
+    if page_size not in LEDGER_PAGE_SIZES:
+        page_size = 100
+
     queryset = ParcelLedger.objects.select_related(
         "parcel", "water_type", "reporting_period"
     ).order_by("-effective_date", "-created_at")
 
     periods = ReportingPeriod.objects.order_by("-start_date")
     water_types = WaterType.objects.order_by("name")
+    zones = Zone.objects.order_by("name")
 
     # ISS-022: landing on the ledger with no filters at all should not bury the
     # audit trail. The "How was this calculated?" links only render on
@@ -665,7 +694,9 @@ def ledger_list(request):
     period_auto_defaulted = False
     auto_default_period_name = ""
     auto_default_calculated = False
-    no_other_filters = not (q or source_type or water_type_id or start_date or end_date)
+    no_other_filters = not (
+        q or source_type or water_type_id or start_date or end_date or zone_id
+    )
     if not period_present and no_other_filters:
         default_period_id = (
             ParcelLedger.objects.filter(
@@ -705,8 +736,21 @@ def ledger_list(request):
         queryset = queryset.filter(effective_date__gte=start_date)
     if end_date:
         queryset = queryset.filter(effective_date__lte=end_date)
+    if zone_id:
+        # parcel ↔ zone is many-to-many through ParcelZone, so a parcel in N
+        # zones would duplicate its ledger rows — .distinct() collapses them.
+        # select_related already pulls the parcel/water_type columns, so ordering
+        # by those joined fields stays valid under SELECT DISTINCT.
+        queryset = queryset.filter(parcel__parcel_zones__zone_id=zone_id).distinct()
 
-    paginator = Paginator(queryset, 50)
+    # Sort: only a whitelisted key re-orders; everything else keeps the
+    # newest-first default set on the queryset above. A stable -created_at
+    # tiebreak keeps pagination deterministic when the sort field ties.
+    if sort in LEDGER_SORTABLE:
+        prefix = "-" if direction == "desc" else ""
+        queryset = queryset.order_by(f"{prefix}{LEDGER_SORTABLE[sort]}", "-created_at")
+
+    paginator = Paginator(queryset, page_size)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
@@ -721,6 +765,12 @@ def ledger_list(request):
         "end_date": end_date,
         "periods": periods,
         "water_types": water_types,
+        "zones": zones,
+        "zone_id": zone_id,
+        "sort": sort,
+        "direction": direction,
+        "page_size": page_size,
+        "page_sizes": LEDGER_PAGE_SIZES,
         "source_type_choices": ParcelLedger.SOURCE_TYPE_CHOICES,
         "period_auto_defaulted": period_auto_defaulted,
         "auto_default_period_name": auto_default_period_name,
