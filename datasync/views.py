@@ -245,6 +245,7 @@ def station_detail(request, pk):
     measured_codes = sorted(
         DataRecordStaging.objects
         .filter(station=station, status="published")
+        .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code alone
         .values_list("parameter_code", flat=True)
         .distinct()
     )
@@ -479,6 +480,7 @@ def station_chart_data(request, pk):
     published_param_rows = (
         DataRecordStaging.objects
         .filter(station=station, status="published")
+        .order_by()  # clear Meta.ordering (-observation_date) so DISTINCT keys on code+unit alone
         .values("parameter_code", "unit")
         .distinct()
     )

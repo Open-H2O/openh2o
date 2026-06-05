@@ -132,3 +132,23 @@ def test_chart_data_only_offers_measured_parameters(source):
     codes = {p["code"] for p in resp.json()["parameters"]}
     assert "15" in codes
     assert "76" not in codes  # declared-but-unmeasured sensor is NOT offered
+
+
+def test_station_detail_parameter_chips_are_deduped(source):
+    """Many readings of one parameter must yield ONE chip, not one per reading.
+
+    Guards the Django DISTINCT + Meta.ordering gotcha: the staging model orders by
+    -observation_date, which leaks into a values_list().distinct() and un-dedupes it.
+    """
+    from django.test import Client
+    from core.models import User
+
+    s = _station(source, "MULTI", "Multi-reading Gauge")
+    _publish(s, 6)  # 6 readings, all parameter_code "20"
+
+    user = User.objects.create_user("d", "d@example.com", "pw12345")
+    c = Client(); c.force_login(user)
+    resp = c.get(f"/datasync/stations/{s.pk}/")
+    enriched = resp.context["enriched_parameters"]
+    codes = [p["code"] for p in enriched]
+    assert codes == ["20"]  # one chip for the one measured parameter, not six
