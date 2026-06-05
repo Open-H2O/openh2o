@@ -213,12 +213,35 @@
 
         <div class="row-between mb-md" style="margin-top: var(--space-sm);">
           <span class="text-secondary text-sm">Residual: <span class="td-num">{{ mass_balance.residual_af|floatformat:4 }}</span> AF</span>
-          {% if mass_balance.closes %}
+          {% if mass_balance.band_status == "closes" %}
           <span class="badge badge-green">Balance closes</span>
+          {% elif mass_balance.band_status == "realistic" %}
+          <span class="badge badge-blue">{% if mass_balance.is_surplus %}Minor surplus{% else %}Minor shortfall{% endif %}</span>
           {% else %}
-          <span class="badge badge-orange">Residual outstanding</span>
+          <span class="badge badge-orange">{% if mass_balance.is_surplus %}Residual outstanding{% else %}Supply shortfall{% endif %}</span>
           {% endif %}
         </div>
+        {% if mass_balance.band_status == "realistic" %}
+        <!-- 58-03: a small residual is NORMAL (real books rarely close to zero), not
+             a warning — explain it plainly so a metered or lightly-supplemented
+             parcel does not read as a problem. -->
+        <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+          {% if mass_balance.is_surplus %}
+          Supplies slightly exceed measured consumptive use — the difference is on-farm
+          loss / return flow that percolates back to the aquifer, not unaccounted water.
+          {% else %}
+          Measured consumptive use slightly exceeds recorded supplies — a minor
+          supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
+          rootzone water the meters don't capture).
+          {% endif %}
+        </p>
+        {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
+        <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+          Recorded supplies fell well short of measured consumptive use this period —
+          expected where a junior surface right was curtailed going into peak season
+          and the parcel had no groundwater to substitute.
+        </p>
+        {% endif %}
 
         <!-- Audit drill-down (Task 2): each engine-run month links to its own
              gross→net waterfall — every number is one click from its source. -->

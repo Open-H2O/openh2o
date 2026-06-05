@@ -686,6 +686,32 @@ def zone_balance(zone, reporting_period=None):
 #: Decimal tolerance for "the books close" — absorbs 4-dp ledger rounding.
 MASS_BALANCE_TOLERANCE = Decimal("0.01")
 
+#: Corrected v1.10 acceptance band (58-03). Real water accounting never closes to
+#: zero — a meter measures pumping (which exceeds the crop's consumptive use by the
+#: on-farm loss / return flow), deficit irrigation under curtailment leaves a real
+#: shortfall, etc. A residual within this fraction of gross ET is "small, realistic,
+#: and not alarming" (Brent's bar): present it as a normal minor surplus/shortfall,
+#: NOT a warning. Only a residual BEYOND it (e.g. a curtailed surface-only parcel
+#: that lost its peak-season water) is flagged for attention.
+REALISTIC_RESIDUAL_BAND = Decimal("0.25")
+
+
+def residual_band_status(residual_af, gross_et_af, *, closes):
+    """Classify a mass-balance residual for presentation (58-03).
+
+    Returns one of ``"closes"`` (≈0, the books balance), ``"realistic"`` (a small,
+    expected residual within ``REALISTIC_RESIDUAL_BAND`` of gross ET — a minor
+    surplus from pump/return-flow loss or a minor shortfall), or ``"large"`` (a
+    residual beyond the band — e.g. a curtailment-driven supply shortfall worth
+    flagging). ``closes`` is the boolean the mass balance already computed.
+    """
+    if closes:
+        return "closes"
+    et = gross_et_af or Decimal("0")
+    if et and abs(residual_af) <= REALISTIC_RESIDUAL_BAND * et:
+        return "realistic"
+    return "large"
+
 
 def _incidental_recharge_af(breakdown):
     """Read deep-percolation recharge (AF) off a CalculationRun.breakdown.
@@ -837,11 +863,19 @@ def parcel_mass_balance(parcel, reporting_period=None):
         "delta_storage": delta_storage,
     }
     residual = sum(inputs.values()) - sum(outputs.values())
+    closes = abs(residual) <= MASS_BALANCE_TOLERANCE
     return {
         "inputs": inputs,
         "outputs": outputs,
         "residual_af": residual,
-        "closes": abs(residual) <= MASS_BALANCE_TOLERANCE,
+        "closes": closes,
+        # 58-03: presentation classification — "closes" / "realistic" / "large".
+        # A small realistic residual (meter pump loss, minor supplement) is normal,
+        # not a warning; only a "large" residual (e.g. curtailment shortfall) flags.
+        "band_status": residual_band_status(residual, et, closes=closes),
+        # True when supplies exceeded measured use (a minor surplus / return flow);
+        # False when measured use exceeded supplies (a shortfall). Drives the badge.
+        "is_surplus": residual >= 0,
     }
 
 

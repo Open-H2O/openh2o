@@ -328,3 +328,20 @@ def test_metered_parcel_mass_balance_within_band():
     assert balance["inputs"]["gw_recovered"] > 0  # the meter reading is the GW input
     assert balance["residual_af"] > 0, balance
     assert abs(balance["residual_af"]) <= BAND * balance["outputs"]["et"], balance
+    # 58-03 presentation: a small surplus reads as "realistic", NOT a warning.
+    assert balance["band_status"] == "realistic", balance
+    assert balance["is_surplus"] is True
+
+
+def test_residual_band_status_classifies_three_tiers():
+    """The presentation classifier: closes (≈0), realistic (small, within the band),
+    and large (beyond it — a flagged shortfall)."""
+    from accounting.services import residual_band_status
+
+    et = Decimal("100")
+    assert residual_band_status(Decimal("0.005"), et, closes=True) == "closes"
+    # 10% of ET → realistic (meter pump loss / minor supplement, either sign).
+    assert residual_band_status(Decimal("10"), et, closes=False) == "realistic"
+    assert residual_band_status(Decimal("-10"), et, closes=False) == "realistic"
+    # 40% of ET → large (e.g. a curtailment shortfall worth flagging).
+    assert residual_band_status(Decimal("-40"), et, closes=False) == "large"
