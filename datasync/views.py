@@ -238,10 +238,19 @@ def station_detail(request, pk):
         source_code, station.last_data_at, timezone.now()
     )
 
-    # Build enriched parameter list so template dropdown shows human labels on first render
+    # Build enriched parameter list for the dropdown + PARAMETERS chips. Only
+    # parameters this station has ACTUALLY published — not the declared sensor
+    # list — so it never offers an empty option for a sensor the site doesn't
+    # measure (matches station_chart_data; 59-02).
+    measured_codes = sorted(
+        DataRecordStaging.objects
+        .filter(station=station, status="published")
+        .values_list("parameter_code", flat=True)
+        .distinct()
+    )
     enriched_parameters = [
         {"code": code, "label": get_parameter_label(source_code, code)}
-        for code in (station.parameters or [])
+        for code in measured_codes
     ]
 
     context = {
@@ -461,8 +470,12 @@ def station_chart_data(request, pk):
     if days > 0:
         date_filter["observation_date__gte"] = timezone.now() - timedelta(days=days)
 
-    # STABLE parameter universe: every parameter this station has ever published,
-    # unioned with its declared parameters. Window-independent on purpose.
+    # STABLE parameter universe: every parameter this station has ACTUALLY
+    # published. Window-independent on purpose (no date filter here), so the
+    # dropdown never empties or desyncs when you change the time range. We do NOT
+    # union the station's *declared* parameters — a site configured for a sensor
+    # it doesn't actually report (e.g. a reservoir gauge that has Inflow declared
+    # but never measures it) should not offer that empty option (59-02).
     published_param_rows = (
         DataRecordStaging.objects
         .filter(station=station, status="published")
@@ -470,11 +483,7 @@ def station_chart_data(request, pk):
         .distinct()
     )
     units_by_code = {r["parameter_code"]: r["unit"] for r in published_param_rows}
-    param_codes = list(units_by_code.keys())
-    for code in (station.parameters or []):
-        if code not in param_codes:
-            param_codes.append(code)
-    param_codes.sort()
+    param_codes = sorted(units_by_code.keys())
 
     # Resolve the selected parameter(s) against the stable universe.
     if not parameter or parameter not in param_codes:
