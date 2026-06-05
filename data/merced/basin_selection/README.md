@@ -25,7 +25,8 @@ this picker captures the human judgment the 62-02 seed hangs on it.
    committed `merced_river_flowlines.geojson` / `merced_existing_basins.geojson`
    are its output; you only re-run it if the DB hydrography changes.)
 2. **Pick basins** — open `merced_basin_picker.qgz` in QGIS:
-   - The **Candidate basins** layer (the 74 crop-field footprints) is on top,
+   - The **Candidate basins** layer (the full DWR crop-field canvas, colored by
+     crop — the same map the crop fields were picked from) is on top,
      semi-transparent over satellite. Canals (cyan) and named rivers (blue) are
      labelled; **Diversion headgates** (gold stars) mark where each surface
      right pulls water off its waterway; the **Existing v1.9 basins** show as
