@@ -38,3 +38,25 @@ def test_keeps_custom_agency_name():
     call_command("seed_merced_base")
     assert SiteConfig.objects.count() == 1
     assert SiteConfig.objects.get().agency_name == "Mariposa County Water Agency"
+
+
+@pytest.mark.django_db
+def test_enables_demonstration_mode_on_existing_merced_identity():
+    """An existing Merced demo whose SiteConfig predates the demonstration_mode
+    field (migrated in as False) gets it flipped on by a re-seed — the name
+    already matches, so neither the create nor the rename branch fires (53-02)."""
+    SiteConfig.objects.create(
+        agency_name="Merced Subbasin GSA", demonstration_mode=False)
+    call_command("seed_merced_base")
+    sc = SiteConfig.objects.get()
+    assert sc.agency_name == "Merced Subbasin GSA"
+    assert sc.demonstration_mode is True
+
+
+@pytest.mark.django_db
+def test_leaves_custom_agency_demonstration_mode_untouched():
+    """A genuinely custom agency name is never stamped as a demonstration."""
+    SiteConfig.objects.create(
+        agency_name="Mariposa County Water Agency", demonstration_mode=False)
+    call_command("seed_merced_base")
+    assert SiteConfig.objects.get().demonstration_mode is False

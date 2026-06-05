@@ -157,6 +157,20 @@ class Command(BaseCommand):
             sc.save()
             self.stdout.write(
                 f"  Renamed SiteConfig: {old} -> {merced_name}")
+        elif sc.agency_name == merced_name:
+            # The seed's own demo identity is already in place (a re-seed of an
+            # existing Merced demo). Ensure demonstration_mode is on idempotently:
+            # a demo whose SiteConfig predates the field — migrated in as False —
+            # would otherwise never get stamped, since the name already matches and
+            # neither the create nor the rename branch fires (Phase 53-02).
+            if not sc.demonstration_mode:
+                sc.demonstration_mode = True
+                sc.save(update_fields=["demonstration_mode"])
+                self.stdout.write(self.style.SUCCESS(
+                    f"  SiteConfig demonstration_mode enabled: {merced_name}"))
+            else:
+                self.stdout.write(
+                    f"  SiteConfig kept (Merced demo identity): {sc.agency_name}")
         else:
             self.stdout.write(
                 f"  SiteConfig kept (custom agency name): {sc.agency_name}")
