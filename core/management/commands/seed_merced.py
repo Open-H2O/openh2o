@@ -63,6 +63,11 @@ SEQUENCE = [
     # Managed recharge sits ON TOP of the accounting layer (needs the WY 2024-2025
     # ReportingPeriod + parcels), so it runs last. Credits groundwater; idempotent.
     ("seed_merced_recharge_events", {}),
+    # Descriptive detail fields (well construction, parcel addresses, CalWATRS
+    # PINs, account contacts, display meters) so every detail page reads complete.
+    # Runs after the ledger rebuild because it fills account contacts; fill-only-
+    # when-blank + deterministic, so it's idempotent and never clobbers real data.
+    ("seed_merced_details", {}),
 ]
 
 
