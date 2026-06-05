@@ -45,107 +45,175 @@
     </p>
   </div>
 
-  <!-- Filters card -->
-  <div class="card-raised">
-    <div class="toolbar-row">
-      <!-- Search (always visible) -->
-      <div style="flex: 1; min-width: 200px;">
-        <label class="form-label" for="filter-search">Search</label>
-        <input type="text"
-               id="filter-search" name="q"
-               value="{{ q }}"
-               placeholder="Parcel number or description..."
-               hx-get="{% url 'accounting:ledger_list' %}"
-               hx-target="#ledger-results"
-               hx-trigger="keyup changed delay:300ms"
-               hx-include="[name='period'],[name='source_type'],[name='water_type'],[name='start_date'],[name='end_date']"
-               class="form-input search-input-icon">
+  <!-- Filters form (single source of truth: every control submits the whole
+       filter+sort+paging state via hx-include="#ledger-filters", so adding a
+       facet never means editing every other control's include list). The form
+       pins on scroll (.ledger-filters-sticky); onsubmit is neutralized so an
+       Enter keypress fires the HTMX refresh, not a full-page GET reload. -->
+  <form id="ledger-filters" class="ledger-filters-sticky" onsubmit="return false;">
+    <div class="card-raised">
+      <div class="toolbar-row">
+        <!-- Search = the parcel filter (always visible) -->
+        <div style="flex: 1; min-width: 200px;">
+          <label class="form-label" for="filter-search">Search</label>
+          <input type="text"
+                 id="filter-search" name="q"
+                 value="{{ q }}"
+                 placeholder="Parcel number or description..."
+                 hx-get="{% url 'accounting:ledger_list' %}"
+                 hx-target="#ledger-results"
+                 hx-trigger="keyup changed delay:300ms"
+                 hx-include="#ledger-filters"
+                 hx-push-url="true"
+                 class="form-input search-input-icon">
+        </div>
+
+        <!-- Reporting Period (always visible) -->
+        <div style="min-width: 160px;">
+          <label class="form-label" for="filter-period">Period</label>
+          <select id="filter-period" name="period"
+                  hx-get="{% url 'accounting:ledger_list' %}"
+                  hx-target="#ledger-results"
+                  hx-trigger="change"
+                  hx-include="#ledger-filters"
+                  hx-push-url="true"
+                  class="form-select">
+            <option value="">All Periods</option>
+            {% for p in periods %}
+            <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Zone facet (a primary facet, next to Period) -->
+        <div style="min-width: 160px;">
+          <label class="form-label" for="filter-zone">Zone</label>
+          <select id="filter-zone" name="zone"
+                  hx-get="{% url 'accounting:ledger_list' %}"
+                  hx-target="#ledger-results"
+                  hx-trigger="change"
+                  hx-include="#ledger-filters"
+                  hx-push-url="true"
+                  class="form-select">
+            <option value="">All Zones</option>
+            {% for z in zones %}
+            <option value="{{ z.pk }}" {% if zone_id == z.pk|stringformat:"d" %}selected{% endif %}>{{ z.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Toggle advanced filters -->
+        <div>
+          <button type="button" class="btn-secondary btn-sm" id="toggle-filters"
+                  onclick="document.getElementById('advanced-filters').toggleAttribute('hidden'); this.textContent = document.getElementById('advanced-filters').hidden ? 'More Filters' : 'Fewer Filters'; if (window.syncLedgerHeaderOffset) window.syncLedgerHeaderOffset();">
+            More Filters
+          </button>
+        </div>
       </div>
 
-      <!-- Reporting Period (always visible) -->
-      <div style="min-width: 160px;">
-        <label class="form-label" for="filter-period">Period</label>
-        <select id="filter-period" name="period"
-                hx-get="{% url 'accounting:ledger_list' %}"
-                hx-target="#ledger-results"
-                hx-trigger="change"
-                hx-include="[name='q'],[name='source_type'],[name='water_type'],[name='start_date'],[name='end_date']"
-                class="form-select">
-          <option value="">All Periods</option>
-          {% for p in periods %}
-          <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
-          {% endfor %}
-        </select>
+      <!-- Advanced filters (collapsed by default) -->
+      <div id="advanced-filters" class="toolbar-row pt-md" hidden>
+        <!-- Source Type -->
+        <div style="min-width: 140px;">
+          <label class="form-label" for="filter-source-type">Source</label>
+          <select id="filter-source-type" name="source_type"
+                  hx-get="{% url 'accounting:ledger_list' %}"
+                  hx-target="#ledger-results"
+                  hx-trigger="change"
+                  hx-include="#ledger-filters"
+                  hx-push-url="true"
+                  class="form-select">
+            <option value="">All Sources</option>
+            {% for val, label in source_type_choices %}
+            <option value="{{ val }}" {% if source_type == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Water Type -->
+        <div style="min-width: 140px;">
+          <label class="form-label" for="filter-water-type">Water Type</label>
+          <select id="filter-water-type" name="water_type"
+                  hx-get="{% url 'accounting:ledger_list' %}"
+                  hx-target="#ledger-results"
+                  hx-trigger="change"
+                  hx-include="#ledger-filters"
+                  hx-push-url="true"
+                  class="form-select">
+            <option value="">All Types</option>
+            {% for wt in water_types %}
+            <option value="{{ wt.pk }}" {% if water_type_id == wt.pk|stringformat:"d" %}selected{% endif %}>{{ wt.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Date Range -->
+        <div style="min-width: 130px;">
+          <label class="form-label" for="filter-start-date">Start Date</label>
+          <input type="date"
+                 id="filter-start-date" name="start_date"
+                 value="{{ start_date }}"
+                 hx-get="{% url 'accounting:ledger_list' %}"
+                 hx-target="#ledger-results"
+                 hx-trigger="change"
+                 hx-include="#ledger-filters"
+                 hx-push-url="true"
+                 class="form-input">
+        </div>
+        <div style="min-width: 130px;">
+          <label class="form-label" for="filter-end-date">End Date</label>
+          <input type="date"
+                 id="filter-end-date" name="end_date"
+                 value="{{ end_date }}"
+                 hx-get="{% url 'accounting:ledger_list' %}"
+                 hx-target="#ledger-results"
+                 hx-trigger="change"
+                 hx-include="#ledger-filters"
+                 hx-push-url="true"
+                 class="form-input">
+        </div>
       </div>
 
-      <!-- Toggle advanced filters -->
-      <div>
-        <button type="button" class="btn-secondary btn-sm" id="toggle-filters"
-                onclick="document.getElementById('advanced-filters').toggleAttribute('hidden'); this.textContent = document.getElementById('advanced-filters').hidden ? 'More Filters' : 'Fewer Filters';">
-          More Filters
-        </button>
+      <!-- Results controls: page size + jump-to-page (form-scoped, so they
+           ride along on every filter/sort change and persist) -->
+      <div class="toolbar-row pt-md" style="align-items: flex-end;">
+        <div style="min-width: 140px;">
+          <label class="form-label" for="filter-page-size">Rows per page</label>
+          <select id="filter-page-size" name="page_size"
+                  hx-get="{% url 'accounting:ledger_list' %}"
+                  hx-target="#ledger-results"
+                  hx-trigger="change"
+                  hx-include="#ledger-filters"
+                  hx-push-url="true"
+                  class="form-select">
+            {% for sz in page_sizes %}
+            <option value="{{ sz }}" {% if page_size == sz %}selected{% endif %}>{{ sz }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="min-width: 150px;">
+          <label class="form-label" for="filter-page">Jump to page</label>
+          <div class="row-start" style="align-items: center;">
+            <input type="number"
+                   id="filter-page" name="page" min="1"
+                   max="{{ page_obj.paginator.num_pages }}"
+                   value="{{ page_obj.number }}"
+                   hx-get="{% url 'accounting:ledger_list' %}"
+                   hx-target="#ledger-results"
+                   hx-trigger="change"
+                   hx-include="#ledger-filters"
+                   hx-push-url="true"
+                   class="form-input" style="width: 5rem;">
+            <span class="text-tertiary text-sm">of {{ page_obj.paginator.num_pages }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Advanced filters (collapsed by default) -->
-    <div id="advanced-filters" class="toolbar-row pt-md" hidden>
-      <!-- Source Type -->
-      <div style="min-width: 140px;">
-        <label class="form-label" for="filter-source-type">Source</label>
-        <select id="filter-source-type" name="source_type"
-                hx-get="{% url 'accounting:ledger_list' %}"
-                hx-target="#ledger-results"
-                hx-trigger="change"
-                hx-include="[name='q'],[name='period'],[name='water_type'],[name='start_date'],[name='end_date']"
-                class="form-select">
-          <option value="">All Sources</option>
-          {% for val, label in source_type_choices %}
-          <option value="{{ val }}" {% if source_type == val %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Water Type -->
-      <div style="min-width: 140px;">
-        <label class="form-label" for="filter-water-type">Water Type</label>
-        <select id="filter-water-type" name="water_type"
-                hx-get="{% url 'accounting:ledger_list' %}"
-                hx-target="#ledger-results"
-                hx-trigger="change"
-                hx-include="[name='q'],[name='period'],[name='source_type'],[name='start_date'],[name='end_date']"
-                class="form-select">
-          <option value="">All Types</option>
-          {% for wt in water_types %}
-          <option value="{{ wt.pk }}" {% if water_type_id == wt.pk|stringformat:"d" %}selected{% endif %}>{{ wt.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Date Range -->
-      <div style="min-width: 130px;">
-        <label class="form-label" for="filter-start-date">Start Date</label>
-        <input type="date"
-               id="filter-start-date" name="start_date"
-               value="{{ start_date }}"
-               hx-get="{% url 'accounting:ledger_list' %}"
-               hx-target="#ledger-results"
-               hx-trigger="change"
-               hx-include="[name='q'],[name='period'],[name='source_type'],[name='water_type'],[name='end_date']"
-               class="form-input">
-      </div>
-      <div style="min-width: 130px;">
-        <label class="form-label" for="filter-end-date">End Date</label>
-        <input type="date"
-               id="filter-end-date" name="end_date"
-               value="{{ end_date }}"
-               hx-get="{% url 'accounting:ledger_list' %}"
-               hx-target="#ledger-results"
-               hx-trigger="change"
-               hx-include="[name='q'],[name='period'],[name='source_type'],[name='water_type'],[name='start_date']"
-               class="form-input">
-      </div>
-    </div>
-  </div>
+    <!-- Active sort state, preserved across filter/page changes -->
+    <input type="hidden" name="sort" value="{{ sort }}">
+    <input type="hidden" name="dir" value="{{ direction }}">
+  </form>
 
   <!-- Results -->
   <div id="ledger-results">
