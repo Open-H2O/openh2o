@@ -141,7 +141,8 @@
            waterfall. The corrected v1.10 lens, surfaced per-parcel. -->
       <div class="card-raised">
         <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header-flush">Water Balance</h2>
+          {% url 'methods' as methods_help_url %}
+          <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water Balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's measured consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
           {% if balance_period %}
           <span class="text-tertiary text-xs">{{ balance_period.name }}</span>
           {% endif %}

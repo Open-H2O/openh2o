@@ -9,7 +9,8 @@
 </div>
 {% else %}
 
-<h2 class="content-section-label">Budget Summary</h2>
+{% url 'water_balances' as wb_help_url %}
+<h2 class="content-section-label" style="display: flex; align-items: center; gap: var(--space-xs);">Budget Summary{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, measured from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This card shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</h2>
 <div class="stat-grid-3col">
 
   <!-- Total Supplies -->
