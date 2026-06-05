@@ -37,11 +37,11 @@
       <div class="concept-op" aria-hidden="true">=</div>
       <div class="card-raised stat-card stat-card-accent-balance">
         <div class="stat-card-label">Balance</div>
-        <div class="stat-card-value-sm">Should close</div>
-        <div class="stat-card-unit">a gap means something</div>
+        <div class="stat-card-value-sm">Rarely zero</div>
+        <div class="stat-card-unit">a gap is normal</div>
       </div>
     </div>
-    <p class="text-tertiary text-sm" style="margin: 0;">Read it left to right: line up the supplies, subtract the measured use, and the leftover is the balance. Where it doesn&rsquo;t close, the platform has something to tell you.</p>
+    <p class="text-tertiary text-sm" style="margin: 0;">Read it left to right: line up the supplies, subtract the measured use, and look at the leftover. In real life the books almost never net to zero &mdash; ET counts only the water truly consumed, while canals leak and some water drains back underground. A small, explainable gap is the goal; a perfect zero would be the surprise.</p>
   </div>
 
   <div class="card-raised">
@@ -50,7 +50,7 @@
     <div class="stat-grid-2col">
       <div class="concept-panel concept-panel-use">
         <div class="concept-panel-title">The use <span class="badge badge-pill badge-grey">measured</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">The water the crops consumed &mdash; evapotranspiration (ET), read from satellites. It&rsquo;s the demand side, and it&rsquo;s the one number we can get for every field without a meter.</p>
+        <p class="text-secondary text-base" style="margin: 0;">The water the crops consumed &mdash; evapotranspiration (ET), read from satellites. It&rsquo;s the demand side, and the one number we can get for every field without a meter. It&rsquo;s also the <em>floor</em>: it counts only what was consumed, not what leaked from a canal or drained past the roots.</p>
       </div>
       <div class="concept-panel concept-panel-supply">
         <div class="concept-panel-title">The supplies <span class="badge badge-pill badge-green">matched against it</span></div>
@@ -62,7 +62,7 @@
         </ul>
       </div>
     </div>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">A balance lays the supplies alongside the use and asks whether they match. If a field drank 100 acre-feet and we can account for 100 acre-feet of supply, the books close. When they don&rsquo;t, the gap is telling us something &mdash; and reading that gap honestly is the next section.</p>
+    <p class="text-secondary text-base" style="margin-bottom: 0;">A balance lays the supplies alongside the use and asks whether they line up. Because ET is the floor, the supplies delivered usually run a little higher than the ET measured &mdash; and that difference is itself information. Reading it honestly is the next section.</p>
   </div>
 
   <div class="card-raised">
@@ -74,6 +74,8 @@
       <p class="text-secondary text-base" style="margin: 0;">An unexplained leftover is booked as <strong>groundwater only where a well actually exists.</strong> On a field with no well, that same leftover is unmet demand &mdash; the crop wanted more than it got &mdash; or a surface number that&rsquo;s off. It is never phantom pumping. The platform refuses to invent groundwater out of a missing meter.</p>
     </div>
 
+    <p class="text-secondary text-base">And expect a gap. ET is the floor, so the water delivered will usually exceed the water consumed &mdash; some seeps from canals on the way (conveyance loss), some runs off, some sinks past the roots back into the aquifer. None of that is a failure of the accounting; it&rsquo;s how irrigation actually behaves. The job isn&rsquo;t to force the balance to zero &mdash; it&rsquo;s to make the remaining gap small enough to explain.</p>
+
     {% include "partials/_deep_dive.html" with label="How a value gets chosen, and why deliveries are never split evenly" body="<p>When the platform has to pick a number, it follows a strict priority ladder &mdash; measurement first, estimate last:</p><ol class='concept-list'><li><strong>A per-field direct measurement</strong> wins over everything. If someone metered this field, that is the truth.</li><li><strong>A district&rsquo;s hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li><strong>An even split</strong> is the last resort, used only when there is no better signal at all.</li></ol><p>This ladder also governs the hardest part of the whole problem: a water district holds <em>one</em> water right but delivers unmetered canal water to many parcels &mdash; growing different crops with different thirsts. You cannot split that delivery equally, because a vineyard and an alfalfa field next door do not drink the same amount. The platform allocates the district&rsquo;s delivery to each parcel <em>in proportion to that parcel&rsquo;s measured ET demand</em>, so the thirsty crop draws the larger share. Splitting evenly would credit water to fields that never used it and starve the ones that did.</p>" %}
   </div>
 
@@ -81,7 +83,15 @@
     <h2 class="section-header">Why ET, why satellites</h2>
     <p class="text-secondary text-base">All of this exists to solve one stubborn problem: most water diversions in California are not metered. Reporting is sparse, self-reported, and exempt below certain thresholds &mdash; so for the vast majority of fields, nobody knows how much water actually moved.</p>
     <p class="text-secondary text-base">Evapotranspiration measured from space is the answer to that missing-meter problem. <a class="prose-link" href="https://openetdata.org/" target="_blank" rel="noopener">OpenET</a> &mdash; a public-private effort led by <a class="prose-link" href="https://www.nasa.gov/" target="_blank" rel="noopener">NASA</a>, the <a class="prose-link" href="https://www.dri.edu/" target="_blank" rel="noopener">Desert Research Institute</a>, the <a class="prose-link" href="https://www.edf.org/" target="_blank" rel="noopener">Environmental Defense Fund</a>, and <a class="prose-link" href="https://earthengine.google.com/" target="_blank" rel="noopener">Google Earth Engine</a> &mdash; turns satellite imagery into a consumptive-use figure for any field, no meter required. That is what makes a credible balance possible where one was never possible before.</p>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">Want to go deeper? The <a class="prose-link" href="https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle" target="_blank" rel="noopener">USGS primer on evapotranspiration</a> covers the science; OpenET&rsquo;s <a class="prose-link" href="https://developers.google.com/earth-engine/datasets/catalog/OpenET_ENSEMBLE_CONUS_GRIDMET_MONTHLY_v2_0" target="_blank" rel="noopener">published dataset</a> lets you inspect the raw numbers; and the <a href="{% url 'glossary' %}" class="prose-link">platform Glossary</a> defines every term used here, including OpenET, ET, and Use Area.</p>
+
+    <div class="concept-panel" style="margin-top: var(--space-md);">
+      <div class="concept-panel-title">Go deeper</div>
+      <ul class="concept-list text-secondary text-base" style="margin-top: var(--space-sm);">
+        <li><a class="prose-link" href="https://etdata.org/openet-data-explorer/" target="_blank" rel="noopener">OpenET Data Explorer</a> &mdash; pull ET for any field on an interactive map, no code required.</li>
+        <li><a class="prose-link" href="https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle" target="_blank" rel="noopener">USGS: Evapotranspiration and the water cycle</a> &mdash; the underlying science, in plain terms.</li>
+        <li><a class="prose-link" href="{% url 'glossary' %}">Platform Glossary</a> &mdash; every term used here, including OpenET, ET, and Use Area.</li>
+      </ul>
+    </div>
   </div>
 
   <div class="card-raised">
@@ -92,15 +102,15 @@
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Dashboard</span><span style="color: var(--color-gold);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Watch a real basin balance close, parcel by parcel, on live data.</p>
       </a>
-      {# TODO(60-02): replace href="#" with {% url 'methods' %} once the "Methods Behind the Numbers" page exists. #}
-      <a href="#" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-gold);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The step-by-step calculation, from satellite ET to a closing balance.</p>
-      </a>
       <a href="{% url 'glossary' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span style="color: var(--color-gold);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Plain-language definitions for every term on this page.</p>
       </a>
+      {# TODO(60-02): when the "Methods Behind the Numbers" page exists, convert this to <a href="{% url 'methods' %}" class="card-raised card-link"> and drop the muted styling + badge. #}
+      <div class="card-raised" style="opacity: 0.55;" aria-disabled="true">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span class="badge badge-pill badge-grey">Coming soon</span></div>
+        <p class="text-tertiary text-sm" style="margin: 0;">The step-by-step calculation, from satellite ET to a closing balance &mdash; arriving in the next update.</p>
+      </div>
     </div>
   </div>
 

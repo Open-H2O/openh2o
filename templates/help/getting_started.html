@@ -17,9 +17,22 @@
 {% block content %}
 <div class="page-stack page-medium">
 
+  <div class="card-raised">
+    <h2 class="section-header">Start with the concept</h2>
+    <p class="text-secondary text-base">Before the steps below, it helps to know what the platform is actually computing. It measures the water your crops consumed &mdash; from satellites &mdash; and reconciles that against the water that supplied them: surface deliveries, groundwater, and rain. A few minutes on the concept makes every step that follows click into place.</p>
+    <a href="{% url 'water_balances' %}" class="text-sm" style="color: var(--color-gold);">Read: How Water Balances Work &rarr;</a>
+  </div>
+
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4CD; 1</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="3" y1="9" x2="21" y2="9"/>
+        <line x1="9" y1="3" x2="9" y2="21"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 1</span>
       <h2 class="section-header">Import Your Use Areas</h2>
       <p class="text-secondary text-base">Upload use area boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Use Areas and use the import command. Each use area needs an Assessor Parcel Number (APN).</p>
       <a href="{% url 'parcels:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Areas &rarr;</a>
@@ -27,8 +40,19 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x26F1; 2</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v4"/>
+        <path d="M12 18v4"/>
+        <path d="M4.93 4.93l2.83 2.83"/>
+        <path d="M16.24 16.24l2.83 2.83"/>
+        <path d="M2 12h4"/>
+        <path d="M18 12h4"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 2</span>
       <h2 class="section-header">Import Your Extraction Wells</h2>
       <p class="text-secondary text-base">Upload extraction well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
       <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Extraction Wells &rarr;</a>
@@ -36,8 +60,15 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F465; 3</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="4" width="20" height="16" rx="2"/>
+        <path d="M2 10h20"/>
+        <path d="M6 16h4"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 3</span>
       <h2 class="section-header">Set Up Water Accounts</h2>
       <p class="text-secondary text-base">Create water accounts to group use areas for tracking. Go to Administration &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
       <a href="{% url 'accounting:accounts_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Accounts &rarr;</a>
@@ -45,8 +76,16 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4C5; 4</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 4</span>
       <h2 class="section-header">Create a Water Year</h2>
       <p class="text-secondary text-base">Define the time window for accounting. Go to Compliance &gt; Water Years. Most agencies use the water year (October 1 through September 30).</p>
       <a href="{% url 'accounting:periods_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Years &rarr;</a>
@@ -54,8 +93,14 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F5FA; 5</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 5</span>
       <h2 class="section-header">Define Management Zones</h2>
       <p class="text-secondary text-base">A management zone is a sub-area of your district that carries its own water budget &mdash; each use area belongs to a zone. Zones are a prerequisite for the next step: a water budget is set per zone, so at least one zone must exist before you can budget water. Go to Administration &gt; Zones and create your zones, then assign use areas to each.</p>
       <a href="{% url 'geography:zone_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Zones &rarr;</a>
@@ -63,8 +108,16 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4CA; 6</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 2a10 10 0 0 1 0 20"/>
+        <path d="M12 2v20"/>
+        <path d="M2 12h10"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 6</span>
       <h2 class="section-header">Set Water Budgets</h2>
       <p class="text-secondary text-base">A water budget is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Create a budget for each zone, water type, and period. New to the difference between a budget and an allocation? See the short guide linked at the bottom of this page.</p>
       <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Budgets &rarr;</a>
@@ -72,8 +125,17 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4D2; 7</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <line x1="10" y1="9" x2="8" y2="9"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 7</span>
       <h2 class="section-header">Enter Use Ledger Data</h2>
       <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. Usage can also be derived from satellite evapotranspiration (ET) &mdash; how that calculation works is configured on your Methodology page. The use ledger is the core of water accounting.</p>
       <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Ledger &rarr;</a>
@@ -83,8 +145,21 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4E1; 8</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M3 12h3"/>
+        <path d="M18 12h3"/>
+        <path d="M12 3v3"/>
+        <path d="M12 18v3"/>
+        <path d="M5.64 5.64l2.12 2.12"/>
+        <path d="M16.24 16.24l2.12 2.12"/>
+        <path d="M5.64 18.36l2.12-2.12"/>
+        <path d="M16.24 7.76l2.12-2.12"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 8</span>
       <h2 class="section-header">Connect Monitoring Stations</h2>
       <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS wells, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
       <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Monitoring Stations &rarr;</a>
@@ -92,8 +167,13 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4A7; 9</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 9</span>
       <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection wells.</p>
       <a href="{% url 'surface:pod_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Surface Diversions &rarr;</a>
@@ -103,8 +183,16 @@
   </div>
 
   <div class="card-raised step-card">
-    <span class="step-number">&#x1F4C4; 10</span>
+    <span class="step-number">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="9" y1="15" x2="15" y2="15"/>
+        <line x1="9" y1="11" x2="13" y2="11"/>
+      </svg>
+    </span>
     <div class="step-body">
+      <span class="step-eyebrow">Step 10</span>
       <h2 class="section-header">Generate State Reports</h2>
       <p class="text-secondary text-base">When your reporting period is complete, generate GEARS CSV (per-well extraction) and CalWATRS CSV (surface diversions) for submission to the Water Board. Go to Reports &gt; Generate.</p>
       <a href="{% url 'reporting:report_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Reports &rarr;</a>

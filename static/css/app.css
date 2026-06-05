@@ -850,6 +850,16 @@ a { color: inherit; }
     margin-top: 2px;
 }
 
+.step-eyebrow {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+    margin-bottom: 2px;
+}
+
 .step-body {
     flex: 1;
     min-width: 0;
