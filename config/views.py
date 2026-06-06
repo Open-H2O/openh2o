@@ -80,7 +80,7 @@ def glossary(request):
         "Allocation": "A single account's share of a zone's Water Budget, pro-rated by how many parcels the account holds in the zone. Allocation minus usage gives the account's remaining water; a negative remaining is an overdraft. See Help > Water Budgets & Allocations.",
         "Apportionment": "Dividing a shared supply — a well or headgate that serves several fields — among those fields by their measured ET demand rather than by headcount, so the total always reconciles back to what the source actually produced. See Help > Methods Behind the Numbers.",
         "Usage": "Water consumed via extraction (well meters) or evapotranspiration (ET estimates), recorded as negative ledger entries.",
-        "CalWATRS": "California Water Accounting, Tracking, and Reporting System — the State Water Board's surface-diversion reporting system (replaced eWRIMS).",
+        "CalWATRS": "California Water Accounting, Tracking, and Reporting System: the State Water Board's surface-diversion reporting system (replaced eWRIMS).",
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
         "CFS (Cubic Feet per Second)": "A rate of flow used for surface water diversions; a point of diversion popup shows a rate like \"50.00 cfs.\" One CFS is about 1.9835 acre-feet per day.",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
