@@ -108,6 +108,21 @@ BASE_LAYER_HINT = (
 # 0=PRE14, 1=POST14, 2=RIP.) Each entry:
 #   right_id, type_idx, holder_name, priority_date(str|None), face_af, source_name, status
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Diversion-reach journey (Phase 67-03). A non-consumptive HYDROELECTRIC
+# passthrough on the Merced River main stem (returns its full volume to the
+# stream) + a DOWNSTREAM re-diversion that draws on that return flow. Both PODs
+# are SEEDED HERE on real Merced River geometry but SERVE NO PARCELS, so they are
+# visible on the detail pages and in CalWATRS (gross Volume AF + Return Flow AF)
+# yet write ZERO surface_diversion ledger rows — the whole-basin consumptive
+# balance is untouched (the load-bearing spine-safety gate of Plan 67-03). The
+# monthly DiversionRecords are seeded by seed_merced_ledgers (the accounting
+# layer's home), keyed to the two POD names below. "Merced Falls" is a real
+# lower-Merced hydroelectric facility, so the demo reads truthfully.
+JOURNEY_RIGHT_ID = "MER-WR-010-DEMO"
+JOURNEY_UPSTREAM_POD = "MER-POD-010-DEMO Merced Falls Hydroelectric Diversion"
+JOURNEY_DOWNSTREAM_POD = "MER-POD-011-DEMO Snelling Re-Diversion"
+
 RIGHT_CONFIGS = [
     ("MER-WR-004-DEMO", 1, "Merced Irrigation District", "1930-04-10",
      Decimal("120000"), "Merced River", "active"),
@@ -162,6 +177,19 @@ POD_CONFIGS = [
      "Merced River", RIVER, 0.88, Decimal("700.0")),
     ("MER-POD-009-DEMO Bottomlands Riparian Take", "MER-WR-008-DEMO", "lower",
      "Merced River", RIVER, 0.15, Decimal("45.0")),
+]
+
+# Phase 67-03 journey PODs are NOT in POD_CONFIGS / PARCEL_CLUSTER_CONFIGS — they
+# are created by the dedicated `_seed_diversion_journey` method (single source of
+# truth, also reachable via `--journey-only` for a surgical live add that touches
+# no parcels). Both sit on the Merced River main stem: the upstream hydroelectric
+# passthrough east (frac 0.62) of the downstream re-diversion (frac 0.40) — water
+# flows east→west down the valley, so the re-diversion genuinely lies downstream
+# of the hydro return point.
+JOURNEY_POD_SPECS = [
+    # name, frac, max_rate_cfs
+    (JOURNEY_UPSTREAM_POD, 0.62, Decimal("400.0")),
+    (JOURNEY_DOWNSTREAM_POD, 0.40, Decimal("150.0")),
 ]
 
 # Per-POD parcel cluster, placed on SATELLITE-VERIFIED OPEN CROPLAND.
@@ -306,11 +334,26 @@ class Command(BaseCommand):
             "--flush", action="store_true",
             help="Delete existing MER- operational rows before seeding.",
         )
+        parser.add_argument(
+            "--journey-only", action="store_true",
+            help="Seed ONLY the Phase 67-03 diversion-reach journey (a hydro "
+            "passthrough + a downstream re-diversion on the Merced River, serving "
+            "no parcels). Touches no parcels/wells/links/other rights — safe to "
+            "run against a live seeded instance without clobbering real geometry.",
+        )
 
     def handle(self, *args, **options):
         # Base-layer guard runs first, BEFORE any flush, so a wrong instance
         # fails fast and leaves existing data untouched.
         lower = self._check_base_layer()
+
+        # Surgical journey-only add: create just the two journey PODs + their
+        # right + the one-hop link, nothing else. Does NOT touch existing parcels,
+        # so it is safe on a live demo whose parcels carry real QGIS geometry.
+        if options.get("journey_only"):
+            with transaction.atomic():
+                self._seed_diversion_journey(lower)
+            return
 
         if options["flush"]:
             self._flush()
@@ -636,6 +679,11 @@ class Command(BaseCommand):
                 )
                 wip_count += 1
 
+        # Phase 67-03: the diversion-reach journey (hydro passthrough + downstream
+        # re-diversion). Additive, serves no parcels, so it rides on top of the
+        # operational layer without affecting any closure.
+        self._seed_diversion_journey(lower)
+
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced operational features seeded (lower subbasin):\n"
             f"  {len(rights_by_id)} water rights\n"
@@ -644,6 +692,77 @@ class Command(BaseCommand):
             f"  {len(all_parcels)} parcels on verified cropland\n"
             f"  {len(wells)} wells ({wip_count} well-parcel links)\n"
             f"  {wrp_count} water right-parcel links"
+        ))
+
+    # ------------------------------------------------------------------
+    # Diversion-reach journey (Phase 67-03)
+    # ------------------------------------------------------------------
+    def _seed_diversion_journey(self, lower):
+        """Place the journey PODs on the Merced River main stem (no parcels).
+
+        A non-consumptive HYDROELECTRIC passthrough (MER-POD-010) that returns its
+        full volume to the stream, plus a DOWNSTREAM re-diversion (MER-POD-011)
+        that draws on that return flow, linked one hop via ``rediverted_from``.
+        Both are anchored to real Merced River geometry but carry NO
+        PointOfDiversionParcel links, so they show on the detail pages and in
+        CalWATRS yet write ZERO surface_diversion ledger rows — the whole-basin
+        consumptive balance is untouched. Monthly DiversionRecords are seeded by
+        seed_merced_ledgers (the accounting layer's home). Idempotent
+        (update_or_create on stable natural keys); touches nothing else, so it is
+        safe to run standalone (``--journey-only``) on a live demo.
+        """
+        post14, _ = WaterRightType.objects.get_or_create(
+            code="POST14", defaults={
+                "name": "Post-1914 Appropriative",
+                "description": "Post-1914 appropriative water right",
+            },
+        )
+        right, _ = WaterRight.objects.update_or_create(
+            right_id=JOURNEY_RIGHT_ID,
+            defaults={
+                "right_type": post14,
+                "holder_name": "Merced Falls Hydroelectric Co.",
+                "priority_date": "1958-07-01",
+                "face_value_acre_feet": Decimal("60000"),
+                "status": "active",
+                "source_name": "Merced River",
+            },
+        )
+
+        journey_pods = {}
+        for name, frac, max_cfs in JOURNEY_POD_SPECS:
+            line = self._named_line(lower, "Merced River", RIVER, frac)
+            if line is None:
+                raise CommandError(
+                    'No "Merced River" (Channel Line) flowline in the Merced '
+                    f"Subbasin for {name}; base layer incomplete or renamed."
+                )
+            location = place_near_flowline(line, 0.0, along=frac)
+            if location is None:
+                location = snap_to_flowline(line.geometry.centroid, line)
+            pod, _ = PointOfDiversion.objects.update_or_create(
+                name=name,
+                defaults={
+                    "water_right": right,
+                    "location": location,
+                    "stream_name": self._stream_name(line, RIVER),
+                    "source_flowline": line,
+                    "max_rate_cfs": max_cfs,
+                    "status": "active",
+                },
+            )
+            journey_pods[name] = pod
+
+        upstream = journey_pods[JOURNEY_UPSTREAM_POD]
+        downstream = journey_pods[JOURNEY_DOWNSTREAM_POD]
+        if downstream.rediverted_from_id != upstream.id:
+            downstream.rediverted_from = upstream
+            downstream.save(update_fields=["rediverted_from"])
+
+        self.stdout.write(self.style.SUCCESS(
+            "  diversion-reach journey placed on the Merced River: "
+            f"{JOURNEY_UPSTREAM_POD} (hydro passthrough) → "
+            f"{JOURNEY_DOWNSTREAM_POD} (re-diversion), linked, no parcels."
         ))
 
     @staticmethod

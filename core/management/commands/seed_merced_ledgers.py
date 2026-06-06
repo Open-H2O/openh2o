@@ -92,6 +92,15 @@ from surface.models import (
 from surface.services import allocate_district_delivery
 from wells.models import Well, WellIrrigatedParcel
 
+# Phase 67-03 diversion-reach journey: the two parcel-less PODs seed_merced_operations
+# places on the Merced River. Their monthly DiversionRecords are created HERE (the
+# accounting layer's home — operations creates no records by design), keyed to these
+# names so the two seeds stay in lock-step.
+from core.management.commands.seed_merced_operations import (  # noqa: E402
+    JOURNEY_DOWNSTREAM_POD,
+    JOURNEY_UPSTREAM_POD,
+)
+
 MER_PARCEL_PREFIX = "MER-APN-"
 GSA_BASIN_CODE = "5-022.04"
 DISTRICT_ZONE_PREFIX = "MER Surface Service Area"
@@ -186,8 +195,25 @@ class Command(BaseCommand):
             "--flush", action="store_true",
             help="No-op alias: this seed always self-flushes its own rows first.",
         )
+        parser.add_argument(
+            "--journey-only", action="store_true",
+            help="Seed ONLY the Phase 67-03 diversion-reach journey records onto "
+            "the EXISTING accounting layer — no flush, no rebuild. For surgical "
+            "live seeding that cannot perturb the whole-basin closure.",
+        )
 
     def handle(self, *args, **options):
+        if options.get("journey_only"):
+            prior = ReportingPeriod.objects.filter(name="WY 2024-2025").first()
+            if prior is None:
+                self.stdout.write(self.style.ERROR(
+                    "WY 2024-2025 reporting period not found — run the full "
+                    "seed_merced_ledgers first."
+                ))
+                return
+            with transaction.atomic():
+                self._seed_diversion_journey_records(prior)
+            return
         with transaction.atomic():
             self._flush()
             self._seed()
@@ -321,6 +347,11 @@ class Command(BaseCommand):
             parcels, curtailed_parcel_ids, gw, prior, net_cu, surface_by_pm)
         ParcelLedger.objects.bulk_create(gw_rows, batch_size=500)
         entries = entries + gw_rows  # combined ledger count for the summary
+
+        # Phase 67-03: the visible water journey (non-consumptive passthrough +
+        # downstream re-diversion). Parcel-less PODs → zero ledger supply → closure
+        # untouched. Recreated AFTER the flush so a `make merced` re-run reproduces it.
+        self._seed_diversion_journey_records(prior)
 
         self._summary(parcels, district_zones, surface_parcel_ids,
                       curtailed_parcel_ids, entries, surface_rows)
@@ -802,6 +833,75 @@ class Command(BaseCommand):
                         reporting_period=prior,
                     ))
         return rows
+
+    # ------------------------------------------------------------------
+    # Diversion-reach journey records (Phase 67-03)
+    # ------------------------------------------------------------------
+    def _seed_diversion_journey_records(self, prior):
+        """Recorded diversions for the two parcel-less journey PODs.
+
+        The UPSTREAM hydroelectric passthrough (seed_merced_operations placed it on
+        the Merced River) returns its FULL volume to the stream every month
+        (``returned_af == volume_acre_feet`` → ``consumed_acre_feet() == 0``), so it
+        writes a zero consumed magnitude and cannot touch the consumptive spine. The
+        DOWNSTREAM re-diversion (linked one hop via ``rediverted_from``) draws on
+        that return flow as ordinary consumptive water — three summer months fully
+        consumed (``returned_af == 0``) plus ONE partially-returned spring month, so
+        the demo shows all three points of the spectrum (0% / partial / 100%).
+
+        SPINE-SAFE BY CONSTRUCTION: both PODs serve no parcels, so
+        ``allocate_district_delivery`` writes no ``surface_diversion`` rows for them;
+        the records are visible on the detail pages + in CalWATRS (gross Volume AF +
+        Return Flow AF) but contribute nothing to the whole-basin balance.
+        ``update_or_create`` on the ``(POD, month, type)`` unique key → idempotent.
+        """
+        upstream = PointOfDiversion.objects.filter(name=JOURNEY_UPSTREAM_POD).first()
+        downstream = PointOfDiversion.objects.filter(
+            name=JOURNEY_DOWNSTREAM_POD).first()
+        if upstream is None or downstream is None:
+            self.stdout.write(self.style.WARNING(
+                "    diversion-reach journey PODs not found — run "
+                "seed_merced_operations first; skipping journey records."
+            ))
+            return
+
+        created = 0
+        # Upstream: a steady run-of-river hydro passthrough, 100% returned, every
+        # month of the prior water year. consumed == 0 on every row.
+        hydro_af = Decimal("1200.0000")
+        for month_date, _mn in self._month_schedule():
+            DiversionRecord.objects.update_or_create(
+                point_of_diversion=upstream, month=month_date,
+                diversion_type="direct_use",
+                defaults={"reporting_period": prior,
+                          "volume_acre_feet": hydro_af, "returned_af": hydro_af},
+            )
+            created += 1
+
+        # Downstream re-diversion: summer months drawn fully (consumptive), well
+        # under the upstream return flow it draws on; one spring month partial.
+        for md in (date(2025, 6, 15), date(2025, 7, 15), date(2025, 8, 15)):
+            DiversionRecord.objects.update_or_create(
+                point_of_diversion=downstream, month=md,
+                diversion_type="direct_use",
+                defaults={"reporting_period": prior,
+                          "volume_acre_feet": Decimal("300.0000"),
+                          "returned_af": Decimal("0")},
+            )
+            created += 1
+        DiversionRecord.objects.update_or_create(
+            point_of_diversion=downstream, month=date(2025, 5, 15),
+            diversion_type="direct_use",
+            defaults={"reporting_period": prior,
+                      "volume_acre_feet": Decimal("250.0000"),
+                      "returned_af": Decimal("100.0000")},
+        )
+        created += 1
+
+        self.stdout.write(
+            f"    diversion-reach journey: {created} records "
+            "(upstream hydro 100%-returned, downstream re-diversion + 1 partial)"
+        )
 
     # ------------------------------------------------------------------
     def _summary(self, parcels, district_zones, surface_parcel_ids,
