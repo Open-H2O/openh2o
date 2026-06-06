@@ -68,6 +68,7 @@
     {% if station_list %}
     <div class="station-card-grid">
       {% for item in station_list %}
+      {% if item.freshness != 'dead' %}
       <a href="{% url 'datasync:station_detail' item.station.pk %}" class="card-raised station-card-link" style="text-decoration: none; display: block;">
         <div class="row-between mb-sm">
           <span class="section-header-sm" style="margin: 0; border: none; padding: 0; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.station.station_name }}</span>
@@ -111,6 +112,7 @@
         <p class="text-tertiary text-xs" style="margin: var(--space-xs) 0 0 0;">No data received</p>
         {% endif %}
       </a>
+      {% endif %}
       {% endfor %}
     </div>
     {% else %}

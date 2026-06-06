@@ -96,9 +96,9 @@
         hx-include="[name='q'],[name='source']"
         class="form-select"
       >
-        <option value="" {% if not active %}selected{% endif %}>All</option>
-        <option value="1" {% if active == "1" %}selected{% endif %}>Active</option>
+        <option value="1" {% if active == "1" or not active %}selected{% endif %}>Active</option>
         <option value="0" {% if active == "0" %}selected{% endif %}>Inactive</option>
+        <option value="all" {% if active == "all" %}selected{% endif %}>All</option>
       </select>
     </div>
     <div style="margin-left: auto;">

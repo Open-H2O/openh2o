@@ -82,10 +82,12 @@ def station_list(request):
         )
     if source:
         queryset = queryset.filter(data_source__code=source)
-    if active == "1":
-        queryset = queryset.filter(is_active=True)
-    elif active == "0":
+    # Default to active-only so the table doesn't surface dead/inactive stations.
+    # Explicit opt-ins preserve the toggle: "0" = inactive only, "all" = everything.
+    if active == "0":
         queryset = queryset.filter(is_active=False)
+    elif active != "all":
+        queryset = queryset.filter(is_active=True)
 
     paginator = Paginator(queryset, 25)
     page_number = request.GET.get("page", 1)
