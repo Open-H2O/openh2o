@@ -28,6 +28,9 @@
 {% endblock %}
 
 {% block content %}
+{% if site_config.demonstration_mode %}
+<div style="margin-bottom: var(--space-md);">{% include "partials/_demo_marker.html" %}</div>
+{% endif %}
 <div
   id="monitoring-content"
   hx-get="{% url 'datasync:monitoring_dashboard' %}"

@@ -17,6 +17,10 @@
 {% block content %}
 <div class="page-stack">
 
+  {% if site_config.demonstration_mode %}
+  <div>{% include "partials/_demo_marker.html" %}</div>
+  {% endif %}
+
   {% if needs_setup %}
   <!-- First run: no watershed configured yet. Point an admin straight at the
        Setup Wizard (which auto-populates parcels, basins, flowlines, and

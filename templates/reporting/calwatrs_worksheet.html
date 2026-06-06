@@ -25,6 +25,12 @@
   </div>
 
   <div class="card-raised" style="border-left: 3px solid var(--color-gold);">
+    {% if site_config.demonstration_mode %}
+    <div style="margin-bottom: var(--space-sm);">
+      {% include "partials/_demo_marker.html" %}
+      <span class="text-secondary text-sm">Demonstration worksheet — sample values, not a real CalWATRS submission.</span>
+    </div>
+    {% endif %}
     <p class="text-secondary text-sm" style="margin: 0;">
       <strong style="color: var(--color-text-primary);">Type these values into CalWATRS by hand.</strong>
       CalWATRS has no upload. Work top to bottom: one block per Point of Diversion, with
