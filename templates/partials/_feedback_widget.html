@@ -1,7 +1,9 @@
-{# In-app feedback widget (the 3rd intake channel of the feedback-triage pipeline).
-   Renders only when FEEDBACK_ENDPOINT is set (see core.context_processors.feedback),
-   so a self-hosted clone shows nothing by default. Dependency-free: plain CSS + a
-   little vanilla JS that POSTs JSON to the intake endpoint. No cookies, no tracking. #}
+{% comment %}
+In-app feedback widget (the 3rd intake channel of the feedback-triage pipeline).
+Renders only when FEEDBACK_ENDPOINT is set (see core.context_processors.feedback),
+so a self-hosted clone shows nothing by default. Dependency-free: plain CSS + a
+little vanilla JS that POSTs JSON to the intake endpoint. No cookies, no tracking.
+{% endcomment %}
 {% if feedback_endpoint %}
 <style>
   .oh2o-fb-btn {
