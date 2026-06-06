@@ -86,7 +86,11 @@
         <div class="field-group">
           <div class="field-label field-row">
             Status
-            {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable. Curtailed rights are temporarily restricted." %}
+            {% if site_config.demonstration_mode %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable. Curtailed rights are temporarily restricted. In this demonstration, curtailment and revocation states are illustrative sample data, not real State Water Board actions." %}
+            {% else %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable. Curtailed rights are temporarily restricted." %}
+            {% endif %}
           </div>
           <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
         </div>
@@ -133,7 +137,13 @@
       <div class="card-raised">
         <h2 class="section-header mb-md" style="color: var(--color-gold);">
           Active Curtailments Affecting This Right
+          {% include "partials/_demo_marker.html" %}
         </h2>
+        {% if site_config.demonstration_mode %}
+        <p class="text-tertiary text-xs" style="margin-top: -0.5rem; margin-bottom: var(--space-sm);">
+          Illustrative sample orders for this demonstration, not filed State Water Board curtailment orders.
+        </p>
+        {% endif %}
         {% for curtailment in active_curtailments %}
         <div class="item-row" style="padding: var(--space-sm) 0;">
           <div class="field-value-sm" style="font-weight: 600;">{{ curtailment.title }}</div>

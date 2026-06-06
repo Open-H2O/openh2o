@@ -116,6 +116,15 @@ a { color: inherit; }
     flex: 1;
     padding: var(--space-lg);
     overflow-y: auto;
+    /* Phase 64: enlarge ONLY the information pane (a first real user had to
+       browser-zoom to 150% to read it). Every font-size in this file is rem
+       (root-relative), so a container font-size does nothing and an html bump
+       would also grow the sidebar nav, header, and all --space-* tokens. `zoom`
+       scales this subtree's text AND spacing uniformly in one knob with zero
+       collateral on the nav/header. Must be `zoom`, NOT transform:scale —
+       transform breaks MapLibre pointer coords and creates a containing block
+       that would break the Phase-63 sticky ledger columns. */
+    zoom: 1.0625;
 }
 
 /* -- Sidebar ------------------------------------------------------------- */
@@ -1078,6 +1087,20 @@ a { color: inherit; }
     color: var(--color-gold);
 }
 
+/* Phase 64: flag-gated meta-label marking demo sample data (e.g. a "Curtailed"
+   state that an outside evaluator could mistake for a real Water Board order).
+   Deliberately neutral — no status color — so it reads as a label ABOUT the
+   data, not as another status. Token-only. */
+.badge-demo {
+    background-color: transparent;
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border-hover);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.625rem;
+    font-weight: 700;
+}
+
 /* -- Empty state --------------------------------------------------------- */
 
 .empty-state {
@@ -1320,6 +1343,18 @@ a { color: inherit; }
     height: 300px;
     width: 100%;
     border-radius: var(--radius-md);
+}
+
+/* Render embedded maps at native scale inside the zoomed .app-content.
+   CSS `zoom` COMPOUNDS through descendants (verified: a child at zoom:1 still
+   renders at the parent's scale), so a map needs the RECIPROCAL of the content
+   zoom to cancel it — not zoom:1. Keep this denominator in sync with the
+   .app-content zoom above. Covers the .map-embed class plus the bare *-map
+   div ids (well-map, parcel-map, zone-map, infra-map, …); div[...] excludes
+   the #btn-parcel-map button. */
+.map-embed,
+div[id$="-map"] {
+    zoom: calc(1 / 1.0625);
 }
 
 /* -- Row start (left-aligned flex row) ----------------------------------- */

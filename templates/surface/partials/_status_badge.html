@@ -3,9 +3,9 @@
 {% elif status == "inactive" %}
   <span class="badge badge-pill badge-grey">Inactive</span>
 {% elif status == "curtailed" %}
-  <span class="badge badge-pill badge-gold">Curtailed</span>
+  <span class="badge badge-pill badge-gold">Curtailed</span> {% include "partials/_demo_marker.html" %}
 {% elif status == "revoked" %}
-  <span class="badge badge-pill badge-red">Revoked</span>
+  <span class="badge badge-pill badge-red">Revoked</span> {% include "partials/_demo_marker.html" %}
 {% else %}
   <span class="badge badge-pill badge-grey">{{ status|capfirst }}</span>
 {% endif %}
