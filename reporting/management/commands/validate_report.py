@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that validates data quality for a state report.
+
+Runs the reporting validators for the chosen report type over a --period and
+prints the resulting warnings and errors, exiting non-zero if any errors exist.
+Run it before generating or filing a report to confirm the data will pass at
+the GEARS or CalWATRS portal.
+"""
 import sys
 
 from django.core.management.base import BaseCommand, CommandError

@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that imports parcels from GeoJSON or a Shapefile.
+
+Stages each feature into ParcelStaging (normalising geometry to SRID 4326 and
+flagging duplicates), then promotes this run's pending rows into the Parcel
+table. Run it to load a county/agency parcel layer; use --dry-run to preview
+without writing Parcel rows.
+"""
 import os
 
 from django.contrib.gis.gdal import DataSource

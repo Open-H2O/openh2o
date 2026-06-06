@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that seeds the default WellType reference rows.
+
+Idempotently get_or_creates the well categories (Production, Monitoring,
+Injection, Observation). Run it once when standing up an instance so wells can
+be classified by type.
+"""
 from django.core.management.base import BaseCommand
 
 from wells.models import WellType

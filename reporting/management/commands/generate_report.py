@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that generates a state report CSV for a reporting period.
+
+Runs the report validators, builds the GEARS (by-well or by-ET) or CalWATRS
+(A1/A2) CSV, writes it to --output or stdout, and records a draft
+ReportSubmission. Run it to produce the file an operator uploads to the Water
+Board for a given --period.
+"""
 import os
 
 from django.core.management.base import BaseCommand, CommandError

@@ -1,4 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Pre-flight data-quality checks for the state report filings.
+
+Produces warning/error/info messages for a reporting period and report type,
+covering GEARS (well registration, meter-reading and ET completeness, parcel
+linkage) and CalWATRS (POD water-right linkage, PINs, return-flow passthrough).
+Each message names the state outcome it predicts so an operator knows what will
+happen at the portal before filing.
+"""
 from collections import defaultdict
 from decimal import Decimal
 

@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that seeds the external monitoring DataSource rows.
+
+An operator runs it during setup to register the agencies the sync pipeline can
+pull from (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR WDL/SGMA, NOAA); it is
+idempotent and enforces each source's is_active flag on re-seed.
+"""
 from django.core.management.base import BaseCommand
 
 from datasync.models import DataSource

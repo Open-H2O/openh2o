@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that seeds the default WaterType reference rows.
+
+An operator runs it during initial setup to populate the supply categories
+(Groundwater, Surface Water, Recycled, Stormwater, Imported, Mixed) keyed by
+code; it is idempotent via get_or_create, so re-running leaves existing rows.
+"""
 from django.core.management.base import BaseCommand
 
 from accounting.models import WaterType

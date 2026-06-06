@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Library of system self-check functions backing the health dashboard.
+
+Each ``check_*`` function returns a category/status/message/details dict (green,
+yellow, or red) covering database connectivity, disk usage, data-sync freshness,
+ledger integrity, unassigned parcels, SSL certificate expiry, the expected
+database, and pending migrations; ``run_all_checks`` runs them all in order.
+"""
 import shutil
 import ssl
 import socket

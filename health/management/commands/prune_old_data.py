@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Retention management command that prunes old operational data.
+
+An operator runs it (typically on a schedule) to delete aged published staging
+records, health-check results, and sync logs past their day thresholds
+(--staging-days/--health-days/--sync-days, each default 365); it defaults to a
+dry-run preview and only deletes when passed --confirm.
+"""
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand

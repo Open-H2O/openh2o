@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that imports ParcelLedger rows from a CSV file.
+
+An operator runs it to bulk-load supply and use entries against existing
+parcels; it validates each row, supports a ``--dry-run`` preview, refuses to
+write into a finalized (state-filed) reporting period, and is idempotent so
+re-importing the same CSV skips duplicate (parcel, date, source, amount) rows.
+"""
 import csv
 import os
 from datetime import datetime

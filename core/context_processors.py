@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Django template context processors that inject site-wide values everywhere.
+
+Each function returns a dict merged into every template's context: site config,
+access-control/admin flags for sidebar gating, a fresh-install setup prompt, and
+opt-in Umami analytics and in-app feedback endpoints.
+"""
 from django.conf import settings
 
 from core.access import is_administrator

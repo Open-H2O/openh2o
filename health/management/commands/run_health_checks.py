@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that runs the platform health-check suite.
+
+Executes every check in health.checks, persists each outcome as a
+HealthCheckResult row, and prints a colour-coded status table (or JSON with
+--json; a single --category narrows the run). Run it to confirm the deployment
+is healthy or to record a point-in-time status snapshot.
+"""
 import json
 
 from django.core.management.base import BaseCommand

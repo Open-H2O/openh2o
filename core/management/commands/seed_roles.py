@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that seeds the default Role reference rows.
+
+An operator runs it during initial setup to populate the (currently dormant)
+RBAC roles (admin, manager, viewer); it is idempotent via get_or_create, so
+re-running leaves existing rows untouched.
+"""
 from django.core.management.base import BaseCommand
 
 from core.models import Role

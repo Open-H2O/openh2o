@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that imports wells from a CSV or Shapefile.
+
+Reads each record (deriving a Point location from lat/lon columns or geometry,
+in SRID 4326), skips duplicates by well registration ID, and creates Well rows.
+Run it to load an agency's well inventory; use --dry-run to preview without
+writing to the database.
+"""
 import csv
 import os
 

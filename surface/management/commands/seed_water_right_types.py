@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that seeds the default surface WaterRightType rows.
+
+Idempotently get_or_creates the reference water-right categories (pre-/post-1914
+appropriative, riparian, pueblo, federal reserved, statutory small domestic).
+Run it once when standing up an instance so water rights can be classified.
+"""
 from django.core.management.base import BaseCommand
 
 from surface.models import WaterRightType

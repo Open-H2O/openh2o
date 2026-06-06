@@ -1,4 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Management command that seeds the default ReportTemplate rows.
+
+Idempotently get_or_creates the four state report templates (GEARS by Well,
+GEARS by ET, CalWATRS Direct Use / A1, CalWATRS To Storage / A2). Run it once
+when standing up an instance so the report types are available to generate.
+"""
 from django.core.management.base import BaseCommand
 
 from reporting.models import ReportTemplate
