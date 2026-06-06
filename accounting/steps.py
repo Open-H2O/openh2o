@@ -6,9 +6,12 @@ Each primitive is a pure-ish function with the signature
     (running_af, parcel, period, ctx, config) -> (new_running_af, step_record)
 
 where:
-  - running_af : Decimal, the POSITIVE extraction magnitude (acre-feet) flowing
-    through the chain. The ledger's sign convention (consumption is negative) is
-    applied exactly once, when run_calculations writes the final row — never here.
+  - running_af : Decimal, the POSITIVE consumptive-use magnitude (acre-feet)
+    flowing through the chain — gross ET whittled down as supplies are subtracted;
+    the leftover residual is resolved (to a groundwater estimate, unmet demand, or
+    a metered reference) by run_calculations, not here. The ledger's sign
+    convention (consumption is negative) is applied exactly once, when
+    run_calculations writes the final row — never here.
   - parcel     : a parcels.models.Parcel instance.
   - period     : a "YYYY-MM" string.
   - ctx        : a shared dict the evaluator threads through every step (scratch

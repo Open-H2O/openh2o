@@ -99,7 +99,7 @@ class AllocationPlan(models.Model):
 
 
 class CalculationPlan(models.Model):
-    """A named, config-as-data recipe for deriving billable groundwater.
+    """A named, config-as-data recipe for deriving net consumptive use.
 
     Mirrors the standards.ObservedProperty controlled-vocabulary pattern: the
     methodology lives in rows an agency can tune from a screen (Phase 38-06)

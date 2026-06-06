@@ -296,11 +296,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--unmetered-only",
             action="store_true",
-            help="Compute only for parcels served by an UNMETERED well "
-            "(measurement_method='unmetered_estimate') that have no meter_reading "
-            "row for the period. A metered well's reading is authoritative — this "
-            "keeps the engine from overwriting or double-counting it. Intersects "
-            "with --parcel.",
+            help="DEPRECATED and ignored. The engine now runs on ALL parcels by "
+            "default and resolves each residual by archetype (well → calculated "
+            "groundwater row; no-well → unmet demand; metered → ET reference run, "
+            "no groundwater row), so a metered reading is never overwritten or "
+            "double-counted. Passing this flag only prints a deprecation warning.",
         )
         parser.add_argument(
             "--dry-run",

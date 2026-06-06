@@ -1045,9 +1045,12 @@ def water_year_usage_by_type(zone, date_start, date_end):
     ``calculated`` row suppresses its gross ``et_estimate`` twin (no ET
     double-count). Each usage row (negative amount) is attributed to a water type:
 
-      - ``et_estimate`` and ``calculated`` rows are groundwater extraction by
-        definition (the platform derives groundwater from satellite ET), so they
-        bucket to "GW" regardless of a possibly-null water_type column.
+      - ``et_estimate`` and ``calculated`` rows are the engine's groundwater-
+        attributed usage (a ``calculated`` row is the derived groundwater estimate
+        — the ET-minus-supplies residual, written only where a well exists; its
+        gross ``et_estimate`` twin is the pre-netting source), so for per-type
+        carryover they bucket to "GW" regardless of a possibly-null water_type
+        column.
       - every other row uses its own water_type code (meter_reading -> its type,
         surface_diversion -> SW, ...).
       - a non-engine row with no water_type cannot be attributed and is skipped
