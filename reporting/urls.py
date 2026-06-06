@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""URL routes for the reporting app."""
 from django.urls import path
 
 from reporting import views

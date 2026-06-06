@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Forms for surface water diversion record entry."""
 from decimal import Decimal
 
 from django import forms

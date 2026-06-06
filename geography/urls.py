@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""URL routes for the geography app."""
 from django.urls import path
 
 from geography import views

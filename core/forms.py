@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Forms for user profiles and site configuration."""
 from decimal import Decimal, InvalidOperation
 
 from allauth.account.models import EmailAddress

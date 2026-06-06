@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""URL routes for the datasync app."""
 from django.urls import path
 
 from datasync import views

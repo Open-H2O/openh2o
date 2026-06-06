@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Forms for recharge event data entry."""
 from django import forms
 
 from recharge.models import RechargeEvent

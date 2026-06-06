@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Forms for generating state compliance reports."""
 from django import forms
 
 from accounting.models import ReportingPeriod

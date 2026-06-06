@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Forms for creating and editing geographic zones."""
 from django import forms
 
 from geography.models import Zone

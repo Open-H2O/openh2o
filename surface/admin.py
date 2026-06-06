@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Django admin registrations for the surface water-right models."""
 from django.contrib import admin
 
 from .models import CurtailmentOrder, DiversionRecord, PointOfDiversion, PointOfDiversionParcel, WaterRight, WaterRightType

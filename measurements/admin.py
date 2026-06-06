@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""Django admin registrations for the meter and sensor measurement models."""
 from django.contrib import admin
 
 from .models import Meter, MeterReading, Sensor, SensorMeasurement, WaterMeasurement
