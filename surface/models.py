@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+from decimal import Decimal
+
 from django.contrib.gis.db import models
+from django.core.exceptions import ValidationError
 
 
 class WaterRightType(models.Model):
@@ -67,6 +70,15 @@ class PointOfDiversion(models.Model):
     water_right = models.ForeignKey(WaterRight, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=200)
     location = models.PointField(srid=4326)
+    rediverted_from = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rediversions",
+        help_text="Upstream point of diversion this point re-diverts from "
+        "(one hop; the return-flow source).",
+    )
     stream_name = models.CharField(max_length=200, blank=True)
     source_flowline = models.ForeignKey(
         "geography.Flowline",
@@ -116,6 +128,14 @@ class DiversionRecord(models.Model):
     )
     month = models.DateField()
     volume_acre_feet = models.DecimalField(max_digits=12, decimal_places=4)
+    returned_af = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Agency-asserted acre-feet of this diversion returned to the "
+        "stream (0 = fully consumed; = full volume for non-consumptive / "
+        "hydropower passthrough).",
+    )
     max_flow_rate_cfs = models.DecimalField(
         max_digits=10, decimal_places=4, null=True, blank=True
     )
@@ -128,6 +148,32 @@ class DiversionRecord(models.Model):
     class Meta:
         ordering = ["-month"]
         unique_together = [("point_of_diversion", "month", "diversion_type")]
+
+    def consumed_acre_feet(self):
+        """The consumed magnitude of this diversion: abs(volume) − returned.
+
+        Single source of truth for every ledger writer. Returned water (hydro
+        passthrough, return flow) is withheld here so only the consumed portion
+        ever reaches ``net_consumptive_use_af``. ``abs`` because surface
+        diversions are stored negative by production convention.
+        """
+        return abs(self.volume_acre_feet) - self.returned_af
+
+    def clean(self):
+        """Reject a return flow larger than the diverted volume.
+
+        A typo where returned > diverted would make ``consumed`` negative and
+        flip the consumptive spine the wrong way, so guard it at the model.
+        """
+        super().clean()
+        if (
+            self.returned_af is not None
+            and self.volume_acre_feet is not None
+            and self.returned_af > abs(self.volume_acre_feet)
+        ):
+            raise ValidationError(
+                {"returned_af": "Return flow cannot exceed the diverted volume."}
+            )
 
     def __str__(self):
         return f"{self.point_of_diversion} {self.month}: {self.volume_acre_feet} AF"
