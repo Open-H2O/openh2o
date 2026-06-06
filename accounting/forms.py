@@ -86,7 +86,7 @@ class WaterAccountForm(forms.ModelForm):
 
 class CsvUploadForm(forms.Form):
     file = forms.FileField(
-        widget=forms.ClearableFileInput(attrs={"accept": ".csv", "class": "form-input"})
+        widget=forms.ClearableFileInput(attrs={"accept": ".csv", "class": "file-picker-input"})
     )
     reporting_period = forms.ModelChoiceField(
         queryset=ReportingPeriod.objects.order_by("-start_date"),

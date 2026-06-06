@@ -41,10 +41,16 @@
           class="page-stack">
       {% csrf_token %}
 
-      <!-- File input -->
+      <!-- File input (styled control; the real widget is visually hidden) -->
       <div class="form-group">
         <label class="form-label" for="{{ form.file.id_for_label }}">CSV File <span class="required-mark">*</span></label>
-        {{ form.file }}
+        <div class="file-picker">
+          <label class="btn-secondary file-picker-button">
+            Choose file
+            {{ form.file }}
+          </label>
+          <span class="file-picker-name text-tertiary text-sm" id="csv-file-name">No file chosen</span>
+        </div>
         {% if form.file.errors %}
         <div class="form-help text-furnace">{{ form.file.errors|join:", " }}</div>
         {% endif %}
@@ -137,4 +143,18 @@
   </div>
 
 </div>
+
+<script>
+  // Show the chosen filename beside the styled "Choose file" button.
+  (function() {
+    var input = document.getElementById('{{ form.file.id_for_label }}');
+    var name = document.getElementById('csv-file-name');
+    if (!input || !name) return;
+    input.addEventListener('change', function() {
+      name.textContent = (input.files && input.files.length)
+        ? input.files[0].name
+        : 'No file chosen';
+    });
+  })();
+</script>
 {% endblock %}
