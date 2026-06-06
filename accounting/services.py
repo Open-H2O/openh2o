@@ -117,7 +117,7 @@ def create_diversion_ledger_entries(diversion_record, parcel=None):
             parcel=parcel,
             transaction_date=timezone.now().date(),
             effective_date=diversion_record.month,
-            amount_acre_feet=-abs(diversion_record.volume_acre_feet),
+            amount_acre_feet=-diversion_record.consumed_acre_feet(),
             source_type="surface_diversion",
             description=(
                 f"Diversion from {diversion_record.point_of_diversion.name}: "
@@ -139,8 +139,10 @@ def create_diversion_ledger_entries(diversion_record, parcel=None):
     )
 
     if pod_parcels:
-        # Distribute by fraction with rounding residual on last entry
-        total_volume = abs(diversion_record.volume_acre_feet)
+        # Distribute by fraction with rounding residual on last entry. Only the
+        # consumed magnitude is apportioned, so returned water never reaches the
+        # spine; the description still shows gross volume_acre_feet.
+        total_volume = diversion_record.consumed_acre_feet()
         today = timezone.now().date()
         entries = []
         distributed = Decimal("0")
@@ -183,7 +185,7 @@ def create_diversion_ledger_entries(diversion_record, parcel=None):
                 parcel=link.parcel,
                 transaction_date=timezone.now().date(),
                 effective_date=diversion_record.month,
-                amount_acre_feet=-abs(diversion_record.volume_acre_feet),
+                amount_acre_feet=-diversion_record.consumed_acre_feet(),
                 source_type="surface_diversion",
                 description=(
                     f"Diversion from {pod.name}: "

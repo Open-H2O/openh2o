@@ -132,7 +132,7 @@ def _fraction_rows(record, served_links, pod):
     unsaved instances rather than writing, so ``dry_run`` can preview it and the
     single delete-then-bulk_create path stays idempotent.
     """
-    total = abs(record.volume_acre_feet)
+    total = record.consumed_acre_feet()
     today = timezone.now().date()
     rows = []
     distributed = Decimal("0")
@@ -200,7 +200,7 @@ def allocate_district_delivery(
 
     to_write = []
     for record in records:
-        delivery_total = abs(record.volume_acre_feet)
+        delivery_total = record.consumed_acre_feet()
         demand_by_parcel = {p: _month_demand(p, record.month) for p in served}
         shares = allocate_by_demand(delivery_total, demand_by_parcel, eff)
 
