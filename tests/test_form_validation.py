@@ -8,6 +8,8 @@
 (c) report_generate handles a ReportTemplate whose report_type is none of the
     four known kinds without an UnboundLocalError 500.
 """
+from decimal import Decimal
+
 import factory
 import pytest
 from django.contrib.auth.hashers import make_password
@@ -17,6 +19,7 @@ from django.urls import reverse
 from accounting.forms import ReportingPeriodForm
 from recharge.forms import RechargeEventForm
 from reporting.models import ReportSubmission, ReportTemplate
+from surface.forms import DiversionRecordForm
 from tests.factories import ReportingPeriodFactory
 
 pytestmark = pytest.mark.django_db
@@ -138,3 +141,40 @@ class TestReportGenerateUnknownType:
         assert b"Unknown report type" in resp.content
         # Nothing was generated.
         assert ReportSubmission.objects.count() == 0
+
+
+# ---------------------------------------------------------------------------
+# Phase 67-02 — DiversionRecordForm returned_af guard
+#
+# The model.clean() guard (67-01) is the backstop, but Model.save() never calls
+# it. The form is the operator's entry boundary, so a return larger than the
+# diverted volume must surface as a readable FIELD error (not a 500), and a blank
+# entry must store 0 so existing entry flows are unchanged.
+# ---------------------------------------------------------------------------
+
+
+class TestDiversionReturnedAfFormGuard:
+    def _data(self, **overrides):
+        data = {
+            "month": "2024-03-01",
+            "volume_acre_feet": "40",
+            "diversion_type": "direct_use",
+        }
+        data.update(overrides)
+        return data
+
+    def test_returned_exceeding_volume_is_a_field_error_not_500(self):
+        form = DiversionRecordForm(self._data(returned_af="50"))
+        assert not form.is_valid()
+        assert "returned_af" in form.errors
+        assert "exceed" in " ".join(form.errors["returned_af"]).lower()
+
+    def test_returned_at_or_below_volume_is_valid(self):
+        form = DiversionRecordForm(self._data(returned_af="40"))
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["returned_af"] == Decimal("40")
+
+    def test_blank_returned_defaults_to_zero(self):
+        form = DiversionRecordForm(self._data())  # returned_af omitted
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["returned_af"] == Decimal("0")

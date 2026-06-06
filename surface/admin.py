@@ -18,10 +18,10 @@ class WaterRightAdmin(admin.ModelAdmin):
 
 @admin.register(PointOfDiversion)
 class PointOfDiversionAdmin(admin.ModelAdmin):
-    list_display = ["name", "water_right", "stream_name", "max_rate_cfs", "status"]
+    list_display = ["name", "water_right", "stream_name", "rediverted_from", "max_rate_cfs", "status"]
     list_filter = ["status"]
     search_fields = ["name", "stream_name"]
-    raw_id_fields = ["water_right"]
+    raw_id_fields = ["water_right", "rediverted_from"]
 
 
 @admin.register(PointOfDiversionParcel)
