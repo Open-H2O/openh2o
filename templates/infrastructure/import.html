@@ -44,9 +44,15 @@
 
       <div class="form-group">
         <label class="form-label" for="import-file">Data file <span class="required-mark">*</span></label>
-        <input type="file" id="import-file" name="file"
-               accept=".csv,.geojson,.json,.zip,.kml"
-               required class="form-input">
+        <div class="file-picker">
+          <label class="btn-secondary file-picker-button">
+            Choose file
+            <input type="file" id="import-file" name="file"
+                   accept=".csv,.geojson,.json,.zip,.kml"
+                   required class="file-picker-input">
+          </label>
+          <span class="file-picker-name text-tertiary text-sm" id="import-file-name">No file chosen</span>
+        </div>
         <div class="form-help">Up to 500 records per file.</div>
       </div>
 
@@ -61,4 +67,18 @@
   <div id="import-area"></div>
 
 </div>
+
+<script>
+  // Show the chosen filename beside the styled "Choose file" button.
+  (function() {
+    var input = document.getElementById('import-file');
+    var name = document.getElementById('import-file-name');
+    if (!input || !name) return;
+    input.addEventListener('change', function() {
+      name.textContent = (input.files && input.files.length)
+        ? input.files[0].name
+        : 'No file chosen';
+    });
+  })();
+</script>
 {% endblock %}

@@ -575,6 +575,48 @@ a { color: inherit; }
     margin-top: var(--space-xs);
 }
 
+/* -- Styled file picker -------------------------------------------------- */
+/* Replaces the unstyled OS file input: a .btn-secondary-styled <label> opens
+   the dialog while the real <input type="file"> is visually hidden but kept
+   focusable for keyboard + screen-reader use. The chosen filename shows beside
+   it (updated by a small inline script on the page). */
+.file-picker {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.file-picker-button {
+    cursor: pointer;
+    margin: 0;
+}
+
+/* Show a focus ring on the button when the hidden input is keyboard-focused. */
+.file-picker-button:focus-within {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+}
+
+.file-picker-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.file-picker-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* -- Breadcrumb ---------------------------------------------------------- */
 
 .breadcrumb-bar {
