@@ -1,4 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Surface views.
+
+The surface-water browsing and entry surfaces. pod_list and pod_detail are the
+primary entry point for surface diversions — pod_detail renders the one-hop water
+journey from a point of diversion through the parcels it serves. water_rights_list
+and water_right_detail expose the underlying entitlements, diversion_record_create
+records a diversion event, and pods_geojson feeds the diversion map.
+"""
 import json
 
 from django.contrib.auth.decorators import login_required

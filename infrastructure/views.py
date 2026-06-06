@@ -1,4 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Infrastructure views.
+
+The operational setup surfaces for placing water infrastructure on the map:
+the type-aware "add" flow that creates a well, surface point of diversion, or
+recharge site from a drawn location, plus the CSV upload/import path. These are
+the admin-facing screens an operator uses to stand up an agency's features
+before any accounting runs.
+"""
 import json
 
 from django.contrib.auth.decorators import login_required

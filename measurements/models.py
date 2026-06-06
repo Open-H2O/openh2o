@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Measurement domain models.
+
+Owns the in-system measurement records: Meter and its MeterReading (totalizer/
+flow/pressure/level readings with calculated volumes), Sensor and its
+SensorMeasurement (well-tied telemetry with anomaly flags), and the generic
+WaterMeasurement tied to a parcel or well. Each links to a standards
+ObservedProperty and carries a SensorThings/USGS quality flag (provisional /
+approved / estimated).
+"""
 from django.conf import settings
 from django.contrib.gis.db import models
 

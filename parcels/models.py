@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Parcels models.
+
+The parcel domain — the agricultural fields whose satellite-measured
+consumptive use (ET) is the spine of the accounting. Parcel is the spatial
+land unit; CropType and UsageLocation describe what is grown where on it;
+ParcelLedger is the per-parcel water-accounting ledger (ET estimates, surface
+deliveries, recharge, allocations, and the calculated groundwater residual);
+ParcelStaging holds raw rows awaiting import.
+"""
 from django.conf import settings
 from django.contrib.gis.db import models
 

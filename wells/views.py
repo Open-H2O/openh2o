@@ -1,4 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Wells views.
+
+The well list and detail surfaces. The list offers HTMX search and status
+filtering across the agency's extraction wells; the detail page presents a
+single well's construction, registry identity, and measurement method, with
+inline editing of its editable fields.
+"""
 import json
 from urllib.parse import parse_qs
 

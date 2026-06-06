@@ -1,4 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Core models.
+
+Cross-cutting models shared by every app. User is the custom AUTH_USER_MODEL
+('core.User') and the home of the two-tier is_administrator access rule
+(ISS-021); SiteConfig holds the single agency's deployment-wide settings,
+including demonstration_mode. Role/UserRole are a deprecated, dormant RBAC
+scheme kept only to avoid a destructive migration — do not build on them.
+"""
 from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser

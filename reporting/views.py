@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Reporting views.
+
+The report-generation surfaces. report_list and report_detail browse generated
+ReportSubmissions; report_generate builds the GEARS (extraction) and CalWATRS
+(diversion) CSVs, validate_report and report_transition gate their workflow,
+and report_download serves the file. shared_supply_check compares district
+deliveries against diversion records, and calwatrs_worksheet plus the prefill
+views stage OpenET-derived values for human review before filing.
+"""
 import os
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 

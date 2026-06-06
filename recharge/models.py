@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Managed aquifer recharge models.
+
+Owns the recharge facilities (RechargeSite: spreading basins, injection/ASR
+wells, ponds), the link tying a basin to the point(s) of diversion that fill it
+(RechargeSitePOD), the recorded recharge deposits (RechargeEvent, in acre-feet),
+and on-site monitoring (RechargeMeasurement). A recharge event credits
+groundwater: it routes to the GSA basin pool for the site's zone, or to a single
+has-well parcel on the conjunctive path.
+"""
 from django.contrib.gis.db import models
 
 

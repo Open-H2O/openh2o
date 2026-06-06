@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+External monitoring-data sync models.
+
+Defines the partner feeds (DataSource: USGS, CDEC, CIMIS, NOAA) and the stations
+they publish (MonitoredStation, with USGS/WQX cross-walk IDs), plus the staging
+pipeline that lands raw readings (DataRecordStaging), records each pull
+(DataSyncLog), and caches satellite ET draws against the monthly budget
+(OpenETCache). These supply the observed inputs the accounting layer reconciles;
+OpenET evapotranspiration is the consumptive-use spine, not a supply.
+"""
 from django.contrib.gis.db import models
 
 

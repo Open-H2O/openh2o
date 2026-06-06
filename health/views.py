@@ -1,4 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Health dashboard surface.
+
+Serves the operator health dashboard and the JSON liveness endpoint, each
+rolling the latest HealthCheckResult per category into one overall status
+(healthy / degraded / unhealthy / unknown). Anonymous callers see the aggregate
+status only; per-subsystem messages are withheld unless the caller is
+authenticated.
+"""
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.db.models import Max

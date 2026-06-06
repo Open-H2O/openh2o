@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Surface models.
+
+The surface-water supply domain. WaterRight (and WaterRightType) carry the
+diversion entitlement and its CalWATRS PIN; PointOfDiversion is where that water
+is taken from a stream, with PointOfDiversionParcel linking a diversion to the
+parcels it serves. DiversionRecord logs each diversion event, including the
+returned_af that distinguishes diverted from actually consumed water.
+CurtailmentOrder records when a right is curtailed.
+"""
 from decimal import Decimal
 
 from django.contrib.gis.db import models

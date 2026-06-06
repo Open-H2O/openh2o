@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Reporting models.
+
+The state-filing layer. ReportingProfile carries the agency's GEARS filing
+identity and certifier of record; ReportTemplate defines each report kind
+(GEARS extraction, CalWATRS diversion); ReportSubmission is a single generated
+report and its workflow status (draft/review/finalized — never a claim the
+State Water Board accepted anything). ReportingCrosswalk maps internal fields
+to the columns the state portals expect.
+"""
 from django.conf import settings
 from django.contrib.gis.db import models
 

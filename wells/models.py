@@ -1,4 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Wells models.
+
+The well domain — the groundwater extraction points. Well carries location,
+construction (DWR Well Completion Report fields), and state-reporting identity;
+WellType classifies it and WellMeter ties it to a measurement device.
+WellIrrigatedParcel is the well-to-parcel link (with the irrigation fraction)
+that distributes pumping onto the parcels a well serves. MonitoringWell flags
+wells used for water-level monitoring rather than extraction.
+"""
 from django.contrib.gis.db import models
 
 

@@ -1,4 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Accounting views.
+
+The dashboards and balance surfaces of the platform. dashboard plus the
+account/zone/parcel balance views present measured consumptive use (ET) against
+the reconciled supplies; ledger_list and the CSV upload/template/export views
+manage the raw ParcelLedger rows; calculation_run_detail explains a single
+engine run step by step. Reporting-period, allocation, and account CRUD live
+here too, alongside the admin-gated delivery_settings and methodology_settings
+that tune the calculation engine.
+"""
 from decimal import Decimal
 
 import csv as csv_module

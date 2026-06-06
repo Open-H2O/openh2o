@@ -1,4 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Geography models.
+
+The platform's spatial backbone: Boundary (the agency footprint, with its DWR
+Bulletin 118 basin identity), Zone (GSA management areas / subbasins, and the
+surface district that owns its own year-end recovery-horizon policy), and
+Flowline (canals and natural hydrography). ZoneGroup and ParcelZone are the
+membership links other apps reference to tie parcels into management areas.
+"""
 from django.contrib.gis.db import models as gis_models
 from django.db import models
 

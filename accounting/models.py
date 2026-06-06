@@ -1,4 +1,15 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Accounting models.
+
+The ledger-and-calculation core of the platform. ReportingPeriod, WaterAccount,
+WaterType and WaterAccountParcel define who is accounted and over what span;
+AllocationPlan and AllocationCarryover hold the per-zone water budget and the
+signed remainder rolled forward between water years. CalculationPlan/CalculationStep
+describe the configurable engine that reconciles measured consumptive use (ET)
+against the available supplies, CalculationRun records each execution of it, and
+WaterCredit/WaterCreditDraw track banked credit drawn against that budget.
+"""
 from decimal import Decimal
 
 from django.conf import settings

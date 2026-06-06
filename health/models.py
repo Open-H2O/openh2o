@@ -1,4 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+System self-check records.
+
+Defines HealthCheckResult: one timestamped row per subsystem check (database,
+disk, sync freshness, ledger integrity, orphans, SSL, Docker, migrations) with a
+green/yellow/red status, a message, and JSON details. The health dashboard reads
+the latest row per category to report overall system status.
+"""
 from django.contrib.gis.db import models
 
 

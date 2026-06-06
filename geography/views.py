@@ -1,4 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Geography views.
+
+The map and zone surfaces: the interactive MapLibre map (map_view), zone
+management (list/detail/create, parcel assignment), and the per-district
+year-end recovery-horizon override. Also serves the spatial layers as GeoJSON
+endpoints — boundaries, zones, flowlines, zone labels, and the tie lines that
+draw wells and points of diversion to the parcel centroids they serve.
+"""
 import json
 from decimal import Decimal
 

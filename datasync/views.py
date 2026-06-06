@@ -1,4 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Monitoring surfaces for synced station data.
+
+Renders the station list and detail pages, the monitoring dashboard with
+per-source health and sparklines, the freshness map (stations colored by how
+recently each reported), and the chart-data/GeoJSON endpoints those views feed.
+All readings are served from published DataRecordStaging rows the scheduled sync
+writes; these views never call the external APIs directly.
+"""
 import json
 import re
 from datetime import timedelta

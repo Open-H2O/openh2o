@@ -1,4 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Recharge site and event surfaces.
+
+Renders the recharge-site list and detail pages (showing a site's RechargeEvents,
+the PODs that fill it, and recent RechargeMeasurements) and the sites GeoJSON
+endpoint. Creating a RechargeEvent here hands off to the accounting service,
+which credits groundwater either to the GSA basin pool for the site's zone or to
+a has-well parcel on the conjunctive path.
+"""
 import json
 
 from django.contrib.auth.decorators import login_required
