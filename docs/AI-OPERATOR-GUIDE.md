@@ -73,10 +73,9 @@ This is the phase an AI must not skip. The platform's production settings **refu
 
 ### Option A — Demo data (always do this first)
 ```bash
-docker compose exec web python manage.py seed_demo_data   # fictional "Demo Valley GSA"
-docker compose exec web python manage.py seed_kaweah      # a real CA basin, coexists with demo
+docker compose exec web python manage.py seed_merced   # the Merced Subbasin demonstration
 ```
-This gives the agency a fully populated example to click through while you gather their real data. It's safe and idempotent. (`--flush` deletes and reloads; only use it deliberately.)
+This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — a fully populated example the agency can click through while you gather their real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed); for real satellite-ET numbers, add an OpenET key and run the ET sync (Phase 4). Each sub-step is idempotent, so re-running is safe.
 
 ### Option B — Their real data
 Three import routes, in rough order of preference:

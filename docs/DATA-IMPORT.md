@@ -11,15 +11,16 @@ Run every importer with `--dry-run` first — it validates and reports what *wou
 ## 1. Demo data (to learn the system)
 
 ```bash
-docker compose exec web python manage.py seed_demo_data   # fictional "Demo Valley GSA"
-docker compose exec web python manage.py seed_kaweah      # a real California basin
+docker compose exec web python manage.py seed_merced   # the Merced Subbasin demonstration
 ```
 
-Both are idempotent and coexist. Add `--flush` to delete and reload (deliberately — it removes that dataset).
+This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — so you have a fully populated example to click through while you gather your agency's real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed). Each sub-step is idempotent, so re-running is safe.
 
 ---
 
 ## 2. File imports (the data you already have)
+
+> **Working with an AI agent?** You don't have to work out the column mapping yourself. Point the agent at your file — a county assessor export, a spreadsheet, an old system's dump — and ask it to import the data. The `--field` override flags below let it map your column names onto what OpenH2O expects, and the `--dry-run` plus staging-table flow lets it check the result before anything is written. Crosswalking messy real-world data into the importer is exactly the kind of work an agent handles well.
 
 ### Parcels — `import_parcels`
 The foundation: accounts, wells, and ledgers all hang off parcels. Accepts **GeoJSON or Shapefile**.
@@ -78,8 +79,8 @@ docker compose exec web python manage.py import_ledger_csv ledger.csv \
 If you only have a basin boundary, `auto_populate` queries DWR and USGS to pull the rest:
 
 ```bash
-docker compose exec web python manage.py auto_populate --boundary "Kaweah Subbasin" --dry-run
-docker compose exec web python manage.py auto_populate --boundary "Kaweah Subbasin"
+docker compose exec web python manage.py auto_populate --boundary "Merced Subbasin" --dry-run
+docker compose exec web python manage.py auto_populate --boundary "Merced Subbasin"
 ```
 
 | Step | Source | Creates |
@@ -105,7 +106,7 @@ No public source provides these, so they're entered in the web UI under **Infras
 
 ## A sensible order
 
-1. `seed_data` (reference tables) → `seed_demo_data` (to explore)
+1. `seed_data` (reference tables) → `seed_merced` (to explore the demo)
 2. `import_parcels` your real parcels — confirm the boundary on the map
 3. `import_wells` if you have a well list; `auto_populate --steps stations` for monitoring
 4. Create water accounts and allocations in the UI

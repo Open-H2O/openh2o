@@ -170,22 +170,24 @@ docker compose exec web python manage.py seed_roles
 
 ---
 
-## 9. Load Demo Data (Optional)
+## 9. Load the Demonstration Dataset (Optional)
 
-For testing or demonstration, load a complete fictional GSA dataset:
-
-```bash
-docker compose exec web python manage.py seed_demo_data
-```
-
-This creates a "Demo Valley GSA" with 3 zones, 40 parcels, 15 wells,
-5 water accounts, 480 ledger entries, water rights, and recharge sites.
-
-The command is idempotent. To reset and reload:
+For testing or demonstration, load the Merced Subbasin demo — a real California
+basin, the same dataset running at openh2o.com:
 
 ```bash
-docker compose exec web python manage.py seed_demo_data --flush
+docker compose exec web python manage.py seed_merced
 ```
+
+This builds the full demonstration: real boundary and hydrography, GSA and
+district zones, water rights and points of diversion, hand-selected place-of-use
+parcels, cropland, recharge basins, and a year of ledger activity. One step does
+a live fetch of flowlines and monitoring stations from public APIs (a few
+minutes, no key required). For real satellite-ET figures, set an OpenET key (see
+section 11) and run the ET sync; without it the demo uses representative
+face-value figures and is still internally coherent.
+
+Each sub-step is idempotent, so re-running is safe.
 
 ---
 

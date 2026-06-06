@@ -36,7 +36,7 @@ openh2o/
 ├── core/                    # Core app (User model, seed commands)
 │   ├── management/commands/
 │   │   ├── seed_data.py     # Runs all seed commands
-│   │   ├── seed_demo_data.py # Comprehensive demo dataset
+│   │   ├── seed_merced.py    # Full Merced Subbasin demonstration (the live demo)
 │   │   └── seed_roles.py
 │   ├── apps.py
 │   └── models.py

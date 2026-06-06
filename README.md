@@ -46,10 +46,22 @@ cp .env.example .env                 # set SECRET_KEY at minimum
 docker compose up -d --build         # start db + web + caddy
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data      # reference data
-docker compose exec web python manage.py seed_demo_data # a fictional example agency
+docker compose exec web python manage.py seed_merced    # the Merced Subbasin demonstration
 ```
 
-Open `http://localhost`. You'll land on a fully populated demo agency ("Demo Valley GSA"). Run `make help` for all shortcuts. For a real deployment with HTTPS, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
+Open `http://localhost`. You'll land on the **Merced Subbasin** demonstration — a real California basin, the same one running at [openh2o.com](https://openh2o.com). The seed pulls live hydrography and monitoring stations from public APIs (a few-minute fetch, no key required); add an OpenET key later for real satellite-ET figures, otherwise the demo uses representative values. Run `make help` for all shortcuts. For a real deployment with HTTPS, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
+
+---
+
+## The AI agent's role doesn't end at setup
+
+For an agency with no software staff, a capable coding agent (Claude Code or similar) is not just a one-time installer — it's the ongoing operator and translator between the agency and the platform.
+
+- **It onboards your existing records.** Point the agent at the data you already have — a county assessor parcel export, a stack of spreadsheets, a dump from an old system — and it works out how your columns map onto OpenH2O's importers and loads them. The import tools are built for this: field-name overrides, a dry-run that validates before writing anything, and a staging table so a bad file never half-corrupts your data. The agent handles the data crosswalking you'd otherwise need a developer for. See [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md).
+- **It runs the routine work.** Monthly data sync, pruning dead monitoring stations, preparing the GEARS and CalWATRS filings, reading the health check — the agent can do these on a schedule and explain what each number means.
+- **It troubleshoots.** When something breaks, the agent reads the logs and the deploy guide and fixes it, rather than the agency waiting on a vendor support ticket.
+
+The deployment is the first thing the agent does, not the only thing. [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) walks an agent through the whole arc.
 
 ---
 
@@ -129,8 +141,6 @@ openh2o/
 | Transactional email (password resets) | Free tier covers most agencies |
 | CIMIS / NOAA / CDEC / USGS / DWR data | Free (public APIs) |
 
-A small agency can realistically run OpenH2O for **under $25/month all-in.**
-
 ## Testing
 
 ```bash
@@ -151,6 +161,8 @@ The AGPL is the strongest open-source guarantee for networked software. Its **Se
 
 ## Acknowledgments
 
-OpenH2O is an independent, clean-room reimplementation on an open stack. It descends conceptually from the **Groundwater Accounting Platform** stewarded by the **California Water Data Consortium** (the independent nonprofit founded in 2019 to carry out AB 1755) and developed by **ESA (formerly Sitka Technology Group)**, which is likewise released under the AGPL. We are grateful for that prior art. No ESA/Sitka source code is included here.
+OpenH2O builds on earlier work. The idea — and much of the accounting methodology — comes from the **Groundwater Accounting Platform**, an open-source system created by **ESA (formerly Sitka Technology Group)** and stewarded by the **California Water Data Consortium**, the nonprofit set up in 2019 to open up California's water data. That platform is also released under the AGPL.
+
+OpenH2O is an independent rebuild on a fully open stack: we studied how that platform works and reimplemented it from scratch, so none of their code is copied here — but we're grateful for the path they cleared.
 
 Built by Brent Vanderburgh for the water managers of California.
