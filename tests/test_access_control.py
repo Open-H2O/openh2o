@@ -15,7 +15,7 @@ guarded by @admin_required over @login_required) and Methodology
 both proves the decorator behaves the same regardless of stack order.
 
 Pinned to config.settings.local via pyproject (prod settings 301-redirect the
-test client). Runs in the Butler web container (needs the DB + templates).
+test client). Runs in the web container (needs the DB + templates).
 """
 from django.contrib.auth import get_user_model
 from django.test import Client, override_settings

@@ -13,7 +13,7 @@ rest of the plan leans on:
     key (a stray IntegrityError here would mean the migration's widened
     unique_together didn't take).
 
-Runs in the Butler web container (needs the DB).
+Runs in the web container (needs the DB).
 """
 from decimal import Decimal
 

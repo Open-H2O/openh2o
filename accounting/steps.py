@@ -28,7 +28,7 @@ ET. Its contested USDA-SCS / TR-21 math lives in the Django-free
 accounting/precip_math.py (proven against published vectors); this module is only
 the thin DB-bound wrapper that reads precip + ET from the cache and converts to AF.
 
-OpenETCache shape (verified against live Butler data, 2026-05-31):
+OpenETCache shape (verified against live deployment data, 2026-05-31):
   - et_data is a LIST of dicts:
       ET     rows: [{"et": 170.02,  "date": "2024-06", "unit": "mm"}, ...]   var="ET"/model="Ensemble"
       precip rows: [{"precip": 75.0, "date": "2024-02", "unit": "mm"}, ...]   var="precip"/model="GRIDMET"

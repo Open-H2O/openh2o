@@ -5,7 +5,7 @@ The contested arithmetic is proven Django-free in tests/test_precip_math.py; thi
 file proves the thin cache-reading wrapper: that it reads precip + ET with the
 RIGHT strings/keys (the silent-zero guard), converts mm<->in<->AF correctly,
 subtracts from the running total, passes through when there is no rain, and
-switches behavior with method. Runs in the Butler web container (needs the DB).
+switches behavior with method. Runs in the web container (needs the DB).
 """
 import datetime as dt
 from decimal import Decimal

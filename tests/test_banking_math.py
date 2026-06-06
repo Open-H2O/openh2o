@@ -5,7 +5,7 @@ Like tests/test_precip_math.py, this file is DELIBERATELY Django-free:
 accounting/banking_math.py imports only ``decimal`` + the standard library, so
 the cross-month money math that the bill depends on gets a real RED->GREEN cycle
 in bare local Python on a Mac with neither Django nor Docker. pytest collects it
-normally in the Butler ``web`` container too.
+normally in the ``web`` container too.
 
 The vectors are the SPEC the implementation must satisfy (geometric decay
 ``value = amount * (1 - rate) ** elapsed``, floored at 0; lexicographic "YYYY-MM"

@@ -6,7 +6,7 @@ tests/test_banking_math.py, this file is DELIBERATELY Django-free:
 accounting/allocation_math.py imports only ``decimal`` plus the standard library,
 so the money-sensitive split of ONE shared well / point-of-diversion across the
 parcels it serves gets a real RED->GREEN cycle in bare local Python on a Mac with
-neither Django nor Docker. pytest collects it normally in the Butler ``web``
+neither Django nor Docker. pytest collects it normally in the ``web``
 container too.
 
 This kernel is the heart of Phase 56. The platform currently splits a shared

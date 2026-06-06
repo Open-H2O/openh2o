@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Export the two basin-picker reference layers from the live openh2o DB.
 
-Run on Butler inside the web container via Django's shell, e.g.:
+Run inside the web container via Django's shell, e.g.:
 
     docker compose exec -T web python manage.py shell \
         -c "exec(open('/tmp/_export_reference_layers.py').read())"

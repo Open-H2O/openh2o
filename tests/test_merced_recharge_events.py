@@ -18,7 +18,7 @@ Instead the whole volume deposits to the zone's GSA basin recharge pool — an
     "Recharge from <basin>" description, so the engine's separate incidental pool
     and its "Incidental recharge" ledger rows survive untouched.
 
-Runs in the Butler web container (needs the DB).
+Runs in the web container (needs the DB).
 """
 from datetime import date
 from decimal import Decimal

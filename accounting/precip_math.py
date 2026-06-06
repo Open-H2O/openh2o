@@ -5,7 +5,7 @@ This module is intentionally Django-free (imports only ``decimal`` + ``math``)
 so the part that actually needs proving — the USDA-SCS / TR-21 formula — has a
 fast, real RED->GREEN test cycle in bare local Python. The thin cache-reading
 wrapper that turns parcel-month rows into ``(P, ET)`` lives in
-``accounting/steps.py`` and is DB-bound (tested on Butler).
+``accounting/steps.py`` and is DB-bound (tested in the running container).
 
 "Effective precipitation" is the share of rainfall that actually contributes to
 crop ET — what you may credit against gross satellite ET to get *net* consumptive

@@ -36,7 +36,7 @@ Order matters:
                               layer (needs the WY 2024-2025 ReportingPeriod + parcels
                               from step 8), so it runs LAST.
 
-Note: demand-aware surface sizing in step 8 reads the OpenETCache, so on Butler
+Note: demand-aware surface sizing in step 8 reads the OpenETCache, so in a deployment
 run ``sync_openet_parcels``/``sync_precip_parcels`` (and ``run_calculations`` for
 the groundwater + incidental-recharge rows) around this sequence; without an ET
 cache, step 8 falls back to face-value sizing and the demo is still coherent.

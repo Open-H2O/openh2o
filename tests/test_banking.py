@@ -16,7 +16,7 @@ over-delivery is now correctly treated as deep-percolation RECHARGE credited to
 groundwater, NOT a bankable precip WaterCredit (which masked summer pumping). So
 the deposit test asserts the recharge outcome; genuine rain-surplus banking
 (which needs Pe>ET, only possible under method=raw) is covered in
-test_calculation_run.py. Runs in the Butler web container (needs the DB).
+test_calculation_run.py. Runs in the web container (needs the DB).
 """
 import datetime as dt
 from decimal import Decimal

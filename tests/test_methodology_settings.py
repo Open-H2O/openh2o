@@ -17,7 +17,7 @@ a TDD plan. They lock the behavior that actually matters for a self-serve agency
   - Empty-plan path renders a 200 empty state, not a 500.
 
 Pinned to config.settings.local (prod settings 301/400 list views). Runs in the
-Butler web container (needs the DB).
+web container (needs the DB).
 """
 import datetime as dt
 from decimal import Decimal

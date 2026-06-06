@@ -6,7 +6,7 @@ tests/test_precip_math.py, this file is DELIBERATELY Django-free:
 accounting/allocation_math.py imports only ``decimal`` plus the standard library,
 so the money-sensitive split of a district delivery total across crop-varied
 parcels gets a real RED->GREEN cycle in bare local Python on a Mac with neither
-Django nor Docker. pytest collects it normally in the Butler ``web`` container too.
+Django nor Docker. pytest collects it normally in the ``web`` container too.
 
 This kernel is the heart of Phase 55: it reframes the throwaway month-axis helper
 ``_demand_aware_deliveries`` (core/management/commands/seed_merced_ledgers.py) onto

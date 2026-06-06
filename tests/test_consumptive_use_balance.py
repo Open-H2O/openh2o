@@ -10,7 +10,7 @@ per-parcel summary, and the mass-balance audit can never drift apart.
 
 These tests build parcel-periods with EXPLICIT CalculationRun terms (gross ET,
 net consumptive use, effective precip) so they prove correctness independent of
-the stale Butler demo, where every persisted ``net_consumptive_use_af`` is still
+the stale demo, where every persisted ``net_consumptive_use_af`` is still
 0 (the field landed in Phase 54 after the 52.5 runs were written; Phase 58
 re-runs the engine). The load-bearing invariants:
 

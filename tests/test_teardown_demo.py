@@ -187,7 +187,7 @@ def _build_multi_basin_world():
         station_ext="DEMO-ST-1", station_source="usgs", gw=gw, prior=prior)
     # A Kaweah gauge in the foothills ABOVE the subbasin — outside the boundary
     # polygon, so only the explicit-ID sweep can remove it. Regression guard for
-    # the out-of-polygon station bug found on the live Butler teardown.
+    # the out-of-polygon station bug found on the live teardown.
     cdec = DataSource.objects.get(code="cdec")
     MonitoredStation.objects.create(
         data_source=cdec, external_station_id="TRM",

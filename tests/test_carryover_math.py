@@ -6,7 +6,7 @@ DELIBERATELY Django-free: accounting/carryover_math.py imports only ``decimal``
 plus accounting.banking_math (itself Django-free), so the money-sensitive
 year-to-year roll-forward arithmetic gets a real RED->GREEN cycle in bare local
 Python on a Mac with neither Django nor Docker. pytest collects it normally in
-the Butler ``web`` container too.
+the ``web`` container too.
 
 The vectors are the SPEC the implementation must satisfy (signed year-end
 remainder; surplus aged via the WaterCredit decay, debt carried at full

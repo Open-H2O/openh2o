@@ -27,7 +27,7 @@ hangs the pick on.
    ```
    (`fetch_parcels.py` pulls Merced County assessor parcels and keeps the
    sizable ones NOT covered by crops. The reference hydrography is exported from
-   the live DB by `_export_reference_layers.py`, run on Butler — its committed
+   the live DB by `_export_reference_layers.py`, run in the deployment — its committed
    output is `merced_river_flowlines.geojson` / `merced_existing_basins.geojson`
    / `merced_diversions.geojson`; re-run only if the DB hydrography changes.)
 2. **Pick basins** — open `merced_basin_picker.qgz` in QGIS:

@@ -92,7 +92,7 @@ class Command(BaseCommand):
             raise CommandError(
                 "No parcels match the filters (need geometry + area_acres"
                 + (f", prefix {prefix!r}" if prefix else "")
-                + "). Load parcel data first (e.g. seed_kaweah)."
+                + "). Load parcel data first (e.g. seed_merced)."
             )
 
         mode = getattr(settings, "OPENET_MODE", "api")

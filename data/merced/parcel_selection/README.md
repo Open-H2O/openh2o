@@ -30,7 +30,7 @@ crop fields (DWR i15 Statewide Crop Mapping, 2023 final) and lets Brent pick.
    - Tag every field a diversion serves. Leave the rest blank.
    - **Save** (toggle editing off → Save).
 3. **Tell Claude "done"** — Claude extracts the tagged fields to
-   `../selected_parcels.geojson` (committed), then on Butler runs:
+   `../selected_parcels.geojson` (committed), then in the deployment runs:
    ```sh
    python manage.py seed_merced_parcels_from_selection
    ```

@@ -91,7 +91,7 @@ def _build_physical_merced():
     """Create a compact, structurally faithful Phase 51-03 physical slice.
 
     Returns nothing — the seed and the tests both read it back from the DB, exactly
-    as they would on the real Butler demo.
+    as they would on the real demo.
     """
     boundary = Boundary.objects.create(name="Merced Subbasin", geometry=_box(-120.5, 37.2, 1.0))
 
@@ -542,7 +542,7 @@ def test_second_seed_run_does_not_change_counts():
 # helpers are gone; the kernel's own math is covered by tests/test_allocation_math.py
 # and the service by tests/test_surface_allocation.py. These tests prove the SEED
 # now calls the service: it records a district total per POD/month and the
-# service splits that total across served parcels (demand-weighted on Butler;
+# service splits that total across served parcels (demand-weighted in a deployment;
 # static-fraction fallback here, where the fixture carries no ET cache), summing
 # back to the recorded diversions.
 # --------------------------------------------------------------------------

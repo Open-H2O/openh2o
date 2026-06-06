@@ -14,7 +14,7 @@ defensibility invariants the blueprint demands:
 
 A run that merely EXISTS but doesn't reconstruct is worse than none (it looks
 defensible and isn't), so the reconstruct test walks the math, it doesn't just
-count rows. Runs in the Butler web container (needs the DB).
+count rows. Runs in the web container (needs the DB).
 """
 import datetime as dt
 from decimal import Decimal

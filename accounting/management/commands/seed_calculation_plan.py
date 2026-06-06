@@ -10,7 +10,7 @@ subtract_effective_precip step is ENABLED with the USDA-SCS / TR-21 method
 (soil_storage_in=3.0), now that its math is TDD-proven against published vectors.
 
 et_gross config uses variable="ET" / model="Ensemble" to match the strings the
-GEE adapter actually writes into OpenETCache (verified live on Butler).
+GEE adapter actually writes into OpenETCache (verified live in a deployment).
 """
 
 from django.core.management.base import BaseCommand

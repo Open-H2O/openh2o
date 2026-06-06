@@ -3,8 +3,8 @@
 
 This file is DELIBERATELY Django-free. accounting/precip_math.py imports only
 ``decimal`` + ``math``, so these tests give a real RED->GREEN cycle in bare local
-Python on a Mac that has neither Django nor Docker (all DB tests run on Butler).
-It is also collected normally by pytest in the Butler ``web`` container.
+Python on a Mac that has neither Django nor Docker (all DB tests run in the web container).
+It is also collected normally by pytest in the ``web`` container.
 
 The expected values are the published anchor vectors from 38-03-PLAN.md's
 reference table (USDA-SCS / TR-21, soil-storage D = 3.0 in), recomputed here as
