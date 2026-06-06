@@ -20,8 +20,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--staging-days",
             type=int,
-            default=90,
-            help="Days to keep published staging records (default: 90)",
+            default=365,
+            help="Days to keep published staging records (default: 365 — "
+                 "matches the station chart's 1-year range)",
         )
         parser.add_argument(
             "--health-days",
