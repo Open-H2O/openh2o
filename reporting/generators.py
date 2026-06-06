@@ -22,6 +22,7 @@ from django.db.models import Sum
 from accounting.allocation_math import apportion_shared_supply
 from accounting.models import CalculationRun
 from accounting.services import billable_ledger
+from core.models import SiteConfig
 from parcels.models import Parcel, ParcelLedger
 from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
 from wells.models import Well, WellIrrigatedParcel
@@ -319,6 +320,9 @@ def generate_gears_csv(reporting_period, method="by_well"):
     output = io.StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
 
+    if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
+        writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
+
     if method == "by_well":
         writer.writerow([
             "Well Registration ID", "Well Name", "Latitude", "Longitude",
@@ -441,6 +445,9 @@ def generate_gears_csv(reporting_period, method="by_well"):
 def generate_calwatrs_csv(reporting_period, template_type="a1"):
     output = io.StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+
+    if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
+        writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
 
     writer.writerow([
         "Water Right ID", "Holder Name", "POD Name", "Source Fraction",

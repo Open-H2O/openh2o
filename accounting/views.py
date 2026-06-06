@@ -842,6 +842,8 @@ def csv_template(request):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="ledger_import_template.csv"'
     writer = csv_module.writer(response)
+    if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
+        writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
     writer.writerow([
         "parcel_number",
         "effective_date",
@@ -885,6 +887,8 @@ def ledger_export(request):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="ledger_export.csv"'
     writer = csv_module.writer(response)
+    if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
+        writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
     writer.writerow([
         "parcel_number", "effective_date", "amount_acre_feet",
         "source_type", "water_type", "reporting_period", "description",
