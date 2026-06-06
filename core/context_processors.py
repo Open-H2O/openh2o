@@ -55,3 +55,10 @@ def analytics(request):
         "umami_website_id": settings.UMAMI_WEBSITE_ID,
         "umami_script_url": settings.UMAMI_SCRIPT_URL,
     }
+
+
+def feedback(request):
+    """Expose the in-app feedback intake URL to templates. Blank on a fresh
+    clone, so the Feedback button only renders where a deployment opts in by
+    setting FEEDBACK_ENDPOINT in its environment."""
+    return {"feedback_endpoint": settings.FEEDBACK_ENDPOINT}

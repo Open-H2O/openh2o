@@ -1,0 +1,126 @@
+{# In-app feedback widget (the 3rd intake channel of the feedback-triage pipeline).
+   Renders only when FEEDBACK_ENDPOINT is set (see core.context_processors.feedback),
+   so a self-hosted clone shows nothing by default. Dependency-free: plain CSS + a
+   little vanilla JS that POSTs JSON to the intake endpoint. No cookies, no tracking. #}
+{% if feedback_endpoint %}
+<style>
+  .oh2o-fb-btn {
+    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 900;
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.6rem 1rem; border: none; border-radius: 999px; cursor: pointer;
+    background: #1B7FAF; color: #fff; font: 600 0.9rem/1 'Public Sans', sans-serif;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35); transition: background .15s, transform .15s;
+  }
+  .oh2o-fb-btn:hover { background: #3DB4E0; transform: translateY(-1px); }
+  .oh2o-fb-btn svg { width: 17px; height: 17px; }
+
+  .oh2o-fb-panel {
+    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 901;
+    width: min(340px, calc(100vw - 2rem));
+    background: #0e1219; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5); padding: 1.1rem 1.1rem 1.2rem;
+    color: #e8edf4; font-family: 'Public Sans', sans-serif;
+    opacity: 0; transform: translateY(12px) scale(.98); pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .oh2o-fb-panel.open { opacity: 1; transform: none; pointer-events: auto; }
+  .oh2o-fb-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .25rem; }
+  .oh2o-fb-head h3 { margin: 0; font-size: 1rem; font-weight: 700; }
+  .oh2o-fb-x { background: none; border: none; color: #8899aa; font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0 .2rem; }
+  .oh2o-fb-x:hover { color: #e8edf4; }
+  .oh2o-fb-sub { margin: 0 0 .85rem; font-size: .8rem; color: #8899aa; }
+  .oh2o-fb-panel label { display: block; font-size: .75rem; color: #8899aa; margin: .55rem 0 .2rem; }
+  .oh2o-fb-panel input, .oh2o-fb-panel textarea {
+    width: 100%; box-sizing: border-box; background: #080b10; color: #e8edf4;
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 7px; padding: .5rem .6rem;
+    font: 400 .85rem 'Public Sans', sans-serif; resize: vertical;
+  }
+  .oh2o-fb-panel input:focus, .oh2o-fb-panel textarea:focus { outline: none; border-color: #3DB4E0; }
+  .oh2o-fb-send {
+    width: 100%; margin-top: .9rem; padding: .6rem; border: none; border-radius: 7px; cursor: pointer;
+    background: #1B7FAF; color: #fff; font: 600 .9rem 'Public Sans', sans-serif; transition: background .15s;
+  }
+  .oh2o-fb-send:hover { background: #3DB4E0; }
+  .oh2o-fb-send:disabled { opacity: .6; cursor: default; }
+  /* Honeypot: hidden from real users, catnip for bots. */
+  .oh2o-fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+</style>
+
+<button type="button" class="oh2o-fb-btn" id="oh2o-fb-open" aria-haspopup="dialog" aria-label="Send feedback">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+  Feedback
+</button>
+
+<div class="oh2o-fb-panel" id="oh2o-fb-panel" role="dialog" aria-modal="false" aria-labelledby="oh2o-fb-title">
+  <div class="oh2o-fb-head">
+    <h3 id="oh2o-fb-title">Send feedback</h3>
+    <button type="button" class="oh2o-fb-x" id="oh2o-fb-close" aria-label="Close">&times;</button>
+  </div>
+  <p class="oh2o-fb-sub">Found a bug or have an idea? Tell us — a real person reads every note.</p>
+  <form id="oh2o-fb-form">
+    <label for="oh2o-fb-name">Name <span style="opacity:.6">(optional)</span></label>
+    <input type="text" id="oh2o-fb-name" name="name" autocomplete="name" maxlength="200">
+    <label for="oh2o-fb-email">Email <span style="opacity:.6">(optional, for a reply)</span></label>
+    <input type="email" id="oh2o-fb-email" name="email" autocomplete="email" maxlength="200">
+    <label for="oh2o-fb-msg">Message</label>
+    <textarea id="oh2o-fb-msg" name="message" rows="4" required maxlength="5000"></textarea>
+    <div class="oh2o-fb-hp" aria-hidden="true">
+      <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <button type="submit" class="oh2o-fb-send" id="oh2o-fb-send">Send feedback</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  var ENDPOINT = "{{ feedback_endpoint|escapejs }}";
+  var openBtn = document.getElementById('oh2o-fb-open');
+  var panel = document.getElementById('oh2o-fb-panel');
+  var closeBtn = document.getElementById('oh2o-fb-close');
+  var form = document.getElementById('oh2o-fb-form');
+  var sendBtn = document.getElementById('oh2o-fb-send');
+
+  function open() { panel.classList.add('open'); openBtn.style.display = 'none'; document.getElementById('oh2o-fb-msg').focus(); }
+  function close() { panel.classList.remove('open'); openBtn.style.display = ''; }
+
+  openBtn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
+
+  function toast(msg, type) {
+    if (window.showToast) window.showToast(msg, type); else alert(msg);
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var data = {
+      product: 'openh2o',
+      message: form.message.value.trim(),
+      name: form.name.value.trim() || null,
+      email: form.email.value.trim() || null,
+      page_url: window.location.href,
+      website: form.website.value
+    };
+    if (!data.message) { toast('Please enter a message.', 'error'); return; }
+    sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function (r) {
+      if (!r.ok) throw new Error('bad status ' + r.status);
+      return r.json();
+    }).then(function () {
+      form.reset(); close();
+      toast('Thanks for your feedback!', 'success');
+    }).catch(function () {
+      toast('Sorry, that didn\'t send. Please try again.', 'error');
+    }).finally(function () {
+      sendBtn.disabled = false; sendBtn.textContent = 'Send feedback';
+    });
+  });
+})();
+</script>
+{% endif %}

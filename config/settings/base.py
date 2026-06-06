@@ -91,6 +91,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.site_config",
                 "core.context_processors.analytics",
+                "core.context_processors.feedback",
                 "core.context_processors.access_flags",
                 "core.context_processors.setup_status",
             ],
@@ -223,6 +224,12 @@ GEE_SERVICE_ACCOUNT_EMAIL = env("GEE_SERVICE_ACCOUNT_EMAIL", default="")
 # base templates). Set it in the environment on your own deployment only.
 UMAMI_WEBSITE_ID = env("UMAMI_WEBSITE_ID", default="")
 UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="https://analytics.vanderdev.net/script.js")
+
+# -- In-app feedback widget --------------------------------------------------
+# Opt-in like Umami: FEEDBACK_ENDPOINT is blank by default so a self-hosted copy
+# shows no Feedback button. Set it to the intake URL to enable the widget (see
+# core.context_processors.feedback and partials/_feedback_widget.html).
+FEEDBACK_ENDPOINT = env("FEEDBACK_ENDPOINT", default="")
 GEE_SERVICE_ACCOUNT_KEY_FILE = env("GEE_SERVICE_ACCOUNT_KEY_FILE", default="")
 
 if _google_client_id and _google_client_secret:
