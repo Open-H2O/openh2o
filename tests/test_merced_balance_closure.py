@@ -54,9 +54,10 @@ from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 
 from accounting.models import AllocationCarryover, CalculationRun
-from accounting.services import parcel_mass_balance
+from accounting.services import consumptive_use_balance, parcel_mass_balance
 from core.models import SiteConfig
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
+from surface.models import DiversionRecord
 from surface.services import allocate_district_delivery
 from tests.factories import (
     DiversionRecordFactory,
@@ -345,3 +346,88 @@ def test_residual_band_status_classifies_three_tiers():
     assert residual_band_status(Decimal("-10"), et, closes=False) == "realistic"
     # 40% of ET → large (e.g. a curtailment shortfall worth flagging).
     assert residual_band_status(Decimal("-40"), et, closes=False) == "large"
+
+
+# --- Phase 67-03 diversion-reach spine-safety guards ------------------------
+# The load-bearing acceptance gate: a fully-returned (hydropower) diversion writes
+# a ZERO consumed magnitude, and the whole diversion-reach journey (a parcel-less
+# passthrough + a downstream re-diversion) leaves the basin consumptive balance
+# untouched. If either drifts, a write-site branched in 67-01 landed in the wrong
+# place — STOP rather than paper over it in the seed.
+
+def test_fully_returned_diversion_contributes_zero_surface_supply():
+    """(a) A fully-returned hydro passthrough (returned_af == volume) writes a
+    surface supply of ZERO, so it cannot move the consumptive spine — even though
+    its gross diverted volume is large."""
+    rp = _setup_period()
+    parcel = _parcel("MER-APN-HYDRO")
+    _et_cache(parcel, et_mm=140.0)
+    _precip_cache(parcel, precip_mm=40.0)
+    _irrigate(parcel)
+    pod = PointOfDiversionFactory()
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=parcel)
+    # returned == volume → consumed_acre_feet() == 0 (the non-consumptive endpoint).
+    record = DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp,
+        month=dt.date(int(PERIOD[:4]), int(PERIOD[5:7]), 1),
+        volume_acre_feet=Decimal("500.0000"), returned_af=Decimal("500.0000"))
+
+    call_command("run_calculations", "--period", PERIOD)
+    allocate_district_delivery(pod, rp)
+
+    # The recorded gross volume is 500 AF, but the consumed magnitude — the only
+    # thing the ledger writers emit — is zero, so surface supply is zero.
+    assert record.consumed_acre_feet() == Decimal("0")
+    assert record.is_non_consumptive()
+    balance = consumptive_use_balance([parcel.id], rp)
+    assert balance["supplies"]["surface"] == Decimal("0"), balance
+
+
+def test_diversion_reach_journey_does_not_move_basin_closure():
+    """(b) Seeding the journey — a fully-returned upstream passthrough + a
+    downstream re-diversion, BOTH serving no parcels — leaves the whole-basin
+    consumptive balance byte-identical. The journey PODs write no surface_diversion
+    rows, so supplies and the closure cannot move (the −0.18%/−0.12% baseline holds
+    by construction; live drift would be the red flag the plan warns about)."""
+    rp = _setup_period()
+    # A normal surface parcel carrying real supply — the "basin" the journey must
+    # not disturb.
+    parcel = _parcel("MER-APN-NORMAL")
+    _et_cache(parcel, et_mm=140.0)
+    _precip_cache(parcel, precip_mm=40.0)
+    _irrigate(parcel)
+    pod = _pod_serving(parcel, volume_af=100, rp=rp)
+    _two_pass_refresh([pod], rp)
+
+    all_ids = list(Parcel.objects.values_list("id", flat=True))
+    before = consumptive_use_balance(all_ids, rp)
+    assert before["supplies"]["surface"] > 0  # the basin has real surface supply
+
+    # Seed the journey: a parcel-less upstream POD (fully returned) and a
+    # parcel-less downstream re-diversion (consumptive), linked one hop.
+    upstream = PointOfDiversionFactory(name="MER-POD-010-DEMO Hydro")
+    downstream = PointOfDiversionFactory(
+        name="MER-POD-011-DEMO Re-Diversion", rediverted_from=upstream)
+    month = dt.date(int(PERIOD[:4]), int(PERIOD[5:7]), 1)
+    DiversionRecordFactory(
+        point_of_diversion=upstream, reporting_period=rp, month=month,
+        volume_acre_feet=Decimal("500.0000"), returned_af=Decimal("500.0000"))
+    DiversionRecordFactory(
+        point_of_diversion=downstream, reporting_period=rp, month=month,
+        volume_acre_feet=Decimal("200.0000"), returned_af=Decimal("0"))
+
+    # allocate_district_delivery is a guaranteed no-op for a parcel-less POD.
+    assert allocate_district_delivery(upstream, rp) == []
+    assert allocate_district_delivery(downstream, rp) == []
+
+    after = consumptive_use_balance(all_ids, rp)
+    assert after == before, (before, after)
+    # The one-hop link resolves both directions.
+    assert downstream.rediverted_from_id == upstream.id
+    assert list(upstream.rediversions.all()) == [downstream]
+    # No surface_diversion row was written for either journey POD.
+    assert not ParcelLedger.objects.filter(
+        source_type="surface_diversion",
+        description__icontains="MER-POD-010-DEMO").exists()
+    assert DiversionRecord.objects.filter(
+        point_of_diversion__in=[upstream, downstream]).count() == 2
