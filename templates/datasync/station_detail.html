@@ -161,6 +161,27 @@
     <!-- Right column -->
     <div class="page-stack">
 
+      <!-- Current Readings card -->
+      {% if latest_readings %}
+      <div class="card-raised">
+        <div class="row-between mb-md">
+          <h2 class="section-header-flush">Current Readings</h2>
+          <span class="text-tertiary text-xs">Latest published value per sensor</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-sm);">
+          {% for r in latest_readings %}
+          <div style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: 6px; padding: var(--space-sm) var(--space-md);">
+            <div class="text-tertiary text-xs" style="margin-bottom: 2px;">{{ r.label }}</div>
+            <div class="field-value" style="font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums;">
+              {% if r.value is not None %}{{ r.value|floatformat:2 }}{% if r.unit %} <span class="text-secondary" style="font-size: 0.75rem; font-weight: 400;">{{ r.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
+            </div>
+            <div class="text-tertiary text-xs" style="margin-top: 2px;">{{ r.observation_date|date:"M d, Y" }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Map card -->
       {% if station_geojson %}
       <div class="card-raised" style="padding: 0; overflow: hidden;">

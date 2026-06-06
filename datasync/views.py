@@ -256,9 +256,29 @@ def station_detail(request, pk):
         for code in measured_codes
     ]
 
+    # At-a-glance current readings: the newest published value per parameter.
+    # Read straight from published DataRecordStaging — the scheduled sync writes
+    # these; the view never calls the external API (ISS-051 timeout hazard).
+    latest_readings = []
+    for code in measured_codes:
+        rec = (
+            DataRecordStaging.objects
+            .filter(station=station, status="published", parameter_code=code)
+            .order_by("-observation_date")
+            .first()
+        )
+        if rec is not None:
+            latest_readings.append({
+                "label": get_parameter_label(source_code, code),
+                "value": rec.value,
+                "unit": rec.unit,
+                "observation_date": rec.observation_date,
+            })
+
     context = {
         "station": station,
         "recent_records": recent_records,
+        "latest_readings": latest_readings,
         "recent_logs": recent_logs,
         "station_geojson": station_geojson,
         "lat": station.location.y if station.location else None,
