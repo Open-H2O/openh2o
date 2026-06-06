@@ -12,7 +12,7 @@ REPORT_TEMPLATES = [
     {
         "name": "GEARS by ET",
         "report_type": "gears_by_et",
-        "description": "Per-parcel ET-based extraction estimates",
+        "description": "Per-parcel groundwater extraction estimated from satellite consumptive use (ET)",
     },
     {
         "name": "CalWATRS — Direct Use",
