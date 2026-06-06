@@ -453,6 +453,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         "Water Right ID", "Holder Name", "POD Name", "Source Fraction",
         "Latitude", "Longitude", "Month", "Volume (AF)",
         "Max Flow Rate (CFS)", "Diversion Type", "Combined Use",
+        "Return Flow (AF)",
     ])
 
     diversion_type = "direct_use" if template_type == "a1" else "to_storage"
@@ -502,11 +503,18 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
                 "pod": pod,
                 "month": month_str,
                 "volume": Decimal("0"),
+                # return_flow: OpenH2O's own annotation of the portion returned to
+                # the stream. It rides ALONGSIDE the gross volume below — never
+                # netted out of it. The state wants gross (under-reporting is a
+                # Water Code §5107 exposure), so a non-consumptive POD shows its
+                # full Volume (AF) AND an equal Return Flow (AF).
+                "return_flow": Decimal("0"),
                 # max_flow_rate_cfs: reported as CFS. 1 CFS × 1 day = 1.9835 AF.
                 "max_flow": rec.max_flow_rate_cfs or Decimal("0"),
                 "type": rec.get_diversion_type_display(),
             }
         raw[key]["volume"] += rec.volume_acre_feet
+        raw[key]["return_flow"] += rec.returned_af
 
     rows = []
     for key in sorted(raw, key=lambda k: (raw[k]["right_id"], raw[k]["month"])):
@@ -534,6 +542,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
                     pod.location.y, pod.location.x, entry["month"],
                     entry["volume"] * fraction,
                     entry["max_flow"], entry["type"], combined_use,
+                    entry["return_flow"] * fraction,
                 ])
         else:
             # POD not linked to any parcel — emit row with fraction 1.0, SW Only
@@ -543,6 +552,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
                 pod.location.y, pod.location.x, entry["month"],
                 entry["volume"],
                 entry["max_flow"], entry["type"], "SW Only",
+                entry["return_flow"],
             ])
 
     for row in rows:
