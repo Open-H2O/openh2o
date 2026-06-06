@@ -1465,7 +1465,9 @@ div[id$="-map"] {
 }
 
 .text-usage {
-    color: oklch(0.65 0.20 25);
+    /* A consumptive-use figure is a plain total, not a warning — neutral, not red.
+       Red stays reserved for .text-deficit (an actual overdraft). */
+    color: var(--color-text-secondary);
 }
 
 .text-surplus {
@@ -1492,6 +1494,10 @@ div[id$="-map"] {
 
 .data-table td.text-deficit {
     color: oklch(0.65 0.20 25);
+}
+
+.data-table td.text-usage {
+    color: var(--color-text-secondary);
 }
 
 /* -- About page: credit cards & inline links ---------------------------- */
