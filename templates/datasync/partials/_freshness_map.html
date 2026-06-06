@@ -27,6 +27,34 @@ Variables:
   if (!el || el._mapInit) return;
   el._mapInit = true;
 
+  // Plain-English freshness states + their dot colours, defined ONCE so the
+  // persistent legend and the per-station popup can never drift apart.
+  var FRESH_META = {
+    fresh: { label: 'Up to date', color: '#22c55e' },
+    stale: { label: 'Slightly behind', color: '#f59e0b' },
+    dead:  { label: 'No recent data', color: '#ef4444' }
+  };
+
+  // Persistent legend anchored in the map's bottom-left corner, token-styled to
+  // match the app's cards. Built from FRESH_META so it tracks the dot colours.
+  var legend = document.createElement('div');
+  legend.style.cssText =
+    'position:absolute;bottom:10px;left:10px;z-index:1;' +
+    'background:var(--color-card,#0e1219);border:1px solid var(--color-border,#1f2630);' +
+    'border-radius:var(--radius-md,6px);padding:8px 10px;' +
+    'font-family:var(--font-display,sans-serif);font-size:11px;' +
+    'box-shadow:0 2px 8px rgba(0,0,0,0.35);';
+  legend.innerHTML =
+    '<div style="color:#8899aa;font-weight:600;text-transform:uppercase;' +
+      'letter-spacing:0.04em;font-size:10px;margin-bottom:5px;">Station freshness</div>' +
+    ['fresh', 'stale', 'dead'].map(function(k) {
+      return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
+        '<span style="width:9px;height:9px;border-radius:50%;flex:none;display:inline-block;' +
+          'background:' + FRESH_META[k].color + ';"></span>' +
+        '<span style="color:#e8edf4;">' + FRESH_META[k].label + '</span></div>';
+    }).join('');
+  el.appendChild(legend);
+
   var map = new maplibregl.Map({
     container: '{{ map_id }}',
     style: OH2O.basemapStyle('aerial'),
@@ -96,12 +124,8 @@ Variables:
             age = Math.round(p.hours_since_data / 24) + ' days ago';
           }
 
-          // Plain-English freshness + the matching dot colour.
-          var freshMeta = {
-            fresh: { label: 'Up to date', color: '#22c55e' },
-            stale: { label: 'Slightly behind', color: '#f59e0b' },
-            dead:  { label: 'No recent data', color: '#ef4444' }
-          }[p.freshness] || { label: p.freshness, color: '#8899aa' };
+          // Plain-English freshness + the matching dot colour, from the shared map.
+          var freshMeta = FRESH_META[p.freshness] || { label: p.freshness, color: '#8899aa' };
 
           // The actual latest measurement, when we have one.
           var readingLine;
