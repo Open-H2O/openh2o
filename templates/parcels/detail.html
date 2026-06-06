@@ -168,13 +168,33 @@
           </div>
         </div>
 
-        <p class="text-tertiary text-sm" style="margin: 0 0 var(--space-lg);">
-          Net of rainfall: <span class="text-usage">{{ consumptive_balance.consumptive_use_net|floatformat:2 }}</span> AF ·
-          met by
-          <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> ·
-          <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> ·
-          <span class="text-supply">precip {{ consumptive_balance.supplies.precip|floatformat:2 }}</span> AF
-        </p>
+        <!-- Net consumptive demand (after effective rainfall) and the three
+             supplies that met it — demand neutral, supplies green, laid out as
+             labeled cards rather than a middot run-on. -->
+        <div style="margin: 0 0 var(--space-lg);">
+          <p class="text-sm text-secondary" style="margin: 0 0 var(--space-sm);">
+            Net consumptive demand of
+            <span class="text-usage" style="font-weight: 600;">{{ consumptive_balance.consumptive_use_net|floatformat:2 }} AF</span>
+            (consumptive use after effective rainfall), met by these supplies:
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm);">
+            <div class="inset-card">
+              <div class="stat-card-label">Surface water</div>
+              <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.surface|floatformat:2 }}</div>
+              <div class="stat-card-unit">AF</div>
+            </div>
+            <div class="inset-card">
+              <div class="stat-card-label">Groundwater</div>
+              <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.groundwater|floatformat:2 }}</div>
+              <div class="stat-card-unit">AF</div>
+            </div>
+            <div class="inset-card">
+              <div class="stat-card-label">Precipitation</div>
+              <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.precip|floatformat:2 }}</div>
+              <div class="stat-card-unit">AF</div>
+            </div>
+          </div>
+        </div>
 
         <!-- The closing mass-balance identity: water in vs water out. -->
         <h3 class="section-header-sm">Closing Mass Balance</h3>
