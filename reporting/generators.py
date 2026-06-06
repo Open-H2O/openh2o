@@ -542,7 +542,10 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
                     pod.location.y, pod.location.x, entry["month"],
                     entry["volume"] * fraction,
                     entry["max_flow"], entry["type"], combined_use,
-                    entry["return_flow"] * fraction,
+                    # Fixed-decimal string so an exact-zero return reads
+                    # "0.00000000" — Decimal renders zero at this precision as the
+                    # scientific-notation "0E-8", which looks wrong in a state file.
+                    f"{entry['return_flow'] * fraction:.8f}",
                 ])
         else:
             # POD not linked to any parcel — emit row with fraction 1.0, SW Only
