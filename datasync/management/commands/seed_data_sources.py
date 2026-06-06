@@ -37,8 +37,8 @@ DATA_SOURCES = [
         "auth_type": "api_key",
         "sync_interval_hours": 24,
         "description": "California Irrigation Management Information System",
-        # 59-01: deferred (ISS-007) — present appKey returns 403; revive after key renewal
-        "is_active": False,
+        # 68-01: revived (ISS-007) — re-pointed to the new 2026 API; valid key in CIMIS_API_KEY.
+        "is_active": True,
     },
     {
         "name": "CNRFC",
