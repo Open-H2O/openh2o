@@ -18,7 +18,7 @@ California's **Sustainable Groundwater Management Act (SGMA)** requires hundreds
 
 OpenH2O exists to change the cost structure. The core idea is simple:
 
-> **Access is the product, not features.** An under-resourced agency buys a frontier-AI subscription, points the AI at this repository and a cheap virtual server, and the AI stands the whole platform up. No procurement cycle, no consulting contract.
+> **The goal is to lower the cost and access barrier.** An under-resourced agency can stand the platform up itself — point a frontier-AI agent at this repository and a cheap virtual server, and the agent does the deployment, with no procurement cycle to wait on. An engineering firm or consultant can run it just as well, and for many agencies that is the sensible path; the point is that self-deployment is now a real option, not a vendor contract by default.
 
 It is designed for a single agency per deployment (single-tenant), and it works whether your basin is groundwater-only, surface-water-only, mixed-use, or doing active recharge.
 

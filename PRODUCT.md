@@ -26,7 +26,7 @@ Professional and direct. No marketing speak, no gamification. Labels should use 
 
 ## Strategic Principles
 
-1. **Access is the product.** A $15/mo VPS replaces a $35K-$75K consulting engagement. The UI must be functional without training.
+1. **Low barrier to entry.** The platform is built so a small agency can run it on a $15/mo VPS instead of a $35K-$75K vendor engagement — and so the UI is usable without training. Engaging an ops person or consultant is a perfectly good path too; self-deployment is meant to be a real option, not the only one.
 2. **Data density over decoration.** Water managers need to see numbers, not animations. Every pixel should serve a purpose.
 3. **Domain-native.** The information architecture mirrors how water agencies actually think: parcels, wells, accounts, diversions, recharge.
 4. **Map-first for spatial data.** Wells and parcels live on maps. The map is a primary navigation surface, not a decoration.

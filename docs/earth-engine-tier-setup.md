@@ -96,8 +96,8 @@ you actually consume.
 about **500 EECU-hours**. On the Limited plan that is `500 x $0.40 = about $200
 per year`, around $17/month, with no base fee. A smaller district with a few
 hundred parcels would consume a fraction of that, on the order of single-digit
-to low-tens of dollars per year. Either way it is trivial next to the
-$35,000 to $75,000 a consulting engagement would charge for the same analysis.
+to low-tens of dollars per year. Either way it is a small fraction of the
+$35,000 to $75,000 that a comparable vendor-managed analysis typically runs.
 
 **Honest summary for your agency:** budget for commercial Earth Engine on the
 pay-as-you-go Limited plan, expect roughly a few dollars to a couple hundred

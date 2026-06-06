@@ -4,7 +4,7 @@
 
 A water accounting platform for California Groundwater Sustainability Agencies (GSAs) and water districts. Tracks groundwater extraction, surface water diversions, mixed-use accounting, and managed aquifer recharge. Generates state reports (GEARS CSV, CalWATRS CSV) for the Water Board.
 
-The core value: a poorly-funded agency buys a frontier AI subscription, points it at this repo and a $15/mo VPS, and the AI stands the platform up. Access is the product, not features.
+The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and a $15/mo VPS and have the AI stand the platform up — and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
 
 ## Tech Stack
 
