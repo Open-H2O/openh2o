@@ -73,6 +73,50 @@
         {% endif %}
       </div>
 
+      <!-- Water Journey card (Phase 67-03) — only when this POD is part of a
+           re-diversion chain, so ordinary diversion points are unaffected. -->
+      {% if rediverted_from or rediversions %}
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Water Journey</h2>
+        <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">
+          Water taken at one point can be partly or fully returned to the stream and
+          re-diverted further downstream. This traces the journey one hop at a time.
+        </p>
+
+        {% if rediverted_from %}
+        <div class="field-group">
+          <div class="field-label">Re-diverts from (upstream source)</div>
+          <div class="field-value">
+            <a href="{% url 'surface:pod_detail' rediverted_from.pk %}" class="data-table-link">
+              {{ rediverted_from.name }}
+            </a>
+            {% if rediverted_from.stream_name %}
+            <span class="text-tertiary text-sm">&mdash; {{ rediverted_from.stream_name }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if rediversions %}
+        <div class="field-group">
+          <div class="field-label">Re-diverted downstream by</div>
+          <div class="field-value">
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              {% for r in rediversions %}
+              <li{% if not forloop.first %} style="margin-top: var(--space-xs);"{% endif %}>
+                <a href="{% url 'surface:pod_detail' r.pk %}" class="data-table-link">{{ r.name }}</a>
+                {% if r.stream_name %}
+                <span class="text-tertiary text-sm">&mdash; {{ r.stream_name }}</span>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
       <!-- Diversion Records card -->
       <div class="card-raised" id="diversion-records-section">
         {% include "surface/partials/_diversion_records.html" %}

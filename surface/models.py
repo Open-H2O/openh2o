@@ -159,6 +159,20 @@ class DiversionRecord(models.Model):
         """
         return abs(self.volume_acre_feet) - self.returned_af
 
+    def is_non_consumptive(self):
+        """True when the full diverted volume is returned to the stream.
+
+        A hydropower / run-of-river passthrough returns everything it takes, so
+        its consumed magnitude is zero — the detail page labels it
+        "Non-consumptive (returned to stream)" to distinguish it from an ordinary
+        irrigation diversion that consumes what it diverts.
+        """
+        return self.returned_af > 0 and self.consumed_acre_feet() == 0
+
+    def is_partial_return(self):
+        """True when SOME but not all of the diverted volume is returned."""
+        return Decimal("0") < self.returned_af < abs(self.volume_acre_feet)
+
     def clean(self):
         """Reject a return flow larger than the diverted volume.
 

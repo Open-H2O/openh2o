@@ -95,6 +95,12 @@ def pod_detail(request, pk):
         .order_by("recharge_site__name")
     )
 
+    # One-hop water journey (Phase 67-03). rediverted_from is the upstream source
+    # this POD re-diverts; rediversions is the reverse — downstream PODs that draw
+    # on this POD's return flow. One hop only — no route-resolver graph this phase.
+    rediverted_from = pod.rediverted_from
+    rediversions = pod.rediversions.order_by("name")
+
     # Water right info (may be None)
     water_right = pod.water_right
 
@@ -120,6 +126,8 @@ def pod_detail(request, pk):
         "diversion_records": diversion_records,
         "pod_parcels": pod_parcels,
         "basin_links": basin_links,
+        "rediverted_from": rediverted_from,
+        "rediversions": rediversions,
         "water_right": water_right,
         "form": form,
         "pod_geojson": pod_geojson,

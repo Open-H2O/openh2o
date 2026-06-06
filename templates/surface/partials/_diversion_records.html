@@ -4,9 +4,9 @@
   <thead>
     <tr>
       <th>Month</th>
-      <th class="th-right">Volume (AF)</th>
-      <th class="th-right">Max Flow (CFS)</th>
-      <th>Type</th>
+      <th class="th-right">Diverted (AF)</th>
+      <th class="th-right">Return Flow (AF)</th>
+      <th class="th-right">Consumptive Use (AF)</th>
       <th>Period</th>
     </tr>
   </thead>
@@ -15,10 +15,15 @@
     <tr>
       <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
       <td class="td-num">{{ record.volume_acre_feet|floatformat:2 }}</td>
-      <td class="td-num text-secondary">
-        {% if record.max_flow_rate_cfs %}{{ record.max_flow_rate_cfs|floatformat:2 }}{% else %}—{% endif %}
+      <td class="td-num text-secondary">{{ record.returned_af|floatformat:2 }}</td>
+      <td class="td-num">
+        {{ record.consumed_acre_feet|floatformat:2 }}
+        {% if record.is_non_consumptive %}
+        <span class="badge badge-teal" title="The full diverted volume is returned to the stream — hydropower / non-consumptive passthrough.">Non-consumptive (returned to stream)</span>
+        {% elif record.is_partial_return %}
+        <span class="badge badge-blue" title="Part of the diverted volume is returned to the stream; only the remainder is consumed.">Partial return</span>
+        {% endif %}
       </td>
-      <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
       <td class="text-tertiary">
         {% if record.reporting_period %}{{ record.reporting_period.name }}{% else %}—{% endif %}
       </td>
