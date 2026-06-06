@@ -769,6 +769,15 @@ a { color: inherit; }
     position: fixed;
     top: 0;
     left: 0;
+    /* explainer-popout.js positions this fixed panel in VISUAL viewport px (read
+       from the icon's getBoundingClientRect). But the panel is a DOM descendant
+       of the zoomed .app-content, and Chrome re-scales a fixed descendant's
+       coordinates by the ancestor zoom — so a JS-set left of 257px would render
+       at 257 * 1.0625, drifting the panel right by ~6% of its distance from the
+       content origin (verified). Counter-zoom to effective scale 1 so the panel
+       renders at exactly the coordinates the script intends and lands on its
+       trigger. Keep the denominator in sync with the .app-content zoom. */
+    zoom: calc(1 / 1.0625);
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
