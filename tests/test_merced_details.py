@@ -82,7 +82,7 @@ def test_fills_parcel_address_pin_and_contact(db):
                         contact_email="")
     call_command("seed_merced_details")
     assert "CA" in Parcel.objects.get(parcel_number="MER-APN-TEST").address
-    assert WaterRight.objects.get(right_id="MER-WR-TEST").calwatrs_pin.startswith("P")
+    assert WaterRight.objects.get(right_id="MER-WR-TEST").calwatrs_pin.startswith("DEMO-P")
     assert WaterAccount.objects.get(
         name="El Nido Irrigation").contact_email.endswith("@example.com")
 

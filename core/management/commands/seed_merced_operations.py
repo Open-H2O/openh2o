@@ -109,13 +109,13 @@ BASE_LAYER_HINT = (
 #   right_id, type_idx, holder_name, priority_date(str|None), face_af, source_name, status
 # ---------------------------------------------------------------------------
 RIGHT_CONFIGS = [
-    ("MER-WR-004", 1, "Merced Irrigation District", "1930-04-10",
+    ("MER-WR-004-DEMO", 1, "Merced Irrigation District", "1930-04-10",
      Decimal("120000"), "Merced River", "active"),
-    ("MER-WR-005", 1, "Le Grand-Athlone Water District", "1948-09-01",
+    ("MER-WR-005-DEMO", 1, "Le Grand-Athlone Water District", "1948-09-01",
      Decimal("18000"), "Le Grand Canal", "active"),
-    ("MER-WR-006", 1, "Stevinson Water District", "1955-03-20",
+    ("MER-WR-006-DEMO", 1, "Stevinson Water District", "1955-03-20",
      Decimal("22000"), "Diversion Canal", "active"),
-    ("MER-WR-008", 2, "San Joaquin Bottomlands Ranch", None,
+    ("MER-WR-008-DEMO", 2, "San Joaquin Bottomlands Ranch", None,
      Decimal("4000"), "Merced River", "active"),
     # Junior right (newest priority date) → first to be curtailed in a drought,
     # which is how California priority works. Its El Nido service area (POD-007)
@@ -123,7 +123,7 @@ RIGHT_CONFIGS = [
     # fall back on groundwater, and surface-only growers simply go short. (A
     # former empty pre-1914 MER-WR-007 was removed — a curtailed right with no
     # parcels demonstrated nothing.)
-    ("MER-WR-009", 1, "Plainsburg Irrigation District", "1962-05-05",
+    ("MER-WR-009-DEMO", 1, "Plainsburg Irrigation District", "1962-05-05",
      Decimal("9000"), "El Nido Canal", "curtailed"),
 ]
 
@@ -150,17 +150,17 @@ RIGHT_CONFIGS = [
 # ---------------------------------------------------------------------------
 POD_CONFIGS = [
     # MID canal headgates (complex) + two Merced River main-stem diversions.
-    ("MER-POD-004 MID Atwater Canal Headgate", "MER-WR-004", "lower",
+    ("MER-POD-004-DEMO MID Atwater Canal Headgate", "MER-WR-004-DEMO", "lower",
      "Atwater Canal", CANAL, 0.50, Decimal("900.0")),
-    ("MER-POD-005 Le Grand Canal Headgate", "MER-WR-005", "lower",
+    ("MER-POD-005-DEMO Le Grand Canal Headgate", "MER-WR-005-DEMO", "lower",
      "Le Grand Canal", CANAL, 0.50, Decimal("220.0")),
-    ("MER-POD-006 Stevinson Diversion Canal Headgate", "MER-WR-006", "lower",
+    ("MER-POD-006-DEMO Stevinson Diversion Canal Headgate", "MER-WR-006-DEMO", "lower",
      "Diversion Canal", CANAL, 0.50, Decimal("260.0")),
-    ("MER-POD-007 Plainsburg El Nido Canal Headgate", "MER-WR-009", "lower",
+    ("MER-POD-007-DEMO Plainsburg El Nido Canal Headgate", "MER-WR-009-DEMO", "lower",
      "El Nido Canal", CANAL, 0.50, Decimal("130.0")),
-    ("MER-POD-008 Crocker-Huffman River Diversion", "MER-WR-004", "lower",
+    ("MER-POD-008-DEMO Crocker-Huffman River Diversion", "MER-WR-004-DEMO", "lower",
      "Merced River", RIVER, 0.88, Decimal("700.0")),
-    ("MER-POD-009 Bottomlands Riparian Take", "MER-WR-008", "lower",
+    ("MER-POD-009-DEMO Bottomlands Riparian Take", "MER-WR-008-DEMO", "lower",
      "Merced River", RIVER, 0.15, Decimal("45.0")),
 ]
 
@@ -180,18 +180,18 @@ POD_CONFIGS = [
 # Each entry: pod_name, anchor_lon, anchor_lat, n_parcels, acres.
 PARCEL_CLUSTER_CONFIGS = [
     # Atwater Canal (MID): orchards/fields by the approved Cressey-Winton basin.
-    ("MER-POD-004 MID Atwater Canal Headgate", -120.665, 37.345, 4, 150.0),
+    ("MER-POD-004-DEMO MID Atwater Canal Headgate", -120.665, 37.345, 4, 150.0),
     # Le Grand Canal: open field blocks east of Planada.
-    ("MER-POD-005 Le Grand Canal Headgate", -120.270, 37.270, 3, 130.0),
+    ("MER-POD-005-DEMO Le Grand Canal Headgate", -120.270, 37.270, 3, 130.0),
     # Diversion Canal (Stevinson): Central-Valley crop mosaic near El Nido.
-    ("MER-POD-006 Stevinson Diversion Canal Headgate", -120.520, 37.100, 3, 140.0),
+    ("MER-POD-006-DEMO Stevinson Diversion Canal Headgate", -120.520, 37.100, 3, 140.0),
     # El Nido Canal (Plainsburg): irrigated fields SW of Plainsburg.
-    ("MER-POD-007 Plainsburg El Nido Canal Headgate", -120.475, 37.205, 3, 110.0),
+    ("MER-POD-007-DEMO Plainsburg El Nido Canal Headgate", -120.475, 37.205, 3, 110.0),
     # Crocker-Huffman river diversion: valley orchards in the MID service area
     # (the intake itself is at the foothill edge; the served land is downvalley).
-    ("MER-POD-008 Crocker-Huffman River Diversion", -120.490, 37.420, 3, 150.0),
+    ("MER-POD-008-DEMO Crocker-Huffman River Diversion", -120.490, 37.420, 3, 150.0),
     # Bottomlands riparian: river-bottom fields west of Livingston.
-    ("MER-POD-009 Bottomlands Riparian Take", -120.825, 37.375, 2, 90.0),
+    ("MER-POD-009-DEMO Bottomlands Riparian Take", -120.825, 37.375, 2, 90.0),
 ]
 
 # Groundwater wells — LOWER SUBBASIN ONLY (the overdraft story). Each entry sets

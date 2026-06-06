@@ -204,7 +204,9 @@ class Command(BaseCommand):
             if r.calwatrs_pin:
                 continue
             rng = random.Random(f"pin:{r.right_id}")
-            r.calwatrs_pin = f"P{rng.randint(100000, 999999)}"
+            # DEMO- prefix so the sample PIN can never be mistaken for a real
+            # CalWATRS PIN (real PINs are a bare P followed by six digits).
+            r.calwatrs_pin = f"DEMO-P{rng.randint(100000, 999999)}"
             r.save(update_fields=["calwatrs_pin"])
             count += 1
         return count
