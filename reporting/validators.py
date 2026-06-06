@@ -342,4 +342,35 @@ def validate_report(reporting_period, report_type):
                 ),
             })
 
+        # Phase 67-02: return flow is INFORMATIONAL, never a volume discrepancy.
+        # CalWATRS reports the GROSS diverted volume the state requires; the
+        # returned portion rides in its own Return Flow (AF) column, never netted.
+        # A POD that returns its FULL volume (hydropower / non-consumptive
+        # passthrough) is intentional, not an error — name it so the operator sees
+        # the gross figure is expected. Mirrors the pod-fraction informational note;
+        # NEVER error-level.
+        passthrough_pods = sorted(
+            {
+                rec.point_of_diversion.name
+                for rec in DiversionRecord.objects.filter(
+                    reporting_period=reporting_period,
+                    diversion_type=diversion_type,
+                ).select_related("point_of_diversion")
+                if rec.returned_af > 0
+                and rec.returned_af == abs(rec.volume_acre_feet)
+            }
+        )
+        if passthrough_pods:
+            names = ", ".join(passthrough_pods)
+            warnings.append({
+                "level": "info",
+                "message": (
+                    f"{len(passthrough_pods)} point(s) of diversion return the full "
+                    f"diverted volume to the stream ({names}) — their Volume (AF) is "
+                    "reported gross as the state requires, with the returned amount in "
+                    "the Return Flow (AF) column. Expected for non-consumptive "
+                    "(hydropower passthrough) use, not a volume discrepancy."
+                ),
+            })
+
     return warnings

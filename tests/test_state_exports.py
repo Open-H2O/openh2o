@@ -216,6 +216,155 @@ class TestCalwatrsBlankRightId:
 
 
 # ---------------------------------------------------------------------------
+# Phase 67-02 — CalWATRS Return Flow (AF) column rides ALONGSIDE gross Volume
+#
+# The state wants GROSS diverted volume; netting it under-reports the diversion
+# (Water Code §5107). So returned_af is reported in its own informational column,
+# never subtracted from Volume (AF). returned_af=0 rows show 0 and an unchanged
+# Volume (AF).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestCalwatrsReturnFlowColumn:
+    HEADER_VOLUME_IDX = 7
+    HEADER_RETURN_IDX = 11
+
+    def _header(self, content):
+        return list(csv.reader(content.splitlines()))[0]
+
+    def test_header_carries_return_flow_column(self):
+        period = _period()
+        content = generate_calwatrs_csv(period, template_type="a1").read()
+        header = self._header(content)
+        assert header[self.HEADER_RETURN_IDX] == "Return Flow (AF)"
+        # Gross volume column is untouched and still present.
+        assert header[self.HEADER_VOLUME_IDX] == "Volume (AF)"
+
+    def test_returned_volume_rides_alongside_gross_not_netted(self):
+        """A pure non-consumptive passthrough (returned == volume) reports the
+        FULL gross volume AND an equal Return Flow — never a netted-to-zero row."""
+        period = _period()
+        pod = PointOfDiversionFactory(water_right=WaterRightFactory())
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("40.0000"),
+            returned_af=Decimal("40.0000"),
+            diversion_type="direct_use",
+        )
+
+        rows = _data_rows(generate_calwatrs_csv(period, template_type="a1").read())
+        assert len(rows) == 1
+        row = rows[0]
+        assert Decimal(row[self.HEADER_VOLUME_IDX]) == Decimal("40"), "gross volume must stay gross"
+        assert Decimal(row[self.HEADER_RETURN_IDX]) == Decimal("40"), "returned amount must round-trip"
+
+    def test_partial_return_reports_gross_volume_and_partial_return(self):
+        period = _period()
+        pod = PointOfDiversionFactory(water_right=WaterRightFactory())
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("40.0000"),
+            returned_af=Decimal("15.0000"),
+            diversion_type="direct_use",
+        )
+
+        rows = _data_rows(generate_calwatrs_csv(period, template_type="a1").read())
+        assert sum(Decimal(r[self.HEADER_VOLUME_IDX]) for r in rows) == Decimal("40")
+        assert sum(Decimal(r[self.HEADER_RETURN_IDX]) for r in rows) == Decimal("15")
+
+    def test_zero_return_shows_zero_and_unchanged_volume(self):
+        period = _period()
+        pod = PointOfDiversionFactory(water_right=WaterRightFactory())
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("40.0000"),
+            diversion_type="direct_use",  # returned_af defaults to 0
+        )
+
+        rows = _data_rows(generate_calwatrs_csv(period, template_type="a1").read())
+        assert len(rows) == 1
+        assert Decimal(rows[0][self.HEADER_VOLUME_IDX]) == Decimal("40")
+        assert Decimal(rows[0][self.HEADER_RETURN_IDX]) == Decimal("0")
+
+    def test_return_flow_splits_across_parcels_like_volume(self):
+        """A POD's return flow follows the same fraction split as its volume, so
+        it sums to the diversion's returned amount once (not N times)."""
+        period = _period()
+        pod = PointOfDiversionFactory(water_right=WaterRightFactory())
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=ParcelFactory(), fraction=Decimal("1.0000")
+        )
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=ParcelFactory(), fraction=Decimal("1.0000")
+        )
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("40.0000"),
+            returned_af=Decimal("10.0000"),
+            diversion_type="direct_use",
+        )
+
+        rows = _data_rows(generate_calwatrs_csv(period, template_type="a1").read())
+        assert sum(Decimal(r[self.HEADER_VOLUME_IDX]) for r in rows) == Decimal("40")
+        assert sum(Decimal(r[self.HEADER_RETURN_IDX]) for r in rows) == Decimal("10")
+
+
+@pytest.mark.django_db
+class TestCalwatrsReturnFlowValidatorInformational:
+    def test_full_passthrough_pod_gets_info_note_not_error(self):
+        period = _period()
+        pod = PointOfDiversionFactory(
+            water_right=WaterRightFactory(), name="Powerhouse Tailrace Foxtrot"
+        )
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("40.0000"),
+            returned_af=Decimal("40.0000"),
+            diversion_type="direct_use",
+        )
+
+        result = validate_report(period, "calwatrs_a1")
+
+        info = [w for w in result if w["level"] == "info"]
+        assert any("Powerhouse Tailrace Foxtrot" in w["message"] for w in info)
+        # NEVER an error/discrepancy about the returned volume.
+        for w in result:
+            assert not (
+                w["level"] == "error"
+                and ("return" in w["message"].lower() or "discrepan" in w["message"].lower())
+            )
+
+    def test_partial_return_raises_no_false_volume_discrepancy(self):
+        period = _period()
+        pod = PointOfDiversionFactory(water_right=WaterRightFactory())
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("40.0000"),
+            returned_af=Decimal("15.0000"),
+            diversion_type="direct_use",
+        )
+
+        result = validate_report(period, "calwatrs_a1")
+        # A partial return is silent — gross volume reported, no error, and not a
+        # full passthrough so no info note either.
+        assert all(w["level"] != "error" for w in result)
+        assert all("return the full" not in w["message"] for w in result)
+
+
+# ---------------------------------------------------------------------------
 # ISS-031c — no literal 0 acres beside a real ET volume
 # ---------------------------------------------------------------------------
 
