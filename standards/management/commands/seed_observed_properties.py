@@ -85,7 +85,7 @@ CODE_TO_KEY = {
         "gw_level": "groundwater_level_depth",
     },
     "cimis": {
-        "day-eto": "reference_et",
+        "day-asce-eto": "reference_et",
         "day-precip": "precipitation",
         "day-sol-rad-avg": "solar_radiation",
         "day-wind-spd-avg": "wind_speed",

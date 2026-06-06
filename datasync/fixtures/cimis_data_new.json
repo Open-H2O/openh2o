@@ -1,0 +1,79 @@
+{
+  "Data": {
+    "Providers": [
+      {
+        "Name": "cimis",
+        "Type": "station",
+        "Owner": "water.ca.gov",
+        "Records": [
+          {
+            "Date": "2026-06-02",
+            "Julian": "153",
+            "Station": "2",
+            "Standard": "english",
+            "ZipCodes": "93624",
+            "Scope": "daily",
+            "DayAirTmpAvg": {
+              "Value": "77.6",
+              "Qc": " ",
+              "Unit": "(F)"
+            },
+            "DayAsceEto": {
+              "Value": "0.32",
+              "Qc": " ",
+              "Unit": "(in)"
+            },
+            "DayPrecip": {
+              "Value": "0.00",
+              "Qc": " ",
+              "Unit": "(in)"
+            },
+            "DaySolRadAvg": {
+              "Value": "582",
+              "Qc": " ",
+              "Unit": "(Ly/day)"
+            },
+            "DayWindSpdAvg": {
+              "Value": "7.3",
+              "Qc": " ",
+              "Unit": "(MPH)"
+            }
+          },
+          {
+            "Date": "2026-06-03",
+            "Julian": "154",
+            "Station": "2",
+            "Standard": "english",
+            "ZipCodes": "93624",
+            "Scope": "daily",
+            "DayAirTmpAvg": {
+              "Value": "77.0",
+              "Qc": " ",
+              "Unit": "(F)"
+            },
+            "DayAsceEto": {
+              "Value": "0.30",
+              "Qc": " ",
+              "Unit": "(in)"
+            },
+            "DayPrecip": {
+              "Value": "0.00",
+              "Qc": " ",
+              "Unit": "(in)"
+            },
+            "DaySolRadAvg": {
+              "Value": "577",
+              "Qc": " ",
+              "Unit": "(Ly/day)"
+            },
+            "DayWindSpdAvg": {
+              "Value": "6.4",
+              "Qc": " ",
+              "Unit": "(MPH)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

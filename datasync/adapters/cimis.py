@@ -2,14 +2,19 @@
 """
 CIMIS (California Irrigation Management Information System) adapter.
 
-API docs: https://et.water.ca.gov/Rest/Index
-Auth: appKey query parameter (api_key auth_type on DataSource).
+API docs: https://cimis.water.ca.gov/web-api/rest-api/latest  (new 2026 API)
+Data host: https://et.water.ca.gov/StationWeb/*  (same host, new paths)
+Auth: application key passed in the ``Ocp-Apim-Subscription-Key`` HTTP header
+      (Azure API Management gateway). NOT a query parameter. Set CIMIS_API_KEY.
 
-Parameters:
-  ETo - Reference evapotranspiration (in)
-  Precip - Precipitation (in)
-  Sol Rad - Solar radiation (Ly/day)
-  Wind - Average wind speed (mph)
+The legacy ``/api/data`` + ``?appKey=`` API retires ~2026-07-31; this adapter
+targets the new API so a freshly-cloned deployment keeps working past that date.
+
+Parameters (WSN station readings; Spatial CIMIS is intentionally out of scope):
+  ASCE ETo - Reference evapotranspiration (in)
+  Precip   - Precipitation (in)
+  Sol Rad  - Solar radiation (Ly/day)
+  Wind     - Average wind speed (mph)
   Air Temp - Average air temperature (F)
 """
 
@@ -21,16 +26,36 @@ from datasync.adapters.base import BaseAdapter
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://et.water.ca.gov/api/data"
-STATION_URL = "https://et.water.ca.gov/api/station"
+BASE_URL = "https://et.water.ca.gov/StationWeb/GetDataByStationNumber"
+STATION_URL = "https://et.water.ca.gov/StationWeb/GetAllStations"
 
 PARAMETER_MAP = {
-    "day-eto": {"name": "Reference ET", "unit": "in"},
+    "day-asce-eto": {"name": "Reference ET (ASCE)", "unit": "in"},
     "day-precip": {"name": "Precipitation", "unit": "in"},
     "day-sol-rad-avg": {"name": "Solar Radiation", "unit": "Ly/day"},
     "day-wind-spd-avg": {"name": "Wind Speed", "unit": "mph"},
     "day-air-tmp-avg": {"name": "Air Temperature", "unit": "F"},
 }
+
+DATA_ITEMS = ",".join(PARAMETER_MAP.keys())
+
+
+def _parse_hms_decimal(value):
+    """Parse CIMIS's combined HMS+decimal location string to a float.
+
+    CIMIS returns latitude/longitude as e.g. ``"36º48'52N / 36.814444"`` (and
+    a signed ``"-119º43'54W / -119.73167"`` for longitude) — the decimal degrees
+    sit after the ``/``. There is no bare decimal field. Calling ``float()`` on
+    the raw string raises, which previously made discovery skip every station
+    ("synced but 0 stations"). Returns the decimal half as a float, or ``None``
+    for empty/malformed input (never raises).
+    """
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        return float(value.split("/")[-1].strip())
+    except (ValueError, TypeError):
+        return None
 
 
 class CIMISAdapter(BaseAdapter):
@@ -40,24 +65,33 @@ class CIMISAdapter(BaseAdapter):
     def _get_api_key(self):
         return os.environ.get("CIMIS_API_KEY", "")
 
+    def _auth_headers(self):
+        """New CIMIS API authenticates via the Ocp-Apim-Subscription-Key header."""
+        return {"Ocp-Apim-Subscription-Key": self._get_api_key()}
+
     def missing_required_credential(self):
-        """CIMIS station + data APIs require an appKey (ISS-007)."""
+        """CIMIS station + data APIs require an application key (ISS-007)."""
         return None if self._get_api_key() else "CIMIS appKey (set CIMIS_API_KEY)"
 
     def fetch(self, station, start_date, end_date):
-        """Fetch daily data from CIMIS."""
+        """Fetch daily data from the new CIMIS API (header auth)."""
         params = {
-            "appKey": self._get_api_key(),
-            "targets": station.external_station_id,
+            "stationNbrs": station.external_station_id,
             "startDate": start_date.strftime("%Y-%m-%d"),
             "endDate": end_date.strftime("%Y-%m-%d"),
-            "dataItems": "day-eto,day-precip,day-sol-rad-avg,day-wind-spd-avg,day-air-tmp-avg",
+            "isHourly": "false",
+            "unitOfMeasure": "E",
+            "dataItems": DATA_ITEMS,
         }
-        resp = self._request("GET", BASE_URL, params=params)
+        resp = self._request("GET", BASE_URL, params=params, headers=self._auth_headers())
         return resp.json()
 
     def parse(self, raw_data):
-        """Parse CIMIS API response into standard records."""
+        """Parse CIMIS API response into standard records.
+
+        Response shape is unchanged from the legacy API:
+        Data > Providers[] > Records[], each value an object {Value, Qc, Unit}.
+        """
         records = []
         data_section = raw_data.get("Data", {}) if isinstance(raw_data, dict) else {}
         providers = data_section.get("Providers", [])
@@ -100,10 +134,10 @@ class CIMISAdapter(BaseAdapter):
             if rec["value"] is None:
                 rec["rejection_reason"] = "null value"
                 rejected.append(rec)
-            elif rec["parameter_code"] == "day-eto" and rec["value"] < 0:
+            elif rec["parameter_code"] == "day-asce-eto" and rec["value"] < 0:
                 rec["rejection_reason"] = "negative ETo"
                 rejected.append(rec)
-            elif rec["parameter_code"] == "day-eto" and rec["value"] > 1.0:
+            elif rec["parameter_code"] == "day-asce-eto" and rec["value"] > 1.0:
                 rec["rejection_reason"] = "ETo exceeds 1.0 in/day"
                 rejected.append(rec)
             else:
@@ -111,10 +145,9 @@ class CIMISAdapter(BaseAdapter):
         return valid, rejected
 
     def discover_stations(self, boundary_geometry, radius_km=50):
-        """Discover CIMIS stations near a boundary."""
+        """Discover CIMIS stations near a boundary (new API, header auth)."""
         try:
-            params = {"appKey": self._get_api_key()}
-            resp = self._discover_request("GET", STATION_URL, params=params)
+            resp = self._discover_request("GET", STATION_URL, headers=self._auth_headers())
             data = resp.json()
         except Exception as exc:
             logger.warning("CIMIS station discovery failed: %s", exc)
@@ -125,22 +158,21 @@ class CIMISAdapter(BaseAdapter):
             return []
 
         from django.contrib.gis.geos import Point
-        from django.contrib.gis.measure import D
 
         buffered = boundary_geometry.buffer(radius_km / 111.0)  # rough deg conversion
 
         results = []
         for stn in stations_list:
-            lat = stn.get("HmsLatitude") or stn.get("Latitude")
-            lon = stn.get("HmsLongitude") or stn.get("Longitude")
+            lat = _parse_hms_decimal(stn.get("HmsLatitude"))
+            lon = _parse_hms_decimal(stn.get("HmsLongitude"))
             sid = str(stn.get("StationNbr", ""))
             name = stn.get("Name", "")
 
-            if not lat or not lon or not sid:
+            if lat is None or lon is None or not sid:
                 continue
 
             try:
-                point = Point(float(lon), float(lat), srid=4326)
+                point = Point(lon, lat, srid=4326)
             except (ValueError, TypeError):
                 continue
 
@@ -148,8 +180,8 @@ class CIMISAdapter(BaseAdapter):
                 results.append({
                     "station_id": sid,
                     "name": name,
-                    "latitude": float(lat),
-                    "longitude": float(lon),
+                    "latitude": lat,
+                    "longitude": lon,
                     "parameters": list(PARAMETER_MAP.keys()),
                 })
 
