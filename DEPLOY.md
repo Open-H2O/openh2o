@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 # Deploy: Open Water Accounting Platform
 
 Complete deployment guide. Every command is copy-pasteable. Written for
@@ -416,7 +418,7 @@ docker compose logs -f web       # Follow logs in real time
 | `EMAIL_HOST_PASSWORD` | No | empty | SMTP password |
 | `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google OAuth client secret |
-| `DATASYNC_MOCK_MODE` | No | `True` | Use mock data for external sync adapters |
+| `DATASYNC_MOCK_MODE` | No | `False` | Use mock data for external sync adapters instead of live APIs |
 
 ---
 

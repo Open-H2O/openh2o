@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 # Earth Engine Tier Setup
 
 This is the third and most powerful way OpenH2O can pull evapotranspiration (ET)

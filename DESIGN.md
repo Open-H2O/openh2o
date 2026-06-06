@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+
 # OpenH2O Design System
 
 Inherits the VanderDev design token system. Dark mode only, OKLCH color ramps.
