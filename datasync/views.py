@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import json
+import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -268,8 +269,13 @@ def station_detail(request, pk):
             .first()
         )
         if rec is not None:
+            # The shared label is "Name (unit)"; strip only the trailing unit
+            # parenthetical (keeps qualifiers like "(ASCE)") since the card shows
+            # the unit beside the value — avoids "Air Temperature (F) … 82.3 F".
+            label = get_parameter_label(source_code, code)
+            label = re.sub(r"\s*\([^)]*\)\s*$", "", label) or label
             latest_readings.append({
-                "label": get_parameter_label(source_code, code),
+                "label": label,
                 "value": rec.value,
                 "unit": rec.unit,
                 "observation_date": rec.observation_date,
