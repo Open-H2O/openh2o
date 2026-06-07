@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo kaweah flush-kaweah merced teardown-demo \
-        check test fresh snapshot-demo reset-demo verify-clean install-cron show-cron sync guard-prod deploy
+        check test fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod deploy
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -34,12 +34,16 @@ down: guard-prod ## Stop all services (refuses in prod)
 build: guard-prod ## Rebuild containers without starting (refuses in prod — use `make deploy`)
 	$(COMPOSE) build
 
-deploy: ## Ship origin/main to THIS checkout (prod-safe: rebuilds web only — no data loss, no logout)
+deploy: ## Ship origin/main to THIS checkout (rebuild web, reset the demo to golden at the new schema, re-stamp the snapshot)
 	git fetch origin
 	git reset --hard origin/main
 	APP_VERSION=$$(git describe --tags --always --dirty 2>/dev/null || echo dev) $(COMPOSE) up -d --build web
 	@echo ""
-	@echo "Deployed $$(git describe --tags --always --dirty). Web container rebuilt; database untouched."
+	@echo "Promoting demo: restore golden, migrate forward to the new schema, re-stamp the snapshot…"
+	FORCE=1 bash scripts/reset-demo.sh
+	bash scripts/snapshot-demo.sh
+	@echo ""
+	@echo "Deployed $$(git describe --tags --always --dirty). Web rebuilt; demo reset to golden and re-stamped at the new schema."
 
 logs: ## Tail web container logs
 	$(COMPOSE) logs -f web
@@ -176,3 +180,9 @@ snapshot-demo: ## Capture the golden snapshot the nightly demo reset restores to
 
 reset-demo: ## Restore the demo DB to its golden snapshot NOW (wipes visitor-added data); the same script runs nightly via cron
 	bash scripts/reset-demo.sh
+
+calc-rebuild: ## Re-run accounting calc for PERIOD=YYYY-MM, then re-stamp the golden snapshot (bundle promote)
+	@test -n "$(PERIOD)" || { echo "Usage: make calc-rebuild PERIOD=YYYY-MM"; exit 1; }
+	$(EXEC) run_calculations --period $(PERIOD)
+	bash scripts/snapshot-demo.sh
+	@echo "Recalculated $(PERIOD) and re-stamped the golden snapshot."

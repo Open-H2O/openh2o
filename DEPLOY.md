@@ -426,21 +426,40 @@ make snapshot-demo   # capture the golden snapshot (scripts/snapshot-demo.sh)
 make reset-demo      # restore the demo to that snapshot now (scripts/reset-demo.sh)
 ```
 
-`reset-demo` pauses web, drops + recreates the database from the snapshot
-(cleanly rebuilding PostGIS and all data), restarts web, and runs `migrate`. Wire
-it to cron for an unattended nightly reset, e.g.:
+`snapshot-demo` writes two files side by side: `golden.dump` (the database) and
+`golden.meta` (a manifest stamping the schema **migration fingerprint**, the code
+version, a timestamp, and per-model row counts). `reset-demo` pauses web, drops +
+recreates the database from the dump, restarts web, and runs `migrate`. Wire it to
+cron for an unattended nightly reset, e.g.:
 
 ```cron
-0 4 * * * cd /path/to/openh2o && bash scripts/reset-demo.sh >> ~/openh2o-logs/reset-demo-cron.log 2>&1
+0 4 * * * cd /path/to/openh2o && OPENH2O_NTFY_URL=http://192.168.0.114:8080/vander-infra bash scripts/reset-demo.sh /path/to/golden.dump >> ~/openh2o-logs/reset-demo-cron.log 2>&1
 ```
 
-> **Discipline — refresh the snapshot when the golden state changes.** The reset
-> reloads whatever was captured. After any **schema migration** or **intentional
-> demo-content change**, re-run `make snapshot-demo`, or the next reset reloads the
-> old shape. `reset-demo` runs `migrate` after restore as a safety net for purely
-> additive migrations, but do not rely on it for data-shape changes. The snapshot
-> also pins the admin accounts and any deliberately seeded data — recreate those
-> *before* snapshotting, not after, or the nightly reset will delete them.
+Set `OPENH2O_NTFY_URL` (optional) to receive ntfy notifications — high-priority on
+a skipped/failed reset, a routine before→after row-count summary on success.
+
+**Staleness guard (the safety net for the discipline below).** Before wiping,
+`reset-demo` compares the live schema's migration fingerprint against the one in
+`golden.meta`. If they differ — meaning a migration ran since the snapshot was
+taken — it **refuses to wipe, fires a high-priority ntfy, and exits**, so a legit
+change is never silently erased. To proceed anyway, re-stamp with
+`make snapshot-demo`, or run with `FORCE=1` to bypass the guard.
+
+This is automatic on deploy: `make deploy` runs `FORCE=1 reset-demo` (restore
+golden, migrate forward to the new schema, drop visitor junk) then `snapshot-demo`
+(re-stamp at the new fingerprint), so the golden auto-stays-current and the nightly
+guard keeps passing. **Note:** `make deploy` now resets the public demo to golden —
+visitor-added data does not survive a deploy (it does not survive the nightly reset
+either, by design).
+
+> **Discipline — refresh the snapshot when the golden CONTENT changes.** The guard
+> catches *schema* drift, but a deliberate **content** change the schema can't see
+> (a calc rebuild, edited demo data) still needs a re-stamp, or the next reset
+> reloads the old content. After a recalculation use `make calc-rebuild PERIOD=YYYY-MM`,
+> which recomputes the period and re-stamps in one step. After any other intentional
+> content/admin change, run `make snapshot-demo`. The snapshot pins the admin
+> accounts and seeded data — recreate those *before* snapshotting, not after.
 
 ---
 
