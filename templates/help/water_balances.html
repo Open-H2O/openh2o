@@ -22,23 +22,25 @@
     <h2 class="section-header">The short version</h2>
     <p class="text-secondary text-base">A water balance answers a deceptively hard question: <em>who used what?</em> &mdash; in a place where almost nobody is metering. Out of everything a field involves, there is exactly one quantity we can measure for every field, from space, whether its water came from a canal, a well, or rain: the water the crops actually drank. That measured amount &mdash; evapotranspiration {% include "partials/_explainer_popout.html" with title="Evapotranspiration (ET)" text="The water a field consumes — taken up by crops and evaporated from the soil. Satellites measure it directly for any field, which is why it works where meters don't." link=glossary_url link_label="See the glossary" %} &mdash; is the anchor. Everything else is a <strong>supply</strong> we line up against it to see whether the books add up.</p>
 
-    <div class="concept-equation">
-      <div class="card-raised stat-card stat-card-accent-supply">
-        <div class="stat-card-label">Supplies</div>
-        <div class="stat-card-value-sm">Surface &middot; Ground &middot; Rain</div>
-        <div class="stat-card-unit">what reached the field</div>
-      </div>
-      <div class="concept-op" aria-hidden="true">&minus;</div>
-      <div class="card-raised stat-card stat-card-accent-usage">
-        <div class="stat-card-label">Use</div>
-        <div class="stat-card-value-sm">Measured ET</div>
-        <div class="stat-card-unit">what the crops drank</div>
-      </div>
-      <div class="concept-op" aria-hidden="true">=</div>
-      <div class="card-raised stat-card stat-card-accent-balance">
-        <div class="stat-card-label">Balance</div>
-        <div class="stat-card-value-sm">Rarely zero</div>
-        <div class="stat-card-unit">a gap is normal</div>
+    <div class="budget-panel budget-panel--concept" style="margin: var(--space-lg) 0 var(--space-sm);">
+      <div class="budget-panel-row">
+        <div class="budget-seg">
+          <div class="budget-seg-label">Supplies</div>
+          <div class="budget-seg-value text-supply">Surface &middot; Ground &middot; Rain</div>
+          <div class="budget-seg-caption">what reached the field</div>
+        </div>
+        <div class="budget-op" aria-hidden="true">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Use</div>
+          <div class="budget-seg-value text-neutral">Measured ET</div>
+          <div class="budget-seg-caption">what the crops drank</div>
+        </div>
+        <div class="budget-op" aria-hidden="true">=</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Balance</div>
+          <div class="budget-seg-value text-gold">Rarely zero</div>
+          <div class="budget-seg-caption">a gap is normal</div>
+        </div>
       </div>
     </div>
     <p class="text-tertiary text-sm" style="margin: 0;">Read it left to right: line up the supplies, subtract the measured use, and look at the leftover. In real life the books almost never net to zero &mdash; ET counts only the water truly consumed, while canals leak and some water drains back underground. A small, explainable gap is the goal; a perfect zero would be the surprise.</p>

@@ -32,9 +32,172 @@
     </a>
   </div>
 
+  <!-- HERO (Phase 75 reorg): Map + Water Balance lead full-width; the parcel's
+       descriptive info and ledger move below. "Where it is" and "how the books
+       close" are the story; the attributes are reference. -->
+
+  <!-- Map banner -->
+  {% if geojson %}
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="parcel-map" class="map-embed" style="height: 380px;"></div>
+  </div>
+  {% endif %}
+
+  <!-- Water Balance card (57-03): consumptive use vs supplies + the closing
+       mass-balance identity, with a drill-down to each month's audit
+       waterfall. The corrected v1.10 lens, surfaced per-parcel. -->
+  <div class="card-raised">
+    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+      {% url 'methods' as methods_help_url %}
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water Balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's measured consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      {% if balance_period %}
+      <span class="text-tertiary text-xs">{{ balance_period.name }}</span>
+      {% endif %}
+    </div>
+
+    {% if run_periods %}
+    <!-- ET has been computed: full consumptive-use + closing identity. -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
+      <div class="inset-card">
+        <div class="stat-card-label">Consumptive Use (ET)</div>
+        <div class="stat-card-value-sm text-usage">{{ consumptive_balance.consumptive_use_gross|floatformat:2 }}</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+      <div class="inset-card">
+        <div class="stat-card-label">Total Supplies</div>
+        <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supply_total|floatformat:2 }}</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+      <div class="inset-card">
+        <div class="stat-card-label">Supplies − Consumptive Use</div>
+        <div class="stat-card-value-sm {% if consumptive_balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ consumptive_balance.net_vs_supply|floatformat:2 }}</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+    </div>
+
+    <!-- Net consumptive demand (after effective rainfall) and the three
+         supplies that met it — demand neutral, supplies green, laid out as
+         labeled cards rather than a middot run-on. -->
+    <div style="margin: 0 0 var(--space-lg);">
+      <p class="text-sm text-secondary" style="margin: 0 0 var(--space-sm);">
+        Net consumptive demand of
+        <span class="text-usage" style="font-weight: 600;">{{ consumptive_balance.consumptive_use_net|floatformat:2 }} AF</span>
+        (consumptive use after effective rainfall), met by these supplies:
+      </p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm);">
+        <div class="inset-card">
+          <div class="stat-card-label">Surface water</div>
+          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.surface|floatformat:2 }}</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+        <div class="inset-card">
+          <div class="stat-card-label">Groundwater</div>
+          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.groundwater|floatformat:2 }}</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+        <div class="inset-card">
+          <div class="stat-card-label">Precipitation</div>
+          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.precip|floatformat:2 }}</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The closing mass-balance identity: water in vs water out. -->
+    <h3 class="section-header-sm">Closing Mass Balance</h3>
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th>Water in</th><th class="th-right">AF</th>
+          <th>Water out</th><th class="th-right">AF</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-secondary">Surface</td>
+          <td class="td-num text-supply">{{ mass_balance.inputs.surface|floatformat:2 }}</td>
+          <td class="text-secondary">ET</td>
+          <td class="td-num text-usage">{{ mass_balance.outputs.et|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td class="text-secondary">Precip</td>
+          <td class="td-num text-supply">{{ mass_balance.inputs.precip|floatformat:2 }}</td>
+          <td class="text-secondary">Recharge</td>
+          <td class="td-num">{{ mass_balance.outputs.recharge|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td class="text-secondary">Groundwater recovered</td>
+          <td class="td-num text-supply">{{ mass_balance.inputs.gw_recovered|floatformat:2 }}</td>
+          <td class="text-secondary">Runoff</td>
+          <td class="td-num">{{ mass_balance.outputs.runoff|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td></td><td></td>
+          <td class="text-secondary">Δ Storage (banked − drawn)</td>
+          <td class="td-num">{{ mass_balance.outputs.delta_storage|floatformat:2 }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="row-between mb-md" style="margin-top: var(--space-sm);">
+      <span class="text-secondary text-sm">Residual: <span class="td-num">{{ mass_balance.residual_af|floatformat:4 }}</span> AF</span>
+      {% if mass_balance.band_status == "closes" %}
+      <span class="badge badge-green">Balance closes</span>
+      {% elif mass_balance.band_status == "realistic" %}
+      <span class="badge badge-blue">{% if mass_balance.is_surplus %}Minor surplus{% else %}Minor shortfall{% endif %}</span>
+      {% else %}
+      <span class="badge badge-orange">{% if mass_balance.is_surplus %}Residual outstanding{% else %}Supply shortfall{% endif %}</span>
+      {% endif %}
+    </div>
+    {% if mass_balance.band_status == "realistic" %}
+    <!-- 58-03: a small residual is NORMAL (real books rarely close to zero), not
+         a warning — explain it plainly so a metered or lightly-supplemented
+         parcel does not read as a problem. -->
+    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+      {% if mass_balance.is_surplus %}
+      Supplies slightly exceed measured consumptive use — the difference is on-farm
+      loss / return flow that percolates back to the aquifer, not unaccounted water.
+      {% else %}
+      Measured consumptive use slightly exceeds recorded supplies — a minor
+      supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
+      rootzone water the meters don't capture).
+      {% endif %}
+    </p>
+    {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
+    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+      Recorded supplies fell well short of measured consumptive use this period —
+      expected where a junior surface right was curtailed going into peak season
+      and the parcel had no groundwater to substitute.
+    </p>
+    {% endif %}
+
+    <!-- Audit drill-down (Task 2): each engine-run month links to its own
+         gross→net waterfall — every number is one click from its source. -->
+    <div class="border-separator">
+      <div class="text-tertiary text-xs mb-sm">See the calculation for each month:</div>
+      <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
+        {% for period in run_periods %}
+        <a href="{% url 'accounting:calculation_run_detail' parcel.pk period %}" class="badge badge-blue">{{ period }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <!-- ET not yet computed for this use area (surface-only ISS-054 case):
+         an honest open-balance state, NOT a scary red residual. -->
+    <div class="alert-warning">
+      ET has not been computed for this use area yet, so the closing balance
+      can't be drawn. It will close once the accounting engine runs for it
+      (Phase 58). Recorded supplies so far:
+      <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> ·
+      <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SUPPORTING INFO below the hero: parcel attributes (left) + ledger (right). -->
   <div class="page-grid-2col">
 
-    <!-- Left column: Parcel Info -->
+    <!-- Left column: Parcel attributes & relationships -->
     <div class="page-stack">
 
       <!-- Parcel Info card -->
@@ -126,166 +289,8 @@
 
     </div>
 
-    <!-- Right column: Map + Ledger -->
+    <!-- Right column: ledger activity -->
     <div class="page-stack">
-
-      <!-- Map card -->
-      {% if geojson %}
-      <div class="card-raised" style="padding: 0; overflow: hidden;">
-        <div id="parcel-map" class="map-embed"></div>
-      </div>
-      {% endif %}
-
-      <!-- Water Balance card (57-03): consumptive use vs supplies + the closing
-           mass-balance identity, with a drill-down to each month's audit
-           waterfall. The corrected v1.10 lens, surfaced per-parcel. -->
-      <div class="card-raised">
-        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          {% url 'methods' as methods_help_url %}
-          <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water Balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's measured consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
-          {% if balance_period %}
-          <span class="text-tertiary text-xs">{{ balance_period.name }}</span>
-          {% endif %}
-        </div>
-
-        {% if run_periods %}
-        <!-- ET has been computed: full consumptive-use + closing identity. -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
-          <div class="inset-card">
-            <div class="stat-card-label">Consumptive Use (ET)</div>
-            <div class="stat-card-value-sm text-usage">{{ consumptive_balance.consumptive_use_gross|floatformat:2 }}</div>
-            <div class="stat-card-unit">AF</div>
-          </div>
-          <div class="inset-card">
-            <div class="stat-card-label">Total Supplies</div>
-            <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supply_total|floatformat:2 }}</div>
-            <div class="stat-card-unit">AF</div>
-          </div>
-          <div class="inset-card">
-            <div class="stat-card-label">Supplies − Consumptive Use</div>
-            <div class="stat-card-value-sm {% if consumptive_balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ consumptive_balance.net_vs_supply|floatformat:2 }}</div>
-            <div class="stat-card-unit">AF</div>
-          </div>
-        </div>
-
-        <!-- Net consumptive demand (after effective rainfall) and the three
-             supplies that met it — demand neutral, supplies green, laid out as
-             labeled cards rather than a middot run-on. -->
-        <div style="margin: 0 0 var(--space-lg);">
-          <p class="text-sm text-secondary" style="margin: 0 0 var(--space-sm);">
-            Net consumptive demand of
-            <span class="text-usage" style="font-weight: 600;">{{ consumptive_balance.consumptive_use_net|floatformat:2 }} AF</span>
-            (consumptive use after effective rainfall), met by these supplies:
-          </p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm);">
-            <div class="inset-card">
-              <div class="stat-card-label">Surface water</div>
-              <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.surface|floatformat:2 }}</div>
-              <div class="stat-card-unit">AF</div>
-            </div>
-            <div class="inset-card">
-              <div class="stat-card-label">Groundwater</div>
-              <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.groundwater|floatformat:2 }}</div>
-              <div class="stat-card-unit">AF</div>
-            </div>
-            <div class="inset-card">
-              <div class="stat-card-label">Precipitation</div>
-              <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.precip|floatformat:2 }}</div>
-              <div class="stat-card-unit">AF</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- The closing mass-balance identity: water in vs water out. -->
-        <h3 class="section-header-sm">Closing Mass Balance</h3>
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Water in</th><th class="th-right">AF</th>
-              <th>Water out</th><th class="th-right">AF</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="text-secondary">Surface</td>
-              <td class="td-num text-supply">{{ mass_balance.inputs.surface|floatformat:2 }}</td>
-              <td class="text-secondary">ET</td>
-              <td class="td-num text-usage">{{ mass_balance.outputs.et|floatformat:2 }}</td>
-            </tr>
-            <tr>
-              <td class="text-secondary">Precip</td>
-              <td class="td-num text-supply">{{ mass_balance.inputs.precip|floatformat:2 }}</td>
-              <td class="text-secondary">Recharge</td>
-              <td class="td-num">{{ mass_balance.outputs.recharge|floatformat:2 }}</td>
-            </tr>
-            <tr>
-              <td class="text-secondary">Groundwater recovered</td>
-              <td class="td-num text-supply">{{ mass_balance.inputs.gw_recovered|floatformat:2 }}</td>
-              <td class="text-secondary">Runoff</td>
-              <td class="td-num">{{ mass_balance.outputs.runoff|floatformat:2 }}</td>
-            </tr>
-            <tr>
-              <td></td><td></td>
-              <td class="text-secondary">Δ Storage (banked − drawn)</td>
-              <td class="td-num">{{ mass_balance.outputs.delta_storage|floatformat:2 }}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="row-between mb-md" style="margin-top: var(--space-sm);">
-          <span class="text-secondary text-sm">Residual: <span class="td-num">{{ mass_balance.residual_af|floatformat:4 }}</span> AF</span>
-          {% if mass_balance.band_status == "closes" %}
-          <span class="badge badge-green">Balance closes</span>
-          {% elif mass_balance.band_status == "realistic" %}
-          <span class="badge badge-blue">{% if mass_balance.is_surplus %}Minor surplus{% else %}Minor shortfall{% endif %}</span>
-          {% else %}
-          <span class="badge badge-orange">{% if mass_balance.is_surplus %}Residual outstanding{% else %}Supply shortfall{% endif %}</span>
-          {% endif %}
-        </div>
-        {% if mass_balance.band_status == "realistic" %}
-        <!-- 58-03: a small residual is NORMAL (real books rarely close to zero), not
-             a warning — explain it plainly so a metered or lightly-supplemented
-             parcel does not read as a problem. -->
-        <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
-          {% if mass_balance.is_surplus %}
-          Supplies slightly exceed measured consumptive use — the difference is on-farm
-          loss / return flow that percolates back to the aquifer, not unaccounted water.
-          {% else %}
-          Measured consumptive use slightly exceeds recorded supplies — a minor
-          supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
-          rootzone water the meters don't capture).
-          {% endif %}
-        </p>
-        {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
-        <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
-          Recorded supplies fell well short of measured consumptive use this period —
-          expected where a junior surface right was curtailed going into peak season
-          and the parcel had no groundwater to substitute.
-        </p>
-        {% endif %}
-
-        <!-- Audit drill-down (Task 2): each engine-run month links to its own
-             gross→net waterfall — every number is one click from its source. -->
-        <div class="border-separator">
-          <div class="text-tertiary text-xs mb-sm">See the calculation for each month:</div>
-          <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
-            {% for period in run_periods %}
-            <a href="{% url 'accounting:calculation_run_detail' parcel.pk period %}" class="badge badge-blue">{{ period }}</a>
-            {% endfor %}
-          </div>
-        </div>
-        {% else %}
-        <!-- ET not yet computed for this use area (surface-only ISS-054 case):
-             an honest open-balance state, NOT a scary red residual. -->
-        <div class="alert-warning">
-          ET has not been computed for this use area yet, so the closing balance
-          can't be drawn. It will close once the accounting engine runs for it
-          (Phase 58). Recorded supplies so far:
-          <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> ·
-          <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
-        </div>
-        {% endif %}
-      </div>
 
       <!-- Recent Ledger card -->
       <div class="card-raised">

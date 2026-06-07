@@ -1348,6 +1348,42 @@ a { color: inherit; }
     .budget-op { display: none; }
 }
 
+/* Concept variant — the same gradient panel, but carrying descriptive text
+   instead of live AF figures. Lets the Help explainers' teaching equation wear
+   the exact skin as the dashboard's real balance, so the page that explains the
+   balance and the page that shows it now read as one family. Flexes to any
+   number of segments (water_balances uses 3; methods uses 5). */
+.budget-panel--concept .budget-panel-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: var(--space-sm);
+    padding: var(--space-lg);
+}
+.budget-panel--concept .budget-seg {
+    flex: 1 1 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.budget-panel--concept .budget-seg-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+.budget-panel--concept .budget-op {
+    display: flex;
+    align-items: center;
+    font-size: 1.4rem;
+    font-family: var(--font-display);
+    color: var(--color-text-tertiary);
+}
+.budget-seg-caption {
+    font-size: 0.72rem;
+    color: var(--color-text-tertiary);
+    margin-top: 8px;
+}
+
 .stat-card-value-sm {
     font-size: 1.25rem;
     font-weight: 800;

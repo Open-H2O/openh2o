@@ -25,35 +25,37 @@
     <h2 class="section-header">The short version</h2>
     <p class="text-secondary text-base">Turning a satellite measurement into a number you can stand behind is a <strong>chain of subtractions.</strong> Start from what the crops actually used &mdash; the one thing we can measure for every field, from space. Then take away what rain covered, and what the canals delivered. Whatever use is still left unexplained is, on a field with a well, the groundwater figure.</p>
 
-    <div class="concept-equation">
-      <div class="card-raised stat-card stat-card-accent-usage">
-        <div class="stat-card-label">Start</div>
-        <div class="stat-card-value-sm">Gross ET</div>
-        <div class="stat-card-unit">what the crops used</div>
-      </div>
-      <div class="concept-op" aria-hidden="true">&minus;</div>
-      <div class="card-raised stat-card stat-card-accent-supply">
-        <div class="stat-card-label">Rain</div>
-        <div class="stat-card-value-sm">Effective precip</div>
-        <div class="stat-card-unit">met for free</div>
-      </div>
-      <div class="concept-op" aria-hidden="true">&minus;</div>
-      <div class="card-raised stat-card stat-card-accent-supply">
-        <div class="stat-card-label">Canals</div>
-        <div class="stat-card-value-sm">Surface water</div>
-        <div class="stat-card-unit">district deliveries</div>
-      </div>
-      <div class="concept-op" aria-hidden="true">&minus;</div>
-      <div class="card-raised stat-card stat-card-accent-usage">
-        <div class="stat-card-label">Adjust</div>
-        <div class="stat-card-value-sm">Edge cases</div>
-        <div class="stat-card-unit">most fields: none</div>
-      </div>
-      <div class="concept-op" aria-hidden="true">=</div>
-      <div class="card-raised stat-card stat-card-accent-balance">
-        <div class="stat-card-label">Result</div>
-        <div class="stat-card-value-sm">Billable groundwater</div>
-        <div class="stat-card-unit">well-only</div>
+    <div class="budget-panel budget-panel--concept" style="margin: var(--space-lg) 0 var(--space-sm);">
+      <div class="budget-panel-row">
+        <div class="budget-seg">
+          <div class="budget-seg-label">Start</div>
+          <div class="budget-seg-value text-neutral">Gross ET</div>
+          <div class="budget-seg-caption">what the crops used</div>
+        </div>
+        <div class="budget-op" aria-hidden="true">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Rain</div>
+          <div class="budget-seg-value text-supply">Effective precip</div>
+          <div class="budget-seg-caption">met for free</div>
+        </div>
+        <div class="budget-op" aria-hidden="true">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Canals</div>
+          <div class="budget-seg-value text-supply">Surface water</div>
+          <div class="budget-seg-caption">district deliveries</div>
+        </div>
+        <div class="budget-op" aria-hidden="true">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Adjust</div>
+          <div class="budget-seg-value text-neutral">Edge cases</div>
+          <div class="budget-seg-caption">most fields: none</div>
+        </div>
+        <div class="budget-op" aria-hidden="true">=</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Result</div>
+          <div class="budget-seg-value text-gold">Billable groundwater</div>
+          <div class="budget-seg-caption">well-only</div>
+        </div>
       </div>
     </div>
     <p class="text-tertiary text-sm" style="margin: 0;">No single clever formula &mdash; just honest bookkeeping, one supply at a time. If &ldquo;measured use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page picks up where that one leaves off and walks the actual arithmetic.</p>
