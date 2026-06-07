@@ -48,7 +48,11 @@
     </form>
     <p class="text-tertiary text-sm" style="margin: var(--space-sm) 0 0;">
       A field is flagged when its entered share differs from its ET-implied share
-      by {{ divergence_points }} or more percentage points.
+      by {{ divergence_points }} or more percentage points. This only checks how a
+      shared source's water is <em>split between its fields</em> — it is not about
+      whether each field's overall water balance closes, so a flagged field can
+      still have a perfectly balanced ledger (it just draws a different amount from
+      this source than its crop-water use alone would suggest).
     </p>
   </div>
 
@@ -66,11 +70,11 @@
         {% endif %}
       </div>
       {% if group.any_flag %}
-      <span class="badge badge-orange">Divergence flagged</span>
+      <span class="badge badge-orange" title="At least one field's entered share is far from its ET-implied share">Entered split looks off</span>
       {% elif group.has_et_signal %}
-      <span class="badge badge-green">Splits agree</span>
+      <span class="badge badge-green" title="Every field's entered share is close to its ET-implied share">Split looks reasonable</span>
       {% else %}
-      <span class="badge badge-grey">No ET signal</span>
+      <span class="badge badge-grey" title="No measured ET demand yet for these fields">No ET signal yet</span>
       {% endif %}
     </div>
 
@@ -94,7 +98,7 @@
       </thead>
       <tbody>
         {% for row in group.rows %}
-        <tr>
+        <tr{% if row.flag %} style="background: rgba(228,163,23,0.06);"{% endif %}>
           <td>
             <a href="{% url 'parcels:detail' row.parcel_id %}" class="data-table-link">{{ row.parcel_number }}</a>
           </td>
@@ -106,7 +110,7 @@
             {% if row.divergence is not None %}{{ row.divergence|floatformat:4 }}{% else %}<span class="text-tertiary">—</span>{% endif %}
           </td>
           <td class="th-right">
-            {% if row.flag %}<span class="badge badge-orange">check</span>{% endif %}
+            {% if row.flag %}<span class="badge badge-orange" title="This field's entered share is {{ divergence_points }}+ points from its ET-implied share">review split</span>{% endif %}
           </td>
         </tr>
         {% endfor %}
