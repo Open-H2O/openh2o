@@ -29,6 +29,10 @@ services:
         condition: service_healthy
     volumes:
       - static_files:/app/staticfiles
+      # User-uploaded media (feedback screenshots) — persists across rebuilds so
+      # a report's attachments are not lost on the next deploy. Lives only on the
+      # server; never served on the public web (n8n receives the bytes directly).
+      - media_files:/app/media
       # Earth Engine service-account key dir (OPENET_MODE=gee only). Read-only.
       # Mount the directory, not the file: a single-file bind to a path that
       # does not exist yet would make Docker create a stray directory and break
@@ -54,5 +58,6 @@ services:
 volumes:
   db_data:
   static_files:
+  media_files:
   caddy_data:
   caddy_config:

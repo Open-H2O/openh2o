@@ -64,10 +64,12 @@ def analytics(request):
 
 
 def feedback(request):
-    """Expose the in-app feedback intake URL to templates. Blank on a fresh
-    clone, so the Feedback button only renders where a deployment opts in by
-    setting FEEDBACK_ENDPOINT in its environment."""
-    return {"feedback_endpoint": settings.FEEDBACK_ENDPOINT}
+    """Expose whether the in-app feedback widget should render. The widget now
+    POSTs to the platform's own intake endpoint, so it works on any deployment;
+    FEEDBACK_ENABLED (default True) just lets a deployment hide the button. The
+    optional downstream forward (FEEDBACK_ENDPOINT) is handled server-side and
+    is intentionally not exposed to templates."""
+    return {"feedback_enabled": settings.FEEDBACK_ENABLED}
 
 
 def app_version(request):

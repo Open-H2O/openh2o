@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "health",
     "setup",
     "infrastructure",
+    "feedback",
 ]
 
 SITE_ID = 1
@@ -232,10 +233,24 @@ UMAMI_WEBSITE_ID = env("UMAMI_WEBSITE_ID", default="")
 UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="https://analytics.vanderdev.net/script.js")
 
 # -- In-app feedback widget --------------------------------------------------
-# Opt-in like Umami: FEEDBACK_ENDPOINT is blank by default so a self-hosted copy
-# shows no Feedback button. Set it to the intake URL to enable the widget (see
-# core.context_processors.feedback and partials/_feedback_widget.html).
+# The widget now POSTs to the platform's OWN intake endpoint (feedback.views.
+# submit), so every report is stored locally first — durable on any deployment,
+# including a self-hosted clone. FEEDBACK_ENABLED renders the button (on by
+# default; a clone gets a working feedback inbox out of the box). FEEDBACK_ENDPOINT
+# is now an OPTIONAL downstream forward target: when set, each stored submission
+# is also POSTed (best-effort, with image bytes) to that URL — our n8n triage
+# pipeline. Blank = store-only, phone home to no one.
+FEEDBACK_ENABLED = env.bool("FEEDBACK_ENABLED", default=True)
 FEEDBACK_ENDPOINT = env("FEEDBACK_ENDPOINT", default="")
+FEEDBACK_MAX_ATTACHMENTS = env.int("FEEDBACK_MAX_ATTACHMENTS", default=5)
+FEEDBACK_MAX_ATTACHMENT_BYTES = env.int(
+    "FEEDBACK_MAX_ATTACHMENT_BYTES", default=8 * 1024 * 1024
+)
+FEEDBACK_MAX_MESSAGE_CHARS = env.int("FEEDBACK_MAX_MESSAGE_CHARS", default=5000)
+FEEDBACK_MAX_DIAGNOSTICS_BYTES = env.int(
+    "FEEDBACK_MAX_DIAGNOSTICS_BYTES", default=64 * 1024
+)
+FEEDBACK_RATE_LIMIT_PER_HOUR = env.int("FEEDBACK_RATE_LIMIT_PER_HOUR", default=20)
 GEE_SERVICE_ACCOUNT_KEY_FILE = env("GEE_SERVICE_ACCOUNT_KEY_FILE", default="")
 
 if _google_client_id and _google_client_secret:
