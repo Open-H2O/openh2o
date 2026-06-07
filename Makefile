@@ -6,11 +6,16 @@
 COMPOSE = docker compose
 EXEC    = $(COMPOSE) exec web python manage.py
 
+# Build version stamp from git, baked into the image and shown in the app footer.
+# Recomputed inside `deploy` after the reset so it reflects the deployed commit.
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+export APP_VERSION = $(VERSION)
+
 .PHONY: help up down build logs shell dbshell migrate makemigrations \
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo kaweah flush-kaweah merced teardown-demo \
-        check test fresh verify-clean install-cron show-cron sync guard-prod
+        check test fresh verify-clean install-cron show-cron sync guard-prod deploy
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -20,14 +25,21 @@ help: ## Show this help message
 # Docker Compose
 # ---------------------------------------------------------------------------
 
-up: ## Start all services
+up: guard-prod ## Start all services (refuses in prod — use `make deploy`)
 	$(COMPOSE) up -d --build
 
-down: ## Stop all services
+down: guard-prod ## Stop all services (refuses in prod)
 	$(COMPOSE) down
 
-build: ## Rebuild containers without starting
+build: guard-prod ## Rebuild containers without starting (refuses in prod — use `make deploy`)
 	$(COMPOSE) build
+
+deploy: ## Ship origin/main to THIS checkout (prod-safe: rebuilds web only — no data loss, no logout)
+	git fetch origin
+	git reset --hard origin/main
+	APP_VERSION=$$(git describe --tags --always --dirty 2>/dev/null || echo dev) $(COMPOSE) up -d --build web
+	@echo ""
+	@echo "Deployed $$(git describe --tags --always --dirty). Web container rebuilt; database untouched."
 
 logs: ## Tail web container logs
 	$(COMPOSE) logs -f web
@@ -140,8 +152,9 @@ guard-prod:
 	@if [ -f .production-lock ]; then \
 		echo ""; \
 		echo "  REFUSING: this is a PROTECTED (production) checkout."; \
-		echo "  '$(MAKECMDGOALS)' destroys the database — it would wipe live data and log out users."; \
-		echo "  Run it on the staging checkout instead (~/openh2o-staging)."; \
+		echo "  '$(MAKECMDGOALS)' rebuilds or resets prod — it can interrupt the live demo, and a reset would wipe its data."; \
+		echo "  To SHIP code to prod safely (rebuild web only, no logout): make deploy"; \
+		echo "  To do DEV work: use the staging checkout instead (~/openh2o-staging)."; \
 		echo "  To override here on purpose: rm .production-lock  (then recreate it after)."; \
 		echo ""; \
 		exit 1; \
