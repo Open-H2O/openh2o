@@ -430,21 +430,22 @@ a { color: inherit; }
     border-radius: 2px;
 }
 
-/* -- Sticky filter bar + sortable headers (Phase 63) --------------------- */
+/* -- Sortable headers + scroll-away filters (Phase 63; revised 73-02) ------ */
 /* The scroll container is .app-content (overflow-y:auto), so position:sticky
-   pins relative to it. The filter form pins at the top; the table header pins
-   directly under it. --ledger-header-offset is set by JS to the rendered filter
-   height so the header sits flush even when the advanced filters expand. */
+   pins relative to it. The filter card is NOT pinned — it scrolls away normally
+   so a tall 3-row filter (search/period/zone + paging) doesn't permanently eat
+   the top of a laptop viewport (it left only 4-5 records). Only the column header
+   stays pinned at the top of the scroll container, so data stays labeled while
+   you scroll; scroll back up to reach the filters. (--ledger-header-offset is no
+   longer consumed; the JS that sets it is harmless and left in place.) */
 .ledger-filters-sticky {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background-color: var(--color-card);
+    /* intentionally not sticky — see note above; class retained for the JS hook */
+    position: static;
 }
 
 .data-table thead th {
     position: sticky;
-    top: var(--ledger-header-offset, 0);
+    top: 0;
     z-index: 10;
     /* th already carries an opaque var(--color-card) background so rows can't
        bleed through; add depth on the stuck header. */
