@@ -17,6 +17,7 @@ scale. The command tests patch the EE entry points in the command's namespace
 
 from datetime import date
 from decimal import Decimal
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -25,9 +26,11 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from datasync.adapters.gee import (
+    EE_COLLECTION,
     EE_SCALE,
     GRIDMET_COLLECTION,
     PRECIP_REDUCE_SCALE,
+    _parcels_bbox,
     build_precip_data,
     reduce_et_by_parcel,
     reduce_precip_by_parcel,
@@ -116,6 +119,11 @@ class _FakeIC:
         # ET filters the whole window; precip filters ONE month at a time.
         return _FakeIC(self._ee, self._coll, month_key=start[:7])
 
+    def filterBounds(self, geom):
+        # Record that the location filter was applied, and on which collection.
+        self._ee.bounds_calls.append((self._coll, geom))
+        return self
+
     def select(self, band):
         return self
 
@@ -143,6 +151,7 @@ class _FakeEE:
         self.daily_count = daily_count
         self.images = [_FakeImage(mk, pp, recorder) for mk, pp in data.items()]
         self.Reducer = _FakeReducer
+        self.bounds_calls = []  # every filterBounds(geom) the reduce made
 
     def ImageCollection(self, coll):
         return _FakeIC(self, coll)
@@ -157,7 +166,7 @@ class _FakeEE:
         return ("FEATURE", props)
 
     def Geometry(self, geojson):
-        return ("GEOM",)
+        return ("GEOM", geojson)
 
     def FeatureCollection(self, features):
         return ("FC", features)
@@ -249,6 +258,57 @@ class TestReduceEtRegression:
         assert [mk for mk, _ in recorder] == ["2024-06", "2024-07"]
         # ET still reduces at OpenET's native 30 m.
         assert all(scale == EE_SCALE for _, scale in recorder)
+
+
+# ---------------------------------------------------------------------------
+# 3b. filterBounds — the OpenET ensemble is tiled; only the district's tile(s)
+#     should survive. Without this the reduce processes ~32x the images.
+# ---------------------------------------------------------------------------
+
+
+def _stub_parcel(extent):
+    """Minimal stand-in exposing only .geometry.extent (xmin,ymin,xmax,ymax)."""
+    return SimpleNamespace(geometry=SimpleNamespace(extent=extent))
+
+
+class TestParcelsBbox:
+    def test_none_when_empty(self):
+        assert _parcels_bbox([]) is None
+
+    def test_single_parcel_is_its_extent(self):
+        p = _stub_parcel((-119.3, 36.3, -119.2, 36.4))
+        assert _parcels_bbox([p]) == (-119.3, 36.3, -119.2, 36.4)
+
+    def test_union_of_many(self):
+        a = _stub_parcel((-119.3, 36.3, -119.2, 36.4))
+        b = _stub_parcel((-120.0, 36.1, -119.25, 36.35))
+        # min of mins, max of maxes across both fields.
+        assert _parcels_bbox([a, b]) == (-120.0, 36.1, -119.2, 36.4)
+
+    def test_margin_expands_outward(self):
+        p = _stub_parcel((-119.3, 36.3, -119.2, 36.4))
+        assert _parcels_bbox([p], margin=0.5) == (-119.8, 35.8, -118.7, 36.9)
+
+
+@pytest.mark.django_db
+class TestEtFilterBounds:
+    def test_reduce_filters_to_parcel_envelope(self, parcel):
+        data = {"2024-06": {parcel.pk: 150.0}}
+        fake = _FakeEE(data, [])
+
+        reduce_et_by_parcel(fake, [parcel], date(2024, 6, 1), date(2024, 6, 30))
+
+        # Exactly one filterBounds, on the OpenET ensemble collection.
+        assert len(fake.bounds_calls) == 1
+        coll, geom = fake.bounds_calls[0]
+        assert coll == EE_COLLECTION
+        # The geometry handed to filterBounds is a GeoJSON rectangle that covers
+        # the parcel's extent (-119.3, 36.3, -119.2, 36.4).
+        coords = geom[1]["coordinates"][0]
+        xs = [pt[0] for pt in coords]
+        ys = [pt[1] for pt in coords]
+        assert min(xs) <= -119.3 and max(xs) >= -119.2
+        assert min(ys) <= 36.3 and max(ys) >= 36.4
 
 
 # ---------------------------------------------------------------------------

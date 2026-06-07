@@ -59,6 +59,43 @@ def _first_of_next_month(d):
     return date(d.year, d.month + 1, 1)
 
 
+def _parcels_bbox(parcels, margin=0.0):
+    """Combined lon/lat envelope ``(minx, miny, maxx, maxy)`` of all parcels.
+
+    Geometries are EPSG:4326 (the same CRS the reduce treats them as when it
+    builds features from ``parcel.geometry.geojson``), so the envelope is in
+    degrees. Returns ``None`` when there are no parcels. Pure: no Earth Engine,
+    no DB beyond reading each parcel's already-loaded geometry — unit-testable.
+    """
+    minx = miny = float("inf")
+    maxx = maxy = float("-inf")
+    for parcel in parcels:
+        x0, y0, x1, y1 = parcel.geometry.extent  # (xmin, ymin, xmax, ymax)
+        minx, miny = min(minx, x0), min(miny, y0)
+        maxx, maxy = max(maxx, x1), max(maxy, y1)
+    if minx == float("inf"):
+        return None
+    return (minx - margin, miny - margin, maxx + margin, maxy + margin)
+
+
+def _bbox_to_ee(ee, bbox):
+    """Turn a ``(minx, miny, maxx, maxy)`` tuple into an ``ee.Geometry`` rectangle.
+
+    Built as a GeoJSON Polygon (not ``ee.Geometry.Rectangle``) so the same call
+    works against the hand-built fake ``ee`` in the tests, which only implements
+    the ``ee.Geometry(geojson)`` constructor.
+    """
+    minx, miny, maxx, maxy = bbox
+    return ee.Geometry(
+        {
+            "type": "Polygon",
+            "coordinates": [
+                [[minx, miny], [maxx, miny], [maxx, maxy], [minx, maxy], [minx, miny]]
+            ],
+        }
+    )
+
+
 def init_earth_engine():
     """Headless service-account auth. Returns the initialized ``ee`` module.
 
@@ -159,13 +196,20 @@ def reduce_et_by_parcel(ee, parcels, start, end):
     The ensemble collection is already monthly, so each image maps to one month.
     Returns ``{parcel_id: {"YYYY-MM": et_mm}}``. ET is in millimeters.
     """
+    parcels = list(parcels)
     filter_start = _first_of_month(start).isoformat()
     filter_end = _first_of_next_month(end).isoformat()  # exclusive
-    ic = (
-        ee.ImageCollection(EE_COLLECTION)
-        .filterDate(filter_start, filter_end)
-        .select(EE_BAND)
-    )
+    ic = ee.ImageCollection(EE_COLLECTION).filterDate(filter_start, filter_end)
+    # The OpenET CONUS ensemble is spatially TILED — ~32 images per month, only
+    # the tile(s) overlapping a district carry its parcels; the rest reduce to
+    # null and are discarded. filterBounds to the parcels' envelope keeps only
+    # the overlapping tile(s), so a year is ~12 reduces instead of ~384. Measured
+    # ~2.3x less EECU for byte-identical results (docs/earth-engine-tier-setup.md,
+    # scripts/benchmarks/gee_eecu_bench.py).
+    bbox = _parcels_bbox(parcels)
+    if bbox is not None:
+        ic = ic.filterBounds(_bbox_to_ee(ee, bbox))
+    ic = ic.select(EE_BAND)
 
     image_list = ic.toList(ic.size())
     count = int(ic.size().getInfo())
@@ -197,17 +241,24 @@ def reduce_precip_by_parcel(ee, parcels, start, end):
 
     Returns ``{parcel_id: {"YYYY-MM": precip_mm}}``. Precip is in millimeters.
     """
+    parcels = list(parcels)
+    # Unlike the tiled OpenET ensemble, GRIDMET is ONE CONUS image per day, so
+    # filterBounds trims no images here today — it is kept for symmetry with the
+    # ET path and stays correct if the precip source is ever swapped for a tiled
+    # one. Computed once; applied to each month's daily collection below.
+    bbox = _parcels_bbox(parcels)
     monthly_images = []
     cursor = _first_of_month(start)
     last = _first_of_month(end)
     while cursor <= last:
         nxt = _first_of_next_month(cursor)
         month_key = cursor.strftime("%Y-%m")
-        daily = (
-            ee.ImageCollection(GRIDMET_COLLECTION)
-            .filterDate(cursor.isoformat(), nxt.isoformat())  # [start, next) exclusive
-            .select(GRIDMET_BAND)
+        daily = ee.ImageCollection(GRIDMET_COLLECTION).filterDate(
+            cursor.isoformat(), nxt.isoformat()  # [start, next) exclusive
         )
+        if bbox is not None:
+            daily = daily.filterBounds(_bbox_to_ee(ee, bbox))
+        daily = daily.select(GRIDMET_BAND)
         count = int(daily.size().getInfo())
         if count == 0:
             raise RuntimeError(
