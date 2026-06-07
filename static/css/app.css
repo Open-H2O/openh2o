@@ -304,8 +304,7 @@ a { color: inherit; }
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--color-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
     margin-bottom: var(--space-sm);
 }
 
@@ -360,8 +359,7 @@ a { color: inherit; }
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--color-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
     margin-bottom: 2px;
 }
 
@@ -514,8 +512,8 @@ a { color: inherit; }
 .form-input {
     width: 100%;
     padding: var(--space-sm) var(--space-md);
-    background-color: var(--color-elevated);
-    border: 1px solid var(--color-border);
+    background-color: var(--color-inset);
+    border: 1px solid rgba(120, 150, 185, 0.22);
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
     font-size: 0.875rem;
@@ -532,12 +530,13 @@ a { color: inherit; }
 .form-select {
     width: 100%;
     padding: var(--space-sm) var(--space-md);
-    background-color: var(--color-elevated);
-    border: 1px solid var(--color-border);
+    background-color: var(--color-inset);
+    border: 1px solid rgba(120, 150, 185, 0.22);
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
     font-size: 0.875rem;
     font-family: var(--font-display);
+    box-shadow: var(--shadow-inset);
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238899aa' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -554,20 +553,29 @@ a { color: inherit; }
 .form-textarea {
     width: 100%;
     padding: var(--space-sm) var(--space-md);
-    background-color: var(--color-elevated);
-    border: 1px solid var(--color-border);
+    background-color: var(--color-inset);
+    border: 1px solid rgba(120, 150, 185, 0.22);
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
     font-size: 0.875rem;
     font-family: var(--font-display);
     min-height: 120px;
     resize: vertical;
+    box-shadow: var(--shadow-inset);
 }
 
 .form-textarea:focus {
     border-color: var(--color-gold);
     outline: none;
     box-shadow: 0 0 0 2px var(--color-gold-muted);
+}
+
+/* Placeholder text was browser-default (near-invisible on dark); give it a
+   real tertiary color so empty fields read as fillable. */
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--color-text-tertiary);
+    opacity: 1;
 }
 
 .form-help {
@@ -741,8 +749,7 @@ a { color: inherit; }
     list-style: none;
     font-size: 0.8125rem;
     font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
     color: var(--color-text-secondary);
     transition: color 150ms;
 }
@@ -980,8 +987,7 @@ a { color: inherit; }
     display: block;
     font-size: 0.6875rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--color-gold);
     margin-bottom: 2px;
 }
@@ -1147,8 +1153,7 @@ a { color: inherit; }
     background-color: transparent;
     color: var(--color-text-tertiary);
     border: 1px solid var(--color-border-hover);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     font-size: 0.625rem;
     font-weight: 700;
 }
@@ -1199,8 +1204,7 @@ a { color: inherit; }
     font-size: 0.9375rem;
     font-weight: 600;
     color: var(--color-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0.01em;
     margin: 0 0 var(--space-md) 0;
     padding: 0;
 }
@@ -1229,8 +1233,7 @@ a { color: inherit; }
     font-size: 0.6875rem;
     font-weight: 600;
     color: var(--color-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
     margin-bottom: var(--space-sm);
 }
 
@@ -1252,6 +1255,97 @@ a { color: inherit; }
 
 .stat-card-accent-balance {
     border-top: 3px solid var(--color-gold);
+}
+
+/* -- Budget panel -------------------------------------------------------- */
+/* The unified water-budget summary: one gradient panel that reads as the
+   balance equation (supplies − use = balance), with a supply breakdown
+   footer. Replaces the three stripe-topped stat cards. Reused on the
+   dashboard, period detail, and Help explainers as the house "balance" card. */
+.budget-panel {
+    background: linear-gradient(180deg, var(--color-card), var(--color-inset));
+    border: 1px solid var(--color-border-hover);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop-sm);
+    overflow: hidden;
+}
+.budget-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+.budget-panel-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+}
+.budget-panel-period {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid var(--color-border);
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+.budget-panel-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: center;
+    padding: var(--space-xl) var(--space-lg);
+}
+.budget-seg {
+    text-align: center;
+}
+.budget-seg-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 10px;
+}
+.budget-seg-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.budget-seg-unit {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    margin-left: 3px;
+}
+.budget-op {
+    font-size: 1.6rem;
+    color: var(--color-text-tertiary);
+    text-align: center;
+    padding: 0 var(--space-sm);
+}
+.budget-panel-foot {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+    padding: var(--space-md) var(--space-lg);
+    border-top: 1px solid var(--color-border);
+    font-size: 0.84rem;
+    color: var(--color-text-secondary);
+}
+.budget-panel-foot b {
+    color: var(--color-text-primary);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+@media (max-width: 767px) {
+    .budget-panel-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+    }
+    .budget-op { display: none; }
 }
 
 .stat-card-value-sm {
@@ -1559,8 +1653,7 @@ div[id$="-map"] {
     display: block;
     font-size: 0.6875rem;
     font-weight: 700;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--color-text-secondary);
     margin-bottom: var(--space-sm);
 }
@@ -1619,8 +1712,7 @@ div[id$="-map"] {
     font-size: 0.6875rem;
     font-weight: 600;
     color: var(--color-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
 }
 
 /* -- Result count bar (list result partials header) ---------------------- */
@@ -1911,7 +2003,7 @@ div[id$="-map"] {
     border-radius: var(--radius-sm);
     font-size: 0.75rem;
     font-weight: 600;
-    text-transform: uppercase;
+    text-transform: capitalize;
 }
 
 .health-status-badge-green::before,

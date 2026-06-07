@@ -10,32 +10,32 @@
 {% else %}
 
 {% url 'water_balances' as wb_help_url %}
-<h2 class="content-section-label" style="display: flex; align-items: center; gap: var(--space-xs);">Budget Summary{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, measured from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This card shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</h2>
-<div class="stat-grid-3col">
-
-  <!-- Total Supplies -->
-  <div class="card-raised stat-card stat-card-accent-supply">
-    <div class="stat-card-label">Total Supplies (surface + groundwater + precip)</div>
-    <div class="stat-card-value text-supply">{{ grand_supply_total|floatformat:2 }}</div>
-    <div class="stat-card-unit">acre-feet</div>
+<div class="budget-panel">
+  <div class="budget-panel-head">
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water budget{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, measured from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
-
-  <!-- Consumptive Use (ET) -->
-  <div class="card-raised stat-card stat-card-accent-usage">
-    <div class="stat-card-label">Consumptive Use (ET)</div>
-    <div class="stat-card-value">{{ grand_consumptive_use|floatformat:2 }}</div>
-    <div class="stat-card-unit">acre-feet</div>
-  </div>
-
-  <!-- Supplies − Consumptive Use -->
-  <div class="card-raised stat-card stat-card-accent-balance">
-    <div class="stat-card-label">Supplies − Consumptive Use</div>
-    <div class="stat-card-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-      {{ grand_net|floatformat:2 }}
+  <div class="budget-panel-row">
+    <div class="budget-seg">
+      <div class="budget-seg-label">Supplies</div>
+      <div class="budget-seg-value text-supply">{{ grand_supply_total|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
     </div>
-    <div class="stat-card-unit">acre-feet</div>
+    <div class="budget-op">&minus;</div>
+    <div class="budget-seg">
+      <div class="budget-seg-label">Consumptive use</div>
+      <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+    </div>
+    <div class="budget-op">&equals;</div>
+    <div class="budget-seg">
+      <div class="budget-seg-label">Balance</div>
+      <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+    </div>
   </div>
-
+  <div class="budget-panel-foot">
+    <span>Surface <b>{{ grand_supply_surface|floatformat:2 }}</b></span>
+    <span>Groundwater <b>{{ grand_supply_groundwater|floatformat:2 }}</b></span>
+    <span>Rain <b>{{ grand_supply_precip|floatformat:2 }}</b></span>
+  </div>
 </div>
 
 <!-- Consumptive-use model explainer -->
