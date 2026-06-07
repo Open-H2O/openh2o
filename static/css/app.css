@@ -1402,8 +1402,13 @@ a { color: inherit; }
    zoom to cancel it — not zoom:1. Keep this denominator in sync with the
    .app-content zoom above. Covers the .map-embed class plus the bare *-map
    div ids (well-map, parcel-map, zone-map, infra-map, …); div[...] excludes
-   the #btn-parcel-map button. */
+   the #btn-parcel-map button. #map is the full-page main map — its id does NOT
+   end in "-map", so it was the one map missing this counter-zoom: MapLibre sized
+   its canvas to the layout box (e.g. 755×912) while .app-content displayed it at
+   1.0625× (802×969), a transform/container mismatch that left the basin off-center
+   (extra empty terrain to the south). Counter-zooming it matches every other map. */
 .map-embed,
+#map,
 div[id$="-map"] {
     zoom: calc(1 / 1.0625);
 }
