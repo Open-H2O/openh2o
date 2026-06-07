@@ -94,17 +94,43 @@ you actually consume.
   **A small or mid-size district does not need a Basic or Enterprise plan.**
   Choose the **Limited plan** and pay only for compute.
 
-**Cost at district scale.** Processing roughly 50,000 parcels for a year costs
-about **500 EECU-hours**. On the Limited plan that is `500 x $0.40 = about $200
-per year`, around $17/month, with no base fee. A smaller district with a few
-hundred parcels would consume a fraction of that, on the order of single-digit
-to low-tens of dollars per year. Either way it is a small fraction of the
-$35,000 to $75,000 that a comparable vendor-managed analysis typically runs.
+**Cost at district scale (measured, not guessed).** We benchmarked the exact
+polygon reduction this tier runs against real Merced County crop parcels on Earth
+Engine and read the compute Google actually metered. A full year of monthly ET
+costs almost nothing per parcel: about **0.045 EECU-seconds per parcel per year**
+at typical Central Valley field sizes (~70 acres). You can estimate your own
+agency's annual compute straight from your parcel count:
+
+> **EECU-hours/year ≈ parcels × (0.022 + 0.00035 × average_acres) ÷ 3600**
+> **Compute cost/year ≈ EECU-hours × $0.40**
+
+Worked out at ~70-acre average parcels:
+
+| Ag parcels | EECU-hours/year | Compute cost/year |
+|-----------:|----------------:|------------------:|
+| 500        | 0.006           | under $0.01       |
+| 5,000      | 0.06            | ~$0.03            |
+| 50,000     | 0.63            | ~$0.25            |
+
+Even a very large district lands well under one EECU-hour and a fraction of a
+dollar per year of compute. Budget a few dollars a year to be safe: that covers
+re-running every month as new data lands, pulling rainfall alongside ET, and the
+overhead of the live (non-batch) code path. There is no scenario at a water
+district's scale where this tier is expensive — it is effectively free compared
+with commissioning a vendor to run the same satellite ET analysis, which is
+typically a five-figure consulting engagement.
+
+(The benchmark that produced these numbers lives at
+`scripts/benchmarks/gee_eecu_bench.py` and can be re-run if Google changes its
+pricing. An earlier draft of this section estimated 500 EECU-hours / ~$200 a
+year; that figure was never measured and overstated the real cost by nearly
+three orders of magnitude. The conclusion it supported — use the no-fee Limited
+plan, never the $500/month Basic plan — was and remains correct.)
 
 **Honest summary for your agency:** budget for commercial Earth Engine on the
-pay-as-you-go Limited plan, expect roughly a few dollars to a couple hundred
-dollars per year depending on how many parcels you run, and do **not** sign up
-for a $500/month plan you will not use. If your use genuinely is research for
+pay-as-you-go Limited plan, expect roughly a few dollars per year of compute even
+for a large district (pennies for a small one), and do **not** sign up for a
+$500/month plan you will not use. If your use genuinely is research for
 publication, you may qualify for the free tier, but confirm that with Google
 before relying on it.
 
