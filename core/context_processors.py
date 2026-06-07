@@ -68,3 +68,10 @@ def feedback(request):
     clone, so the Feedback button only renders where a deployment opts in by
     setting FEEDBACK_ENDPOINT in its environment."""
     return {"feedback_endpoint": settings.FEEDBACK_ENDPOINT}
+
+
+def app_version(request):
+    """Expose the build version (git describe, baked into the image at build time)
+    to templates, so the footer can name the exact commit a deployment is running —
+    the first question on any bug report. "dev" for un-stamped local builds."""
+    return {"app_version": settings.APP_VERSION}

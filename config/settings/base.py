@@ -94,12 +94,18 @@ TEMPLATES = [
                 "core.context_processors.feedback",
                 "core.context_processors.access_flags",
                 "core.context_processors.setup_status",
+                "core.context_processors.app_version",
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+
+# Build version stamp (git describe), baked into the image at build time by the
+# Dockerfile ARG/ENV. Surfaced in the footer so any bug report can name the exact
+# build. "dev" on an un-stamped local build.
+APP_VERSION = os.environ.get("APP_VERSION", "dev")
 
 # -- Database ----------------------------------------------------------------
 
