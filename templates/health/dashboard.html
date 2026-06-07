@@ -62,8 +62,8 @@
         {% endfor %}
     </div>
     {% else %}
-    {# Anonymous visitors get the aggregate liveness status only — no per-subsystem
-       names or failure messages (those are operator-only reconnaissance). #}
+    {% comment %} Anonymous visitors get the aggregate liveness status only — no per-subsystem
+       names or failure messages (those are operator-only reconnaissance). {% endcomment %}
     <div class="card-raised empty-state">
         <p class="empty-state-text text-secondary" style="text-transform: capitalize;">
             Overall status: {{ overall_status }}

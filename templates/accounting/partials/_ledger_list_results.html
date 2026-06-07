@@ -10,9 +10,9 @@
   <table class="data-table">
     <thead>
       <tr>
-        {# Sortable columns re-request the partial carrying the full filter state
+        {% comment %} Sortable columns re-request the partial carrying the full filter state
            (hx-include=#ledger-filters) with a toggled direction. ▲/▼ marks the
-           active column; Date also shows ▼ in the default newest-first state. #}
+           active column; Date also shows ▼ in the default newest-first state. {% endcomment %}
         <th class="th-sortable" role="button" tabindex="0"
             hx-get="{% url 'accounting:ledger_list' %}"
             hx-target="#ledger-results"
@@ -131,10 +131,10 @@
 </div>
 {% endif %}
 
-{# The active sort lives in hidden inputs in the OUTER #ledger-filters form,
+{% comment %} The active sort lives in hidden inputs in the OUTER #ledger-filters form,
    which HTMX never re-renders on a results-only swap. This re-runs on every
    swap and writes the current sort/dir back into those inputs, so a later
-   filter change carries the active sort instead of resetting it. #}
+   filter change carries the active sort instead of resetting it. {% endcomment %}
 <script>
 (function () {
   var form = document.getElementById("ledger-filters");
