@@ -47,7 +47,17 @@ class Command(BaseCommand):
         user.is_staff = True
         user.is_superuser = True
         user.is_active = True
-        user.set_password(password)
+        # Only (re)hash the password when it actually changed. Calling
+        # set_password unconditionally re-hashes with a fresh salt on EVERY
+        # container boot, which rotates the user's session-auth hash — and
+        # Django invalidates all of a user's sessions whenever that hash moves.
+        # The result was the admin being silently logged out after every prod
+        # rebuild. Guarding on check_password makes a normal rebuild a true
+        # no-op for the password, while a genuinely changed
+        # DJANGO_SUPERUSER_PASSWORD still updates (and correctly ends old
+        # sessions, which is the desired behavior for a real password change).
+        if created or not user.check_password(password):
+            user.set_password(password)
         user.save()
 
         # django-allauth authenticates by email via its EmailAddress table.
