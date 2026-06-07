@@ -6,7 +6,7 @@
 
 **A production-ready water accounting platform that a California water agency can stand up on a $15/month server — with an AI agent doing the deployment.**
 
-OpenH2O tracks groundwater extraction, surface-water diversions, mixed-use accounting, and managed aquifer recharge, and prepares the state compliance reports (GEARS and CalWATRS) that California agencies have to file. It is built on a fully open stack so that any agency — or any engineering firm working on their behalf — can run it, read it, and improve it.
+OpenH2O tracks groundwater extraction, surface-water diversions, mixed-use accounting, and managed aquifer recharge — first and foremost so an agency can understand its own basin. For agencies that also file with the state, it can prepare the compliance reports (GEARS and CalWATRS), but reporting is an optional add-on, not the reason the platform exists. It is built on a fully open stack so that any agency — or any engineering firm working on their behalf — can run it, read it, and improve it.
 
 > **Live demo:** [openh2o.com](https://openh2o.com) · **License:** [AGPL-3.0-or-later](#license) · **Deploy guide:** [DEPLOY.md](DEPLOY.md) · **Deploy it with an AI:** [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md)
 
@@ -14,7 +14,7 @@ OpenH2O tracks groundwater extraction, surface-water diversions, mixed-use accou
 
 ## Who this is for
 
-California's **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to measure and report how much water their basins use. Most of these agencies are small, underfunded, and have no software staff. The existing tooling is excellent but expensive — a typical setup runs **$35,000–$75,000** in consulting, and effectively every deployment is vendor-managed.
+California's **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to measure and report how much water their basins use. Most of these agencies are small, underfunded, and have no software staff. The existing tooling is excellent but expensive, and effectively every deployment is vendor-managed.
 
 OpenH2O exists to change the cost structure. The core idea is simple:
 
