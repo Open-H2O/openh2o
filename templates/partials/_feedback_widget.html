@@ -18,34 +18,38 @@ etc.) are gathered silently at submit time.
      only stick during the last sliver of scroll, since a sticky element only
      clings while its own containing block is on screen.) It lives OUTSIDE
      .app-content, so that pane's zoom:1.0625 never distorts its coordinates.
-     The negative margin-top lifts its resting position up into the footer band;
-     `bottom` is the gap it keeps above the window edge while floating. Both are
-     tuned for the one-line footer height — nudge if the footer ever grows. */
+     The box is sized to nest INSIDE the footer band with even breathing room:
+     the footer is 3rem tall, the box 1.75rem, leaving 0.625rem above and below.
+     That same 0.625rem is the gap it floats above the window while scrolling, so
+     one value drives both states. `margin-top` is set so the box's resting (in-
+     flow) position equals its stuck position — it lands centered in the footer
+     with no jump at the very bottom. Tuned together: footer 3rem = fb-h + 2*gap. */
   .oh2o-fb-btn {
-    --fb-h: 2.1rem;
+    --fb-h: 1.75rem;                               /* box height (footer band is 3rem) */
+    --fb-gap: 0.625rem;                            /* even top/bottom inset AND the float gap */
     position: sticky;
-    bottom: 0.85rem;                               /* gap above window bottom while floating */
+    bottom: var(--fb-gap);                         /* gap above window bottom while floating */
     align-self: flex-end;                          /* right side of the column */
-    margin-right: 1.25rem;
-    margin-top: calc(-1 * var(--fb-h) - 0.4rem);   /* ride up into the footer band at rest */
+    margin-right: 1.5rem;                          /* line up with the footer's side padding */
+    margin-top: calc(-1 * (var(--fb-h) + var(--fb-gap)));  /* rest centered in the footer band */
     z-index: 60;
     height: var(--fb-h);
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0 0.85rem; box-sizing: border-box;
+    padding: 0 0.7rem; box-sizing: border-box;
     border: 1px solid rgba(255,255,255,0.16);
-    border-radius: 9px; cursor: pointer;
+    border-radius: 8px; cursor: pointer;
     background: linear-gradient(180deg, #2090c2 0%, #1B7FAF 100%);
-    color: #fff; font: 600 0.8rem/1 'Public Sans', sans-serif;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.12);
+    color: #fff; font: 600 0.78rem/1 'Public Sans', sans-serif;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.12);
     transition: background .15s, transform .15s, box-shadow .15s;
   }
   .oh2o-fb-btn:hover {
     background: linear-gradient(180deg, #45bce6 0%, #2a9fce 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.46), inset 0 1px 0 rgba(255,255,255,0.18);
   }
   .oh2o-fb-btn:active { transform: translateY(0); }
-  .oh2o-fb-btn svg { width: 15px; height: 15px; }
+  .oh2o-fb-btn svg { width: 14px; height: 14px; }
 
   .oh2o-fb-panel {
     position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 901;
