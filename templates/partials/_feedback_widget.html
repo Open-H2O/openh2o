@@ -217,19 +217,29 @@ etc.) are gathered silently at submit time.
       if (attachments.length >= WIDGET.maxAttachments) { toast('Up to ' + WIDGET.maxAttachments + ' images.', 'error'); break; }
       var file = files[i];
       if (!file.type || file.type.indexOf('image/') !== 0) continue;
-      downscale(file, addAttachment);
+      prepareImage(file, addAttachment);
     }
   }
 
-  // Shrink large images in-browser so a 4K/phone screenshot doesn't bloat the
-  // upload. ~1600px wide, JPEG q.82 — readable for debugging, ~200-400KB.
-  function downscale(file, cb) {
+  // Keep screenshots legible — reading the bug is the whole point. A normal
+  // phone or laptop screenshot is sent UNTOUCHED at full fidelity. Only a
+  // genuinely huge capture (a 4K/5K desktop grab) is resized, and only to 2560px
+  // on its longest side — well above where small UI text starts to break down —
+  // then re-encoded as WebP, which keeps text crisp (JPEG fuzzes it).
+  var MAX_DIM = 2560;                          // longest side, for oversized only
+  var PASSTHROUGH_BYTES = 2 * 1024 * 1024;     // <=2MB & within MAX_DIM -> as-is
+
+  function prepareImage(file, cb) {
     var img = new Image();
     var url = URL.createObjectURL(file);
     img.onload = function () {
       URL.revokeObjectURL(url);
-      var maxW = 1600;
-      var scale = Math.min(1, maxW / img.width);
+      var longest = Math.max(img.width, img.height);
+      if (file.size <= PASSTHROUGH_BYTES && longest <= MAX_DIM) {
+        cb(file, file.name || 'screenshot.png');   // full fidelity, no re-encode
+        return;
+      }
+      var scale = Math.min(1, MAX_DIM / longest);
       var w = Math.max(1, Math.round(img.width * scale));
       var h = Math.max(1, Math.round(img.height * scale));
       var canvas = document.createElement('canvas');
@@ -237,8 +247,9 @@ etc.) are gathered silently at submit time.
       try {
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
         canvas.toBlob(function (blob) {
-          cb(blob || file, baseName(file.name) + '.jpg');
-        }, 'image/jpeg', 0.82);
+          if (blob) cb(blob, baseName(file.name) + '.webp');
+          else cb(file, file.name || 'screenshot.png');  // WebP unsupported -> original
+        }, 'image/webp', 0.92);
       } catch (_) { cb(file, file.name || 'screenshot.png'); }
     };
     img.onerror = function () { URL.revokeObjectURL(url); cb(file, file.name || 'screenshot.png'); };
