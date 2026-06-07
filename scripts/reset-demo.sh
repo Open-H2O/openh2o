@@ -61,7 +61,9 @@ if ! docker compose exec -T web python manage.py migrate --noinput >>"$LOG" 2>&1
   log "WARN: migrate after restore returned nonzero (check $LOG)"
 fi
 
-# Sanity: the restore must leave the seeded Merced parcels present.
+# Sanity: the restore must leave the seeded Merced parcels present. Tag the line
+# so the shell_plus auto-import banner doesn't pollute the parsed number.
 count="$(docker compose exec -T web python manage.py shell -c \
-  'from parcels.models import Parcel; print(Parcel.objects.count())' 2>/dev/null | tr -dc '0-9')"
+  'from parcels.models import Parcel; print("PCOUNT:%d" % Parcel.objects.count())' 2>/dev/null \
+  | sed -n 's/.*PCOUNT:\([0-9]*\).*/\1/p' | tail -1)"
 log "reset-demo: done — Parcel count now ${count:-unknown}"
