@@ -164,5 +164,3 @@ The AGPL is the strongest open-source guarantee for networked software. Its **Se
 OpenH2O builds on earlier work. The idea — and much of the accounting methodology — comes from the **Groundwater Accounting Platform**, an open-source system created by **ESA (formerly Sitka Technology Group)** and stewarded by the **California Water Data Consortium**, the nonprofit set up in 2019 to open up California's water data. That platform is also released under the AGPL.
 
 OpenH2O is an independent rebuild on a fully open stack: we studied how that platform works and reimplemented it from scratch, so none of their code is copied here — but we're grateful for the path they cleared.
-
-Built by Brent Vanderburgh for the water managers of California.
