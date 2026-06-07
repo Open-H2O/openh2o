@@ -38,7 +38,8 @@
     {% if site_config and site_config.allow_google_oauth %}
     <div class="border-separator pt-sm" style="margin-top: var(--space-md);">
     {% load socialaccount %}
-    <a href="{% provider_login_url 'google' %}" class="btn-secondary w-full">Continue with Google</a>
+    {% load static %}
+    <a href="{% provider_login_url 'google' %}" class="btn-secondary w-full" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><img src="{% static 'img/google-g.svg' %}" alt="" width="18" height="18">Continue with Google</a>
     </div>
     {% endif %}
 </div>
