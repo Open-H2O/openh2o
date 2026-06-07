@@ -414,6 +414,34 @@ docker compose logs caddy        # Caddy reverse proxy
 docker compose logs -f web       # Follow logs in real time
 ```
 
+### Public Demo Reset (golden snapshot)
+
+A **public** demo is single-tenant: one shared database, open self-signup, no
+per-visitor isolation. Any logged-in visitor's parcels, wells, and reports
+persist for everyone, and nothing prunes them. To keep the demo pristine, restore
+it on a schedule from a "golden" snapshot of the clean state.
+
+```bash
+make snapshot-demo   # capture the golden snapshot (scripts/snapshot-demo.sh)
+make reset-demo      # restore the demo to that snapshot now (scripts/reset-demo.sh)
+```
+
+`reset-demo` pauses web, drops + recreates the database from the snapshot
+(cleanly rebuilding PostGIS and all data), restarts web, and runs `migrate`. Wire
+it to cron for an unattended nightly reset, e.g.:
+
+```cron
+0 4 * * * cd /path/to/openh2o && bash scripts/reset-demo.sh >> ~/openh2o-logs/reset-demo-cron.log 2>&1
+```
+
+> **Discipline — refresh the snapshot when the golden state changes.** The reset
+> reloads whatever was captured. After any **schema migration** or **intentional
+> demo-content change**, re-run `make snapshot-demo`, or the next reset reloads the
+> old shape. `reset-demo` runs `migrate` after restore as a safety net for purely
+> additive migrations, but do not rely on it for data-shape changes. The snapshot
+> also pins the admin accounts and any deliberately seeded data — recreate those
+> *before* snapshotting, not after, or the nightly reset will delete them.
+
 ---
 
 ## 12. Environment Variables Reference

@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo kaweah flush-kaweah merced teardown-demo \
-        check test fresh verify-clean install-cron show-cron sync guard-prod deploy
+        check test fresh snapshot-demo reset-demo verify-clean install-cron show-cron sync guard-prod deploy
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -170,3 +170,9 @@ fresh: guard-prod down ## Full reset: destroy volumes, rebuild, migrate, seed, M
 	$(EXEC) seed_merced
 	@echo ""
 	@echo "Fresh environment ready (Merced Subbasin demo). Run 'make createsuperuser' to create an admin."
+
+snapshot-demo: ## Capture the golden snapshot the nightly demo reset restores to (run after a fresh/intended schema or content change)
+	bash scripts/snapshot-demo.sh
+
+reset-demo: ## Restore the demo DB to its golden snapshot NOW (wipes visitor-added data); the same script runs nightly via cron
+	bash scripts/reset-demo.sh
