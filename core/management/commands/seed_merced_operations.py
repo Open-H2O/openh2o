@@ -51,6 +51,7 @@ against an empty flowline set.
 import math
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -341,6 +342,14 @@ class Command(BaseCommand):
             "no parcels). Touches no parcels/wells/links/other rights — safe to "
             "run against a live seeded instance without clobbering real geometry.",
         )
+        parser.add_argument(
+            "--allow-prod-clobber", action="store_true",
+            help="Override the production safety guard and allow the full "
+            "(non --journey-only) seed to run when DEBUG is False. Required only "
+            "for an intentional first-time setup or rebuild on a production "
+            "instance; the full seed DELETES and regenerates parcel/well geometry, "
+            "destroying any hand-drawn QGIS shapes on the live demo.",
+        )
 
     def handle(self, *args, **options):
         # Base-layer guard runs first, BEFORE any flush, so a wrong instance
@@ -354,6 +363,23 @@ class Command(BaseCommand):
             with transaction.atomic():
                 self._seed_diversion_journey(lower)
             return
+
+        # Production safety guard. The full seed below (and its --flush) DELETE
+        # and regenerate parcel/well/POD geometry — on the live demo that destroys
+        # the hand-drawn QGIS field boundaries. DEBUG is False under production
+        # settings, so refuse there unless the operator explicitly opts in. The
+        # Makefile guard does not cover this command (it runs via manage.py), so
+        # this is the only thing standing between a stray rerun and lost geometry.
+        if not settings.DEBUG and not options.get("allow_prod_clobber"):
+            raise CommandError(
+                "Refusing to run the full Merced operations seed on a production "
+                "instance (DEBUG=False): it deletes and regenerates parcel/well "
+                "geometry, destroying any hand-drawn QGIS shapes on the live demo.\n"
+                "  • To add the diversion-reach journey to a live demo, use "
+                "--journey-only (safe, touches no parcels).\n"
+                "  • For an intentional first-time setup or rebuild, re-run with "
+                "--allow-prod-clobber."
+            )
 
         if options["flush"]:
             self._flush()
