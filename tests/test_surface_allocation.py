@@ -15,7 +15,7 @@ from decimal import Decimal
 
 import pytest
 
-from accounting.models import CalculationRun
+from accounting.models import CalculationRun, WaterType
 from core.models import SiteConfig
 from parcels.models import ParcelLedger
 from surface.services import allocate_district_delivery
@@ -183,3 +183,49 @@ def test_efficiency_defaults_to_siteconfig():
 
     # Capped at demand/efficiency using the agency default 0.750.
     assert rows[0].amount_acre_feet == Decimal("-40.0000")
+
+
+def test_demand_weighted_rows_carry_surface_water_type():
+    """Every demand-weighted surface row is stamped Surface Water (not blank)."""
+    WaterType.objects.create(code="SW", name="Surface Water")
+    rp = ReportingPeriodFactory()
+    a = ParcelFactory(parcel_number="APN-A")
+    b = ParcelFactory(parcel_number="APN-B")
+    pod = PointOfDiversionFactory()
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a)
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b)
+    _run(a, "2024-01", 10)  # ET demand present -> demand-weighted path
+    _run(b, "2024-01", 20)
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("20"),
+    )
+
+    rows = allocate_district_delivery(pod, rp, efficiency=EFF)
+
+    assert rows  # demand-weighted path produced rows
+    assert "demand-weighted" in rows[0].description  # confirm the path taken
+    assert all(r.water_type is not None for r in rows)
+    assert all(r.water_type.code == "SW" for r in rows)
+
+
+def test_fraction_fallback_rows_carry_surface_water_type():
+    """The no-ET-demand fraction fallback also stamps Surface Water."""
+    WaterType.objects.create(code="SW", name="Surface Water")
+    rp = ReportingPeriodFactory()
+    a = ParcelFactory(parcel_number="APN-A")
+    b = ParcelFactory(parcel_number="APN-B")
+    pod = PointOfDiversionFactory()
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("0.6"))
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b, fraction=Decimal("0.4"))
+    # NO CalculationRun -> kernel returns {} -> static fraction fallback path.
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("50"),
+    )
+
+    rows = allocate_district_delivery(pod, rp, efficiency=EFF)
+
+    assert "static fraction fallback" in rows[0].description  # confirm the path taken
+    assert all(r.water_type is not None for r in rows)
+    assert all(r.water_type.code == "SW" for r in rows)

@@ -44,7 +44,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from accounting.allocation_math import allocate_by_demand
-from accounting.models import CalculationRun
+from accounting.models import CalculationRun, WaterType
 from parcels.models import ParcelLedger
 from surface.models import DiversionRecord, PointOfDiversionParcel
 
@@ -102,7 +102,7 @@ def _records_for_period(point_of_diversion, reporting_period):
     return qs.order_by("month").distinct()
 
 
-def _demand_rows(record, shares, pod):
+def _demand_rows(record, shares, pod, sw_type):
     """Unsaved demand-weighted ledger rows (NEGATIVE) for one diversion record."""
     today = timezone.now().date()
     return [
@@ -118,13 +118,13 @@ def _demand_rows(record, shares, pod):
                 f"(ET-allocated)"
             ),
             reporting_period=record.reporting_period,
-            water_type=None,
+            water_type=sw_type,
         )
         for parcel, share in shares.items()
     ]
 
 
-def _fraction_rows(record, served_links, pod):
+def _fraction_rows(record, served_links, pod, sw_type):
     """Unsaved static-fraction fallback rows (NEGATIVE) — the no-ET-demand path.
 
     Mirrors ``accounting.services.create_diversion_ledger_entries`` exactly (split
@@ -156,7 +156,7 @@ def _fraction_rows(record, served_links, pod):
                     f"fallback (no ET demand), fraction={link.fraction}"
                 ),
                 reporting_period=record.reporting_period,
-                water_type=None,
+                water_type=sw_type,
             )
         )
     return rows
@@ -189,6 +189,13 @@ def allocate_district_delivery(
     eff = _resolve_efficiency(efficiency)
     pod = point_of_diversion
 
+    # Surface deliveries are, by definition, Surface Water. Resolve the type ONCE
+    # and stamp it on every row so the ledger's Water Type column is populated for
+    # surface rows the way it already is for groundwater. .filter().first() (not
+    # .get()) so a fresh DB without the seeded type yields None rather than raising;
+    # the seeds (seed_kaweah / seed_merced_ledgers) create it.
+    sw_type = WaterType.objects.filter(code="SW").first()
+
     served_links = list(
         PointOfDiversionParcel.objects.filter(point_of_diversion=pod)
         .select_related("parcel")
@@ -205,10 +212,10 @@ def allocate_district_delivery(
         shares = allocate_by_demand(delivery_total, demand_by_parcel, eff)
 
         if shares:
-            to_write.extend(_demand_rows(record, shares, pod))
+            to_write.extend(_demand_rows(record, shares, pod, sw_type))
             path = "demand-weighted"
         else:
-            to_write.extend(_fraction_rows(record, served_links, pod))
+            to_write.extend(_fraction_rows(record, served_links, pod, sw_type))
             path = "static-fraction fallback (no ET demand)"
         logger.info(
             "allocate_district_delivery POD=%s month=%s: %s (%d parcels, %s AF)",
