@@ -102,6 +102,13 @@
                 OpenH2O — Open Water Accounting Platform ·
                 <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer" style="color:#3DB4E0; text-decoration:none;">Source code (AGPL-3.0)</a>{% if app_version and app_version != "dev" %} · <span style="color:#4d5e6f;" title="Build version">{{ app_version }}</span>{% endif %}
             </footer>
+
+            {% comment %}
+              Feedback trigger lives here, as the last child of .app-main, so its
+              sticky box can ride the document scroll and settle into the footer.
+              The panel + JS in this partial are position:fixed / inert in flow.
+            {% endcomment %}
+            {% include "partials/_feedback_widget.html" %}
         </div>
     </div>
 
@@ -195,7 +202,5 @@
     </script>
 
     {% block extra_scripts %}{% endblock %}
-
-    {% include "partials/_feedback_widget.html" %}
 </body>
 </html>
