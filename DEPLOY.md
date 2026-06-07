@@ -438,6 +438,13 @@ docker compose logs -f web       # Follow logs in real time
 | `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google OAuth client secret |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use mock data for external sync adapters instead of live APIs |
+| `FEEDBACK_ENABLED` | No | `True` | Render the in-app feedback widget; set `False` to hide it entirely |
+| `FEEDBACK_ENDPOINT` | No | empty | Optional URL to also POST each stored report to (e.g. an n8n triage pipeline); blank = store-only |
+| `FEEDBACK_MAX_ATTACHMENTS` | No | `5` | Max screenshots allowed per report |
+| `FEEDBACK_MAX_ATTACHMENT_BYTES` | No | `8388608` | Max size per attachment (bytes; default 8 MB) |
+| `FEEDBACK_MAX_MESSAGE_CHARS` | No | `5000` | Max characters in a feedback message |
+| `FEEDBACK_MAX_DIAGNOSTICS_BYTES` | No | `65536` | Max size of the auto-captured diagnostics blob (bytes; default 64 KB) |
+| `FEEDBACK_RATE_LIMIT_PER_HOUR` | No | `20` | Max submissions accepted per client per hour |
 
 ---
 

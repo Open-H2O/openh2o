@@ -37,4 +37,8 @@ New external sources are the most common contribution. An adapter lives in `data
 
 ## Reporting bugs and ideas
 
-Open an issue with what you expected, what happened, and (for bugs) the steps to reproduce. For security-sensitive reports, please contact the maintainer privately rather than opening a public issue.
+The fastest path is the **in-app feedback widget** — the blue "Send feedback" bar docked at the bottom of every page. Pick a category (bug, idea, question, or "data looks wrong"), write what happened, and optionally attach a screenshot (click, drag, or paste one in). It quietly captures useful diagnostics — the page URL, your browser, any JavaScript errors, and the build version — so you don't have to. Reports land in the running instance's own database; a maintained deployment also forwards them to a triage pipeline. Name and email are optional and only used to reply.
+
+Prefer GitHub? Open an issue with what you expected, what happened, and (for bugs) the steps to reproduce.
+
+For security-sensitive reports, please contact the maintainer privately rather than opening a public issue.
