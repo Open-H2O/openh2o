@@ -9,18 +9,31 @@ etc.) are gathered silently at submit time.
 {% endcomment %}
 {% if feedback_enabled %}
 <style>
-  .oh2o-fb-btn {
-    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 900;
-    display: inline-flex; align-items: center; gap: 0.45rem;
-    padding: 0.6rem 1rem; border: none; border-radius: 999px; cursor: pointer;
-    background: #1B7FAF; color: #fff; font: 600 0.9rem/1 'Public Sans', sans-serif;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35); transition: background .15s, transform .15s;
+  /* Persistent feedback bar: a slim blue strip docked to the bottom of the
+     window, matching the footer's height/padding and the content width. It
+     insets to clear the sidebar (and follows its collapse) so it lines up with
+     the footer instead of floating over the data like the old bubble did. */
+  .oh2o-fb-bar {
+    position: fixed; left: 240px; right: 0; bottom: 0; z-index: 800;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.75rem 1.5rem; border: none; cursor: pointer;
+    background: #1B7FAF; color: #fff; font: 600 0.85rem/1 'Public Sans', sans-serif;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.35);
+    transition: background .15s, left 200ms ease;
   }
-  .oh2o-fb-btn:hover { background: #3DB4E0; transform: translateY(-1px); }
-  .oh2o-fb-btn svg { width: 17px; height: 17px; }
+  .oh2o-fb-bar:hover { background: #3DB4E0; }
+  .oh2o-fb-bar svg { width: 16px; height: 16px; }
+  /* Track the sidebar's 240px↔56px collapse; full-width on mobile where the
+     sidebar overlays the content. */
+  body:has(.sidebar[data-collapsed="true"]) .oh2o-fb-bar { left: 56px; }
+  @media (max-width: 768px) {
+    .oh2o-fb-bar, body:has(.sidebar[data-collapsed="true"]) .oh2o-fb-bar { left: 0; }
+  }
+  /* Reserve space so the docked bar never hides the footer or the last rows. */
+  .app-main { padding-bottom: 2.75rem; }
 
   .oh2o-fb-panel {
-    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 901;
+    position: fixed; bottom: 3.25rem; right: 1.5rem; z-index: 901;
     width: min(360px, calc(100vw - 2rem));
     max-height: calc(100vh - 3rem); overflow-y: auto;
     background: #0e1219; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
@@ -82,11 +95,11 @@ etc.) are gathered silently at submit time.
   .oh2o-fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 </style>
 
-<button type="button" class="oh2o-fb-btn" id="oh2o-fb-open" aria-haspopup="dialog" aria-label="Send feedback">
+<button type="button" class="oh2o-fb-bar" id="oh2o-fb-open" aria-haspopup="dialog" aria-label="Send feedback">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   </svg>
-  Feedback
+  Send feedback
 </button>
 
 <div class="oh2o-fb-panel" id="oh2o-fb-panel" role="dialog" aria-modal="false" aria-labelledby="oh2o-fb-title">
