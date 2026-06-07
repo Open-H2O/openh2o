@@ -1355,26 +1355,30 @@ a { color: inherit; }
    number of segments (water_balances uses 3; methods uses 5). */
 .budget-panel--concept .budget-panel-row {
     display: flex;
-    flex-wrap: wrap;
     align-items: stretch;
     gap: var(--space-sm);
     padding: var(--space-lg);
 }
+/* Equal columns that share one row regardless of count (3 on water_balances,
+   5 on methods) — flex-basis 0 lets every segment shrink to fit, so the
+   equation never breaks mid-line into a stranded 3+2; long labels just wrap
+   inside their own column. */
 .budget-panel--concept .budget-seg {
-    flex: 1 1 150px;
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
 .budget-panel--concept .budget-seg-value {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 700;
     line-height: 1.25;
 }
 .budget-panel--concept .budget-op {
     display: flex;
     align-items: center;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-family: var(--font-display);
     color: var(--color-text-tertiary);
 }
@@ -1382,6 +1386,13 @@ a { color: inherit; }
     font-size: 0.72rem;
     color: var(--color-text-tertiary);
     margin-top: 8px;
+}
+/* Stack the equation vertically on narrow screens (operators hidden by the
+   base .budget-op mobile rule). */
+@media (max-width: 767px) {
+    .budget-panel--concept .budget-panel-row {
+        flex-direction: column;
+    }
 }
 
 .stat-card-value-sm {
