@@ -147,6 +147,13 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STORAGES = {
+    # Default file storage for user uploads (feedback screenshots, SiteConfig
+    # logo). Overriding STORAGES replaces it wholesale — Django does NOT backfill
+    # the "default" key, so it must be declared explicitly or every FileField/
+    # ImageField save raises "Could not find config for 'default'".
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
