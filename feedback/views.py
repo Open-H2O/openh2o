@@ -22,12 +22,20 @@ from .models import Feedback, FeedbackAttachment
 
 logger = logging.getLogger("feedback")
 
-# Defaults; overridable in settings so a deployment can tighten/loosen them.
-MAX_ATTACHMENTS = getattr(settings, "FEEDBACK_MAX_ATTACHMENTS", 5)
-MAX_ATTACHMENT_BYTES = getattr(settings, "FEEDBACK_MAX_ATTACHMENT_BYTES", 8 * 1024 * 1024)
-MAX_MESSAGE_CHARS = getattr(settings, "FEEDBACK_MAX_MESSAGE_CHARS", 5000)
-MAX_DIAGNOSTICS_BYTES = getattr(settings, "FEEDBACK_MAX_DIAGNOSTICS_BYTES", 64 * 1024)
-RATE_LIMIT_PER_HOUR = getattr(settings, "FEEDBACK_RATE_LIMIT_PER_HOUR", 20)
+# Limit defaults. Read LIVE from settings inside each request (via _limit) so a
+# deployment can tune them by env, and so override_settings works in tests —
+# reading them once at import time would freeze the import-time values.
+_DEFAULTS = {
+    "FEEDBACK_MAX_ATTACHMENTS": 5,
+    "FEEDBACK_MAX_ATTACHMENT_BYTES": 8 * 1024 * 1024,
+    "FEEDBACK_MAX_MESSAGE_CHARS": 5000,
+    "FEEDBACK_MAX_DIAGNOSTICS_BYTES": 64 * 1024,
+    "FEEDBACK_RATE_LIMIT_PER_HOUR": 20,
+}
+
+
+def _limit(name):
+    return getattr(settings, name, _DEFAULTS[name])
 
 
 def _client_ip(request):
@@ -53,10 +61,11 @@ def submit(request):
 
     # Light per-IP throttle. LocMemCache is per-process, so this is a soft brake
     # on abuse rather than a hard guarantee — adequate for a low-volume widget.
-    if ip and RATE_LIMIT_PER_HOUR:
+    rate_limit = _limit("FEEDBACK_RATE_LIMIT_PER_HOUR")
+    if ip and rate_limit:
         key = f"feedback:rate:{ip}"
         count = cache.get(key, 0)
-        if count >= RATE_LIMIT_PER_HOUR:
+        if count >= rate_limit:
             return JsonResponse(
                 {"ok": False, "error": "rate_limited"}, status=429
             )
@@ -67,7 +76,7 @@ def submit(request):
         return JsonResponse(
             {"ok": False, "error": "Message is required."}, status=400
         )
-    message = message[:MAX_MESSAGE_CHARS]
+    message = message[: _limit("FEEDBACK_MAX_MESSAGE_CHARS")]
 
     category = (request.POST.get("category") or "").strip()
     if category not in Feedback.Category.values:
@@ -135,8 +144,9 @@ def _parse_diagnostics(raw):
     """Parse the client diagnostics JSON, bounded in size, never raising."""
     if not raw:
         return {}
-    if len(raw) > MAX_DIAGNOSTICS_BYTES:
-        raw = raw[:MAX_DIAGNOSTICS_BYTES]
+    cap = _limit("FEEDBACK_MAX_DIAGNOSTICS_BYTES")
+    if len(raw) > cap:
+        raw = raw[:cap]
     try:
         data = json.loads(raw)
     except (TypeError, ValueError):
@@ -145,16 +155,18 @@ def _parse_diagnostics(raw):
 
 
 def _save_attachments(request, fb):
-    """Persist up to MAX_ATTACHMENTS image files; skip anything that isn't a
-    sane-sized image rather than failing the whole submission."""
+    """Persist up to FEEDBACK_MAX_ATTACHMENTS image files; skip anything that
+    isn't a sane-sized image rather than failing the whole submission."""
+    max_count = _limit("FEEDBACK_MAX_ATTACHMENTS")
+    max_bytes = _limit("FEEDBACK_MAX_ATTACHMENT_BYTES")
     saved = 0
     for upload in request.FILES.getlist("attachments"):
-        if saved >= MAX_ATTACHMENTS:
+        if saved >= max_count:
             break
         ctype = (upload.content_type or "").lower()
         if not ctype.startswith("image/"):
             continue
-        if upload.size and upload.size > MAX_ATTACHMENT_BYTES:
+        if upload.size and upload.size > max_bytes:
             continue
         try:
             FeedbackAttachment.objects.create(
