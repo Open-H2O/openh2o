@@ -13,10 +13,11 @@
     <span class="breadcrumb-current">Shared-supply check</span>
   </nav>
   <p class="page-description">
-    For every shared well or point of diversion whose split was set by hand, this
-    compares the entered split against the split that measured ET (crop water use)
-    would imply. A large gap is flagged as a likely data-entry tell. This view
-    never changes a split — it only points out where to look.
+    When one well or canal feeds several fields, someone sets each field's share of
+    that water by hand. This page compares each hand-entered share against the share
+    that measured satellite crop-water use (ET) would imply, and flags any field
+    where the two are far apart — a likely typo worth a look on the source's own
+    page. It only points out where to check; it never changes a split.
   </p>
 </div>
 {% endblock %}
@@ -45,14 +46,25 @@
         · gap threshold {{ divergence_points }} points
       </div>
     </form>
+    <p class="text-tertiary text-sm" style="margin: var(--space-sm) 0 0;">
+      A field is flagged when its entered share differs from its ET-implied share
+      by {{ divergence_points }} or more percentage points.
+    </p>
   </div>
 
   {% for group in groups %}
   <div class="card-raised">
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <h2 class="section-header-flush">
-        {{ group.kind }}: {{ group.source_name }}
-      </h2>
+      <div class="row-start" style="gap: var(--space-md); align-items: baseline; flex-wrap: wrap;">
+        <h2 class="section-header-flush">
+          {{ group.kind }}: {{ group.source_name }}
+        </h2>
+        {% if group.source_kind == 'well' %}
+        <a href="{% url 'wells:detail' group.source_id %}" class="text-link text-sm">Open well →</a>
+        {% else %}
+        <a href="{% url 'surface:pod_detail' group.source_id %}" class="text-link text-sm">Open point of diversion →</a>
+        {% endif %}
+      </div>
       {% if group.any_flag %}
       <span class="badge badge-orange">Divergence flagged</span>
       {% elif group.has_et_signal %}

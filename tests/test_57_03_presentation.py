@@ -266,6 +266,25 @@ class TestSharedSupplyComparison:
         rows = _rows_by_parcel(g)
         assert rows[a.pk]["et_weight"] == Decimal("0.5000")    # equal demand
 
+    def test_groups_carry_source_id_and_kind_for_edit_links(self):
+        """Each group exposes the source pk + kind so the template can link to the
+        well / POD detail page where the split is actually edited."""
+        rp = ReportingPeriodFactory()
+        well = WellFactory(name="Edit-link Well")
+        wa, wb = ParcelFactory(), ParcelFactory()
+        WellIrrigatedParcelFactory(well=well, parcel=wa, fraction=Decimal("0.6000"))
+        WellIrrigatedParcelFactory(well=well, parcel=wb, fraction=Decimal("0.4000"))
+        pod = PointOfDiversionFactory(name="Edit-link POD")
+        pa, pb = ParcelFactory(), ParcelFactory()
+        PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=pa, fraction=Decimal("0.7000"))
+        PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=pb, fraction=Decimal("0.3000"))
+
+        by_kind = {g["kind"]: g for g in build_shared_supply_comparison(rp)}
+        assert by_kind["Well"]["source_kind"] == "well"
+        assert by_kind["Well"]["source_id"] == well.pk
+        assert by_kind["Point of diversion"]["source_kind"] == "pod"
+        assert by_kind["Point of diversion"]["source_id"] == pod.pk
+
     def test_view_renders(self, auth_client):
         """The shared-supply check page returns 200 and lists a hand-set group."""
         rp = ReportingPeriodFactory()

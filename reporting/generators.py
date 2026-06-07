@@ -257,6 +257,7 @@ def build_shared_supply_comparison(reporting_period=None):
     Returns a list of group dicts ordered by source name::
 
         {"kind": "Well" | "Point of diversion", "source_name": str,
+         "source_id": int, "source_kind": "well" | "pod",
          "has_et_signal": bool, "any_flag": bool,
          "rows": [{"parcel_number", "your_weight", "et_weight" (Decimal|None),
                    "divergence" (Decimal|None), "flag": bool}, ...]}
@@ -264,7 +265,9 @@ def build_shared_supply_comparison(reporting_period=None):
     demand_by_parcel = _period_demand_by_parcel(reporting_period)
 
     # Gather candidate hand-set shared sources from both link tables.
-    candidates = []  # (kind, source_name, [(parcel_id, fraction), ...])
+    # source_id + source_kind carry the well/POD pk and a discriminator so the
+    # template can link a flagged group to the page where the split is edited.
+    candidates = []  # (kind, source_name, source_id, source_kind, [(parcel_id, fraction), ...])
 
     wips_by_well = {}
     for wip in WellIrrigatedParcel.objects.select_related("well").all():
@@ -275,7 +278,8 @@ def build_shared_supply_comparison(reporting_period=None):
         if not any(wip.fraction != Decimal("1.0") for wip in wips):
             continue  # untouched fractions → not hand-set, nothing to compare
         candidates.append(
-            ("Well", well.name, [(wip.parcel_id, wip.fraction) for wip in wips])
+            ("Well", well.name, well.pk, "well",
+             [(wip.parcel_id, wip.fraction) for wip in wips])
         )
 
     podps_by_pod = {}
@@ -290,23 +294,27 @@ def build_shared_supply_comparison(reporting_period=None):
             (
                 "Point of diversion",
                 pod.name,
+                pod.pk,
+                "pod",
                 [(podp.parcel_id, podp.fraction) for podp in podps],
             )
         )
 
     # One query for every parcel number we will display (no N+1).
-    parcel_ids = {pid for _, _, links in candidates for pid, _ in links}
+    parcel_ids = {pid for *_, links in candidates for pid, _ in links}
     parcel_names = dict(
         Parcel.objects.filter(id__in=parcel_ids).values_list("id", "parcel_number")
     )
 
     groups = []
-    for kind, source_name, links in candidates:
+    for kind, source_name, source_id, source_kind, links in candidates:
         comparison = _compare_split(links, demand_by_parcel, parcel_names)
         groups.append(
             {
                 "kind": kind,
                 "source_name": source_name,
+                "source_id": source_id,
+                "source_kind": source_kind,
                 "has_et_signal": comparison["has_et_signal"],
                 "any_flag": comparison["any_flag"],
                 "rows": comparison["rows"],
