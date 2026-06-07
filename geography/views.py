@@ -13,9 +13,10 @@ from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -486,16 +487,74 @@ def tie_lines_geojson(request):
     return HttpResponse(data, content_type="application/json")
 
 
+def _round_coords(node, ndigits=6):
+    """Recursively round the coordinate floats in a GeoJSON coordinates array.
+
+    A leaf is a flat list of numbers (one position, possibly with a Z value);
+    anything deeper is a nested ring/part, so recurse. Non-floats (ints) pass
+    through untouched.
+    """
+    if isinstance(node, list):
+        if node and all(isinstance(n, (int, float)) for n in node):
+            return [round(n, ndigits) if isinstance(n, float) else n for n in node]
+        return [_round_coords(c, ndigits) for c in node]
+    return node
+
+
+def _layer_signature(qs):
+    """A cheap (count, max-pk) cache signature for a layer queryset.
+
+    One aggregate query. The pair is unique per dataset state: a reseed
+    (delete+recreate) raises max-pk even if the count is unchanged, so a stale
+    cached body is never served across a reseed, and two different layers that
+    happen to share a count never collide.
+    """
+    agg = qs.aggregate(c=Count("pk"), m=Max("pk"))
+    return f"{agg['c']}:{agg['m']}"
+
+
+def _geojson_response(cache_key, build, *, max_age=3600, mutate=None):
+    """Serialize a layer once, trim coordinate precision, cache the bytes, return.
+
+    Map layers render at zoom <= 18, where 6-decimal degrees (~0.1 m) is already
+    sub-pixel, so trimming Django's full float precision is visually lossless while
+    roughly halving the payload (the flowlines layer alone is ~2.8 MB raw). The
+    rounded, whitespace-stripped body is cached so the serialize+parse+round cost
+    runs once per period instead of on every request; ``cache_key`` carries the
+    layer's (count, max-pk) signature so a reseed busts it, and the per-process
+    LocMemCache also clears on every deploy/rebuild. ``Cache-Control`` lets the
+    browser reuse it across navigations.
+
+    ``build`` is a callable returning the raw ``serialize("geojson", ...)`` string;
+    ``mutate`` optionally post-processes the parsed dict before rounding.
+    """
+    body = cache.get(cache_key)
+    if body is None:
+        data = json.loads(build())
+        if mutate is not None:
+            mutate(data)
+        for feature in data.get("features", []):
+            geom = feature.get("geometry")
+            if geom and geom.get("coordinates") is not None:
+                geom["coordinates"] = _round_coords(geom["coordinates"])
+        body = json.dumps(data, separators=(",", ":"))
+        cache.set(cache_key, body, max_age)
+    response = HttpResponse(body, content_type="application/json")
+    response["Cache-Control"] = f"public, max-age={max_age}"
+    return response
+
+
 @login_required
 def boundaries_geojson(request):
     """Return all boundaries as a GeoJSON FeatureCollection."""
-    data = serialize(
-        "geojson",
-        Boundary.objects.filter(geometry__isnull=False),
-        geometry_field="geometry",
-        fields=["name", "description", "area_sq_miles"],
+    qs = Boundary.objects.filter(geometry__isnull=False)
+    return _geojson_response(
+        f"geojson:boundaries:{_layer_signature(qs)}",
+        lambda: serialize(
+            "geojson", qs, geometry_field="geometry",
+            fields=["name", "description", "area_sq_miles"],
+        ),
     )
-    return HttpResponse(data, content_type="application/json")
 
 
 @login_required
@@ -513,31 +572,35 @@ def flowlines_geojson(request):
     (man-made infrastructure is always relevant) plus every named natural
     waterway (a GNIS name marks a flowline worth showing). That keeps the full
     Merced Irrigation District canal mesh and the named Merced River system
-    while dropping the unnamed capillaries — ~7,700 features / 5.7 MB.
+    while dropping the unnamed capillaries. Coordinate precision is trimmed to
+    6 decimals (sub-pixel) which roughly halves the payload — the single biggest
+    map asset.
 
     The `geometry__isnull=False` filter mirrors the peer endpoints;
     Flowline.geometry is non-nullable so it is defensive parity.
     """
     significant = Q(feature_type__icontains="Canal") | ~Q(name="")
-    data = serialize(
-        "geojson",
-        Flowline.objects.filter(significant, geometry__isnull=False),
-        geometry_field="geometry",
-        fields=["name", "feature_type", "stream_order"],
+    qs = Flowline.objects.filter(significant, geometry__isnull=False)
+    return _geojson_response(
+        f"geojson:flowlines:{_layer_signature(qs)}",
+        lambda: serialize(
+            "geojson", qs, geometry_field="geometry",
+            fields=["name", "feature_type", "stream_order"],
+        ),
     )
-    return HttpResponse(data, content_type="application/json")
 
 
 @login_required
 def zones_geojson(request):
     """Return all zones as a GeoJSON FeatureCollection."""
-    data = serialize(
-        "geojson",
-        Zone.objects.filter(geometry__isnull=False),
-        geometry_field="geometry",
-        fields=["name", "zone_type"],
+    qs = Zone.objects.filter(geometry__isnull=False)
+    return _geojson_response(
+        f"geojson:zones:{_layer_signature(qs)}",
+        lambda: serialize(
+            "geojson", qs, geometry_field="geometry",
+            fields=["name", "zone_type"],
+        ),
     )
-    return HttpResponse(data, content_type="application/json")
 
 
 @login_required

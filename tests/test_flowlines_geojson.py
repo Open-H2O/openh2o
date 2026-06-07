@@ -18,15 +18,32 @@ impossible row.
 """
 
 import json
+import re
 
 import factory
 import pytest
 from django.contrib.auth.hashers import make_password
+from django.contrib.gis.geos import MultiLineString, LineString
+from django.core.cache import cache
 from django.test import Client
 from django.urls import reverse
 
 from geography.models import Flowline
 from tests.factories import FlowlineFactory
+
+
+def _max_decimals(node):
+    """Deepest number of decimal places among all coordinate floats."""
+    worst = 0
+    if isinstance(node, list):
+        for c in node:
+            if isinstance(c, (int, float)) and not isinstance(c, bool):
+                s = repr(float(c))
+                if "." in s and "e" not in s:
+                    worst = max(worst, len(s.split(".")[1]))
+            else:
+                worst = max(worst, _max_decimals(c))
+    return worst
 
 
 class _UserFactory(factory.django.DjangoModelFactory):
@@ -96,3 +113,34 @@ def test_flowlines_geojson_renders_named_and_canals_skips_unnamed_capillaries(au
     assert types == ["Canal", "Channel Line"]
     names = {f["properties"]["name"] for f in data["features"]}
     assert "Merced River" in names
+
+
+@pytest.mark.django_db
+def test_flowlines_geojson_trims_precision_and_preserves_geometry(auth_client):
+    """Coordinates are rounded to <=6 decimals (sub-pixel, payload-halving) and the
+    geometry is otherwise unchanged: every returned coordinate equals the source
+    coordinate rounded to 6 places."""
+    cache.clear()  # avoid a stale cached body from another test
+    hi = MultiLineString(
+        LineString((-120.12345678, 37.87654321), (-120.22222222, 37.33333333))
+    )
+    Flowline.objects.create(name="Precise River", feature_type="Channel Line",
+                            stream_order=3, geometry=hi)
+    resp = auth_client.get(reverse("geography:flowlines_geojson"))
+    assert resp.status_code == 200
+
+    coords = json.loads(resp.content.decode())["features"][0]["geometry"]["coordinates"]
+    assert _max_decimals(coords) <= 6
+    # geometry preserved within rounding: returned == source rounded to 6
+    returned = coords[0]  # first line of the MultiLineString
+    expected = [[round(-120.12345678, 6), round(37.87654321, 6)],
+                [round(-120.22222222, 6), round(37.33333333, 6)]]
+    assert returned == expected
+
+
+@pytest.mark.django_db
+def test_flowlines_geojson_sets_cache_control(auth_client):
+    FlowlineFactory(name="Cached Creek", feature_type="Canal")
+    resp = auth_client.get(reverse("geography:flowlines_geojson"))
+    assert resp.status_code == 200
+    assert re.search(r"max-age=\d+", resp.headers.get("Cache-Control", ""))
