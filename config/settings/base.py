@@ -184,8 +184,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
-# Closes public signup when ACCESS_CONTROL_ENFORCED is ON (go-live); open while
-# OFF so the demo's self-registration is unchanged. See core.adapters / ISS-021.
+# Closes public signup when ACCESS_CONTROL_ENFORCED is ON (the default); set it
+# OFF only on an open demo where self-registration should stay open. See
+# core.adapters / ISS-021.
 ACCOUNT_ADAPTER = "core.adapters.AccessControlledAccountAdapter"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
@@ -193,12 +194,16 @@ SOCIALACCOUNT_PROVIDERS = {}
 
 # -- Access control (two-tier model, ISS-021) --------------------------------
 # Master switch for the Administrator vs Operator access model.
-#   OFF (default) = status quo: any logged-in user reaches every screen, so the
-#       live demo is unaffected by the access machinery shipped in Phase 41.
-#   ON  = enforce admin_required gates (Setup Wizard, Methodology) + close
-#       public signup (41-02).
-# Flip to True at go-live. See core.access for the switch-aware decorator.
-ACCESS_CONTROL_ENFORCED = env.bool("ACCESS_CONTROL_ENFORCED", default=False)
+#   ON (default) = secure posture for a real agency: enforce admin_required
+#       gates (Setup Wizard, Methodology) and close public self-signup, so a
+#       district that just stands the platform up isn't left open to the world.
+#       A superuser (createsuperuser) is already an administrator, so the
+#       deployer is never locked out — see core.access.is_administrator.
+#   OFF = open-demo posture: any logged-in user reaches every screen and public
+#       self-registration is open. Set ACCESS_CONTROL_ENFORCED=False only on a
+#       demo/eval deployment (our hosted demo does exactly this).
+# See core.access for the switch-aware decorator.
+ACCESS_CONTROL_ENFORCED = env.bool("ACCESS_CONTROL_ENFORCED", default=True)
 
 # -- Email -------------------------------------------------------------------
 
@@ -242,12 +247,13 @@ UMAMI_SCRIPT_URL = env("UMAMI_SCRIPT_URL", default="https://analytics.vanderdev.
 # -- In-app feedback widget --------------------------------------------------
 # The widget now POSTs to the platform's OWN intake endpoint (feedback.views.
 # submit), so every report is stored locally first — durable on any deployment,
-# including a self-hosted clone. FEEDBACK_ENABLED renders the button (on by
-# default; a clone gets a working feedback inbox out of the box). FEEDBACK_ENDPOINT
-# is now an OPTIONAL downstream forward target: when set, each stored submission
-# is also POSTed (best-effort, with image bytes) to that URL — our n8n triage
-# pipeline. Blank = store-only, phone home to no one.
-FEEDBACK_ENABLED = env.bool("FEEDBACK_ENABLED", default=True)
+# including a self-hosted clone. FEEDBACK_ENABLED renders the button (OFF by
+# default — a fresh district isn't asked to run a feedback inbox it has no one to
+# read; set FEEDBACK_ENABLED=True to turn it on, e.g. on our demo and managed
+# deployments). FEEDBACK_ENDPOINT is an OPTIONAL downstream forward target: when
+# set, each stored submission is also POSTed (best-effort, with image bytes) to
+# that URL — our n8n triage pipeline. Blank = store-only, phone home to no one.
+FEEDBACK_ENABLED = env.bool("FEEDBACK_ENABLED", default=False)
 FEEDBACK_ENDPOINT = env("FEEDBACK_ENDPOINT", default="")
 FEEDBACK_MAX_ATTACHMENTS = env.int("FEEDBACK_MAX_ATTACHMENTS", default=5)
 FEEDBACK_MAX_ATTACHMENT_BYTES = env.int(

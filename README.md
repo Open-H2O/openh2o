@@ -75,7 +75,7 @@ The deployment is the first thing the agent does, not the only thing. [docs/AI-O
 - **State report preparation** — GEARS (by-well and by-ET) and CalWATRS (direct-use and to-storage) as ready-to-file CSV.
 - **Standards-based publishing** — the data model is built to publish out as OGC SensorThings, Frictionless Data Packages, and WaDE 2.0 (see below).
 - **Health monitoring** dashboard with source-aware freshness, plus interactive dark-mode maps via MapLibre GL JS.
-- **In-app feedback** — a built-in widget lets users file bugs, ideas, and questions (with screenshots and automatic diagnostics) without leaving the app; reports are stored locally and can optionally forward to a triage pipeline.
+- **In-app feedback (optional, off by default)** — a built-in widget can let users file bugs, ideas, and questions (with screenshots and automatic diagnostics) without leaving the app; reports are stored locally and can optionally forward to a triage pipeline. Enable it with `FEEDBACK_ENABLED=True` on a deployment that has someone to read the reports.
 
 ---
 

@@ -43,6 +43,14 @@ def _tmp_media(settings, tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _feedback_on(settings):
+    """The widget ships OFF by default (a fresh district opts in); these tests
+    exercise the intake contract, so turn it on explicitly. test_disabled_*
+    flips it back off in its own body, after this fixture has run."""
+    settings.FEEDBACK_ENABLED = True
+
+
+@pytest.fixture(autouse=True)
 def _no_forward(settings):
     """Default: no downstream forward (store-only). Individual tests override."""
     settings.FEEDBACK_ENDPOINT = ""

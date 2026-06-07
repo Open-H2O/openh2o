@@ -427,6 +427,7 @@ docker compose logs -f web       # Follow logs in real time
 | `DJANGO_SETTINGS_MODULE` | No | `config.settings.local` | Use `config.settings.production` for prod |
 | `ALLOWED_HOSTS` | Yes (prod) | `[]` | Comma-separated list of allowed hostnames |
 | `CSRF_TRUSTED_ORIGINS` | Yes (prod) | `[]` | Comma-separated HTTPS origins |
+| `ACCESS_CONTROL_ENFORCED` | No | `True` | Two-tier access model. On (default) closes public self-signup and gates admin-only screens — the right posture for a real agency. Set `False` only for an open demo where anyone should be able to self-register. Your superuser is always an administrator, so you can't lock yourself out |
 | `TIME_ZONE` | No | `America/Los_Angeles` | Django timezone |
 | `DEFAULT_FROM_EMAIL` | No | `noreply@openh2o.com` | Sender address for emails |
 | `EMAIL_BACKEND` | No | console (dev), SMTP (prod) | Django email backend |
@@ -438,7 +439,7 @@ docker compose logs -f web       # Follow logs in real time
 | `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google OAuth client secret |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use mock data for external sync adapters instead of live APIs |
-| `FEEDBACK_ENABLED` | No | `True` | Render the in-app feedback widget; set `False` to hide it entirely |
+| `FEEDBACK_ENABLED` | No | `False` | Render the in-app feedback widget. Off by default; set `True` to turn it on (e.g. on a hosted/managed deployment with someone to read the reports) |
 | `FEEDBACK_ENDPOINT` | No | empty | Optional URL to also POST each stored report to (e.g. an n8n triage pipeline); blank = store-only |
 | `FEEDBACK_MAX_ATTACHMENTS` | No | `5` | Max screenshots allowed per report |
 | `FEEDBACK_MAX_ATTACHMENT_BYTES` | No | `8388608` | Max size per attachment (bytes; default 8 MB) |
