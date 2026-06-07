@@ -9,10 +9,12 @@
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/favicon-192.png' %}?v=2">
 
     {% if feedback_enabled %}
-    {# Feedback diagnostics: an always-on, early-loading buffer that captures JS
+    {% comment %}
+       Feedback diagnostics: an always-on, early-loading buffer that captures JS
        errors and failed network requests so a bug report can carry them. Loaded
        FIRST (before HTMX/app scripts, no defer) so it catches their errors too.
-       Cheap ring buffers; nothing is sent until a user submits feedback. #}
+       Cheap ring buffers; nothing is sent until a user submits feedback.
+    {% endcomment %}
     <script>
     (function () {
       var D = window.__oh2oDiag = { errors: [], net: [] };
