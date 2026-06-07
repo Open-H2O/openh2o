@@ -124,8 +124,8 @@ def test_flowlines_geojson_trims_precision_and_preserves_geometry(auth_client):
     hi = MultiLineString(
         LineString((-120.12345678, 37.87654321), (-120.22222222, 37.33333333))
     )
-    Flowline.objects.create(name="Precise River", feature_type="Channel Line",
-                            stream_order=3, geometry=hi)
+    FlowlineFactory(name="Precise River", feature_type="Channel Line",
+                    stream_order=3, geometry=hi)
     resp = auth_client.get(reverse("geography:flowlines_geojson"))
     assert resp.status_code == 200
 
