@@ -291,6 +291,23 @@ sources require a key, set in `.env` (then `docker compose up -d` to reload):
 Until a key is set, that source shows **"Needs API key"** on the monitoring
 page rather than a misleading failure, and is skipped by the sync.
 
+### Map Basemaps (streamed, no tile server to host)
+
+The interactive maps do **not** self-host a basemap or run a tile server — both
+basemaps stream their tiles live from third-party services on every page load:
+
+| Basemap | Streams from | Needs a key? |
+|---------|--------------|--------------|
+| Aerial (default) | Esri World Imagery + labels, `server.arcgisonline.com` | No |
+| Dark | OpenFreeMap vector tiles + fonts/sprites, `tiles.openfreemap.org`, with a Natural Earth raster underlay | No |
+
+There is nothing to provision, configure, or back up for maps. The trade-off is a
+live external dependency: if Esri or OpenFreeMap is unreachable (outage, firewall,
+air-gapped network), the map backdrop fails to load. The platform's own data
+layers (parcels, wells, diversions, boundaries — served as GeoJSON from this
+deployment) still render on top. An operator who needs offline or self-hosted
+maps would have to stand up their own tile server and repoint `static/js/map-core.js`.
+
 ### Email / Password Reset (SMTP)
 
 Logged-in users can change their password with no setup — the **Change Password**

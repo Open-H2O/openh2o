@@ -7,7 +7,20 @@
      - switchBasemap()   toggle dark <-> aerial without rebuilding the map
      - pointPaint/glowPaint/makeLabelLayer  reusable layer generators
    Dark basemap is a recolored OpenFreeMap (OpenMapTiles schema) vector style,
-   keyless and unlimited, fonts+sprites served by OpenFreeMap. Aerial is Esri. */
+   keyless and unlimited, fonts+sprites served by OpenFreeMap. Aerial is Esri.
+
+   STREAMING BASEMAPS (operator note): the platform does NOT self-host a custom
+   basemap style or tile server. Both basemaps STREAM their tiles live from
+   external services every time a map loads:
+     - Aerial (default): Esri World Imagery + reference labels from
+       server.arcgisonline.com (see OH2O._AERIAL_SOURCES below).
+     - Dark: OpenFreeMap vector tiles (tiles.openfreemap.org/planet) + a Natural
+       Earth raster underlay, plus OpenFreeMap fonts/sprites (OH2O.GLYPHS /
+       OH2O.SPRITE / OH2O._DARK_SOURCES below).
+   Implication: the map's backdrop depends on those third-party services staying
+   reachable. If Esri or OpenFreeMap is down or blocked, basemap tiles fail to
+   load (the app's own GeoJSON layers still render). No tile-server install is
+   part of deployment; there is nothing local to provision or back up for maps. */
 (function () {
 'use strict';
 var OH2O = window.OH2O = window.OH2O || {};
