@@ -32,6 +32,11 @@
     </a>
   </div>
 
+  <!-- HERO (Phase 75): map leads full-width; well details below. -->
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="well-map" class="map-embed" style="height: 380px;"></div>
+  </div>
+
   <div class="page-grid-2col">
 
     <!-- Left column: Well Info -->
@@ -96,6 +101,11 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- Right column: Meters, Parcels, Monitoring -->
+    <div class="page-stack">
+
       <!-- Current Meters card -->
       <div class="card-raised">
         <h2 class="section-header mb-md">Current Meters</h2>
@@ -133,16 +143,6 @@
         {% else %}
           <p class="text-tertiary text-base">No parcels linked to this well.</p>
         {% endif %}
-      </div>
-
-    </div>
-
-    <!-- Right column: Map + Monitoring -->
-    <div class="page-stack">
-
-      <!-- Map card -->
-      <div class="card-raised" style="padding: 0; overflow: hidden;">
-        <div id="well-map" class="map-embed"></div>
       </div>
 
       <!-- Monitoring Data card -->
