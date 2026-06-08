@@ -15,6 +15,7 @@ Pinned to config.settings.local (prod settings 301-redirect the test client).
 """
 import json
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import MultiPolygon, Point, Polygon
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -26,6 +27,21 @@ from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary
 
 User = get_user_model()
+
+
+def _seed_session(client, **values):
+    """Pre-seed wizard state into the test client's session.
+
+    Sessions are signed-cookie backed (ISS-069), which has NO server-side store,
+    so ``session.save()`` alone does not carry injected values into the next
+    request the way the old DB backend did. Refresh the client's session cookie
+    from the saved session so the seeded keys actually reach the view (ISS-071).
+    """
+    session = client.session
+    for key, value in values.items():
+        session[key] = value
+    session.save()
+    client.cookies[settings.SESSION_COOKIE_NAME] = session.session_key
 
 DASHBOARD_URL = reverse("accounting:dashboard")
 WIZARD_URL = reverse("setup:wizard")
@@ -160,9 +176,7 @@ def test_enable_all_activates_only_boundary_stations(db):
 
     client = Client()
     client.force_login(_admin())
-    session = client.session
-    session["setup_wizard_boundary_id"] = boundary.pk
-    session.save()
+    _seed_session(client, setup_wizard_boundary_id=boundary.pk)
 
     resp = client.post(reverse("setup:activate_stations"))
     assert resp.status_code == 200
@@ -317,16 +331,17 @@ def test_stations_phase_polls_one_provider_per_request(db, settings, monkeypatch
     client.force_login(_admin())
     # Start the run already at the stations phase — the three geographic steps
     # call external ArcGIS services and are covered elsewhere.
-    session = client.session
-    session["setup_wizard_boundary_id"] = boundary.pk
-    session["setup_wizard_step_index"] = 3  # stations is index 3
-    session["setup_wizard_provider_index"] = 0
-    session["setup_wizard_results"] = [
-        {"step": "basins", "label": "Groundwater Basins", "count": 1, "errors": [], "success": True},
-        {"step": "parcels", "label": "Parcel Boundaries", "count": 1, "errors": [], "success": True},
-        {"step": "flowlines", "label": "Flowlines", "count": 1, "errors": [], "success": True},
-    ]
-    session.save()
+    _seed_session(
+        client,
+        setup_wizard_boundary_id=boundary.pk,
+        setup_wizard_step_index=3,  # stations is index 3
+        setup_wizard_provider_index=0,
+        setup_wizard_results=[
+            {"step": "basins", "label": "Groundwater Basins", "count": 1, "errors": [], "success": True},
+            {"step": "parcels", "label": "Parcel Boundaries", "count": 1, "errors": [], "success": True},
+            {"step": "flowlines", "label": "Flowlines", "count": 1, "errors": [], "success": True},
+        ],
+    )
 
     n = len(STATION_PROVIDERS)  # 7
     # DB count after each poll proves one provider advances per request: usgs
