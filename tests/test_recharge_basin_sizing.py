@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Acreage-band guard for recharge spreading basins (Phase 50-03).
 
-The named anti-pattern: the Kaweah seed built spreading-basin footprints with
+The named anti-pattern: a retired seed built spreading-basin footprints with
 ``make_box(size=0.008)``, a fixed-degree box that is ~156 acres at Central
 Valley latitude — applied uniformly regardless of a basin's real size, so a
 basin that should read as a facility instead "swallows half a city," the most

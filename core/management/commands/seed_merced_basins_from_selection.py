@@ -37,7 +37,7 @@ areas (old hardcoded AND prior selection runs, keyed on operator), their POD
 links, the recharge-intake PODs this command owns (MER-BPOD-*), and ONLY the
 managed ``basin_recharge_pool`` slice for the Merced GSA zones — never the
 engine's ``incidental_recharge_pool`` or the rollover's ``allocation_carryover``
-(RESEARCH Pitfall 1). It never touches Kaweah/Demo rows.
+(RESEARCH Pitfall 1). It never touches Demo Valley rows.
 """
 import json
 import os
@@ -62,7 +62,7 @@ RIVER_FIXTURE = os.path.join(DATA_DIR, "selected_river_ag_parcels.geojson")
 
 # Every Merced recharge area carries this operator — the single, readable key the
 # wipe and the recharge-events seed use to find "the Merced basins" without
-# touching Kaweah ("Kaweah Delta WCD"…) or Demo Valley ("Demo Valley GSA").
+# touching Demo Valley ("Demo Valley GSA").
 MID_OPERATOR = "Merced Irrigation District"
 # PODs this command owns (the El Nido recharge intakes). The wipe deletes these by
 # prefix so a removed basin never leaves an orphan intake behind. Distinct from
@@ -313,7 +313,7 @@ class Command(BaseCommand):
         Scoped by operator (Merced Irrigation District) so it clears BOTH the old
         hardcoded basins and any prior selection run, and by the MER-BPOD- prefix
         for the intakes — never the operational MER-POD-### diversions, never
-        Kaweah/Demo. The pool delete is scoped to ``basin_recharge_pool`` ONLY, so
+        Demo Valley. The pool delete is scoped to ``basin_recharge_pool`` ONLY, so
         the engine's incidental pool and the rollover carryover survive.
         """
         site_ids = list(

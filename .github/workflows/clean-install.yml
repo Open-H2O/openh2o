@@ -2,7 +2,7 @@ name: clean-install-guard
 
 # Proves the public software always ships clean: a fresh database + migrations +
 # reference data only (`seed_data`) must contain ZERO demo/agency content. If a
-# demo row (Demo Valley GSA, Kaweah Subbasin, any parcel/well/station/account)
+# demo row (Demo Valley GSA, any parcel/well/station/account)
 # ever sneaks into a clean install, this build fails. See
 # core/management/commands/verify_clean_install.py.
 
@@ -52,7 +52,7 @@ jobs:
           -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
           web python manage.py migrate --noinput
 
-      - name: Seed REFERENCE data only (never demo/kaweah)
+      - name: Seed REFERENCE data only (never demo data)
         run: >-
           docker compose run --rm
           -e DJANGO_SETTINGS_MODULE -e SECRET_KEY

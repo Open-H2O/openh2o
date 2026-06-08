@@ -28,7 +28,7 @@ layer later, never one enormous footprint.)
 
 Idempotent: matched by name via ``update_or_create``, so a re-run refreshes the
 location / footprint / attributes in place without duplicating. Additive — it
-does NOT touch Kaweah, Demo Valley, or the Merced boundaries seeded by
+does NOT touch Demo Valley or the Merced boundaries seeded by
 ``seed_merced_base``. ``zone`` is left null until Merced zones exist.
 """
 from decimal import Decimal
@@ -80,7 +80,7 @@ class Command(BaseCommand):
     help = (
         "Seed the two real Merced Irrigation District recharge basins "
         "(Cressey-Winton ~20 ac, El Nido ~18 ac) at real coordinates with "
-        "true-area footprints. Idempotent; additive (does not touch Kaweah)."
+        "true-area footprints. Idempotent; additive (does not touch Demo Valley)."
     )
 
     def handle(self, *args, **options):

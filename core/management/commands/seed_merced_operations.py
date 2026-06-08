@@ -30,7 +30,7 @@ ADDITIVE + PREFIX-KEYED: all operational rows carry a ``MER-`` prefix
 (``MER-WR-`` rights, ``MER-POD-`` PODs via name, ``MER-APN-`` parcels,
 ``MER-W-`` wells). ``--flush`` deletes ONLY those prefixed rows and their link
 rows, then rebuilds — it NEVER touches boundaries, flowlines, recharge sites,
-stations, or any Kaweah / Demo Valley row, and the base layer is left intact.
+stations, or any Demo Valley row, and the base layer is left intact.
 
 Phase 51 is PHYSICAL features + their relationships ONLY. It creates NO
 ``DiversionRecord`` monthly volumes, NO ``ParcelLedger``, NO water accounts, NO
@@ -327,7 +327,7 @@ class Command(BaseCommand):
         "Seed the Merced demonstration's operational features (water rights, "
         "diversions snapped to real rivers/canals, parcels, wells, and physical "
         "link tables) onto the Phase-50 base layer. Idempotent; additive "
-        "(MER-prefixed; does not touch Kaweah, Demo Valley, or the base layer)."
+        "(MER-prefixed; does not touch Demo Valley or the base layer)."
     )
 
     def add_arguments(self, parser):
@@ -426,7 +426,7 @@ class Command(BaseCommand):
         return lower
 
     # ------------------------------------------------------------------
-    # Flush — ONLY MER- operational rows + their links. Base layer + Kaweah /
+    # Flush — ONLY MER- operational rows + their links. Base layer + Demo Valley /
     # Demo Valley rows are never touched. Delete links before the rows they
     # reference (defensive ordering, defensive ordering).
     # ------------------------------------------------------------------

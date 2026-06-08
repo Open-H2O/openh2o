@@ -157,7 +157,7 @@ class Command(BaseCommand):
         if not months:
             # No REST baseline to derive a window from. Default to a peak-season
             # 2-month window in a year with settled OpenET coverage; summer ET
-            # is a strong, easy-to-sanity-check signal for Kaweah crops.
+            # is a strong, easy-to-sanity-check signal for irrigated crops.
             self.stdout.write(
                 "No REST window to borrow; defaulting to 2023-06-01..2023-07-31 "
                 "(override with --start-date/--end-date)."

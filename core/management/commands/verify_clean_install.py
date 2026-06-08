@@ -82,7 +82,7 @@ class Command(BaseCommand):
                 )
             raise CommandError(
                 "A public install must ship with reference data only. "
-                "Run `make seed` (reference data) — never `make demo`/`make kaweah` "
+                "Run `make seed` (reference data) — never `make demo` "
                 "— for a clean install."
             )
 

@@ -57,5 +57,5 @@ require a district data request (out of scope for the base layer).
 python manage.py seed_merced_base   # idempotent; updates in place on re-run
 ```
 
-Merced is **additive**: it coexists with the Kaweah and Demo Valley
-datasets. Kaweah/Fresno teardown is deliberately Phase 53.
+Merced is **additive**: it coexists with the Demo Valley
+dataset. Demo-Valley/Fresno teardown is deliberately Phase 53.

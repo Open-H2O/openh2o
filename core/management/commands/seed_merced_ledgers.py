@@ -35,7 +35,7 @@ DETERMINISTIC + IDEMPOTENT + ADDITIVE. No ``random`` (index-based jitter only), 
 re-runs reproduce identical rows. The command ALWAYS flushes its OWN rows first
 (the synthesized district zones, its Allocations, its accounts, and the
 ParcelLedger rows on MER- parcels) then rebuilds, so a bare re-run leaves counts
-unchanged. It NEVER touches Kaweah / Demo / base-layer rows, nor the three GSA
+unchanged. It NEVER touches Demo Valley / base-layer rows, nor the three GSA
 management-area zones (those belong to seed_merced_gsas).
 
 SIZING — estimated-ET-derived (58-03, the corrected v1.10 model). The DELIVERED
@@ -185,7 +185,7 @@ class Command(BaseCommand):
     help = (
         "Build the Merced demo's synthetic accounting layer (reporting periods, "
         "two-authority Allocations, accounts, and the full keyed ParcelLedger). "
-        "Idempotent; additive (MER-keyed; never touches Kaweah/Demo/base/GSA rows)."
+        "Idempotent; additive (MER-keyed; never touches Demo Valley/base/GSA rows)."
     )
 
     def add_arguments(self, parser):
@@ -220,7 +220,7 @@ class Command(BaseCommand):
 
     # ------------------------------------------------------------------
     # Flush — ONLY this seed's rows. Never the GSA zones (management_area,
-    # owned by seed_merced_gsas), never Kaweah/Demo/base-layer rows.
+    # owned by seed_merced_gsas), never Demo Valley/base-layer rows.
     # ------------------------------------------------------------------
     def _flush(self):
         ParcelLedger.objects.filter(
@@ -229,7 +229,7 @@ class Command(BaseCommand):
 
         # DiversionRecords this seed synthesizes as the recorded district total per
         # MER POD/month (the source of truth the allocation service splits). Keyed
-        # to MER- rights so the flush never touches Kaweah / base-layer records.
+        # to MER- rights so the flush never touches Demo Valley / base-layer records.
         DiversionRecord.objects.filter(
             point_of_diversion__water_right__right_id__startswith="MER-WR-"
         ).delete()
@@ -283,7 +283,7 @@ class Command(BaseCommand):
         # an operator who has already tuned it to a non-default value.
         self._ensure_efficiency()
 
-        # --- Reporting periods (global, agency-agnostic; shared with Kaweah) ---
+        # --- Reporting periods (global, agency-agnostic) ---
         prior, _ = ReportingPeriod.objects.get_or_create(
             name="WY 2024-2025",
             defaults={"start_date": date(2024, 10, 1), "end_date": date(2025, 9, 30),
@@ -469,7 +469,7 @@ class Command(BaseCommand):
         """One account per distinct owner; an account-parcel link per parcel.
 
         Membership is recorded for the operative reporting period — the finalized
-        WY 2024-2025, where the full year of transactions lives (mirroring Kaweah,
+        WY 2024-2025, where the full year of transactions lives (mirroring the prior demo,
         whose proven engine reads account membership for that period).
         """
         owners = sorted({(p.owner_name or "Unassigned Owner") for p in parcels})

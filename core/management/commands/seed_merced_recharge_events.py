@@ -12,7 +12,7 @@ engine; see run_calculations / ISS-052.)
 
 Basins are selected by ``operator`` (Merced Irrigation District) so this picks up
 whatever the current hand-pick produced without hardcoding basin names, and never
-touches Kaweah/Demo recharge sites.
+touches Demo Valley recharge sites.
 
 Decision (Brent, 2026-06-03): recharge credits **Groundwater (GW)**. The physical
 source water (storm/surface runoff diverted to the basin) is preserved in the
@@ -49,7 +49,7 @@ WET_SEASON = [
     (date(2025, 3, 15), Decimal("0.20")),
 ]
 # Merced recharge areas all carry this operator (set by the basin seed); the
-# single readable key that finds them without hardcoding names or hitting Kaweah.
+# single readable key that finds them without hardcoding names or hitting other demos.
 MID_OPERATOR = "Merced Irrigation District"
 REPORTING_PERIOD_NAME = "WY 2024-2025"
 

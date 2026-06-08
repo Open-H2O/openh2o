@@ -24,7 +24,7 @@ per chosen field, properties:
     water_source = "surface" | "groundwater" | "conjunctive"
     crop_class, MAIN_CROP, COUNTY, ACRES, UniqueID  (carried for provenance)
 
-Idempotent, additive: only touches MER- rows, never Kaweah/Demo.
+Idempotent, additive: only touches MER- rows, never Demo Valley.
 """
 import json
 import os

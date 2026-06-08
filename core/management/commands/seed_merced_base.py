@@ -24,7 +24,7 @@ populated separately by driving the platform's own loaders:
 Idempotent: re-running updates the existing boundary's geometry and
 attributes in place (matched by name), so a refreshed fixture re-seeds
 cleanly without creating duplicates. Merced is additive — it does NOT
-touch Kaweah or Demo Valley data.
+touch Demo Valley data.
 """
 import json
 import os
@@ -64,7 +64,7 @@ class Command(BaseCommand):
     help = (
         "Seed the real Merced Subbasin boundary (5-022.04) from "
         "committed public-source GeoJSON. "
-        "Idempotent; additive (does not touch Kaweah or Demo Valley)."
+        "Idempotent; additive (does not touch Demo Valley)."
     )
 
     def handle(self, *args, **options):

@@ -12,7 +12,7 @@ Steps:
               (geometry-based, not station-based). (MonitoredStation records)
 
 Usage:
-  python manage.py auto_populate --boundary "Kaweah Subbasin"
+  python manage.py auto_populate --boundary "Merced Subbasin"
   python manage.py auto_populate --boundary 1 --steps basins --dry-run
 """
 

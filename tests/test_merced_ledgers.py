@@ -54,7 +54,7 @@ from wells.models import Well, WellIrrigatedParcel, WellType
 # --- The accounting contract the seed must meet (independent of its internals) ---
 GW_EXTRACTION_SOURCES = {"meter_reading", "et_estimate"}
 # The full transactional ledger lives in the finalized prior water year, mirroring
-# the proven Kaweah engine path (Oct 2024 – Sep 2025).
+# the proven engine path (Oct 2024 – Sep 2025).
 PRIOR_WY = "WY 2024-2025"
 OPEN_WY = "WY 2025-2026"
 # The junior El Nido right is curtailed going into the peak irrigation season: the
