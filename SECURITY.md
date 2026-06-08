@@ -6,12 +6,9 @@
 
 Please report security issues **privately** — do not open a public GitHub issue.
 
-**Preferred:** use GitHub's private vulnerability reporting on this repository
-(the **Security** tab → **Report a vulnerability**). It opens a confidential
-thread with the maintainers.
-
-If you cannot use that, email **security@openh2o.com** with the details and a way
-to reach you. We aim to acknowledge within a few days.
+Use GitHub's private vulnerability reporting on this repository: the
+**Security** tab → **Report a vulnerability**. It opens a confidential thread
+with the maintainers, who aim to acknowledge within a few days.
 
 ## Scope
 
