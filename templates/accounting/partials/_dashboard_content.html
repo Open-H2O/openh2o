@@ -2,7 +2,7 @@
 {% if not selected_period %}
 <!-- No reporting periods exist yet -->
 <div class="empty-state">
-  <p class="empty-state-text text-secondary">No reporting periods found. Create your first period to see budget data.</p>
+  <p class="empty-state-text text-secondary">No reporting periods found. Create your first period to see your data.</p>
   <a href="{% url 'accounting:period_create' %}" class="btn-primary">
     + Create Reporting Period
   </a>
@@ -12,7 +12,7 @@
 {% url 'water_balances' as wb_help_url %}
 <div class="budget-panel">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. use{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, estimated from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. Use{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, estimated from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
     <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
   <div class="budget-panel-row">

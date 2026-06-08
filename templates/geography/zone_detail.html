@@ -40,13 +40,13 @@
   <div class="alert-warning">
     <strong>Curtailment in effect.</strong>
     {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
-    Surface deliveries to the curtailed parcels stop after the curtailment date — the current-year surface budget below is reduced to match, and conjunctive growers substitute groundwater.
+    Surface deliveries to the curtailed parcels stop after the curtailment date — the current-year surface allocation below is reduced to match, and conjunctive growers substitute groundwater.
   </div>
   {% endif %}
 
   <div class="page-grid-2col">
 
-    <!-- Left column: Zone Info + Parcels + Budget -->
+    <!-- Left column: Zone Info + Parcels + Allocation -->
     <div class="page-stack">
 
       <!-- Zone Info card -->
@@ -110,16 +110,16 @@
         </div>
       </div>
 
-      <!-- Budget vs. use card -->
+      <!-- Allocation vs. use card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Budget vs. Use</h2>
+        <h2 class="section-header mb-md">Allocation vs. Use</h2>
         {% if budgets %}
         <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Period</th>
               <th>Water Type</th>
-              <th class="th-right">Budget (AF)</th>
+              <th class="th-right">Allocation (AF)</th>
               <th class="th-right">Used (AF)</th>
               <th class="th-right">Remaining (AF)</th>
             </tr>

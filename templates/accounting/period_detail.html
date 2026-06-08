@@ -80,7 +80,7 @@
               <button type="submit" class="btn-secondary btn-sm">Reopen Period</button>
             </form>
           {% else %}
-            <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm);">Finalizing locks this water year's budgets and ledger against further edits so its reports stay stable.</p>
+            <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm);">Finalizing locks this water year's allocations and ledger against further edits so its reports stay stable.</p>
             <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
               {% csrf_token %}
               <button type="submit" class="btn-primary" style="width: 100%;">Finalize Period</button>
