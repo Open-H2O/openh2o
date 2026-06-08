@@ -3,9 +3,7 @@
 This is the invariant the public repo must always satisfy: an agency clones the
 code, runs migrations + `seed_data` (reference/lookup data every install needs),
 and gets an EMPTY instance ready for their own watershed. The fictional
-"Demo Valley GSA" (`seed_demo_data`) is an opt-in demo the public never runs;
-"Kaweah Subbasin" is a retired demo basin kept in the guard list below so a
-stray leftover from an older install is still caught.
+"Demo Valley GSA" (`seed_demo_data`) is an opt-in demo the public never runs.
 
 The CI `clean-install-guard` workflow runs this after `seed_data` and fails the
 build if a single row of agency/demo content is present — making it impossible
@@ -38,8 +36,10 @@ CONTENT_MODELS = [
 ]
 
 # Named demo artifacts — checked explicitly so the failure message is obvious
-# even if a future model is missed by the count sweep above.
-DEMO_BOUNDARY_NAMES = ["Demo Valley GSA", "Kaweah Subbasin"]
+# even if a future model is missed by the count sweep above. Only FICTIONAL demo
+# names belong here — never a real basin/agency name, or a legitimate operator
+# who happens to choose that name would be falsely flagged as demo content.
+DEMO_BOUNDARY_NAMES = ["Demo Valley GSA"]
 
 
 class Command(BaseCommand):

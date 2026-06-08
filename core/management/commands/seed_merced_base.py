@@ -133,7 +133,9 @@ class Command(BaseCommand):
         from core.models import SiteConfig
 
         merced_name = "Merced Subbasin GSA"
-        retired_names = {"Kaweah Subbasin GSA", "Demo Valley GSA"}
+        # Only FICTIONAL retired demo identities — never a real basin/agency
+        # name, or a real agency that chose it would be silently renamed.
+        retired_names = {"Demo Valley GSA"}
 
         sc = SiteConfig.objects.first()
         if sc is None:

@@ -26,7 +26,7 @@ def test_creates_site_config_when_absent():
 
 @pytest.mark.django_db
 def test_renames_retired_basin_identity():
-    SiteConfig.objects.create(agency_name="Kaweah Subbasin GSA")
+    SiteConfig.objects.create(agency_name="Demo Valley GSA")
     call_command("seed_merced_base")
     assert SiteConfig.objects.count() == 1
     assert SiteConfig.objects.get().agency_name == "Merced Subbasin GSA"
