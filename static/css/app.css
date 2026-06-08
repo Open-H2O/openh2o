@@ -176,7 +176,7 @@ a { color: inherit; }
 .sidebar-nav {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     padding: var(--space-sm);
     flex: 1;
     overflow-y: auto;
@@ -223,12 +223,21 @@ a { color: inherit; }
 /* -- Header -------------------------------------------------------------- */
 
 .app-header {
-    display: flex;
+    /* 3-column grid (toggle | title | user) with equal 1fr side columns keeps
+       the title visually centered AND stable: the center column is bracketed by
+       two symmetric flex columns, so the title does not drift when the user's
+       email on the right changes width (the old flex layout let it float left). */
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: var(--space-md);
     padding: var(--space-sm) var(--space-lg);
     background-color: var(--color-card);
     border-bottom: 1px solid var(--color-border);
+    /* Subtle lift so the chrome reads as a layer above the content pane. */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    position: relative;
+    z-index: 20;
     min-height: 48px;
 }
 
@@ -236,6 +245,7 @@ a { color: inherit; }
     display: flex;
     align-items: center;
     justify-content: center;
+    justify-self: start;
     padding: var(--space-xs);
     background: none;
     border: 1px solid var(--color-border);
@@ -260,13 +270,21 @@ a { color: inherit; }
     font-weight: 600;
     color: var(--color-text-primary);
     margin: 0;
+    justify-self: center;
+    text-align: center;
+    /* Never let an unusually long title shove the side columns into overflow. */
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .app-header-user {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    margin-left: auto;
+    justify-self: end;
 }
 
 .app-header-email {
@@ -278,7 +296,7 @@ a { color: inherit; }
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: var(--space-md);
 }
 
