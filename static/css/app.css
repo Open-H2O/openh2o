@@ -406,10 +406,14 @@ a { color: inherit; }
     border-bottom: 1px solid rgba(100, 140, 180, 0.12);
     font-size: 0.875rem;
     color: var(--color-text-primary);
+    transition: background-color 0.12s ease;
 }
 
+/* Zebra striping at 0.03 was effectively invisible on the dark card; 0.055 is
+   perceptible but still quiet, so wide rows (parcel/owner/acres/status/zones)
+   are easier to track across. One rule lifts every list page at once. */
 .data-table tbody tr:nth-child(even) td {
-    background-color: rgba(100, 140, 180, 0.03);
+    background-color: rgba(120, 150, 185, 0.055);
 }
 
 .data-table tbody tr:hover td {
