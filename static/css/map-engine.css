@@ -15,8 +15,11 @@
 }
 
 /* ── Top bar: basemap toggle + tools ── */
+/* All map controls share a consistent 10px inset from the map edge. The left
+   column stacks top-down: toolbar (10px) → coords (52px) → zoom/compass (~85px,
+   positioned via .maplibregl-ctrl-top-left below). */
 #toolbar {
-    position:absolute; top:14px; left:14px; z-index:10;
+    position:absolute; top:10px; left:10px; z-index:10;
     display:flex; gap:10px; align-items:center;
 }
 .tb-group {
@@ -56,7 +59,7 @@
 
 /* ── Layer control panel (right side) ── */
 #controls {
-    position:absolute; top:14px; right:14px; z-index:10;
+    position:absolute; top:10px; right:10px; z-index:10;
     background: color-mix(in oklch, var(--color-card) 90%, transparent);
     border:1px solid var(--color-border-hover, rgba(100,140,180,0.13));
     border-radius:var(--radius-lg, 12px);
@@ -66,12 +69,12 @@
     -webkit-backdrop-filter:blur(14px) saturate(1.1);
     box-shadow:var(--shadow-pop-lg, 0 12px 28px rgba(0,0,0,0.45));
     overflow:hidden;
-    /* Cap the panel so a long layer list never grows down into the bottom-right
-       attribution credit + zoom control. The ~130px reserve = nav control (~92px)
-       + attribution strip (~24px) + gap. The list scrolls inside .panel-body;
-       the header band stays pinned. */
+    /* The zoom control now lives top-left, so the right edge is the panel's
+       alone — it only has to clear the attribution credit in the bottom-right
+       corner. Reserve ~56px (10px top inset + ~24px credit + gaps). A long layer
+       list scrolls inside .panel-body; the header band stays pinned. */
     display:flex; flex-direction:column;
-    max-height: calc(100% - 130px);
+    max-height: calc(100% - 56px);
 }
 /* Panel header band */
 .panel-head {
@@ -156,7 +159,7 @@
 
 /* ── Legend (bottom left) ── */
 #legend {
-    position:absolute; bottom:34px; left:14px; z-index:10;
+    position:absolute; bottom:10px; left:10px; z-index:10;
     background: color-mix(in oklch, var(--color-card) 90%, transparent);
     border:1px solid var(--color-border-hover, rgba(100,140,180,0.13));
     border-radius:var(--radius-md, 10px);
@@ -226,13 +229,18 @@
    onto the page footer below the map. Centering MapLibre's own bottom-left ctrl
    container keeps the intended centered look but confines it to the map box,
    clear of the legend (bottom-left) and the zoom/attribution stack (bottom-right). */
-.maplibregl-ctrl-bottom-left { left:50% !important; transform:translateX(-50%) !important; bottom:8px !important; }
+.maplibregl-ctrl-bottom-left { left:50% !important; transform:translateX(-50%) !important; bottom:10px !important; }
+/* Zoom/compass group: relocated to the left column, below #toolbar (top 10px,
+   ~34px tall) and #coords (top 52px, ~25px tall). The container's own 10px inner
+   margin supplies the 10px left inset, so top:75px lands the group ~8px under the
+   coords readout. */
+.maplibregl-ctrl-top-left { top:75px !important; left:0 !important; }
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl-scale { position:static !important; bottom:auto !important; left:auto !important; transform:none !important; margin:0 !important; }
 .maplibregl-ctrl-scale { background:color-mix(in oklch, var(--color-card) 88%, transparent) !important; color:var(--color-text-secondary, #8899aa) !important; border:none !important; border-bottom:2px solid var(--color-gold, #E4A317) !important; font-family:var(--font-mono); font-size:10px !important; letter-spacing:0.3px; padding:4px 11px !important; border-radius:0 !important; backdrop-filter:blur(10px); }
 
 /* ── Coordinate display ── */
 #coords {
-    position:absolute; top:60px; left:14px; z-index:10;
+    position:absolute; top:52px; left:10px; z-index:10;
     background: color-mix(in oklch, var(--color-card) 88%, transparent);
     border:1px solid var(--color-border-hover, rgba(100,140,180,0.13));
     border-radius:8px;

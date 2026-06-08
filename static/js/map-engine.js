@@ -212,7 +212,10 @@ if (MAP_CONFIG.fitBounds) {
     map.fitBounds(MAP_CONFIG.fitBounds, { padding: MAP_CONFIG.fitBoundsPadding || 40, duration: 0 });
 }
 
-map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+// Zoom/compass live TOP-LEFT with the rest of the map controls (basemap, tools,
+// coords) so the entire RIGHT edge belongs to the LAYERS panel and the two can
+// never collide. CSS (.maplibregl-ctrl-top-left) drops this group below #coords.
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
 map.addControl(new maplibregl.ScaleControl({ maxWidth: 160, unit: 'imperial' }), 'bottom-left');
 
 // ── Basemap switching (delegates to the shared toolkit) ──
