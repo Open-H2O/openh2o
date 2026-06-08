@@ -26,6 +26,21 @@ SECRET_KEY = env("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
+# -- Sessions ---------------------------------------------------------------
+# Store sessions in a SIGNED COOKIE, not the database. The demo is reset on every
+# deploy by scripts/reset-demo.sh, which DROPs and restores the whole database
+# from the golden snapshot — that restore replaces the `django_session` table,
+# so DB-backed sessions are destroyed on each deploy and EVERY logged-in user is
+# logged out (recurring incident; see ISS-069). Cookie sessions live in the
+# browser, signed by the pinned SECRET_KEY, so they survive a DB restore AND a
+# container rebuild. Behaviour stays correct: the session still carries the auth
+# hash, so a real password change (or a wiped/restored admin row whose hash
+# differs) still invalidates it via SessionAuthenticationMiddleware; a visitor
+# whose user row is wiped by the reset simply resolves to AnonymousUser. Nothing
+# in this codebase reads the session table directly, and session payloads are
+# tiny (auth + flash messages), well under the ~4 KB cookie limit.
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+
 # -- Application definition -------------------------------------------------
 
 INSTALLED_APPS = [

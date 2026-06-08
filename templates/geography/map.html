@@ -48,6 +48,21 @@
         border-radius: var(--radius-md, 10px);
         overflow: hidden;
     }
+    /* The feedback button uses position:sticky + a negative margin-top to ride
+       the document scroll and rest centered in the footer. That trick assumes a
+       SCROLLING page; here the shell is locked to the viewport (above), so as the
+       last flex child of .app-main that -38px margin instead steals 10px from the
+       flex sizing — over-tallening the map, pushing the footer 10px past the
+       clipped viewport bottom, and leaving the button riding 10px high in the
+       band. Pin it to the viewport instead: it nests centered in the footer like
+       every other page, and the flex column sizes cleanly (footer no longer
+       clipped). bottom = (3rem footer − 1.75rem button) / 2 = 0.625rem. */
+    .oh2o-fb-btn {
+        position: fixed !important;
+        bottom: 0.625rem !important;
+        right: 1.5rem !important;
+        margin: 0 !important;
+    }
 </style>
 {% endblock %}
 
