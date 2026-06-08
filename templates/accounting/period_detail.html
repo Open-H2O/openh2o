@@ -72,16 +72,20 @@
         </div>
         {% endif %}
 
-        <!-- Finalize / Unfinalize button -->
+        <!-- Finalize / Unfinalize (Phase 75: primary action made prominent) -->
         <div class="border-separator">
-          <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
-            {% csrf_token %}
-            {% if period.is_finalized %}
+          {% if period.is_finalized %}
+            <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
+              {% csrf_token %}
               <button type="submit" class="btn-secondary btn-sm">Reopen Period</button>
-            {% else %}
-              <button type="submit" class="btn-primary btn-sm">Finalize Period</button>
-            {% endif %}
-          </form>
+            </form>
+          {% else %}
+            <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm);">Finalizing locks this water year's budgets and ledger against further edits so its reports stay stable.</p>
+            <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn-primary" style="width: 100%;">Finalize Period</button>
+            </form>
+          {% endif %}
         </div>
 
         <!-- Timestamps -->
@@ -92,17 +96,17 @@
         </div>
       </div>
 
-      <!-- Stats card -->
+      <!-- Stats card (Phase 75: counts on the stat-tile vocabulary) -->
       <div class="card-raised">
         <h2 class="section-header mb-md">Summary</h2>
-        <div style="display: flex; gap: var(--space-lg);">
-          <div class="field-group mb-0">
-            <div class="field-label">Water Budgets</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: var(--color-text-primary);">{{ allocations|length }}</div>
+        <div class="stat-grid-2col">
+          <div class="inset-card">
+            <div class="stat-card-label">Water budgets</div>
+            <div class="stat-card-value-sm">{{ allocations|length }}</div>
           </div>
-          <div class="field-group mb-0">
-            <div class="field-label">Ledger Entries</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: var(--color-text-primary);">{{ ledger_count }}</div>
+          <div class="inset-card">
+            <div class="stat-card-label">Ledger entries</div>
+            <div class="stat-card-value-sm">{{ ledger_count }}</div>
           </div>
         </div>
       </div>

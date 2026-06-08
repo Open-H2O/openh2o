@@ -17,24 +17,39 @@
 {% block content %}
 <div class="page-stack">
 
-  <!-- Hero cards: one per report type -->
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+  <!-- Hero cards: one per report type (Phase 75: left-accent + icon, replacing
+       the old top-stripe stat cards) -->
+  <div class="stat-grid-2col">
 
     <!-- GEARS card -->
-    <div class="card-raised" style="border-top: 3px solid var(--color-gold);">
-      <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 var(--space-sm) 0;">GEARS</h3>
-      <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md) 0; line-height: 1.5;">Groundwater Extraction Annual Report. Per-well extraction volumes for SGMA compliance reporting to the State Water Board.</p>
-      <div style="display: flex; align-items: center; justify-content: space-between;">
+    <div class="card-raised accent-card accent-card--gold">
+      <div class="accent-card-head">
+        <span class="accent-card-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+        </span>
+        <h3 class="accent-card-title">GEARS</h3>
+      </div>
+      <div class="accent-card-body">
+        <p class="text-secondary text-sm" style="margin: 0; line-height: 1.5;">Groundwater Extraction Annual Report. Per-well extraction volumes for SGMA compliance reporting to the State Water Board.</p>
+      </div>
+      <div class="accent-card-foot">
         <span class="text-tertiary text-sm">{{ gears_count }} report{{ gears_count|pluralize }}</span>
         <a href="{% url 'reporting:report_generate' %}?type=gears" class="btn-primary btn-sm" style="text-decoration: none;">Generate Report</a>
       </div>
     </div>
 
     <!-- CalWATRS card -->
-    <div class="card-raised" style="border-top: 3px solid var(--color-blue);">
-      <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--color-text-primary); margin: 0 0 var(--space-sm) 0;">CalWATRS</h3>
-      <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md) 0; line-height: 1.5;">California Water Accounting, Tracking, and Reporting System. Surface water diversion records for the State Water Resources Control Board.</p>
-      <div style="display: flex; align-items: center; justify-content: space-between;">
+    <div class="card-raised accent-card accent-card--blue">
+      <div class="accent-card-head">
+        <span class="accent-card-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 1.3 0 1.9-.5 2.5-1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 1.3 0 1.9-.5 2.5-1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 1.3 0 1.9-.5 2.5-1"/></svg>
+        </span>
+        <h3 class="accent-card-title">CalWATRS</h3>
+      </div>
+      <div class="accent-card-body">
+        <p class="text-secondary text-sm" style="margin: 0; line-height: 1.5;">California Water Accounting, Tracking, and Reporting System. Surface water diversion records for the State Water Resources Control Board.</p>
+      </div>
+      <div class="accent-card-foot">
         <span class="text-tertiary text-sm">{{ calwatrs_count }} report{{ calwatrs_count|pluralize }}</span>
         <a href="{% url 'reporting:report_generate' %}?type=calwatrs" class="btn-primary btn-sm" style="text-decoration: none;">Generate Report</a>
       </div>

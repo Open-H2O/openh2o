@@ -1399,6 +1399,60 @@ a { color: inherit; }
     }
 }
 
+/* -- Accent feature card ------------------------------------------------- */
+/* A left-accent card for a labeled entity that carries a description + an
+   action (the report-type heroes) — replaces the old top-stripe stat cards.
+   The accent rides the left edge and tints a small icon chip in the header;
+   the body flexes so footers line up across a row of equal-height cards. */
+.accent-card {
+    display: flex;
+    flex-direction: column;
+    border-left: 3px solid var(--color-border-hover);
+}
+.accent-card-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+.accent-card-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    background: rgba(120, 150, 185, 0.1);
+}
+.accent-card-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+.accent-card-body {
+    flex: 1;
+}
+.accent-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+}
+.accent-card--gold { border-left-color: var(--color-gold); }
+.accent-card--gold .accent-card-icon {
+    color: var(--color-gold);
+    background: rgba(228, 163, 23, 0.12);
+}
+.accent-card--blue { border-left-color: var(--color-blue); }
+.accent-card--blue .accent-card-icon {
+    color: var(--color-blue);
+    background: rgba(46, 107, 150, 0.16);
+}
+
 .stat-card-value-sm {
     font-size: 1.25rem;
     font-weight: 800;
