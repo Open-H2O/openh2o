@@ -20,15 +20,23 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
 <style>
+    /* Full-page map: lock the shell to the viewport so the map fills the screen
+       and the document does NOT scroll. ROOT CAUSE of the outer-scrollbar bug:
+       .app-shell is only `min-height: 100vh` with auto height (app pages scroll
+       as one document by design), so NOTHING in the chain has a definite height.
+       With no definite height to resolve against, #map-wrapper/#map height:100%
+       collapse to auto and the map area sizes to MapLibre's own canvas height
+       (~971px) instead of the viewport — 971 + header + breadcrumb overflows
+       100vh and the page scrolls. Giving .app-shell a definite height:100vh
+       restores the percentage chain so the map fills exactly the space below the
+       header/breadcrumb. overflow:hidden everywhere then guarantees no scrollbar. */
+    .app-shell { height: 100vh; overflow: hidden; }
     .app-main { overflow: hidden; }
-    /* The full-page map is not text-to-read, so it must NOT inherit the global
-       .app-content { zoom: 1.0625 } info-pane magnification (app.css ~127). Left
-       on, that zoom inflates this 100%-height map area ~6% past the viewport, so
-       .app-shell grows beyond 100vh and the whole document scrolls (the outer
-       scrollbar bug). Reset the pane to native scale here — and because #map
+    /* Also drop the global .app-content { zoom: 1.0625 } info-pane magnification
+       (app.css ~127) on this page — a map is not text-to-read, and left on it
+       would re-inflate the now-definite map area ~6% past the viewport. #map
        carries a global counter-zoom calc(1/1.0625) (app.css ~1599) that only
-       exists to cancel that pane zoom, reset #map to native too or it renders
-       ~6% too small. Both back to 1 = clean 100vh math. */
+       exists to cancel that pane zoom, so reset #map to native too. */
     .app-content { padding: 0 !important; overflow: hidden; display: flex; zoom: 1; }
     #map { zoom: 1; }
     #map-wrapper {
