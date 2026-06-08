@@ -989,11 +989,17 @@ def calculation_run_detail(request, parcel_id, period):
     for i, s in enumerate(run.breakdown):
         inp = s.get("input_af")
         out = s.get("output_af")
+        # breakdown is JSON, so the AF figures arrive as strings — compare them
+        # numerically (a lexical compare reads "9.81" as greater than "16.89").
+        try:
+            inp_n, out_n = float(inp), float(out)
+        except (TypeError, ValueError):
+            inp_n = out_n = None
         if i == 0:
             kind = "start"
-        elif inp is None or out is None or out == inp:
+        elif inp_n is None or out_n is None or out_n == inp_n:
             kind = "same"
-        elif out < inp:
+        elif out_n < inp_n:
             kind = "reduce"
         else:
             kind = "add"
