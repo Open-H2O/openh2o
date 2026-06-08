@@ -21,7 +21,16 @@
 <link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
 <style>
     .app-main { overflow: hidden; }
-    .app-content { padding: 0 !important; overflow: hidden; display: flex; }
+    /* The full-page map is not text-to-read, so it must NOT inherit the global
+       .app-content { zoom: 1.0625 } info-pane magnification (app.css ~127). Left
+       on, that zoom inflates this 100%-height map area ~6% past the viewport, so
+       .app-shell grows beyond 100vh and the whole document scrolls (the outer
+       scrollbar bug). Reset the pane to native scale here — and because #map
+       carries a global counter-zoom calc(1/1.0625) (app.css ~1599) that only
+       exists to cancel that pane zoom, reset #map to native too or it renders
+       ~6% too small. Both back to 1 = clean 100vh math. */
+    .app-content { padding: 0 !important; overflow: hidden; display: flex; zoom: 1; }
+    #map { zoom: 1; }
     #map-wrapper {
         position: relative;
         flex: 1;
