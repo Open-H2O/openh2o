@@ -1,36 +1,31 @@
 {% url 'water_balances' as wb_help_url %}
-<!-- Summary row: Consumptive Use (ET) / Total Supplies / Net (the v1.10 lens) -->
-<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
-  <div class="inset-card">
-    <div class="stat-card-label">Consumptive Use (ET)</div>
-    <div class="stat-card-value-sm text-usage">
-      {{ balance.consumptive_use_gross|floatformat:2 }}
+<!-- Balance as the house budget-panel: supplies − consumptive use = balance,
+     the same equation skin as the dashboard, with the supply breakdown in the
+     foot. Head-less because the card already titles it + carries the period
+     selector. -->
+<div class="budget-panel" style="margin-bottom: var(--space-md);">
+  <div class="budget-panel-row">
+    <div class="budget-seg">
+      <div class="budget-seg-label">Supplies</div>
+      <div class="budget-seg-value text-supply">{{ balance.supply_total|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
     </div>
-    <div class="stat-card-unit">AF</div>
+    <div class="budget-op">&minus;</div>
+    <div class="budget-seg">
+      <div class="budget-seg-label">Consumptive use</div>
+      <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+    </div>
+    <div class="budget-op">&equals;</div>
+    <div class="budget-seg">
+      <div class="budget-seg-label" style="display: flex; align-items: center; justify-content: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use is the water the crops actually drank (measured ET). Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
+      <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+    </div>
   </div>
-  <div class="inset-card">
-    <div class="stat-card-label">Total Supplies</div>
-    <div class="stat-card-value-sm text-supply">
-      {{ balance.supply_total|floatformat:2 }}
-    </div>
-    <div class="stat-card-unit">AF</div>
-  </div>
-  <div class="inset-card">
-    <div class="stat-card-label" style="display: flex; align-items: center; gap: var(--space-xs);">Supplies − Consumptive Use{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use is the water the crops actually drank (measured ET). Supplies are surface, groundwater, and rain. This figure is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
-    <div class="stat-card-value-sm {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-      {{ balance.net_vs_supply|floatformat:2 }}
-    </div>
-    <div class="stat-card-unit">AF</div>
+  <div class="budget-panel-foot">
+    <span>Surface <b>{{ balance.supplies.surface|floatformat:2 }}</b></span>
+    <span>Groundwater <b>{{ balance.supplies.groundwater|floatformat:2 }}</b></span>
+    <span>Rain <b>{{ balance.supplies.precip|floatformat:2 }}</b></span>
   </div>
 </div>
-
-<!-- Supplies breakdown: what met the consumptive use (dense, not hidden) -->
-<p class="text-tertiary text-sm" style="margin: 0 0 var(--space-lg);">
-  Supplies by source:
-  <span class="text-supply">surface {{ balance.supplies.surface|floatformat:2 }}</span> ·
-  <span class="text-supply">groundwater {{ balance.supplies.groundwater|floatformat:2 }}</span> ·
-  <span class="text-supply">precip {{ balance.supplies.precip|floatformat:2 }}</span> AF
-</p>
 
 <!-- Per-parcel breakdown -->
 {% if parcel_balances %}

@@ -2753,3 +2753,189 @@ div[id$="-map"] {
     grid-template-columns: 1fr 1fr;
     gap: var(--space-md);
 }
+
+/* -- Phase 75: accounting / reporting page polish ------------------------ */
+
+/* Methodology step cards — the ordered calculation chain. Each step gets a
+   left accent + a numbered badge so the sequence reads as a pipeline; a
+   disabled step goes muted (dashed grey accent + grey badge), which is far
+   clearer than the old opacity:0.6 alone. */
+.methodology-step {
+    background: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-gold);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-md);
+}
+.methodology-step--off {
+    border-left-color: var(--color-text-tertiary);
+    border-left-style: dashed;
+    background: var(--color-card);
+}
+.methodology-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: oklch(0.45 0.12 80 / 0.15);
+    color: var(--color-gold);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+.methodology-step--off .methodology-step-num {
+    background: rgba(120, 150, 185, 0.1);
+    color: var(--color-text-tertiary);
+}
+
+/* Calculation-run waterfall — tint each row by what the step does to the
+   running total: a reduction (subtraction) carries a furnace left-edge and a
+   faint warm wash; an addition carries a forest edge; the starting gross
+   figure and pass-throughs stay neutral. Scoped to .waterfall so the global
+   zebra stripe steps aside and the type-shading reads cleanly; hover still
+   wins (declared last). */
+.data-table.waterfall tbody tr:nth-child(even) td {
+    background-color: transparent;
+}
+.data-table.waterfall td:first-child {
+    border-left: 3px solid transparent;
+}
+.data-table.waterfall .wf-start td:first-child {
+    border-left-color: var(--color-text-tertiary);
+}
+.data-table.waterfall .wf-reduce td:first-child {
+    border-left-color: var(--furnace-400);
+}
+.data-table.waterfall .wf-add td:first-child {
+    border-left-color: var(--forest-400);
+}
+.data-table.waterfall .wf-reduce td {
+    background-color: oklch(0.49 0.14 50 / 0.06);
+}
+.data-table.waterfall .wf-add td {
+    background-color: oklch(0.49 0.11 145 / 0.06);
+}
+.data-table.waterfall tbody tr:hover td {
+    background-color: var(--color-hover);
+}
+
+/* Result card — the single figure a page produces (the final billable
+   groundwater), as a gold-accent hero so it reads as the answer, not a
+   footnote. */
+.result-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    background: linear-gradient(180deg, var(--color-card), var(--color-inset));
+    border: 1px solid var(--color-border-hover);
+    border-left: 4px solid var(--color-gold);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg) var(--space-xl);
+    box-shadow: var(--shadow-pop-sm);
+}
+.result-card-value {
+    font-size: 2.25rem;
+    font-weight: 800;
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* On-brand radio options — each choice is a selectable tile; the native dot is
+   replaced with a gold-filled disc, and the tile lights up gold when chosen.
+   Styled by descendant selector so it works on Django's bare RadioSelect tag. */
+.radio-option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-sm);
+    cursor: pointer;
+    transition: border-color 120ms, background-color 120ms;
+}
+.radio-option:last-child {
+    margin-bottom: 0;
+}
+.radio-option:hover {
+    border-color: var(--color-border-hover);
+}
+.radio-option:has(input:checked) {
+    border-color: var(--color-gold);
+    background: rgba(228, 163, 23, 0.06);
+}
+.radio-option input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    border: 2px solid var(--color-text-tertiary);
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: border-color 120ms, background 120ms;
+}
+.radio-option input[type="radio"]:checked {
+    border-color: var(--color-gold);
+    background: radial-gradient(circle, var(--color-gold) 0 42%, transparent 48%);
+}
+.radio-option input[type="radio"]:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+}
+
+/* Input with an attached unit suffix (e.g. an efficiency percent + "%"). The
+   inner field loses its own border so the wrapper reads as one control. */
+.input-suffix {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-inset);
+    overflow: hidden;
+    width: max-content;
+}
+.input-suffix .form-input {
+    border: none;
+    background: transparent;
+    border-radius: 0;
+    text-align: right;
+}
+.input-suffix .form-input:focus {
+    outline: none;
+    box-shadow: none;
+}
+.input-suffix:focus-within {
+    border-color: var(--color-gold);
+}
+.input-suffix-unit {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-md);
+    background: rgba(0, 0, 0, 0.2);
+    border-left: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+/* File picker — once a file is chosen, the name reads as confirmed (primary
+   weight + a forest check) instead of the quiet "No file chosen" placeholder. */
+.file-picker-name.has-file {
+    color: var(--color-text-primary);
+    font-weight: 600;
+}
+.file-picker-name.has-file::before {
+    content: "\2713\00a0";
+    color: var(--forest-500);
+    font-weight: 700;
+}

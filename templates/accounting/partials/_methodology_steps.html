@@ -5,14 +5,17 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
 {% endcomment %}
 <div id="methodology-steps">
   {% for step in steps %}
-  <div style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-md);{% if not step.enabled %} opacity: 0.6;{% endif %}">
+  <div class="methodology-step{% if not step.enabled %} methodology-step--off{% endif %}">
 
-    <!-- Header row: order, label, type, reorder + enable controls -->
+    <!-- Header row: number badge, label, type, status, reorder + enable controls -->
     <div class="row-between" style="align-items: flex-start;">
-      <div>
-        <span class="td-num-bold text-tertiary">{{ step.order }}.</span>
-        <strong style="color: var(--color-text-primary);">{{ step.label }}</strong>
-        <span class="text-tertiary text-sm">({{ step.get_step_type_display }})</span>
+      <div class="flex" style="align-items: center; gap: var(--space-sm);">
+        <span class="methodology-step-num">{{ step.order }}</span>
+        <span>
+          <strong style="color: var(--color-text-primary);">{{ step.label }}</strong>
+          <span class="text-tertiary text-sm">({{ step.get_step_type_display }})</span>
+          {% if not step.enabled %}<span class="badge badge-pill badge-grey" style="margin-left: var(--space-xs);">Disabled</span>{% endif %}
+        </span>
       </div>
       <div class="flex" style="gap: var(--space-xs); flex-shrink: 0;">
         <button type="button" class="btn-secondary btn-xs"

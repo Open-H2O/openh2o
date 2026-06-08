@@ -34,22 +34,26 @@
 
     <!-- Setting 1: efficiency -->
     <div class="card-raised">
+      <span class="step-eyebrow">Setting 1 of 2</span>
       <h2 class="section-header">{{ form.efficiency_percent.label }}</h2>
       <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.efficiency_percent.help_text }}</p>
-      <div class="field-group" style="display: flex; align-items: center; gap: var(--space-sm);">
-        {{ form.efficiency_percent }}
-        <span class="text-secondary text-base">%</span>
+      <div class="field-group mb-0">
+        <span class="input-suffix">
+          {{ form.efficiency_percent }}
+          <span class="input-suffix-unit">%</span>
+        </span>
       </div>
-      {% if form.efficiency_percent.errors %}<p class="text-sm text-furnace">{{ form.efficiency_percent.errors|striptags }}</p>{% endif %}
+      {% if form.efficiency_percent.errors %}<p class="text-sm text-furnace" style="margin-top: var(--space-sm);">{{ form.efficiency_percent.errors|striptags }}</p>{% endif %}
     </div>
 
     <!-- Setting 2: year-end unused water -->
     <div class="card-raised">
+      <span class="step-eyebrow">Setting 2 of 2</span>
       <h2 class="section-header">{{ form.recovery_horizon.label }}</h2>
       <div class="field-group" style="margin-top: var(--space-sm);">
         {% for radio in form.recovery_horizon %}
-        <label style="display: flex; align-items: flex-start; gap: var(--space-sm); margin-bottom: var(--space-sm); cursor: pointer;">
-          <span style="margin-top: 0.15rem;">{{ radio.tag }}</span>
+        <label class="radio-option">
+          {{ radio.tag }}
           <span class="text-secondary text-base">{{ radio.choice_label }}</span>
         </label>
         {% endfor %}

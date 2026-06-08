@@ -980,15 +980,32 @@ def calculation_run_detail(request, parcel_id, period):
     if run is None:
         raise Http404("No calculation run for this parcel and period.")
 
-    steps = [
-        {
-            "label": s.get("label") or s.get("step_type"),
-            "input_af": s.get("input_af"),
-            "output_af": s.get("output_af"),
-            "detail_text": _step_detail_summary(s),
-        }
-        for s in run.breakdown
-    ]
+    # Classify each row by what it does to the running total so the template can
+    # shade the waterfall: the first row is the starting gross figure; after that
+    # a smaller output is a reduction (subtraction), a larger output is an
+    # addition, an equal output is a pass-through. Lets the gross→net descent be
+    # read at a glance instead of decoded from the In/Out columns.
+    steps = []
+    for i, s in enumerate(run.breakdown):
+        inp = s.get("input_af")
+        out = s.get("output_af")
+        if i == 0:
+            kind = "start"
+        elif inp is None or out is None or out == inp:
+            kind = "same"
+        elif out < inp:
+            kind = "reduce"
+        else:
+            kind = "add"
+        steps.append(
+            {
+                "label": s.get("label") or s.get("step_type"),
+                "input_af": inp,
+                "output_af": out,
+                "detail_text": _step_detail_summary(s),
+                "kind": kind,
+            }
+        )
 
     draws = (
         WaterCreditDraw.objects.filter(credit__parcel=parcel, draw_period=period)

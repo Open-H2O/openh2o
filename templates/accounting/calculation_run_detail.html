@@ -59,7 +59,7 @@
   <!-- The gross → net waterfall -->
   <div class="card-raised">
     <h2 class="section-header mb-md">Calculation steps</h2>
-    <table class="data-table text-sm">
+    <table class="data-table waterfall text-sm">
       <thead>
         <tr>
           <th style="width: 1%; white-space: nowrap;">#</th>
@@ -71,7 +71,7 @@
       </thead>
       <tbody>
         {% for step in steps %}
-        <tr>
+        <tr class="wf-{{ step.kind }}">
           <td class="text-tertiary">{{ forloop.counter }}</td>
           <td style="font-weight: 600;">{{ step.label }}</td>
           <td class="text-secondary">{{ step.detail_text }}</td>
@@ -119,18 +119,16 @@
   </div>
   {% endif %}
 
-  <!-- Footer: the final number ties back to the ledger -->
-  <div class="card-raised card-inset">
-    <div class="row-between">
-      <div>
-        <div class="field-label">Final billable groundwater</div>
-        <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
-          Equals the magnitude of the <span class="text-secondary">calculated</span> ledger entry for {{ period }}.
-        </p>
-      </div>
-      <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary);">
-        {{ run.final_af|floatformat:4 }} AF
-      </div>
+  <!-- Result: the final number the waterfall produces, tied back to the ledger -->
+  <div class="result-card">
+    <div>
+      <div class="field-label">Final billable groundwater</div>
+      <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
+        Equals the magnitude of the <span class="text-secondary">calculated</span> ledger entry for {{ period }}.
+      </p>
+    </div>
+    <div class="result-card-value">
+      {{ run.final_af|floatformat:4 }} <span class="stat-card-unit" style="font-size: 1rem;">AF</span>
     </div>
   </div>
 

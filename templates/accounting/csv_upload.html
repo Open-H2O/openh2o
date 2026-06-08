@@ -84,9 +84,10 @@
     </form>
   </div>
 
-  <!-- Required columns reference -->
-  <div class="card-raised">
-    <h3 class="section-header-sm">Required CSV Columns</h3>
+  <!-- Required columns reference (quiet, secondary to the upload action above) -->
+  <div class="card-raised card-inset">
+    <span class="step-eyebrow" style="color: var(--color-text-tertiary);">Reference</span>
+    <h3 class="section-header-sm">CSV columns</h3>
     <table class="data-table">
       <thead>
         <tr>
@@ -98,37 +99,37 @@
       <tbody>
         <tr>
           <td class="text-mono">parcel_number</td>
-          <td class="text-forest font-semibold">Yes</td>
+          <td><span class="badge badge-pill badge-green">Yes</span></td>
           <td class="text-secondary">Must match an existing parcel record</td>
         </tr>
         <tr>
           <td class="text-mono">effective_date</td>
-          <td class="text-forest font-semibold">Yes</td>
+          <td><span class="badge badge-pill badge-green">Yes</span></td>
           <td class="text-secondary">YYYY-MM-DD or MM/DD/YYYY</td>
         </tr>
         <tr>
           <td class="text-mono">amount_acre_feet</td>
-          <td class="text-forest font-semibold">Yes</td>
+          <td><span class="badge badge-pill badge-green">Yes</span></td>
           <td class="text-secondary">Positive = supply, negative = usage</td>
         </tr>
         <tr>
           <td class="text-mono">source_type</td>
-          <td class="text-forest font-semibold">Yes</td>
+          <td><span class="badge badge-pill badge-green">Yes</span></td>
           <td class="text-secondary">Must match a valid source type choice</td>
         </tr>
         <tr>
           <td class="text-mono">water_type_code</td>
-          <td class="text-tertiary">No</td>
+          <td><span class="badge badge-pill badge-grey">No</span></td>
           <td class="text-secondary">Must match an existing water type code if provided</td>
         </tr>
         <tr>
           <td class="text-mono">description</td>
-          <td class="text-tertiary">No</td>
+          <td><span class="badge badge-pill badge-grey">No</span></td>
           <td class="text-secondary">Free text description</td>
         </tr>
         <tr>
           <td class="text-mono">transaction_date</td>
-          <td class="text-tertiary">No</td>
+          <td><span class="badge badge-pill badge-grey">No</span></td>
           <td class="text-secondary">Defaults to effective_date if omitted</td>
         </tr>
       </tbody>
@@ -151,9 +152,9 @@
     var name = document.getElementById('csv-file-name');
     if (!input || !name) return;
     input.addEventListener('change', function() {
-      name.textContent = (input.files && input.files.length)
-        ? input.files[0].name
-        : 'No file chosen';
+      var chosen = input.files && input.files.length > 0;
+      name.textContent = chosen ? input.files[0].name : 'No file chosen';
+      name.classList.toggle('has-file', chosen);
     });
   })();
 </script>
