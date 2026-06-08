@@ -344,11 +344,37 @@
 <script>
 (function() {
   var geojson = JSON.parse(document.getElementById('parcel-geojson-data').textContent);
+
+  // Flatten every vertex of the parcel polygon(s) so we can frame the map on the
+  // parcel from the FIRST painted frame. Without this the map opens at [0,0] (off
+  // West Africa) and visibly flies to California once fitBounds runs in 'load'.
+  var coords = [];
+  geojson.features.forEach(function(f) {
+    if (f.geometry && f.geometry.coordinates) {
+      f.geometry.coordinates.forEach(function(poly) {
+        poly.forEach(function(ring) {
+          ring.forEach(function(pt) { coords.push(pt); });
+        });
+      });
+    }
+  });
+  // Center on the parcel's bounds midpoint; fall back to the Merced Subbasin
+  // (the demo area) if the parcel somehow has no geometry.
+  var initialCenter = [-120.5, 37.3];
+  if (coords.length) {
+    var lon0 = coords.map(function(c) { return c[0]; });
+    var lat0 = coords.map(function(c) { return c[1]; });
+    initialCenter = [
+      (Math.min.apply(null, lon0) + Math.max.apply(null, lon0)) / 2,
+      (Math.min.apply(null, lat0) + Math.max.apply(null, lat0)) / 2
+    ];
+  }
+
   var map = new maplibregl.Map({
     container: 'parcel-map',
     style: OH2O.basemapStyle('aerial'),
-    center: [0, 0],
-    zoom: 10
+    center: initialCenter,
+    zoom: 13
   });
 
   map.on('load', function() {
@@ -379,25 +405,16 @@
              'Owner: ' + (p.owner_name || '—');
     });
 
-    // Fit to parcel bounds
-    var coords = [];
-    geojson.features.forEach(function(f) {
-      if (f.geometry && f.geometry.coordinates) {
-        f.geometry.coordinates.forEach(function(poly) {
-          poly.forEach(function(ring) {
-            ring.forEach(function(pt) { coords.push(pt); });
-          });
-        });
-      }
-    });
-
+    // Fit to parcel bounds. coords were flattened above (reused here). duration:0
+    // snaps to the final framing instead of animating from the initial center —
+    // the map is already on the parcel, so there is nothing to animate.
     if (coords.length) {
       var lons = coords.map(function(c) { return c[0]; });
       var lats = coords.map(function(c) { return c[1]; });
       map.fitBounds(
         [[Math.min.apply(null, lons), Math.min.apply(null, lats)],
          [Math.max.apply(null, lons), Math.max.apply(null, lats)]],
-        { padding: 32, maxZoom: 16 }
+        { padding: 32, maxZoom: 16, duration: 0 }
       );
     }
   });
