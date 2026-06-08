@@ -60,3 +60,42 @@ def test_leaves_custom_agency_demonstration_mode_untouched():
         agency_name="Mariposa County Water Agency", demonstration_mode=False)
     call_command("seed_merced_base")
     assert SiteConfig.objects.get().demonstration_mode is False
+
+
+@pytest.mark.django_db
+def test_heals_retired_basin_email_on_renamed_identity():
+    """A demo renamed off a retired basin still carrying that basin's contact
+    email gets the email healed too (ISS-067): the in-place rename moved the
+    name but left ``info@kaweahgsa.example.com`` behind for the demo's lifetime."""
+    SiteConfig.objects.create(
+        agency_name="Demo Valley GSA",
+        contact_email="info@kaweahgsa.example.com")
+    call_command("seed_merced_base")
+    sc = SiteConfig.objects.get()
+    assert sc.agency_name == "Merced Subbasin GSA"
+    assert sc.contact_email == "info@mercedsubbasingsa.example.com"
+
+
+@pytest.mark.django_db
+def test_heals_retired_basin_email_on_existing_merced_identity():
+    """The exact ISS-067 production state: name already says Merced, but the
+    contact email is still the retired Kaweah demo address. A re-seed must
+    correct the stale email even though the name already matches."""
+    SiteConfig.objects.create(
+        agency_name="Merced Subbasin GSA",
+        contact_email="info@kaweahgsa.example.com")
+    call_command("seed_merced_base")
+    assert SiteConfig.objects.get().contact_email == (
+        "info@mercedsubbasingsa.example.com")
+
+
+@pytest.mark.django_db
+def test_keeps_custom_contact_email_on_merced_identity():
+    """A real operator's own contact email is never overwritten — only the
+    known retired demo emails are healed, so a deployment that set a real
+    address keeps it across a re-seed."""
+    SiteConfig.objects.create(
+        agency_name="Merced Subbasin GSA",
+        contact_email="ops@realagency.gov")
+    call_command("seed_merced_base")
+    assert SiteConfig.objects.get().contact_email == "ops@realagency.gov"

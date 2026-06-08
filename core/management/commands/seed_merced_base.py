@@ -133,9 +133,20 @@ class Command(BaseCommand):
         from core.models import SiteConfig
 
         merced_name = "Merced Subbasin GSA"
+        merced_email = "info@mercedsubbasingsa.example.com"
         # Only FICTIONAL retired demo identities — never a real basin/agency
         # name, or a real agency that chose it would be silently renamed.
         retired_names = {"Demo Valley GSA"}
+        # Contact emails minted by a retired demo seed (Kaweah v1.0-1.8 and the
+        # Demo Valley sample). An in-place rename moved the agency NAME off the
+        # retired identity but left these stale, so a long-lived demo kept a
+        # retired-basin contact email in core_siteconfig (ISS-067). Heal only
+        # these known demo emails on a demo-owned identity — never an operator's
+        # real contact address.
+        retired_demo_emails = {
+            "info@kaweahgsa.example.com",
+            "info@demovalleygsa.example.com",
+        }
 
         sc = SiteConfig.objects.first()
         if sc is None:
@@ -156,6 +167,11 @@ class Command(BaseCommand):
             # Renaming off a retired demo identity → still the seed's demo;
             # turn on demonstration_mode alongside the name (53-02).
             sc.demonstration_mode = True
+            # Heal a retired-basin contact email carried over from the old demo
+            # (ISS-067) — this is the seed's own demo, so a known retired demo
+            # email is stale, never a real operator's address.
+            if not sc.contact_email or sc.contact_email in retired_demo_emails:
+                sc.contact_email = merced_email
             sc.save()
             self.stdout.write(
                 f"  Renamed SiteConfig: {old} -> {merced_name}")
@@ -165,11 +181,23 @@ class Command(BaseCommand):
             # a demo whose SiteConfig predates the field — migrated in as False —
             # would otherwise never get stamped, since the name already matches and
             # neither the create nor the rename branch fires (Phase 53-02).
+            update_fields = []
             if not sc.demonstration_mode:
                 sc.demonstration_mode = True
-                sc.save(update_fields=["demonstration_mode"])
+                update_fields.append("demonstration_mode")
+            # Heal a retired-basin contact email left behind by an earlier
+            # in-place rename (ISS-067). The name already matched Merced, so
+            # neither the create nor the rename branch ever corrected the email
+            # minted by the retired Kaweah/Demo-Valley seed — it would persist
+            # for the life of the demo (and reseeding never touched it).
+            if sc.contact_email in retired_demo_emails:
+                sc.contact_email = merced_email
+                update_fields.append("contact_email")
+            if update_fields:
+                sc.save(update_fields=update_fields)
                 self.stdout.write(self.style.SUCCESS(
-                    f"  SiteConfig demonstration_mode enabled: {merced_name}"))
+                    f"  SiteConfig healed ({', '.join(update_fields)}): "
+                    f"{merced_name}"))
             else:
                 self.stdout.write(
                     f"  SiteConfig kept (Merced demo identity): {sc.agency_name}")
