@@ -43,13 +43,13 @@
   </div>
   {% endif %}
 
-  <!-- Water Balance card (57-03): consumptive use vs supplies + the closing
-       mass-balance identity, with a drill-down to each month's audit
+  <!-- Water Balance card (57-03): consumptive use vs supplies + the supply-vs-use
+       reconciliation, with a drill-down to each month's audit
        waterfall. The corrected v1.10 lens, surfaced per-parcel. -->
   <div class="card-raised">
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
       {% url 'methods' as methods_help_url %}
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water Balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's measured consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water Balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's satellite-estimated consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
       {% if balance_period %}
       <span class="text-tertiary text-xs">{{ balance_period.name }}</span>
       {% endif %}
@@ -103,13 +103,13 @@
       </div>
     </div>
 
-    <!-- The closing mass-balance identity: water in vs water out. -->
-    <h3 class="section-header-sm">Closing Mass Balance</h3>
+    <!-- The supply-vs-use reconciliation: supplies in vs uses out. -->
+    <h3 class="section-header-sm">Supply vs. Use Summary</h3>
     <table class="data-table text-sm">
       <thead>
         <tr>
-          <th>Water in</th><th class="th-right">AF</th>
-          <th>Water out</th><th class="th-right">AF</th>
+          <th>Supplies</th><th class="th-right">AF</th>
+          <th>Uses</th><th class="th-right">AF</th>
         </tr>
       </thead>
       <tbody>
@@ -133,7 +133,7 @@
         </tr>
         <tr>
           <td></td><td></td>
-          <td class="text-secondary">Δ Storage (banked − drawn)</td>
+          <td class="text-secondary">Net Banked/Drawn (credits)</td>
           <td class="td-num">{{ mass_balance.outputs.delta_storage|floatformat:2 }}</td>
         </tr>
       </tbody>
@@ -155,17 +155,17 @@
          parcel does not read as a problem. -->
     <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
       {% if mass_balance.is_surplus %}
-      Supplies slightly exceed measured consumptive use — the difference is on-farm
-      loss / return flow that percolates back to the aquifer, not unaccounted water.
+      Supplies slightly exceed estimated consumptive use — the difference is on-farm
+      loss or return flow, not unaccounted water.
       {% else %}
-      Measured consumptive use slightly exceeds recorded supplies — a minor
+      Estimated consumptive use slightly exceeds recorded supplies — a minor
       supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
       rootzone water the meters don't capture).
       {% endif %}
     </p>
     {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
     <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
-      Recorded supplies fell well short of measured consumptive use this period —
+      Recorded supplies fell well short of estimated consumptive use this period —
       expected where a junior surface right was curtailed going into peak season
       and the parcel had no groundwater to substitute.
     </p>
@@ -220,7 +220,7 @@
             {% if ef.name == "status" %}
               {% include "partials/_help_tooltip.html" with label="Status" text="Active use areas are included in water accounting. Inactive use areas are excluded from reports." %}
             {% elif ef.name == "area_acres" %}
-              {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel geometry. Used for per-acre water budget calculations." %}
+              {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel geometry. Used for per-acre allocation calculations." %}
             {% endif %}
           </div>
           <div id="field-{{ ef.name }}" class="field-row">

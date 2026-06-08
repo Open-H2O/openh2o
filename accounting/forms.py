@@ -46,7 +46,7 @@ class AllocationPlanForm(forms.ModelForm):
             "notes",
         ]
         labels = {
-            "allocation_acre_feet": "Water Budget (AF)",
+            "allocation_acre_feet": "Allocation (AF)",
         }
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),

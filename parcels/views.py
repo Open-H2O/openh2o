@@ -3,7 +3,7 @@
 Parcels views.
 
 The parcel list and detail surfaces. The detail page is the per-parcel
-water-balance view: it reconciles the parcel's measured consumptive use (ET)
+water-balance view: it reconciles the parcel's estimated consumptive use (ET)
 against its supplies for a reporting period (consumptive balance + mass
 balance), lists the recent ledger rows, shows zone memberships and the wells
 that irrigate it, and inline-edits the parcel's editable fields.

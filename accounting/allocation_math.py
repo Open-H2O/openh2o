@@ -7,7 +7,7 @@ math a real RED->GREEN cycle in bare local Python. This is the heart of Phase 55
 — the missing v1.10 capability: an unmetered district records ONE surface
 delivery total for a period, but the parcels that diversion serves grow different
 crops with different water demand. This kernel splits that one total across the
-parcels by each parcel's measured ET demand, never giving any parcel more than it
+parcels by each parcel's estimated ET demand, never giving any parcel more than it
 can physically consume.
 
 It generalizes the throwaway month-axis helper ``_demand_aware_deliveries``
@@ -165,7 +165,7 @@ def apportion_shared_supply(members):
     """Split ONE shared well / point-of-diversion across its parcels, weighted.
 
     The measurement-first ladder (see the module docstring): a district's
-    hand-set fractions win; absent any hand-set fraction, split by measured ET
+    hand-set fractions win; absent any hand-set fraction, split by estimated ET
     demand; absent demand, split evenly. The result is a set of normalized
     weights summing to EXACTLY ``1.0000`` — the caller multiplies the shared
     source's recorded volume by these to get each parcel's slice.
@@ -179,7 +179,7 @@ def apportion_shared_supply(members):
               ``WellIrrigatedParcel`` ``.fraction`` for this link (Decimal). The
               default ``Decimal("1.0")`` is the "untouched" sentinel; any other
               value is a deliberate human entry.
-            * ``demand`` — this parcel's measured ET demand for the period
+            * ``demand`` — this parcel's estimated ET demand for the period
               (Decimal, ``>= 0``); ``0`` means "no ET signal for this parcel".
 
     Returns:

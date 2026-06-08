@@ -12,7 +12,7 @@
 {% url 'water_balances' as wb_help_url %}
 <div class="budget-panel">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water budget{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, measured from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. use{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, estimated from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
     <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
   <div class="budget-panel-row">
@@ -41,8 +41,8 @@
 <!-- Consumptive-use model explainer -->
 <div class="card-raised card-inset">
   <p class="text-tertiary text-sm" style="margin: 0;">
-    <strong class="text-secondary">How the budget works:</strong>
-    <span class="text-supply">Consumptive use</span> — the water crops actually consumed, measured from satellite evapotranspiration (ET) — is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. The columns below show each area's consumptive use beside the supplies that met it; the budget remaining is the water budget minus consumptive use.
+    <strong class="text-secondary">How this summary works:</strong>
+    <span class="text-supply">Consumptive use</span> — the water crops actually consumed, estimated from satellite evapotranspiration (ET) — is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. The columns below show each area's consumptive use beside the supplies that met it; the balance is the supplies minus consumptive use.
   </p>
 </div>
 
@@ -50,7 +50,7 @@
 <!-- Info banner: no allocations for this period -->
 <div class="card-raised" style="border-left: 3px solid var(--color-gold); padding: var(--space-md);">
   <p class="text-secondary text-sm" style="margin: 0;">
-    No water budgets set for this period. <a href="{% url 'accounting:allocation_create' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Create a water budget</a> to enable budget tracking.
+    No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Create an allocation</a> to enable allocation tracking.
   </p>
 </div>
 {% endif %}
@@ -73,7 +73,7 @@
         <th class="th-right">Supplies (AF)</th>
         <th class="th-right">Net (AF)</th>
         {% if has_allocations %}
-        <th class="th-right">Water Budget (AF)</th>
+        <th class="th-right">Allocation (AF)</th>
         <th class="th-right">Remaining (AF)</th>
         {% endif %}
       </tr>
@@ -129,7 +129,7 @@
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Zones</h2>
-    <span class="text-tertiary text-xs">Geographic management areas with water budgets</span>
+    <span class="text-tertiary text-xs">Geographic management areas with allocations</span>
   </div>
   {% if zone_summaries %}
   <table class="data-table">
@@ -143,7 +143,7 @@
         <th class="th-right">Supplies (AF)</th>
         <th class="th-right">Net (AF)</th>
         {% if has_allocations %}
-        <th class="th-right">Water Budget (AF)</th>
+        <th class="th-right">Allocation (AF)</th>
         <th class="th-right">Carried fwd (AF)</th>
         <th class="th-right">Remaining (AF)</th>
         {% endif %}

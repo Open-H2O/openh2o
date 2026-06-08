@@ -904,7 +904,7 @@ def parcel_mass_balance(parcel, reporting_period=None):
 
 
 def consumptive_use_balance(parcel_ids, reporting_period=None):
-    """Measured consumptive use vs. the supplies that met it, for a parcel set.
+    """Estimated consumptive use vs. the supplies that met it, for a parcel set.
 
     Frames a collection of parcels as **consumptive use (gross ET and net CU)
     against surface + groundwater + precipitation supplies** — the corrected

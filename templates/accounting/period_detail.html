@@ -101,7 +101,7 @@
         <h2 class="section-header mb-md">Summary</h2>
         <div class="stat-grid-2col">
           <div class="inset-card">
-            <div class="stat-card-label">Water budgets</div>
+            <div class="stat-card-label">Allocations</div>
             <div class="stat-card-value-sm">{{ allocations|length }}</div>
           </div>
           <div class="inset-card">
@@ -112,11 +112,11 @@
       </div>
     </div>
 
-    <!-- Right column: Water Budgets -->
+    <!-- Right column: Allocations -->
     <div class="page-stack">
 
       <div class="card-raised">
-        <h2 class="section-header mb-md">Water Budgets</h2>
+        <h2 class="section-header mb-md">Allocations</h2>
         {% if allocations %}
         <table class="data-table text-sm">
           <thead>
@@ -124,7 +124,7 @@
               <th>Name</th>
               <th>Zone</th>
               <th>Water Type</th>
-              <th class="th-right">Water Budget (AF)</th>
+              <th class="th-right">Allocation (AF)</th>
             </tr>
           </thead>
           <tbody>
@@ -139,7 +139,7 @@
           </tbody>
         </table>
         {% else %}
-          <p class="text-tertiary text-base">No water budgets for this period.</p>
+          <p class="text-tertiary text-base">No allocations for this period.</p>
         {% endif %}
       </div>
 

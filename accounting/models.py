@@ -4,9 +4,9 @@ Accounting models.
 
 The ledger-and-calculation core of the platform. ReportingPeriod, WaterAccount,
 WaterType and WaterAccountParcel define who is accounted and over what span;
-AllocationPlan and AllocationCarryover hold the per-zone water budget and the
+AllocationPlan and AllocationCarryover hold the per-zone allocation and the
 signed remainder rolled forward between water years. CalculationPlan/CalculationStep
-describe the configurable engine that reconciles measured consumptive use (ET)
+describe the configurable engine that reconciles estimated consumptive use (ET)
 against the available supplies, CalculationRun records each execution of it, and
 WaterCredit/WaterCreditDraw track banked credit drawn against that budget.
 """
@@ -94,7 +94,7 @@ class AllocationPlan(models.Model):
     water_type = models.ForeignKey(WaterType, on_delete=models.CASCADE)
     reporting_period = models.ForeignKey(ReportingPeriod, on_delete=models.CASCADE)
     allocation_acre_feet = models.DecimalField(
-        max_digits=12, decimal_places=4, verbose_name="Water budget (AF)"
+        max_digits=12, decimal_places=4, verbose_name="Allocation (AF)"
     )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -102,8 +102,8 @@ class AllocationPlan(models.Model):
 
     class Meta:
         unique_together = [("zone", "water_type", "reporting_period")]
-        verbose_name = "Water Budget"
-        verbose_name_plural = "Water Budgets"
+        verbose_name = "Allocation Plan"
+        verbose_name_plural = "Allocation Plans"
 
     def __str__(self):
         return self.name
@@ -414,9 +414,12 @@ class CalculationRun(models.Model):
         max_digits=12,
         decimal_places=4,
         default=Decimal("0"),
-        help_text="Net consumptive use = gross ET − effective precip (positive AF). "
-        "The source-agnostic spine quantity, recorded for every parcel with ET "
-        "regardless of supply source or whether a well exists.",
+        help_text="Net consumptive use = gross ET − effective precip (positive AF) — "
+        "an ET-based estimate used where meters are absent. This is distinct from the "
+        "calculation-chain residual, which goes a step further and also subtracts "
+        "surface water; the two 'net consumptive use' senses are not the same number. "
+        "A source-agnostic quantity, recorded for every parcel with ET regardless of "
+        "supply source or whether a well exists.",
     )
     residual_disposition = models.CharField(
         max_length=20,

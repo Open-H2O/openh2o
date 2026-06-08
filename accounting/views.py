@@ -3,7 +3,7 @@
 Accounting views.
 
 The dashboards and balance surfaces of the platform. dashboard plus the
-account/zone/parcel balance views present measured consumptive use (ET) against
+account/zone/parcel balance views present estimated consumptive use (ET) against
 the reconciled supplies; ledger_list and the CSV upload/template/export views
 manage the raw ParcelLedger rows; calculation_run_detail explains a single
 engine run step by step. Reporting-period, allocation, and account CRUD live
@@ -72,7 +72,7 @@ from surface.models import CurtailmentOrder, WaterRight
 
 @login_required
 def dashboard(request):
-    """Water budget overview dashboard with period selector."""
+    """Water-data overview dashboard with period selector."""
     periods = ReportingPeriod.objects.order_by("-start_date")
 
     # Resolve selected period: from query param or default to most recent
@@ -105,7 +105,7 @@ def dashboard(request):
 
     account_summaries = []
     zone_summaries = []
-    # v1.10 lens: the grand totals roll up MEASURED CONSUMPTIVE USE (gross ET) as
+    # v1.10 lens: the grand totals roll up ESTIMATED CONSUMPTIVE USE (gross ET) as
     # the demand line and the three SUPPLIES that met it (surface + groundwater +
     # precip). grand_consumptive_use replaces the old grand_usage (which only ever
     # counted groundwater); grand_supply_total replaces grand_supply.
@@ -210,7 +210,7 @@ def dashboard(request):
                 zone_available = available_with_carryover(
                     zone_allocation, zone_carryover_af
                 )
-                # Same budget basis as accounts: subtract measured consumptive use.
+                # Same allocation basis as accounts: subtract estimated consumptive use.
                 zone_remaining = zone_available - zcu["consumptive_use_gross"]
             else:
                 zone_allocation = None
@@ -230,7 +230,7 @@ def dashboard(request):
                 "remaining": zone_remaining,
             })
 
-    # Bottom-line: supplies minus measured consumptive use.
+    # Bottom-line: supplies minus estimated consumptive use.
     grand_net = grand_supply_total - grand_consumptive_use
 
     context = {
@@ -483,7 +483,7 @@ def account_detail(request, pk):
         else:
             selected_period = periods.filter(is_finalized=False).first()
 
-    # Account-level balance, in the corrected v1.10 lens: measured consumptive
+    # Account-level balance, in the corrected v1.10 lens: estimated consumptive
     # use (gross ET) against the surface / groundwater / precip supplies that met
     # it (57-02). account_consumptive_balance selects the SAME active assignments
     # account_balance did, so the roll-up partitions identically.

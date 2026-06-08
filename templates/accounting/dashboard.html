@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Water Budget - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Water Budget{% endblock %}
+{% block title %}Overview - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Overview{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Dashboard</span>
   </nav>
-  <p class="page-description">Water budget summary for the selected reporting period. Shows measured consumptive use (ET) against the surface, groundwater, and precipitation supplies that met it, by account and zone.</p>
+  <p class="page-description">Summary of your district's water data for the selected period — recorded supplies and uses by account and zone, with satellite ET shown as one estimated input.</p>
 </div>
 {% endblock %}
 
@@ -45,7 +45,7 @@
   <div class="card-raised empty-state">
     <h2 class="section-header-flush mb-sm">Welcome to OpenH2O</h2>
     <p class="text-secondary text-sm mb-lg" style="max-width: 500px; margin-left: auto; margin-right: auto;">
-      This is your water budget dashboard. It shows how much water is being pumped, consumed, and what's left in your water budget. To get started:
+      This is your water-data overview. It summarizes the water data you've recorded — deliveries, measurements, and usage — by account and zone. To get started:
     </p>
     <div class="onboarding-steps">
       <div class="onboarding-step">
@@ -58,11 +58,11 @@
       </div>
       <div class="onboarding-step">
         <span class="step-badge">3</span>
-        <span class="text-secondary text-sm">Add ledger entries (pumping, ET estimates) or upload CSV</span>
+        <span class="text-secondary text-sm">Add ledger entries (deliveries, measurements, ET estimates) or upload CSV</span>
       </div>
       <div class="onboarding-step">
         <span class="step-badge">4</span>
-        <span class="text-secondary text-sm">Dashboard shows your water position: consumptive use (ET) vs. the supplies that met it vs. water budget</span>
+        <span class="text-secondary text-sm">The overview summarizes your recorded water data — supplies, usage, and how they compare by account and zone</span>
       </div>
     </div>
   </div>

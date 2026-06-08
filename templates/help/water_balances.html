@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">How Water Balances Work</span>
   </nav>
-  <p class="page-description">The one idea behind every number on this platform: measure what the crops used, then match it against the water that supplied them.</p>
+  <p class="page-description">The one idea behind every number on this platform: estimate what the crops used, then match it against the water that supplied them.</p>
 </div>
 {% endblock %}
 
@@ -20,7 +20,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">A water balance answers a deceptively hard question: <em>who used what?</em> &mdash; in a place where almost nobody is metering. Out of everything a field involves, there is exactly one quantity we can measure for every field, from space, whether its water came from a canal, a well, or rain: the water the crops actually drank. That measured amount &mdash; evapotranspiration {% include "partials/_explainer_popout.html" with title="Evapotranspiration (ET)" text="The water a field consumes — taken up by crops and evaporated from the soil. Satellites measure it directly for any field, which is why it works where meters don't." link=glossary_url link_label="See the glossary" %} &mdash; is the anchor. Everything else is a <strong>supply</strong> we line up against it to see whether the books add up.</p>
+    <p class="text-secondary text-base">A water balance answers a deceptively hard question: <em>who used what?</em> &mdash; in a place where almost nobody is metering. Out of everything a field involves, there is exactly one quantity we can estimate for every field, from space, whether its water came from a canal, a well, or rain: the water the crops actually drank. That estimated amount &mdash; evapotranspiration {% include "partials/_explainer_popout.html" with title="Evapotranspiration (ET)" text="The water a field consumes — taken up by crops and evaporated from the soil. Satellites estimate it for any field, which is why it works where meters don't." link=glossary_url link_label="See the glossary" %} &mdash; is the anchor. Everything else is a <strong>supply</strong> we line up against it to see whether the books add up.</p>
 
     <div class="budget-panel budget-panel--concept" style="margin: var(--space-lg) 0 var(--space-sm);">
       <div class="budget-panel-row">
@@ -32,7 +32,7 @@
         <div class="budget-op" aria-hidden="true">&minus;</div>
         <div class="budget-seg">
           <div class="budget-seg-label">Use</div>
-          <div class="budget-seg-value text-neutral">Measured ET</div>
+          <div class="budget-seg-value text-neutral">Estimated ET</div>
           <div class="budget-seg-caption">what the crops drank</div>
         </div>
         <div class="budget-op" aria-hidden="true">=</div>
@@ -43,7 +43,7 @@
         </div>
       </div>
     </div>
-    <p class="text-tertiary text-sm" style="margin: 0;">Read it left to right: line up the supplies, subtract the measured use, and look at the leftover. In real life the books almost never net to zero &mdash; ET counts only the water truly consumed, while canals leak and some water drains back underground. A small, explainable gap is the goal; a perfect zero would be the surprise.</p>
+    <p class="text-tertiary text-sm" style="margin: 0;">Read it left to right: line up the supplies, subtract the estimated use, and look at the leftover. In real life the books almost never net to zero &mdash; ET counts only the water truly consumed, while canals leak and some water drains back underground. A small, explainable gap is the goal; a perfect zero would be the surprise.</p>
   </div>
 
   <div class="card-raised">
@@ -51,7 +51,7 @@
     <p class="text-secondary text-base">The whole model rests on one distinction.</p>
     <div class="stat-grid-2col">
       <div class="concept-panel concept-panel-use">
-        <div class="concept-panel-title">The use <span class="badge badge-pill badge-grey">measured</span></div>
+        <div class="concept-panel-title">The use <span class="badge badge-pill badge-grey">estimated</span></div>
         <p class="text-secondary text-base" style="margin: 0;">The water the crops consumed &mdash; evapotranspiration (ET), read from satellites. It&rsquo;s the demand side, and the one number we can get for every field without a meter. It&rsquo;s also the <em>floor</em>: it counts only what was consumed, not what leaked from a canal or drained past the roots.</p>
       </div>
       <div class="concept-panel concept-panel-supply">
@@ -78,7 +78,7 @@
 
     <p class="text-secondary text-base">And expect a gap. ET is the floor, so the water delivered will usually exceed the water consumed &mdash; some seeps from canals on the way (conveyance loss), some runs off, some sinks past the roots back into the aquifer. None of that is a failure of the accounting; it&rsquo;s how irrigation actually behaves. The job isn&rsquo;t to force the balance to zero &mdash; it&rsquo;s to make the remaining gap small enough to explain.</p>
 
-    {% include "partials/_deep_dive.html" with label="How a value gets chosen, and why deliveries are never split evenly" body="<p>When the platform has to pick a number, it follows a strict priority ladder &mdash; measurement first, estimate last:</p><ol class='concept-list'><li><strong>A per-field direct measurement</strong> wins over everything. If someone metered this field, that is the truth.</li><li><strong>A district&rsquo;s hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li><strong>An even split</strong> is the last resort, used only when there is no better signal at all.</li></ol><p>This ladder also governs the hardest part of the whole problem: a water district holds <em>one</em> water right but delivers unmetered canal water to many parcels &mdash; growing different crops with different thirsts. You cannot split that delivery equally, because a vineyard and an alfalfa field next door do not drink the same amount. The platform allocates the district&rsquo;s delivery to each parcel <em>in proportion to that parcel&rsquo;s measured ET demand</em>, so the thirsty crop draws the larger share. Splitting evenly would credit water to fields that never used it and starve the ones that did.</p>" %}
+    {% include "partials/_deep_dive.html" with label="How a value gets chosen, and why deliveries are never split evenly" body="<p>When the platform has to pick a number, it follows a strict priority ladder &mdash; measurement first, estimate last:</p><ol class='concept-list'><li><strong>A per-field direct measurement</strong> wins over everything. If someone metered this field, that is the truth.</li><li><strong>A district&rsquo;s hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li><strong>An even split</strong> is the last resort, used only when there is no better signal at all.</li></ol><p>This ladder also governs the hardest part of the whole problem: a water district holds <em>one</em> water right but delivers unmetered canal water to many parcels &mdash; growing different crops with different thirsts. You cannot split that delivery equally, because a vineyard and an alfalfa field next door do not drink the same amount. The platform allocates the district&rsquo;s delivery to each parcel <em>in proportion to that parcel&rsquo;s estimated ET demand</em>, so the thirsty crop draws the larger share. Splitting evenly would credit water to fields that never used it and starve the ones that did.</p>" %}
   </div>
 
   <div class="card-raised">

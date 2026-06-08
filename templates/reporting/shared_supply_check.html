@@ -74,13 +74,13 @@
       {% elif group.has_et_signal %}
       <span class="badge badge-green" title="Every field's entered share is close to its ET-implied share">Split looks reasonable</span>
       {% else %}
-      <span class="badge badge-grey" title="No measured ET demand yet for these fields">No ET signal yet</span>
+      <span class="badge badge-grey" title="No estimated ET demand yet for these fields">No ET signal yet</span>
       {% endif %}
     </div>
 
     {% if not group.has_et_signal %}
     <p class="text-tertiary text-sm" style="margin: 0 0 var(--space-md);">
-      No measured ET demand for these use areas in this period, so there is no
+      No estimated ET demand for these use areas in this period, so there is no
       ET-implied split to compare against yet (it will appear once the engine runs
       for them). The entered split is shown for reference.
     </p>

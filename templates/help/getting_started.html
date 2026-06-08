@@ -53,9 +53,9 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step 2</span>
-      <h2 class="section-header">Import Your Extraction Wells</h2>
-      <p class="text-secondary text-base">Upload extraction well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
-      <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Extraction Wells &rarr;</a>
+      <h2 class="section-header">Import Your Wells</h2>
+      <p class="text-secondary text-base">Upload well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
+      <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Wells &rarr;</a>
     </div>
   </div>
 
@@ -102,7 +102,7 @@
     <div class="step-body">
       <span class="step-eyebrow">Step 5</span>
       <h2 class="section-header">Define Management Zones</h2>
-      <p class="text-secondary text-base">A management zone is a sub-area of your district that carries its own water budget &mdash; each use area belongs to a zone. Zones are a prerequisite for the next step: a water budget is set per zone, so at least one zone must exist before you can budget water. Go to Administration &gt; Zones and create your zones, then assign use areas to each.</p>
+      <p class="text-secondary text-base">A management zone is a sub-area of your district that carries its own allocation &mdash; each use area belongs to a zone. Zones are a prerequisite for the next step: an allocation is set per zone, so at least one zone must exist before you can allocate water. Go to Administration &gt; Zones and create your zones, then assign use areas to each.</p>
       <a href="{% url 'geography:zone_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Zones &rarr;</a>
     </div>
   </div>
@@ -118,9 +118,9 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step 6</span>
-      <h2 class="section-header">Set Water Budgets</h2>
-      <p class="text-secondary text-base">A water budget is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Create a budget for each zone, water type, and period. New to the difference between a budget and an allocation? See the short guide linked at the bottom of this page.</p>
-      <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Budgets &rarr;</a>
+      <h2 class="section-header">Set Allocation Ceilings</h2>
+      <p class="text-secondary text-base">An allocation ceiling is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Set a ceiling for each zone, water type, and period. New to the difference between a ceiling and an account&rsquo;s allocation? See the short guide linked at the bottom of this page.</p>
+      <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Allocations &rarr;</a>
     </div>
   </div>
 
@@ -200,9 +200,9 @@
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">New to water budgets and allocations?</h2>
-    <p class="text-secondary text-base">If the difference between a zone&rsquo;s water budget and an account&rsquo;s allocation is unclear, this short guide walks through how the platform turns one into the other, with a worked example.</p>
-    <a href="{% url 'budgets_allocations' %}" class="text-sm" style="color: var(--color-gold);">Read: Water Budgets &amp; Allocations &rarr;</a>
+    <h2 class="section-header">New to allocations and ceilings?</h2>
+    <p class="text-secondary text-base">If the difference between a zone&rsquo;s allocation ceiling and an account&rsquo;s allocation is unclear, this short guide walks through how the platform turns one into the other, with a worked example.</p>
+    <a href="{% url 'budgets_allocations' %}" class="text-sm" style="color: var(--color-gold);">Read: Allocations &amp; Ceilings &rarr;</a>
   </div>
 
   <div class="card-raised">

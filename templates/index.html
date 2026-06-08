@@ -5,7 +5,7 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<p class="page-description">Overview of your water accounting system. Cards show entity counts and link to their management pages.</p>
+<p class="page-description">Overview of your water data. Cards show entity counts and link to their management pages.</p>
 
 <h2 class="content-section-label">Water Data</h2>
 <div class="dashboard-grid">
@@ -15,9 +15,9 @@
         <div class="dashboard-card-sublabel">View all use areas</div>
     </a>
     <a href="{% url 'wells:list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Extraction Wells</div>
+        <div class="dashboard-card-label">Wells</div>
         <div class="dashboard-card-value text-blue">{{ well_count }}</div>
-        <div class="dashboard-card-sublabel">View all extraction wells</div>
+        <div class="dashboard-card-sublabel">View all wells</div>
     </a>
     <a href="{% url 'surface:water_rights_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Surface Diversions</div>
@@ -47,7 +47,7 @@
     <a href="{% url 'accounting:methodology_settings' %}" class="dashboard-card">
         <div class="dashboard-card-label">Methodology Settings</div>
         <div class="dashboard-card-value text-gold">&#9881;</div>
-        <div class="dashboard-card-sublabel">Tune how gross ET becomes billable groundwater</div>
+        <div class="dashboard-card-sublabel">Configure how usage is derived from your data sources</div>
     </a>
     {% endif %}
 </div>

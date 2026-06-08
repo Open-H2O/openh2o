@@ -33,7 +33,7 @@
 
   <!-- Zone help block -->
   <div class="card-raised">
-    <p class="text-secondary text-base" style="margin: 0;">A <strong>management zone</strong> is a sub-area of the district that carries its own <strong>water budget</strong>. Use areas assigned to this zone share its budget, which the platform divides into per-account allocations. <a href="{% url 'glossary' %}" class="text-sm" style="color: var(--color-gold);">Glossary &rarr;</a></p>
+    <p class="text-secondary text-base" style="margin: 0;">A <strong>management zone</strong> is a sub-area of the district that carries its own <strong>allocation ceiling</strong>. Use areas assigned to this zone share that ceiling, which the platform divides into per-account allocations. <a href="{% url 'glossary' %}" class="text-sm" style="color: var(--color-gold);">Glossary &rarr;</a></p>
   </div>
 
   {% if is_curtailed %}
@@ -137,7 +137,7 @@
           </tbody>
         </table>
         {% else %}
-        <p class="text-tertiary text-sm">No water budgets for this zone.</p>
+        <p class="text-tertiary text-sm">No allocations for this zone.</p>
         {% endif %}
       </div>
 

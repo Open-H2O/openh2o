@@ -4,7 +4,7 @@
 WHY this command exists. Phases 50–51 built the physical Merced demo — real
 boundaries, rivers/canals, GSAs, water rights, points of diversion, parcels on
 surveyed cropland, and wells. That canvas shows WHERE water moves. This command
-adds the accounting layer that shows HOW MUCH: reporting periods, Water Budgets
+adds the accounting layer that shows HOW MUCH: reporting periods, Allocations
 for BOTH authorities, water accounts per grower, and the full ParcelLedger
 transaction set. It is the payoff of the whole rebuild — the layer that lets an
 evaluator read "this grower was allocated X, used Y, is Z over/under, and here is
@@ -23,24 +23,24 @@ groundwater extraction):
   4. shared-well apportionment — a well that irrigates several parcels splits its
      monthly extraction across them by the stored fraction, summing to the well total.
 
-TWO-AUTHORITY budgets (Brent's 2026-06-03 call). SGMA splits the jobs: the GSA
+TWO-AUTHORITY allocations (Brent's 2026-06-03 call). SGMA splits the jobs: the GSA
 manages groundwater (a management-area zone), the irrigation district moves canal
-water (a water right + PODs). Both get Water Budgets here. A GSA already IS a zone,
-so its groundwater budget hangs off it directly. A surface district is a water
+water (a water right + PODs). Both get Allocations here. A GSA already IS a zone,
+so its groundwater allocation hangs off it directly. A surface district is a water
 right, NOT a zone — so this command synthesizes a ``custom`` service-area zone per
-surface district (the dissolve of the parcels it serves) to hang its surface budget
-on, exactly so a canal district shows budget-vs-delivered on screen like a GSA does.
+surface district (the dissolve of the parcels it serves) to hang its surface allocation
+on, exactly so a canal district shows allocation-vs-delivered on screen like a GSA does.
 
 DETERMINISTIC + IDEMPOTENT + ADDITIVE. No ``random`` (index-based jitter only), so
 re-runs reproduce identical rows. The command ALWAYS flushes its OWN rows first
-(the synthesized district zones, its Water Budgets, its accounts, and the
+(the synthesized district zones, its Allocations, its accounts, and the
 ParcelLedger rows on MER- parcels) then rebuilds, so a bare re-run leaves counts
 unchanged. It NEVER touches Kaweah / Demo / base-layer rows, nor the three GSA
 management-area zones (those belong to seed_merced_gsas).
 
-SIZING — measured-ET-derived (58-03, the corrected v1.10 model). The DELIVERED
+SIZING — estimated-ET-derived (58-03, the corrected v1.10 model). The DELIVERED
 supply — surface deliveries AND meter readings — is now sized to each parcel's
-MEASURED net consumptive-use demand (gross ET − effective precip), read from the
+ESTIMATED net consumptive-use demand (gross ET − effective precip), read from the
 ``CalculationRun`` rows the FIRST ``run_calculations`` pass of
 ``refresh_merced_accounting`` writes for EVERY parcel (54-01 spine + the 58-03
 metered reference run). Supply tracks that demand within a realistic loss band
@@ -184,7 +184,7 @@ def _period_str(month_date):
 class Command(BaseCommand):
     help = (
         "Build the Merced demo's synthetic accounting layer (reporting periods, "
-        "two-authority Water Budgets, accounts, and the full keyed ParcelLedger). "
+        "two-authority Allocations, accounts, and the full keyed ParcelLedger). "
         "Idempotent; additive (MER-keyed; never touches Kaweah/Demo/base/GSA rows)."
     )
 
@@ -312,7 +312,7 @@ class Command(BaseCommand):
         # --- Surface-district service-area zones (one per served surface right) ---
         district_zones = self._build_district_zones(parcels)
 
-        # --- Water Budgets for BOTH authorities, both periods ---
+        # --- Allocations for BOTH authorities, both periods ---
         self._build_budgets(gw, sw, periods, prior, open_wy, parcels, district_zones)
 
         # --- Water accounts (one per distinct owner) + account-parcel links ---
@@ -321,7 +321,7 @@ class Command(BaseCommand):
         # --- Curtailment order (audit provenance for the El Nido cut) ---
         self._build_curtailment_order()
 
-        # 58-03: each parcel-month's MEASURED net consumptive-use demand
+        # 58-03: each parcel-month's ESTIMATED net consumptive-use demand
         # (gross ET − effective precip), read from the CalculationRuns the first
         # run_calculations pass wrote. Supply (surface + meter) is sized to THIS,
         # so the seed sizes against the SAME ET the mass balance later checks.
@@ -401,7 +401,7 @@ class Command(BaseCommand):
                     "description": (
                         f"Surface-water service area for {right.holder_name} "
                         f"({right.right_id}). Synthesized to carry the district's "
-                        "surface Water Budget (a district is a right, not a zone)."
+                        "Surface Allocation (a district is a right, not a zone)."
                     ),
                 },
             )
@@ -414,10 +414,10 @@ class Command(BaseCommand):
         return zones
 
     # ------------------------------------------------------------------
-    # Water Budgets
+    # Allocations
     # ------------------------------------------------------------------
     def _build_budgets(self, gw, sw, periods, prior, open_wy, parcels, district_zones):
-        # GSA groundwater budgets — one per GSA zone, both periods. Sized to a
+        # GSA groundwater allocations — one per GSA zone, both periods. Sized to a
         # plausible SGMA sustainable-yield fraction of the GSA's demo acreage.
         gsa_zones = list(Zone.objects.filter(
             zone_type="management_area", basin_code=GSA_BASIN_CODE))
@@ -435,12 +435,12 @@ class Command(BaseCommand):
                     defaults={
                         "name": f"{zone.name} — Groundwater {rp.name}",
                         "allocation_acre_feet": budget,
-                        "notes": "SGMA sustainable-yield groundwater budget (demo).",
+                        "notes": "SGMA sustainable-yield groundwater allocation (demo).",
                     },
                 )
 
-        # Surface-district budgets — one per district zone, both periods, sized near
-        # the right's face value. The curtailed district's CURRENT-year budget
+        # Surface-district allocations — one per district zone, both periods, sized near
+        # the right's face value. The curtailed district's CURRENT-year allocation
         # collapses to reflect the curtailment, so the on-screen story stays honest.
         for right_id, (zone, right) in district_zones.items():
             face = Decimal(str(right.face_value_acre_feet or 0))
@@ -449,10 +449,10 @@ class Command(BaseCommand):
             for rp in periods:
                 if curtailed and rp is open_wy:
                     amount = _q(face * CURTAILED_OPEN_FRACTION)
-                    note = "Surface budget reduced — junior right curtailed this year."
+                    note = "Surface allocation reduced — junior right curtailed this year."
                 else:
                     amount = base
-                    note = "Surface Water Budget (~face value of the district's right)."
+                    note = "Surface Allocation (~face value of the district's right)."
                 AllocationPlan.objects.update_or_create(
                     zone=zone, water_type=sw, reporting_period=rp,
                     defaults={
@@ -915,11 +915,11 @@ class Command(BaseCommand):
             f"({len(surface_parcel_ids)} with surface delivery, "
             f"{len(curtailed_parcel_ids)} under the curtailed El Nido right)\n"
             f"  {len(district_zones)} surface-district service-area zones "
-            f"(+ {gsa_count} GSA zones) carry Water Budgets for BOTH authorities\n"
+            f"(+ {gsa_count} GSA zones) carry Allocations for BOTH authorities\n"
             f"  {WaterAccount.objects.filter(account_number__startswith='MER-ACCT-').count()} "
             "water accounts (one per owner)\n"
             f"  {AllocationPlan.objects.filter(name__startswith='MER Surface Service Area').count()} "
-            "surface budgets + GSA groundwater budgets, both periods\n"
+            "surface allocations + GSA groundwater allocations, both periods\n"
             f"  {total_rows} ledger rows ({len(entries)} allocations + groundwater, "
             f"{len(surface_rows)} surface deliveries via allocate_district_delivery)\n"
             "  2 reporting periods (WY 2024-2025 finalized, WY 2025-2026 open)"

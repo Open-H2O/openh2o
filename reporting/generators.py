@@ -118,7 +118,7 @@ def build_normalized_well_parcel_map(reporting_period=None):
     so the weights always sum to exactly 1.0 across the parcels it irrigates:
 
       - a district's hand-set fractions win (rung 2);
-      - absent any hand-set fraction, the volume follows measured ET demand for the
+      - absent any hand-set fraction, the volume follows estimated ET demand for the
         ``reporting_period`` — the thirsty crop gets the larger share (rung 3);
       - absent ET demand (or no period passed), an even 1/N split (rung 4).
 
@@ -246,7 +246,7 @@ def build_shared_supply_comparison(reporting_period=None):
     ``apportion_shared_supply``, where the human split wins over ET demand.
 
     For every hand-set shared source this surfaces a two-column reasonableness
-    check — the stored split a human entered beside the split measured ET demand
+    check — the stored split a human entered beside the split estimated ET demand
     would imply — with a soft per-parcel flag where the two diverge by >= 15
     points. **Display only**: a hand-set share is never auto-overwritten.
 

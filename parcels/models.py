@@ -57,7 +57,7 @@ class ParcelLedger(models.Model):
         ("csv_import", "CSV Import"),
         ("surface_diversion", "Surface Diversion"),
         ("recharge", "Recharge"),
-        ("allocation", "Water Budget"),
+        ("allocation", "Allocation"),
         ("adjustment", "Adjustment"),
         ("calculated", "Calculated"),
     ]

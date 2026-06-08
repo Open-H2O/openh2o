@@ -16,7 +16,7 @@
     </div>
     <div class="budget-op">&equals;</div>
     <div class="budget-seg">
-      <div class="budget-seg-label" style="display: flex; align-items: center; justify-content: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use is the water the crops actually drank (measured ET). Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
+      <div class="budget-seg-label" style="display: flex; align-items: center; justify-content: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use is the water the crops actually drank (estimated ET). Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
       <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
     </div>
   </div>

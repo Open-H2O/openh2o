@@ -132,11 +132,11 @@ def zone_detail(request, pk):
         .order_by("-reporting_period__start_date")
     )
 
-    # Budget vs. use (Phase 52-02): a budget number alone doesn't tell the story —
-    # an evaluator needs "of X budgeted, Y was used". For each budget, compute the
-    # matching draw against the zone's parcels in that period: groundwater budgets
+    # Allocation vs. use (Phase 52-02): an allocation number alone doesn't tell the story —
+    # an evaluator needs "of X allocated, Y was used". For each allocation, compute the
+    # matching draw against the zone's parcels in that period: groundwater allocations
     # show metered/estimated PUMPING (the magnitude of the negative extraction
-    # rows); surface budgets show DELIVERED canal water (the surface-delivery rows
+    # rows); surface allocations show DELIVERED canal water (the surface-delivery rows
     # only — allocations are excluded so we don't count the grant as a use).
     zone_parcel_ids = list(parcel_zones.values_list("parcel_id", flat=True))
     budgets = []

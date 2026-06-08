@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Run the calculation engine for a period over satellite-measured consumptive use.
+"""Run the calculation engine for a period over satellite-estimated consumptive use.
 
 For each in-scope parcel that has gross-ET data for the period, evaluate the
 active CalculationPlan and record its net consumptive use on a CalculationRun.

@@ -10,7 +10,7 @@ consumer). Plain module-level constants — no Django imports — so any of thos
 import them without an app-load cycle.
 """
 
-# How a district's unused water budget is treated at the close of a water year.
+# How a district's unused allocation is treated at the close of a water year.
 CARRY_FORWARD = "carry_forward"  # surplus banks forward as an opening credit
 SAME_WATER_YEAR = "same_water_year"  # surplus expires; use-it-or-lose-it
 

@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Water Budgets & Allocations - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Water Budgets & Allocations{% endblock %}
+{% block title %}Allocations & Ceilings - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Allocations & Ceilings{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="{% url 'getting_started' %}">Help</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Water Budgets &amp; Allocations</span>
+    <span class="breadcrumb-current">Allocations &amp; Ceilings</span>
   </nav>
   <p class="page-description">How the platform turns a zone-wide cap into each account's individual limit.</p>
 </div>
@@ -19,32 +19,32 @@
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">A <strong>water budget</strong> and an <strong>allocation</strong> are the same number seen from two directions. The budget is the whole pie &mdash; the total volume of water assigned to a management zone for a reporting period. The allocation is one account's slice of that pie, worked out from how much land the account holds in the zone. Set the budget at the top; the platform divides it into allocations underneath.</p>
+    <p class="text-secondary text-base">An <strong>allocation ceiling</strong> and an <strong>allocation</strong> are the same number seen from two directions. The ceiling is the whole pie &mdash; the total volume of water assigned to a management zone for a reporting period. The allocation is one account's slice of that pie, worked out from how much land the account holds in the zone. Set the ceiling at the top; the platform divides it into allocations underneath.</p>
 
     <div class="stat-grid-2col" style="margin: var(--space-md) 0 var(--space-xs);">
       <div class="concept-panel concept-panel-supply">
-        <div class="concept-panel-title">Water budget <span class="badge badge-pill badge-green">you set this</span></div>
+        <div class="concept-panel-title">Allocation ceiling <span class="badge badge-pill badge-green">you set this</span></div>
         <p class="text-secondary text-base" style="margin: 0;">The whole pie &mdash; the total volume assigned to a zone for a period. One policy ceiling for a whole area, set at the top.</p>
       </div>
       <div class="concept-panel">
         <div class="concept-panel-title">Allocation <span class="badge badge-pill badge-grey">derived</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">One account&rsquo;s slice &mdash; the platform pro-rates the budget by how many use areas the account holds in the zone.</p>
+        <p class="text-secondary text-base" style="margin: 0;">One account&rsquo;s slice &mdash; the platform pro-rates the ceiling by how many use areas the account holds in the zone.</p>
       </div>
     </div>
   </div>
 
   <div class="card-raised">
-    <h2 class="section-header">Water budget &mdash; the cap you set</h2>
-    <p class="text-secondary text-base">The water budget is the top-down decision. Your agency declares, for example, &ldquo;this zone gets 12,000 acre-feet of groundwater this water year.&rdquo; You set one budget per <strong>zone</strong>, per <strong>water type</strong> (groundwater, surface water, and so on), per <strong>reporting period</strong>. It is the policy ceiling for a whole area &mdash; the total volume available before anyone&rsquo;s individual share is worked out.</p>
+    <h2 class="section-header">Allocation ceiling &mdash; the cap you set</h2>
+    <p class="text-secondary text-base">The allocation ceiling is the top-down decision. Your agency declares, for example, &ldquo;this zone gets 12,000 acre-feet of groundwater this water year.&rdquo; You set one ceiling per <strong>zone</strong>, per <strong>water type</strong> (groundwater, surface water, and so on), per <strong>reporting period</strong>. It is the policy ceiling for a whole area &mdash; the total volume available before anyone&rsquo;s individual share is worked out.</p>
     <p class="text-tertiary text-sm">An acre-foot is the volume of water covering one acre to a depth of one foot &mdash; roughly a year of household use. It is the standard unit California water managers count in.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Allocation &mdash; each account's share</h2>
-    <p class="text-secondary text-base">A single landowner does not care about the zone&rsquo;s full 12,000 acre-feet &mdash; they care about <em>their</em> limit. The platform calculates each account&rsquo;s allocation by pro-rating the zone budget according to how many parcels (use areas) that account holds in the zone:</p>
+    <p class="text-secondary text-base">A single landowner does not care about the zone&rsquo;s full 12,000 acre-feet &mdash; they care about <em>their</em> limit. The platform calculates each account&rsquo;s allocation by pro-rating the zone ceiling according to how many parcels (use areas) that account holds in the zone:</p>
     <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
       <p class="text-primary text-base" style="margin: 0;">
-        account allocation = zone budget &times; (account&rsquo;s parcels in zone &divide; total parcels in zone)
+        account allocation = zone ceiling &times; (account&rsquo;s parcels in zone &divide; total parcels in zone)
       </p>
     </div>
     <p class="text-secondary text-base">Parcel <em>count</em> is used &mdash; not parcel acreage &mdash; on purpose: parcel-area data is often incomplete, and counts are always available. It trades a little precision for not breaking when data is missing.</p>
@@ -52,7 +52,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">A worked example</h2>
-    <p class="text-secondary text-base">Say a zone has a water budget of <strong>12,000 acre-feet</strong> for the year, and contains <strong>600 parcels</strong> in total. Your account holds <strong>30</strong> of those parcels. Your allocation is:</p>
+    <p class="text-secondary text-base">Say a zone has an allocation ceiling of <strong>12,000 acre-feet</strong> for the year, and contains <strong>600 parcels</strong> in total. Your account holds <strong>30</strong> of those parcels. Your allocation is:</p>
     <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
       <p class="text-primary text-base" style="margin: 0;">
         12,000 &times; (30 &divide; 600) = <strong>600 acre-feet</strong>
@@ -69,7 +69,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">One thing worth knowing</h2>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">If no water budget has been set for a zone in a given period, every account&rsquo;s allocation shows as <strong>blank</strong> &mdash; not zero. &ldquo;No budget defined&rdquo; and &ldquo;a budget of zero&rdquo; are deliberately different: the platform will not imply a limit nobody actually set. To start enforcing allocations, set a water budget for the zone and period first on the <a class="prose-link" href="{% url 'accounting:allocations_list' %}">Water Budgets</a> page.</p>
+    <p class="text-secondary text-base" style="margin-bottom: 0;">If no allocation ceiling has been set for a zone in a given period, every account&rsquo;s allocation shows as <strong>blank</strong> &mdash; not zero. &ldquo;No ceiling defined&rdquo; and &ldquo;a ceiling of zero&rdquo; are deliberately different: the platform will not imply a limit nobody actually set. To start enforcing allocations, set a ceiling for the zone and period first on the <a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a> page.</p>
   </div>
 
   <div class="card-raised">
@@ -77,12 +77,12 @@
     <p class="text-secondary text-base">Set the numbers, or read the idea and arithmetic behind them &mdash; one click each.</p>
     <div class="card-grid">
       <a href="{% url 'accounting:allocations_list' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Water Budgets</span><span style="color: var(--color-gold);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The live page where a zone&rsquo;s budget is set and allocations are derived.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Allocations</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">The live page where a zone&rsquo;s ceiling is set and allocations are derived.</p>
       </a>
       <a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-gold);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: measured use vs. supplies.</p>
+        <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: estimated use vs. supplies.</p>
       </a>
       <a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-gold);">&rarr;</span></div>

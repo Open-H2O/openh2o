@@ -84,7 +84,7 @@ class SiteConfig(models.Model):
         help_text="Share of delivered water the crop actually consumes; the rest "
         "returns to the aquifer as recharge.",
     )
-    # The agency-wide default for what happens to an unused water budget at
+    # The agency-wide default for what happens to an unused allocation at
     # year-end. A district may override it on its Zone; this default must always
     # resolve to a concrete value (never null), so existing rollover behavior is
     # preserved on migrate (carry_forward = the historic behavior).
@@ -92,7 +92,7 @@ class SiteConfig(models.Model):
         max_length=16,
         choices=RECOVERY_HORIZON_CHOICES,
         default="carry_forward",
-        help_text="What happens to a district's unused water budget at year-end "
+        help_text="What happens to a district's unused allocation at year-end "
         "(agency-wide default; a district may override it).",
     )
 

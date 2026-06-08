@@ -44,7 +44,7 @@ def getting_started(request):
 
 @login_required
 def budgets_allocations(request):
-    """Explainer: how a zone water budget becomes each account's allocation."""
+    """Explainer: how a zone allocation ceiling becomes each account's allocation."""
     return render(request, "help/budgets_allocations.html")
 
 
@@ -56,7 +56,7 @@ def surface_deliveries(request):
 
 @login_required
 def water_balances(request):
-    """Conceptual explainer: ET as measured use, supplies reconciled against it."""
+    """Conceptual explainer: ET as estimated use, supplies reconciled against it."""
     return render(request, "help/water_balances.html")
 
 
@@ -76,22 +76,22 @@ def settings_explained(request):
 def glossary(request):
     """Glossary of water accounting terms used throughout the platform."""
     terms = {
-        "Water Budget": "The total volume of water assigned to a zone for a reporting period, set per zone, water type, and period. It is the policy ceiling for a whole area. The platform divides it into per-account Allocations. See Help > Water Budgets & Allocations.",
-        "Allocation": "A single account's share of a zone's Water Budget, pro-rated by how many parcels the account holds in the zone. Allocation minus usage gives the account's remaining water; a negative remaining is an overdraft. See Help > Water Budgets & Allocations.",
-        "Apportionment": "Dividing a shared supply — a well or headgate that serves several fields — among those fields by their measured ET demand rather than by headcount, so the total always reconciles back to what the source actually produced. See Help > Methods Behind the Numbers.",
+        "Allocation Ceiling": "The total volume of water assigned to a zone for a reporting period, set per zone, water type, and period. It is the policy ceiling for a whole area. The platform divides it into per-account Allocations. See Help > Allocations & Ceilings.",
+        "Allocation": "A single account's share of a zone's Allocation Ceiling, pro-rated by how many parcels the account holds in the zone. Allocation minus usage gives the account's remaining water; a negative remaining is an overdraft. See Help > Allocations & Ceilings.",
+        "Apportionment": "Dividing a shared supply — a well or headgate that serves several fields — among those fields by their estimated ET demand rather than by headcount, so the total always reconciles back to what the source actually produced. See Help > Methods Behind the Numbers.",
         "Usage": "Water consumed via extraction (well meters) or evapotranspiration (ET estimates), recorded as negative ledger entries.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System: the State Water Board's surface-diversion reporting system (replaced eWRIMS).",
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
         "CFS (Cubic Feet per Second)": "A rate of flow used for surface water diversions; a point of diversion popup shows a rate like \"50.00 cfs.\" One CFS is about 1.9835 acre-feet per day.",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
-        "Closing Balance": "The reconciliation of a use area's water in (surface, precipitation, recovered groundwater) against water out (ET, recharge, runoff, and change in storage) for a period. A small leftover residual is normal — real books rarely close to exactly zero. See Help > How Water Balances Work.",
-        "Consumptive Use": "The water a crop actually consumes, measured from satellite evapotranspiration (ET), regardless of whether it came from a canal, a well, or rain. It is the demand every water balance is built around. Gross consumptive use is total ET; net consumptive use subtracts effective precipitation. See Help > How Water Balances Work.",
+        "Closing Balance": "The reconciliation of a use area's supplies (surface, precipitation, recovered groundwater) against its uses (ET, recharge, runoff, and net banked/drawn credits) for a period. A small leftover residual is normal — real books rarely close to exactly zero. See Help > How Water Balances Work.",
+        "Consumptive Use": "The water a crop actually consumes, estimated from satellite evapotranspiration (ET), regardless of whether it came from a canal, a well, or rain. It is one input among many; district measurements are the primary record. Gross consumptive use is total ET; net consumptive use subtracts effective precipitation. See Help > How Water Balances Work.",
         "Curtailment": "A State Water Board order to reduce or stop diverting under a water right, usually during drought. A right's curtailment status appears on its water-right detail card.",
         "Delivery Settings": "Two agency-wide settings that shape how surface-water deliveries are counted: how much of a delivery the crop actually uses (the rest recharges the aquifer), and what happens to a district's unused water at year-end (carry it forward or let it expire). Set by the analyst on the Delivery Settings page. See Help > Surface Delivery Settings.",
         "Data Source": "An external agency or API that provides hydrologic measurements.",
-        "ET (Evapotranspiration)": "The water consumed by crops — evaporation from the soil plus transpiration through the plants. The methodology's first step estimates groundwater use from ET. (OpenET is the satellite data source; ET is the quantity it measures.)",
+        "ET (Evapotranspiration)": "The water consumed by crops — evaporation from the soil plus transpiration through the plants. Where meters are sparse, the methodology can use ET as one optional way to estimate groundwater use. (OpenET is the satellite data source; ET is the quantity it measures.)",
         "Effective Precipitation": "The portion of rainfall that crops actually use, rather than running off or percolating away. The methodology subtracts it from gross ET to find the net consumptive demand that supplies must meet. See Help > Methods Behind the Numbers.",
-        "ET-Demand Allocation": "How a single recorded district delivery is split across the many fields one headgate serves — weighted by each field's measured ET demand, not divided evenly, and capped at each field's demand divided by irrigation efficiency. See Help > Methods Behind the Numbers.",
+        "ET-Demand Allocation": "How a single recorded district delivery is split across the many fields one headgate serves — weighted by each field's estimated ET demand, not divided evenly, and capped at each field's demand divided by irrigation efficiency. See Help > Methods Behind the Numbers.",
         "GEARS": "Groundwater Extraction Annual Reporting System, the State Water Board reporting format for per-well extraction.",
         "GSA": "Groundwater Sustainability Agency, the local agency responsible for managing groundwater under SGMA.",
         "GSP": "Groundwater Sustainability Plan, the 20-year plan each GSA must adopt.",
@@ -109,8 +109,8 @@ def glossary(request):
         "USGS": "United States Geological Survey, provides stream gauge and groundwater level data.",
         "Water Account": "Groups use areas for accounting purposes, tracks supply and usage.",
         "Water Right": "A legal entitlement to divert surface water, issued by the State Water Board.",
-        "Zone / Management Zone": "A sub-area of the district that carries its own Water Budget. Each use area belongs to a zone, and a zone must exist before a Water Budget can be set for it. See Help > Water Budgets & Allocations.",
-        "Extraction Well": "A borehole used to extract groundwater, identified by state well number or local ID.",
+        "Zone / Management Zone": "A sub-area of the district that carries its own Allocation Ceiling. Each use area belongs to a zone, and a zone must exist before an Allocation Ceiling can be set for it. See Help > Allocations & Ceilings.",
+        "Well": "A borehole used to draw groundwater, identified by state well number or local ID.",
     }
     sorted_terms = sorted(terms.items())
     # Build list of unique first letters for the jump nav

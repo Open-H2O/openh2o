@@ -26,7 +26,7 @@ Order matters:
                               zero every parcel. Land use is a prerequisite for
                               the accounting layer, so it runs BEFORE the ledgers.
   8. seed_merced_ledgers    — the synthetic accounting layer (reporting periods,
-                              two-authority Water Budgets, accounts, and the full
+                              two-authority Allocations, accounts, and the full
                               keyed ParcelLedger). Depends on parcels, wells,
                               rights, PODs, and the GSA zones all existing, so it
                               runs after them.

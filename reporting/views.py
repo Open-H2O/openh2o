@@ -189,7 +189,7 @@ def shared_supply_check(request):
     """ISS-056: stored split vs. ET-implied split reasonableness check.
 
     Lists every hand-set shared well / point of diversion with the human split
-    beside the split measured ET demand would imply, flagging large divergences
+    beside the split estimated ET demand would imply, flagging large divergences
     as a likely data-entry tell. Display only — never writes a fraction back.
     Defaults to the most recent period carrying real activity (where the ET
     signal lives), with a period selector; ``?period=`` overrides.

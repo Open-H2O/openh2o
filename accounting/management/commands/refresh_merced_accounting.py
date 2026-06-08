@@ -2,7 +2,7 @@
 """Refresh the Merced demo's ACCOUNTING layer under the corrected v1.10 model.
 
 WHY this command exists — the ordering trap. Phases 54-57 rebuilt the accounting
-model around measured consumptive use: net consumptive use (gross ET minus
+model around estimated consumptive use: net consumptive use (gross ET minus
 effective precip) is the source-agnostic spine (54-01), unmetered district
 deliveries are allocated to crop-varied parcels BY ET demand (55), and the
 per-parcel books are meant to close (``parcel_mass_balance``). But the live demo

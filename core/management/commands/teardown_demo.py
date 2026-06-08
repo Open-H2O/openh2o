@@ -233,7 +233,7 @@ class Command(BaseCommand):
         self._del(WaterRight.objects.filter(id__in=right_ids), "water rights", counts)
 
         self._del(AllocationPlan.objects.filter(zone_id__in=zone_ids),
-                  "water budgets", counts)
+                  "allocations", counts)
         self._del(WaterAccount.objects.filter(id__in=account_ids),
                   "water accounts", counts)
 
