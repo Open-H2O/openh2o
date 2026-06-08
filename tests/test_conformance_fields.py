@@ -76,7 +76,7 @@ class TestDatastreamUom:
             ucum_unit="[cft_i]/s",
         )
         ds = Datastream.objects.create(
-            name="Kaweah discharge",
+            name="Test discharge",
             observed_property=op,
             sensor=Sensor.objects.create(name="S1", sensor_type="flow"),
             well=WellFactory(),
