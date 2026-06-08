@@ -20,6 +20,17 @@
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
     <p class="text-secondary text-base">A <strong>water budget</strong> and an <strong>allocation</strong> are the same number seen from two directions. The budget is the whole pie &mdash; the total volume of water assigned to a management zone for a reporting period. The allocation is one account's slice of that pie, worked out from how much land the account holds in the zone. Set the budget at the top; the platform divides it into allocations underneath.</p>
+
+    <div class="stat-grid-2col" style="margin: var(--space-md) 0 var(--space-xs);">
+      <div class="concept-panel concept-panel-supply">
+        <div class="concept-panel-title">Water budget <span class="badge badge-pill badge-green">you set this</span></div>
+        <p class="text-secondary text-base" style="margin: 0;">The whole pie &mdash; the total volume assigned to a zone for a period. One policy ceiling for a whole area, set at the top.</p>
+      </div>
+      <div class="concept-panel">
+        <div class="concept-panel-title">Allocation <span class="badge badge-pill badge-grey">derived</span></div>
+        <p class="text-secondary text-base" style="margin: 0;">One account&rsquo;s slice &mdash; the platform pro-rates the budget by how many use areas the account holds in the zone.</p>
+      </div>
+    </div>
   </div>
 
   <div class="card-raised">
@@ -31,8 +42,8 @@
   <div class="card-raised">
     <h2 class="section-header">Allocation &mdash; each account's share</h2>
     <p class="text-secondary text-base">A single landowner does not care about the zone&rsquo;s full 12,000 acre-feet &mdash; they care about <em>their</em> limit. The platform calculates each account&rsquo;s allocation by pro-rating the zone budget according to how many parcels (use areas) that account holds in the zone:</p>
-    <div class="card-raised" style="background: var(--color-surface-base); margin: var(--space-md) 0;">
-      <p class="text-primary text-base" style="margin: 0; text-align: center;">
+    <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
+      <p class="text-primary text-base" style="margin: 0;">
         account allocation = zone budget &times; (account&rsquo;s parcels in zone &divide; total parcels in zone)
       </p>
     </div>
@@ -42,14 +53,14 @@
   <div class="card-raised">
     <h2 class="section-header">A worked example</h2>
     <p class="text-secondary text-base">Say a zone has a water budget of <strong>12,000 acre-feet</strong> for the year, and contains <strong>600 parcels</strong> in total. Your account holds <strong>30</strong> of those parcels. Your allocation is:</p>
-    <div class="card-raised" style="background: var(--color-surface-base); margin: var(--space-md) 0;">
-      <p class="text-primary text-base" style="margin: 0; text-align: center;">
+    <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
+      <p class="text-primary text-base" style="margin: 0;">
         12,000 &times; (30 &divide; 600) = <strong>600 acre-feet</strong>
       </p>
     </div>
     <p class="text-secondary text-base">The platform then subtracts what the account actually <strong>used</strong> &mdash; the sum of its ledger entries (every metered extraction, surface diversion, and recharge credit) &mdash; to show what is left:</p>
-    <div class="card-raised" style="background: var(--color-surface-base); margin: var(--space-md) 0;">
-      <p class="text-primary text-base" style="margin: 0; text-align: center;">
+    <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
+      <p class="text-primary text-base" style="margin: 0;">
         remaining = allocation &minus; usage
       </p>
     </div>
@@ -58,8 +69,26 @@
 
   <div class="card-raised">
     <h2 class="section-header">One thing worth knowing</h2>
-    <p class="text-secondary text-base">If no water budget has been set for a zone in a given period, every account&rsquo;s allocation shows as <strong>blank</strong> &mdash; not zero. &ldquo;No budget defined&rdquo; and &ldquo;a budget of zero&rdquo; are deliberately different: the platform will not imply a limit nobody actually set. To start enforcing allocations, set a water budget for the zone and period first.</p>
-    <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Budgets &rarr;</a>
+    <p class="text-secondary text-base" style="margin-bottom: 0;">If no water budget has been set for a zone in a given period, every account&rsquo;s allocation shows as <strong>blank</strong> &mdash; not zero. &ldquo;No budget defined&rdquo; and &ldquo;a budget of zero&rdquo; are deliberately different: the platform will not imply a limit nobody actually set. To start enforcing allocations, set a water budget for the zone and period first on the <a class="prose-link" href="{% url 'accounting:allocations_list' %}">Water Budgets</a> page.</p>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="section-header">Where to go next</h2>
+    <p class="text-secondary text-base">Set the numbers, or read the idea and arithmetic behind them &mdash; one click each.</p>
+    <div class="card-grid">
+      <a href="{% url 'accounting:allocations_list' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Water Budgets</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">The live page where a zone&rsquo;s budget is set and allocations are derived.</p>
+      </a>
+      <a href="{% url 'water_balances' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: measured use vs. supplies.</p>
+      </a>
+      <a href="{% url 'methods' %}" class="card-raised card-link">
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <p class="text-secondary text-sm" style="margin: 0;">The calculation chain that produces each account&rsquo;s usage.</p>
+      </a>
+    </div>
   </div>
 
 </div>
