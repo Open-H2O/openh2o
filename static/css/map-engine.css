@@ -66,6 +66,12 @@
     -webkit-backdrop-filter:blur(14px) saturate(1.1);
     box-shadow:var(--shadow-pop-lg, 0 12px 28px rgba(0,0,0,0.45));
     overflow:hidden;
+    /* Cap the panel so a long layer list never grows down into the bottom-right
+       attribution credit + zoom control. The ~130px reserve = nav control (~92px)
+       + attribution strip (~24px) + gap. The list scrolls inside .panel-body;
+       the header band stays pinned. */
+    display:flex; flex-direction:column;
+    max-height: calc(100% - 130px);
 }
 /* Panel header band */
 .panel-head {
@@ -92,7 +98,7 @@
 }
 .panel-toggle-all:hover { color:var(--color-text-primary, #e8edf4); border-color:var(--color-gold, #E4A317); }
 
-.panel-body { padding:10px 14px 12px; max-height:64vh; overflow-y:auto; }
+.panel-body { padding:10px 14px 12px; flex:1; min-height:0; overflow-y:auto; }
 
 .layer-toggle {
     display:flex; align-items:center; gap:9px;
@@ -215,7 +221,13 @@
 .maplibregl-ctrl-group button span { filter:invert(0.7); }
 .maplibregl-ctrl-attrib { background:color-mix(in oklch, var(--color-base) 85%, transparent) !important; color:var(--color-text-tertiary, #6b7f94) !important; font-size:10px !important; border-radius:6px 0 0 0 !important; }
 .maplibregl-ctrl-attrib a { color:var(--color-blue-bright, #5A95BC) !important; }
-.maplibregl-ctrl-bottom-left .maplibregl-ctrl-scale { position:fixed !important; bottom:14px !important; left:50% !important; transform:translateX(-50%) !important; }
+/* Scale bar: centered along the MAP's bottom edge, anchored to the map container
+   itself. The old `position:fixed` pinned it to the viewport, which dropped it
+   onto the page footer below the map. Centering MapLibre's own bottom-left ctrl
+   container keeps the intended centered look but confines it to the map box,
+   clear of the legend (bottom-left) and the zoom/attribution stack (bottom-right). */
+.maplibregl-ctrl-bottom-left { left:50% !important; transform:translateX(-50%) !important; bottom:8px !important; }
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-scale { position:static !important; bottom:auto !important; left:auto !important; transform:none !important; margin:0 !important; }
 .maplibregl-ctrl-scale { background:color-mix(in oklch, var(--color-card) 88%, transparent) !important; color:var(--color-text-secondary, #8899aa) !important; border:none !important; border-bottom:2px solid var(--color-gold, #E4A317) !important; font-family:var(--font-mono); font-size:10px !important; letter-spacing:0.3px; padding:4px 11px !important; border-radius:0 !important; backdrop-filter:blur(10px); }
 
 /* ── Coordinate display ── */
