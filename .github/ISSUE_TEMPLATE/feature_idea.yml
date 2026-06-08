@@ -1,0 +1,40 @@
+name: Feature or idea
+description: Suggest an improvement or a new capability for the platform.
+title: "[Idea]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. One thing to keep in mind: OpenH2O has deliberate
+        constraints — single-tenant, no Node.js build step, no Celery/Redis — so it
+        stays runnable on the smallest practical server. Proposals that fit those
+        bounds are easiest to land. See the "Key Constraints" section of CLAUDE.md.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: The need or pain point behind the request, not just the proposed solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: How might it work? Optional — a clear problem is enough to start.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the platform?
+      options:
+        - Accounting / ledger
+        - Reporting (GEARS / CalWATRS)
+        - Data sync / adapters
+        - Maps / monitoring
+        - Standards / interoperability
+        - Deployment / ops
+        - Other
+    validations:
+      required: false

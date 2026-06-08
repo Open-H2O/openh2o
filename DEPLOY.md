@@ -433,7 +433,7 @@ recreates the database from the dump, restarts web, and runs `migrate`. Wire it 
 cron for an unattended nightly reset, e.g.:
 
 ```cron
-0 4 * * * cd /path/to/openh2o && OPENH2O_NTFY_URL=http://192.168.0.114:8080/vander-infra bash scripts/reset-demo.sh /path/to/golden.dump >> ~/openh2o-logs/reset-demo-cron.log 2>&1
+0 4 * * * cd /path/to/openh2o && OPENH2O_NTFY_URL=http://your-ntfy-host:8080/your-topic bash scripts/reset-demo.sh /path/to/golden.dump >> ~/openh2o-logs/reset-demo-cron.log 2>&1
 ```
 
 Set `OPENH2O_NTFY_URL` (optional) to receive ntfy notifications — high-priority on

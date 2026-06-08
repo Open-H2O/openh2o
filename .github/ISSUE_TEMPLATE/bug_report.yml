@@ -1,0 +1,57 @@
+name: Bug report
+description: Something in the OpenH2O software is broken or behaves incorrectly.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. This tracker is for the **OpenH2O software** itself.
+
+        If you are using a running deployment and a *number* looks wrong, that is data
+        for your operator to review, not a code bug — please use that site's in-app
+        **Send feedback** widget instead, or contact whoever runs your deployment.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what actually happened.
+      placeholder: |
+        Steps to reproduce:
+        1. ...
+        Expected:
+        Actual:
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Build version
+      description: The version string in the site footer (e.g. v1.14-46-g087bf7d), or the commit you deployed.
+    validations:
+      required: false
+  - type: dropdown
+    id: deploy-mode
+    attributes:
+      label: How are you running it?
+      options:
+        - Local trial (docker compose on my machine)
+        - Production deployment (real server + domain)
+        - Just reading the code
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: "Output from `docker compose logs web --tail=50`, if applicable. Redact any secrets."
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Docker version, and browser if it is a UI bug.
+    validations:
+      required: false

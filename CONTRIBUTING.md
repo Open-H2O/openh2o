@@ -13,7 +13,7 @@ OpenH2O is licensed under **AGPL-3.0-or-later**. By submitting a contribution yo
 ```bash
 git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
-cp .env.example .env        # set SECRET_KEY
+cp .env.example .env        # set SECRET_KEY, and DJANGO_SETTINGS_MODULE=config.settings.local for dev
 docker compose up -d --build
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data

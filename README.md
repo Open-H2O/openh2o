@@ -42,7 +42,10 @@ It is designed for a single agency per deployment (single-tenant), and it works 
 ```bash
 git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
-cp .env.example .env                 # set SECRET_KEY at minimum
+cp .env.example .env
+# For a local trial, set these two lines in .env:
+#   SECRET_KEY=<any-random-string>             # base settings require it, no default
+#   DJANGO_SETTINGS_MODULE=config.settings.local   # local mode: no HTTPS redirect, dev DB password is fine
 docker compose up -d --build         # start db + web + caddy
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data      # reference data
