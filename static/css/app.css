@@ -952,6 +952,18 @@ a { color: inherit; }
     margin-bottom: var(--space-xs);
 }
 
+/* Gold label that heads a concept-panel whose body is prose (not a larger
+   title). Sized to LEAD its paragraph — unlike .step-eyebrow, which is
+   intentionally tiny because it sits above a bigger heading; using the eyebrow
+   here made the gold label read smaller than its own body text. */
+.concept-panel-label {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-gold);
+    margin-bottom: var(--space-xs);
+}
+
 .concept-list {
     margin: var(--space-sm) 0 0;
     padding-left: var(--space-lg);
