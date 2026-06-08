@@ -77,11 +77,12 @@ Three OKLCH tonal ramps (8 stops each, 100-800):
 These are the shared visual vocabulary the data/accounting/help pages reuse so
 the same idea always looks the same. All live in `static/css/app.css`.
 
-- `.budget-panel` — the unified water-budget summary: one gradient panel that
-  reads as the balance equation (supplies − use = balance) with a supply
-  breakdown foot. The house "balance" card. Used on the dashboard, period
-  detail, account detail, and (as `.budget-panel--concept`, carrying
-  descriptive text instead of live AF figures) the Help explainers.
+- `.budget-panel` — a supply-vs-use summary: one gradient panel that reads as
+  the balance equation (supplies − use = balance) with a supply breakdown foot.
+  It is one summary view among many data surfaces, not the product's centerpiece.
+  Used on the dashboard, period detail, account detail, and (as
+  `.budget-panel--concept`, carrying descriptive text instead of live AF figures)
+  the Help explainers.
 - `.accent-card` — a left-accent feature card for a labeled entity with a
   description + an action (e.g. the report-type heroes). `--gold` / `--blue`
   modifiers tint the left edge and a small icon chip.

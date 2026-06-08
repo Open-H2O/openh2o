@@ -2,7 +2,7 @@
 
 # Data Standards & Interoperability
 
-OpenH2O is **born-compliant**: rather than bolting standards on at export time, every measurement it stores or ingests is mapped, at the source, to a single canonical vocabulary. That one decision is what lets the platform publish to open standards without per-agency remapping, and it's the part of OpenH2O most directly reusable by another district's system.
+OpenH2O is **born-compliant** — meaning standards-*interoperable* by construction, not a claim of SGMA compliance: rather than bolting standards on at export time, every measurement it stores or ingests is mapped, at the source, to a single canonical vocabulary. That one decision is what lets the platform publish to open data standards (OGC SensorThings, the USGS/EPA water vocabularies, UCUM units) without per-agency remapping, and it's the part of OpenH2O most directly reusable by another district's system.
 
 This document is the reference for that vocabulary, the crosswalk, the conformance rules, and the publishing roadmap. If you operate a different platform and want to align with OpenH2O (or with the standards it targets), start here.
 
@@ -103,7 +103,18 @@ OpenH2O prepares the two filings California agencies owe, as ready-to-submit CSV
 
 ---
 
-## 6. Publishing roadmap (open standards out)
+## 6. Derived values: effective precipitation & the precip feed
+
+Two values OpenH2O computes (rather than ingests) are worth documenting plainly, because both are estimates, not measurements:
+
+- **Effective precipitation.** Not all rain is usable by a crop, so the calculation engine subtracts only the *effective* share of precipitation from gross ET. The method is configurable per agency (`accounting/precip_math.py`): a raw pass-through, a flat fraction of total rain, or the USDA-SCS / TR-21 soil-storage model. The USDA-SCS option caps effective precipitation at the month's ET, so Pe never exceeds `min(P, ET)` and the net consumptive use stays ≥ 0.
+- **Precipitation source.** Per-parcel precipitation is sampled from GRIDMET (`pr` band, mm), not a separate rain-gauge network. This is deliberate: the OpenET ensemble OpenH2O uses for ET is itself built on gridMET forcing, so drawing precip from the same source keeps ET and precip on consistent inputs (`datasync/adapters/gee.py`).
+
+These are estimates used to fill gaps where direct measurements are absent; a district's own metered or recorded values always take precedence.
+
+---
+
+## 7. Publishing roadmap (open standards out)
 
 The data model already maps onto these standards; the serializers are the remaining work.
 

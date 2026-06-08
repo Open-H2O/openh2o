@@ -4,7 +4,7 @@
 
 **Read this if you are an AI agent (or the person driving one) tasked with standing up OpenH2O for a water agency.**
 
-OpenH2O is designed so that a capable coding agent — Claude Code, or similar — can take a bare Linux server and a domain name and deliver a running, secured, data-populated water-accounting platform, then walk the agency's staff through their first report. [DEPLOY.md](../DEPLOY.md) is the exact command reference; **this guide is the decision-making layer on top of it** — what to ask, what to choose, and what order to do it in.
+OpenH2O is designed so that a capable coding agent — Claude Code, or similar — can take a bare Linux server and a domain name and deliver a running, secured, data-populated water-data management platform, then help the agency's staff see and manage their own data. [DEPLOY.md](../DEPLOY.md) is the exact command reference; **this guide is the decision-making layer on top of it** — what to ask, what to choose, and what order to do it in.
 
 Work through the five phases in order. Stop at each ✋ checkpoint and confirm with the human before proceeding.
 
@@ -160,9 +160,9 @@ The platform has three roles. Set expectations before handing over:
 - **Manager** — edits the ledger, creates accounts, runs reports (one or two people).
 - **Viewer** — read-only; for board members and outside agencies.
 
-Then walk them through the first loop: log in → confirm their boundary → review accounts and allocations → open the reporting page → generate a draft GEARS or CalWATRS CSV. Make clear that OpenH2O *prepares* the filing; a certifying official reviews and submits it in the state portal.
+Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. If the agency files with the state, show the optional reporting step too: open the reporting page → generate a draft GEARS or CalWATRS CSV, making clear that OpenH2O *prepares* the filing; a certifying official reviews and submits it in the state portal.
 
-✋ **Done when:** an agency staffer can log in, see their own basin, and produce a draft report without you.
+✋ **Done when:** an agency staffer can log in and see and manage their own basin data without you — and, if they report to the state, produce a draft report.
 
 ---
 

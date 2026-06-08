@@ -2,9 +2,9 @@
 
 # Roadmap
 
-OpenH2O already does the core job: it tracks an agency's water and prepares
-California's required reports. This page is about what comes next — and, just as
-important, what's already finished.
+OpenH2O already does the core job: it manages an agency's water data, and can
+prepare California's required reports when needed. This page is about what comes
+next — and, just as important, what's already finished.
 
 A bit of background. An earlier version of this roadmap compared OpenH2O against
 a more mature reference system (the Qanat / Groundwater Accounting Platform) and
@@ -19,10 +19,11 @@ it's a different technology stack.*
 
 These were the three headline gaps in the old roadmap. They're done:
 
-- **The calculation engine.** The math that turns a satellite
-  evapotranspiration (ET) measurement into a usable groundwater number —
-  subtract effective rainfall, subtract the surface water that was delivered,
-  and so on. Built and tested. *(See
+- **The calculation engine.** The math that can turn a satellite
+  evapotranspiration (ET) estimate into a usable groundwater number — one
+  optional way to fill gaps where meters are sparse: subtract effective
+  rainfall, subtract the surface water that was delivered, and so on. Built and
+  tested. *(See
   [`accounting/steps.py`](../accounting/steps.py),
   [`accounting/calculation.py`](../accounting/calculation.py), and
   [`accounting/services.py`](../accounting/services.py).)*

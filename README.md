@@ -4,9 +4,9 @@
 
 # OpenH2O — Open Water Accounting Platform
 
-**A production-ready water accounting platform that a California water agency can stand up on a $15/month server — with an AI agent doing the deployment.**
+**A production-ready water-data management platform that a California water agency can stand up on a $15/month server — with an AI agent doing the deployment.**
 
-OpenH2O tracks groundwater extraction, surface-water diversions, mixed-use accounting, and managed aquifer recharge — first and foremost so an agency can understand its own basin. For agencies that also file with the state, it can prepare the compliance reports (GEARS and CalWATRS), but reporting is an optional add-on, not the reason the platform exists. It is built on a fully open stack so that any agency — or any engineering firm working on their behalf — can run it, read it, and improve it.
+OpenH2O helps a water agency manage its own water data — the measurements, deliveries, wells, diversions, and recharge that make up an agency's records — so the agency owns and understands its own basin. Satellite evapotranspiration (ET) is one of those data feeds, not the centerpiece. For agencies that also file with the state, it can prepare the reports (GEARS and CalWATRS), but reporting is an optional add-on, not the reason the platform exists. It is built on a fully open stack so that any agency — or any engineering firm working on their behalf — can run it, read it, and improve it.
 
 > **Live demo:** [openh2o.com](https://openh2o.com) · **License:** [AGPL-3.0-or-later](#license) · **Deploy guide:** [DEPLOY.md](DEPLOY.md) · **Deploy it with an AI:** [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md)
 
@@ -14,13 +14,13 @@ OpenH2O tracks groundwater extraction, surface-water diversions, mixed-use accou
 
 ## Who this is for
 
-California's **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to measure and report how much water their basins use. Most of these agencies are small, underfunded, and have no software staff. The existing tooling is excellent but expensive, and effectively every deployment is vendor-managed.
+California's **Sustainable Groundwater Management Act (SGMA)** requires hundreds of local **Groundwater Sustainability Agencies (GSAs)** and water districts to account for the water their basins use. Most of these agencies are small, underfunded, and have no software staff. The existing tooling is excellent but expensive, and effectively every deployment is vendor-managed.
 
 OpenH2O exists to change the cost structure. The core idea is simple:
 
 > **The goal is to lower the cost and access barrier.** An under-resourced agency can stand the platform up itself — point a frontier-AI agent at this repository and a cheap virtual server, and the agent does the deployment, with no procurement cycle to wait on. An engineering firm or consultant can run it just as well, and for many agencies that is the sensible path; the point is that self-deployment is now a real option, not a vendor contract by default.
 
-It is designed for a single agency per deployment (single-tenant), and it works whether your basin is groundwater-only, surface-water-only, mixed-use, or doing active recharge.
+It is designed for a single agency per deployment (single-tenant), and it works whether your basin is surface-water, groundwater, mixed-use, or doing active recharge.
 
 ### A note on terms
 - **GSA** — Groundwater Sustainability Agency, the local body responsible for a basin under SGMA.
@@ -71,7 +71,7 @@ The deployment is the first thing the agent does, not the only thing. [docs/AI-O
 ## What it does
 
 - **Parcels and wells** with real spatial data (GeoDjango + PostGIS) — boundaries, points of diversion, well inventories.
-- **A double-entry water accounting ledger** that tracks supply, usage, and allocations by water type and zone — the same accounting discipline a bank uses, applied to acre-feet.
+- **A water-data ledger** that records supply, usage, and allocations by water type and zone, so every entry is traceable.
 - **Surface-water rights** with points of diversion and diversion records, including curtailment.
 - **Managed aquifer recharge** site and event tracking.
 - **External data sync** from seven public sources — USGS, CDEC, DWR (Water Data Library and SGMA portal), CIMIS, NOAA, CNRFC — plus OpenET satellite evapotranspiration, all crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)).
@@ -84,7 +84,7 @@ The deployment is the first thing the agent does, not the only thing. [docs/AI-O
 
 ## Data standards & interoperability
 
-This is the part most worth a careful look. OpenH2O is **born-compliant**: every measurement it stores or ingests is mapped to a single canonical vocabulary, so it can publish to open standards without per-agency remapping.
+This is the part most worth a careful look. OpenH2O is **born-compliant** — standards-*interoperable* by design, not a claim of SGMA compliance: every measurement it stores or ingests is mapped to a single canonical vocabulary, so it can publish to open data standards without per-agency remapping.
 
 - A **canonical ObservedProperty registry** maps every measured concept (stream discharge, depth-to-groundwater, ET, reservoir storage, …) to its **USGS parameter code**, **EPA WQX characteristic name**, and **UCUM unit**.
 - A **SourceParameter crosswalk** maps each external source's native parameter codes onto that canonical vocabulary, so USGS code `00060`, CDEC code `20`, and a CNRFC streamflow forecast all resolve to the same `discharge` concept.

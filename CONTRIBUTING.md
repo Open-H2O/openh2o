@@ -2,7 +2,7 @@
 
 # Contributing to OpenH2O
 
-Thanks for your interest. OpenH2O exists to put a capable water-accounting platform within reach of every California agency, and contributions — from bug reports to new data adapters — move that forward.
+Thanks for your interest. OpenH2O exists to put a capable water-data management platform within reach of every California agency, and contributions — from bug reports to new data adapters — move that forward.
 
 ## License of contributions
 
