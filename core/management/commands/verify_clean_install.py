@@ -3,8 +3,9 @@
 This is the invariant the public repo must always satisfy: an agency clones the
 code, runs migrations + `seed_data` (reference/lookup data every install needs),
 and gets an EMPTY instance ready for their own watershed. The fictional
-"Demo Valley GSA" (`seed_demo_data`) and the real-basin "Kaweah Subbasin"
-(`seed_kaweah`) are opt-in demo commands the public never runs.
+"Demo Valley GSA" (`seed_demo_data`) is an opt-in demo the public never runs;
+"Kaweah Subbasin" is a retired demo basin kept in the guard list below so a
+stray leftover from an older install is still caught.
 
 The CI `clean-install-guard` workflow runs this after `seed_data` and fails the
 build if a single row of agency/demo content is present — making it impossible

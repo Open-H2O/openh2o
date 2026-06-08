@@ -134,12 +134,12 @@ var MAP_CONFIG = {
         {
             id: 'zones-fill', type: 'fill', source: 'zones',
             label: 'GSA Zones', group: 'zones', section: 'Administrative',
-            paint: { 'fill-color': ['match', ['get', 'name'],
-                'East Kaweah GSA', '#2d6a4f',
-                'Mid-Kaweah GSA', '#40916c',
-                'Greater Kaweah GSA', '#52b788',
-                '#3a7d5c'
-            ], 'fill-opacity': 0.16 },
+            // Fill colors are rendered from the live GSA zones (geography views
+            // map_view) so symbology can never diverge from the data again.
+            paint: { 'fill-color': {% if gsa_zones %}['match', ['get', 'name'],
+{% for z in gsa_zones %}                '{{ z.name|escapejs }}', '{{ z.color }}',
+{% endfor %}                '#3a7d5c'
+            ]{% else %}'#3a7d5c'{% endif %}, 'fill-opacity': 0.16 },
             swatch: 'fill', swatchColor: '#40916c'
         },
         {
@@ -149,7 +149,7 @@ var MAP_CONFIG = {
         },
         // One label per zone, placed at a single interior point (zone-labels
         // source). Labeling the MultiPolygon directly stamped the name once per
-        // disjoint part — 16x for Greater Kaweah.
+        // disjoint part — many times over for a multi-part GSA.
         Object.assign(OH2O.makeLabelLayer('zones-label', 'zone-labels', 'zone', { anchor: 'center', offset: [0, 0] }),
             { panelHidden: true, group: 'zones', section: 'Administrative' }),
 
@@ -356,12 +356,10 @@ var MAP_CONFIG = {
         }
     },
     legend: [
-        { title: 'GSA Zones', items: [
-            { label: 'East Kaweah GSA',    swatch: 'fill', color: '#2d6a4f' },
-            { label: 'Mid-Kaweah GSA',     swatch: 'fill', color: '#40916c' },
-            { label: 'Greater Kaweah GSA', swatch: 'fill', color: '#52b788' }
-        ]}
-    ]
+{% if gsa_zones %}        { title: 'GSA Zones', items: [
+{% for z in gsa_zones %}            { label: '{{ z.name|escapejs }}', swatch: 'fill', color: '{{ z.color }}' }{% if not forloop.last %},{% endif %}
+{% endfor %}        ]}
+{% endif %}    ]
 };
 </script>
 <script src="{% static 'js/map-engine.js' %}"></script>

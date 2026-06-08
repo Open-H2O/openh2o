@@ -7,7 +7,7 @@ distinct from the surface-water district (the canal headgates).
 WHY: SGMA splits the two jobs. The surface-water district moves canal water
 to fields (modeled as water rights + points of diversion). The GSA manages
 groundwater pumping (modeled as a management-area zone a well/parcel falls
-within). Mirrors the Kaweah side, which already has its three GSA zones.
+within). (the same management-area-zone pattern any subbasin's GSAs use).
 
 The three Merced GSAs (DWR Bulletin 118 subbasin 5-022.04) come from the
 state's SGMA boundary service, committed as data/merced/merced_gsas.geojson

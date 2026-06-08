@@ -193,7 +193,7 @@ def allocate_district_delivery(
     # and stamp it on every row so the ledger's Water Type column is populated for
     # surface rows the way it already is for groundwater. .filter().first() (not
     # .get()) so a fresh DB without the seeded type yields None rather than raising;
-    # the seeds (seed_kaweah / seed_merced_ledgers) create it.
+    # the seed commands (e.g. seed_merced_ledgers) create it.
     sw_type = WaterType.objects.filter(code="SW").first()
 
     served_links = list(

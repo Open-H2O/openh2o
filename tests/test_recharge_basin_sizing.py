@@ -66,12 +66,20 @@ def test_seeded_merced_basins_within_band():
 
 
 def test_fixed_degree_box_would_breach_the_band():
-    """The retired make_box(0.008) footprint is out of band — proving the guard
-    catches a regression to the anti-pattern without a manual edit-and-revert."""
-    from core.management.commands.seed_kaweah import make_box
+    """A naive fixed-degree footprint is out of band — proving the guard catches
+    a regression to the anti-pattern without a manual edit-and-revert."""
+    from django.contrib.gis.geos import MultiPolygon, Polygon
 
-    box = make_box(-120.5, 37.0, size=0.008)
-    box.srid = 4326  # make_box does not set one; transform needs a source SRID
+    # The retired seed anti-pattern: a square 0.008 degrees on a side, regardless
+    # of latitude. Built inline so this guard owns its own fixture.
+    cx, cy, half = -120.5, 37.0, 0.008 / 2
+    ring = [
+        (cx - half, cy - half), (cx + half, cy - half),
+        (cx + half, cy + half), (cx - half, cy + half),
+        (cx - half, cy - half),
+    ]
+    box = MultiPolygon(Polygon(ring))
+    box.srid = 4326  # the inline box has no SRID; transform needs a source SRID
     acres = _true_acres(box)
     assert acres > MAX_BASIN_ACRES, (
         f"expected the fixed-degree box to breach the band; it was {acres:.1f} ac"

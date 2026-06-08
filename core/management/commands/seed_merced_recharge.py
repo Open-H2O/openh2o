@@ -2,7 +2,7 @@
 """Seed the two real Merced Irrigation District recharge basins.
 
 This command kills the synthetic-square anti-pattern named by the v1.9
-demonstration: the Kaweah seed builds spreading basins with
+demonstration: a naive seed builds spreading basins with
 ``make_box(size=0.008)``, a fixed-degree box that is ~150-190 acres at Central
 Valley latitude — about ten times too large for a real spreading basin. A
 basin that swallows half a city is the single most visible tell that makes a

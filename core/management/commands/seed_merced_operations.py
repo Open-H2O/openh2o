@@ -9,7 +9,7 @@ inspects: Merced River diversions, MID-canal headgates, groundwater wells, and
 farm parcels — the complex conjunctive-use story of surface water + groundwater.
 The upper Merced River watershed is intentionally out of scope (see RIGHT_CONFIGS).
 
-The anti-pattern this command exists to KILL: the Kaweah seed hand-types a
+The anti-pattern this command exists to KILL: a retired seed hand-typed a
 diversion's lon/lat and a ``stream_name`` STRING with no tie to real river
 geometry, so a diversion can land in a field and its labelled source can be a
 river that is nowhere near it. A diversion floating in a field — or a farm with
@@ -428,7 +428,7 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     # Flush — ONLY MER- operational rows + their links. Base layer + Kaweah /
     # Demo Valley rows are never touched. Delete links before the rows they
-    # reference (defensive ordering, mirroring seed_kaweah._flush).
+    # reference (defensive ordering, defensive ordering).
     # ------------------------------------------------------------------
     def _flush(self):
         self.stdout.write("Flushing existing MER- operational data...")
@@ -506,7 +506,7 @@ class Command(BaseCommand):
         return segs[idx]
 
     def _seed(self, lower):
-        # --- Water-right types (global lookup rows; same codes as seed_kaweah) ---
+        # --- Water-right types (global lookup rows) ---
         self.stdout.write("Ensuring water-right types...")
         pre14, _ = WaterRightType.objects.get_or_create(
             code="PRE14", defaults={

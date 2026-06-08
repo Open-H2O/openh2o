@@ -14,7 +14,7 @@ export APP_VERSION = $(VERSION)
 .PHONY: help up down build logs shell dbshell migrate makemigrations \
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
-        seed-well-types demo flush-demo kaweah flush-kaweah merced teardown-demo \
+        seed-well-types demo flush-demo merced teardown-demo \
         check test fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod deploy
 
 help: ## Show this help message
@@ -109,12 +109,6 @@ demo: ## Load demo data (fictional Demo Valley GSA)
 
 flush-demo: ## Delete and reload demo data
 	$(EXEC) seed_demo_data --flush
-
-kaweah: ## Load Kaweah Subbasin demo data (real basin data)
-	$(EXEC) seed_kaweah
-
-flush-kaweah: ## Delete and reload Kaweah data
-	$(EXEC) seed_kaweah --flush
 
 merced: ## Load the full Merced Subbasin demo (boundary, hydrography, GSAs, rights/PODs, selected parcels, recharge)
 	$(EXEC) seed_merced

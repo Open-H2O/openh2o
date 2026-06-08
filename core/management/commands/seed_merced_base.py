@@ -14,7 +14,7 @@ contrast now lives entirely within the valley floor. Do not re-add it.
 
 The geometry is committed under ``data/merced/`` as EPSG:4326 GeoJSON
 so the demo is reproducible from authoritative public sources (the same
-doctrine as ``data/kaweah/``). Provenance lives in ``data/merced/README.md``.
+doctrine). Provenance lives in ``data/merced/README.md``.
 
 This command loads ONLY the boundary. Rivers, canals, and stations are
 populated separately by driving the platform's own loaders:
@@ -124,7 +124,7 @@ class Command(BaseCommand):
 
         The platform is single-tenant: exactly one SiteConfig names the deployed
         agency (and the singleton's save() refuses a second row). Only the
-        retired seeds (seed_kaweah / seed_demo_data) ever created one, so a fresh
+        the retired seed_demo_data ever created one, so a fresh
         ``make fresh`` → ``seed_merced`` rebuild would have NO identity, and a
         post-teardown server still carries the retired-basin name. Create it if
         absent, or rename it off a retired demo identity — but never clobber an

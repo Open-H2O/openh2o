@@ -63,11 +63,26 @@ def map_view(request):
     else:
         bounds = "null"
 
+    # GSA-zone legend + fill colors, DERIVED from the live management-area zones
+    # so the legend can never name a basin that isn't in the database. (A
+    # hardcoded Kaweah legend survived the v1.9 Kaweah→Merced demo migration and
+    # showed retired-basin names on the live map — post-mortem 2026-06-08.)
+    zone_palette = ["#2d6a4f", "#40916c", "#52b788", "#74c69d", "#95d5b2"]
+    gsa_zones = [
+        {"name": name, "color": zone_palette[i % len(zone_palette)]}
+        for i, name in enumerate(
+            Zone.objects.filter(zone_type="management_area", geometry__isnull=False)
+            .order_by("name")
+            .values_list("name", flat=True)
+        )
+    ]
+
     return render(request, "geography/map.html", {
         "center_lng": center_lng,
         "center_lat": center_lat,
         "zoom": zoom,
         "bounds": bounds,
+        "gsa_zones": gsa_zones,
     })
 
 
@@ -609,8 +624,8 @@ def zone_labels_geojson(request):
 
     Zone geometries are MultiPolygons with many disjoint parts (a GSA is a
     union of scattered parcels). A symbol layer placed on the polygon source
-    stamps the zone name once *per part* — so "Greater Kaweah GSA" appeared
-    ~16 times across the map. Labeling a single interior point per zone gives
+    stamps the zone name once *per part* — a multi-part GSA appeared a dozen-plus
+    times across the map. Labeling a single interior point per zone gives
     exactly one clean, well-placed label.
     """
     features = [

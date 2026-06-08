@@ -24,8 +24,8 @@ class Boundary(models.Model):
     basin_code = models.CharField(
         max_length=20,
         blank=True,
-        help_text='DWR Bulletin 118 basin/subbasin number, e.g. "5-022.11" '
-        "(Kaweah). The basin identity WaDE/AB1755 expect.",
+        help_text='DWR Bulletin 118 basin/subbasin number, e.g. "5-022.04" '
+        "(Merced Subbasin). The basin identity WaDE/AB1755 expect.",
     )
     huc = models.CharField(
         max_length=20,

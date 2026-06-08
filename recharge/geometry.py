@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Area-accurate geometry helpers for recharge facilities.
 
-The naive ``make_box(size=0.008)`` in the Kaweah seed builds a basin footprint
+The naive ``make_box(size=0.008)`` fixed-degree square builds a basin footprint
 from a fixed number of DEGREES. At Central Valley latitude (~37 N) that is a
 ~0.5-mile square ≈ 156 acres — applied uniformly regardless of a basin's real
 size, so small basins balloon to "swallow half a city." (Real spreading basins

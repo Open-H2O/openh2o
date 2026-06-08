@@ -66,9 +66,10 @@ BASINS = {
         "well_prefix": "KAW-W-",
         "account_prefix": "KAW-ACCT-",
         "right_prefix": "KAW-WR-",
-        # Stations the Kaweah seed placed ABOVE the subbasin (Terminus Dam,
-        # Three Rivers) sit outside the boundary polygon, so the spatial sweep
-        # alone misses them. List them explicitly (mirrors seed_kaweah._flush).
+        # Stations the retired Kaweah demo placed ABOVE the subbasin (Terminus
+        # Dam, Three Rivers) sit outside the boundary polygon, so the spatial
+        # sweep alone misses them. List them explicitly so teardown still cleans
+        # any leftover from an older install.
         "station_ext_ids": [
             "TRM", "KWR", "VIS", "11210100", "11208730", "54",
             "KAW-GWL-01", "KAW-GWL-02",
