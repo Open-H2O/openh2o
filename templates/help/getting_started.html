@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Getting Started</span>
   </nav>
-  <p class="page-description">A step-by-step guide to setting up your water accounting system.</p>
+  <p class="page-description">A step-by-step guide to setting up your water-data platform.</p>
 </div>
 {% endblock %}
 
@@ -137,7 +137,7 @@
     <div class="step-body">
       <span class="step-eyebrow">Step 7</span>
       <h2 class="section-header">Enter Use Ledger Data</h2>
-      <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. Usage can also be derived from satellite evapotranspiration (ET) &mdash; how that calculation works is configured on your Methodology page. The use ledger is the core of water accounting.</p>
+      <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. Usage can also be derived from satellite evapotranspiration (ET) &mdash; how that calculation works is configured on your Methodology page. The use ledger is the core record of your water data.</p>
       <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Ledger &rarr;</a>
       <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
       <a href="{% url 'accounting:methodology_settings' %}" class="text-sm" style="color: var(--color-gold);">View the Methodology &rarr;</a>

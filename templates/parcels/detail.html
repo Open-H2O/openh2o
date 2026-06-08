@@ -218,7 +218,7 @@
           <div class="field-label field-row">
             {{ ef.label }}
             {% if ef.name == "status" %}
-              {% include "partials/_help_tooltip.html" with label="Status" text="Active use areas are included in water accounting. Inactive use areas are excluded from reports." %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active use areas are included in your water data and reports. Inactive use areas are excluded." %}
             {% elif ef.name == "area_acres" %}
               {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel geometry. Used for per-acre allocation calculations." %}
             {% endif %}
