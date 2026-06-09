@@ -25,6 +25,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from core.csv_safe import safe_row
 from accounting.calculation import evaluate_chain
 from accounting.forms import (
     AllocationPlanForm,
@@ -905,7 +906,10 @@ def ledger_export(request):
         "source_type", "water_type", "reporting_period", "description",
     ])
     for entry in queryset.iterator():
-        writer.writerow([
+        # safe_row neutralizes CSV formula injection in the free-text cells
+        # (parcel_number, water_type name, period name, description) without
+        # touching numeric/date cells. See core.csv_safe.
+        writer.writerow(safe_row([
             entry.parcel.parcel_number,
             entry.effective_date,
             entry.amount_acre_feet,
@@ -913,7 +917,7 @@ def ledger_export(request):
             entry.water_type.name if entry.water_type else "",
             entry.reporting_period.name if entry.reporting_period else "",
             entry.description,
-        ])
+        ]))
     return response
 
 

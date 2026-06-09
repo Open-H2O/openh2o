@@ -39,11 +39,20 @@ def _limit(name):
 
 
 def _client_ip(request):
-    """Best-effort client IP. Trusts X-Forwarded-For's first hop only when set
-    by our own reverse proxy (Caddy); falls back to REMOTE_ADDR."""
-    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    if xff:
-        return xff.split(",")[0].strip()
+    """Best-effort client IP for rate-limiting.
+
+    Behind Cloudflare, the real client IP arrives in CF-Connecting-IP, which the
+    edge sets and overwrites on every request — a client cannot forge it — so we
+    prefer it. We deliberately do NOT trust X-Forwarded-For's first hop: it is
+    attacker-controlled, which previously let anyone mint unlimited rate-limit
+    buckets (and poison the stored remote_ip) just by sending a header. On a
+    non-Cloudflare deployment CF-Connecting-IP is absent and we fall back to
+    REMOTE_ADDR, which behind a proxy may be the proxy's own IP — that makes the
+    throttle global rather than per-client, which fails toward MORE limiting,
+    not less, so it stays safe."""
+    cf_ip = request.META.get("HTTP_CF_CONNECTING_IP", "").strip()
+    if cf_ip:
+        return cf_ip
     return request.META.get("REMOTE_ADDR")
 
 
@@ -59,17 +68,27 @@ def submit(request):
 
     ip = _client_ip(request)
 
-    # Light per-IP throttle. LocMemCache is per-process, so this is a soft brake
-    # on abuse rather than a hard guarantee — adequate for a low-volume widget.
+    # Per-IP throttle, backed by the shared DatabaseCache (see CACHES in
+    # settings) so the count is consistent across all gunicorn workers and
+    # survives a restart — the default LocMemCache would give each worker its
+    # own counter, so the real ceiling would be N x the configured limit. The
+    # cache is a brake, not an auth control, so a broken/unavailable backend
+    # must never take down the public intake: fail OPEN (allow) and log.
     rate_limit = _limit("FEEDBACK_RATE_LIMIT_PER_HOUR")
     if ip and rate_limit:
         key = f"feedback:rate:{ip}"
-        count = cache.get(key, 0)
-        if count >= rate_limit:
-            return JsonResponse(
-                {"ok": False, "error": "rate_limited"}, status=429
+        try:
+            count = cache.get(key, 0)
+            if count >= rate_limit:
+                return JsonResponse(
+                    {"ok": False, "error": "rate_limited"}, status=429
+                )
+            cache.set(key, count + 1, 3600)
+        except Exception:
+            logger.warning(
+                "feedback rate-limit cache unavailable; allowing request",
+                exc_info=True,
             )
-        cache.set(key, count + 1, 3600)
 
     message = (request.POST.get("message") or "").strip()
     if not message:

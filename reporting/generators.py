@@ -22,6 +22,7 @@ from django.db.models import Sum
 from accounting.allocation_math import apportion_shared_supply
 from accounting.models import CalculationRun
 from accounting.services import billable_ledger
+from core.csv_safe import safe_row
 from core.models import SiteConfig
 from parcels.models import Parcel, ParcelLedger
 from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
@@ -393,10 +394,10 @@ def generate_gears_csv(reporting_period, method="by_well"):
                 rows[key]["volume"] += abs(entry.amount_acre_feet)
 
         for row in sorted(rows.values(), key=lambda r: (r["reg_id"], r["month"])):
-            writer.writerow([
+            writer.writerow(safe_row([
                 row["reg_id"], row["name"], row["lat"], row["lon"],
                 row["month"], row["volume"], gears_method(row["method"]),
-            ])
+            ]))
 
     elif method == "by_et":
         writer.writerow([
@@ -441,10 +442,10 @@ def generate_gears_csv(reporting_period, method="by_well"):
             rows[key]["volume"] += abs(entry.amount_acre_feet)
 
         for row in sorted(rows.values(), key=lambda r: (r["parcel_number"], r["month"])):
-            writer.writerow([
+            writer.writerow(safe_row([
                 row["parcel_number"], row["area"], row["month"],
                 row["volume"], gears_method(row["method"]),
-            ])
+            ]))
 
     output.seek(0)
     return output
@@ -567,7 +568,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
             ])
 
     for row in rows:
-        writer.writerow(row)
+        writer.writerow(safe_row(row))
 
     output.seek(0)
     return output

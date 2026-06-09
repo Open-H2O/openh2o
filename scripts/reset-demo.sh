@@ -114,6 +114,14 @@ if ! docker compose exec -T web python manage.py migrate --noinput >>"$LOG" 2>&1
   log "WARN: migrate after restore returned nonzero (check $LOG)"
 fi
 
+# Recreate the cache table the DROP+restore just wiped (golden predates it / is
+# DB-independent). Idempotent. The feedback rate-limiter's DatabaseCache lives
+# here; created empty, which also clears stale rate-limit counters each reset —
+# fine, the limit is a brake, not an auth control.
+if ! docker compose exec -T web python manage.py createcachetable >>"$LOG" 2>&1; then
+  log "WARN: createcachetable after restore returned nonzero (check $LOG)"
+fi
+
 # ---------------------------------------------------------------------------
 # Data-loss backstop: report what changed, pre vs post. On a normal night this
 # shows visitor junk being cleared (counts shrink to the golden canonical). An

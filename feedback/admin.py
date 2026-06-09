@@ -10,7 +10,6 @@ import json
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 
 from .models import Feedback, FeedbackAttachment
 
@@ -71,8 +70,15 @@ class FeedbackAdmin(admin.ModelAdmin):
             blob = json.dumps(obj.diagnostics or {}, indent=2, sort_keys=True)
         except (TypeError, ValueError):
             blob = str(obj.diagnostics)
-        return mark_safe(
-            f'<pre style="white-space:pre-wrap;max-height:480px;overflow:auto;">{blob}</pre>'
+        # diagnostics is fully attacker-controlled (raw client POST), and
+        # json.dumps does NOT escape <, >, or / — so an unescaped value like
+        # "</pre><img src=x onerror=...>" would break out of the <pre> and run
+        # script in the admin's authenticated session (stored XSS). format_html
+        # escapes the {} argument, neutralizing the payload while keeping the
+        # <pre> wrapper literal.
+        return format_html(
+            '<pre style="white-space:pre-wrap;max-height:480px;overflow:auto;">{}</pre>',
+            blob,
         )
 
     diagnostics_pretty.short_description = "Diagnostics"

@@ -17,16 +17,19 @@ classifiers = [
     "Topic :: Scientific/Engineering :: GIS",
 ]
 dependencies = [
-    "Django>=5.1,<6.0",
+    # Security floors: each lower bound excludes known-vulnerable releases so a
+    # clean build can never resolve to one. Bump deliberately. (A lockfile is
+    # the next step for fully reproducible builds.)
+    "Django>=5.1.6,<6.0",
     "psycopg[binary]>=3.1",
     "django-environ>=0.11",
-    "gunicorn>=22.0",
+    "gunicorn>=22.0",  # 22.0 fixed the HTTP request-smuggling CVEs
     "whitenoise>=6.7",
     "django-allauth[socialaccount]>=65.0",
     "django-extensions>=3.2",
     "django-htmx>=1.19",
-    "Pillow>=10.0",
-    "requests>=2.31",
+    "Pillow>=10.3",  # 10.2/10.3 fixed buffer-overflow CVEs; processes uploaded screenshots
+    "requests>=2.32.2",  # 2.32.2 fixed the cert-verification regression
     "earthengine-api>=1.0,<2.0",
 ]
 

@@ -133,6 +133,22 @@ DATABASES = {
     )
 }
 
+# -- Cache -------------------------------------------------------------------
+# DatabaseCache, NOT the default per-process LocMemCache, so the feedback
+# rate-limit counter is shared across all gunicorn workers and survives a
+# restart. With LocMemCache each of the N workers keeps its own counter, so the
+# real ceiling is N x the configured limit and it resets on every deploy. No
+# Redis (the platform deliberately targets a 2-4GB server). The cache table is
+# created by `manage.py createcachetable` — run in the container boot CMD and
+# again after every demo reset (scripts/reset-demo.sh), so it survives the
+# nightly DB restore. LOCATION is the table name.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "feedback_cache",
+    }
+}
+
 # -- Auth --------------------------------------------------------------------
 
 AUTH_USER_MODEL = "core.User"
