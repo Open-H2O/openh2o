@@ -6,8 +6,12 @@ Each check returns a dict with: category, status, message, details.
 Status values: "green", "yellow", or "red".
 """
 
-import pytest
+from decimal import Decimal
 
+import pytest
+from django.test import override_settings
+
+from tests.factories import ParcelLedgerFactory
 from health.checks import (
     check_database,
     check_disk,
@@ -289,3 +293,29 @@ class TestRunAllChecks:
         results = run_all_checks()
         actual_categories = {r["category"] for r in results}
         assert actual_categories == expected_categories
+
+
+class TestHealthDemoMode:
+    """HEALTH_DEMO_MODE exempts the staleness/zero-amount alarms on the frozen
+    public demo, where the DB is snapshot-restored nightly and those signals are
+    static by design. Every other check is unaffected by the flag."""
+
+    @override_settings(HEALTH_DEMO_MODE=True)
+    def test_sync_freshness_is_green_in_demo_mode(self):
+        result = check_sync_freshness()
+        assert result["status"] == "green"
+        assert result["details"].get("demo_mode") is True
+
+    @pytest.mark.django_db
+    @override_settings(HEALTH_DEMO_MODE=True)
+    def test_zero_amount_ledger_is_green_in_demo_mode(self):
+        ParcelLedgerFactory(amount_acre_feet=Decimal("0"))
+        result = check_ledger_integrity()
+        assert result["status"] == "green"
+
+    @pytest.mark.django_db
+    @override_settings(HEALTH_DEMO_MODE=False)
+    def test_zero_amount_ledger_is_yellow_when_live(self):
+        ParcelLedgerFactory(amount_acre_feet=Decimal("0"))
+        result = check_ledger_integrity()
+        assert result["status"] == "yellow"

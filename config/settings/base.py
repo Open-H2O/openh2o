@@ -267,6 +267,18 @@ OPENET_MODE = env("OPENET_MODE", default="api")
 GEE_PROJECT = env("GEE_PROJECT", default="")
 GEE_SERVICE_ACCOUNT_EMAIL = env("GEE_SERVICE_ACCOUNT_EMAIL", default="")
 
+# -- Health dashboard --------------------------------------------------------
+# HEALTH_DEMO_MODE marks an instance whose database is restored from a frozen
+# golden snapshot every night (our public demo at openh2o.com). On such a box,
+# external-feed timestamps and demo-seeded zero-amount ledger rows are static by
+# design, so the sync-freshness and zero-amount-ledger checks would otherwise
+# alarm forever on a non-fault. When True, those two checks report green (the
+# data is still shown, just not raised as a problem); every other health check is
+# unaffected. Leave False on a real agency deployment, where stale data and
+# zero-amount entries are genuine signals worth surfacing.
+HEALTH_DEMO_MODE = env.bool("HEALTH_DEMO_MODE", default=False)
+
+
 # -- Analytics ---------------------------------------------------------------
 # Umami is opt-in and deployment-specific. UMAMI_WEBSITE_ID is blank by default
 # so a self-hosted copy reports traffic to no one; the tracking <script> only

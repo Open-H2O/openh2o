@@ -90,6 +90,18 @@ def check_disk():
 def check_sync_freshness():
     from datasync.models import DataSource, DataSyncLog
 
+    # On the public demo the database is restored from a frozen golden snapshot
+    # every night, so external-feed timestamps are intentionally static. Staleness
+    # is the designed state here, not a fault — report green instead of alarming
+    # forever (and escalating to red once the snapshot ages past a week).
+    if getattr(settings, "HEALTH_DEMO_MODE", False):
+        return {
+            "category": "sync_freshness",
+            "status": "green",
+            "message": "Demo instance — sync freshness not enforced (data is snapshot-restored nightly).",
+            "details": {"demo_mode": True},
+        }
+
     active_sources = DataSource.objects.filter(is_active=True)
     if not active_sources.exists():
         return {
@@ -151,12 +163,19 @@ def check_ledger_integrity():
 
     details = {"orphan_entries": orphan_count, "zero_amount_entries": zero_count}
 
+    # Orphaned entries are real corruption and stay red everywhere. Zero-amount
+    # entries are legitimate demo-seed artifacts (a parcel that booked no water in
+    # a period); on the frozen demo they're static and shouldn't alarm.
+    demo = getattr(settings, "HEALTH_DEMO_MODE", False)
     if orphan_count > 0:
         status = "red"
         msg = f"{orphan_count} orphaned ledger entries (parcel deleted)"
-    elif zero_count > 0:
+    elif zero_count > 0 and not demo:
         status = "yellow"
         msg = f"{zero_count} zero-amount ledger entries"
+    elif zero_count > 0:
+        status = "green"
+        msg = f"{zero_count} zero-amount ledger entries (demo data; informational)"
     else:
         status = "green"
         msg = "All ledger entries valid"
