@@ -6,7 +6,7 @@
 :root {
     /* -- Surface colors -------------------------------------------------- */
     --color-base: #040608;
-    --color-card: oklch(0.17 0.012 260); /* ~#1a1e27 */
+    --color-card: #080b10; /* brand Surface Raised; matches DESIGN.md/CLAUDE.md + VanderDev/VanderOps. Depth comes from the pop-shadow, not from a lighter card. */
     --color-inset: oklch(0.12 0.010 260); /* ~#12151b */
     --color-elevated: oklch(0.21 0.012 260); /* ~#242a33 */
     --color-hover: oklch(0.24 0.012 260); /* ~#2c333d */
@@ -15,9 +15,9 @@
     --color-gold: #E4A317;
     --color-gold-hover: #D4952A;
     --color-gold-muted: rgba(228, 163, 23, 0.08);
-    --color-blue: #2E6B96;
-    --color-blue-bright: #5A95BC;
-    --color-blue-muted: rgba(46, 107, 150, 0.10);
+    --color-blue: #1B7FAF; /* brand Pacific Blue (was the muddier #2E6B96); matches --color-entity-blue + VanderDev/VanderOps */
+    --color-blue-bright: #3DB4E0; /* brand Pacific Bright */
+    --color-blue-muted: rgba(27, 127, 175, 0.10); /* tint of the new --color-blue */
 
     /* -- Text colors ----------------------------------------------------- */
     --color-text-primary: #e8edf4;
