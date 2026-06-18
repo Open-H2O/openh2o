@@ -139,13 +139,18 @@ def classify_source_status(source_code, active_stations, last_log, fresh_count):
         return "no_stations"
     if last_log is None:
         return "never"
+    # Fresh data outranks a single bad run. A live demo's hourly gauge sync hits
+    # cranky upstreams (CDEC routinely drops the connection mid-burst), so one
+    # failed or unfinished run is routine and self-heals on the next hourly pass.
+    # If the readings on screen are still current (fresh_count > 0) the source is
+    # genuinely healthy — don't cry wolf with a red "failed" card over data that
+    # is actually fine. Only when nothing is fresh do we surface the run state.
+    if fresh_count > 0:
+        return "healthy"
     if last_log.status == "running":
         return "running"
     if last_log.status == "failed":
         return "failed"
-    # success or partial: distinguish "data is flowing" from "ran but nothing recent"
-    if fresh_count > 0:
-        return "healthy"
     return "no_data"
 
 

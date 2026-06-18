@@ -78,6 +78,27 @@ class Command(BaseCommand):
             f"({start_date} to {end_date})"
         )
 
+        # Reap orphaned "running" logs first. Syncs for a single source run
+        # serially (one cron entry per source, no overlap), so any log still
+        # marked "running" when a new run begins is a prior run that died
+        # mid-flight — a SIGKILLed worker or a container restart between the
+        # create and the finalize below. Left alone it latches "running" forever
+        # and the monitoring panel shows a permanent "Syncing…". Close them out
+        # as failed so the source reflects reality.
+        reaped = DataSyncLog.objects.filter(
+            data_source=data_source, status="running"
+        ).update(
+            status="failed",
+            completed_at=timezone.now(),
+            error_message="Orphaned: a prior run did not finish (process died mid-sync).",
+        )
+        if reaped:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Reaped {reaped} orphaned 'running' log(s) for {code}."
+                )
+            )
+
         # Create a shared sync log for all stations in this run
         sync_log = DataSyncLog.objects.create(
             data_source=data_source, status="running"
