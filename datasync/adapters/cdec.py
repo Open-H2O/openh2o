@@ -96,8 +96,26 @@ class CDECAdapter(BaseAdapter):
                     "Start": start_date.strftime("%Y-%m-%d"),
                     "End": end_date.strftime("%Y-%m-%d"),
                 }
-                resp = self._request("GET", BASE_URL, params=params)
-                data = resp.json()
+                try:
+                    resp = self._request("GET", BASE_URL, params=params)
+                    data = resp.json()
+                except (requests.RequestException, ValueError) as exc:
+                    # CDEC is queried for every sensor a station MIGHT carry, so a
+                    # creek gauge gets asked for reservoir storage etc. Most such
+                    # misses return an empty list (handled below), but under the
+                    # resulting request burst CDEC intermittently drops the
+                    # connection (RemoteDisconnected) or returns a non-JSON error
+                    # page — and resp.json() then raises ValueError. Treat one bad
+                    # sensor/duration as "nothing here" and move on: a single
+                    # flaky response must never fail the whole station, and we
+                    # never crash on .json() (mirrors the discovery contract,
+                    # ISS-048). Stations with real data on other sensors still
+                    # publish it; truly-empty stations report honestly as stale.
+                    logger.warning(
+                        "CDEC %s sensor %s dur %s: %s",
+                        station.external_station_id, param_code, dur_code, exc,
+                    )
+                    continue
                 if isinstance(data, list) and data:
                     records.extend(data)
                     break  # got this sensor's data at its native duration
