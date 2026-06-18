@@ -75,6 +75,14 @@ class CDECAdapter(BaseAdapter):
     source_code = "cdec"
     rate_limit_seconds = 0.5
 
+    # Fail fast instead of retrying into a throttle. CDEC rate-limits bursts by
+    # dropping connections, and an immediate retry just hits the same throttle —
+    # so the base default (3 attempts with 2s+4s backoff) turns a cranky-CDEC
+    # sync into ~11 minutes of mostly-sleeping for no extra data. We sync hourly,
+    # so the NEXT run is the real retry: take one shot per sensor, let the fetch
+    # guard skip a drop, and move on. Keeps a bad-mood sync to ~40s, not minutes.
+    max_retries = 1
+
     # CDEC sensors post at different durations: reservoirs report a Daily value,
     # but most river/stream gauges only publish Hourly or Event ("E", ~15-min)
     # readings and return NOTHING for a daily-duration query. Querying "D" alone
