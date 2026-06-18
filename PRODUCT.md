@@ -6,7 +6,7 @@ product
 
 ## Users
 
-GSA (Groundwater Sustainability Agency) staff and water district managers in California. Typically 1-3 people per agency, many non-technical. They manage their agency's water data — measurements, deliveries, wells, surface diversions, and recharge events — and, when they file with the state, generate the required reports (GEARS, CalWATRS). They work with the platform year-round, not only during reporting seasons.
+GSA (Groundwater Sustainability Agency) staff and water district managers in California. Typically 1-3 people per agency, many non-technical. They manage their agency's water data — measurements, deliveries, wells, surface diversions, and recharge events — and, when they file with the state, generate the data for the required reports (GEARS, CalWATRS). They work with the platform year-round, not only during reporting seasons.
 
 ## Brand
 

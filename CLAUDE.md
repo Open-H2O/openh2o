@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A water-data management platform for California Groundwater Sustainability Agencies (GSAs) and water districts. It manages an agency's water data — measurements, deliveries, wells, surface diversions, mixed-use accounting, and managed aquifer recharge. When an agency files with the state, it can generate the required reports (GEARS CSV, CalWATRS CSV); reporting is an optional feature, not the platform's purpose.
+A water-data management platform for California Groundwater Sustainability Agencies (GSAs) and water districts. It manages an agency's water data — measurements, deliveries, wells, surface diversions, mixed-use accounting, and managed aquifer recharge. When an agency files with the state, it can generate the data for the required reports (GEARS CSV, CalWATRS CSV); reporting is an optional feature, not the platform's purpose.
 
 The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and a $15/mo VPS and have the AI stand the platform up — and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
 
