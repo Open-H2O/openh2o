@@ -39,7 +39,7 @@
   <div>
     <div class="row-between" style="margin-bottom: var(--space-sm);">
       <span class="text-secondary text-xs" style="font-weight: 600; letter-spacing: 0.03em;">Sources</span>
-      <span class="text-tertiary text-xs">{{ total_active }} active &middot; {{ fresh_count }} on schedule &middot; {{ stale_count }} behind</span>
+      <span class="text-tertiary text-xs">{{ total_active }} active &middot; {{ fresh_count }} on schedule &middot; {{ stale_count }} behind{% if dormant_count %} &middot; {{ dormant_count }} dormant{% endif %}</span>
     </div>
     <div style="display: flex; flex-wrap: wrap; gap: var(--space-sm);">
       {% for info in source_status_list %}

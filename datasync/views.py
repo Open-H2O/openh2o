@@ -191,14 +191,22 @@ def station_list(request):
     if request.headers.get("HX-Request"):
         return render(request, "datasync/partials/_station_list_results.html", context)
 
-    # Full page: add summary stats and source status (source-aware freshness)
+    # Full page: add summary stats and source status (source-aware freshness).
+    # Count fresh / stale / dormant separately rather than lumping every
+    # not-fresh station into "behind": a dormant well that simply isn't due to
+    # report is not the same message as a gauge that is overdue, and the summary
+    # line should not quietly re-raise the alarm we just took out of the colours.
     all_active = MonitoredStation.objects.filter(is_active=True).select_related("data_source")
-    total_active = all_active.count()
-    fresh_count = sum(
-        1 for s in all_active
-        if freshness.classify_freshness(s.data_source.code, s.last_data_at, now) == "fresh"
-    )
-    stale_count = total_active - fresh_count
+    fresh_count = stale_count = dormant_count = 0
+    for s in all_active:
+        f = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        if f == "fresh":
+            fresh_count += 1
+        elif f == "stale":
+            stale_count += 1
+        else:
+            dormant_count += 1
+    total_active = fresh_count + stale_count + dormant_count
 
     source_status_list = _build_source_status(None, now)
 
@@ -208,6 +216,7 @@ def station_list(request):
         "total_active": total_active,
         "fresh_count": fresh_count,
         "stale_count": stale_count,
+        "dormant_count": dormant_count,
         "source_status_list": source_status_list,
         "openet_used": openet_used,
         "openet_limit": openet_limit,
