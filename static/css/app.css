@@ -2399,7 +2399,10 @@ div[id$="-map"] {
 
 .freshness-dot--fresh  { background: #22c55e; }
 .freshness-dot--stale  { background: #f59e0b; }
-.freshness-dot--dead   { background: #ef4444; }
+/* "dead" is really "dormant": no reading inside the expected window, which for
+   many water stations is normal. A calm slate-grey says "quiet", not "broken" —
+   red is reserved for a source whose sync genuinely failed. */
+.freshness-dot--dead   { background: #9ca3af; }
 
 /* -- Wizard step list ---------------------------------------------------- */
 

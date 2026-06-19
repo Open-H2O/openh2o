@@ -99,7 +99,21 @@ def station_list(request):
     elif active != "all":
         queryset = queryset.filter(is_active=True)
 
-    paginator = Paginator(queryset, 25)
+    # Order by health, not just the alphabet. Up-to-date stations come first,
+    # then slightly-behind, then dormant ones pushed to the very end — so a
+    # handful of quiet stations never lead the page and make a mostly-healthy
+    # network look broken. Freshness is source-aware and computed in Python, so
+    # we materialise the (already source/name-ordered) queryset and stable-sort
+    # it by a health rank; the alphabetical order is preserved within each band.
+    HEALTH_RANK = {"fresh": 0, "stale": 1, "dead": 2}
+    stations_ordered = sorted(
+        queryset,
+        key=lambda s: HEALTH_RANK.get(
+            freshness.classify_freshness(s.data_source.code, s.last_data_at, now), 3
+        ),
+    )
+
+    paginator = Paginator(stations_ordered, 25)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 

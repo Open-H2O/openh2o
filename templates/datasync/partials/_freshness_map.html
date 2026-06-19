@@ -32,7 +32,7 @@ Variables:
   var FRESH_META = {
     fresh: { label: 'Up to date', color: '#22c55e' },
     stale: { label: 'Slightly behind', color: '#f59e0b' },
-    dead:  { label: 'No recent data', color: '#ef4444' }
+    dead:  { label: 'Dormant', color: '#9ca3af' }
   };
 
   // Persistent legend anchored in the map's bottom-left corner, token-styled to
@@ -95,7 +95,7 @@ Variables:
             'circle-radius': 16,
             'circle-opacity': 0.15,
             'circle-blur': 1,
-            'circle-color': ['match', ['get', 'freshness'], 'fresh', '#22c55e', 'stale', '#f59e0b', '#ef4444']
+            'circle-color': ['match', ['get', 'freshness'], 'fresh', '#22c55e', 'stale', '#f59e0b', '#9ca3af']
           }
         });
 
@@ -105,7 +105,7 @@ Variables:
           source: '{{ map_id }}-source',
           paint: {
             'circle-radius': 7,
-            'circle-color': ['match', ['get', 'freshness'], 'fresh', '#22c55e', 'stale', '#f59e0b', '#ef4444'],
+            'circle-color': ['match', ['get', 'freshness'], 'fresh', '#22c55e', 'stale', '#f59e0b', '#9ca3af'],
             'circle-stroke-width': 1.5,
             'circle-stroke-color': 'rgba(255,255,255,0.3)'
           }
