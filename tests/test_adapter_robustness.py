@@ -12,6 +12,7 @@ These cover the data-integrity boundary for live state data:
 
 import importlib
 import logging
+import subprocess
 from datetime import date
 from io import StringIO
 from types import SimpleNamespace
@@ -184,35 +185,36 @@ class TestDiscoveryIsTimeBounded:
         # CDEC discover_stations only needs the boundary's extent.
         return SimpleNamespace(extent=(-119.5, 36.0, -119.0, 36.5))
 
+    # CDEC fetches through the system curl binary (its WAF drops urllib3's TLS
+    # fingerprint), so these assert the timeout contract on the curl --max-time
+    # argument rather than on a urllib3 timeout kwarg.
     def test_discovery_uses_short_timeout_not_sixty(self, monkeypatch):
         captured = {}
 
-        def fake_request(method, url, **kwargs):
-            captured.update(kwargs)
-            return SimpleNamespace(
-                text="", headers={}, raise_for_status=lambda: None
-            )
+        def fake_run(argv, **kwargs):
+            captured["argv"] = argv
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
 
-        monkeypatch.setattr(
-            "datasync.adapters.base.requests.request", fake_request
-        )
+        monkeypatch.setattr("datasync.adapters.cdec.subprocess.run", fake_run)
         adapter = CDECAdapter()
 
         result = adapter.discover_stations(self._bbox())
 
         assert result == []
         # The discovery call passes the tight timeout, never the 60s budget.
-        assert captured["timeout"] == adapter.discovery_timeout
-        assert captured["timeout"] <= 10
+        argv = captured["argv"]
+        max_time = argv[argv.index("--max-time") + 1]
+        assert max_time == str(int(adapter.discovery_timeout))
+        assert int(max_time) <= 10
 
     def test_timeout_fails_fast_returns_empty_and_warns(self, monkeypatch, caplog):
         calls = {"n": 0}
 
-        def boom(method, url, **kwargs):
+        def boom(argv, **kwargs):
             calls["n"] += 1
-            raise requests.Timeout("read timed out")
+            raise subprocess.TimeoutExpired(cmd="curl", timeout=10)
 
-        monkeypatch.setattr("datasync.adapters.base.requests.request", boom)
+        monkeypatch.setattr("datasync.adapters.cdec.subprocess.run", boom)
         adapter = CDECAdapter()
 
         with caplog.at_level(logging.WARNING):
@@ -228,18 +230,17 @@ class TestDiscoveryIsTimeBounded:
         discovery path is bounded."""
         captured = {}
 
-        def fake_request(method, url, **kwargs):
-            captured.update(kwargs)
-            return SimpleNamespace(json=lambda: [], raise_for_status=lambda: None)
+        def fake_run(argv, **kwargs):
+            captured["argv"] = argv
+            return SimpleNamespace(returncode=0, stdout="[]", stderr="")
 
-        monkeypatch.setattr(
-            "datasync.adapters.base.requests.request", fake_request
-        )
+        monkeypatch.setattr("datasync.adapters.cdec.subprocess.run", fake_run)
         station = SimpleNamespace(external_station_id="KWH", parameters=["15"])
 
         CDECAdapter().fetch(station, date(2024, 1, 1), date(2024, 1, 2))
 
-        assert captured["timeout"] == 60
+        argv = captured["argv"]
+        assert argv[argv.index("--max-time") + 1] == "60"
 
 
 # ── Task 2: production request-error logging (ISS-016) ──────────────────────
