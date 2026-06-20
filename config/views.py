@@ -16,9 +16,12 @@ from accounting.models import WaterAccount
 
 
 def index(request):
-    """Render the index/status page, or redirect logged-in users to dashboard."""
-    if request.user.is_authenticated:
-        return redirect(reverse("accounting:dashboard"))
+    """Signed-in users get the task-first home; visitors get the public landing.
+
+    Both share the same entity counts; the home page uses them as an at-a-glance
+    snapshot beneath the "what do you want to do?" task cards, while the public
+    landing shows them as the demo's headline numbers.
+    """
     context = {
         "parcel_count": Parcel.objects.count(),
         "well_count": Well.objects.count(),
@@ -27,7 +30,27 @@ def index(request):
         "water_account_count": WaterAccount.objects.count(),
         "station_count": MonitoredStation.objects.count(),
     }
+    if request.user.is_authenticated:
+        return render(request, "home.html", context)
     return render(request, "index.html", context)
+
+
+def set_nav_mode(request):
+    """Flip the sidebar between Operations and Admin density, then return.
+
+    A view preference, not a state change, so a plain GET link is fine. The
+    value lives in a year-long cookie read by the ``nav_mode`` context
+    processor; we bounce back to wherever the click came from.
+    """
+    mode = request.GET.get("mode", "operations")
+    if mode not in ("operations", "admin"):
+        mode = "operations"
+    destination = request.META.get("HTTP_REFERER") or reverse("index")
+    response = redirect(destination)
+    response.set_cookie(
+        "nav_mode", mode, max_age=60 * 60 * 24 * 365, samesite="Lax"
+    )
+    return response
 
 
 def about(request):

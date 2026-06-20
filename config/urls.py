@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
-from config.views import about, index, getting_started, glossary, budgets_allocations, surface_deliveries, water_balances, methods, settings_explained, profile
+from config.views import about, index, getting_started, glossary, budgets_allocations, surface_deliveries, water_balances, methods, settings_explained, profile, set_nav_mode
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -30,6 +30,7 @@ urlpatterns = [
     path("help/methods/", methods, name="methods"),
     path("help/settings/", settings_explained, name="settings_explained"),
     path("profile/", profile, name="profile"),
+    path("nav-mode/", set_nav_mode, name="set_nav_mode"),
     path("", index, name="index"),
 ]
 

@@ -109,6 +109,7 @@ TEMPLATES = [
                 "core.context_processors.analytics",
                 "core.context_processors.feedback",
                 "core.context_processors.access_flags",
+                "core.context_processors.nav_mode",
                 "core.context_processors.setup_status",
                 "core.context_processors.app_version",
             ],

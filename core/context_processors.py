@@ -32,6 +32,22 @@ def access_flags(request):
     }
 
 
+def nav_mode(request):
+    """Operations (default) vs Admin sidebar density.
+
+    Operations mode shows only the everyday working tools and hides the
+    Administration section (accounts, water years, allocations, zones, users,
+    methodology, delivery settings, site health, setup). One click flips to
+    Admin to bring the configuration tools back. Cookie-backed so the choice
+    survives logout without needing a DB migration; unknown values fall back to
+    the safe default.
+    """
+    mode = request.COOKIES.get("nav_mode", "operations")
+    if mode not in ("operations", "admin"):
+        mode = "operations"
+    return {"nav_mode": mode}
+
+
 def setup_status(request):
     """Flag a brand-new install so the dashboard can point an admin at setup.
 

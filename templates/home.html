@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Open Water Accounting Platform{% endblock %}
+
+{% block page_title %}Home{% endblock %}
+
+{% block content %}
+<p class="page-description">Welcome back. Start a task below, or jump straight to any tool from the sidebar.</p>
+
+<h2 class="content-section-label">What do you want to do?</h2>
+<div class="dashboard-grid">
+    <a href="{% url 'accounting:ledger_create' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Log Water Use</div>
+        <div class="dashboard-card-sublabel">Record a new measurement or ledger entry</div>
+    </a>
+    <a href="{% url 'accounting:dashboard' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Water Balance</div>
+        <div class="dashboard-card-sublabel">See supplies against uses by account and zone</div>
+    </a>
+    <a href="{% url 'reporting:report_list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Run a Report</div>
+        <div class="dashboard-card-sublabel">Generate GEARS and CalWATRS exports</div>
+    </a>
+    {% if not access_enforced or user_is_admin %}
+    <a href="{% url 'setup:wizard' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Set Up &amp; Import Data</div>
+        <div class="dashboard-card-sublabel">Boundaries, zones, and bringing your data in</div>
+    </a>
+    {% endif %}
+    <a href="{% url 'getting_started' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Get Help</div>
+        <div class="dashboard-card-sublabel">Guides, methods, and the glossary</div>
+    </a>
+</div>
+
+<h2 class="content-section-label" style="margin-top: var(--space-xl);">Your data at a glance</h2>
+<div class="dashboard-grid">
+    <a href="{% url 'parcels:list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Use Areas</div>
+        <div class="dashboard-card-value text-gold">{{ parcel_count }}</div>
+        <div class="dashboard-card-sublabel">View all use areas</div>
+    </a>
+    <a href="{% url 'wells:list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Wells</div>
+        <div class="dashboard-card-value text-gold">{{ well_count }}</div>
+        <div class="dashboard-card-sublabel">View all wells</div>
+    </a>
+    <a href="{% url 'surface:pod_list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Surface Diversions</div>
+        <div class="dashboard-card-value text-gold">{{ water_right_count }}</div>
+        <div class="dashboard-card-sublabel">View surface diversions</div>
+    </a>
+    <a href="{% url 'recharge:list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Recharge Sites</div>
+        <div class="dashboard-card-value text-gold">{{ recharge_site_count }}</div>
+        <div class="dashboard-card-sublabel">View recharge sites</div>
+    </a>
+    <a href="{% url 'accounting:accounts_list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Water Accounts</div>
+        <div class="dashboard-card-value text-gold">{{ water_account_count }}</div>
+        <div class="dashboard-card-sublabel">View accounts</div>
+    </a>
+    <a href="{% url 'datasync:station_list' %}" class="dashboard-card">
+        <div class="dashboard-card-label">Monitoring Stations</div>
+        <div class="dashboard-card-value text-gold">{{ station_count }}</div>
+        <div class="dashboard-card-sublabel">View stations</div>
+    </a>
+</div>
+{% endblock %}
