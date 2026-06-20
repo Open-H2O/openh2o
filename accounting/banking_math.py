@@ -69,8 +69,14 @@ def depreciated_value(amount, depreciation_rate, periods_elapsed):
     if factor < 0:
         factor = Decimal("0")
 
-    # Decimal("0") ** 0 == Decimal("1"), so elapsed 0 returns the full amount
-    # even when the factor is 0 (a rate>=1 credit is still whole the month it lands).
+    # x ** 0 == 1 for all x, so at elapsed 0 a credit is whole the month it lands
+    # regardless of rate. Guard this explicitly: Decimal("0") ** 0 raises
+    # InvalidOperation under the default decimal context (it does NOT return 1),
+    # so a rate>=1 credit drawn in its origin month would otherwise crash. The
+    # decay factor only matters once at least one period has elapsed.
+    if periods_elapsed == 0:
+        return amt if amt > 0 else Decimal("0")
+
     value = amt * (factor ** periods_elapsed)
     return value if value > 0 else Decimal("0")
 

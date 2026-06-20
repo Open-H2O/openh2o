@@ -52,6 +52,17 @@ def test_elapsed_zero_returns_amount_regardless_of_rate():
     assert _close(got, "100"), f"expected 100 (elapsed 0), got {got}"
 
 
+def test_elapsed_zero_full_amount_even_for_rate_ge_one():
+    # Regression: a credit with rate >= 1 drawn in its ORIGIN month is still
+    # whole (x ** 0 == 1). Previously crashed — Decimal("0") ** 0 raises
+    # InvalidOperation under the default context rather than returning 1, and no
+    # test covered elapsed 0 on the rate>=1 path. Reachable via
+    # carryover_math.available_with_carryover.
+    for rate in (Decimal("1.0"), Decimal("1.5")):
+        got = depreciated_value(Decimal("100"), rate, 0)
+        assert _close(got, "100"), f"expected 100 at elapsed 0 (rate {rate}), got {got}"
+
+
 def test_rate_ten_percent_one_period():
     got = depreciated_value(Decimal("100"), Decimal("0.10"), 1)
     assert _close(got, "90"), f"expected 90 (0.9x), got {got}"
