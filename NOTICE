@@ -25,10 +25,27 @@ requirement; keep that link pointing at your published source if you modify it.
 
 Lineage and acknowledgment
 
-OpenH2O is an independent, clean-room reimplementation on an open stack
-(Django, GeoDjango, PostgreSQL/PostGIS, Docker). It descends conceptually from
-the Groundwater Accounting Platform stewarded by the California Water Data
-Consortium and developed by ESA (formerly Sitka Technology Group), which is
-likewise released under the GNU Affero General Public License v3. We are
-grateful for that prior art. No ESA/Sitka source code is included in this
+OpenH2O independently reimplements the methodology of the open-source
+Groundwater Accounting Platform on a different stack (Django, GeoDjango,
+PostgreSQL/PostGIS, Docker) and in a different programming language. That
+platform is stewarded by the California Water Data Consortium and developed by
+ESA (formerly Sitka Technology Group), and is likewise released under the GNU
+Affero General Public License v3.
+
+Among that platform's releases, OpenH2O's design most closely parallels the
+current "Qanat" community platform (esassoc/qanat-community); it also draws on
+the earlier "Rio" implementation (Rosedale-Rio Bravo, California) and the
+"Zybach" sibling deployment (Natural Resources Districts, Nebraska). We are
+grateful for that prior art. OpenH2O re-expresses its concepts in original
+code: none of the ESA/Sitka/Qanat/Rio/Zybach source code is copied into this
 repository.
+
+----------------------------------------------------------------------------
+
+Third-party components
+
+OpenH2O depends on open-source libraries that carry their own licenses,
+including two under the GNU Lesser General Public License: psycopg (LGPL-3.0)
+and GEOS (LGPL-2.1). These are acknowledged, with pointers to their license
+texts, in THIRD-PARTY-NOTICES.md in this repository, which the running
+application also links from its About page.

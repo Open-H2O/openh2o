@@ -6,7 +6,7 @@ Thanks for your interest. OpenH2O exists to put a capable water-data management 
 
 ## License of contributions
 
-OpenH2O is licensed under **AGPL-3.0-or-later**. By submitting a contribution you agree it is licensed under the same terms. If you run a modified version as a network service, the AGPL requires you to offer your users its source — keep the in-app "Source code" link pointing at your published fork (see [NOTICE](NOTICE)).
+OpenH2O is licensed under **AGPL-3.0-or-later**. By submitting a contribution you agree it is licensed under the same terms. If you run a modified version as a network service, the AGPL requires you to offer your users its source — keep the in-app "Source code" link pointing at your published source (see [NOTICE](NOTICE)).
 
 ## Getting set up
 
