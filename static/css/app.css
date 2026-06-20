@@ -491,6 +491,15 @@ a { color: inherit; }
     color: #040608;
 }
 
+/* On hover, a secondary action's ghost icon lights up to the same gold chip —
+   a satisfying, unmistakable response alongside the card lift. The primary
+   action is gold at rest, so it still reads as the default action. */
+.home-task-card:hover .home-task-icon {
+    background-color: var(--color-gold);
+    border-color: transparent;
+    color: #040608;
+}
+
 .home-task-body {
     display: flex;
     flex-direction: column;
