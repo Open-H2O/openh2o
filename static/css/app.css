@@ -1456,11 +1456,14 @@ a { color: inherit; }
 
 /* -- Content section labels ----------------------------------------------- */
 
+/* Matches the home page's section labels (.home-section-label) so every page
+   divides its sections the same way — tracked uppercase, quiet tertiary. */
 .content-section-label {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    letter-spacing: 0.01em;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-text-tertiary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     margin: 0 0 var(--space-md) 0;
     padding: 0;
 }
