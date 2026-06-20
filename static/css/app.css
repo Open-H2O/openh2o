@@ -491,13 +491,22 @@ a { color: inherit; }
     color: #040608;
 }
 
-/* On hover, a secondary action's ghost icon lights up to the same gold chip —
-   a satisfying, unmistakable response alongside the card lift. The primary
-   action is gold at rest, so it still reads as the default action. */
+/* On hover, a tile's icon lights up to the gold chip — a satisfying response
+   alongside the card lift. The primary action is gold at rest, so it reads as
+   the default until you reach for something else. */
 .home-task-card:hover .home-task-icon {
     background-color: var(--color-gold);
     border-color: transparent;
     color: #040608;
+}
+
+/* Gold follows the cursor: while any tile is hovered, the primary surrenders
+   its resting gold unless it's the one under the mouse — so exactly one icon
+   is ever gold at a time. */
+.home-task-grid:has(.home-task-card:hover) .home-task-card--primary:not(:hover) .home-task-icon {
+    background-color: transparent;
+    border-color: var(--color-border-hover);
+    color: var(--color-text-secondary);
 }
 
 .home-task-body {
