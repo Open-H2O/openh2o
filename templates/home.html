@@ -114,10 +114,8 @@
             <span class="home-stat-value">{{ water_account_count }}</span>
             <span class="home-stat-label">Water Accounts</span>
         </a>
-        <a href="{% url 'datasync:station_list' %}" class="home-stat">
-            <span class="home-stat-value">{{ station_count }}</span>
-            <span class="home-stat-label">Monitoring Stations</span>
-        </a>
+        {# Monitoring Stations intentionally omitted here — the hero already #}
+        {# reports live station health ("37 of 42 reporting"); a raw total below it just confused the two. #}
     </div>
 
 </div>
