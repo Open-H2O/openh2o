@@ -3103,16 +3103,22 @@ div[id$="-map"] {
    left accent + a numbered badge so the sequence reads as a pipeline; a
    disabled step goes muted (dashed grey accent + grey badge), which is far
    clearer than the old opacity:0.6 alone. */
+/* Brand card treatment: a near-black surface that floats on the pop-shadow,
+   matching every other card on the site (was a flat medium-grey fill that read
+   as a different material). An active step floats; a disabled one sinks. */
 .methodology-step {
-    background: var(--color-elevated);
+    background: var(--color-card);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     padding: var(--space-md) var(--space-lg);
     margin-bottom: var(--space-md);
+    box-shadow: var(--shadow-pop-sm);
 }
-/* "Off" reads from the muted badge + dimmer surface, not a dashed accent. */
+/* "Off" recedes — flat on the page, dimmed, no float (plus the muted badge). */
 .methodology-step--off {
-    background: var(--color-card);
+    background: var(--color-base);
+    box-shadow: none;
+    opacity: 0.7;
 }
 .methodology-step-num {
     display: inline-flex;
