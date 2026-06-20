@@ -346,6 +346,192 @@ a { color: inherit; }
     color: var(--color-text-secondary);
 }
 
+/* -- Home: Command Console ---------------------------------------------- */
+/* The authenticated front door. Three zones with deliberate hierarchy:
+   a status hero (orient), big primary task cards (act), and the entity
+   counts demoted to a compact stat bar (reference). Distinct from the
+   generic .dashboard-card so the rest of the platform is untouched. */
+
+.home-section-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin: 0 0 var(--space-md);
+}
+
+/* First label sits under the hero (which already supplies space below);
+   the second ("Your data") gets generous air above it. */
+.home > .home-section-label:not(:first-of-type) {
+    margin-top: var(--space-2xl);
+}
+
+/* Status hero — a console header. Blue structural rule on the left edge;
+   the agency name leads, with live data health beneath. */
+.home-hero {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-blue);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-pop-sm);
+    margin-bottom: var(--space-xl);
+}
+
+.home-hero-greeting {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-xs);
+}
+
+.home-hero-title {
+    font-size: 1.625rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--color-text-primary);
+    margin: 0 0 var(--space-sm);
+}
+
+.home-hero-status {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.home-hero-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.home-hero-dot--ok {
+    background-color: var(--forest-500);
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.12);
+}
+
+.home-hero-dot--idle {
+    background-color: #9ca3af;
+}
+
+.home-status-sep {
+    color: var(--color-text-tertiary);
+}
+
+/* Primary task cards — bigger and more deliberate than dashboard cards,
+   icon + label + sublabel. The most-common action carries a gold edge. */
+.home-task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-md);
+}
+
+.home-task-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    text-decoration: none;
+    box-shadow: var(--shadow-pop-sm);
+    transition: border-color 200ms, box-shadow 200ms, transform 200ms;
+}
+
+.home-task-card:hover {
+    border-color: var(--color-border-hover);
+    box-shadow: var(--shadow-pop-lg);
+    transform: translateY(-2px);
+}
+
+.home-task-card--primary {
+    border-left: 3px solid var(--color-gold);
+}
+
+.home-task-icon {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-blue-muted);
+    color: var(--color-blue-bright);
+    transition: background-color 200ms, color 200ms;
+}
+
+.home-task-card--primary .home-task-icon {
+    background-color: var(--color-gold-muted);
+    color: var(--color-gold);
+}
+
+.home-task-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.home-task-label {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.home-task-sublabel {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+}
+
+/* Data at a glance — demoted from full cards to a single reference strip. */
+.home-stat-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md) var(--space-2xl);
+    background-color: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    box-shadow: var(--shadow-pop-sm);
+}
+
+.home-stat {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    padding: var(--space-xs) 0;
+}
+
+.home-stat-value {
+    font-size: 1.375rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--color-gold);
+    font-variant-numeric: tabular-nums;
+    transition: color 150ms;
+}
+
+.home-stat:hover .home-stat-value {
+    color: var(--color-gold-hover);
+}
+
+.home-stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-text-tertiary);
+    margin-top: 2px;
+}
+
 /* -- Page layout --------------------------------------------------------- */
 
 .page-stack {

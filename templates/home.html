@@ -5,65 +5,100 @@
 {% block page_title %}Home{% endblock %}
 
 {% block content %}
-<p class="page-description">Welcome back. Start a task below, or jump straight to any tool from the sidebar.</p>
+<div class="home">
 
-<h2 class="content-section-label">What do you want to do?</h2>
-<div class="dashboard-grid">
-    <a href="{% url 'accounting:ledger_create' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Log Water Use</div>
-        <div class="dashboard-card-sublabel">Record a new measurement or ledger entry</div>
-    </a>
-    <a href="{% url 'accounting:dashboard' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Water Balance</div>
-        <div class="dashboard-card-sublabel">See supplies against uses by account and zone</div>
-    </a>
-    <a href="{% url 'reporting:report_list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Run a Report</div>
-        <div class="dashboard-card-sublabel">Generate GEARS and CalWATRS exports</div>
-    </a>
-    {% if not access_enforced or user_is_admin %}
-    <a href="{% url 'setup:wizard' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Set Up &amp; Import Data</div>
-        <div class="dashboard-card-sublabel">Boundaries, zones, and bringing your data in</div>
-    </a>
-    {% endif %}
-    <a href="{% url 'getting_started' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Get Help</div>
-        <div class="dashboard-card-sublabel">Guides, methods, and the glossary</div>
-    </a>
-</div>
+    {# Status hero — orients the user: who/where, plus live data health. #}
+    <section class="home-hero">
+        <div class="home-hero-greeting">{{ greeting }}</div>
+        <h2 class="home-hero-title">{{ agency_name }}</h2>
+        <div class="home-hero-status">
+            <span class="home-hero-dot {% if fresh_stations %}home-hero-dot--ok{% else %}home-hero-dot--idle{% endif %}"></span>
+            <span>{{ fresh_stations }} of {{ active_station_count }} station{{ active_station_count|pluralize }} reporting</span>
+            {% if last_sync_time %}
+            <span class="home-status-sep">·</span>
+            <span>synced {{ last_sync_time|timesince }} ago</span>
+            {% endif %}
+        </div>
+    </section>
 
-<h2 class="content-section-label" style="margin-top: var(--space-xl);">Your data at a glance</h2>
-<div class="dashboard-grid">
-    <a href="{% url 'parcels:list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Use Areas</div>
-        <div class="dashboard-card-value text-gold">{{ parcel_count }}</div>
-        <div class="dashboard-card-sublabel">View all use areas</div>
-    </a>
-    <a href="{% url 'wells:list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Wells</div>
-        <div class="dashboard-card-value text-gold">{{ well_count }}</div>
-        <div class="dashboard-card-sublabel">View all wells</div>
-    </a>
-    <a href="{% url 'surface:pod_list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Surface Diversions</div>
-        <div class="dashboard-card-value text-gold">{{ water_right_count }}</div>
-        <div class="dashboard-card-sublabel">View surface diversions</div>
-    </a>
-    <a href="{% url 'recharge:list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Recharge Sites</div>
-        <div class="dashboard-card-value text-gold">{{ recharge_site_count }}</div>
-        <div class="dashboard-card-sublabel">View recharge sites</div>
-    </a>
-    <a href="{% url 'accounting:accounts_list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Water Accounts</div>
-        <div class="dashboard-card-value text-gold">{{ water_account_count }}</div>
-        <div class="dashboard-card-sublabel">View accounts</div>
-    </a>
-    <a href="{% url 'datasync:station_list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Monitoring Stations</div>
-        <div class="dashboard-card-value text-gold">{{ station_count }}</div>
-        <div class="dashboard-card-sublabel">View stations</div>
-    </a>
+    <h2 class="home-section-label">Start a task</h2>
+    <div class="home-task-grid">
+        <a href="{% url 'accounting:ledger_create' %}" class="home-task-card home-task-card--primary">
+            <span class="home-task-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+            </span>
+            <span class="home-task-body">
+                <span class="home-task-label">Log Water Use</span>
+                <span class="home-task-sublabel">Record a new measurement or ledger entry</span>
+            </span>
+        </a>
+        <a href="{% url 'accounting:dashboard' %}" class="home-task-card">
+            <span class="home-task-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+            <span class="home-task-body">
+                <span class="home-task-label">Water Balance</span>
+                <span class="home-task-sublabel">See supplies against uses by account and zone</span>
+            </span>
+        </a>
+        <a href="{% url 'reporting:report_list' %}" class="home-task-card">
+            <span class="home-task-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </span>
+            <span class="home-task-body">
+                <span class="home-task-label">Run a Report</span>
+                <span class="home-task-sublabel">Generate GEARS and CalWATRS exports</span>
+            </span>
+        </a>
+        {% if not access_enforced or user_is_admin %}
+        <a href="{% url 'setup:wizard' %}" class="home-task-card">
+            <span class="home-task-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </span>
+            <span class="home-task-body">
+                <span class="home-task-label">Set Up &amp; Import Data</span>
+                <span class="home-task-sublabel">Boundaries, zones, and bringing your data in</span>
+            </span>
+        </a>
+        {% endif %}
+        <a href="{% url 'getting_started' %}" class="home-task-card">
+            <span class="home-task-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </span>
+            <span class="home-task-body">
+                <span class="home-task-label">Get Help</span>
+                <span class="home-task-sublabel">Guides, methods, and the glossary</span>
+            </span>
+        </a>
+    </div>
+
+    <h2 class="home-section-label">Your data</h2>
+    <div class="home-stat-bar">
+        <a href="{% url 'parcels:list' %}" class="home-stat">
+            <span class="home-stat-value">{{ parcel_count }}</span>
+            <span class="home-stat-label">Use Areas</span>
+        </a>
+        <a href="{% url 'wells:list' %}" class="home-stat">
+            <span class="home-stat-value">{{ well_count }}</span>
+            <span class="home-stat-label">Wells</span>
+        </a>
+        <a href="{% url 'surface:pod_list' %}" class="home-stat">
+            <span class="home-stat-value">{{ water_right_count }}</span>
+            <span class="home-stat-label">Surface Diversions</span>
+        </a>
+        <a href="{% url 'recharge:list' %}" class="home-stat">
+            <span class="home-stat-value">{{ recharge_site_count }}</span>
+            <span class="home-stat-label">Recharge Sites</span>
+        </a>
+        <a href="{% url 'accounting:accounts_list' %}" class="home-stat">
+            <span class="home-stat-value">{{ water_account_count }}</span>
+            <span class="home-stat-label">Water Accounts</span>
+        </a>
+        <a href="{% url 'datasync:station_list' %}" class="home-stat">
+            <span class="home-stat-value">{{ station_count }}</span>
+            <span class="home-stat-label">Monitoring Stations</span>
+        </a>
+    </div>
+
 </div>
 {% endblock %}

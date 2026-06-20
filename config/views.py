@@ -6,21 +6,35 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 
-from datasync.models import MonitoredStation
+from datasync import freshness
+from datasync.models import DataSyncLog, MonitoredStation
 from parcels.models import Parcel
 from recharge.models import RechargeSite
 from surface.models import WaterRight
 from wells.models import Well
 from accounting.models import WaterAccount
+from core.models import SiteConfig
+
+
+def _greeting(now):
+    """Time-of-day greeting in the deployment's local timezone."""
+    hour = timezone.localtime(now).hour
+    if hour < 12:
+        return "Good morning"
+    if hour < 17:
+        return "Good afternoon"
+    return "Good evening"
 
 
 def index(request):
     """Signed-in users get the task-first home; visitors get the public landing.
 
-    Both share the same entity counts; the home page uses them as an at-a-glance
-    snapshot beneath the "what do you want to do?" task cards, while the public
-    landing shows them as the demo's headline numbers.
+    Both share the same entity counts. The home page wraps them in a Command
+    Console layout: a status hero (who/where + live data health), the primary
+    task cards, and the counts demoted to an at-a-glance stat bar. The public
+    landing shows the same counts as the demo's headline numbers.
     """
     context = {
         "parcel_count": Parcel.objects.count(),
@@ -30,9 +44,34 @@ def index(request):
         "water_account_count": WaterAccount.objects.count(),
         "station_count": MonitoredStation.objects.count(),
     }
-    if request.user.is_authenticated:
-        return render(request, "home.html", context)
-    return render(request, "index.html", context)
+    if not request.user.is_authenticated:
+        return render(request, "index.html", context)
+
+    # Status-hero data — every value is real, never decorative.
+    now = timezone.now()
+    site_config = SiteConfig.objects.first()
+    active = list(
+        MonitoredStation.objects.filter(is_active=True).select_related("data_source")
+    )
+    fresh_stations = sum(
+        1
+        for s in active
+        if freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        == "fresh"
+    )
+    last_sync = (
+        DataSyncLog.objects.filter(status__in=["success", "partial"]).first()
+    )
+    context.update(
+        {
+            "greeting": _greeting(now),
+            "agency_name": site_config.agency_name if site_config else "Your Agency",
+            "active_station_count": len(active),
+            "fresh_stations": fresh_stations,
+            "last_sync_time": last_sync.started_at if last_sync else None,
+        }
+    )
+    return render(request, "home.html", context)
 
 
 def set_nav_mode(request):
