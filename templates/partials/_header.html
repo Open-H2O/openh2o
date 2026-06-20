@@ -18,6 +18,10 @@
 
     <!-- User menu -->
     <div class="app-header-user">
+        {% if nav_mode == 'admin' %}
+            <a href="{% url 'set_nav_mode' %}?mode=operations" class="header-mode-badge"
+               title="You are in Admin mode — click to return to Operations">Admin mode</a>
+        {% endif %}
         {% if user.is_authenticated %}
             <a href="{% url 'profile' %}" class="app-header-email">{{ user.email }}</a>
             <a href="{% url 'account_logout' %}" class="btn-secondary btn-sm">Sign Out</a>

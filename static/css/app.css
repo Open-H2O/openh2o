@@ -1917,6 +1917,29 @@ div[id$="-map"] {
     display: none;
 }
 
+/* -- Admin-mode header badge -------------------------------------------- */
+/* A persistent gold chip in the header whenever the sidebar is in Admin mode,
+   so the elevated state is signalled on every page — not just by the section
+   that appears in the nav. Doubles as a one-click exit back to Operations. */
+.header-mode-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--color-gold);
+    background-color: rgba(228, 163, 23, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(228, 163, 23, 0.30);
+    transition: background-color 150ms;
+}
+.header-mode-badge:hover {
+    background-color: rgba(228, 163, 23, 0.22);
+}
+
 /* -- Result count bar (list result partials header) ---------------------- */
 
 .result-count-bar {
