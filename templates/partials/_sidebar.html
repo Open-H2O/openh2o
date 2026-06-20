@@ -42,32 +42,6 @@
             <span class="sidebar-link-text">Map</span>
         </a>
 
-        <!-- VIEW MODE TOGGLE -->
-        <div class="sidebar-section">
-            <span class="sidebar-link-text sidebar-section-label">View &middot; {{ nav_mode|capfirst }}</span>
-        </div>
-        {% if nav_mode == 'admin' %}
-        <a href="{% url 'set_nav_mode' %}?mode=operations"
-           class="sidebar-link" title="Hide setup &amp; administration tools">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="9"/>
-                <rect x="14" y="3" width="7" height="5"/>
-                <rect x="14" y="12" width="7" height="9"/>
-                <rect x="3" y="16" width="7" height="5"/>
-            </svg>
-            <span class="sidebar-link-text">Switch to Operations</span>
-        </a>
-        {% else %}
-        <a href="{% url 'set_nav_mode' %}?mode=admin"
-           class="sidebar-link" title="Show setup &amp; administration tools">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            <span class="sidebar-link-text">Switch to Admin</span>
-        </a>
-        {% endif %}
-
         <!-- WATER DATA -->
         <div class="sidebar-section">
             <span class="sidebar-link-text sidebar-section-label">Water Data</span>
@@ -262,10 +236,14 @@
             <span class="sidebar-link-text">Reports</span>
         </a>
 
-        <!-- HELP -->
-        <div class="sidebar-section">
+        <!-- HELP (collapsed by default; auto-opens on a help/about page) -->
+        <details class="sidebar-collapsible"{% if '/help/' in request.path or request.path == '/about/' %} open{% endif %}>
+        <summary class="sidebar-section sidebar-collapsible-summary">
             <span class="sidebar-link-text sidebar-section-label">Help</span>
-        </div>
+            <svg class="sidebar-collapsible-chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </summary>
         <a href="{% url 'getting_started' %}"
            class="sidebar-link{% if request.path == '/help/getting-started/' %} active{% endif %}">
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -323,5 +301,16 @@
             </svg>
             <span class="sidebar-link-text">About</span>
         </a>
+        </details>
+
+        <!-- VIEW MODE — segmented toggle, tucked at the foot of the nav -->
+        <div class="nav-mode-toggle" role="group" aria-label="Sidebar view mode">
+            <a href="{% url 'set_nav_mode' %}?mode=operations"
+               class="nav-mode-option{% if nav_mode != 'admin' %} active{% endif %}"
+               title="Everyday tools only">Operations</a>
+            <a href="{% url 'set_nav_mode' %}?mode=admin"
+               class="nav-mode-option{% if nav_mode == 'admin' %} active{% endif %}"
+               title="Show setup &amp; administration tools">Admin</a>
+        </div>
     </nav>
 </aside>
