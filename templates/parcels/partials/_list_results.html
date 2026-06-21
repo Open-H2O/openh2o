@@ -7,50 +7,28 @@
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
-  <table class="data-table master-table">
-    <thead>
-      <tr>
-        <th>Parcel Number</th>
-        <th>Owner</th>
-        <th class="th-right">Acres</th>
-        <th>Status</th>
-        <th>Zones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for parcel in page_obj %}
-      <tr
-        data-parcel-row
-        class="master-row{% if selected_parcel and parcel.pk == selected_parcel.pk %} is-selected{% endif %}"
-        hx-get="{% url 'parcels:detail' parcel.pk %}"
-        hx-target="#detail-pane"
-        hx-swap="innerHTML"
-        hx-push-url="{% url 'parcels:list' %}?selected={{ parcel.pk }}"
-        role="link"
-        tabindex="0"
-        aria-label="Open use area {{ parcel.parcel_number }}">
-        <td>
-          <span class="data-table-link">{{ parcel.parcel_number }}</span>
-        </td>
-        <td>{{ parcel.owner_name|default:"—" }}</td>
-        <td class="text-secondary td-num">
-          {% if parcel.area_acres %}{{ parcel.area_acres }}{% else %}—{% endif %}
-        </td>
-        <td>
-          {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
-        </td>
-        <td class="text-secondary">
-          {% for pz in parcel.parcel_zones.all %}
-            <span class="pill-tag" style="margin-right: 2px;">{{ pz.zone.name }}</span>
-          {% empty %}
-            —
-          {% endfor %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card-raised master-list-card">
+  {% for parcel in page_obj %}
+  <div
+    data-parcel-row
+    class="master-row{% if selected_parcel and parcel.pk == selected_parcel.pk %} is-selected{% endif %}"
+    hx-get="{% url 'parcels:detail' parcel.pk %}"
+    hx-target="#detail-pane"
+    hx-swap="innerHTML"
+    hx-push-url="{% url 'parcels:list' %}?selected={{ parcel.pk }}"
+    role="link"
+    tabindex="0"
+    aria-label="Open use area {{ parcel.parcel_number }}">
+    <div class="master-row-top">
+      <span class="master-row-id">{{ parcel.parcel_number }}</span>
+      {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
+    </div>
+    <div class="master-row-sub">
+      <span class="master-row-owner">{{ parcel.owner_name|default:"—" }}</span>
+      {% if parcel.area_acres %}<span class="master-row-acres">{{ parcel.area_acres }} ac</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
 <!-- Pagination -->
