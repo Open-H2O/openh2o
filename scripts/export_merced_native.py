@@ -87,6 +87,74 @@ GW_SOLO_OWNERS = [
     "Snelling Orchard Co.",
 ]
 
+# --- Surface-water domain (Phase F) ----------------------------------------
+# Synthesized from the SAME fixtures the ledger uses, so each POD's monthly
+# DiversionRecords sum to exactly the surface_diversion ledger rows for its
+# served parcels. Values mirror the web seed_merced_operations (the senior 1930
+# MID right, the junior 1962 El Nido right that drought-curtails, the undated
+# riparian take). The water-right HOLDER is the district/agency (as in CA), kept
+# distinct from the farm parcel owners the bundle already carries.
+#
+# Right type codes: PRE14 / POST14 (appropriative) and RIP (riparian).
+WATER_RIGHT_TYPES = [
+    {"code": "PRE14", "name": "Pre-1914 Appropriative",
+     "detail": "Pre-1914 appropriative water right"},
+    {"code": "POST14", "name": "Post-1914 Appropriative",
+     "detail": "Post-1914 appropriative water right"},
+    {"code": "RIP", "name": "Riparian", "detail": "Riparian water right"},
+]
+
+# rightID -> typeCode, holder, priorityDate(str|None), faceValueAF, source, status, calwatrsPIN
+WATER_RIGHTS = [
+    ("MER-WR-004", "POST14", "Merced Irrigation District", "1930-04-10",
+     "120000", "Merced River", "active", "A004720"),
+    ("MER-WR-005", "POST14", "Le Grand-Athlone Water District", "1948-09-01",
+     "18000", "Le Grand Canal", "active", "A015533"),
+    ("MER-WR-006", "POST14", "Stevinson Water District", "1955-03-20",
+     "22000", "Diversion Canal", "active", "A018002"),
+    ("MER-WR-008", "RIP", "San Joaquin Bottomlands Ranch", None,
+     "4000", "Merced River", "active", ""),
+    # Junior right (newest priority) → first curtailed in the summer-2025 drought.
+    ("MER-WR-009", "POST14", "Plainsburg Irrigation District", "1962-05-05",
+     "9000", "El Nido Canal", "curtailed", "A021145"),
+    # Merced Falls hydroelectric passthrough — serves no parcels, returns its full
+    # diverted volume to the river (non-consumptive). Lights up the "Non-consumptive
+    # (returned to stream)" classification with real-looking data on the read screen.
+    ("MER-WR-010", "POST14", "Merced Falls Hydroelectric Co.", "1958-07-01",
+     "60000", "Merced River", "active", "A019887"),
+]
+
+# POD code (matches a parcel's servedBy) -> rightID, name, streamName, maxRateCFS
+POD_SURFACE = {
+    "MER-POD-004": ("MER-WR-004", "MID Atwater Canal Headgate", "Atwater Canal", "900.0"),
+    "MER-POD-005": ("MER-WR-005", "Le Grand Canal Headgate", "Le Grand Canal", "220.0"),
+    "MER-POD-006": ("MER-WR-006", "Stevinson Diversion Canal Headgate", "Diversion Canal", "260.0"),
+    "MER-POD-007": ("MER-WR-009", "Plainsburg El Nido Canal Headgate", "El Nido Canal", "130.0"),
+    "MER-POD-008": ("MER-WR-004", "Crocker-Huffman River Diversion", "Merced River", "700.0"),
+    "MER-POD-009": ("MER-WR-008", "Bottomlands Riparian Take", "Merced River", "45.0"),
+}
+
+# The hydro passthrough POD (no parcels; its records are synthesized, not ledger-derived).
+HYDRO_POD = "MER-POD-010"
+HYDRO_POD_SPEC = ("MER-WR-010", "Merced Falls Hydroelectric Diversion", "Merced River", "400.0")
+# A plausible Merced River main-stem point (near Merced Falls), since it serves no parcels.
+HYDRO_POD_LONLAT = (-120.30, 37.52)
+HYDRO_MONTHLY_AF = Decimal("3200")   # flat monthly passthrough volume, fully returned
+
+# The summer-2025 drought curtailment: basin-wide by priority date (how the State
+# Water Board actually cut the Merced system in 2021-22). Its 1962 cutoff curtails
+# only the junior El Nido right (MER-WR-009, priority 1962-05-05).
+CURTAILMENT_ORDER = {
+    "orderID": "MER-CURT-001",
+    "title": "Merced River System Drought Curtailment — Summer 2025",
+    "effectiveDate": "2025-07-01",
+    "endDate": "2025-09-30",
+    "watershed": "",                       # basin-wide (empty = matches every right)
+    "priorityDateCutoff": "1962-01-01",
+    "status": "active",
+    "notes": "Curtails post-1962 junior appropriative rights during the 2025 drought.",
+}
+
 
 def q4(value) -> str:
     """Quantize to the ledger's 4 decimal places, return as a STRING.
@@ -413,6 +481,9 @@ def build_bundle():
             "parcels": [p["parcelNumber"] for p in parcels if p["ownerName"] == owner],
         })
 
+    # --- Surface-water domain (rights, PODs, diversion records, curtailment) ---
+    surface = build_surface(parcels, parcel_by_number, ledger, schedule)
+
     # Strip the transient geometry from zones before emitting.
     for z in zones:
         z.pop("geometry", None)
@@ -426,6 +497,9 @@ def build_bundle():
             "wellCount": len(wells),
             "accountCount": len(accounts),
             "ledgerRows": len(ledger),
+            "waterRightCount": len(surface["waterRights"]),
+            "podCount": len(surface["pointsOfDiversion"]),
+            "diversionRecordCount": len(surface["diversionRecords"]),
             "waterYear": "WY 2024-2025",
             "note": "ET/precip intentionally omitted; native fetches via OpenET after import.",
         },
@@ -466,8 +540,117 @@ def build_bundle():
         "wells": wells,
         "accounts": accounts,
         "ledger": ledger,
+        "surface": surface,
     }
     return bundle
+
+
+def build_surface(parcels, parcel_by_number, ledger, schedule):
+    """The surface-water domain, synthesized from the same fixtures + ledger.
+
+    Each POD's monthly DiversionRecords are the SUM of the surface_diversion ledger
+    rows for the parcels it serves, so the surface book ties out to the ledger the
+    accounting waterfall already consumes. Returns the bundle's ``surface`` dict.
+    """
+    # Which parcels each POD serves (a surface/conjunctive parcel names its POD in servedBy).
+    pod_parcels = {}   # pod_code -> [parcelNumber, ...]
+    for p in parcels:
+        pod = (p.get("servedBy") or "").strip()
+        if pod in POD_SURFACE and p["waterSource"] in SURFACE_SOURCES:
+            pod_parcels.setdefault(pod, []).append(p["parcelNumber"])
+
+    # --- Points of diversion (located at the centroid of the parcels they serve) ---
+    points = []
+    for code, (rid, name, stream, max_cfs) in POD_SURFACE.items():
+        members = pod_parcels.get(code, [])
+        if members:
+            lats = [parcel_by_number[m]["footprint"]["centroidLat"] for m in members]
+            lons = [parcel_by_number[m]["footprint"]["centroidLon"] for m in members]
+            clat, clon = sum(lats) / len(lats), sum(lons) / len(lons)
+            frac = q4(Decimal(1) / Decimal(len(members)))
+        else:
+            clat = clon = None
+            frac = None
+        points.append({
+            "code": code, "name": name, "rightID": rid, "streamName": stream,
+            "maxRateCFS": max_cfs, "status": "active",
+            "footprint": ({
+                "geoJSON": json.dumps(
+                    {"type": "Point", "coordinates": [clon, clat]}, separators=(",", ":")),
+                "centroidLat": clat, "centroidLon": clon, "bbox": None,
+            } if clat is not None else None),
+            "parcels": [{"parcelNumber": m, "fraction": frac} for m in members],
+        })
+
+    # The hydro passthrough POD: no parcels, fixed Merced River point, re-diverts nothing.
+    hlon, hlat = HYDRO_POD_LONLAT
+    hrid, hname, hstream, hmax = HYDRO_POD_SPEC
+    points.append({
+        "code": HYDRO_POD, "name": hname, "rightID": hrid, "streamName": hstream,
+        "maxRateCFS": hmax, "status": "active",
+        "footprint": {
+            "geoJSON": json.dumps(
+                {"type": "Point", "coordinates": [hlon, hlat]}, separators=(",", ":")),
+            "centroidLat": hlat, "centroidLon": hlon, "bbox": None,
+        },
+        "parcels": [],
+    })
+
+    # --- Water-right ↔ parcel links (a right serves the union of its PODs' parcels) ---
+    right_parcels = {}   # rightID -> set(parcelNumber)
+    for code, members in pod_parcels.items():
+        rid = POD_SURFACE[code][0]
+        right_parcels.setdefault(rid, set()).update(members)
+    water_right_parcels = [
+        {"rightID": rid, "parcelNumber": n}
+        for rid in sorted(right_parcels) for n in sorted(right_parcels[rid])
+    ]
+
+    # --- Diversion records: aggregate surface_diversion ledger by (POD, month) ---
+    # parcel -> its POD; only surface-served parcels write surface_diversion rows.
+    pod_of_parcel = {n: code for code, members in pod_parcels.items() for n in members}
+    by_pod_month = {}   # (pod_code, day) -> summed magnitude (Decimal)
+    for row in ledger:
+        if row["sourceType"] != "surface_diversion":
+            continue
+        code = pod_of_parcel.get(row["parcelNumber"])
+        if code is None:
+            continue
+        mag = abs(Decimal(row["amountAcreFeet"]))
+        key = (code, row["transactionDate"])
+        by_pod_month[key] = by_pod_month.get(key, Decimal("0")) + mag
+
+    records = []
+    for (code, day), vol in sorted(by_pod_month.items()):
+        records.append({
+            "podCode": code, "month": day, "periodName": "WY 2024-2025",
+            "volumeAcreFeet": q4(vol), "returnedAF": "0",
+            "diversionType": "direct_use",
+            "detail": "Recorded monthly canal diversion",
+        })
+
+    # Hydro passthrough records: full volume returned each month (non-consumptive).
+    for _yr, _mn, day in schedule:
+        records.append({
+            "podCode": HYDRO_POD, "month": day, "periodName": "WY 2024-2025",
+            "volumeAcreFeet": q4(HYDRO_MONTHLY_AF), "returnedAF": q4(HYDRO_MONTHLY_AF),
+            "diversionType": "direct_use",
+            "detail": "Hydroelectric passthrough — returned to stream",
+        })
+
+    return {
+        "waterRightTypes": WATER_RIGHT_TYPES,
+        "waterRights": [
+            {"rightID": rid, "typeCode": tc, "holderName": holder,
+             "priorityDate": pdate, "faceValueAcreFeet": fv, "sourceName": src,
+             "status": status, "calwatrsPIN": pin}
+            for (rid, tc, holder, pdate, fv, src, status, pin) in WATER_RIGHTS
+        ],
+        "pointsOfDiversion": points,
+        "waterRightParcels": water_right_parcels,
+        "diversionRecords": records,
+        "curtailmentOrders": [CURTAILMENT_ORDER],
+    }
 
 
 def main():
@@ -490,6 +673,10 @@ def main():
     print(f"  allocations: {len(bundle['allocations'])} GW budgets across {len(bundle['zones'])} zones")
     metered = sum(1 for w in bundle["wells"] if w["metered"])
     print(f"  wells metered/total: {metered}/{len(bundle['wells'])}")
+    s = bundle["surface"]
+    print(f"  surface: {len(s['waterRights'])} rights, {len(s['pointsOfDiversion'])} PODs, "
+          f"{len(s['diversionRecords'])} diversion records, "
+          f"{len(s['curtailmentOrders'])} curtailment order(s)")
 
 
 if __name__ == "__main__":
