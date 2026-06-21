@@ -3299,20 +3299,25 @@ div[id$="-map"] {
    swaps in place on row click. Both panes scroll independently
    and stay in view as you work the list.
    ============================================================ */
+/* On the workspace page, app-content becomes the bounded frame: it fills the
+   viewport exactly and does NOT scroll, so each pane can scroll internally
+   against a real height instead of a guessed `100vh - chrome` (the guess left
+   dead space below the panes). Scoped with :has() so every other page keeps
+   its normal document scroll. */
+.app-content:has(.workspace-split) {
+    min-height: 0;
+    overflow: hidden;
+}
 .workspace-split {
     display: grid;
     grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
     gap: var(--space-md);
-    align-items: start;
+    align-items: stretch;
+    height: 100%;
 }
 .master-pane,
 .detail-pane {
-    position: sticky;
-    top: var(--space-md);
-    /* Fill the content viewport minus the app chrome (header + breadcrumb +
-       footer + padding). Forgiving: if slightly off you just get a little
-       more/less internal scroll, never a broken layout. */
-    max-height: calc(100vh - 8rem);
+    height: 100%;
     overflow-y: auto;
     min-height: 0;
     /* Internal breathing room so content never butts against the divider or
@@ -3449,15 +3454,20 @@ div[id$="-map"] {
     line-height: 1.5;
 }
 
-/* Stack to one column on narrow viewports; drop the sticky split. */
+/* Stack to one column on narrow viewports and hand scrolling back to the page
+   (no fixed-height panes when they're stacked). */
 @media (max-width: 900px) {
+    .app-content:has(.workspace-split) {
+        min-height: auto;
+        overflow: visible;
+    }
     .workspace-split {
         grid-template-columns: 1fr;
+        height: auto;
     }
     .master-pane,
     .detail-pane {
-        position: static;
-        max-height: none;
+        height: auto;
         overflow-y: visible;
     }
 }
