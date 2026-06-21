@@ -3303,7 +3303,15 @@ div[id$="-map"] {
    viewport exactly and does NOT scroll, so each pane can scroll internally
    against a real height instead of a guessed `100vh - chrome` (the guess left
    dead space below the panes). Scoped with :has() so every other page keeps
-   its normal document scroll. */
+   its normal document scroll.
+   The main column is pinned to the viewport (100dvh) so app-content has a
+   DEFINITE height to fill — without this the flex column grows to content and
+   the whole page scrolls, which is what left the bottom void. overflow:hidden
+   on the column keeps the footer in flow; app-content (flex:1) takes the rest. */
+.app-main:has(.workspace-split) {
+    height: 100dvh;
+    overflow: hidden;
+}
 .app-content:has(.workspace-split) {
     min-height: 0;
     overflow: hidden;
@@ -3457,6 +3465,10 @@ div[id$="-map"] {
 /* Stack to one column on narrow viewports and hand scrolling back to the page
    (no fixed-height panes when they're stacked). */
 @media (max-width: 900px) {
+    .app-main:has(.workspace-split) {
+        height: auto;
+        overflow: visible;
+    }
     .app-content:has(.workspace-split) {
         min-height: auto;
         overflow: visible;
