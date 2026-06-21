@@ -155,6 +155,37 @@ CURTAILMENT_ORDER = {
     "notes": "Curtails post-1962 junior appropriative rights during the 2025 drought.",
 }
 
+# --- Managed-recharge domain (Phase F-recharge) -----------------------------
+# The two REAL Merced Irrigation District spreading basins (from seed_merced_recharge:
+# Cressey-Winton ~110 ac / 550 AF, El Nido ~85 ac / 425 AF), each placed on open
+# cropland beside an MID canal that fills it. The basin↔POD link ties each basin to
+# the surface diversion that feeds it — a data link surfaced on the detail page, not a
+# flow line on the map. (El Nido is fed by MER-POD-007, the same canal whose junior
+# right drought-curtails — the basin's supply and the surface book share one source.)
+#
+# code -> name, siteType, lon, lat, acres, capacityAF, fedByPOD
+RECHARGE_SITES = {
+    "MER-RB-001": ("Cressey-Winton Recharge Basin", "spreading_basin",
+                   -120.666, 37.336, 110.0, "550.0", "MER-POD-004"),
+    "MER-RB-002": ("El Nido Recharge Basin", "spreading_basin",
+                   -120.498, 37.125, 85.0, "425.0", "MER-POD-007"),
+}
+RECHARGE_OPERATOR = "Merced Irrigation District"
+
+# Wet-season recharge schedule for WY 2024-2025 (mirrors seed_merced_recharge_events):
+# storm-driven, weighted to mid-winter; (event_date, fraction-of-capacity). Fractions
+# sum to 1.0, so each basin recharges ~one full capacity over the season.
+RECHARGE_WET_SEASON = [
+    ("2024-12-15", Decimal("0.20")),
+    ("2025-01-15", Decimal("0.30")),
+    ("2025-02-15", Decimal("0.30")),
+    ("2025-03-15", Decimal("0.20")),
+]
+# Decision (Brent, 2026-06-03): managed recharge credits Groundwater (GW); the physical
+# source water (diverted storm/surface runoff) is preserved in the event source field.
+RECHARGE_WATER_TYPE = "GW"
+RECHARGE_SOURCE_DESC = "storm/surface runoff diverted to basin"
+
 
 def q4(value) -> str:
     """Quantize to the ledger's 4 decimal places, return as a STRING.
@@ -484,6 +515,9 @@ def build_bundle():
     # --- Surface-water domain (rights, PODs, diversion records, curtailment) ---
     surface = build_surface(parcels, parcel_by_number, ledger, schedule)
 
+    # --- Managed-recharge domain (basins, basin↔POD links, recharge events) ---
+    recharge = build_recharge()
+
     # Strip the transient geometry from zones before emitting.
     for z in zones:
         z.pop("geometry", None)
@@ -500,6 +534,8 @@ def build_bundle():
             "waterRightCount": len(surface["waterRights"]),
             "podCount": len(surface["pointsOfDiversion"]),
             "diversionRecordCount": len(surface["diversionRecords"]),
+            "rechargeSiteCount": len(recharge["sites"]),
+            "rechargeEventCount": len(recharge["events"]),
             "waterYear": "WY 2024-2025",
             "note": "ET/precip intentionally omitted; native fetches via OpenET after import.",
         },
@@ -541,6 +577,7 @@ def build_bundle():
         "accounts": accounts,
         "ledger": ledger,
         "surface": surface,
+        "recharge": recharge,
     }
     return bundle
 
@@ -653,6 +690,48 @@ def build_surface(parcels, parcel_by_number, ledger, schedule):
     }
 
 
+def build_recharge():
+    """The managed-recharge domain: the MID spreading basins, the POD that fills each,
+    and a wet-season of recharge events. Returns the bundle's ``recharge`` dict.
+
+    Independent of the ledger (unlike surface): managed recharge is its own recorded book
+    of deposits to the aquifer, sized as a fraction of each basin's capacity per event.
+    """
+    sites, links, events = [], [], []
+    for code, (name, site_type, lon, lat, acres, cap_af, fed_by_pod) in RECHARGE_SITES.items():
+        sites.append({
+            "code": code, "name": name, "siteType": site_type,
+            "capacityAcreFeet": q4(cap_af), "status": "active",
+            "operator": RECHARGE_OPERATOR,
+            "notes": (f"{acres:.0f}-acre spreading basin on open cropland beside an "
+                      f"MID canal; flooded in storm events and pooled to percolate."),
+            "footprint": {
+                "geoJSON": json.dumps(
+                    {"type": "Point", "coordinates": [lon, lat]}, separators=(",", ":")),
+                "centroidLat": lat, "centroidLon": lon, "bbox": None,
+            },
+        })
+        # Basin ← POD link (the diversion that fills it).
+        links.append({"siteCode": code, "podCode": fed_by_pod})
+        # Wet-season events: each a fraction of the basin's capacity.
+        capacity = Decimal(cap_af)
+        for ev_date, fraction in RECHARGE_WET_SEASON:
+            vol = (capacity * fraction)
+            events.append({
+                "siteCode": code, "startDate": ev_date, "endDate": None,
+                "volumeAcreFeet": q4(vol), "waterTypeCode": RECHARGE_WATER_TYPE,
+                "periodName": "WY 2024-2025", "sourceDescription": RECHARGE_SOURCE_DESC,
+                "notes": ("Managed aquifer recharge credited to groundwater (GW); "
+                          "physical source is diverted surface/storm water."),
+            })
+
+    return {
+        "sites": sites,
+        "sitePODs": links,
+        "events": events,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=DEFAULT_OUT, help="output bundle path")
@@ -677,6 +756,9 @@ def main():
     print(f"  surface: {len(s['waterRights'])} rights, {len(s['pointsOfDiversion'])} PODs, "
           f"{len(s['diversionRecords'])} diversion records, "
           f"{len(s['curtailmentOrders'])} curtailment order(s)")
+    rc = bundle["recharge"]
+    print(f"  recharge: {len(rc['sites'])} basins, {len(rc['sitePODs'])} basin↔POD links, "
+          f"{len(rc['events'])} recharge events")
 
 
 if __name__ == "__main__":
