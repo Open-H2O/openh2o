@@ -23,7 +23,10 @@
   <!-- Map banner -->
   {% if geojson %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    <div id="parcel-map" class="map-embed" style="height: 320px;"></div>
+    <!-- Starts hidden and fades in on the map's 'load' event. MapLibre paints
+         its canvas at the window's top-left for a few frames during startup;
+         hiding until load keeps that flash off-screen. -->
+    <div id="parcel-map" class="map-embed" style="height: 320px; opacity: 0; transition: opacity 220ms ease;"></div>
   </div>
   {% endif %}
 
@@ -358,6 +361,8 @@
       zoom: 13
     });
     window._parcelPaneMap = map;
+    // Safety net: reveal even if 'load' never fires (offline tiles, etc.).
+    var revealTimer = window.setTimeout(function () { el.style.opacity = '1'; }, 1200);
 
     map.on('load', function() {
       map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
@@ -385,6 +390,9 @@
           { padding: 32, maxZoom: 16, duration: 0 }
         );
       }
+      // Map is positioned and framed — now fade it in (the startup flash is done).
+      window.clearTimeout(revealTimer);
+      el.style.opacity = '1';
     });
   }
   boot();
