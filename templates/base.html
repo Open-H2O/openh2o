@@ -101,6 +101,7 @@
             <footer style="display:flex; align-items:center; justify-content:center; min-height:3rem; padding:0 1.5rem; font-size:0.8rem; color:#8899aa; border-top:1px solid rgba(255,255,255,0.06);">
                 <div style="text-align:center;">
                     OpenH2O — Open Water Accounting Platform ·
+                    <a href="{% url 'about' %}" style="color:#3DB4E0; text-decoration:none;">About</a> ·
                     <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer" style="color:#3DB4E0; text-decoration:none;">Source code (AGPL-3.0)</a>{% if app_version and app_version != "dev" %} · <span style="color:#4d5e6f;" title="Build version">{{ app_version }}</span>{% endif %}
                 </div>
             </footer>
