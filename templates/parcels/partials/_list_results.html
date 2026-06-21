@@ -8,7 +8,7 @@
 
 {% if page_obj.object_list %}
 <div class="card-raised table-scroll">
-  <table class="data-table">
+  <table class="data-table master-table">
     <thead>
       <tr>
         <th>Parcel Number</th>
@@ -20,11 +20,18 @@
     </thead>
     <tbody>
       {% for parcel in page_obj %}
-      <tr>
+      <tr
+        data-parcel-row
+        class="master-row{% if selected_parcel and parcel.pk == selected_parcel.pk %} is-selected{% endif %}"
+        hx-get="{% url 'parcels:detail' parcel.pk %}"
+        hx-target="#detail-pane"
+        hx-swap="innerHTML"
+        hx-push-url="{% url 'parcels:list' %}?selected={{ parcel.pk }}"
+        role="link"
+        tabindex="0"
+        aria-label="Open use area {{ parcel.parcel_number }}">
         <td>
-          <a href="{% url 'parcels:detail' parcel.pk %}" class="data-table-link">
-            {{ parcel.parcel_number }}
-          </a>
+          <span class="data-table-link">{{ parcel.parcel_number }}</span>
         </td>
         <td>{{ parcel.owner_name|default:"—" }}</td>
         <td class="text-secondary td-num">

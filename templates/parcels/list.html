@@ -1,7 +1,13 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Use Areas - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Use Areas{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,7 +16,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Use Areas</span>
   </nav>
-  <p class="page-description">Use areas tracked in the system. Import from GeoJSON or Shapefile, then assign to water accounts for tracking.</p>
+  <p class="page-description">Use areas tracked in the system. Pick one to open its water balance, map, and ledger alongside the list.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
     <a href="{% url 'infrastructure:add' %}" class="btn-secondary btn-sm">Import</a>
     <a href="{% url 'infrastructure:add' %}" class="btn-primary btn-sm">+ Add Use Area</a>
@@ -19,49 +25,80 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack">
+<div class="workspace-split">
 
-  <!-- Toolbar -->
-  <div class="card-raised toolbar-row">
-    <!-- Search -->
-    <div style="flex: 1; min-width: 200px;">
-      <label class="form-label" for="filter-search">Search</label>
-      <input
-        type="text"
-        id="filter-search" name="q"
-        value="{{ q }}"
-        placeholder="Parcel number or owner..."
-        hx-get="{% url 'parcels:list' %}"
-        hx-target="#results"
-        hx-trigger="keyup changed delay:300ms"
-        hx-include="[name='status']"
-        class="form-input search-input-icon"
-      >
+  <!-- Master pane: searchable list of use areas -->
+  <section class="master-pane">
+    <div class="card-raised toolbar-stack">
+      <div>
+        <label class="form-label" for="filter-search">Search</label>
+        <input
+          type="text"
+          id="filter-search" name="q"
+          value="{{ q }}"
+          placeholder="Parcel number or owner..."
+          hx-get="{% url 'parcels:list' %}"
+          hx-target="#results"
+          hx-trigger="keyup changed delay:300ms"
+          hx-include="[name='status']"
+          class="form-input search-input-icon"
+        >
+      </div>
+      <div>
+        <label class="form-label" for="filter-status">Status</label>
+        <select
+          id="filter-status" name="status"
+          hx-get="{% url 'parcels:list' %}"
+          hx-target="#results"
+          hx-trigger="change"
+          hx-include="[name='q']"
+          class="form-select"
+        >
+          <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+          {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
 
-    <!-- Status filter -->
-    <div>
-      <label class="form-label" for="filter-status">Status</label>
-      <select
-        id="filter-status" name="status"
-        hx-get="{% url 'parcels:list' %}"
-        hx-target="#results"
-        hx-trigger="change"
-        hx-include="[name='q']"
-        class="form-select"
-      >
-        <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
-        {% for val, label in status_choices %}
-          <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
+    <div id="results" class="master-results">
+      {% include "parcels/partials/_list_results.html" %}
     </div>
-  </div>
+  </section>
 
-  <!-- Results -->
-  <div id="results">
-    {% include "parcels/partials/_list_results.html" %}
-  </div>
+  <!-- Detail pane: the selected use area, swapped in place on row click -->
+  <section class="detail-pane" id="detail-pane">
+    {% if selected_parcel %}
+      {% include "parcels/partials/_detail_pane.html" %}
+    {% else %}
+      {% include "parcels/partials/_detail_empty.html" %}
+    {% endif %}
+  </section>
 
 </div>
+{% endblock %}
+
+{% block map_scripts %}
+<!-- Loaded once for the whole workspace so every swapped-in detail pane has the
+     map toolkit ready (the pane's guarded init waits for these). -->
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Keep the clicked row highlighted. Delegated on document so it survives the
+// #results list being re-rendered by a search/filter/pagination swap.
+(function() {
+  document.addEventListener('click', function(e) {
+    var row = e.target.closest ? e.target.closest('[data-parcel-row]') : null;
+    if (!row) return;
+    document.querySelectorAll('[data-parcel-row].is-selected').forEach(function(r) {
+      r.classList.remove('is-selected');
+    });
+    row.classList.add('is-selected');
+  });
+})();
+</script>
 {% endblock %}

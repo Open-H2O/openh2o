@@ -43,7 +43,17 @@ EDITABLE_FIELDS = {
 
 @login_required
 def parcels_list(request):
-    """List view with HTMX search and status filter."""
+    """Master-detail workspace for use areas.
+
+    Left pane: the HTMX-searchable parcel list. Right pane: the selected
+    parcel's detail, swapped in place when a row is clicked. A `?selected=<pk>`
+    query param pre-renders that parcel server-side so a reload or a deep link
+    lands on the same workspace view (the row click pushes that URL).
+
+    Returns the `_list_results` partial for an HTMX list refresh (search /
+    filter / pagination, which target `#results`), and the full workspace page
+    otherwise.
+    """
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
 
@@ -62,13 +72,22 @@ def parcels_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Pre-load the selected parcel (deep link / reload) into the detail pane.
+    selected_parcel = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_parcel = Parcel.objects.filter(pk=selected_raw).first()
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "q": q,
         "status": status,
         "status_choices": Parcel.STATUS_CHOICES,
+        "selected_parcel": selected_parcel,
     }
+    if selected_parcel is not None:
+        context.update(_parcel_detail_context(selected_parcel))
 
     if request.headers.get("HX-Request"):
         return render(request, "parcels/partials/_list_results.html", context)
@@ -76,10 +95,12 @@ def parcels_list(request):
     return render(request, "parcels/list.html", context)
 
 
-@login_required
-def parcel_detail(request, pk):
-    """Detail view for a single parcel."""
-    parcel = get_object_or_404(Parcel, pk=pk)
+def _parcel_detail_context(parcel):
+    """Build the per-parcel water-balance context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded `?selected=` pane so all three are identical.
+    """
     zone_memberships = parcel.parcel_zones.select_related("zone").all()
     related_wells = parcel.wellirrigatedparcel_set.select_related("well").all()
     recent_ledger = ParcelLedger.objects.filter(parcel=parcel).order_by(
@@ -152,6 +173,21 @@ def parcel_detail(request, pk):
         # json_script so operator free-text can't break out of <script>.
         "geojson": geojson,
     }
+    return context
+
+
+@login_required
+def parcel_detail(request, pk):
+    """A single parcel's water-balance detail.
+
+    On an HTMX request it returns just the `_detail_pane` fragment (the
+    workspace swaps this into `#detail-pane`); otherwise it returns the
+    standalone page, which deep links and no-HTMX clients still reach.
+    """
+    parcel = get_object_or_404(Parcel, pk=pk)
+    context = _parcel_detail_context(parcel)
+    if request.headers.get("HX-Request"):
+        return render(request, "parcels/partials/_detail_pane.html", context)
     return render(request, "parcels/detail.html", context)
 
 

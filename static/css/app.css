@@ -3292,3 +3292,120 @@ div[id$="-map"] {
     color: var(--forest-500);
     font-weight: 700;
 }
+
+/* ============================================================
+   MASTER-DETAIL WORKSPACE (v2.0 re-engineering, Use Areas first)
+   A persistent searchable list beside a live detail pane that
+   swaps in place on row click. Both panes scroll independently
+   and stay in view as you work the list.
+   ============================================================ */
+.workspace-split {
+    display: grid;
+    grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+    gap: var(--space-md);
+    align-items: start;
+}
+.master-pane,
+.detail-pane {
+    position: sticky;
+    top: var(--space-md);
+    /* Fill the content viewport minus the app chrome (header + breadcrumb +
+       footer + padding). Forgiving: if slightly off you just get a little
+       more/less internal scroll, never a broken layout. */
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+    min-height: 0;
+}
+.toolbar-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+/* Clickable list rows */
+.master-row {
+    cursor: pointer;
+    transition: background-color 120ms ease;
+}
+.master-row:hover td {
+    background-color: var(--color-hover);
+}
+.master-row.is-selected td {
+    background-color: rgba(228, 163, 23, 0.10);
+}
+.master-row.is-selected td:first-child {
+    box-shadow: inset 3px 0 0 var(--color-gold);
+}
+.master-row:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: -2px;
+}
+
+/* Detail pane header (the workspace has no breadcrumb to name the parcel) */
+.pane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding-bottom: var(--space-md);
+    margin-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+}
+.pane-header-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+}
+.pane-header-sub {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+.pane-header-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-xs);
+    white-space: nowrap;
+}
+.pane-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+/* Resting (no parcel selected) state */
+.pane-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 420px;
+    color: var(--color-text-tertiary);
+    padding: var(--space-xl);
+}
+.pane-empty-icon {
+    opacity: 0.4;
+    margin-bottom: var(--space-md);
+}
+.pane-empty-text {
+    max-width: 320px;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+/* Stack to one column on narrow viewports; drop the sticky split. */
+@media (max-width: 900px) {
+    .workspace-split {
+        grid-template-columns: 1fr;
+    }
+    .master-pane,
+    .detail-pane {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+    }
+}

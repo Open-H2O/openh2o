@@ -1,0 +1,393 @@
+{% load static %}
+{% comment %}
+  Per-parcel detail, rendered INTO the workspace's #detail-pane (and reused as
+  the body of the standalone detail.html page). Everything here must stand on
+  its own when HTMX swaps it in: the map init lives inline at the bottom and is
+  guarded so it runs on both a fresh page load and an in-place swap.
+{% endcomment %}
+
+<!-- Pane header: which parcel you're looking at (the workspace has no breadcrumb). -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">{{ parcel.parcel_number }}</div>
+    <div class="pane-header-sub">{{ parcel.owner_name|default:"—" }}</div>
+  </div>
+  <div class="pane-header-meta">
+    {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
+    <a href="{% url 'parcels:detail' parcel.pk %}" class="text-tertiary text-xs back-link" title="Open this use area on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+<div class="pane-stack">
+
+  <!-- Map banner -->
+  {% if geojson %}
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="parcel-map" class="map-embed" style="height: 320px;"></div>
+  </div>
+  {% endif %}
+
+  <!-- Water Balance card -->
+  <div class="card-raised">
+    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+      {% url 'methods' as methods_help_url %}
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water Balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's satellite-estimated consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      {% if balance_period %}
+      <span class="text-tertiary text-xs">{{ balance_period.name }}</span>
+      {% endif %}
+    </div>
+
+    {% if run_periods %}
+    <!-- ET has been computed: full consumptive-use + closing identity. -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
+      <div class="inset-card">
+        <div class="stat-card-label">Consumptive Use (ET)</div>
+        <div class="stat-card-value-sm text-usage">{{ consumptive_balance.consumptive_use_gross|floatformat:2 }}</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+      <div class="inset-card">
+        <div class="stat-card-label">Total Supplies</div>
+        <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supply_total|floatformat:2 }}</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+      <div class="inset-card">
+        <div class="stat-card-label">Supplies − Consumptive Use</div>
+        <div class="stat-card-value-sm {% if consumptive_balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ consumptive_balance.net_vs_supply|floatformat:2 }}</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+    </div>
+
+    <div style="margin: 0 0 var(--space-lg);">
+      <p class="text-sm text-secondary" style="margin: 0 0 var(--space-sm);">
+        Net consumptive demand of
+        <span class="text-usage" style="font-weight: 600;">{{ consumptive_balance.consumptive_use_net|floatformat:2 }} AF</span>
+        (consumptive use after effective rainfall), met by these supplies:
+      </p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm);">
+        <div class="inset-card">
+          <div class="stat-card-label">Surface water</div>
+          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.surface|floatformat:2 }}</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+        <div class="inset-card">
+          <div class="stat-card-label">Groundwater</div>
+          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.groundwater|floatformat:2 }}</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+        <div class="inset-card">
+          <div class="stat-card-label">Precipitation</div>
+          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.precip|floatformat:2 }}</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="section-header-sm">Supply vs. Use Summary</h3>
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th>Supplies</th><th class="th-right">AF</th>
+          <th>Uses</th><th class="th-right">AF</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-secondary">Surface</td>
+          <td class="td-num text-supply">{{ mass_balance.inputs.surface|floatformat:2 }}</td>
+          <td class="text-secondary">ET</td>
+          <td class="td-num text-usage">{{ mass_balance.outputs.et|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td class="text-secondary">Precip</td>
+          <td class="td-num text-supply">{{ mass_balance.inputs.precip|floatformat:2 }}</td>
+          <td class="text-secondary">Recharge</td>
+          <td class="td-num">{{ mass_balance.outputs.recharge|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td class="text-secondary">Groundwater recovered</td>
+          <td class="td-num text-supply">{{ mass_balance.inputs.gw_recovered|floatformat:2 }}</td>
+          <td class="text-secondary">Runoff</td>
+          <td class="td-num">{{ mass_balance.outputs.runoff|floatformat:2 }}</td>
+        </tr>
+        <tr>
+          <td></td><td></td>
+          <td class="text-secondary">Net Banked/Drawn (credits)</td>
+          <td class="td-num">{{ mass_balance.outputs.delta_storage|floatformat:2 }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="row-between mb-md" style="margin-top: var(--space-sm);">
+      <span class="text-secondary text-sm">Residual: <span class="td-num">{{ mass_balance.residual_af|floatformat:4 }}</span> AF</span>
+      {% if mass_balance.band_status == "closes" %}
+      <span class="badge badge-green">Balance closes</span>
+      {% elif mass_balance.band_status == "realistic" %}
+      <span class="badge badge-blue">{% if mass_balance.is_surplus %}Minor surplus{% else %}Minor shortfall{% endif %}</span>
+      {% else %}
+      <span class="badge badge-orange">{% if mass_balance.is_surplus %}Residual outstanding{% else %}Supply shortfall{% endif %}</span>
+      {% endif %}
+    </div>
+    {% if mass_balance.band_status == "realistic" %}
+    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+      {% if mass_balance.is_surplus %}
+      Supplies slightly exceed estimated consumptive use — the difference is on-farm
+      loss or return flow, not unaccounted water.
+      {% else %}
+      Estimated consumptive use slightly exceeds recorded supplies — a minor
+      supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
+      rootzone water the meters don't capture).
+      {% endif %}
+    </p>
+    {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
+    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+      Recorded supplies fell well short of estimated consumptive use this period —
+      expected where a junior surface right was curtailed going into peak season
+      and the parcel had no groundwater to substitute.
+    </p>
+    {% endif %}
+
+    <div class="border-separator">
+      <div class="text-tertiary text-xs mb-sm">See the calculation for each month:</div>
+      <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
+        {% for period in run_periods %}
+        <a href="{% url 'accounting:calculation_run_detail' parcel.pk period %}" class="badge badge-blue">{{ period }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="alert-warning">
+      ET has not been computed for this use area yet, so the closing balance
+      can't be drawn. It will close once the accounting engine runs for it
+      (Phase 58). Recorded supplies so far:
+      <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> ·
+      <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- SUPPORTING INFO: parcel attributes (left) + ledger (right). -->
+  <div class="page-grid-2col">
+
+    <!-- Left column: Parcel attributes & relationships -->
+    <div class="page-stack">
+
+      <!-- Parcel Info card -->
+      <div class="card-raised">
+        <h2 class="section-header">
+          Parcel Information {% include "partials/_demo_marker.html" %}
+        </h2>
+
+        <div class="field-group">
+          <div class="field-label">Parcel Number</div>
+          <div class="field-value">{{ parcel.parcel_number }}</div>
+        </div>
+
+        {% for ef in editable_fields_with_values %}
+        <div class="field-group">
+          <div class="field-label field-row">
+            {{ ef.label }}
+            {% if ef.name == "status" %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active use areas are included in your water data and reports. Inactive use areas are excluded." %}
+            {% elif ef.name == "area_acres" %}
+              {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel geometry. Used for per-acre allocation calculations." %}
+            {% endif %}
+          </div>
+          <div id="field-{{ ef.name }}" class="field-row">
+            <span class="field-value" style="flex: 1;">
+              {% if ef.name == "status" %}
+                {% include "parcels/partials/_status_badge.html" with status=ef.value %}
+              {% elif ef.type == "number" %}
+                {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
+              {% else %}
+                {{ ef.value|default:"—" }}
+              {% endif %}
+            </span>
+            <button
+              hx-get="{% url 'parcels:edit_field' parcel.pk %}?field={{ ef.name }}"
+              hx-target="#field-{{ ef.name }}"
+              hx-swap="innerHTML"
+              class="edit-btn"
+              title="Edit {{ ef.label }}">
+              &#9998;
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="border-separator">
+          <div class="text-tertiary text-xs">
+            Created {{ parcel.created_at|date:"M d, Y" }} &middot; Updated {{ parcel.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone Memberships card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Zone Memberships</h2>
+        {% if zone_memberships %}
+          {% for pz in zone_memberships %}
+          <div class="item-row row-start">
+            <span class="field-value-sm">{{ pz.zone.name }}</span>
+            {% if pz.zone.zone_type %}
+            <span class="pill-tag">{{ pz.zone.get_zone_type_display }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-tertiary text-base">No zone memberships.</p>
+        {% endif %}
+      </div>
+
+      <!-- Related Wells card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Related Wells</h2>
+        {% if related_wells %}
+          {% for wip in related_wells %}
+          <div class="item-row row-between">
+            <a href="{% url 'wells:detail' wip.well.pk %}" class="data-table-link text-base">
+              {{ wip.well.name }}
+            </a>
+            <span class="text-tertiary text-xs">{{ wip.fraction|floatformat:2 }} fraction</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-tertiary text-base">No wells linked to this parcel.</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right column: ledger activity -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 class="section-header-flush">Recent Ledger Entries</h2>
+          <div class="row-start">
+            <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
+               class="text-tertiary back-link text-xs">
+              View All
+            </a>
+            <a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
+               class="btn-primary btn-sm">
+              + Add Entry
+            </a>
+          </div>
+        </div>
+        {% if recent_ledger %}
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="th-right">Amount (AF)</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in recent_ledger %}
+            <tr>
+              <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
+              <td class="td-num {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">{{ entry.amount_acre_feet|floatformat:2 }}</td>
+              <td class="text-tertiary">{{ entry.get_source_type_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p class="text-tertiary text-base">No ledger entries yet.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% comment %}
+  Map init. Lives inline so HTMX runs it on swap (block-based scripts don't fire
+  on a fragment swap). Guarded: it polls until maplibre-gl + the OH2O map toolkit
+  are loaded (the workspace loads them once, up top), and it removes any prior
+  map first so clicking through parcels never leaks WebGL contexts (the browser
+  caps them at ~16, after which every map goes blank).
+{% endcomment %}
+{% if geojson %}
+{{ geojson|json_script:"parcel-geojson-data" }}
+<script>
+(function() {
+  function boot() {
+    if (typeof maplibregl === 'undefined' || !window.OH2O || !OH2O.basemapStyle) {
+      return window.setTimeout(boot, 50);
+    }
+    var el = document.getElementById('parcel-map');
+    var dataEl = document.getElementById('parcel-geojson-data');
+    if (!el || !dataEl) return;
+
+    // Tear down the previous pane's map before building this one.
+    if (window._parcelPaneMap) {
+      try { window._parcelPaneMap.remove(); } catch (e) {}
+      window._parcelPaneMap = null;
+    }
+
+    var geojson = JSON.parse(dataEl.textContent);
+
+    // Flatten every vertex so we can frame the map on the parcel from the first
+    // painted frame (without this it opens at [0,0] and flies to California).
+    var coords = [];
+    geojson.features.forEach(function(f) {
+      if (f.geometry && f.geometry.coordinates) {
+        f.geometry.coordinates.forEach(function(poly) {
+          poly.forEach(function(ring) {
+            ring.forEach(function(pt) { coords.push(pt); });
+          });
+        });
+      }
+    });
+    var initialCenter = [-120.5, 37.3];
+    if (coords.length) {
+      var lon0 = coords.map(function(c) { return c[0]; });
+      var lat0 = coords.map(function(c) { return c[1]; });
+      initialCenter = [
+        (Math.min.apply(null, lon0) + Math.max.apply(null, lon0)) / 2,
+        (Math.min.apply(null, lat0) + Math.max.apply(null, lat0)) / 2
+      ];
+    }
+
+    var map = new maplibregl.Map({
+      container: 'parcel-map',
+      style: OH2O.basemapStyle('aerial'),
+      center: initialCenter,
+      zoom: 13
+    });
+    window._parcelPaneMap = map;
+
+    map.on('load', function() {
+      map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+      OH2O.mountBasemapToggle(map, 'aerial');
+      map.addSource('parcel', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'parcel-fill', type: 'fill', source: 'parcel',
+        paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.35 }
+      });
+      map.addLayer({
+        id: 'parcel-outline', type: 'line', source: 'parcel',
+        paint: { 'line-color': OH2O.colors.blue, 'line-width': 2 }
+      });
+      OH2O.addDetailLabel(map, 'parcel', 'parcel', { id: 'parcel-label', anchor: 'center', offset: [0, 0] });
+      OH2O.attachPopup(map, 'parcel-fill', function (p) {
+        return '<strong>' + (p.parcel_number || 'Parcel') + '</strong><br>' +
+               'Owner: ' + (p.owner_name || '—');
+      });
+      if (coords.length) {
+        var lons = coords.map(function(c) { return c[0]; });
+        var lats = coords.map(function(c) { return c[1]; });
+        map.fitBounds(
+          [[Math.min.apply(null, lons), Math.min.apply(null, lats)],
+           [Math.max.apply(null, lons), Math.max.apply(null, lats)]],
+          { padding: 32, maxZoom: 16, duration: 0 }
+        );
+      }
+    });
+  }
+  boot();
+})();
+</script>
+{% endif %}
