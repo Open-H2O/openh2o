@@ -372,6 +372,31 @@ def build_bundle():
                         "detail": "Monthly metered groundwater extraction",
                     })
 
+    # --- GSA groundwater allocations (the budgets carryover rolls against) ---
+    # One AllocationPlan per GSA zone per period, sized to a SGMA sustainable-yield
+    # fraction of the zone's demo acreage (mirrors seed_merced_ledgers._build_budgets).
+    # Native has only the management-area GSA zones (no surface-district zones — Phase F),
+    # so only the GW budgets are emitted; that is exactly what groundwater carryover needs.
+    GSA_SUSTAINABLE_RATE = Decimal("2.0")    # AF/acre
+    GSA_BUDGET_FLOOR = Decimal("500.0")      # a GSA with no demo parcels still gets a budget
+    acres_by_zone = {}
+    for p in parcels:
+        zk = p.get("zoneKey")
+        if zk is not None:
+            acres_by_zone[zk] = acres_by_zone.get(zk, Decimal("0")) + Decimal(p["areaAcres"])
+    period_names = ["WY 2024-2025", "WY 2025-2026"]
+    allocations = []
+    for z in zones:
+        acres = acres_by_zone.get(z["key"], Decimal("0"))
+        budget = max(GSA_BUDGET_FLOOR, Decimal(q4(acres * GSA_SUSTAINABLE_RATE)))
+        for rp_name in period_names:
+            allocations.append({
+                "zoneKey": z["key"], "waterTypeCode": "GW", "periodName": rp_name,
+                "name": f"{z['name']} — Groundwater {rp_name}",
+                "allocationAcreFeet": q4(budget),
+                "notes": "SGMA sustainable-yield groundwater allocation (demo).",
+            })
+
     # Strip the transient geometry from zones before emitting.
     for z in zones:
         z.pop("geometry", None)
@@ -401,6 +426,7 @@ def build_bundle():
             {"name": "WY 2025-2026", "startDate": "2025-10-01",
              "endDate": "2026-09-30", "isFinalized": False},
         ],
+        "allocations": allocations,
         "methodology": {
             "name": "Default Methodology v1",
             "waterTypeCode": "GW",
@@ -443,6 +469,7 @@ def main():
     print(f"  zones:     {len(bundle['zones'])}")
     print(f"  crops:     {len(bundle['cropTypes'])}")
     print(f"  ledger:    {m['ledgerRows']} rows across {len(bundle['reportingPeriods'])} periods")
+    print(f"  allocations: {len(bundle['allocations'])} GW budgets across {len(bundle['zones'])} zones")
     metered = sum(1 for w in bundle["wells"] if w["metered"])
     print(f"  wells metered/total: {metered}/{len(bundle['wells'])}")
 
