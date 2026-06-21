@@ -393,8 +393,11 @@ def build_bundle():
         ],
         "cropTypes": [{"name": name, "code": code} for code, name in sorted(crops.items())],
         "reportingPeriods": [
+            # WY 2024-2025 imports OPEN: the native lifecycle is run the year →
+            # finalize it (locking re-runs) → roll its balance forward. Pre-stamping
+            # it finalized would lock the months before they were ever run.
             {"name": "WY 2024-2025", "startDate": "2024-10-01",
-             "endDate": "2025-09-30", "isFinalized": True},
+             "endDate": "2025-09-30", "isFinalized": False},
             {"name": "WY 2025-2026", "startDate": "2025-10-01",
              "endDate": "2026-09-30", "isFinalized": False},
         ],
