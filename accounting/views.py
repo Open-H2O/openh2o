@@ -863,6 +863,7 @@ def csv_template(request):
         "source_type",
         "water_type_code",
         "description",
+        "transaction_date",
     ])
     return response
 
@@ -901,22 +902,27 @@ def ledger_export(request):
     writer = csv_module.writer(response)
     if getattr(SiteConfig.objects.first(), "demonstration_mode", False):
         writer.writerow(["DEMONSTRATION DATA — sample values, not an official submission"])
+    # Round-trip contract: emit EXACTLY the columns the importer reads
+    # (import_ledger_csv / parse_ledger_csv), in their order, so a downloaded
+    # export re-imports losslessly. Previously this wrote a water_type *name* and a
+    # reporting_period the importer ignores, and omitted transaction_date — so the
+    # app's own export could not be fed back into its own import.
     writer.writerow([
-        "parcel_number", "effective_date", "amount_acre_feet",
-        "source_type", "water_type", "reporting_period", "description",
+        "parcel_number", "effective_date", "amount_acre_feet", "source_type",
+        "water_type_code", "description", "transaction_date",
     ])
     for entry in queryset.iterator():
         # safe_row neutralizes CSV formula injection in the free-text cells
-        # (parcel_number, water_type name, period name, description) without
-        # touching numeric/date cells. See core.csv_safe.
+        # (parcel_number, water_type code, description) without touching the
+        # numeric/date cells. See core.csv_safe.
         writer.writerow(safe_row([
             entry.parcel.parcel_number,
             entry.effective_date,
             entry.amount_acre_feet,
             entry.source_type,
-            entry.water_type.name if entry.water_type else "",
-            entry.reporting_period.name if entry.reporting_period else "",
+            entry.water_type.code if entry.water_type else "",
             entry.description,
+            entry.transaction_date,
         ]))
     return response
 
