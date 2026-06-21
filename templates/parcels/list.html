@@ -67,13 +67,19 @@
     </div>
   </section>
 
-  <!-- Detail pane: the selected use area, swapped in place on row click -->
-  <section class="detail-pane" id="detail-pane">
-    {% if selected_parcel %}
-      {% include "parcels/partials/_detail_pane.html" %}
-    {% else %}
-      {% include "parcels/partials/_detail_empty.html" %}
-    {% endif %}
+  <!-- Detail pane: persistent map (built once, re-pointed per switch) + a body
+       that swaps in place on row click. -->
+  <section class="detail-pane">
+    <div id="parcel-map-card" class="card-raised" style="padding: 0; overflow: hidden; margin-bottom: var(--space-md); display: none;">
+      <div id="parcel-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+    </div>
+    <div id="detail-body">
+      {% if selected_parcel %}
+        {% include "parcels/partials/_detail_pane.html" %}
+      {% else %}
+        {% include "parcels/partials/_detail_empty.html" %}
+      {% endif %}
+    </div>
   </section>
 
 </div>

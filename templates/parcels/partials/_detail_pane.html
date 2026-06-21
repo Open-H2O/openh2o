@@ -1,9 +1,10 @@
-{% load static %}
 {% comment %}
-  Per-parcel detail, rendered INTO the workspace's #detail-pane (and reused as
-  the body of the standalone detail.html page). Everything here must stand on
-  its own when HTMX swaps it in: the map init lives inline at the bottom and is
-  guarded so it runs on both a fresh page load and an in-place swap.
+  Per-parcel detail BODY, swapped into #detail-body on row click (and reused by
+  the standalone detail.html page). The map itself is NOT here — it lives as a
+  persistent element (#parcel-map) in the pane shell so it is built ONCE and
+  merely re-pointed at the new parcel on each switch (no teardown/rebuild, so no
+  startup flash). This fragment carries the new parcel's geometry + the small
+  script that creates-or-updates that persistent map.
 {% endcomment %}
 
 <!-- Pane header: which parcel you're looking at (the workspace has no breadcrumb). -->
@@ -19,18 +20,6 @@
 </div>
 
 <div class="pane-stack">
-
-  <!-- Map banner -->
-  {% if geojson %}
-  <div class="card-raised" style="padding: 0; overflow: hidden;">
-    <!-- position:relative + overflow:hidden keep MapLibre's startup canvas
-         (which paints at the window's top-left for a few frames) clipped inside
-         this box instead of flashing in the window corner. The dark background
-         means the brief gap while a new map builds shows as the card colour,
-         never the previous parcel's leftover pixels. -->
-    <div id="parcel-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
-  </div>
-  {% endif %}
 
   <!-- Water Balance card -->
   <div class="card-raised">
@@ -308,63 +297,66 @@
 </div>
 
 {% comment %}
-  Map init. Lives inline so HTMX runs it on swap (block-based scripts don't fire
-  on a fragment swap). Guarded: it polls until maplibre-gl + the OH2O map toolkit
-  are loaded (the workspace loads them once, up top), and it removes any prior
-  map first so clicking through parcels never leaks WebGL contexts (the browser
-  caps them at ~16, after which every map goes blank).
+  Geometry for the PERSISTENT map (#parcel-map lives in the pane shell). The
+  script builds the map once, then on every later swap just re-points it at the
+  new parcel via setData + fitBounds — no rebuild, so no startup flash. It is
+  defensive: polls until maplibre + the OH2O toolkit are ready, and no-ops if
+  this page has no map host (e.g. a parcel with no geometry hides the card).
 {% endcomment %}
-{% if geojson %}
 {{ geojson|json_script:"parcel-geojson-data" }}
 <script>
-(function() {
+(function () {
   function boot() {
     if (typeof maplibregl === 'undefined' || !window.OH2O || !OH2O.basemapStyle) {
       return window.setTimeout(boot, 50);
     }
-    var el = document.getElementById('parcel-map');
+    var card = document.getElementById('parcel-map-card');
+    var host = document.getElementById('parcel-map');
     var dataEl = document.getElementById('parcel-geojson-data');
-    if (!el || !dataEl) return;
-
-    // Tear down the previous pane's map before building this one.
-    if (window._parcelPaneMap) {
-      try { window._parcelPaneMap.remove(); } catch (e) {}
-      window._parcelPaneMap = null;
-    }
+    if (!card || !host) return;            // page has no map host
+    if (!dataEl) { card.style.display = 'none'; return; }  // parcel has no geometry
+    card.style.display = '';
 
     var geojson = JSON.parse(dataEl.textContent);
 
-    // Flatten every vertex so we can frame the map on the parcel from the first
-    // painted frame (without this it opens at [0,0] and flies to California).
+    // Flatten every vertex to frame the parcel.
     var coords = [];
-    geojson.features.forEach(function(f) {
+    geojson.features.forEach(function (f) {
       if (f.geometry && f.geometry.coordinates) {
-        f.geometry.coordinates.forEach(function(poly) {
-          poly.forEach(function(ring) {
-            ring.forEach(function(pt) { coords.push(pt); });
-          });
+        f.geometry.coordinates.forEach(function (poly) {
+          poly.forEach(function (ring) { ring.forEach(function (pt) { coords.push(pt); }); });
         });
       }
     });
-    var initialCenter = [-120.5, 37.3];
+    var bounds = null, center = [-120.5, 37.3];
     if (coords.length) {
-      var lon0 = coords.map(function(c) { return c[0]; });
-      var lat0 = coords.map(function(c) { return c[1]; });
-      initialCenter = [
-        (Math.min.apply(null, lon0) + Math.max.apply(null, lon0)) / 2,
-        (Math.min.apply(null, lat0) + Math.max.apply(null, lat0)) / 2
-      ];
+      var lons = coords.map(function (c) { return c[0]; });
+      var lats = coords.map(function (c) { return c[1]; });
+      bounds = [[Math.min.apply(null, lons), Math.min.apply(null, lats)],
+                [Math.max.apply(null, lons), Math.max.apply(null, lats)]];
+      center = [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
     }
 
-    var map = new maplibregl.Map({
+    var map = window._parcelPaneMap;
+    if (map && map.__oh2oReady) {
+      // UPDATE the existing map in place — no rebuild, no flash.
+      map.getSource('parcel').setData(geojson);
+      map.resize();  // card may have been display:none (zeroes the canvas)
+      if (bounds) map.fitBounds(bounds, { padding: 32, maxZoom: 16, duration: 0 });
+      return;
+    }
+    if (map) return;  // a map is mid-build; its load handler will use current data
+
+    // CREATE once.
+    map = new maplibregl.Map({
       container: 'parcel-map',
       style: OH2O.basemapStyle('aerial'),
-      center: initialCenter,
-      zoom: 13
+      center: center,
+      zoom: 13,
+      fadeDuration: 0   // no tile cross-fade flicker
     });
     window._parcelPaneMap = map;
-
-    map.on('load', function() {
+    map.on('load', function () {
       map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
       OH2O.mountBasemapToggle(map, 'aerial');
       map.addSource('parcel', { type: 'geojson', data: geojson });
@@ -381,18 +373,26 @@
         return '<strong>' + (p.parcel_number || 'Parcel') + '</strong><br>' +
                'Owner: ' + (p.owner_name || '—');
       });
-      if (coords.length) {
-        var lons = coords.map(function(c) { return c[0]; });
-        var lats = coords.map(function(c) { return c[1]; });
-        map.fitBounds(
-          [[Math.min.apply(null, lons), Math.min.apply(null, lats)],
-           [Math.max.apply(null, lons), Math.max.apply(null, lats)]],
-          { padding: 32, maxZoom: 16, duration: 0 }
-        );
+      // Re-read the CURRENT data element — the user may have switched parcels
+      // while tiles were loading, so honour the latest selection.
+      var latest = document.getElementById('parcel-geojson-data');
+      if (latest) {
+        try {
+          var gj = JSON.parse(latest.textContent);
+          map.getSource('parcel').setData(gj);
+          var cs = [];
+          gj.features.forEach(function (f) { if (f.geometry && f.geometry.coordinates) f.geometry.coordinates.forEach(function (poly) { poly.forEach(function (ring) { ring.forEach(function (pt) { cs.push(pt); }); }); }); });
+          if (cs.length) {
+            var lo = cs.map(function (c) { return c[0]; }), la = cs.map(function (c) { return c[1]; });
+            map.fitBounds([[Math.min.apply(null, lo), Math.min.apply(null, la)], [Math.max.apply(null, lo), Math.max.apply(null, la)]], { padding: 32, maxZoom: 16, duration: 0 });
+          }
+        } catch (e) {}
+      } else if (bounds) {
+        map.fitBounds(bounds, { padding: 32, maxZoom: 16, duration: 0 });
       }
+      map.__oh2oReady = true;
     });
   }
   boot();
 })();
 </script>
-{% endif %}

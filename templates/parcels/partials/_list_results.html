@@ -13,7 +13,7 @@
     data-parcel-row
     class="master-row{% if selected_parcel and parcel.pk == selected_parcel.pk %} is-selected{% endif %}"
     hx-get="{% url 'parcels:detail' parcel.pk %}"
-    hx-target="#detail-pane"
+    hx-target="#detail-body"
     hx-swap="innerHTML"
     hx-push-url="{% url 'parcels:list' %}?selected={{ parcel.pk }}"
     role="link"
