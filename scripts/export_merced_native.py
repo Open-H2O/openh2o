@@ -397,6 +397,22 @@ def build_bundle():
                 "notes": "SGMA sustainable-yield groundwater allocation (demo).",
             })
 
+    # --- Water accounts (one per owner; the balance sheet groups parcels by who owns them) ---
+    # The web derives accounts from private owner constants; we mirror that by grouping the
+    # synthesized owner names every parcel already carries. Members are embedded as bare
+    # parcelNumbers (same shape wells use), so the native importer maps them to the parcel
+    # IDs it assigns. Account number is a stable, zero-padded ordinal over the sorted owners
+    # so the "By water account" balance sheet lists deterministically.
+    owners = sorted({p["ownerName"] for p in parcels})
+    accounts = []
+    for i, owner in enumerate(owners, start=1):
+        accounts.append({
+            "name": owner,
+            "accountNumber": f"{i:03d}",
+            "status": "active",
+            "parcels": [p["parcelNumber"] for p in parcels if p["ownerName"] == owner],
+        })
+
     # Strip the transient geometry from zones before emitting.
     for z in zones:
         z.pop("geometry", None)
@@ -408,6 +424,7 @@ def build_bundle():
             "district": "Merced Subbasin GSA",
             "parcelCount": len(parcels),
             "wellCount": len(wells),
+            "accountCount": len(accounts),
             "ledgerRows": len(ledger),
             "waterYear": "WY 2024-2025",
             "note": "ET/precip intentionally omitted; native fetches via OpenET after import.",
@@ -447,6 +464,7 @@ def build_bundle():
         "zones": zones,
         "parcels": parcels,
         "wells": wells,
+        "accounts": accounts,
         "ledger": ledger,
     }
     return bundle
