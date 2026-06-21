@@ -3315,6 +3315,16 @@ div[id$="-map"] {
     max-height: calc(100vh - 8rem);
     overflow-y: auto;
     min-height: 0;
+    /* Internal breathing room so content never butts against the divider or
+       the column edge, and a reserved gutter so the scrollbar can't sit on
+       top of content (it was clipping the pane-header badge + link). */
+    padding: var(--space-sm) var(--space-md) var(--space-md);
+    scrollbar-gutter: stable;
+}
+/* The map/cards already carry the visual frame; the detail pane just needs a
+   little more left inset to separate it from the master list. */
+.detail-pane {
+    padding-left: var(--space-lg);
 }
 .toolbar-stack {
     display: flex;
