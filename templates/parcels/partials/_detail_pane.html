@@ -23,13 +23,12 @@
   <!-- Map banner -->
   {% if geojson %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    <!-- The MapLibre canvas paints at the window's top-left for a few frames
-         during startup. Two guards kill that flash: (1) position:relative +
-         overflow:hidden keep any transient canvas clipped inside this box
-         instead of escaping to the window corner; (2) opacity starts at 0 and
-         fades in on the map's 'idle' event (fires only after rendering has
-         settled — unlike 'load', which can fire mid-flash on cached tiles). -->
-    <div id="parcel-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; opacity: 0; transition: opacity 220ms ease;"></div>
+    <!-- position:relative + overflow:hidden keep MapLibre's startup canvas
+         (which paints at the window's top-left for a few frames) clipped inside
+         this box instead of flashing in the window corner. The dark background
+         means the brief gap while a new map builds shows as the card colour,
+         never the previous parcel's leftover pixels. -->
+    <div id="parcel-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
   {% endif %}
 
@@ -364,14 +363,6 @@
       zoom: 13
     });
     window._parcelPaneMap = map;
-    // Reveal once rendering has settled (not on 'load' — that can fire while
-    // the canvas is still mid-flash on cached tiles). Safety net in case
-    // 'idle' never fires (offline tiles, etc.).
-    var revealTimer = window.setTimeout(function () { el.style.opacity = '1'; }, 1200);
-    map.once('idle', function () {
-      window.clearTimeout(revealTimer);
-      el.style.opacity = '1';
-    });
 
     map.on('load', function() {
       map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
