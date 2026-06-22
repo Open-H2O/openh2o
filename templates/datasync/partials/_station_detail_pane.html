@@ -24,7 +24,10 @@
 </div>
 
 <div class="pane-stack">
-  <div class="page-grid-2col">
+  <!-- minmax(0,1fr) so the two columns can shrink to the (narrow) detail pane
+       instead of being held open by their content's min-content; the wide
+       log/record tables scroll inside their own .table-scroll cards. -->
+  <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
 
     <!-- Left column: Station Info + Sync Logs -->
     <div class="page-stack">
@@ -34,7 +37,7 @@
         <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
           <h2 class="section-header-flush">Station Information</h2>
           <div id="toggle-cell" class="row-start">
-            <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);">Active{% include "partials/_help_tooltip.html" with label="Active" text="Active stations sync measurements during scheduled data pulls. Inactive stations are skipped." %}</span>
+            <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);" title="Active stations sync measurements during scheduled data pulls. Inactive stations are skipped.">Active</span>
             {% include "datasync/partials/_station_toggle.html" %}
           </div>
         </div>
