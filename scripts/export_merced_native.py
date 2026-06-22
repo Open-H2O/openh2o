@@ -224,6 +224,49 @@ MONITORING_WELLS = {
                   "Legacy DWR record; transducer logs daily, datum not yet converted to NAVD88."),
 }
 
+# External data providers the datasync domain pulls from (datasync/models.py DataSource). Reference
+# data, like the water types: the native loader inserts them and the Monitoring Stations editor
+# offers them as a station's provider (an optional FK picker). No editor of their own in this slice.
+# Tuple: (code, name, url, authType, syncIntervalHours).
+DATA_SOURCES = [
+    ("USGS-NWIS", "USGS National Water Information System",
+     "https://waterservices.usgs.gov/nwis/", "none", 24),
+    ("CDEC", "CA DWR - California Data Exchange Center",
+     "https://cdec.water.ca.gov/", "none", 6),
+    ("CIMIS", "CA DWR - California Irrigation Management Information System",
+     "https://cimis.water.ca.gov/", "api_key", 24),
+]
+
+# Field monitoring stations cross-walked to an external provider (datasync/models.py
+# MonitoredStation). Each is a point; the native side synthesizes a GeoFootprint Point from
+# (lon, lat). Coordinates sit inside the Merced Subbasin so the marker lands true. The inactive CDEC
+# row exercises the is-active toggle; the WQX cross-walk is populated only where a station also
+# reports to the federal Water Quality Exchange. A sourceCode absent from DATA_SOURCES is dropped, so
+# the count and the links never disagree. Tuple:
+# (sourceCode, externalStationID, name, lon, lat, usgsSiteID, wqxLocationID, parameters[], isActive, notes).
+MONITORED_STATIONS = [
+    ("USGS-NWIS", "11272500", "Merced River near Stevinson",
+     -120.8497, 37.3094, "11272500", "CA_WQX-MERCED-11272500",
+     ["00060 Discharge (cfs)", "00065 Gage height (ft)"], True,
+     "Primary river gauge below the subbasin; real-time discharge and stage."),
+    ("USGS-NWIS", "373015120401601", "Merced Subbasin observation well 12N/13E-21",
+     -120.6711, 37.2543, "373015120401601", None,
+     ["72019 Depth to water (ft)"], True,
+     "Dedicated CASGEM observation well; daily transducer record."),
+    ("CDEC", "MST", "Merced - Stevinson stage (CDEC)",
+     -120.8512, 37.3061, None, None,
+     ["Stage (ft)", "Water temperature (degF)"], True,
+     "CDEC mirror of the Stevinson stage sensor for cross-checking USGS."),
+    ("CDEC", "BCN", "Bear Creek near Merced (CDEC)",
+     -120.5089, 37.2876, None, None,
+     ["Stage (ft)"], False,
+     "Seasonal tributary gauge; out of service for the 2025 water year, kept for history."),
+    ("CIMIS", "148", "Merced CIMIS station #148",
+     -120.5067, 37.2419, None, None,
+     ["ETo (in)", "Air temperature (degF)", "Precipitation (in)"], True,
+     "Reference-ET station feeding the precip/ET cross-check, not the run engine."),
+]
+
 
 def q4(value) -> str:
     """Quantize to the ledger's 4 decimal places, return as a STRING.
@@ -594,6 +637,31 @@ def build_bundle():
         if reg in well_regs
     ]
 
+    # Datasync domain: the external providers and the field stations cross-walked to them. The
+    # native importer keys a station to its source by `sourceCode`; a station whose source is not in
+    # DATA_SOURCES is dropped so the link never dangles. The footprint is a GeoFootprint Point, built
+    # the same way the well markers are (a Point geoJSON string + the centroid; no bbox for a point).
+    data_sources = [
+        {"code": code, "name": name, "url": url, "authType": auth,
+         "syncIntervalHours": interval, "isActive": True}
+        for (code, name, url, auth, interval) in DATA_SOURCES
+    ]
+    source_codes = {s["code"] for s in data_sources}
+    monitored_stations = [
+        {
+            "sourceCode": src, "externalStationID": ext, "stationName": name,
+            "usgsSiteID": usgs, "wqxMonitoringLocationID": wqx,
+            "parameters": params, "isActive": active, "notes": note,
+            "footprint": {
+                "geoJSON": json.dumps(
+                    {"type": "Point", "coordinates": [lon, lat]}, separators=(",", ":")),
+                "centroidLat": lat, "centroidLon": lon, "bbox": None,
+            },
+        }
+        for (src, ext, name, lon, lat, usgs, wqx, params, active, note) in MONITORED_STATIONS
+        if src in source_codes
+    ]
+
     bundle = {
         "metadata": {
             "source": "openh2o fixtures (export_merced_native.py)",
@@ -609,6 +677,8 @@ def build_bundle():
             "diversionRecordCount": len(surface["diversionRecords"]),
             "rechargeSiteCount": len(recharge["sites"]),
             "rechargeEventCount": len(recharge["events"]),
+            "dataSourceCount": len(data_sources),
+            "monitoredStationCount": len(monitored_stations),
             "waterYear": "WY 2024-2025",
             "note": "ET/precip intentionally omitted; native fetches via OpenET after import.",
         },
@@ -648,6 +718,8 @@ def build_bundle():
         "parcels": parcels,
         "wells": wells,
         "monitoringWells": monitoring_wells,
+        "dataSources": data_sources,
+        "monitoredStations": monitored_stations,
         "accounts": accounts,
         "ledger": ledger,
         "surface": surface,
