@@ -7,43 +7,28 @@
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Registration ID</th>
-        <th>Type</th>
-        <th class="th-right">Depth (ft)</th>
-        <th class="th-right">Capacity (gpm)</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for well in page_obj %}
-      <tr>
-        <td>
-          <a href="{% url 'wells:detail' well.pk %}" class="data-table-link">
-            {{ well.name }}
-          </a>
-        </td>
-        <td class="text-secondary text-mono text-sm">
-          {{ well.well_registration_id|default:"—" }}
-        </td>
-        <td class="text-secondary">{{ well.well_type|default:"—" }}</td>
-        <td class="text-secondary td-num">
-          {% if well.depth_ft %}{{ well.depth_ft }}{% else %}—{% endif %}
-        </td>
-        <td class="text-secondary td-num">
-          {% if well.capacity_gpm %}{{ well.capacity_gpm }}{% else %}—{% endif %}
-        </td>
-        <td>
-          {% include "wells/partials/_status_badge.html" with status=well.status %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card-raised master-list-card">
+  {% for well in page_obj %}
+  <div
+    data-row
+    class="master-row{% if selected_well and well.pk == selected_well.pk %} is-selected{% endif %}"
+    hx-get="{% url 'wells:detail' well.pk %}"
+    hx-target="#detail-body"
+    hx-swap="innerHTML"
+    hx-push-url="{% url 'wells:list' %}?selected={{ well.pk }}"
+    role="link"
+    tabindex="0"
+    aria-label="Open well {{ well.name }}">
+    <div class="master-row-top">
+      <span class="master-row-id">{{ well.name }}</span>
+      {% include "wells/partials/_status_badge.html" with status=well.status %}
+    </div>
+    <div class="master-row-sub">
+      <span class="master-row-owner">{{ well.well_registration_id|default:"—" }}</span>
+      {% if well.depth_ft %}<span class="master-row-acres">{{ well.depth_ft }} ft</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
 <!-- Pagination -->

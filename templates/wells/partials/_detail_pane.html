@@ -1,0 +1,193 @@
+{% comment %}
+  Per-well detail BODY, swapped into #detail-body on row click (and reused by the
+  standalone detail.html page). The map itself is NOT here — it lives as a
+  persistent element (#detail-map) in the pane shell so it is built ONCE and
+  merely re-pointed at the new well on each switch (no teardown/rebuild, so no
+  startup flash). This fragment carries the new well's geometry + the one-line
+  call into OH2O.detailPaneMap that creates-or-updates that persistent map.
+{% endcomment %}
+
+<!-- Pane header: which well you're looking at (the workspace has no breadcrumb). -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">{{ well.name }}</div>
+    <div class="pane-header-sub">{{ well.well_registration_id|default:"—" }}</div>
+  </div>
+  <div class="pane-header-meta">
+    {% include "wells/partials/_status_badge.html" with status=well.status %}
+    <a href="{% url 'wells:detail' well.pk %}" class="text-tertiary text-xs back-link" title="Open this well on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+<div class="pane-stack">
+  <div class="page-grid-2col">
+
+    <!-- Left column: Well Info -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+
+        <!-- ── Identification ── -->
+        <h2 class="section-header">Identification {% include "partials/_demo_marker.html" %}</h2>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.name %}
+
+        <!-- Static field: well_registration_id (local registry id) -->
+        <div class="field-group">
+          <div class="field-label field-row">
+            Registration ID
+            {% include "partials/_help_tooltip.html" with label="Registration ID" text="This agency's local registry identifier for the well. The statewide DWR identifier is the State Well Number field below." %}
+          </div>
+          <div class="field-value-mono">{{ well.well_registration_id|default:"—" }}</div>
+        </div>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.wcr_number %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.state_well_number %}
+
+        <!-- Static field: well_type -->
+        <div class="field-group">
+          <div class="field-label">Well Type</div>
+          <div class="field-value">{{ well.well_type|default:"—" }}</div>
+        </div>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.owner_name %}
+
+        <!-- ── State Reporting (GEARS) ── -->
+        <h2 class="section-header" style="margin-top: var(--space-lg);">State Reporting (GEARS)</h2>
+        <p class="text-tertiary text-xs" style="margin-bottom: var(--space-sm);">
+          These fields feed a GEARS extraction filing.
+        </p>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.status %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.capacity_gpm %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.year_pumping_began %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.measurement_method %}
+
+        <!-- ── Construction (DWR Well Completion Report) ── -->
+        <h2 class="section-header" style="margin-top: var(--space-lg);">Construction (DWR Well Completion Report)</h2>
+
+        {% include "wells/partials/_editable_field.html" with ef=ef.depth_ft %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.casing_diameter_in %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.casing_material %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.screen_top_ft %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.screen_bottom_ft %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.tested_yield_gpm %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.pump_type %}
+
+        <!-- Notes + timestamps -->
+        <div class="border-separator">
+          {% include "wells/partials/_editable_field.html" with ef=ef.notes %}
+          <div class="text-tertiary text-xs">
+            Created {{ well.created_at|date:"M d, Y" }} &middot; Updated {{ well.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: Meters, Parcels, Monitoring -->
+    <div class="page-stack">
+
+      <!-- Current Meters card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Current Meters</h2>
+        {% if current_meters %}
+          {% for wm in current_meters %}
+          <div class="item-row">
+            <span class="field-value-sm">{{ wm.meter }}</span>
+            {% if wm.installed_date %}
+              <span class="text-tertiary text-xs" style="margin-left: var(--space-sm);">Installed {{ wm.installed_date|date:"M d, Y" }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-tertiary text-base">No active meters on this well.</p>
+        {% endif %}
+      </div>
+
+      <!-- Irrigated Parcels card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Irrigated Parcels</h2>
+        {% if irrigated_parcels %}
+          {% for wip in irrigated_parcels %}
+          <div class="item-row row-between">
+            <a href="{% url 'parcels:detail' wip.parcel.pk %}" class="data-table-link text-base">
+              {{ wip.parcel.parcel_number }}
+            </a>
+            <div style="text-align: right;">
+              <span class="text-secondary text-sm">{{ wip.fraction|floatformat:2 }} fraction</span>
+              {% if wip.parcel.owner_name %}
+                <div class="text-tertiary text-xs">{{ wip.parcel.owner_name }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-tertiary text-base">No parcels linked to this well.</p>
+        {% endif %}
+      </div>
+
+      <!-- Monitoring Data card -->
+      {% if monitoring %}
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Monitoring Data</h2>
+        <div class="page-stack" style="gap: var(--space-sm);">
+          {% if monitoring.monitoring_agency %}
+          <div class="field-group mb-0">
+            <span class="field-label">Agency</span>
+            <div class="field-value-sm">{{ monitoring.monitoring_agency }}</div>
+          </div>
+          {% endif %}
+          {% if monitoring.measurement_frequency %}
+          <div class="field-group mb-0">
+            <span class="field-label">Frequency</span>
+            <div class="field-value-sm">{{ monitoring.measurement_frequency }}</div>
+          </div>
+          {% endif %}
+          {% if monitoring.reference_elevation_ft %}
+          <div class="field-group mb-0">
+            <span class="field-label">Reference Elevation</span>
+            <div class="field-value-sm">{{ monitoring.reference_elevation_ft|floatformat:1 }} ft</div>
+          </div>
+          {% endif %}
+          {% if monitoring.notes %}
+          <div class="field-group mb-0">
+            <span class="field-label">Notes</span>
+            <div class="text-secondary text-base">{{ monitoring.notes }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+{% comment %}
+  Geometry for the PERSISTENT map (#detail-map lives in the pane shell). The
+  shared OH2O.detailPaneMap engine builds the map once, then on every later swap
+  re-points it at this well via setData + reframe — no rebuild, so no flash. It
+  is defensive: polls until the map toolkit is ready, hides the map card when a
+  well has no recorded location (no geojson element emitted).
+{% endcomment %}
+{% if geojson %}{{ geojson|json_script:"detail-geojson-data" }}{% endif %}
+<script>
+// Wait for the map toolkit: on a full-page load this body renders BEFORE the
+// map scripts at end of page, so poll on window.OH2O (safe access) until ready.
+// On an HTMX row-swap the toolkit is already loaded, so this runs immediately.
+(function () {
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
+      source: 'well',
+      popup: function (p) {
+        return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
+               'Reg ID: ' + (p.well_registration_id || '—');
+      }
+    });
+  }
+  go();
+})();
+</script>

@@ -262,4 +262,145 @@ OH2O.mountBasemapToggle = function (map, mode) {
     return bar;
 };
 
+/* ── Persistent detail-pane map (master-detail workspace engine) ────────────
+   The shared spine of the v2.0 master-detail screens. The map element lives in
+   the pane SHELL (the workspace layout / the standalone detail page); each
+   swapped-in detail body calls OH2O.detailPaneMap() to re-point that ONE map at
+   the newly selected feature. The map is built once per host and thereafter only
+   setData + reframed — never torn down and rebuilt — which is what kills the
+   tile-load flash on row-to-row switching. Handles both point geometries (wells,
+   diversions, stations: glow + marker) and polygon geometries (parcels, zones,
+   recharge: fill + outline), auto-detected from the GeoJSON. */
+
+OH2O._detailMaps = OH2O._detailMaps || {};
+
+/* Walk arbitrarily-nested GeoJSON coordinates down to [lon,lat] pairs. */
+OH2O._walkCoords = function (geo, cb) {
+    if (!geo) return;
+    if (typeof geo[0] === 'number' && typeof geo[1] === 'number') { cb(geo); return; }
+    for (var i = 0; i < geo.length; i++) OH2O._walkCoords(geo[i], cb);
+};
+
+/* Bounding box [[minLon,minLat],[maxLon,maxLat]] of a FeatureCollection, or null. */
+OH2O._geojsonBounds = function (gj) {
+    var pts = [];
+    (gj.features || []).forEach(function (f) {
+        if (f.geometry && f.geometry.coordinates) {
+            OH2O._walkCoords(f.geometry.coordinates, function (pt) { pts.push(pt); });
+        }
+    });
+    if (!pts.length) return null;
+    var lons = pts.map(function (c) { return c[0]; });
+    var lats = pts.map(function (c) { return c[1]; });
+    return [[Math.min.apply(null, lons), Math.min.apply(null, lats)],
+            [Math.max.apply(null, lons), Math.max.apply(null, lats)]];
+};
+
+OH2O._geojsonIsPoint = function (gj) {
+    var f = (gj.features || [])[0];
+    return !!(f && f.geometry && /Point/.test(f.geometry.type || ''));
+};
+
+/* Frame a map on a bounding box. A single point gives a degenerate box, so fall
+   back to center + fixed zoom; anything with real extent uses fitBounds. */
+OH2O._frameBounds = function (map, bounds) {
+    var spanLon = bounds[1][0] - bounds[0][0];
+    var spanLat = bounds[1][1] - bounds[0][1];
+    if (spanLon < 1e-6 && spanLat < 1e-6) {
+        map.easeTo({ center: [bounds[0][0], bounds[0][1]], zoom: 14, duration: 0 });
+    } else {
+        map.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 0 });
+    }
+};
+
+/* Add this feature's layers (point or polygon) to a freshly-loaded map. */
+OH2O._addDetailLayers = function (map, src, key, isPoint, popup) {
+    var color = (OH2O.entities[key] || {}).color || OH2O.colors.blue;
+    if (isPoint) {
+        map.addLayer({ id: src + '-glow', type: 'circle', source: src, paint: OH2O.glowPaint(key) });
+        map.addLayer({ id: src + '-point', type: 'circle', source: src,
+            paint: OH2O.pointPaint(key, { 'circle-stroke-width': 2 }) });
+        OH2O.addDetailLabel(map, src, key, { id: src + '-label' });
+        if (popup) OH2O.attachPopup(map, src + '-point', popup);
+    } else {
+        map.addLayer({ id: src + '-fill', type: 'fill', source: src,
+            paint: { 'fill-color': color, 'fill-opacity': 0.35 } });
+        map.addLayer({ id: src + '-outline', type: 'line', source: src,
+            paint: { 'line-color': color, 'line-width': 2 } });
+        OH2O.addDetailLabel(map, src, key, { id: src + '-label', anchor: 'center', offset: [0, 0] });
+        if (popup) OH2O.attachPopup(map, src + '-fill', popup);
+    }
+};
+
+/* Public entry point. opts:
+     card   id of the wrapping card element (shown/hidden by geometry presence)
+     host   id of the map container element
+     dataEl id of the json_script element carrying this feature's GeoJSON
+     source MapLibre source name + layer-id prefix (e.g. 'well', 'parcel')
+     key    OH2O.entities key for color/label rules (defaults to source)
+     popup  optional fn(properties) -> popup HTML
+   Defensive: polls until maplibre + the toolkit are ready, no-ops when the page
+   has no map host, hides the card when the feature has no geometry. */
+OH2O.detailPaneMap = function (opts) {
+    var src = opts.source;
+    var key = opts.key || opts.source;
+    function boot() {
+        if (typeof maplibregl === 'undefined' || !window.OH2O || !OH2O.basemapStyle) {
+            return window.setTimeout(boot, 50);
+        }
+        var card = document.getElementById(opts.card);
+        var host = document.getElementById(opts.host);
+        var dataEl = document.getElementById(opts.dataEl);
+        if (!host) return;                                   // page has no map host
+        if (!dataEl) { if (card) card.style.display = 'none'; return; }  // no geometry
+        if (card) card.style.display = '';
+
+        var geojson = JSON.parse(dataEl.textContent);
+        var bounds = OH2O._geojsonBounds(geojson);
+        var isPoint = OH2O._geojsonIsPoint(geojson);
+        var center = bounds
+            ? [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2]
+            : [-120.5, 37.3];
+
+        var reg = OH2O._detailMaps[opts.host];
+        var map = reg && reg.map;
+        if (map && map.__oh2oReady) {
+            // UPDATE in place — no rebuild, no flash.
+            map.getSource(src).setData(geojson);
+            map.resize();                        // card may have been display:none
+            if (bounds) OH2O._frameBounds(map, bounds);
+            return;
+        }
+        if (map) return;                         // a map is mid-build; its load handler honours latest data
+
+        // CREATE once.
+        map = new maplibregl.Map({
+            container: opts.host, style: OH2O.basemapStyle('aerial'),
+            center: center, zoom: 13, fadeDuration: 0
+        });
+        OH2O._detailMaps[opts.host] = { map: map };
+        map.on('load', function () {
+            map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+            OH2O.mountBasemapToggle(map, 'aerial');
+            map.addSource(src, { type: 'geojson', data: geojson });
+            OH2O._addDetailLayers(map, src, key, isPoint, opts.popup);
+            // Honour the CURRENT selection — the user may have switched while the
+            // tiles were still loading.
+            var latest = document.getElementById(opts.dataEl);
+            if (latest) {
+                try {
+                    var gj = JSON.parse(latest.textContent);
+                    map.getSource(src).setData(gj);
+                    var b = OH2O._geojsonBounds(gj);
+                    if (b) OH2O._frameBounds(map, b);
+                } catch (e) { /* keep initial frame */ }
+            } else if (bounds) {
+                OH2O._frameBounds(map, bounds);
+            }
+            map.__oh2oReady = true;
+        });
+    }
+    boot();
+};
+
 })();

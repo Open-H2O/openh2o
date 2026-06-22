@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% comment %}
+  Reusable master-detail workspace shell (v2.0). A screen-agnostic two-pane
+  layout: a searchable list on the left, a persistent map + a swap-in-place
+  detail body on the right. Extend this instead of base.html and fill the blocks:
+
+    master_toolbar    the search / filter controls (inside the toolbar card)
+    master_results    {% templatetag openblock %} include the list results partial {% templatetag closeblock %} (the HTMX #results target)
+    detail_body       the selected record's detail, OR the resting empty state
+    workspace_scripts optional extra JS (the map init usually rides inside the
+                      swapped-in detail partial, so most screens leave this empty)
+
+  Standard element IDs every screen relies on:
+    #results          list container (search/filter/pagination swap here)
+    #detail-map-card  the map card wrapper (hidden until a record with geometry)
+    #detail-map       the MapLibre host (OH2O.detailPaneMap re-points this)
+    #detail-body      the detail target (row clicks swap their pane here)
+
+  The breadcrumb-bar and page title come from the child via base.html's own
+  {% templatetag openblock %} block breadcrumbs {% templatetag closeblock %} / {% templatetag openblock %} block page_title {% templatetag closeblock %}.
+{% endcomment %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="workspace-split">
+
+  <!-- Master pane: searchable list -->
+  <section class="master-pane">
+    <div class="card-raised toolbar-stack">
+      {% block master_toolbar %}{% endblock %}
+    </div>
+    <div id="results" class="master-results">
+      {% block master_results %}{% endblock %}
+    </div>
+  </section>
+
+  <!-- Detail pane: persistent map (built once, re-pointed per switch) + a body
+       that swaps in place on row click. -->
+  <section class="detail-pane">
+    <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; margin-bottom: var(--space-md); display: none;">
+      <div id="detail-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+    </div>
+    <div id="detail-body">
+      {% block detail_body %}{% endblock %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block map_scripts %}
+<!-- Loaded once for the whole workspace so every swapped-in detail body has the
+     map toolkit ready (each pane's guarded init waits for these). -->
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Keep the clicked row highlighted. Delegated on document so it survives the
+// #results list being re-rendered by a search / filter / pagination swap.
+(function () {
+  document.addEventListener('click', function (e) {
+    var row = e.target.closest ? e.target.closest('[data-row]') : null;
+    if (!row) return;
+    document.querySelectorAll('[data-row].is-selected').forEach(function (r) {
+      r.classList.remove('is-selected');
+    });
+    row.classList.add('is-selected');
+  });
+})();
+</script>
+{% block workspace_scripts %}{% endblock %}
+{% endblock %}

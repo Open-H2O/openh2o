@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "workspace.html" %}
 
 {% block title %}Wells - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Wells{% endblock %}
@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Wells</span>
   </nav>
-  <p class="page-description">Wells — groundwater sources in your district. Import from CSV or Shapefile. Each well can be linked to a meter for automated reading tracking.</p>
+  <p class="page-description">Groundwater wells tracked in the system. Pick one to open its construction record, map, and linked meters alongside the list.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
     <a href="{% url 'infrastructure:import' %}?type=well" class="btn-secondary btn-sm">Import</a>
     <a href="{% url 'infrastructure:add' %}?type=well" class="btn-primary btn-sm">+ Add Well</a>
@@ -18,50 +18,47 @@
 </div>
 {% endblock %}
 
-{% block content %}
-<div class="page-stack">
-
-  <!-- Toolbar -->
-  <div class="card-raised toolbar-row">
-    <!-- Search -->
-    <div style="flex: 1; min-width: 200px;">
-      <label class="form-label" for="filter-search">Search</label>
-      <input
-        type="text"
-        id="filter-search" name="q"
-        value="{{ q }}"
-        placeholder="Well name or registration ID..."
-        hx-get="{% url 'wells:list' %}"
-        hx-target="#results"
-        hx-trigger="keyup changed delay:300ms"
-        hx-include="[name='status']"
-        class="form-input search-input-icon"
-      >
-    </div>
-
-    <!-- Status filter -->
-    <div>
-      <label class="form-label" for="filter-status">Status</label>
-      <select
-        id="filter-status" name="status"
-        hx-get="{% url 'wells:list' %}"
-        hx-target="#results"
-        hx-trigger="change"
-        hx-include="[name='q']"
-        class="form-select"
-      >
-        <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
-        {% for val, label in status_choices %}
-          <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
+{% block master_toolbar %}
+  <div>
+    <label class="form-label" for="filter-search">Search</label>
+    <input
+      type="text"
+      id="filter-search" name="q"
+      value="{{ q }}"
+      placeholder="Well name or registration ID..."
+      hx-get="{% url 'wells:list' %}"
+      hx-target="#results"
+      hx-trigger="keyup changed delay:300ms"
+      hx-include="[name='status']"
+      class="form-input search-input-icon"
+    >
   </div>
-
-  <!-- Results -->
-  <div id="results">
-    {% include "wells/partials/_list_results.html" %}
+  <div>
+    <label class="form-label" for="filter-status">Status</label>
+    <select
+      id="filter-status" name="status"
+      hx-get="{% url 'wells:list' %}"
+      hx-target="#results"
+      hx-trigger="change"
+      hx-include="[name='q']"
+      class="form-select"
+    >
+      <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+      {% for val, label in status_choices %}
+        <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
   </div>
+{% endblock %}
 
-</div>
+{% block master_results %}
+  {% include "wells/partials/_list_results.html" %}
+{% endblock %}
+
+{% block detail_body %}
+  {% if selected_well %}
+    {% include "wells/partials/_detail_pane.html" %}
+  {% else %}
+    {% include "wells/partials/_detail_empty.html" %}
+  {% endif %}
 {% endblock %}

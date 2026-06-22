@@ -20,6 +20,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
+from core.workspace import detail_response, list_response
 from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES, Well
 
 
@@ -51,7 +52,17 @@ EDITABLE_FIELDS = {
 
 @login_required
 def wells_list(request):
-    """List view with HTMX search and status filter."""
+    """Master-detail workspace for wells.
+
+    Left pane: the HTMX-searchable well list. Right pane: the selected well's
+    detail, swapped in place when a row is clicked. A ``?selected=<pk>`` query
+    param pre-renders that well server-side so a reload or a deep link lands on
+    the same workspace view (the row click pushes that URL).
+
+    Returns the ``_list_results`` partial for an HTMX list refresh (search /
+    filter / pagination, which target ``#results``), and the full workspace page
+    otherwise.
+    """
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
 
@@ -68,24 +79,39 @@ def wells_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Pre-load the selected well (deep link / reload) into the detail pane.
+    selected_well = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_well = (
+            Well.objects.select_related("well_type").filter(pk=selected_raw).first()
+        )
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "q": q,
         "status": status,
         "status_choices": Well.STATUS_CHOICES,
+        "selected_well": selected_well,
     }
+    if selected_well is not None:
+        context.update(_well_detail_context(selected_well))
 
-    if request.headers.get("HX-Request"):
-        return render(request, "wells/partials/_list_results.html", context)
+    return list_response(
+        request,
+        page_template="wells/list.html",
+        results_template="wells/partials/_list_results.html",
+        context=context,
+    )
 
-    return render(request, "wells/list.html", context)
 
+def _well_detail_context(well):
+    """Build the per-well detail context.
 
-@login_required
-def well_detail(request, pk):
-    """Detail view for a single well."""
-    well = get_object_or_404(Well.objects.select_related("well_type"), pk=pk)
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
     current_meters = well.wellmeter_set.filter(is_current=True).select_related("meter")
     irrigated_parcels = well.wellirrigatedparcel_set.select_related("parcel").all()
     monitoring = getattr(well, "monitoringwell", None)
@@ -115,7 +141,7 @@ def well_detail(request, pk):
         for fname, fmeta in EDITABLE_FIELDS.items()
     }
 
-    context = {
+    return {
         "well": well,
         "current_meters": current_meters,
         "irrigated_parcels": irrigated_parcels,
@@ -125,7 +151,24 @@ def well_detail(request, pk):
         # json_script so a malicious place-name can't break out of <script>.
         "geojson": geojson,
     }
-    return render(request, "wells/detail.html", context)
+
+
+@login_required
+def well_detail(request, pk):
+    """A single well's detail.
+
+    On an HTMX request it returns just the ``_detail_pane`` fragment (the
+    workspace swaps this into ``#detail-body``); otherwise it returns the
+    standalone page, which deep links and no-HTMX clients still reach.
+    """
+    well = get_object_or_404(Well.objects.select_related("well_type"), pk=pk)
+    context = _well_detail_context(well)
+    return detail_response(
+        request,
+        pane_template="wells/partials/_detail_pane.html",
+        page_template="wells/detail.html",
+        context=context,
+    )
 
 
 @login_required
