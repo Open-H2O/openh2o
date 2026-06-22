@@ -3311,21 +3311,25 @@ div[id$="-map"] {
 .app-main:has(.workspace-split) {
     height: 100dvh;
     overflow: hidden;
-    /* Grid (not the inherited flex column) so the content row is minmax(0,1fr):
-       it takes EXACTLY the leftover height and the footer stays flush at the
-       bottom. A flex column mis-resolved its free space against the zoomed
-       .app-content (zoom:1.0625) — the content rendered a few px taller than its
-       flex share, that surplus grew with viewport height, and it pushed the
-       footer below the fold (a widening black void under it). Grid's strict track
-       sizing removes the surplus while keeping the zoom (so the map counter-zoom
-       still holds). Rows: header / breadcrumb / content / footer. */
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 .app-content:has(.workspace-split) {
     min-height: 0;
     overflow: hidden;
+}
+/* The feedback button is the LAST flex child of .app-main and normally a sticky
+   box that rides the document scroll and nests into the footer (its negative
+   margin-top centers it in the footer band). On a workspace page the column is
+   pinned (100dvh, no document scroll), and that in-flow box added ~one button's
+   worth of height to the flex column, pushing the footer below the fold — the
+   black void under it. Here there's no scroll to ride, so float it out of flow
+   (position:fixed) at the bottom-right: the flex column sums to exactly 100dvh,
+   the footer sits flush, and the button looks identical. Scoped to workspace
+   pages so the sticky-into-footer behaviour everywhere else is untouched. */
+.app-main:has(.workspace-split) > .oh2o-fb-btn {
+    position: fixed;
+    right: 1.5rem;
+    bottom: var(--fb-gap);
+    margin: 0;
 }
 .workspace-split {
     display: grid;
@@ -3477,10 +3481,6 @@ div[id$="-map"] {
    (no fixed-height panes when they're stacked). */
 @media (max-width: 900px) {
     .app-main:has(.workspace-split) {
-        /* Back to the flex column from the base .app-main rule: stacked panes
-           flow at natural height and scrolling returns to the page (the desktop
-           grid pin would otherwise keep constraining the single column). */
-        display: flex;
         height: auto;
         overflow: visible;
     }
