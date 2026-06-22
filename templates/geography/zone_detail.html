@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% comment %}
+  Standalone page for a single zone. The body is the shared _zone_detail_pane
+  partial (the same fragment the workspace swaps into #detail-body), so the page
+  and the in-pane view never drift. This is the deep-link / direct-URL target;
+  day-to-day use happens in the master-detail workspace at geography:zone_list.
+{% endcomment %}
+
 {% block title %}{{ zone.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ zone.name }}{% endblock %}
 
@@ -23,204 +30,22 @@
 
 {% block content %}
 <div class="page-stack">
-
-  <!-- Back link -->
   <div>
-    <a href="{% url 'geography:zone_list' %}" class="back-link">
-      &larr; Back to Zones
-    </a>
+    <a href="{% url 'geography:zone_list' %}" class="back-link">&larr; Back to Zones</a>
   </div>
-
-  <!-- Zone help block -->
-  <div class="card-raised">
-    <p class="text-secondary text-base" style="margin: 0;">A <strong>management zone</strong> is a sub-area of the district that carries its own <strong>allocation ceiling</strong>. Use areas assigned to this zone share that ceiling, which the platform divides into per-account allocations. <a href="{% url 'glossary' %}" class="text-sm" style="color: var(--color-gold);">Glossary &rarr;</a></p>
+  <!-- Persistent map host (the shared body partial builds the map into this). -->
+  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
-
-  {% if is_curtailed %}
-  <div class="alert-warning">
-    <strong>Curtailment in effect.</strong>
-    {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
-    Surface deliveries to the curtailed parcels stop after the curtailment date — the current-year surface allocation below is reduced to match, and conjunctive growers substitute groundwater.
-  </div>
-  {% endif %}
-
-  <div class="page-grid-2col">
-
-    <!-- Left column: Zone Info + Parcels + Allocation -->
-    <div class="page-stack">
-
-      <!-- Zone Info card -->
-      <div class="card-raised">
-        <h2 class="section-header">Zone Information</h2>
-
-        <div class="field-group">
-          <div class="field-label">Name</div>
-          <div class="field-value">{{ zone.name }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Type</div>
-          <div class="field-value">{{ zone.get_zone_type_display|default:"—" }}</div>
-        </div>
-
-        {% if zone.description %}
-        <div class="field-group">
-          <div class="field-label">Description</div>
-          <div class="text-secondary text-base">{{ zone.description }}</div>
-        </div>
-        {% endif %}
-
-        <div class="field-group">
-          {% include "geography/partials/_zone_recovery_horizon.html" %}
-        </div>
-
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ zone.created_at|date:"M d, Y" }} &middot; Updated {{ zone.updated_at|date:"M d, Y" }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Assigned Use Areas card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Assigned Use Areas</h2>
-        <div id="zone-parcels">
-          {% include "geography/partials/_zone_parcels.html" %}
-        </div>
-      </div>
-
-      <!-- Assign Use Area search card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Assign Use Area</h2>
-
-        <div class="field-group">
-          <input
-            type="text"
-            name="q"
-            placeholder="Search by parcel number or owner..."
-            hx-get="{% url 'geography:zone_parcel_search' zone.pk %}"
-            hx-target="#zone-parcel-search-results"
-            hx-trigger="keyup changed delay:300ms"
-            class="form-input"
-          >
-        </div>
-
-        <div id="zone-parcel-search-results">
-          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
-        </div>
-      </div>
-
-      <!-- Allocation vs. use card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Allocation vs. Use</h2>
-        {% if budgets %}
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Period</th>
-              <th>Water Type</th>
-              <th class="th-right">Allocation (AF)</th>
-              <th class="th-right">Used (AF)</th>
-              <th class="th-right">Remaining (AF)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for b in budgets %}
-            <tr>
-              <td class="text-secondary">{{ b.period.name }}</td>
-              <td class="text-secondary">{{ b.water_type.name }}</td>
-              <td class="td-num">{{ b.budget|floatformat:2 }}</td>
-              <td class="td-num">{{ b.used|floatformat:2 }} <span class="text-tertiary text-xs">{{ b.used_label }}</span></td>
-              <td class="td-num">{{ b.remaining|floatformat:2 }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p class="text-tertiary text-sm">No allocations for this zone.</p>
-        {% endif %}
-      </div>
-
-    </div>
-
-    <!-- Right column: Map -->
-    <div class="page-stack">
-      <div class="card-raised" style="padding: 0; overflow: hidden;">
-        <div id="zone-map" class="map-embed" style="height: 400px;"></div>
-      </div>
-    </div>
+  <div id="detail-body">
+    {% include "geography/partials/_zone_detail_pane.html" %}
   </div>
 </div>
 {% endblock %}
 
 {% block map_scripts %}
+<!-- Always load the toolkit so the guarded init inside the pane resolves even for
+     a zone with no geometry (it just hides the map card). -->
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="{% static 'js/map-core.js' %}"></script>
-{% if zone_geojson %}{{ zone_geojson|json_script:"zone-geojson-data" }}{% endif %}
-<script>
-(function() {
-  var _gjEl = document.getElementById('zone-geojson-data');
-  var geojson = _gjEl ? JSON.parse(_gjEl.textContent) : null;
-
-  var defaultCenter = [-120.5, 37.5];
-  var defaultZoom = 10;
-
-  var map = new maplibregl.Map({
-    container: 'zone-map',
-    style: OH2O.basemapStyle('aerial'),
-    center: defaultCenter,
-    zoom: defaultZoom
-  });
-
-  map.on('load', function() {
-    map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
-    OH2O.mountBasemapToggle(map, 'aerial');
-    if (geojson) {
-      map.addSource('zone', { type: 'geojson', data: geojson });
-      map.addLayer({
-        id: 'zone-fill',
-        type: 'fill',
-        source: 'zone',
-        paint: {
-          'fill-color': OH2O.colors.blue,
-          'fill-opacity': 0.25
-        }
-      });
-      map.addLayer({
-        id: 'zone-line',
-        type: 'line',
-        source: 'zone',
-        paint: {
-          'line-color': OH2O.colors.blueBright,
-          'line-width': 2
-        }
-      });
-      OH2O.addDetailLabel(map, 'zone', 'zone', { id: 'zone-label', anchor: 'center', offset: [0, 0] });
-      OH2O.attachPopup(map, 'zone-fill', function (p) {
-        return '<strong>' + (p.name || 'Zone') + '</strong><br>' +
-               'Type: ' + (p.zone_type || '—');
-      });
-
-      // Fit map to zone bounds
-      var coords = JSON.stringify(geojson.geometry.coordinates).match(/-?\d+\.?\d*/g);
-      if (coords && coords.length >= 4) {
-        var lngs = [], lats = [];
-        for (var i = 0; i < coords.length - 1; i += 2) {
-          lngs.push(parseFloat(coords[i]));
-          lats.push(parseFloat(coords[i + 1]));
-        }
-        map.fitBounds([
-          [Math.min.apply(null, lngs), Math.min.apply(null, lats)],
-          [Math.max.apply(null, lngs), Math.max.apply(null, lats)]
-        ], { padding: 48, maxZoom: 14 });
-      }
-    } else {
-      var el = document.createElement('div');
-      el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d5e6f;font-size:0.875rem;pointer-events:none;';
-      el.textContent = 'No geometry set for this zone';
-      document.getElementById('zone-map').appendChild(el);
-    }
-  });
-})();
-</script>
 {% endblock %}

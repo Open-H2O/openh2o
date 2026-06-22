@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "workspace.html" %}
 
 {% block title %}Zones - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Zones{% endblock %}
@@ -10,57 +10,54 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Zones</span>
   </nav>
-  <p class="page-description">Management zones divide your district into areas with separate allocations. Assign use areas to zones, then set allocations per zone to track usage.</p>
+  <p class="page-description">Management zones divide your district into areas with separate allocations. Pick one to open its boundary on the map, alongside its assigned use areas and allocation-vs-use.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
     <a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add Zone</a>
   </div>
 </div>
 {% endblock %}
 
-{% block content %}
-<div class="page-stack">
-
-  <!-- Toolbar -->
-  <div class="card-raised toolbar-row">
-    <!-- Search -->
-    <div style="flex: 1; min-width: 200px;">
-      <label class="form-label" for="filter-search">Search</label>
-      <input
-        type="text"
-        id="filter-search" name="q"
-        value="{{ q }}"
-        placeholder="Zone name..."
-        hx-get="{% url 'geography:zone_list' %}"
-        hx-target="#results"
-        hx-trigger="keyup changed delay:300ms"
-        hx-include="[name='zone_type']"
-        class="form-input search-input-icon"
-      >
-    </div>
-
-    <!-- Type filter -->
-    <div>
-      <label class="form-label" for="filter-type">Type</label>
-      <select
-        id="filter-type" name="zone_type"
-        hx-get="{% url 'geography:zone_list' %}"
-        hx-target="#results"
-        hx-trigger="change"
-        hx-include="[name='q']"
-        class="form-select"
-      >
-        <option value="" {% if not zone_type %}selected{% endif %}>All Types</option>
-        {% for val, label in zone_type_choices %}
-          <option value="{{ val }}" {% if zone_type == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
+{% block master_toolbar %}
+  <div>
+    <label class="form-label" for="filter-search">Search</label>
+    <input
+      type="text"
+      id="filter-search" name="q"
+      value="{{ q }}"
+      placeholder="Zone name..."
+      hx-get="{% url 'geography:zone_list' %}"
+      hx-target="#results"
+      hx-trigger="keyup changed delay:300ms"
+      hx-include="[name='zone_type']"
+      class="form-input search-input-icon"
+    >
   </div>
-
-  <!-- Results -->
-  <div id="results">
-    {% include "geography/partials/_zone_list_results.html" %}
+  <div>
+    <label class="form-label" for="filter-type">Type</label>
+    <select
+      id="filter-type" name="zone_type"
+      hx-get="{% url 'geography:zone_list' %}"
+      hx-target="#results"
+      hx-trigger="change"
+      hx-include="[name='q']"
+      class="form-select"
+    >
+      <option value="" {% if not zone_type %}selected{% endif %}>All Types</option>
+      {% for val, label in zone_type_choices %}
+        <option value="{{ val }}" {% if zone_type == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
   </div>
+{% endblock %}
 
-</div>
+{% block master_results %}
+  {% include "geography/partials/_zone_list_results.html" %}
+{% endblock %}
+
+{% block detail_body %}
+  {% if selected_zone %}
+    {% include "geography/partials/_zone_detail_pane.html" %}
+  {% else %}
+    {% include "geography/partials/_zone_empty.html" %}
+  {% endif %}
 {% endblock %}

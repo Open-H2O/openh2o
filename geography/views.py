@@ -26,6 +26,7 @@ from accounting.services import billable_ledger
 from core.access import admin_required
 from core.constants import RECOVERY_HORIZON_CHOICES
 from core.models import SiteConfig
+from core.workspace import detail_response, list_response
 from geography.forms import ZoneForm
 from geography.models import Boundary, Flowline, ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
@@ -93,7 +94,19 @@ def map_view(request):
 
 @login_required
 def zone_list(request):
-    """Paginated list of zones with HTMX search and type filter."""
+    """Master-detail workspace for management zones.
+
+    Left pane: the HTMX-searchable zone list. Right pane: the selected zone's
+    detail — its boundary mapped, plus assigned use areas, the allocation-vs-use
+    table, and the per-district year-end-water control — swapped in place when a
+    row is clicked. A ``?selected=<pk>`` query param pre-renders that zone
+    server-side so a reload or deep link lands on the same workspace view (the
+    row click pushes that URL).
+
+    Returns the ``_zone_list_results`` partial for an HTMX list refresh (search /
+    filter / pagination, which target ``#results``), and the full workspace page
+    otherwise.
+    """
     q = request.GET.get("q", "").strip()
     zone_type = request.GET.get("zone_type", "").strip()
 
@@ -112,25 +125,37 @@ def zone_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Pre-load the selected zone (deep link / reload) into the detail pane.
+    selected_zone = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_zone = Zone.objects.filter(pk=selected_raw).first()
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "q": q,
         "zone_type": zone_type,
         "zone_type_choices": Zone.ZONE_TYPE_CHOICES,
+        "selected_zone": selected_zone,
     }
+    if selected_zone is not None:
+        context.update(_zone_detail_context(selected_zone))
 
-    if request.headers.get("HX-Request"):
-        return render(request, "geography/partials/_zone_list_results.html", context)
+    return list_response(
+        request,
+        page_template="geography/zone_list.html",
+        results_template="geography/partials/_zone_list_results.html",
+        context=context,
+    )
 
-    return render(request, "geography/zone_list.html", context)
 
+def _zone_detail_context(zone):
+    """Build the per-zone detail context.
 
-@login_required
-def zone_detail(request, pk):
-    """Detail page for a single zone."""
-    zone = get_object_or_404(Zone, pk=pk)
-
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
     # Assigned parcels via ParcelZone
     parcel_zones = (
         ParcelZone.objects
@@ -213,19 +238,21 @@ def zone_detail(request, pk):
             )
         )
 
-    # GeoJSON for the zone map
-    zone_geojson = None
+    # GeoJSON for the persistent detail map. A FeatureCollection (via serialize)
+    # so OH2O.detailPaneMap reads it exactly as it does for every other screen;
+    # it auto-detects the zone's polygon boundary (fill + outline). A Python
+    # object (or None): the template escapes it via json_script so the zone name
+    # can't break out of <script>.
+    geojson = None
     if zone.geometry:
-        # Python object (not a json.dumps string): the template escapes it via
-        # json_script so zone.name can't break out of <script>.
-        zone_geojson = {
-            "type": "Feature",
-            "geometry": json.loads(zone.geometry.geojson),
-            "properties": {
-                "name": zone.name,
-                "zone_type": zone.zone_type,
-            },
-        }
+        geojson = json.loads(
+            serialize(
+                "geojson",
+                [zone],
+                geometry_field="geometry",
+                fields=["name", "zone_type"],
+            )
+        )
 
     context = {
         "zone": zone,
@@ -234,10 +261,28 @@ def zone_detail(request, pk):
         "budgets": budgets,
         "is_curtailed": is_curtailed,
         "curtailment_orders": curtailment_orders,
-        "zone_geojson": zone_geojson,
+        "geojson": geojson,
     }
     context.update(_recovery_horizon_context(zone))
-    return render(request, "geography/zone_detail.html", context)
+    return context
+
+
+@login_required
+def zone_detail(request, pk):
+    """A single zone's detail.
+
+    On an HTMX request it returns just the ``_zone_detail_pane`` fragment (the
+    workspace swaps this into ``#detail-body``); otherwise it returns the
+    standalone page, which deep links and no-HTMX clients still reach.
+    """
+    zone = get_object_or_404(Zone, pk=pk)
+    context = _zone_detail_context(zone)
+    return detail_response(
+        request,
+        pane_template="geography/partials/_zone_detail_pane.html",
+        page_template="geography/zone_detail.html",
+        context=context,
+    )
 
 
 # ---------------------------------------------------------------------------

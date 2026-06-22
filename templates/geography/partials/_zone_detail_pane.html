@@ -1,0 +1,160 @@
+{% comment %}
+  Per-zone detail BODY, swapped into #detail-body on row click (and reused by the
+  standalone zone_detail.html page). The map itself is NOT here — it lives as a
+  persistent element (#detail-map) in the pane shell so it is built ONCE and
+  merely re-pointed at the new zone's geometry on each switch (no teardown, so no
+  startup flash). A zone is a MultiPolygon boundary; OH2O.detailPaneMap
+  auto-detects polygon and draws fill + outline.
+{% endcomment %}
+{% load static %}
+
+<!-- Pane header: which zone you're looking at. -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">{{ zone.name }}</div>
+    <div class="pane-header-sub">{{ zone.get_zone_type_display|default:"Zone" }}</div>
+  </div>
+  <div class="pane-header-meta">
+    <a href="{% url 'geography:zone_detail' zone.pk %}" class="text-tertiary text-xs back-link" title="Open this zone on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+{% if is_curtailed %}
+<div class="alert-warning">
+  <strong>Curtailment in effect.</strong>
+  {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
+  Surface deliveries to the curtailed parcels stop after the curtailment date — the current-year surface allocation below is reduced to match, and conjunctive growers substitute groundwater.
+</div>
+{% endif %}
+
+<div class="pane-stack">
+  <div class="page-grid-2col">
+
+    <!-- Left column: Zone Info + Use Areas + Assign -->
+    <div class="page-stack">
+
+      <!-- Zone Info card -->
+      <div class="card-raised">
+        <h2 class="section-header">Zone Information</h2>
+
+        <div class="field-group">
+          <div class="field-label">Name</div>
+          <div class="field-value">{{ zone.name }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Type</div>
+          <div class="field-value">{{ zone.get_zone_type_display|default:"—" }}</div>
+        </div>
+
+        {% if zone.description %}
+        <div class="field-group">
+          <div class="field-label">Description</div>
+          <div class="text-secondary text-base">{{ zone.description }}</div>
+        </div>
+        {% endif %}
+
+        <div class="field-group">
+          {% include "geography/partials/_zone_recovery_horizon.html" %}
+        </div>
+
+        <div class="border-separator">
+          <div class="text-tertiary text-xs">
+            Created {{ zone.created_at|date:"M d, Y" }} &middot; Updated {{ zone.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Assigned Use Areas card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Assigned Use Areas</h2>
+        <div id="zone-parcels">
+          {% include "geography/partials/_zone_parcels.html" %}
+        </div>
+      </div>
+
+      <!-- Assign Use Area search card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Assign Use Area</h2>
+
+        <div class="field-group">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by parcel number or owner..."
+            hx-get="{% url 'geography:zone_parcel_search' zone.pk %}"
+            hx-target="#zone-parcel-search-results"
+            hx-trigger="keyup changed delay:300ms"
+            class="form-input"
+          >
+        </div>
+
+        <div id="zone-parcel-search-results">
+          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: Allocation vs. Use -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Allocation vs. Use</h2>
+        {% if budgets %}
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Water Type</th>
+              <th class="th-right">Allocation (AF)</th>
+              <th class="th-right">Used (AF)</th>
+              <th class="th-right">Remaining (AF)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in budgets %}
+            <tr>
+              <td class="text-secondary">{{ b.period.name }}</td>
+              <td class="text-secondary">{{ b.water_type.name }}</td>
+              <td class="td-num">{{ b.budget|floatformat:2 }}</td>
+              <td class="td-num">{{ b.used|floatformat:2 }} <span class="text-tertiary text-xs">{{ b.used_label }}</span></td>
+              <td class="td-num">{{ b.remaining|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-tertiary text-sm">No allocations for this zone.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% comment %}
+  Geometry for the PERSISTENT map (#detail-map lives in the pane shell).
+  OH2O.detailPaneMap builds the map once, then on every later swap re-points it at
+  this zone's boundary via setData + reframe — no rebuild, so no flash. Defensive:
+  polls until the toolkit is ready (on a full-page load this body renders BEFORE
+  the map scripts at end of page), hides the map card when the zone has no
+  geometry.
+{% endcomment %}
+{% if geojson %}{{ geojson|json_script:"detail-geojson-data" }}{% endif %}
+<script>
+(function () {
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
+      source: 'zone',
+      popup: function (p) {
+        return '<strong>' + (p.name || 'Zone') + '</strong><br>' +
+               'Type: ' + (p.zone_type || '—');
+      }
+    });
+  }
+  go();
+})();
+</script>

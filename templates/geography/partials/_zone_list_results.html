@@ -7,33 +7,27 @@
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th class="th-right">Use Areas</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for zone in page_obj %}
-      <tr>
-        <td>
-          <a href="{% url 'geography:zone_detail' zone.pk %}" class="data-table-link">
-            {{ zone.name }}
-          </a>
-        </td>
-        <td class="text-secondary">{{ zone.get_zone_type_display|default:"—" }}</td>
-        <td class="td-num text-secondary">{{ zone.parcel_count }}</td>
-        <td class="text-tertiary" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          {{ zone.description|truncatewords:12|default:"—" }}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card-raised master-list-card">
+  {% for zone in page_obj %}
+  <div
+    data-row
+    class="master-row{% if selected_zone and zone.pk == selected_zone.pk %} is-selected{% endif %}"
+    hx-get="{% url 'geography:zone_detail' zone.pk %}"
+    hx-target="#detail-body"
+    hx-swap="innerHTML"
+    hx-push-url="{% url 'geography:zone_list' %}?selected={{ zone.pk }}"
+    role="link"
+    tabindex="0"
+    aria-label="Open zone {{ zone.name }}">
+    <div class="master-row-top">
+      <span class="master-row-id">{{ zone.name }}</span>
+    </div>
+    <div class="master-row-sub">
+      <span class="master-row-owner">{{ zone.get_zone_type_display|default:"—" }}</span>
+      <span class="master-row-acres">{{ zone.parcel_count }} use area{{ zone.parcel_count|pluralize }}</span>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
 <!-- Pagination -->
