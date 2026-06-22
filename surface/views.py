@@ -235,7 +235,18 @@ def diversion_record_create(request, pk):
 
 @login_required
 def water_rights_list(request):
-    """List view for water rights with HTMX search and status filter."""
+    """Master-detail workspace for water rights.
+
+    Left pane: the HTMX-searchable rights list. Right pane: the selected right's
+    detail — its points of diversion mapped, plus diversion records and active
+    curtailments — swapped in place when a row is clicked. A ``?selected=<pk>``
+    query param pre-renders that right server-side so a reload or deep link lands
+    on the same workspace view (the row click pushes that URL).
+
+    Returns the ``_list_results`` partial for an HTMX list refresh (search /
+    filter / pagination, which target ``#results``), and the full workspace page
+    otherwise.
+    """
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
 
@@ -252,27 +263,41 @@ def water_rights_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Pre-load the selected right (deep link / reload) into the detail pane.
+    selected_right = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_right = (
+            WaterRight.objects.select_related("right_type")
+            .filter(pk=selected_raw)
+            .first()
+        )
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "q": q,
         "status": status,
         "status_choices": WaterRight.STATUS_CHOICES,
+        "selected_right": selected_right,
     }
+    if selected_right is not None:
+        context.update(_water_right_detail_context(selected_right))
 
-    if request.headers.get("HX-Request"):
-        return render(request, "surface/partials/_list_results.html", context)
-
-    return render(request, "surface/water_rights_list.html", context)
-
-
-@login_required
-def water_right_detail(request, pk):
-    """Detail view for a single water right."""
-    water_right = get_object_or_404(
-        WaterRight.objects.select_related("right_type"), pk=pk
+    return list_response(
+        request,
+        page_template="surface/water_rights_list.html",
+        results_template="surface/partials/_list_results.html",
+        context=context,
     )
 
+
+def _water_right_detail_context(water_right):
+    """Build the per-right detail context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
     pods = PointOfDiversion.objects.filter(water_right=water_right).order_by("name")
 
     # Recent diversion records through PODs, last 12
@@ -290,7 +315,10 @@ def water_right_detail(request, pk):
             priority_date_cutoff__gte=water_right.priority_date,
         ).order_by("-effective_date")
 
-    # GeoJSON for PODs
+    # GeoJSON for the PODs this right serves — a FeatureCollection (the right maps
+    # multiple diversion points, so OH2O.detailPaneMap frames the map across all of
+    # them via geojson.features). Python object (not a dumped string): the template
+    # escapes it via json_script so POD names can't break out of <script>.
     pods_with_location = [p for p in pods if p.location]
     pods_geojson = None
     if pods_with_location:
@@ -303,15 +331,33 @@ def water_right_detail(request, pk):
             )
         )
 
-    context = {
+    return {
         "water_right": water_right,
         "pods": pods,
         "recent_diversions": recent_diversions,
         "active_curtailments": active_curtailments,
-        # Python object (or None); template escapes it via json_script.
         "pods_geojson": pods_geojson,
     }
-    return render(request, "surface/water_right_detail.html", context)
+
+
+@login_required
+def water_right_detail(request, pk):
+    """A single water right's detail.
+
+    On an HTMX request it returns just the ``_water_right_detail_pane`` fragment
+    (the workspace swaps this into ``#detail-body``); otherwise it returns the
+    standalone page, which deep links and no-HTMX clients still reach.
+    """
+    water_right = get_object_or_404(
+        WaterRight.objects.select_related("right_type"), pk=pk
+    )
+    context = _water_right_detail_context(water_right)
+    return detail_response(
+        request,
+        pane_template="surface/partials/_water_right_detail_pane.html",
+        page_template="surface/water_right_detail.html",
+        context=context,
+    )
 
 
 @login_required

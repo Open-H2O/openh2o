@@ -451,6 +451,44 @@ class TestSurfacePages:
         response = client.get(reverse("surface:water_rights_list"))
         assert response.status_code == 302
 
+    # Water Rights master-detail workspace (v2.0 conversion).
+    def test_water_right_detail(self, auth_client):
+        right = WaterRightFactory()
+        response = auth_client.get(
+            reverse("surface:detail", kwargs={"pk": right.pk})
+        )
+        assert response.status_code == 200
+
+    def test_water_rights_list_selected_preloads_detail_pane(self, auth_client):
+        """?selected=<pk> renders the chosen right's detail server-side so a
+        reload or deep link lands on the same workspace view (no extra
+        round-trip), with the served PODs' geometry along for the map."""
+        right = WaterRightFactory(right_id="WR-DEEPLINK")
+        # A located POD on this right so the pane emits the map geometry.
+        PointOfDiversionFactory(water_right=right, name="Deep Link Headgate")
+        response = auth_client.get(
+            reverse("surface:water_rights_list"), {"selected": right.pk}
+        )
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "WR-DEEPLINK" in body
+        # The persistent map's POD geometry rides along in the pre-loaded pane.
+        assert "detail-geojson-data" in body
+
+    def test_water_right_detail_hx_request_returns_pane_fragment(self, auth_client):
+        """An HTMX row click gets just the detail-pane fragment (swapped into
+        #detail-body), not the full standalone page wrapped in base.html."""
+        right = WaterRightFactory(right_id="WR-FRAGMENT")
+        response = auth_client.get(
+            reverse("surface:detail", kwargs={"pk": right.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "WR-FRAGMENT" in body
+        # Fragment, not full document: no <html> shell from base.html.
+        assert "<html" not in body.lower()
+
     # Surface Diversions master-detail workspace (v2.0 conversion).
     def test_pod_list(self, auth_client):
         response = auth_client.get(reverse("surface:pod_list"))

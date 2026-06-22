@@ -7,41 +7,30 @@
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Right ID</th>
-        <th>Type</th>
-        <th>Holder</th>
-        <th>Priority Date</th>
-        <th class="th-right">Face Value (AF)</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for right in page_obj %}
-      <tr>
-        <td>
-          <a href="{% url 'surface:detail' right.pk %}" class="data-table-link text-mono" style="font-size: 0.8125rem;">
-            {{ right.right_id }}
-          </a>
-        </td>
-        <td class="text-secondary">{{ right.right_type|default:"—" }}</td>
-        <td>{{ right.holder_name|default:"—" }}</td>
-        <td class="text-secondary">
-          {% if right.priority_date %}{{ right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
-        </td>
-        <td class="text-secondary td-num">
-          {% if right.face_value_acre_feet %}{{ right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
-        </td>
-        <td>
-          {% include "surface/partials/_status_badge.html" with status=right.status %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card-raised master-list-card">
+  {% for right in page_obj %}
+  <div
+    data-row
+    class="master-row{% if selected_right and right.pk == selected_right.pk %} is-selected{% endif %}"
+    hx-get="{% url 'surface:detail' right.pk %}"
+    hx-target="#detail-body"
+    hx-swap="innerHTML"
+    hx-push-url="{% url 'surface:water_rights_list' %}?selected={{ right.pk }}"
+    role="link"
+    tabindex="0"
+    aria-label="Open water right {{ right.right_id }}">
+    <div class="master-row-top">
+      <span class="master-row-id text-mono">{{ right.right_id }}</span>
+      {% include "surface/partials/_status_badge.html" with status=right.status %}
+    </div>
+    <div class="master-row-sub">
+      <span class="master-row-owner">{{ right.holder_name|default:"—" }}</span>
+      {% if right.face_value_acre_feet %}
+      <span class="master-row-acres">{{ right.face_value_acre_feet|floatformat:0 }} AF</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
 <!-- Pagination -->

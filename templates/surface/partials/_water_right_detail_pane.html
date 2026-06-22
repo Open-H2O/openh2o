@@ -1,0 +1,242 @@
+{% comment %}
+  Per-right detail BODY, swapped into #detail-body on row click (and reused by the
+  standalone water_right_detail.html page). The map itself is NOT here — it lives
+  as a persistent element (#detail-map) in the pane shell so it is built ONCE and
+  merely re-pointed at the new right's diversion points on each switch (no
+  teardown, so no startup flash). A right maps MULTIPLE points of diversion, so
+  the geometry below is a FeatureCollection; OH2O.detailPaneMap frames the map
+  across all of them and the onMapLoad hook lays the river/canal flowlines
+  substrate beneath the points.
+{% endcomment %}
+{% load static %}
+
+<!-- Pane header: which water right you're looking at. -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title text-mono">{{ water_right.right_id }}</div>
+    <div class="pane-header-sub">{{ water_right.holder_name|default:"—" }}</div>
+  </div>
+  <div class="pane-header-meta">
+    {% include "surface/partials/_status_badge.html" with status=water_right.status %}
+    <a href="{% url 'surface:detail' water_right.pk %}" class="text-tertiary text-xs back-link" title="Open this water right on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+<div class="pane-stack">
+  <div class="page-grid-2col">
+
+    <!-- Left column: Right Info + Points of Diversion + Curtailments -->
+    <div class="page-stack">
+
+      <!-- Right Info card -->
+      <div class="card-raised">
+        <h2 class="section-header">Right Information</h2>
+
+        <div class="field-group">
+          <div class="field-label">Right ID</div>
+          <div class="field-value-mono">{{ water_right.right_id }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Right Type</div>
+          <div class="field-value">{{ water_right.right_type|default:"—" }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Holder</div>
+          <div class="field-value">{{ water_right.holder_name|default:"—" }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label field-row">
+            Priority Date
+            {% include "partials/_help_tooltip.html" with label="Priority Date" text="The date establishing seniority. Earlier dates have higher priority during shortages." %}
+          </div>
+          <div class="field-value">
+            {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label field-row">
+            Face Value (AF)
+            {% include "partials/_help_tooltip.html" with label="Face Value" text="The maximum amount of water authorized by the right, in acre-feet per year." %}
+          </div>
+          <div class="field-value">
+            {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Source</div>
+          <div class="field-value">{{ water_right.source_name|default:"—" }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label field-row">
+            Status
+            {% if site_config.demonstration_mode %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable. Curtailed rights are temporarily restricted. In this demonstration, curtailment and revocation states are illustrative sample data, not real State Water Board actions." %}
+            {% else %}
+              {% include "partials/_help_tooltip.html" with label="Status" text="Active rights are currently exercisable. Curtailed rights are temporarily restricted." %}
+            {% endif %}
+          </div>
+          <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
+        </div>
+
+        {% if water_right.notes %}
+        <div class="field-group">
+          <div class="field-label">Notes</div>
+          <div class="text-secondary text-base">{{ water_right.notes }}</div>
+        </div>
+        {% endif %}
+
+        <div class="border-separator">
+          <div class="text-tertiary text-xs">
+            Created {{ water_right.created_at|date:"M d, Y" }} &middot; Updated {{ water_right.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Points of Diversion card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Points of Diversion</h2>
+        {% if pods %}
+          {% for pod in pods %}
+          <div class="item-row">
+            <div class="row-between" style="margin-bottom: 2px;">
+              <a href="{% url 'surface:pod_detail' pod.pk %}" class="data-table-link field-value-sm" style="font-weight: 600;">{{ pod.name }}</a>
+              {% include "surface/partials/_status_badge.html" with status=pod.status %}
+            </div>
+            {% if pod.stream_name %}
+              <div class="text-tertiary text-xs">{{ pod.stream_name }}</div>
+            {% endif %}
+            {% if pod.max_rate_cfs %}
+              <div class="text-tertiary text-xs">Max rate: {{ pod.max_rate_cfs|floatformat:2 }} cfs</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-tertiary text-base">No points of diversion recorded.</p>
+        {% endif %}
+      </div>
+
+      <!-- Curtailment Status card -->
+      {% if active_curtailments %}
+      <div class="card-raised">
+        <h2 class="section-header mb-md" style="color: var(--color-gold);">
+          Active Curtailments Affecting This Right
+          {% include "partials/_demo_marker.html" %}
+        </h2>
+        {% if site_config.demonstration_mode %}
+        <p class="text-tertiary text-xs" style="margin-top: -0.5rem; margin-bottom: var(--space-sm);">
+          Illustrative sample orders for this demonstration, not filed State Water Board curtailment orders.
+        </p>
+        {% endif %}
+        {% for curtailment in active_curtailments %}
+        <div class="item-row" style="padding: var(--space-sm) 0;">
+          <div class="field-value-sm" style="font-weight: 600;">{{ curtailment.title }}</div>
+          <div class="text-tertiary text-xs" style="margin-top: 2px;">
+            Order {{ curtailment.order_id }} &middot; Effective {{ curtailment.effective_date|date:"M d, Y" }}
+            {% if curtailment.watershed %}&middot; {{ curtailment.watershed }}{% endif %}
+          </div>
+          {% if curtailment.priority_date_cutoff %}
+            <div class="text-xs" style="color: var(--color-gold); margin-top: 2px;">
+              Priority cutoff: {{ curtailment.priority_date_cutoff|date:"M d, Y" }}
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right column: Recent Diversion Records -->
+    <div class="page-stack">
+
+      <!-- Recent Diversion Records card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Recent Diversion Records</h2>
+        {% if recent_diversions %}
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>POD</th>
+              <th class="th-right">Volume (AF)</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in recent_diversions %}
+            <tr>
+              <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
+              <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
+              <td class="td-num">{{ record.volume_acre_feet|floatformat:2 }}</td>
+              <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p class="text-tertiary text-base">No diversion records yet.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% comment %}
+  Geometry for the PERSISTENT map (#detail-map lives in the pane shell). The right
+  maps every point of diversion it serves; OH2O.detailPaneMap builds the map once,
+  then on every later swap re-points it at this right's PODs via setData + reframe
+  — no rebuild, so no flash. The onMapLoad hook lays the river/canal flowlines
+  beneath the diversion points (the hydrography substrate is the story for surface
+  water); it runs once with the map, not per swap. Defensive: polls until the
+  toolkit is ready, hides the map card when the right has no located PODs.
+{% endcomment %}
+{% if pods_geojson %}{{ pods_geojson|json_script:"detail-geojson-data" }}{% endif %}
+<script>
+// Wait for the map toolkit: on a full-page load this body renders BEFORE the
+// map scripts at end of page, so poll on window.OH2O (safe access) until ready.
+// On an HTMX row-swap the toolkit is already loaded, so this runs immediately.
+(function () {
+  var FLOWLINES_URL = '{% url "geography:flowlines_geojson" %}';
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
+      source: 'pod',
+      popup: function (p) {
+        return '<strong>' + (p.name || 'Point of Diversion') + '</strong><br>' +
+               'Stream: ' + (p.stream_name || '—') + '<br>' +
+               'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—');
+      },
+      // Hydrography substrate: the rivers/canals these diversions sit on. Added
+      // once beneath the POD glow so the diversion points always read on top.
+      onMapLoad: function (map) {
+        if (map.getSource('flowlines')) return;
+        fetch(FLOWLINES_URL)
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (fc) {
+            if (!fc || !fc.features || !fc.features.length) return;
+            if (map.getSource('flowlines')) return;
+            map.addSource('flowlines', { type: 'geojson', data: fc });
+            var beforeId = map.getLayer('pod-glow') ? 'pod-glow' : undefined;
+            map.addLayer({
+              id: 'flowlines-line', type: 'line', source: 'flowlines',
+              paint: { 'line-color': ['case',
+                           ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']],
+                           OH2O.colors.canal, OH2O.colors.river],
+                       'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 16, 2.5],
+                       'line-opacity': 0.85 }
+            }, beforeId);
+          });
+      }
+    });
+  }
+  go();
+})();
+</script>
