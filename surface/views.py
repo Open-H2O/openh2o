@@ -19,6 +19,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounting.models import ReportingPeriod
+from core.workspace import detail_response, list_response
 from surface.forms import DiversionRecordForm
 from surface.models import (
     CurtailmentOrder,
@@ -36,7 +37,17 @@ from surface.models import (
 
 @login_required
 def pod_list(request):
-    """Paginated list of points of diversion with HTMX search and status filter."""
+    """Master-detail workspace for points of diversion.
+
+    Left pane: the HTMX-searchable POD list. Right pane: the selected diversion
+    point's detail, swapped in place when a row is clicked. A ``?selected=<pk>``
+    query param pre-renders that POD server-side so a reload or deep link lands
+    on the same workspace view (the row click pushes that URL).
+
+    Returns the ``_pod_list_results`` partial for an HTMX list refresh (search /
+    filter / pagination, which target ``#results``), and the full workspace page
+    otherwise.
+    """
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
 
@@ -58,27 +69,41 @@ def pod_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Pre-load the selected POD (deep link / reload) into the detail pane.
+    selected_pod = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_pod = (
+            PointOfDiversion.objects.select_related("water_right")
+            .filter(pk=selected_raw)
+            .first()
+        )
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "q": q,
         "status": status,
         "status_choices": PointOfDiversion.STATUS_CHOICES,
+        "selected_pod": selected_pod,
     }
+    if selected_pod is not None:
+        context.update(_pod_detail_context(selected_pod))
 
-    if request.headers.get("HX-Request"):
-        return render(request, "surface/partials/_pod_list_results.html", context)
-
-    return render(request, "surface/pod_list.html", context)
-
-
-@login_required
-def pod_detail(request, pk):
-    """Detail page for a single point of diversion."""
-    pod = get_object_or_404(
-        PointOfDiversion.objects.select_related("water_right"), pk=pk
+    return list_response(
+        request,
+        page_template="surface/pod_list.html",
+        results_template="surface/partials/_pod_list_results.html",
+        context=context,
     )
 
+
+def _pod_detail_context(pod):
+    """Build the per-POD detail context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
     # Diversion records for this POD
     diversion_records = (
         DiversionRecord.objects
@@ -116,21 +141,22 @@ def pod_detail(request, pk):
     # Inline form for adding diversion records
     form = DiversionRecordForm()
 
-    # GeoJSON for the mini map
-    pod_geojson = None
+    # GeoJSON for the persistent detail map. A FeatureCollection (not a bare
+    # Feature) because OH2O.detailPaneMap frames the map off geojson.features.
+    # Python object (not a json.dumps string): the template escapes it via
+    # json_script so pod.name / stream_name can't break out of <script>.
+    geojson = None
     if pod.location:
-        # Python object (not a json.dumps string): the template escapes it via
-        # json_script so pod.name / stream_name can't break out of <script>.
-        pod_geojson = {
-            "type": "Feature",
-            "geometry": json.loads(pod.location.geojson),
-            "properties": {
-                "name": pod.name,
-                "stream_name": pod.stream_name,
-            },
-        }
+        geojson = json.loads(
+            serialize(
+                "geojson",
+                [pod],
+                geometry_field="location",
+                fields=["name", "stream_name"],
+            )
+        )
 
-    context = {
+    return {
         "pod": pod,
         "diversion_records": diversion_records,
         "pod_parcels": pod_parcels,
@@ -139,9 +165,28 @@ def pod_detail(request, pk):
         "rediversions": rediversions,
         "water_right": water_right,
         "form": form,
-        "pod_geojson": pod_geojson,
+        "geojson": geojson,
     }
-    return render(request, "surface/pod_detail.html", context)
+
+
+@login_required
+def pod_detail(request, pk):
+    """A single point of diversion's detail.
+
+    On an HTMX request it returns just the ``_detail_pane`` fragment (the
+    workspace swaps this into ``#detail-body``); otherwise it returns the
+    standalone page, which deep links and no-HTMX clients still reach.
+    """
+    pod = get_object_or_404(
+        PointOfDiversion.objects.select_related("water_right"), pk=pk
+    )
+    context = _pod_detail_context(pod)
+    return detail_response(
+        request,
+        pane_template="surface/partials/_detail_pane.html",
+        page_template="surface/pod_detail.html",
+        context=context,
+    )
 
 
 @login_required

@@ -7,43 +7,28 @@
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Stream</th>
-        <th>Status</th>
-        <th class="th-right">Diversions</th>
-        <th>Water Right</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for pod in page_obj %}
-      <tr>
-        <td>
-          <a href="{% url 'surface:pod_detail' pod.pk %}" class="data-table-link">
-            {{ pod.name }}
-          </a>
-        </td>
-        <td class="text-secondary">{{ pod.stream_name|default:"—" }}</td>
-        <td>
-          {% include "surface/partials/_status_badge.html" with status=pod.status %}
-        </td>
-        <td class="td-num text-secondary">{{ pod.diversion_count }}</td>
-        <td>
-          {% if pod.water_right %}
-            <a href="{% url 'surface:detail' pod.water_right.pk %}" class="data-table-link text-mono" style="font-size: 0.8125rem;">
-              {{ pod.water_right.right_id }}
-            </a>
-          {% else %}
-            <span class="text-tertiary">None</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card-raised master-list-card">
+  {% for pod in page_obj %}
+  <div
+    data-row
+    class="master-row{% if selected_pod and pod.pk == selected_pod.pk %} is-selected{% endif %}"
+    hx-get="{% url 'surface:pod_detail' pod.pk %}"
+    hx-target="#detail-body"
+    hx-swap="innerHTML"
+    hx-push-url="{% url 'surface:pod_list' %}?selected={{ pod.pk }}"
+    role="link"
+    tabindex="0"
+    aria-label="Open diversion point {{ pod.name }}">
+    <div class="master-row-top">
+      <span class="master-row-id">{{ pod.name }}</span>
+      {% include "surface/partials/_status_badge.html" with status=pod.status %}
+    </div>
+    <div class="master-row-sub">
+      <span class="master-row-owner">{{ pod.stream_name|default:"—" }}</span>
+      <span class="master-row-acres">{{ pod.diversion_count }} record{{ pod.diversion_count|pluralize }}</span>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
 <!-- Pagination -->

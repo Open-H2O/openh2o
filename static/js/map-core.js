@@ -339,6 +339,11 @@ OH2O._addDetailLayers = function (map, src, key, isPoint, popup) {
      source MapLibre source name + layer-id prefix (e.g. 'well', 'parcel')
      key    OH2O.entities key for color/label rules (defaults to source)
      popup  optional fn(properties) -> popup HTML
+     onMapLoad optional fn(map) -> run ONCE, after the feature's own layers are
+            added on first build, for a per-screen substrate (e.g. the POD pane
+            drops the river/canal flowlines beneath the diversion point). Does
+            NOT re-run on row-to-row swaps — the substrate is built once with the
+            map, same as the basemap.
    Defensive: polls until maplibre + the toolkit are ready, no-ops when the page
    has no map host, hides the card when the feature has no geometry. */
 OH2O.detailPaneMap = function (opts) {
@@ -384,6 +389,10 @@ OH2O.detailPaneMap = function (opts) {
             OH2O.mountBasemapToggle(map, 'aerial');
             map.addSource(src, { type: 'geojson', data: geojson });
             OH2O._addDetailLayers(map, src, key, isPoint, opts.popup);
+            // Per-screen substrate (e.g. POD flowlines), added once beneath the
+            // feature's own layers. Guarded so a screen's substrate fetch can't
+            // abort the map build.
+            if (opts.onMapLoad) { try { opts.onMapLoad(map); } catch (e) { /* substrate optional */ } }
             // Honour the CURRENT selection — the user may have switched while the
             // tiles were still loading.
             var latest = document.getElementById(opts.dataEl);

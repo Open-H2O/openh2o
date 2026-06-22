@@ -3315,13 +3315,40 @@ div[id$="-map"] {
 .app-content:has(.workspace-split) {
     min-height: 0;
     overflow: hidden;
+    /* Flex column so the split fills via flex-grow (below), NOT a height:100%
+       percentage chain. A percentage height has to resolve against a definite
+       ancestor height; through a flex-grown .app-content that resolution is
+       fragile across engines — on some it silently collapses the panes to their
+       content height, so a short detail let the footer ride up with a black void
+       below it. Flex stretch fills the panes the same way in every engine. */
+    display: flex;
+    flex-direction: column;
+}
+/* The feedback button is the LAST flex child of .app-main and normally a sticky
+   box that rides the document scroll and nests into the footer (its negative
+   margin-top centers it in the footer band). On a workspace page the column is
+   pinned (100dvh, no document scroll), and that in-flow box added ~one button's
+   worth of height to the flex column, pushing the footer below the fold — the
+   black void under it. Here there's no scroll to ride, so float it out of flow
+   (position:fixed) at the bottom-right: the flex column sums to exactly 100dvh,
+   the footer sits flush, and the button looks identical. Scoped to workspace
+   pages so the sticky-into-footer behaviour everywhere else is untouched. */
+.app-main:has(.workspace-split) > .oh2o-fb-btn {
+    position: fixed;
+    right: 1.5rem;
+    bottom: var(--fb-gap);
+    margin: 0;
 }
 .workspace-split {
     display: grid;
     grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
     gap: var(--space-md);
     align-items: stretch;
-    height: 100%;
+    /* Fill the flex-column .app-content via flex-grow (definite height in every
+       engine), replacing the old height:100%. min-height:0 lets the panes inside
+       own the scrolling. */
+    flex: 1 1 auto;
+    min-height: 0;
 }
 .master-pane,
 .detail-pane {

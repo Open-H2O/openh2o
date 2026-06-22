@@ -17,6 +17,7 @@ from tests.factories import (
     ParcelFactory,
     ParcelLedgerFactory,
     ParcelZoneFactory,
+    PointOfDiversionFactory,
     ReportingPeriodFactory,
     WaterAccountFactory,
     WaterAccountParcelFactory,
@@ -449,6 +450,47 @@ class TestSurfacePages:
     def test_water_rights_list_redirects_anonymous(self, client):
         response = client.get(reverse("surface:water_rights_list"))
         assert response.status_code == 302
+
+    # Surface Diversions master-detail workspace (v2.0 conversion).
+    def test_pod_list(self, auth_client):
+        response = auth_client.get(reverse("surface:pod_list"))
+        assert response.status_code == 200
+
+    def test_pod_list_redirects_anonymous(self, client):
+        response = client.get(reverse("surface:pod_list"))
+        assert response.status_code == 302
+
+    def test_pod_detail(self, auth_client):
+        pod = PointOfDiversionFactory()
+        response = auth_client.get(reverse("surface:pod_detail", kwargs={"pk": pod.pk}))
+        assert response.status_code == 200
+
+    def test_pod_list_selected_preloads_detail_pane(self, auth_client):
+        """?selected=<pk> renders the chosen POD's detail server-side so a reload
+        or deep link lands on the same workspace view (no extra round-trip)."""
+        pod = PointOfDiversionFactory(name="Deep Link Weir")
+        response = auth_client.get(
+            reverse("surface:pod_list"), {"selected": pod.pk}
+        )
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "Deep Link Weir" in body
+        # The persistent map's geometry rides along in the pre-loaded pane.
+        assert "detail-geojson-data" in body
+
+    def test_pod_detail_hx_request_returns_pane_fragment(self, auth_client):
+        """An HTMX row click gets just the detail-pane fragment (swapped into
+        #detail-body), not the full standalone page wrapped in base.html."""
+        pod = PointOfDiversionFactory(name="Fragment Headgate")
+        response = auth_client.get(
+            reverse("surface:pod_detail", kwargs={"pk": pod.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "Fragment Headgate" in body
+        # Fragment, not full document: no <html> shell from base.html.
+        assert "<html" not in body.lower()
 
 
 # ---------------------------------------------------------------------------
