@@ -107,6 +107,7 @@
       <div class="card-raised">
         <h2 class="section-header mb-md">Recent Sync Logs</h2>
         {% if recent_logs %}
+        <div class="table-scroll">
         <table class="data-table text-sm">
           <thead>
             <tr>
@@ -139,6 +140,7 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
         {% else %}
           <p class="text-tertiary text-base">No sync logs yet.</p>
         {% endif %}
@@ -212,6 +214,7 @@
           {% endif %}
         </div>
         {% if recent_records %}
+        <div class="table-scroll">
         <table class="data-table text-sm">
           <thead>
             <tr>
@@ -243,6 +246,7 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
         {% else %}
           <p class="text-tertiary text-base">No data records yet.</p>
         {% endif %}
