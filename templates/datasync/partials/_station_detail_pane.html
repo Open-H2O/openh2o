@@ -25,9 +25,43 @@
 
 <div class="pane-stack">
 
-  <!-- Row 1: identity (left) + current readings (right). minmax(0,1fr) so the
-       columns share the width evenly; the tables further down scroll inside
-       their own .table-scroll cards rather than forcing a column wide. -->
+  <!-- Telemetry chart, full width, directly under the map — the trend over time
+       is the thing people open a station to see, so it leads. -->
+  <div class="card-raised">
+    <div class="row-between mb-md" style="flex-wrap: wrap; gap: var(--space-sm);">
+      <h2 id="chart-title" class="section-header-flush">Telemetry</h2>
+      <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap; align-items: center;">
+        {% if enriched_parameters %}
+        <select id="chart-param" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;">
+          {% for p in enriched_parameters %}
+          <option value="{{ p.code }}">{{ p.label }}</option>
+          {% endfor %}
+        </select>
+        <select id="chart-param2" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;" title="Overlay a second parameter on the right-hand axis">
+          <option value="">Compare…</option>
+          {% for p in enriched_parameters %}
+          <option value="{{ p.code }}">{{ p.label }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+        <div style="display: flex; gap: 2px;">
+          <button class="chart-range-btn" data-days="7" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 4px 0 0 4px; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">7d</button>
+          <button class="chart-range-btn" data-days="30" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">30d</button>
+          <button class="chart-range-btn" data-days="90" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">90d</button>
+          <button class="chart-range-btn" data-days="365" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">1y</button>
+          <button class="chart-range-btn active-range" data-days="0" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 0 4px 4px 0; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">All</button>
+        </div>
+      </div>
+    </div>
+    <div style="position: relative; height: 300px;">
+      <canvas id="telemetry-chart"></canvas>
+    </div>
+    <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">No published data for this period.</p>
+  </div>
+
+  <!-- Identity (left) + current readings (right). minmax(0,1fr) so the columns
+       share the width evenly; the tables further down scroll inside their own
+       .table-scroll cards rather than forcing a column wide. -->
   <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
 
     <!-- Station Info card -->
@@ -129,41 +163,7 @@
 
   </div>
 
-  <!-- Row 2: telemetry chart, full width — the reason this screen is its own
-       page rather than a cramped half-pane. -->
-  <div class="card-raised">
-    <div class="row-between mb-md" style="flex-wrap: wrap; gap: var(--space-sm);">
-      <h2 id="chart-title" class="section-header-flush">Telemetry</h2>
-      <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap; align-items: center;">
-        {% if enriched_parameters %}
-        <select id="chart-param" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;">
-          {% for p in enriched_parameters %}
-          <option value="{{ p.code }}">{{ p.label }}</option>
-          {% endfor %}
-        </select>
-        <select id="chart-param2" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;" title="Overlay a second parameter on the right-hand axis">
-          <option value="">Compare…</option>
-          {% for p in enriched_parameters %}
-          <option value="{{ p.code }}">{{ p.label }}</option>
-          {% endfor %}
-        </select>
-        {% endif %}
-        <div style="display: flex; gap: 2px;">
-          <button class="chart-range-btn" data-days="7" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 4px 0 0 4px; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">7d</button>
-          <button class="chart-range-btn" data-days="30" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">30d</button>
-          <button class="chart-range-btn" data-days="90" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">90d</button>
-          <button class="chart-range-btn" data-days="365" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">1y</button>
-          <button class="chart-range-btn active-range" data-days="0" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 0 4px 4px 0; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">All</button>
-        </div>
-      </div>
-    </div>
-    <div style="position: relative; height: 300px;">
-      <canvas id="telemetry-chart"></canvas>
-    </div>
-    <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">No published data for this period.</p>
-  </div>
-
-  <!-- Row 3: sync logs (left) + recent records (right). -->
+  <!-- Sync logs (left) + recent records (right). -->
   <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
 
     <!-- Recent Sync Logs card -->
