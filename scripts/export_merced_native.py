@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from decimal import Decimal, ROUND_HALF_EVEN
 
@@ -249,6 +250,30 @@ def footprint(geometry):
         "centroidLat": lat,
         "centroidLon": lon,
         "bbox": bbox,
+    }
+
+
+def acre_box_footprint(lon, lat, acres):
+    """An area-accurate square Polygon footprint for a facility whose seed geometry is only a
+    centroid + an acreage (the recharge basins are placed this way). The box is sized so the
+    native map reads a 110-acre basin as visibly larger than an 85-acre one, instead of an
+    identical pin. The exact (lon, lat) is kept as the centroid so the basin marker sits true;
+    bbox is the box itself. (Mirrors the river-MAR parcel pool's centroid→box synthesis.)
+    """
+    side_m = math.sqrt(float(acres) * 4046.8564224)          # 1 acre = 4046.8564224 m^2
+    half = side_m / 2.0
+    dlat = half / 111_320.0                                   # metres per degree latitude
+    dlon = half / (111_320.0 * math.cos(math.radians(lat)))   # …shrinks with latitude
+    ring = [
+        [lon - dlon, lat - dlat], [lon + dlon, lat - dlat],
+        [lon + dlon, lat + dlat], [lon - dlon, lat + dlat],
+        [lon - dlon, lat - dlat],                            # close the ring
+    ]
+    return {
+        "geoJSON": json.dumps(
+            {"type": "Polygon", "coordinates": [ring]}, separators=(",", ":")),
+        "centroidLat": lat, "centroidLon": lon,
+        "bbox": [lon - dlon, lat - dlat, lon + dlon, lat + dlat],
     }
 
 
@@ -705,11 +730,9 @@ def build_recharge():
             "operator": RECHARGE_OPERATOR,
             "notes": (f"{acres:.0f}-acre spreading basin on open cropland beside an "
                       f"MID canal; flooded in storm events and pooled to percolate."),
-            "footprint": {
-                "geoJSON": json.dumps(
-                    {"type": "Point", "coordinates": [lon, lat]}, separators=(",", ":")),
-                "centroidLat": lat, "centroidLon": lon, "bbox": None,
-            },
+            # An area-accurate box footprint (acres → square Polygon), so the native map draws the
+            # basin's real extent instead of a pin. The seed places these by centroid + acreage.
+            "footprint": acre_box_footprint(lon, lat, acres),
         })
         # Basin ← POD link (the diversion that fills it).
         links.append({"siteCode": code, "podCode": fed_by_pod})
