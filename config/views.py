@@ -12,7 +12,7 @@ from datasync import freshness
 from datasync.models import DataSyncLog, MonitoredStation
 from parcels.models import Parcel
 from recharge.models import RechargeSite
-from surface.models import WaterRight
+from surface.models import PointOfDiversion
 from wells.models import Well
 from accounting.models import WaterAccount
 from core.models import SiteConfig
@@ -39,7 +39,7 @@ def index(request):
     context = {
         "parcel_count": Parcel.objects.count(),
         "well_count": Well.objects.count(),
-        "water_right_count": WaterRight.objects.count(),
+        "diversion_count": PointOfDiversion.objects.count(),
         "recharge_site_count": RechargeSite.objects.count(),
         "water_account_count": WaterAccount.objects.count(),
         "station_count": MonitoredStation.objects.count(),

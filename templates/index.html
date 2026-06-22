@@ -19,9 +19,9 @@
         <div class="dashboard-card-value text-gold">{{ well_count }}</div>
         <div class="dashboard-card-sublabel">View all wells</div>
     </a>
-    <a href="{% url 'surface:water_rights_list' %}" class="dashboard-card">
+    <a href="{% url 'surface:pod_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Surface Diversions</div>
-        <div class="dashboard-card-value text-gold">{{ water_right_count }}</div>
+        <div class="dashboard-card-value text-gold">{{ diversion_count }}</div>
         <div class="dashboard-card-sublabel">View surface diversions</div>
     </a>
     <a href="{% url 'recharge:list' %}" class="dashboard-card">
