@@ -3311,6 +3311,17 @@ div[id$="-map"] {
 .app-main:has(.workspace-split) {
     height: 100dvh;
     overflow: hidden;
+    /* Grid (not the inherited flex column) so the content row is minmax(0,1fr):
+       it takes EXACTLY the leftover height and the footer stays flush at the
+       bottom. A flex column mis-resolved its free space against the zoomed
+       .app-content (zoom:1.0625) — the content rendered a few px taller than its
+       flex share, that surplus grew with viewport height, and it pushed the
+       footer below the fold (a widening black void under it). Grid's strict track
+       sizing removes the surplus while keeping the zoom (so the map counter-zoom
+       still holds). Rows: header / breadcrumb / content / footer. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 .app-content:has(.workspace-split) {
     min-height: 0;
@@ -3466,6 +3477,10 @@ div[id$="-map"] {
    (no fixed-height panes when they're stacked). */
 @media (max-width: 900px) {
     .app-main:has(.workspace-split) {
+        /* Back to the flex column from the base .app-main rule: stacked panes
+           flow at natural height and scrolling returns to the page (the desktop
+           grid pin would otherwise keep constraining the single column). */
+        display: flex;
         height: auto;
         overflow: visible;
     }
