@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "workspace.html" %}
 
 {% block title %}Recharge Areas - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Recharge Areas{% endblock %}
@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Recharge Areas</span>
   </nav>
-  <p class="page-description">Managed aquifer recharge areas where water is applied to replenish groundwater. Track recharge events and volumes.</p>
+  <p class="page-description">Managed aquifer recharge areas where water is applied to replenish groundwater. Pick one to open its basin on the map, alongside its recharge event history and recent measurements.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
     <a href="{% url 'infrastructure:import' %}?type=recharge_site" class="btn-secondary btn-sm">Import</a>
     <a href="{% url 'infrastructure:add' %}?type=recharge_site" class="btn-primary btn-sm">+ Add Recharge Site</a>
@@ -18,50 +18,47 @@
 </div>
 {% endblock %}
 
-{% block content %}
-<div class="page-stack">
-
-  <!-- Toolbar -->
-  <div class="card-raised toolbar-row">
-    <!-- Search -->
-    <div style="flex: 1; min-width: 200px;">
-      <label class="form-label" for="filter-search">Search</label>
-      <input
-        type="text"
-        id="filter-search" name="q"
-        value="{{ q }}"
-        placeholder="Site name..."
-        hx-get="{% url 'recharge:list' %}"
-        hx-target="#results"
-        hx-trigger="keyup changed delay:300ms"
-        hx-include="[name='site_type']"
-        class="form-input search-input-icon"
-      >
-    </div>
-
-    <!-- Site type filter -->
-    <div>
-      <label class="form-label" for="filter-site-type">Type</label>
-      <select
-        id="filter-site-type" name="site_type"
-        hx-get="{% url 'recharge:list' %}"
-        hx-target="#results"
-        hx-trigger="change"
-        hx-include="[name='q']"
-        class="form-select"
-      >
-        <option value="" {% if not site_type %}selected{% endif %}>All Types</option>
-        {% for val, label in site_type_choices %}
-          <option value="{{ val }}" {% if site_type == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
+{% block master_toolbar %}
+  <div>
+    <label class="form-label" for="filter-search">Search</label>
+    <input
+      type="text"
+      id="filter-search" name="q"
+      value="{{ q }}"
+      placeholder="Site name..."
+      hx-get="{% url 'recharge:list' %}"
+      hx-target="#results"
+      hx-trigger="keyup changed delay:300ms"
+      hx-include="[name='site_type']"
+      class="form-input search-input-icon"
+    >
   </div>
-
-  <!-- Results -->
-  <div id="results">
-    {% include "recharge/partials/_list_results.html" %}
+  <div>
+    <label class="form-label" for="filter-site-type">Type</label>
+    <select
+      id="filter-site-type" name="site_type"
+      hx-get="{% url 'recharge:list' %}"
+      hx-target="#results"
+      hx-trigger="change"
+      hx-include="[name='q']"
+      class="form-select"
+    >
+      <option value="" {% if not site_type %}selected{% endif %}>All Types</option>
+      {% for val, label in site_type_choices %}
+        <option value="{{ val }}" {% if site_type == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
   </div>
+{% endblock %}
 
-</div>
+{% block master_results %}
+  {% include "recharge/partials/_list_results.html" %}
+{% endblock %}
+
+{% block detail_body %}
+  {% if selected_site %}
+    {% include "recharge/partials/_detail_pane.html" %}
+  {% else %}
+    {% include "recharge/partials/_recharge_empty.html" %}
+  {% endif %}
 {% endblock %}

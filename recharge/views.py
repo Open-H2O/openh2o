@@ -17,13 +17,25 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
+from core.workspace import detail_response, list_response
 from recharge.forms import RechargeEventForm
 from recharge.models import RechargeMeasurement, RechargeEvent, RechargeSite
 
 
 @login_required
 def recharge_sites_list(request):
-    """List view for recharge sites with HTMX search and type filter."""
+    """Master-detail workspace for recharge areas.
+
+    Left pane: the HTMX-searchable site list. Right pane: the selected site's
+    detail — its geometry mapped (polygon basin or point), plus event history and
+    recent measurements — swapped in place when a row is clicked. A
+    ``?selected=<pk>`` query param pre-renders that site server-side so a reload
+    or deep link lands on the same workspace view (the row click pushes that URL).
+
+    Returns the ``_list_results`` partial for an HTMX list refresh (search /
+    filter / pagination, which target ``#results``), and the full workspace page
+    otherwise.
+    """
     q = request.GET.get("q", "").strip()
     site_type = request.GET.get("site_type", "").strip()
 
@@ -38,6 +50,12 @@ def recharge_sites_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Pre-load the selected site (deep link / reload) into the detail pane.
+    selected_site = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_site = RechargeSite.objects.filter(pk=selected_raw).first()
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
@@ -45,19 +63,25 @@ def recharge_sites_list(request):
         "site_type": site_type,
         "site_type_choices": RechargeSite.SITE_TYPE_CHOICES,
         "status_choices": RechargeSite.STATUS_CHOICES,
+        "selected_site": selected_site,
     }
+    if selected_site is not None:
+        context.update(_recharge_site_detail_context(selected_site))
 
-    if request.headers.get("HX-Request"):
-        return render(request, "recharge/partials/_list_results.html", context)
+    return list_response(
+        request,
+        page_template="recharge/list.html",
+        results_template="recharge/partials/_list_results.html",
+        context=context,
+    )
 
-    return render(request, "recharge/list.html", context)
 
+def _recharge_site_detail_context(site):
+    """Build the per-site detail context.
 
-@login_required
-def recharge_site_detail(request, pk):
-    """Detail view for a single recharge site."""
-    site = get_object_or_404(RechargeSite, pk=pk)
-
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
     events = RechargeEvent.objects.filter(recharge_site=site).select_related(
         "water_type"
     ).order_by("-start_date")
@@ -75,6 +99,11 @@ def recharge_site_detail(request, pk):
         recharge_site=site
     ).order_by("-measurement_date")[:10]
 
+    # GeoJSON for the persistent detail map. Prefer the polygon basin geometry;
+    # fall back to a point location. OH2O.detailPaneMap auto-detects polygon
+    # (fill + outline) vs point (glow + marker) from the geometry type, so the
+    # same call serves both. Python object (or None): the template escapes it via
+    # json_script so the site name / type can't break out of <script>.
     geojson = None
     geo_field = "geometry" if site.geometry else "location"
     if geo_field == "location" and not site.location:
@@ -89,16 +118,32 @@ def recharge_site_detail(request, pk):
             )
         )
 
-    context = {
+    return {
         "site": site,
         "events": events,
         "pod_links": pod_links,
         "recent_measurements": recent_measurements,
         "event_form": RechargeEventForm(),
-        # Python object (or None); template escapes it via json_script.
         "geojson": geojson,
     }
-    return render(request, "recharge/site_detail.html", context)
+
+
+@login_required
+def recharge_site_detail(request, pk):
+    """A single recharge site's detail.
+
+    On an HTMX request it returns just the ``_detail_pane`` fragment (the
+    workspace swaps this into ``#detail-body``); otherwise it returns the
+    standalone page, which deep links and no-HTMX clients still reach.
+    """
+    site = get_object_or_404(RechargeSite, pk=pk)
+    context = _recharge_site_detail_context(site)
+    return detail_response(
+        request,
+        pane_template="recharge/partials/_detail_pane.html",
+        page_template="recharge/site_detail.html",
+        context=context,
+    )
 
 
 @login_required
