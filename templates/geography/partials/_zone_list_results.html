@@ -2,35 +2,38 @@
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
-    zone{{ total_count|pluralize }} found
+    zone{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
   </span>
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised master-list-card">
-  {% for zone in page_obj %}
-  <div
-    data-row
-    class="master-row{% if selected_zone and zone.pk == selected_zone.pk %} is-selected{% endif %}"
-    hx-get="{% url 'geography:zone_detail' zone.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    hx-push-url="{% url 'geography:zone_list' %}?selected={{ zone.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open zone {{ zone.name }}">
-    <div class="master-row-top">
-      <span class="master-row-id">{{ zone.name }}</span>
-    </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">{{ zone.get_zone_type_display|default:"—" }}</span>
-      <span class="master-row-acres">{{ zone.parcel_count }} use area{{ zone.parcel_count|pluralize }}</span>
-    </div>
-  </div>
-  {% endfor %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Zone</th>
+        <th>Type</th>
+        <th>Use Areas</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for zone in page_obj %}
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='{% url 'geography:zone_detail' zone.pk %}';}">
+        <td>
+          <a href="{% url 'geography:zone_detail' zone.pk %}" class="data-table-link">
+            {{ zone.name }}
+          </a>
+        </td>
+        <td class="text-secondary text-sm">{{ zone.get_zone_type_display|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ zone.parcel_count }} use area{{ zone.parcel_count|pluralize }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<!-- Pagination -->
+<!-- Pagination (graceful fallback only — the page size shows every zone) -->
 {% if page_obj.has_other_pages %}
 <div class="pagination-row">
   {% if page_obj.has_previous %}

@@ -94,18 +94,19 @@ def map_view(request):
 
 @login_required
 def zone_list(request):
-    """Master-detail workspace for management zones.
+    """Zones OVERVIEW: a boundary map of every zone + a searchable list.
 
-    Left pane: the HTMX-searchable zone list. Right pane: the selected zone's
-    detail — its boundary mapped, plus assigned use areas, the allocation-vs-use
-    table, and the per-district year-end-water control — swapped in place when a
-    row is clicked. A ``?selected=<pk>`` query param pre-renders that zone
-    server-side so a reload or deep link lands on the same workspace view (the
-    row click pushes that URL).
+    Zones are a Bucket-3 screen (few items, each heavy): an instance has a
+    handful of bounded management areas, and each zone's detail is rich (its
+    boundary mapped, assigned use areas, the allocation-vs-use table, and the
+    per-district year-end-water control). So this screen is a finder, not a
+    master-detail half-pane: the map up top shows all zone boundaries at once,
+    the full-width list below is for finding one fast, and clicking a row (or a
+    zone on the map) opens that zone's own full-width detail page. See
+    ``docs/2.0-UX-PATTERN-SPEC.md`` for why this is Bucket 3, not master-detail.
 
     Returns the ``_zone_list_results`` partial for an HTMX list refresh (search /
-    filter / pagination, which target ``#results``), and the full workspace page
-    otherwise.
+    filter / pagination, which target ``#results``), and the full page otherwise.
     """
     q = request.GET.get("q", "").strip()
     zone_type = request.GET.get("zone_type", "").strip()
@@ -121,15 +122,12 @@ def zone_list(request):
     if zone_type:
         queryset = queryset.filter(zone_type=zone_type)
 
-    paginator = Paginator(queryset, 25)
+    # Zones are bounded and few, so show them all on one page — finding one is a
+    # glance plus a type-to-filter, not a paging exercise. Pagination stays as a
+    # graceful fallback for an unusually large district.
+    paginator = Paginator(queryset, 100)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
-
-    # Pre-load the selected zone (deep link / reload) into the detail pane.
-    selected_zone = None
-    selected_raw = request.GET.get("selected", "").strip()
-    if selected_raw:
-        selected_zone = Zone.objects.filter(pk=selected_raw).first()
 
     context = {
         "page_obj": page_obj,
@@ -137,10 +135,7 @@ def zone_list(request):
         "q": q,
         "zone_type": zone_type,
         "zone_type_choices": Zone.ZONE_TYPE_CHOICES,
-        "selected_zone": selected_zone,
     }
-    if selected_zone is not None:
-        context.update(_zone_detail_context(selected_zone))
 
     return list_response(
         request,
@@ -660,6 +655,43 @@ def zones_geojson(request):
             "geojson", qs, geometry_field="geometry",
             fields=["name", "zone_type"],
         ),
+    )
+
+
+@login_required
+def zone_overview_geojson(request):
+    """Zone boundaries for the Zones overview map, with ``pk`` in properties.
+
+    The shared ``zones_geojson`` above is built by Django's serializer, which
+    puts the primary key at the GeoJSON feature's top level, not in
+    ``properties`` — so a MapLibre click handler can't read it to build the
+    detail URL. This endpoint hand-builds the FeatureCollection (the same way
+    ``datasync.stations_geojson`` does) so the overview map can navigate to a
+    zone's full detail page on click. Counts are cheap (a district has a handful
+    of zones), so this is not on a hot path.
+    """
+    zones = (
+        Zone.objects
+        .filter(geometry__isnull=False)
+        .annotate(parcel_count=Count("parcel_zones"))
+    )
+    features = [
+        {
+            "type": "Feature",
+            "geometry": json.loads(zone.geometry.geojson),
+            "properties": {
+                "pk": zone.pk,
+                "name": zone.name,
+                "zone_type": zone.zone_type,
+                "zone_type_label": zone.get_zone_type_display(),
+                "parcel_count": zone.parcel_count,
+            },
+        }
+        for zone in zones
+    ]
+    return HttpResponse(
+        json.dumps({"type": "FeatureCollection", "features": features}),
+        content_type="application/json",
     )
 
 

@@ -1,0 +1,117 @@
+{% comment %}
+Zones overview map: every zone boundary at once, on the Zones overview page.
+
+The Bucket-3 overview map (see docs/2.0-UX-PATTERN-SPEC.md) — the zone analogue
+of datasync's _freshness_map. It draws each zone's polygon (fill + outline) from
+geography:zone_overview_geojson and, on click, opens a popup with the zone name
+and a link to that zone's full detail page. Modeled on _freshness_map.html so the
+two overview maps stay consistent.
+
+The parent page must provide a <div> with the matching map_id, and must load
+MapLibre GL JS + map-core.js (the map_scripts block) before this include.
+
+Variables:
+  map_id  - ID of the existing <div> container on the page (required)
+{% endcomment %}
+<script>
+(function() {
+  // MapLibre loads in the map_scripts block, which renders AFTER page content,
+  // so on first render this runs before the library exists. Defer until
+  // DOMContentLoaded (library loaded by then); on an HTMX content swap the
+  // document is already loaded, so run immediately.
+  function init() {
+    if (!window.maplibregl) return;
+    var el = document.getElementById('{{ map_id }}');
+    if (!el || el._mapInit) return;
+    el._mapInit = true;
+
+    var FILL = '#40916c';     // matches the GSA-zone fill on the big district map
+    var OUTLINE = '#74c69d';
+
+    var map = new maplibregl.Map({
+      container: '{{ map_id }}',
+      style: OH2O.basemapStyle('aerial'),
+      zoom: 7,
+      center: [-119.5, 37.3],
+      attributionControl: false
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    OH2O.mountBasemapToggle(map, 'aerial');
+
+    // Walk a GeoJSON geometry's nested coordinate arrays, expanding the running
+    // bbox. Handles Polygon and MultiPolygon (any nesting depth) by recursing
+    // until it reaches a [lng, lat] position.
+    function extend(bbox, node) {
+      if (typeof node[0] === 'number') {
+        if (node[0] < bbox[0]) bbox[0] = node[0];
+        if (node[1] < bbox[1]) bbox[1] = node[1];
+        if (node[0] > bbox[2]) bbox[2] = node[0];
+        if (node[1] > bbox[3]) bbox[3] = node[1];
+        return;
+      }
+      for (var i = 0; i < node.length; i++) extend(bbox, node[i]);
+    }
+
+    map.on('load', function() {
+      fetch('{% url "geography:zone_overview_geojson" %}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.features || !data.features.length) return;
+
+          var bbox = [Infinity, Infinity, -Infinity, -Infinity];
+          data.features.forEach(function(f) {
+            if (f.geometry && f.geometry.coordinates) extend(bbox, f.geometry.coordinates);
+          });
+          if (isFinite(bbox[0])) {
+            map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, maxZoom: 13 });
+          }
+
+          map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+
+          map.addLayer({
+            id: '{{ map_id }}-fill',
+            type: 'fill',
+            source: '{{ map_id }}-source',
+            paint: { 'fill-color': FILL, 'fill-opacity': 0.18 }
+          });
+
+          map.addLayer({
+            id: '{{ map_id }}-outline',
+            type: 'line',
+            source: '{{ map_id }}-source',
+            paint: { 'line-color': OUTLINE, 'line-width': 1.5, 'line-opacity': 0.9 }
+          });
+
+          map.on('click', '{{ map_id }}-fill', function(e) {
+            var p = e.features[0].properties;
+            var sub = (p.zone_type_label ? p.zone_type_label : '') +
+              (p.parcel_count != null
+                ? (p.zone_type_label ? ' &middot; ' : '') + p.parcel_count + ' use area' + (p.parcel_count == 1 ? '' : 's')
+                : '');
+            new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
+              .setLngLat(e.lngLat)
+              .setHTML(
+                '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+                '<div style="font-weight:600;font-size:13px;">' + p.name + '</div>' +
+                (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
+                '<a href="/geography/zones/' + p.pk + '/" ' +
+                  'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View zone &rarr;</a>' +
+                '</div>'
+              )
+              .addTo(map);
+          });
+
+          map.on('mouseenter', '{{ map_id }}-fill', function() { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', '{{ map_id }}-fill', function() { map.getCanvas().style.cursor = ''; });
+        })
+        .catch(function(err) { console.error('Zones GeoJSON failed:', err); });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
