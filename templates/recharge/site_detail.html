@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% comment %}
+  Standalone page for a single recharge site. The body is the shared
+  _detail_pane partial (the same fragment the workspace swaps into #detail-body),
+  so the page and the in-pane view never drift. This page is the deep-link /
+  direct-URL target; day-to-day use happens in the master-detail workspace at
+  recharge:list.
+{% endcomment %}
+
 {% block title %}{{ site.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ site.name }}{% endblock %}
 
@@ -24,208 +32,22 @@
 
 {% block content %}
 <div class="page-stack">
-
-  <!-- Back link -->
   <div>
-    <a href="{% url 'recharge:list' %}" class="back-link">
-      &larr; Back to Recharge Areas
-    </a>
+    <a href="{% url 'recharge:list' %}" class="back-link">&larr; Back to Recharge Areas</a>
   </div>
-
-  <!-- HERO (Phase 75): map leads full-width; site info + history below. -->
-  <div class="card-raised" style="padding: 0; overflow: hidden;">
-    <div id="site-map" class="map-embed" style="height: 380px;"></div>
+  <!-- Persistent map host (the shared body partial builds the map into this). -->
+  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
-
-  <div class="page-grid-2col">
-
-    <!-- Left column: Site Info + Event History -->
-    <div class="page-stack">
-
-      <!-- Site Info card -->
-      <div class="card-raised">
-        <h2 class="section-header">
-          Site Information
-        </h2>
-
-        <div class="field-group">
-          <div class="field-label">Name</div>
-          <div class="field-value">{{ site.name }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Site Type</div>
-          <div class="field-value">{{ site.get_site_type_display }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Capacity (AF)</div>
-          <div class="field-value">
-            {% if site.capacity_acre_feet %}{{ site.capacity_acre_feet|floatformat:2 }}{% else %}—{% endif %}
-          </div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Status</div>
-          <div style="margin-top: 2px;">{% include "recharge/partials/_status_badge.html" with status=site.status %}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Operator</div>
-          <div class="field-value">{{ site.operator|default:"—" }}</div>
-        </div>
-
-        {% if pod_links %}
-        <div class="field-group">
-          <div class="field-label">Filled by</div>
-          <div class="field-value">
-            {% for link in pod_links %}
-            <div{% if not forloop.first %} style="margin-top: var(--space-xs);"{% endif %}>
-              <a href="{% url 'surface:pod_detail' link.point_of_diversion.pk %}" class="data-table-link">{{ link.point_of_diversion.name }}</a>
-              <span class="text-secondary">on {{ link.point_of_diversion.source_flowline.name|default:link.point_of_diversion.stream_name|default:"—" }}</span>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        {% if site.notes %}
-        <div class="field-group">
-          <div class="field-label">Notes</div>
-          <div class="text-secondary text-base">{{ site.notes }}</div>
-        </div>
-        {% endif %}
-
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ site.created_at|date:"M d, Y" }} &middot; Updated {{ site.updated_at|date:"M d, Y" }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Recharge Event History card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Event History</h2>
-        <div id="event-history">
-          {% include "recharge/partials/_event_history.html" %}
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Right column: Measurements -->
-    <div class="page-stack">
-
-      <!-- Recent Measurements card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Recent Measurements</h2>
-        {% if recent_measurements %}
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th class="th-right">Value</th>
-              <th>Unit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for m in recent_measurements %}
-            <tr>
-              <td class="text-secondary">{{ m.measurement_date|date:"M d, Y H:i" }}</td>
-              <td class="text-secondary">{{ m.get_measurement_type_display }}</td>
-              <td class="td-num">{{ m.value|floatformat:2 }}</td>
-              <td class="text-tertiary">{{ m.unit }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-          <p class="text-tertiary text-base">No measurements recorded.</p>
-        {% endif %}
-      </div>
-
-    </div>
+  <div id="detail-body">
+    {% include "recharge/partials/_detail_pane.html" %}
   </div>
 </div>
 {% endblock %}
 
 {% block map_scripts %}
+<!-- Always load the toolkit so the guarded init inside the pane resolves even for
+     a site with no geometry (it just hides the map card). -->
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="{% static 'js/map-core.js' %}"></script>
-{% if geojson %}{{ geojson|json_script:"site-geojson-data" }}{% endif %}
-<script>
-(function() {
-  var _gjEl = document.getElementById('site-geojson-data');
-  var geojson = _gjEl ? JSON.parse(_gjEl.textContent) : null;
-
-  function geoCenter(gj) {
-    if (!gj || !gj.features || !gj.features[0]) return [-119.3, 36.3];
-    var c = gj.features[0].geometry.coordinates;
-    var t = gj.features[0].geometry.type;
-    if (t === 'Point') return [c[0], c[1]];
-    if (t === 'Polygon') return [c[0][0][0], c[0][0][1]];
-    if (t === 'MultiPolygon') return [c[0][0][0][0], c[0][0][0][1]];
-    return [-119.3, 36.3];
-  }
-  var center = geoCenter(geojson);
-
-  var map = new maplibregl.Map({
-    container: 'site-map',
-    style: OH2O.basemapStyle('aerial'),
-    center: center,
-    zoom: 14
-  });
-
-  map.on('load', function() {
-    map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
-    OH2O.mountBasemapToggle(map, 'aerial');
-    if (geojson) {
-      map.addSource('site', { type: 'geojson', data: geojson });
-      var geomType = geojson.features[0].geometry.type;
-      if (geomType === 'Point') {
-        map.addLayer({ id: 'site-glow', type: 'circle', source: 'site', paint: OH2O.glowPaint('recharge') });
-        map.addLayer({
-          id: 'site-point', type: 'circle', source: 'site',
-          paint: OH2O.pointPaint('recharge', { 'circle-stroke-width': 2 })
-        });
-      } else {
-        map.addLayer({
-          id: 'site-fill', type: 'fill', source: 'site',
-          paint: { 'fill-color': OH2O.colors.purple, 'fill-opacity': 0.25 }
-        });
-        map.addLayer({
-          id: 'site-outline', type: 'line', source: 'site',
-          paint: { 'line-color': OH2O.colors.purple, 'line-width': 2 }
-        });
-      }
-      var siteLayer = geomType === 'Point' ? 'site-point' : 'site-fill';
-      OH2O.addDetailLabel(map, 'site', 'recharge', {
-        id: 'site-label',
-        anchor: geomType === 'Point' ? 'top' : 'center',
-        offset: geomType === 'Point' ? [0, 1.1] : [0, 0]
-      });
-      OH2O.attachPopup(map, siteLayer, function (p) {
-        return '<strong>' + (p.name || 'Recharge Site') + '</strong><br>' +
-               'Type: ' + (p.site_type || '—') + '<br>' +
-               'Status: ' + (p.status || '—');
-      });
-      var bounds = new maplibregl.LngLatBounds();
-      var flat = JSON.stringify(geojson.features[0].geometry.coordinates);
-      var pairs = flat.match(/-?\d+\.\d+/g);
-      if (pairs) {
-        for (var i = 0; i < pairs.length - 1; i += 2) {
-          bounds.extend([parseFloat(pairs[i]), parseFloat(pairs[i+1])]);
-        }
-        map.fitBounds(bounds, { padding: 60, maxZoom: 16 });
-      }
-    } else {
-      var el = document.createElement('div');
-      el.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#4d5e6f;font-size:0.875rem;pointer-events:none;';
-      el.textContent = 'No location recorded';
-      document.getElementById('site-map').appendChild(el);
-    }
-  });
-})();
-</script>
 {% endblock %}

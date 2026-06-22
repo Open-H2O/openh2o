@@ -1,0 +1,160 @@
+{% comment %}
+  Per-site detail BODY, swapped into #detail-body on row click (and reused by the
+  standalone site_detail.html page). The map itself is NOT here — it lives as a
+  persistent element (#detail-map) in the pane shell so it is built ONCE and
+  merely re-pointed at the new site's geometry on each switch (no teardown, so no
+  startup flash). A recharge site is usually a POLYGON basin, occasionally a
+  point; OH2O.detailPaneMap auto-detects which from the GeoJSON and draws fill +
+  outline for polygons or glow + marker for points — the same call serves both.
+{% endcomment %}
+{% load static %}
+
+<!-- Pane header: which recharge site you're looking at. -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">{{ site.name }}</div>
+    <div class="pane-header-sub">{{ site.get_site_type_display }}</div>
+  </div>
+  <div class="pane-header-meta">
+    {% include "recharge/partials/_status_badge.html" with status=site.status %}
+    <a href="{% url 'recharge:detail' site.pk %}" class="text-tertiary text-xs back-link" title="Open this recharge site on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+<div class="pane-stack">
+  <div class="page-grid-2col">
+
+    <!-- Left column: Site Info + Event History -->
+    <div class="page-stack">
+
+      <!-- Site Info card -->
+      <div class="card-raised">
+        <h2 class="section-header">Site Information</h2>
+
+        <div class="field-group">
+          <div class="field-label">Name</div>
+          <div class="field-value">{{ site.name }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Site Type</div>
+          <div class="field-value">{{ site.get_site_type_display }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Capacity (AF)</div>
+          <div class="field-value">
+            {% if site.capacity_acre_feet %}{{ site.capacity_acre_feet|floatformat:2 }}{% else %}—{% endif %}
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Status</div>
+          <div style="margin-top: 2px;">{% include "recharge/partials/_status_badge.html" with status=site.status %}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Operator</div>
+          <div class="field-value">{{ site.operator|default:"—" }}</div>
+        </div>
+
+        {% if pod_links %}
+        <div class="field-group">
+          <div class="field-label">Filled by</div>
+          <div class="field-value">
+            {% for link in pod_links %}
+            <div{% if not forloop.first %} style="margin-top: var(--space-xs);"{% endif %}>
+              <a href="{% url 'surface:pod_detail' link.point_of_diversion.pk %}" class="data-table-link">{{ link.point_of_diversion.name }}</a>
+              <span class="text-secondary">on {{ link.point_of_diversion.source_flowline.name|default:link.point_of_diversion.stream_name|default:"—" }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if site.notes %}
+        <div class="field-group">
+          <div class="field-label">Notes</div>
+          <div class="text-secondary text-base">{{ site.notes }}</div>
+        </div>
+        {% endif %}
+
+        <div class="border-separator">
+          <div class="text-tertiary text-xs">
+            Created {{ site.created_at|date:"M d, Y" }} &middot; Updated {{ site.updated_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Recharge Event History card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Event History</h2>
+        <div id="event-history">
+          {% include "recharge/partials/_event_history.html" %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: Recent Measurements -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Recent Measurements</h2>
+        {% if recent_measurements %}
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th class="th-right">Value</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in recent_measurements %}
+            <tr>
+              <td class="text-secondary">{{ m.measurement_date|date:"M d, Y H:i" }}</td>
+              <td class="text-secondary">{{ m.get_measurement_type_display }}</td>
+              <td class="td-num">{{ m.value|floatformat:2 }}</td>
+              <td class="text-tertiary">{{ m.unit }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p class="text-tertiary text-base">No measurements recorded.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% comment %}
+  Geometry for the PERSISTENT map (#detail-map lives in the pane shell).
+  OH2O.detailPaneMap builds the map once, then on every later swap re-points it at
+  this site's geometry via setData + reframe — no rebuild, so no flash. It
+  auto-detects polygon (fill + outline) vs point (glow + marker) from the
+  geometry type. Defensive: polls until the toolkit is ready (on a full-page load
+  this body renders BEFORE the map scripts at end of page), hides the map card
+  when the site has no geometry.
+{% endcomment %}
+{% if geojson %}{{ geojson|json_script:"detail-geojson-data" }}{% endif %}
+<script>
+(function () {
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
+      source: 'recharge',
+      popup: function (p) {
+        return '<strong>' + (p.name || 'Recharge Site') + '</strong><br>' +
+               'Type: ' + (p.site_type || '—') + '<br>' +
+               'Status: ' + (p.status || '—');
+      }
+    });
+  }
+  go();
+})();
+</script>
