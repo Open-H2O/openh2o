@@ -210,6 +210,20 @@ RECHARGE_MEASUREMENTS = {
     ],
 }
 
+# Per-well monitoring metadata (wells/models.py MonitoringWell): the one-to-one record marking a
+# well as monitored, attached to a few of the district's ag wells that double as water-level
+# monitoring points. Keyed by the registrationID the well loop assigns (MER-W-NNN); a key absent
+# from the generated wells is simply skipped. The NGVD29 row exercises the legacy-datum path.
+# Tuple: (monitoringAgency, measurementFrequency, referenceElevationFt, verticalDatum, notes).
+MONITORING_WELLS = {
+    "MER-W-001": ("Merced Irrigation District", "Monthly", "182.40", "NAVD88",
+                  "CASGEM voluntary monitoring point; manual sounder reading."),
+    "MER-W-002": ("Merced Subbasin GSA", "Quarterly", "176.10", "NAVD88",
+                  "Representative monitoring well for the GSA's spring/fall sweep."),
+    "MER-W-004": ("DWR", "Continuous", "169.85", "NGVD29",
+                  "Legacy DWR record; transducer logs daily, datum not yet converted to NAVD88."),
+}
+
 
 def q4(value) -> str:
     """Quantize to the ledger's 4 decimal places, return as a STRING.
@@ -570,6 +584,16 @@ def build_bundle():
     for z in zones:
         z.pop("geometry", None)
 
+    # Per-well monitoring metadata, only for wells that were actually generated (a seed key for a
+    # well the loop didn't mint is dropped, so wellCount and this list never disagree).
+    well_regs = {w["registrationID"] for w in wells}
+    monitoring_wells = [
+        {"registrationID": reg, "monitoringAgency": agency, "measurementFrequency": freq,
+         "referenceElevationFt": q4(Decimal(elev)), "verticalDatum": datum, "notes": note}
+        for reg, (agency, freq, elev, datum, note) in MONITORING_WELLS.items()
+        if reg in well_regs
+    ]
+
     bundle = {
         "metadata": {
             "source": "openh2o fixtures (export_merced_native.py)",
@@ -577,6 +601,7 @@ def build_bundle():
             "district": "Merced Subbasin GSA",
             "parcelCount": len(parcels),
             "wellCount": len(wells),
+            "monitoringWellCount": len(monitoring_wells),
             "accountCount": len(accounts),
             "ledgerRows": len(ledger),
             "waterRightCount": len(surface["waterRights"]),
@@ -622,6 +647,7 @@ def build_bundle():
         "zones": zones,
         "parcels": parcels,
         "wells": wells,
+        "monitoringWells": monitoring_wells,
         "accounts": accounts,
         "ledger": ledger,
         "surface": surface,
