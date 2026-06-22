@@ -83,6 +83,10 @@ Variables:
             paint: { 'line-color': OUTLINE, 'line-width': 1.5, 'line-opacity': 0.9 }
           });
 
+          // Resolve the detail URL through Django (a sentinel pk we swap out) so
+          // the link tracks the app's URL prefix instead of hardcoding it.
+          var detailUrl = '{% url "geography:zone_detail" 0 %}';
+
           map.on('click', '{{ map_id }}-fill', function(e) {
             var p = e.features[0].properties;
             var sub = (p.zone_type_label ? p.zone_type_label : '') +
@@ -95,7 +99,7 @@ Variables:
                 '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
                 '<div style="font-weight:600;font-size:13px;">' + p.name + '</div>' +
                 (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
-                '<a href="/geography/zones/' + p.pk + '/" ' +
+                '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
                   'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View zone &rarr;</a>' +
                 '</div>'
               )
