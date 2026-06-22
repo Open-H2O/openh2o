@@ -186,29 +186,6 @@ RECHARGE_WET_SEASON = [
 RECHARGE_WATER_TYPE = "GW"
 RECHARGE_SOURCE_DESC = "storm/surface runoff diverted to basin"
 
-# On-site monitoring readings per basin across the recharge season (mirrors the
-# seed_merced_recharge measurements: ponded depth, canal inflow, percolation rate,
-# and source-water quality). Type vocabulary matches recharge/models.py
-# RechargeMeasurement.MEASUREMENT_TYPE_CHOICES. Water level + inflow scale loosely
-# with the basin; infiltration and TDS are intrinsic, so they read alike across both.
-# code -> [(date, type, value, unit, note)]
-RECHARGE_MEASUREMENTS = {
-    "MER-RB-001": [   # Cressey-Winton — the larger (~110 ac) basin
-        ("2024-12-16", "water_level", "3.4", "ft", "Ponded depth after the December storm flooding."),
-        ("2024-12-16", "flow_rate", "82", "cfs", "Canal inflow while the basin was filling."),
-        ("2025-01-16", "infiltration_rate", "0.9", "in/hr", "Percolation rate measured mid-season."),
-        ("2025-02-16", "water_quality", "300", "mg/L", "Source-water total dissolved solids (storm runoff)."),
-        ("2025-02-16", "water_level", "2.8", "ft", "Ponded depth during the February refill."),
-    ],
-    "MER-RB-002": [   # El Nido — the smaller (~85 ac) basin, fed by the curtailed canal
-        ("2024-12-16", "water_level", "2.7", "ft", "Ponded depth after the December storm flooding."),
-        ("2024-12-16", "flow_rate", "61", "cfs", "Canal inflow while the basin was filling."),
-        ("2025-01-16", "infiltration_rate", "1.1", "in/hr", "Percolation rate measured mid-season."),
-        ("2025-02-16", "water_quality", "330", "mg/L", "Source-water total dissolved solids (storm runoff)."),
-        ("2025-02-16", "water_level", "2.2", "ft", "Ponded depth during the February refill."),
-    ],
-}
-
 
 def q4(value) -> str:
     """Quantize to the ledger's 4 decimal places, return as a STRING.
