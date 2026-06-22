@@ -23,6 +23,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from core.workspace import detail_response, list_response
 from datasync import freshness
 from datasync.adapters.registry import get_parameter_label
 from datasync.models import (
@@ -73,14 +74,31 @@ def _build_source_status(boundary, now):
 
 @login_required
 def station_list(request):
-    """Unified station list with monitoring stats, freshness map, and enriched table."""
+    """Master-detail workspace for monitoring stations.
+
+    Left pane: the HTMX-searchable station list (filterable by source and
+    active-state, ordered by health so quiet stations never lead the page).
+    Right pane: the selected station's detail — its location mapped, plus
+    current readings, telemetry chart, sync logs, and recent records — swapped
+    in place when a row is clicked. A ``?selected=<pk>`` query param pre-renders
+    that station server-side so a reload or deep link lands on the same
+    workspace view (the row click pushes that URL).
+
+    The network-wide overview (freshness map of every station, per-source health
+    chips, summary counts) lives on the Monitoring Dashboard
+    (``datasync:monitoring_dashboard``), linked from this page's toolbar — not
+    stacked on the list, so the workspace keeps the clean single-screen two-pane
+    shell every other v2.0 screen uses.
+
+    Returns the ``_station_list_results`` partial for an HTMX list refresh
+    (search / filter / pagination, which target ``#results``), and the full
+    workspace page otherwise.
+    """
     now = timezone.now()
 
     q = request.GET.get("q", "").strip()
     source = request.GET.get("source", "").strip()
     active = request.GET.get("active", "").strip()
-
-    boundary = Boundary.objects.first()
 
     queryset = MonitoredStation.objects.select_related("data_source").order_by(
         "data_source__code", "station_name"
@@ -92,7 +110,7 @@ def station_list(request):
         )
     if source:
         queryset = queryset.filter(data_source__code=source)
-    # Default to active-only so the table doesn't surface dead/inactive stations.
+    # Default to active-only so the list doesn't surface dead/inactive stations.
     # Explicit opt-ins preserve the toggle: "0" = inactive only, "all" = everything.
     if active == "0":
         queryset = queryset.filter(is_active=False)
@@ -117,66 +135,27 @@ def station_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # Freshness classification for current page stations (source-aware)
-    station_freshness = {
-        s.pk: freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
-        for s in page_obj
-    }
-
-    # Sparkline data for current page stations
-    page_station_ids = [s.pk for s in page_obj]
-    staging_qs = (
-        DataRecordStaging.objects
-        .filter(station__in=page_station_ids)
-        .order_by("station_id", "-observation_date")
-        .values("station_id", "value", "unit")
-    )
-    raw_records: dict = {}
-    latest_unit: dict = {}
-    latest_value: dict = {}
-    for row in staging_qs:
-        sid = row["station_id"]
-        if sid not in raw_records:
-            raw_records[sid] = []
-            # First row is the most recent record for this station
-            latest_value[sid] = row["value"]
-            latest_unit[sid] = row["unit"] or ""
-        if len(raw_records[sid]) < 10:
-            raw_records[sid].append(row["value"])
-
-    station_sparklines = {}
-    for sid, values in raw_records.items():
-        vals = list(reversed(values))
-        numeric = [float(v) for v in vals if v is not None]
-        if len(numeric) < 2:
-            continue
-        min_v, max_v = min(numeric), max(numeric)
-        span = max_v - min_v if max_v != min_v else 1.0
-        points = []
-        for i, v in enumerate(numeric):
-            x = round(i * 119 / (len(numeric) - 1), 2)
-            y = round(40 - ((v - min_v) / span) * 34 - 2, 2)
-            points.append(f"{x},{y}")
-        station_sparklines[sid] = " ".join(points)
-
-    # Enrich page objects with freshness, sparkline, and latest value/unit
-    enriched_stations = []
-    for s in page_obj:
-        lv = latest_value.get(s.pk)
-        lu = latest_unit.get(s.pk, "")
-        if lv is not None:
-            try:
-                latest_tooltip = f"Latest: {float(lv):,.2f} {lu}".strip()
-            except (ValueError, TypeError):
-                latest_tooltip = None
-        else:
-            latest_tooltip = None
-        enriched_stations.append({
+    # A freshness dot on each master row is the at-a-glance health signal (the
+    # full sparkline + per-source chips live on the Monitoring Dashboard).
+    enriched_stations = [
+        {
             "station": s,
-            "freshness": station_freshness.get(s.pk, "dead"),
-            "sparkline_points": station_sparklines.get(s.pk),
-            "latest_tooltip": latest_tooltip,
-        })
+            "freshness": freshness.classify_freshness(
+                s.data_source.code, s.last_data_at, now
+            ),
+        }
+        for s in page_obj
+    ]
+
+    # Pre-load the selected station (deep link / reload) into the detail pane.
+    selected_station = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_station = (
+            MonitoredStation.objects.select_related("data_source")
+            .filter(pk=selected_raw)
+            .first()
+        )
 
     context = {
         "page_obj": page_obj,
@@ -186,58 +165,30 @@ def station_list(request):
         "source": source,
         "active": active,
         "data_sources": DataSource.objects.filter(is_active=True).order_by("code"),
+        "selected_station": selected_station,
     }
+    if selected_station is not None:
+        context.update(_station_detail_context(selected_station))
 
-    if request.headers.get("HX-Request"):
-        return render(request, "datasync/partials/_station_list_results.html", context)
-
-    # Full page: add summary stats and source status (source-aware freshness).
-    # Count fresh / stale / dormant separately rather than lumping every
-    # not-fresh station into "behind": a dormant well that simply isn't due to
-    # report is not the same message as a gauge that is overdue, and the summary
-    # line should not quietly re-raise the alarm we just took out of the colours.
-    all_active = MonitoredStation.objects.filter(is_active=True).select_related("data_source")
-    fresh_count = stale_count = dormant_count = 0
-    for s in all_active:
-        f = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
-        if f == "fresh":
-            fresh_count += 1
-        elif f == "stale":
-            stale_count += 1
-        else:
-            dormant_count += 1
-    total_active = fresh_count + stale_count + dormant_count
-
-    source_status_list = _build_source_status(None, now)
-
-    _, openet_used, openet_limit = OpenETCache.check_budget()
-
-    context.update({
-        "total_active": total_active,
-        "fresh_count": fresh_count,
-        "stale_count": stale_count,
-        "dormant_count": dormant_count,
-        "source_status_list": source_status_list,
-        "openet_used": openet_used,
-        "openet_limit": openet_limit,
-        "boundary_name": boundary.name if boundary else None,
-    })
-
-    return render(request, "datasync/station_list.html", context)
-
-
-@login_required
-def station_detail(request, pk):
-    """Detail view for a single monitoring station."""
-    station = get_object_or_404(
-        MonitoredStation.objects.select_related("data_source"), pk=pk
+    return list_response(
+        request,
+        page_template="datasync/station_list.html",
+        results_template="datasync/partials/_station_list_results.html",
+        context=context,
     )
 
-    recent_records_qs = DataRecordStaging.objects.filter(station=station).order_by(
-        "-observation_date"
-    )[:10]
-    recent_records = list(recent_records_qs)
+
+def _station_detail_context(station):
+    """Build the per-station detail context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+    """
     source_code = station.data_source.code
+
+    recent_records = list(
+        DataRecordStaging.objects.filter(station=station).order_by("-observation_date")[:10]
+    )
     for rec in recent_records:
         rec.param_display = get_parameter_label(source_code, rec.parameter_code)
 
@@ -245,13 +196,15 @@ def station_detail(request, pk):
         "-started_at"
     )[:10]
 
-    # Build point GeoJSON for the embedded map
-    station_geojson = None
+    # Point GeoJSON for the PERSISTENT detail map. OH2O.detailPaneMap reads this
+    # FeatureCollection, detects the point geometry, and draws the shared station
+    # symbology (red glow + marker + label) — the same call Wells/PODs use. A
+    # Python object (not a json.dumps string): the template escapes it via
+    # json_script so station_name / external_station_id can't break out of
+    # <script>.
+    geojson = None
     if station.location:
-        # Python object (not a json.dumps string): the template escapes it via
-        # json_script so station_name / external_station_id can't break out of
-        # <script>.
-        station_geojson = {
+        geojson = {
             "type": "FeatureCollection",
             "features": [
                 {
@@ -268,7 +221,7 @@ def station_detail(request, pk):
             ],
         }
 
-    # Determine freshness for chart color (source-aware)
+    # Freshness drives the telemetry chart's line colour (source-aware).
     station_freshness = freshness.classify_freshness(
         source_code, station.last_data_at, timezone.now()
     )
@@ -313,19 +266,36 @@ def station_detail(request, pk):
                 "observation_date": rec.observation_date,
             })
 
-    context = {
+    return {
         "station": station,
         "recent_records": recent_records,
         "latest_readings": latest_readings,
         "recent_logs": recent_logs,
-        "station_geojson": station_geojson,
-        "lat": station.location.y if station.location else None,
-        "lng": station.location.x if station.location else None,
+        "geojson": geojson,
         "station_freshness": station_freshness,
         "chart_data_url": f"/datasync/stations/{station.pk}/chart-data/",
         "enriched_parameters": enriched_parameters,
     }
-    return render(request, "datasync/station_detail.html", context)
+
+
+@login_required
+def station_detail(request, pk):
+    """A single monitoring station's detail.
+
+    On an HTMX request it returns just the ``_station_detail_pane`` fragment (the
+    workspace swaps this into ``#detail-body``); otherwise it returns the
+    standalone page, which deep links and no-HTMX clients still reach.
+    """
+    station = get_object_or_404(
+        MonitoredStation.objects.select_related("data_source"), pk=pk
+    )
+    context = _station_detail_context(station)
+    return detail_response(
+        request,
+        pane_template="datasync/partials/_station_detail_pane.html",
+        page_template="datasync/station_detail.html",
+        context=context,
+    )
 
 
 @login_required
