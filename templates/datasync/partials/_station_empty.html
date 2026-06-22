@@ -1,19 +1,24 @@
 {% comment %}
-  Resting state for the workspace detail pane before a station is picked.
+  Resting state for the workspace detail pane before a station is picked. Instead
+  of dead space, it shows the network freshness map — every active station colored
+  by how recently it reported — so the pane is useful at a glance. Picking a row
+  from the list (or clicking a point's "View station") opens that one station,
+  which swaps this whole body out for the single-station detail pane.
+
+  This map is its OWN element (#station-rest-map), separate from the persistent
+  single-station map (#detail-map) in the pane shell, so the two never collide:
+  the network map lives only in this resting body, the single-station map appears
+  only once a station is selected.
 {% endcomment %}
-<div class="pane-empty">
-  <div class="pane-empty-icon">
-    <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M3 12h3"/>
-      <path d="M18 12h3"/>
-      <path d="M12 3v3"/>
-      <path d="M12 18v3"/>
-      <path d="M5.64 5.64l2.12 2.12"/>
-      <path d="M16.24 16.24l2.12 2.12"/>
-      <path d="M5.64 18.36l2.12-2.12"/>
-      <path d="M16.24 7.76l2.12-2.12"/>
-    </svg>
+<div class="pane-stack" style="height: 100%;">
+  <div style="margin-bottom: var(--space-sm);">
+    <h2 class="section-header-flush">Network at a glance</h2>
+    <p class="text-tertiary text-xs" style="margin: 2px 0 0; line-height: 1.4;">
+      Every active station, colored by how recently it reported. Pick a station from the list — or click a point on the map — to open its readings, chart, and records.
+    </p>
   </div>
-  <p class="pane-empty-text">Select a station from the list to open its location on the map, current readings, telemetry chart, and recent records.</p>
+  <div class="card-raised" style="padding: 0; overflow: hidden; height: calc(100dvh - 250px); min-height: 460px;">
+    <div id="station-rest-map" style="height: 100%; width: 100%;"></div>
+  </div>
 </div>
+{% include "datasync/partials/_freshness_map.html" with map_id="station-rest-map" %}
