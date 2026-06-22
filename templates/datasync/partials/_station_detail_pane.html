@@ -19,7 +19,6 @@
       <span class="freshness-dot freshness-dot--{{ station_freshness }}"></span>
       <span class="text-secondary text-xs">{% if station_freshness == 'fresh' %}On schedule{% elif station_freshness == 'stale' %}Behind{% else %}Dormant{% endif %}</span>
     </span>
-    <a href="{% url 'datasync:station_detail' station.pk %}" class="text-tertiary text-xs back-link" title="Open this station on its own page">Open full page &rarr;</a>
   </div>
 </div>
 

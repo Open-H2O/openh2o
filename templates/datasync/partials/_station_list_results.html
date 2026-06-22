@@ -2,40 +2,90 @@
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
-    station{{ total_count|pluralize }} found
+    station{{ total_count|pluralize }}{% if q %} matching "{{ q }}"{% endif %}{% if source %} from {{ source }}{% endif %}
   </span>
 </div>
 
 {% if enriched_stations %}
-<div class="card-raised master-list-card">
-  {% for item in enriched_stations %}
-  <div
-    data-row
-    class="master-row{% if selected_station and item.station.pk == selected_station.pk %} is-selected{% endif %}"
-    hx-get="{% url 'datasync:station_detail' item.station.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    hx-push-url="{% url 'datasync:station_list' %}?selected={{ item.station.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open station {{ item.station.station_name }}">
-    <div class="master-row-top">
-      <span class="master-row-id">
-        <span class="freshness-dot freshness-dot--{{ item.freshness }}" title="{{ item.freshness }}" style="margin-right: 6px;"></span>{{ item.station.station_name }}
-      </span>
-      <span class="master-row-acres" style="font-family: var(--font-mono);">{{ item.station.external_station_id }}</span>
-    </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">{{ item.station.data_source.name }}</span>
-      <span class="master-row-acres">
-        {% if item.station.last_data_at %}{{ item.station.last_data_at|timesince }} ago{% else %}never{% endif %}
-      </span>
-    </div>
-  </div>
-  {% endfor %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 28px;"></th>
+        <th>Station</th>
+        <th>Source</th>
+        <th>Last Data</th>
+        <th>Trend</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in enriched_stations %}
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='{% url 'datasync:station_detail' item.station.pk %}';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--{{ item.freshness }}" title="{{ item.freshness }}"></span>
+        </td>
+        <td>
+          <a href="{% url 'datasync:station_detail' item.station.pk %}" class="data-table-link">
+            {{ item.station.station_name }}
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">{{ item.station.external_station_id }}</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">{{ item.station.data_source.name }}</span>
+        </td>
+        <td class="text-secondary text-sm">
+          {% if item.station.last_data_at %}
+            {{ item.station.last_data_at|timesince }} ago
+          {% else %}
+            <span class="text-tertiary">never</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if item.sparkline_points %}
+          <div class="sparkline-container" {% if item.latest_tooltip %}title="{{ item.latest_tooltip }}" style="cursor: default;"{% endif %}>
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-{{ item.station.pk }}" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              {% if item.latest_tooltip %}<title>{{ item.latest_tooltip }}</title>{% endif %}
+              <polygon
+                points="{{ item.sparkline_points }} 119,40 0,40"
+                fill="url(#spk-grad-{{ item.station.pk }})"
+              />
+              <polyline
+                points="{{ item.sparkline_points }}"
+                stroke="{% if item.freshness == 'fresh' %}#22c55e{% elif item.freshness == 'stale' %}#f59e0b{% else %}#9ca3af{% endif %}"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          {% else %}
+          <span class="text-tertiary text-xs">--</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<!-- Pagination -->
+<!-- Pagination (graceful fallback only — the page size shows the whole network) -->
 {% if page_obj.has_other_pages %}
 <div class="pagination-row">
   {% if page_obj.has_previous %}

@@ -2,11 +2,11 @@
 {% load static %}
 
 {% comment %}
-  Standalone page for a single monitoring station. The body is the shared
-  _station_detail_pane partial (the same fragment the workspace swaps into
-  #detail-body), so the page and the in-pane view never drift. This page is the
-  deep-link / direct-URL target; day-to-day use happens in the master-detail
-  workspace at datasync:station_list.
+  Full-width detail page for a single monitoring station — the destination this
+  screen is built around (live map, current readings, telemetry chart, sync logs,
+  recent records). Reached from a row or a map point on the stations overview
+  (datasync:station_list). The body is the _station_detail_pane partial; the
+  persistent #detail-map host below is filled by OH2O.detailPaneMap from inside it.
 {% endcomment %}
 
 {% block title %}{{ station.station_name }} - Open Water Accounting Platform{% endblock %}

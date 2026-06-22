@@ -23,7 +23,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from core.workspace import detail_response, list_response
+from core.workspace import list_response
 from datasync import freshness
 from datasync.adapters.registry import get_parameter_label
 from datasync.models import (
@@ -74,25 +74,20 @@ def _build_source_status(boundary, now):
 
 @login_required
 def station_list(request):
-    """Master-detail workspace for monitoring stations.
+    """Monitoring stations OVERVIEW: a network freshness map + a searchable list.
 
-    Left pane: the HTMX-searchable station list (filterable by source and
-    active-state, ordered by health so quiet stations never lead the page).
-    Right pane: the selected station's detail — its location mapped, plus
-    current readings, telemetry chart, sync logs, and recent records — swapped
-    in place when a row is clicked. A ``?selected=<pk>`` query param pre-renders
-    that station server-side so a reload or deep link lands on the same
-    workspace view (the row click pushes that URL).
-
-    The network-wide overview (freshness map of every station, per-source health
-    chips, summary counts) lives on the Monitoring Dashboard
-    (``datasync:monitoring_dashboard``), linked from this page's toolbar — not
-    stacked on the list, so the workspace keeps the clean single-screen two-pane
-    shell every other v2.0 screen uses.
+    Stations are the overview→detail outlier among the Water-Data screens. An
+    instance rarely has more than ~50 of them, and each one's detail is heavy
+    (live map, multi-parameter telemetry chart, sync logs, records) and is the
+    thing people actually come here to study. So this screen is a finder, not the
+    master-detail half-pane the lighter screens use: the freshness map up top is
+    the network-health glance, the list below is for finding a station fast, and
+    clicking a row (or a point on the map) opens that station's own full-width
+    page.
 
     Returns the ``_station_list_results`` partial for an HTMX list refresh
-    (search / filter / pagination, which target ``#results``), and the full
-    workspace page otherwise.
+    (search / filter / pagination, which target ``#results``), and the full page
+    otherwise.
     """
     now = timezone.now()
 
@@ -111,7 +106,7 @@ def station_list(request):
     if source:
         queryset = queryset.filter(data_source__code=source)
     # Default to active-only so the list doesn't surface dead/inactive stations.
-    # Explicit opt-ins preserve the toggle: "0" = inactive only, "all" = everything.
+    # Explicit opt-ins: "0" = inactive only, "all" = everything.
     if active == "0":
         queryset = queryset.filter(is_active=False)
     elif active != "all":
@@ -131,31 +126,68 @@ def station_list(request):
         ),
     )
 
-    paginator = Paginator(stations_ordered, 25)
+    # An instance rarely exceeds ~50 stations, so show them all on one page —
+    # finding one is a glance plus a type-to-filter, not a paging exercise. The
+    # high page size keeps pagination as a graceful fallback for a rare large
+    # network rather than a routine control.
+    paginator = Paginator(stations_ordered, 100)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # A freshness dot on each master row is the at-a-glance health signal (the
-    # full sparkline + per-source chips live on the Monitoring Dashboard).
-    enriched_stations = [
-        {
-            "station": s,
-            "freshness": freshness.classify_freshness(
-                s.data_source.code, s.last_data_at, now
-            ),
-        }
+    # Per-row freshness + a 10-point sparkline + latest value, so each row tells
+    # its at-a-glance story (health, trend, current reading) without opening it.
+    station_freshness = {
+        s.pk: freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
         for s in page_obj
-    ]
+    }
+    page_ids = [s.pk for s in page_obj]
+    staging_qs = (
+        DataRecordStaging.objects
+        .filter(station__in=page_ids)
+        .order_by("station_id", "-observation_date")
+        .values("station_id", "value", "unit")
+    )
+    raw_records: dict = {}
+    latest_value: dict = {}
+    latest_unit: dict = {}
+    for row in staging_qs:
+        sid = row["station_id"]
+        if sid not in raw_records:
+            raw_records[sid] = []
+            latest_value[sid] = row["value"]
+            latest_unit[sid] = row["unit"] or ""
+        if len(raw_records[sid]) < 10:
+            raw_records[sid].append(row["value"])
 
-    # Pre-load the selected station (deep link / reload) into the detail pane.
-    selected_station = None
-    selected_raw = request.GET.get("selected", "").strip()
-    if selected_raw:
-        selected_station = (
-            MonitoredStation.objects.select_related("data_source")
-            .filter(pk=selected_raw)
-            .first()
+    sparklines: dict = {}
+    for sid, values in raw_records.items():
+        numeric = [float(v) for v in reversed(values) if v is not None]
+        if len(numeric) < 2:
+            continue
+        min_v, max_v = min(numeric), max(numeric)
+        span = max_v - min_v if max_v != min_v else 1.0
+        sparklines[sid] = " ".join(
+            f"{round(i * 119 / (len(numeric) - 1), 2)},"
+            f"{round(40 - ((v - min_v) / span) * 34 - 2, 2)}"
+            for i, v in enumerate(numeric)
         )
+
+    enriched_stations = []
+    for s in page_obj:
+        lv = latest_value.get(s.pk)
+        lu = latest_unit.get(s.pk, "")
+        tooltip = None
+        if lv is not None:
+            try:
+                tooltip = f"Latest: {float(lv):,.2f} {lu}".strip()
+            except (ValueError, TypeError):
+                tooltip = None
+        enriched_stations.append({
+            "station": s,
+            "freshness": station_freshness.get(s.pk, "dead"),
+            "sparkline_points": sparklines.get(s.pk),
+            "latest_tooltip": tooltip,
+        })
 
     context = {
         "page_obj": page_obj,
@@ -165,11 +197,7 @@ def station_list(request):
         "source": source,
         "active": active,
         "data_sources": DataSource.objects.filter(is_active=True).order_by("code"),
-        "selected_station": selected_station,
     }
-    if selected_station is not None:
-        context.update(_station_detail_context(selected_station))
-
     return list_response(
         request,
         page_template="datasync/station_list.html",
@@ -280,21 +308,18 @@ def _station_detail_context(station):
 
 @login_required
 def station_detail(request, pk):
-    """A single monitoring station's detail.
+    """A single monitoring station's full-width detail page.
 
-    On an HTMX request it returns just the ``_station_detail_pane`` fragment (the
-    workspace swaps this into ``#detail-body``); otherwise it returns the
-    standalone page, which deep links and no-HTMX clients still reach.
+    Stations are the overview→detail outlier among the Water-Data screens: the
+    detail is the destination people come for (live map, telemetry chart, sync
+    logs, records), so it gets its own full-width page rather than a master-detail
+    half-pane. Reached from a row or a map point on the stations overview.
     """
     station = get_object_or_404(
         MonitoredStation.objects.select_related("data_source"), pk=pk
     )
-    context = _station_detail_context(station)
-    return detail_response(
-        request,
-        pane_template="datasync/partials/_station_detail_pane.html",
-        page_template="datasync/station_detail.html",
-        context=context,
+    return render(
+        request, "datasync/station_detail.html", _station_detail_context(station)
     )
 
 

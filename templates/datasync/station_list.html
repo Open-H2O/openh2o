@@ -1,7 +1,18 @@
-{% extends "workspace.html" %}
+{% extends "base.html" %}
+{% load static %}
 
 {% block title %}Monitoring Stations - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Monitoring Stations{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,76 +21,81 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Monitoring Stations</span>
   </nav>
-  <p class="page-description">Monitoring stations linked to external data sources (CDEC, USGS, CIMIS, and others). Pick one to open its location on the map alongside its current readings, telemetry chart, and recent records. The freshness dot shows how recently each station reported.</p>
+  <p class="page-description">Every monitoring station linked to an external data source (CDEC, USGS, CIMIS, and others). The map shows the whole network, colored by how recently each station reported; pick a station from the map or the list to open its readings, telemetry chart, and history.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
-    <a href="{% url 'datasync:monitoring_dashboard' %}" class="btn-secondary btn-sm" title="Network-wide freshness map and per-source health across every station">Network Health</a>
     <a href="{% url 'datasync:station_add' %}" class="btn-primary btn-sm">+ Add Station</a>
   </div>
 </div>
 {% endblock %}
 
-{% block master_toolbar %}
-  <div>
-    <label class="form-label" for="filter-search">Search</label>
-    <input
-      type="text"
-      id="filter-search" name="q"
-      value="{{ q }}"
-      placeholder="Station name or ID..."
-      hx-get="{% url 'datasync:station_list' %}"
-      hx-target="#results"
-      hx-trigger="keyup changed delay:300ms"
-      hx-include="[name='source'],[name='active']"
-      class="form-input search-input-icon"
-    >
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  <!-- Network freshness map (overview): all stations, colored by recency. The
+       legend lives inside the map; clicking a point opens that station. -->
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="stations-overview-map" style="height: 380px; width: 100%;"></div>
   </div>
-  <div>
-    <label class="form-label" for="filter-source">Source</label>
-    <select
-      id="filter-source" name="source"
-      hx-get="{% url 'datasync:station_list' %}"
-      hx-target="#results"
-      hx-trigger="change"
-      hx-include="[name='q'],[name='active']"
-      class="form-select"
-    >
-      <option value="" {% if not source %}selected{% endif %}>All Sources</option>
-      {% for ds in data_sources %}
-        <option value="{{ ds.code }}" {% if source == ds.code %}selected{% endif %}>{{ ds.name }}</option>
-      {% endfor %}
-    </select>
+
+  <!-- Toolbar: search + filters. With <=50 stations the whole list is on one
+       page, so search is a live filter rather than a way to escape pagination. -->
+  <div class="card-raised toolbar-row">
+    <div style="flex: 1; min-width: 200px;">
+      <label class="form-label" for="filter-search">Search</label>
+      <input
+        type="text"
+        id="filter-search" name="q"
+        value="{{ q }}"
+        placeholder="Station name or ID..."
+        hx-get="{% url 'datasync:station_list' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:200ms"
+        hx-include="[name='source'],[name='active']"
+        autocomplete="off"
+        class="form-input search-input-icon"
+      >
+    </div>
+    <div>
+      <label class="form-label" for="filter-source">Source</label>
+      <select
+        id="filter-source" name="source"
+        hx-get="{% url 'datasync:station_list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q'],[name='active']"
+        class="form-select"
+      >
+        <option value="" {% if not source %}selected{% endif %}>All Sources</option>
+        {% for ds in data_sources %}
+          <option value="{{ ds.code }}" {% if source == ds.code %}selected{% endif %}>{{ ds.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="form-label" for="filter-active">Status</label>
+      <select
+        id="filter-active" name="active"
+        hx-get="{% url 'datasync:station_list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q'],[name='source']"
+        class="form-select"
+      >
+        <option value="1" {% if active == "1" or not active %}selected{% endif %}>Active</option>
+        <option value="0" {% if active == "0" %}selected{% endif %}>Inactive</option>
+        <option value="all" {% if active == "all" %}selected{% endif %}>All</option>
+      </select>
+    </div>
   </div>
-  <div>
-    <label class="form-label" for="filter-active">Status</label>
-    <select
-      id="filter-active" name="active"
-      hx-get="{% url 'datasync:station_list' %}"
-      hx-target="#results"
-      hx-trigger="change"
-      hx-include="[name='q'],[name='source']"
-      class="form-select"
-    >
-      <option value="1" {% if active == "1" or not active %}selected{% endif %}>Active</option>
-      <option value="0" {% if active == "0" %}selected{% endif %}>Inactive</option>
-      <option value="all" {% if active == "all" %}selected{% endif %}>All</option>
-    </select>
+
+  <!-- Results (HTMX target) -->
+  <div id="results">
+    {% include "datasync/partials/_station_list_results.html" %}
   </div>
+
+</div>
 {% endblock %}
 
-{% block master_results %}
-  {% include "datasync/partials/_station_list_results.html" %}
-{% endblock %}
-
-{% block detail_body %}
-  {% if selected_station %}
-    {% include "datasync/partials/_station_detail_pane.html" %}
-  {% else %}
-    {% include "datasync/partials/_station_empty.html" %}
-  {% endif %}
-{% endblock %}
-
-{% block chart_scripts %}
-<!-- Loaded once for the whole workspace so every swapped-in station pane can
-     build its telemetry chart (each pane's guarded init waits for window.Chart). -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+{% block extra_scripts %}
+{% include "datasync/partials/_freshness_map.html" with map_id="stations-overview-map" %}
 {% endblock %}
