@@ -745,7 +745,7 @@ def build_recharge():
     Independent of the ledger (unlike surface): managed recharge is its own recorded book
     of deposits to the aquifer, sized as a fraction of each basin's capacity per event.
     """
-    sites, links, events = [], [], []
+    sites, links, events, measurements = [], [], [], []
     for code, (name, site_type, lon, lat, acres, cap_af, fed_by_pod) in RECHARGE_SITES.items():
         sites.append({
             "code": code, "name": name, "siteType": site_type,
@@ -770,11 +770,18 @@ def build_recharge():
                 "notes": ("Managed aquifer recharge credited to groundwater (GW); "
                           "physical source is diverted surface/storm water."),
             })
+        # On-site monitoring readings (pond depth, inflow, percolation, source quality).
+        for m_date, m_type, value, unit, note in RECHARGE_MEASUREMENTS.get(code, []):
+            measurements.append({
+                "siteCode": code, "measurementDate": m_date,
+                "measurementType": m_type, "value": q4(value), "unit": unit, "notes": note,
+            })
 
     return {
         "sites": sites,
         "sitePODs": links,
         "events": events,
+        "measurements": measurements,
     }
 
 
@@ -804,7 +811,7 @@ def main():
           f"{len(s['curtailmentOrders'])} curtailment order(s)")
     rc = bundle["recharge"]
     print(f"  recharge: {len(rc['sites'])} basins, {len(rc['sitePODs'])} basin↔POD links, "
-          f"{len(rc['events'])} recharge events")
+          f"{len(rc['events'])} recharge events, {len(rc['measurements'])} measurements")
 
 
 if __name__ == "__main__":
