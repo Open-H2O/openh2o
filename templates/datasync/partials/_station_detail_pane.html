@@ -1,14 +1,15 @@
 {% comment %}
-  Per-station detail BODY, swapped into #detail-body on row click (and reused by
-  the standalone station_detail.html page). The map itself is NOT here — it lives
-  as a persistent element (#detail-map) in the pane shell so it is built ONCE and
-  merely re-pointed at the newly selected station on each switch (no teardown, so
-  no startup flash). This fragment carries the station's point GeoJSON + the
-  one-line call into OH2O.detailPaneMap (source 'station': red glow + marker), and
-  its own Chart.js telemetry chart, which is rebuilt fresh per swap.
+  Per-station detail BODY for the full-width station detail page
+  (station_detail.html). Layout: identity + current readings side by side, then
+  the telemetry chart full-width (the star of the page), then the sync-log and
+  recent-record tables side by side. The map itself is NOT here — it lives as
+  #detail-map in the page shell and is filled by OH2O.detailPaneMap (source
+  'station': red glow + marker) from the guarded script at the bottom. The
+  Chart.js telemetry chart is built here too, guarded so it survives the
+  full-page load order (Chart.js loads at end of body).
 {% endcomment %}
 
-<!-- Pane header: which station you're looking at (the workspace has no breadcrumb). -->
+<!-- Page sub-header: which station, and how fresh. -->
 <div class="pane-header">
   <div>
     <div class="pane-header-title">{{ station.station_name }}</div>
@@ -23,247 +24,246 @@
 </div>
 
 <div class="pane-stack">
-  <!-- minmax(0,1fr) so the two columns can shrink to the (narrow) detail pane
-       instead of being held open by their content's min-content; the wide
-       log/record tables scroll inside their own .table-scroll cards. -->
+
+  <!-- Row 1: identity (left) + current readings (right). minmax(0,1fr) so the
+       columns share the width evenly; the tables further down scroll inside
+       their own .table-scroll cards rather than forcing a column wide. -->
   <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
 
-    <!-- Left column: Station Info + Sync Logs -->
-    <div class="page-stack">
-
-      <!-- Station Info card -->
-      <div class="card-raised">
-        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header-flush">Station Information</h2>
-          <div id="toggle-cell" class="row-start">
-            <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);" title="Active stations sync measurements during scheduled data pulls. Inactive stations are skipped.">Active</span>
-            {% include "datasync/partials/_station_toggle.html" %}
-          </div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label field-row">
-            Data Source
-            {% include "partials/_help_tooltip.html" with label="Source" text="The external data provider (CDEC, USGS, CIMIS, etc.) this station syncs from." %}
-          </div>
-          <div class="row-start">
-            <span class="pill-tag" style="color: var(--color-error);">{{ station.data_source.code }}</span>
-            <span class="text-secondary text-base">{{ station.data_source.name }}</span>
-          </div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label field-row">
-            External Station ID
-            {% include "partials/_help_tooltip.html" with label="Station ID" text="The identifier used by the external data source to reference this station." %}
-          </div>
-          <div class="field-value-mono">{{ station.external_station_id }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Location</div>
-          {% if station.location %}
-            <div class="text-secondary field-value-mono text-sm">
-              {{ station.location.y|floatformat:5 }}, {{ station.location.x|floatformat:5 }}
-            </div>
-          {% else %}
-            <div class="text-tertiary">—</div>
-          {% endif %}
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Parameters</div>
-          {% if enriched_parameters %}
-            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-              {% for p in enriched_parameters %}
-                <span class="pill-tag">{{ p.label }}</span>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="text-tertiary">—</div>
-          {% endif %}
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Last Data</div>
-          <div class="field-value">
-            {% if station.last_data_at %}{{ station.last_data_at|date:"M d, Y H:i" }}{% else %}<span class="text-tertiary">No data yet</span>{% endif %}
-          </div>
-        </div>
-
-        {% if station.notes %}
-        <div class="field-group">
-          <div class="field-label">Notes</div>
-          <div class="text-secondary text-base" style="line-height: 1.5;">{{ station.notes }}</div>
-        </div>
-        {% endif %}
-
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ station.created_at|date:"M d, Y" }} &middot; Updated {{ station.updated_at|date:"M d, Y" }}
-          </div>
+    <!-- Station Info card -->
+    <div class="card-raised">
+      <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+        <h2 class="section-header-flush">Station Information</h2>
+        <div id="toggle-cell" class="row-start">
+          <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);" title="Active stations sync measurements during scheduled data pulls. Inactive stations are skipped.">Active</span>
+          {% include "datasync/partials/_station_toggle.html" %}
         </div>
       </div>
 
-      <!-- Recent Sync Logs card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Recent Sync Logs</h2>
-        {% if recent_logs %}
-        <div class="table-scroll">
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Started</th>
-              <th>Status</th>
-              <th class="th-right">Staged</th>
-              <th class="th-right">Published</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for log in recent_logs %}
-            <tr>
-              <td class="text-secondary">{{ log.started_at|date:"M d, H:i" }}</td>
-              <td>
-                <span style="
-                  display: inline-flex; align-items: center;
-                  border-radius: 4px;
-                  padding: 1px 6px;
-                  font-size: 0.7rem;
-                  font-weight: 600;
-                  {% if log.status == 'success' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
-                  {% elif log.status == 'failed' %}background: rgba(239,68,68,0.1); color: var(--color-error);
-                  {% elif log.status == 'partial' %}background: rgba(234,179,8,0.1); color: var(--color-warning);
-                  {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
-                ">{{ log.get_status_display }}</span>
-              </td>
-              <td class="td-num">{{ log.records_staged }}</td>
-              <td class="td-num">{{ log.records_published }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div class="field-group">
+        <div class="field-label field-row">
+          Data Source
+          {% include "partials/_help_tooltip.html" with label="Source" text="The external data provider (CDEC, USGS, CIMIS, etc.) this station syncs from." %}
         </div>
+        <div class="row-start">
+          <span class="pill-tag" style="color: var(--color-error);">{{ station.data_source.code }}</span>
+          <span class="text-secondary text-base">{{ station.data_source.name }}</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label field-row">
+          External Station ID
+          {% include "partials/_help_tooltip.html" with label="Station ID" text="The identifier used by the external data source to reference this station." %}
+        </div>
+        <div class="field-value-mono">{{ station.external_station_id }}</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Location</div>
+        {% if station.location %}
+          <div class="text-secondary field-value-mono text-sm">
+            {{ station.location.y|floatformat:5 }}, {{ station.location.x|floatformat:5 }}
+          </div>
         {% else %}
-          <p class="text-tertiary text-base">No sync logs yet.</p>
+          <div class="text-tertiary">—</div>
         {% endif %}
       </div>
 
-    </div>
-
-    <!-- Right column: Current Readings + Telemetry + Recent Records -->
-    <div class="page-stack">
-
-      <!-- Current Readings card -->
-      {% if latest_readings %}
-      <div class="card-raised">
-        <div class="row-between mb-md">
-          <h2 class="section-header-flush">Current Readings</h2>
-          <span class="text-tertiary text-xs">Latest published value per sensor</span>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-sm);">
-          {% for r in latest_readings %}
-          <div style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: 6px; padding: var(--space-sm) var(--space-md);">
-            <div class="text-tertiary text-xs" style="margin-bottom: 2px;">{{ r.label }}</div>
-            <div class="field-value" style="font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums;">
-              {% if r.value is not None %}{{ r.value|floatformat:2 }}{% if r.unit %} <span class="text-secondary" style="font-size: 0.75rem; font-weight: 400;">{{ r.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
-            </div>
-            <div class="text-tertiary text-xs" style="margin-top: 2px;">{{ r.observation_date|date:"M d, Y" }}</div>
+      <div class="field-group">
+        <div class="field-label">Parameters</div>
+        {% if enriched_parameters %}
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            {% for p in enriched_parameters %}
+              <span class="pill-tag">{{ p.label }}</span>
+            {% endfor %}
           </div>
-          {% endfor %}
+        {% else %}
+          <div class="text-tertiary">—</div>
+        {% endif %}
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Last Data</div>
+        <div class="field-value">
+          {% if station.last_data_at %}{{ station.last_data_at|date:"M d, Y H:i" }}{% else %}<span class="text-tertiary">No data yet</span>{% endif %}
         </div>
+      </div>
+
+      {% if station.notes %}
+      <div class="field-group">
+        <div class="field-label">Notes</div>
+        <div class="text-secondary text-base" style="line-height: 1.5;">{{ station.notes }}</div>
       </div>
       {% endif %}
 
-      <!-- Telemetry Chart card -->
-      <div class="card-raised">
-        <div class="row-between mb-md" style="flex-wrap: wrap; gap: var(--space-sm);">
-          <h2 id="chart-title" class="section-header-flush">Telemetry</h2>
-          <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap; align-items: center;">
-            {% if enriched_parameters %}
-            <select id="chart-param" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;">
-              {% for p in enriched_parameters %}
-              <option value="{{ p.code }}">{{ p.label }}</option>
-              {% endfor %}
-            </select>
-            <select id="chart-param2" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;" title="Overlay a second parameter on the right-hand axis">
-              <option value="">Compare…</option>
-              {% for p in enriched_parameters %}
-              <option value="{{ p.code }}">{{ p.label }}</option>
-              {% endfor %}
-            </select>
-            {% endif %}
-            <div style="display: flex; gap: 2px;">
-              <button class="chart-range-btn" data-days="7" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 4px 0 0 4px; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">7d</button>
-              <button class="chart-range-btn" data-days="30" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">30d</button>
-              <button class="chart-range-btn" data-days="90" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">90d</button>
-              <button class="chart-range-btn" data-days="365" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">1y</button>
-              <button class="chart-range-btn active-range" data-days="0" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 0 4px 4px 0; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">All</button>
-            </div>
-          </div>
+      <div class="border-separator">
+        <div class="text-tertiary text-xs">
+          Created {{ station.created_at|date:"M d, Y" }} &middot; Updated {{ station.updated_at|date:"M d, Y" }}
         </div>
-        <div style="position: relative; height: 220px;">
-          <canvas id="telemetry-chart"></canvas>
-        </div>
-        <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">No published data for this period.</p>
       </div>
+    </div>
 
-      <!-- Recent Data Records card -->
-      <div class="card-raised">
-        <div class="row-between mb-md">
-          <h2 class="section-header-flush">Recent Data Records</h2>
-          {% if recent_records|length >= 10 %}
-          <span class="text-tertiary text-xs">Showing 10 most recent</span>
-          {% endif %}
+    <!-- Current Readings card (always rendered so the row stays balanced) -->
+    <div class="card-raised">
+      <div class="row-between mb-md">
+        <h2 class="section-header-flush">Current Readings</h2>
+        <span class="text-tertiary text-xs">Latest published value per sensor</span>
+      </div>
+      {% if latest_readings %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-sm);">
+        {% for r in latest_readings %}
+        <div style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: 6px; padding: var(--space-sm) var(--space-md);">
+          <div class="text-tertiary text-xs" style="margin-bottom: 2px;">{{ r.label }}</div>
+          <div class="field-value" style="font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums;">
+            {% if r.value is not None %}{{ r.value|floatformat:2 }}{% if r.unit %} <span class="text-secondary" style="font-size: 0.75rem; font-weight: 400;">{{ r.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
+          </div>
+          <div class="text-tertiary text-xs" style="margin-top: 2px;">{{ r.observation_date|date:"M d, Y" }}</div>
         </div>
-        {% if recent_records %}
-        <div class="table-scroll">
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Parameter</th>
-              <th class="th-right">Value</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for record in recent_records %}
-            <tr>
-              <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
-              <td class="text-secondary text-sm">{{ record.param_display }}</td>
-              <td class="td-num">
-                {% if record.value is not None %}{{ record.value|floatformat:2 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
-              </td>
-              <td>
-                <span style="
-                  display: inline-flex; align-items: center;
-                  border-radius: 4px; padding: 1px 6px; font-size: 0.7rem; font-weight: 600;
-                  {% if record.status == 'published' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
-                  {% elif record.status == 'rejected' %}background: rgba(239,68,68,0.1); color: var(--color-error);
-                  {% elif record.status == 'duplicate' %}background: rgba(100,116,139,0.1); color: var(--color-text-secondary);
-                  {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
-                ">{{ record.get_status_display }}</span>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-tertiary text-base">No published readings yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Row 2: telemetry chart, full width — the reason this screen is its own
+       page rather than a cramped half-pane. -->
+  <div class="card-raised">
+    <div class="row-between mb-md" style="flex-wrap: wrap; gap: var(--space-sm);">
+      <h2 id="chart-title" class="section-header-flush">Telemetry</h2>
+      <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap; align-items: center;">
+        {% if enriched_parameters %}
+        <select id="chart-param" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;">
+          {% for p in enriched_parameters %}
+          <option value="{{ p.code }}">{{ p.label }}</option>
+          {% endfor %}
+        </select>
+        <select id="chart-param2" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;" title="Overlay a second parameter on the right-hand axis">
+          <option value="">Compare…</option>
+          {% for p in enriched_parameters %}
+          <option value="{{ p.code }}">{{ p.label }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+        <div style="display: flex; gap: 2px;">
+          <button class="chart-range-btn" data-days="7" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 4px 0 0 4px; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">7d</button>
+          <button class="chart-range-btn" data-days="30" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">30d</button>
+          <button class="chart-range-btn" data-days="90" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">90d</button>
+          <button class="chart-range-btn" data-days="365" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">1y</button>
+          <button class="chart-range-btn active-range" data-days="0" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 0 4px 4px 0; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">All</button>
         </div>
-        {% else %}
-          <p class="text-tertiary text-base">No data records yet.</p>
+      </div>
+    </div>
+    <div style="position: relative; height: 300px;">
+      <canvas id="telemetry-chart"></canvas>
+    </div>
+    <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">No published data for this period.</p>
+  </div>
+
+  <!-- Row 3: sync logs (left) + recent records (right). -->
+  <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
+
+    <!-- Recent Sync Logs card -->
+    <div class="card-raised">
+      <h2 class="section-header mb-md">Recent Sync Logs</h2>
+      {% if recent_logs %}
+      <div class="table-scroll">
+      <table class="data-table text-sm">
+        <thead>
+          <tr>
+            <th>Started</th>
+            <th>Status</th>
+            <th class="th-right">Staged</th>
+            <th class="th-right">Published</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in recent_logs %}
+          <tr>
+            <td class="text-secondary">{{ log.started_at|date:"M d, H:i" }}</td>
+            <td>
+              <span style="
+                display: inline-flex; align-items: center;
+                border-radius: 4px;
+                padding: 1px 6px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                {% if log.status == 'success' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
+                {% elif log.status == 'failed' %}background: rgba(239,68,68,0.1); color: var(--color-error);
+                {% elif log.status == 'partial' %}background: rgba(234,179,8,0.1); color: var(--color-warning);
+                {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
+              ">{{ log.get_status_display }}</span>
+            </td>
+            <td class="td-num">{{ log.records_staged }}</td>
+            <td class="td-num">{{ log.records_published }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+        <p class="text-tertiary text-base">No sync logs yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Recent Data Records card -->
+    <div class="card-raised">
+      <div class="row-between mb-md">
+        <h2 class="section-header-flush">Recent Data Records</h2>
+        {% if recent_records|length >= 10 %}
+        <span class="text-tertiary text-xs">Showing 10 most recent</span>
         {% endif %}
       </div>
-
+      {% if recent_records %}
+      <div class="table-scroll">
+      <table class="data-table text-sm">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Parameter</th>
+            <th class="th-right">Value</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in recent_records %}
+          <tr>
+            <td class="text-secondary">{{ record.observation_date|date:"M d, Y" }}</td>
+            <td class="text-secondary text-sm">{{ record.param_display }}</td>
+            <td class="td-num">
+              {% if record.value is not None %}{{ record.value|floatformat:2 }} {% if record.unit %}<span class="text-tertiary" style="font-size: 0.7rem;">{{ record.unit }}</span>{% endif %}{% else %}<span class="text-tertiary">—</span>{% endif %}
+            </td>
+            <td>
+              <span style="
+                display: inline-flex; align-items: center;
+                border-radius: 4px; padding: 1px 6px; font-size: 0.7rem; font-weight: 600;
+                {% if record.status == 'published' %}background: rgba(34,197,94,0.1); color: var(--forest-400);
+                {% elif record.status == 'rejected' %}background: rgba(239,68,68,0.1); color: var(--color-error);
+                {% elif record.status == 'duplicate' %}background: rgba(100,116,139,0.1); color: var(--color-text-secondary);
+                {% else %}background: var(--color-elevated); color: var(--color-text-secondary);{% endif %}
+              ">{{ record.get_status_display }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+        <p class="text-tertiary text-base">No data records yet.</p>
+      {% endif %}
     </div>
+
   </div>
 </div>
 
 {% comment %}
-  Geometry for the PERSISTENT map (#detail-map lives in the pane shell).
-  OH2O.detailPaneMap builds the map once, then on every later swap re-points it at
-  this station via setData + reframe — no rebuild, so no flash. Defensive: polls
-  until the toolkit is ready (on a full-page load this body renders BEFORE the map
-  scripts at end of page), hides the map card when the station has no location.
+  Geometry for the PERSISTENT map (#detail-map lives in the page shell).
+  OH2O.detailPaneMap builds the map and frames it on this station. Defensive:
+  polls until the toolkit is ready (this body renders BEFORE the map scripts at
+  end of page), hides the map card when the station has no location.
 {% endcomment %}
 {% if geojson %}{{ geojson|json_script:"detail-geojson-data" }}{% endif %}
 <script>
@@ -284,11 +284,9 @@
 </script>
 
 {% comment %}
-  Telemetry chart. Unlike the persistent map, the chart canvas lives INSIDE this
-  swapped body, so a fresh Chart is built each time a station is opened. Guarded:
-  on a full-page load this runs BEFORE Chart.js (loaded at end of body), so it
-  polls window.Chart until ready; on an HTMX row-swap Chart.js is already loaded
-  and it runs immediately.
+  Telemetry chart. The chart canvas lives INSIDE this body, so a fresh Chart is
+  built when the page loads. Guarded: on a full-page load this runs BEFORE
+  Chart.js (loaded at end of body), so it polls window.Chart until ready.
 {% endcomment %}
 <script>
 (function () {
@@ -314,7 +312,7 @@
       var b = parseInt(hex.slice(5, 7), 16);
       return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
     }
-    var gradient = ctx.createLinearGradient(0, 0, 0, 220);
+    var gradient = ctx.createLinearGradient(0, 0, 0, 300);
     gradient.addColorStop(0, hexToRgba(primaryColor, 0.20));
     gradient.addColorStop(1, hexToRgba(primaryColor, 0.00));
 

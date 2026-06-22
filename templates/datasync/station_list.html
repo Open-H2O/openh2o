@@ -23,6 +23,7 @@
   </nav>
   <p class="page-description">Every monitoring station linked to an external data source (CDEC, USGS, CIMIS, and others). The map shows the whole network, colored by how recently each station reported; pick a station from the map or the list to open its readings, telemetry chart, and history.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    <a href="{% url 'datasync:monitoring_dashboard' %}" class="btn-secondary btn-sm" title="Deeper network health: per-source sync status, station sparklines, and freshness detail">Network Health</a>
     <a href="{% url 'datasync:station_add' %}" class="btn-primary btn-sm">+ Add Station</a>
   </div>
 </div>

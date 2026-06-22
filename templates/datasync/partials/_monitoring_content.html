@@ -1,5 +1,13 @@
 <div class="page-stack" style="max-width: 1400px;">
 
+  <!-- Freshness Map (top): the whole network at a glance. -->
+  <div>
+    <h2 class="content-section-label">Station Freshness</h2>
+    <div class="card-raised" style="padding: 0; overflow: hidden;">
+      <div id="monitoring-freshness-map" style="height: 320px; width: 100%;"></div>
+    </div>
+  </div>
+
   <!-- Stat Cards -->
   <div class="stat-grid-4col">
     <div class="card-raised stat-card stat-card-accent-supply">
@@ -120,14 +128,6 @@
       <p class="empty-state-text text-secondary">No active stations. Activate stations from the <a href="{% url 'datasync:station_list' %}" class="text-gold">Stations</a> page.</p>
     </div>
     {% endif %}
-  </div>
-
-  <!-- Freshness Map -->
-  <div>
-    <h2 class="content-section-label">Station Freshness</h2>
-    <div class="card-raised" style="padding: 0; overflow: hidden;">
-      <div id="monitoring-freshness-map" style="height: 320px; width: 100%;"></div>
-    </div>
   </div>
 
 </div>

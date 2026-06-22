@@ -28,6 +28,9 @@
 {% endblock %}
 
 {% block content %}
+<div style="margin-bottom: var(--space-md);">
+  <a href="{% url 'datasync:station_list' %}" class="back-link">&larr; Back to Monitoring Stations</a>
+</div>
 {% if site_config.demonstration_mode %}
 <div style="margin-bottom: var(--space-md);">{% include "partials/_demo_marker.html" %}</div>
 {% endif %}
