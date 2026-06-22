@@ -1,0 +1,287 @@
+{% comment %}
+  Per-POD detail BODY, swapped into #detail-body on row click (and reused by the
+  standalone pod_detail.html page). The map itself is NOT here — it lives as a
+  persistent element (#detail-map) in the pane shell so it is built ONCE and
+  merely re-pointed at the new diversion point on each switch (no teardown, so no
+  startup flash). This fragment carries the new POD's geometry + the one-line
+  call into OH2O.detailPaneMap that creates-or-updates that persistent map; the
+  onMapLoad hook lays the river/canal flowlines substrate beneath the point.
+{% endcomment %}
+
+<!-- Pane header: which diversion point you're looking at. -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">{{ pod.name }}</div>
+    <div class="pane-header-sub">{{ pod.stream_name|default:"—" }}</div>
+  </div>
+  <div class="pane-header-meta">
+    {% include "surface/partials/_status_badge.html" with status=pod.status %}
+    <a href="{% url 'surface:pod_detail' pod.pk %}" class="text-tertiary text-xs back-link" title="Open this diversion point on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+<div class="pane-stack">
+  <div class="page-grid-2col">
+
+    <!-- Left column: POD Info + Water Journey + Diversion Records + Compliance -->
+    <div class="page-stack">
+
+      <!-- POD Info card -->
+      <div class="card-raised">
+        <h2 class="section-header">
+          Diversion Point Information {% include "partials/_demo_marker.html" %}
+        </h2>
+
+        <div class="field-group">
+          <div class="field-label">Name</div>
+          <div class="field-value">{{ pod.name }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Stream</div>
+          <div class="field-value">{{ pod.stream_name|default:"—" }}</div>
+        </div>
+
+        {% if pod.max_rate_cfs %}
+        <div class="field-group">
+          <div class="field-label">Max Rate (CFS)</div>
+          <div class="field-value">{{ pod.max_rate_cfs|floatformat:2 }}</div>
+        </div>
+        {% endif %}
+
+        <div class="field-group">
+          <div class="field-label">Status</div>
+          <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=pod.status %}</div>
+        </div>
+
+        {% if pod.notes %}
+        <div class="field-group">
+          <div class="field-label">Notes</div>
+          <div class="text-secondary text-base">{{ pod.notes }}</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Water Journey card (Phase 67-03) — only when this POD is part of a
+           re-diversion chain, so ordinary diversion points are unaffected. -->
+      {% if rediverted_from or rediversions %}
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Water Journey</h2>
+        <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">
+          Water taken at one point can be partly or fully returned to the stream and
+          re-diverted further downstream. This traces the journey one hop at a time.
+        </p>
+
+        {% if rediverted_from %}
+        <div class="field-group">
+          <div class="field-label">Re-diverts from (upstream source)</div>
+          <div class="field-value">
+            <a href="{% url 'surface:pod_detail' rediverted_from.pk %}" class="data-table-link">
+              {{ rediverted_from.name }}
+            </a>
+            {% if rediverted_from.stream_name %}
+            <span class="text-tertiary text-sm">&mdash; {{ rediverted_from.stream_name }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if rediversions %}
+        <div class="field-group">
+          <div class="field-label">Re-diverted downstream by</div>
+          <div class="field-value">
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              {% for r in rediversions %}
+              <li{% if not forloop.first %} style="margin-top: var(--space-xs);"{% endif %}>
+                <a href="{% url 'surface:pod_detail' r.pk %}" class="data-table-link">{{ r.name }}</a>
+                {% if r.stream_name %}
+                <span class="text-tertiary text-sm">&mdash; {{ r.stream_name }}</span>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Diversion Records card -->
+      <div class="card-raised" id="diversion-records-section">
+        {% include "surface/partials/_diversion_records.html" %}
+      </div>
+
+      <!-- Compliance Details (collapsible) -->
+      <div class="card-raised">
+        <details>
+          <summary class="section-header" style="cursor: pointer; list-style: none; display: flex; align-items: center; gap: var(--space-sm);">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-tertiary">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            Compliance Details
+          </summary>
+          <div style="margin-top: var(--space-md);">
+            {% if water_right %}
+              <div class="field-group">
+                <div class="field-label">Right ID</div>
+                <div class="field-value">
+                  <a href="{% url 'surface:detail' water_right.pk %}" class="data-table-link text-mono" style="font-size: 0.8125rem;">
+                    {{ water_right.right_id }}
+                  </a>
+                </div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Holder</div>
+                <div class="field-value">{{ water_right.holder_name|default:"—" }}</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Right Type</div>
+                <div class="field-value">{{ water_right.right_type|default:"—" }}</div>
+              </div>
+              {% if water_right.priority_date %}
+              <div class="field-group">
+                <div class="field-label">Priority Date</div>
+                <div class="field-value">{{ water_right.priority_date|date:"M d, Y" }}</div>
+              </div>
+              {% endif %}
+              {% if water_right.face_value_acre_feet %}
+              <div class="field-group">
+                <div class="field-label">Face Value (AF)</div>
+                <div class="field-value">{{ water_right.face_value_acre_feet|floatformat:2 }}</div>
+              </div>
+              {% endif %}
+              <div class="field-group">
+                <div class="field-label">Status</div>
+                <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
+              </div>
+            {% elif basin_links %}
+              <p class="text-secondary text-sm">Recharge diversion — water is taken during high-flow / storm events for managed aquifer recharge, which does not require a consumptive water right.</p>
+            {% else %}
+              <p class="text-secondary text-sm">No water right linked. This diversion point operates without a formal water right permit.</p>
+              <p class="text-tertiary text-xs" style="margin-top: var(--space-xs);">CalWATRS reports will flag this diversion as [INCOMPLETE].</p>
+            {% endif %}
+          </div>
+        </details>
+      </div>
+
+    </div>
+
+    <!-- Right column: Linked Use Areas + Recharge Areas Filled -->
+    <div class="page-stack">
+
+      <!-- Linked Use Areas card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Linked Use Areas</h2>
+        {% if pod_parcels %}
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Parcel</th>
+              <th>Owner</th>
+              <th class="th-right">Fraction</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pp in pod_parcels %}
+            <tr>
+              <td>
+                <a href="{% url 'parcels:detail' pp.parcel.pk %}" class="data-table-link">
+                  {{ pp.parcel.parcel_number }}
+                </a>
+              </td>
+              <td class="text-secondary">{{ pp.parcel.owner_name|default:"—" }}</td>
+              <td class="td-num text-secondary">{{ pp.fraction }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <p class="text-tertiary text-sm">No parcels linked to this diversion point.</p>
+        {% endif %}
+      </div>
+
+      <!-- Recharge Areas Filled card (Phase 62) -->
+      {% if basin_links %}
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Recharge Areas Filled</h2>
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Recharge Area</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for link in basin_links %}
+            <tr>
+              <td>
+                <a href="{% url 'recharge:detail' link.recharge_site.pk %}" class="data-table-link">
+                  {{ link.recharge_site.name }}
+                </a>
+              </td>
+              <td class="text-secondary">{{ link.recharge_site.get_site_type_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="text-tertiary text-xs" style="margin-top: var(--space-sm);">
+          This diversion fills the recharge area(s) above &mdash; for dual-purpose cropland, during storm events.
+        </p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+{% comment %}
+  Geometry for the PERSISTENT map (#detail-map lives in the pane shell). The
+  shared OH2O.detailPaneMap engine builds the map once, then on every later swap
+  re-points it at this POD via setData + reframe — no rebuild, so no flash. The
+  onMapLoad hook lays the river/canal flowlines beneath the diversion point (the
+  hydrography substrate is the story for surface water); it runs once with the
+  map, not per swap. Defensive: polls until the toolkit is ready, hides the map
+  card when a POD has no recorded location (no geojson element emitted).
+{% endcomment %}
+{% if geojson %}{{ geojson|json_script:"detail-geojson-data" }}{% endif %}
+<script>
+// Wait for the map toolkit: on a full-page load this body renders BEFORE the
+// map scripts at end of page, so poll on window.OH2O (safe access) until ready.
+// On an HTMX row-swap the toolkit is already loaded, so this runs immediately.
+(function () {
+  var FLOWLINES_URL = '{% url "geography:flowlines_geojson" %}';
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
+      source: 'pod',
+      popup: function (p) {
+        return '<strong>' + (p.name || 'Point of Diversion') + '</strong><br>' +
+               'Stream: ' + (p.stream_name || '—');
+      },
+      // Hydrography substrate: the river/canal this diversion sits on. Added once
+      // beneath the POD glow so the diversion point always reads on top.
+      onMapLoad: function (map) {
+        if (map.getSource('flowlines')) return;
+        fetch(FLOWLINES_URL)
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (fc) {
+            if (!fc || !fc.features || !fc.features.length) return;
+            if (map.getSource('flowlines')) return;
+            map.addSource('flowlines', { type: 'geojson', data: fc });
+            var beforeId = map.getLayer('pod-glow') ? 'pod-glow' : undefined;
+            map.addLayer({
+              id: 'flowlines-line', type: 'line', source: 'flowlines',
+              paint: { 'line-color': ['case',
+                           ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']],
+                           OH2O.colors.canal, OH2O.colors.river],
+                       'line-width': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 16, 2.5],
+                       'line-opacity': 0.85 }
+            }, beforeId);
+          });
+      }
+    });
+  }
+  go();
+})();
+</script>
