@@ -2,36 +2,40 @@
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
-    diversion point{{ total_count|pluralize }} found
+    diversion point{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
   </span>
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised master-list-card">
-  {% for pod in page_obj %}
-  <div
-    data-row
-    class="master-row{% if selected_pod and pod.pk == selected_pod.pk %} is-selected{% endif %}"
-    hx-get="{% url 'surface:pod_detail' pod.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    hx-push-url="{% url 'surface:pod_list' %}?selected={{ pod.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open diversion point {{ pod.name }}">
-    <div class="master-row-top">
-      <span class="master-row-id">{{ pod.name }}</span>
-      {% include "surface/partials/_status_badge.html" with status=pod.status %}
-    </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">{{ pod.stream_name|default:"—" }}</span>
-      <span class="master-row-acres">{{ pod.diversion_count }} record{{ pod.diversion_count|pluralize }}</span>
-    </div>
-  </div>
-  {% endfor %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Diversion Point</th>
+        <th>Stream</th>
+        <th>Status</th>
+        <th>Records</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pod in page_obj %}
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='{% url 'surface:pod_detail' pod.pk %}';}">
+        <td>
+          <a href="{% url 'surface:pod_detail' pod.pk %}" class="data-table-link">
+            {{ pod.name }}
+          </a>
+        </td>
+        <td class="text-secondary text-sm">{{ pod.stream_name|default:"—" }}</td>
+        <td>{% include "surface/partials/_status_badge.html" with status=pod.status %}</td>
+        <td class="text-secondary text-sm">{{ pod.diversion_count }} record{{ pod.diversion_count|pluralize }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<!-- Pagination -->
+<!-- Pagination (graceful fallback only — the page size shows every point) -->
 {% if page_obj.has_other_pages %}
 <div class="pagination-row">
   {% if page_obj.has_previous %}

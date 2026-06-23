@@ -37,16 +37,19 @@ from surface.models import (
 
 @login_required
 def pod_list(request):
-    """Master-detail workspace for points of diversion.
+    """Surface Diversions OVERVIEW: a map of every diversion point + a list.
 
-    Left pane: the HTMX-searchable POD list. Right pane: the selected diversion
-    point's detail, swapped in place when a row is clicked. A ``?selected=<pk>``
-    query param pre-renders that POD server-side so a reload or deep link lands
-    on the same workspace view (the row click pushes that URL).
+    Points of diversion are a Bucket-3 screen (few items, each heavy): a district
+    has a handful, and each one's detail is rich (its location mapped on the
+    stream/canal network, diversion records, linked use areas, compliance). So
+    this screen is a finder, not a master-detail half-pane: the map up top shows
+    every diversion point at once, the full-width list below is for finding one
+    fast, and clicking a row (or a point on the map) opens that diversion's own
+    full-width detail page. See ``docs/2.0-UX-PATTERN-SPEC.md`` for why this is
+    Bucket 3, not master-detail.
 
     Returns the ``_pod_list_results`` partial for an HTMX list refresh (search /
-    filter / pagination, which target ``#results``), and the full workspace page
-    otherwise.
+    filter / pagination, which target ``#results``), and the full page otherwise.
     """
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
@@ -65,19 +68,12 @@ def pod_list(request):
     if status:
         queryset = queryset.filter(status=status)
 
-    paginator = Paginator(queryset, 25)
+    # Diversion points are bounded and few, so show them all on one page; finding
+    # one is a glance plus a type-to-filter. Pagination stays as a graceful
+    # fallback for an unusually large district.
+    paginator = Paginator(queryset, 100)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
-
-    # Pre-load the selected POD (deep link / reload) into the detail pane.
-    selected_pod = None
-    selected_raw = request.GET.get("selected", "").strip()
-    if selected_raw:
-        selected_pod = (
-            PointOfDiversion.objects.select_related("water_right")
-            .filter(pk=selected_raw)
-            .first()
-        )
 
     context = {
         "page_obj": page_obj,
@@ -85,10 +81,7 @@ def pod_list(request):
         "q": q,
         "status": status,
         "status_choices": PointOfDiversion.STATUS_CHOICES,
-        "selected_pod": selected_pod,
     }
-    if selected_pod is not None:
-        context.update(_pod_detail_context(selected_pod))
 
     return list_response(
         request,

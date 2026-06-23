@@ -1,7 +1,18 @@
-{% extends "workspace.html" %}
+{% extends "base.html" %}
+{% load static %}
 
 {% block title %}Surface Diversions - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Surface Diversions{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,7 +21,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Surface Diversions</span>
   </nav>
-  <p class="page-description">Points of diversion from streams and canals. Pick one to open its diversion records, map, and linked use areas alongside the list.</p>
+  <p class="page-description">Points of diversion from streams and canals. The map shows every diversion point at once; pick one from the map or the list to open its diversion records, location, and linked use areas.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
     <a href="{% url 'infrastructure:import' %}?type=diversion" class="btn-secondary btn-sm">Import</a>
     <a href="{% url 'infrastructure:add' %}?type=diversion" class="btn-primary btn-sm">+ Add Diversion</a>
@@ -18,47 +29,59 @@
 </div>
 {% endblock %}
 
-{% block master_toolbar %}
-  <div>
-    <label class="form-label" for="filter-search">Search</label>
-    <input
-      type="text"
-      id="filter-search" name="q"
-      value="{{ q }}"
-      placeholder="Name or stream..."
-      hx-get="{% url 'surface:pod_list' %}"
-      hx-target="#results"
-      hx-trigger="keyup changed delay:300ms"
-      hx-include="[name='status']"
-      class="form-input search-input-icon"
-    >
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  <!-- Diversion-point map (overview): every point at once. Clicking a point
+       opens its detail page; the list below is the type-to-find path to the same. -->
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="pods-overview-map" style="height: 380px; width: 100%;"></div>
   </div>
-  <div>
-    <label class="form-label" for="filter-status">Status</label>
-    <select
-      id="filter-status" name="status"
-      hx-get="{% url 'surface:pod_list' %}"
-      hx-target="#results"
-      hx-trigger="change"
-      hx-include="[name='q']"
-      class="form-select"
-    >
-      <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
-      {% for val, label in status_choices %}
-        <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
+
+  <!-- Toolbar: search + status filter. Diversion points are bounded and few, so
+       the whole list is on one page and search is a live filter, not paging. -->
+  <div class="card-raised toolbar-row">
+    <div style="flex: 1; min-width: 200px;">
+      <label class="form-label" for="filter-search">Search</label>
+      <input
+        type="text"
+        id="filter-search" name="q"
+        value="{{ q }}"
+        placeholder="Name or stream..."
+        hx-get="{% url 'surface:pod_list' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='status']"
+        autocomplete="off"
+        class="form-input search-input-icon"
+      >
+    </div>
+    <div>
+      <label class="form-label" for="filter-status">Status</label>
+      <select
+        id="filter-status" name="status"
+        hx-get="{% url 'surface:pod_list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q']"
+        class="form-select"
+      >
+        <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+        {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
   </div>
+
+  <!-- Results (HTMX target) -->
+  <div id="results">
+    {% include "surface/partials/_pod_list_results.html" %}
+  </div>
+
+</div>
 {% endblock %}
 
-{% block master_results %}
-  {% include "surface/partials/_pod_list_results.html" %}
-{% endblock %}
-
-{% block detail_body %}
-  {% if selected_pod %}
-    {% include "surface/partials/_detail_pane.html" %}
-  {% else %}
-    {% include "surface/partials/_detail_empty.html" %}
-  {% endif %}
+{% block extra_scripts %}
+{% include "surface/partials/_pods_overview_map.html" with map_id="pods-overview-map" %}
 {% endblock %}

@@ -1,0 +1,112 @@
+{% comment %}
+Surface Diversions overview map: every diversion point at once, on the pod_list
+overview page.
+
+The Bucket-3 overview map (see docs/2.0-UX-PATTERN-SPEC.md) for a POINT screen —
+the points-of-diversion analogue of the Zones boundary map and datasync's station
+map. It draws each diversion point from surface:pods_geojson (which already
+carries pk in properties) and, on click, opens a popup with the point's name and
+a link to its full detail page. Modeled on _zones_overview_map.html.
+
+The parent page must provide a <div> with the matching map_id, and must load
+MapLibre GL JS + map-core.js (the map_scripts block) before this include.
+
+Variables:
+  map_id  - ID of the existing <div> container on the page (required)
+{% endcomment %}
+<script>
+(function() {
+  // MapLibre loads in the map_scripts block, which renders AFTER page content,
+  // so on first render this runs before the library exists. Defer until
+  // DOMContentLoaded; on an HTMX content swap the document is already loaded.
+  function init() {
+    if (!window.maplibregl) return;
+    var el = document.getElementById('{{ map_id }}');
+    if (!el || el._mapInit) return;
+    el._mapInit = true;
+
+    var COLOR = OH2O.colors.teal;   // matches the POD symbology on the big map
+
+    var map = new maplibregl.Map({
+      container: '{{ map_id }}',
+      style: OH2O.basemapStyle('aerial'),
+      zoom: 7,
+      center: [-119.5, 37.3],
+      attributionControl: false
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    OH2O.mountBasemapToggle(map, 'aerial');
+
+    // Resolve the detail URL through Django (a sentinel pk we swap out) so the
+    // link tracks the app's URL prefix instead of hardcoding it.
+    var detailUrl = '{% url "surface:pod_detail" 0 %}';
+
+    map.on('load', function() {
+      fetch('{% url "surface:pods_geojson" %}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.features || !data.features.length) return;
+
+          var coords = data.features
+            .map(function(f) { return f.geometry && f.geometry.coordinates; })
+            .filter(Boolean);
+          if (coords.length > 1) {
+            var lngs = coords.map(function(c) { return c[0]; });
+            var lats = coords.map(function(c) { return c[1]; });
+            map.fitBounds(
+              [[Math.min.apply(null, lngs), Math.min.apply(null, lats)],
+               [Math.max.apply(null, lngs), Math.max.apply(null, lats)]],
+              { padding: 40, maxZoom: 13 }
+            );
+          } else if (coords.length === 1) {
+            map.setCenter(coords[0]); map.setZoom(11);
+          }
+
+          map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+
+          map.addLayer({
+            id: '{{ map_id }}-glow',
+            type: 'circle',
+            source: '{{ map_id }}-source',
+            paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
+          });
+          map.addLayer({
+            id: '{{ map_id }}-dots',
+            type: 'circle',
+            source: '{{ map_id }}-source',
+            paint: {
+              'circle-radius': 6, 'circle-color': COLOR,
+              'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
+            }
+          });
+
+          map.on('click', '{{ map_id }}-dots', function(e) {
+            var p = e.features[0].properties;
+            var sub = [p.stream_name, p.status].filter(Boolean).join(' &middot; ');
+            new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
+              .setLngLat(e.features[0].geometry.coordinates)
+              .setHTML(
+                '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+                '<div style="font-weight:600;font-size:13px;">' + (p.name || 'Diversion point') + '</div>' +
+                (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
+                '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
+                  'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View diversion &rarr;</a>' +
+                '</div>'
+              )
+              .addTo(map);
+          });
+
+          map.on('mouseenter', '{{ map_id }}-dots', function() { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', '{{ map_id }}-dots', function() { map.getCanvas().style.cursor = ''; });
+        })
+        .catch(function(err) { console.error('PODs GeoJSON failed:', err); });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

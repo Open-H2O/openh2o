@@ -2,11 +2,11 @@
 {% load static %}
 
 {% comment %}
-  Standalone page for a single point of diversion. The body is the shared
-  _detail_pane partial (the same fragment the workspace swaps into #detail-body),
-  so the page and the in-pane view never drift. This page is the deep-link /
-  direct-URL target; day-to-day use happens in the master-detail workspace at
-  surface:pod_list.
+  A single point of diversion's full detail page — the Bucket-3 detail view (see
+  docs/2.0-UX-PATTERN-SPEC.md). Reached by clicking a point on the overview map or
+  a row in the overview list at surface:pod_list. The body is the shared
+  _detail_pane partial; the map host (#detail-map) is built by the toolkit loaded
+  in map_scripts.
 {% endcomment %}
 
 {% block title %}{{ pod.name }} - Open Water Accounting Platform{% endblock %}
