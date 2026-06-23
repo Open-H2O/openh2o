@@ -322,3 +322,16 @@
         </div>
     </nav>
 </aside>
+<script>
+    // On a phone the sidebar is a fixed overlay that sits on top of the page,
+    // so it must start closed or it covers the content on every load. Run this
+    // inline right after the sidebar markup (before the main content paints) to
+    // avoid a flash of the open sidebar. The hamburger opens it; an outside tap
+    // closes it (wired in base.html). We deliberately do NOT write localStorage
+    // here, so the desktop open/collapsed preference is left untouched.
+    (function () {
+        if (window.matchMedia('(max-width: 767px)').matches) {
+            document.getElementById('sidebar').setAttribute('data-collapsed', 'true');
+        }
+    })();
+</script>

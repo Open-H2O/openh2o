@@ -24,7 +24,7 @@
     your district automatically.
   </p>
 {% else %}
-  <div class="form-footer" style="justify-content: center; gap: var(--space-sm); margin-top: var(--space-md);">
+  <div class="form-footer" style="justify-content: center; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-md);">
     <a href="{% url 'infrastructure:add' %}{% if type_param %}?type={{ type_param }}{% endif %}" class="btn-primary">{{ add_label }}</a>
     <a href="{% url 'infrastructure:import' %}{% if type_param %}?type={{ type_param }}{% endif %}" class="btn-secondary">Import</a>
   </div>
