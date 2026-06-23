@@ -65,6 +65,10 @@
       <line x1="9" y1="3" x2="9" y2="21"/>
     </svg>
   </div>
+  {% if q or status %}
   <p class="empty-state-text">No parcels found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+  {% else %}
+  {% include "partials/_empty_onboarding.html" with what="Use Areas are the parcels you account for — each one's water use is reconciled against the supplies that serve it." add_label="+ Add Use Area" type_param="" %}
+  {% endif %}
 </div>
 {% endif %}

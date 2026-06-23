@@ -69,6 +69,10 @@
       <path d="M18 12h4"/>
     </svg>
   </div>
+  {% if q or status %}
   <p class="empty-state-text">No wells found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+  {% else %}
+  {% include "partials/_empty_onboarding.html" with what="Wells are your groundwater extraction points — each one tracks its meter readings and the parcels it irrigates." add_label="+ Add Well" type_param="well" %}
+  {% endif %}
 </div>
 {% endif %}

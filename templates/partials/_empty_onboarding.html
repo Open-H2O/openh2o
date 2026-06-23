@@ -1,0 +1,31 @@
+{% comment %}
+  Actionable empty state (E6) — shown when a list has zero records AND no active
+  search/filter, i.e. a genuine "nothing here yet" moment rather than "no
+  matches." It turns a dead end into the next step:
+
+    • Fresh instance (needs_setup) → the Setup Wizard, which auto-imports
+      parcels, wells, basins and nearby stations. The wizard is the onboarding
+      spine, so an empty list defers to it.
+    • Configured instance → this screen's own Add + Import actions (the same
+      links its toolbar offers), so an admin who emptied a list can refill it.
+
+  Caller supplies: `what` (one-line plain-English description of the entity),
+  `add_label` (e.g. "+ Add Well"), and `type_param` (the infrastructure ?type=
+  value; blank for Use Areas, which the add form keys differently). The entity
+  icon stays in the caller so each screen keeps its own glyph.
+{% endcomment %}
+<p class="empty-state-text" style="max-width: 460px; margin-left: auto; margin-right: auto;">{{ what }}</p>
+{% if needs_setup %}
+  <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
+    <a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>
+  </div>
+  <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+    Setup imports your parcels, wells, basins, and the monitoring stations near
+    your district automatically.
+  </p>
+{% else %}
+  <div class="form-footer" style="justify-content: center; gap: var(--space-sm); margin-top: var(--space-md);">
+    <a href="{% url 'infrastructure:add' %}{% if type_param %}?type={{ type_param }}{% endif %}" class="btn-primary">{{ add_label }}</a>
+    <a href="{% url 'infrastructure:import' %}{% if type_param %}?type={{ type_param }}{% endif %}" class="btn-secondary">Import</a>
+  </div>
+{% endif %}

@@ -70,6 +70,10 @@
       <line x1="16" y1="17" x2="8" y2="17"/>
     </svg>
   </div>
-  <p class="empty-state-text">No water rights found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+  {% if q or status %}
+  <p class="empty-state-text">No surface diversions found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+  {% else %}
+  {% include "partials/_empty_onboarding.html" with what="Surface Diversions are the points where surface water is taken from a stream or canal under a water right." add_label="+ Add Diversion" type_param="diversion" %}
+  {% endif %}
 </div>
 {% endif %}
