@@ -3862,6 +3862,21 @@ div[id$="-map"] {
     border-color: oklch(0.55 0.13 85 / 0.5);
 }
 
+/* -- Screen-reader-only utility (a11y) ------------------------------------ */
+/* Visually removes an element while leaving it in the accessibility tree —
+   used for the real per-page <h1> whose visible counterpart is the breadcrumb. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* -- Skip-to-content link (accessibility, E3) ----------------------------- */
 /* Off-screen until focused; the first Tab from the address bar reveals it and
    jumps a keyboard / screen-reader user past the sidebar+header to #main-content. */

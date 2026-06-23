@@ -65,7 +65,7 @@
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <!-- App layout and component styles -->
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=60">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=61">
 
     <!-- MapLibre GL JS (available in map pages via block) -->
     {% block map_styles %}{% endblock %}
@@ -98,6 +98,13 @@
             {% block breadcrumbs %}{% endblock %}
 
             <main class="app-content" id="main-content">
+                {# The real per-page H1 (a11y: 1.3.1 / 2.4.6). Visually hidden
+                   because the page subject already shows in the breadcrumb bar;
+                   this gives assistive tech a correct, unique top-level heading
+                   and fixes the heading order. The block lives here, in the
+                   {% extends %} chain, so the per-page overrides apply — inside
+                   the {% include %}d header they silently did not. #}
+                <h1 class="sr-only">{% block page_title %}Open Water Accounting Platform{% endblock %}</h1>
                 {% block content %}{% endblock %}
             </main>
 

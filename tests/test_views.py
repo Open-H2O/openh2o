@@ -256,6 +256,34 @@ class TestLedgerPresetChips:
         assert response.context["period_id"] == str(period_calc.pk)
 
 
+class TestAccessibility:
+    """WCAG 2.1 AA / 508 remediation (2026-06-23, audit docs/2.0-ACCESSIBILITY-AUDIT.md):
+    F1 keyboard-operable master rows, F3 a real per-page <h1>."""
+
+    def test_master_rows_are_keyboard_activatable(self, auth_client):
+        # F1 (2.1.1 Keyboard): the div[role=link] rows must carry an Enter-key
+        # trigger, not rely on HTMX's default mouse-only click.
+        WellFactory(name="MER-WELL-001")
+        response = auth_client.get(reverse("wells:list"))
+        body = response.content.decode()
+        assert 'role="link"' in body
+        assert "keyup[key=='Enter']" in body
+
+    def test_page_has_one_real_h1_that_is_the_page_subject(self, auth_client):
+        # F3 (1.3.1 / 2.4.6): exactly one <h1>, and it is the page subject
+        # (now in <main>), NOT the static app name that used to live in the
+        # header. The page_title block override only reaches the chain-defined
+        # h1, never the {% include %}d header.
+        import re
+
+        response = auth_client.get(reverse("accounting:ledger_list"))
+        body = response.content.decode()
+        assert body.count("<h1") == 1
+        assert '<h1 class="app-header-title"' not in body
+        h1 = re.search(r'<h1 class="sr-only">(.*?)</h1>', body, re.S)
+        assert h1 and "Use Ledger" in h1.group(1)
+
+
 class TestAccountDetailBillableLedger:
     """ISS-026: the per-parcel breakdown on account_detail must route through
     billable_ledger so a netted `calculated` row suppresses its gross

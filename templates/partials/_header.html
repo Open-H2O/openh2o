@@ -40,10 +40,11 @@
         {% endif %}
     </div>
 
-    <!-- Page title -->
-    <h1 class="app-header-title">
-        {% block page_title %}Open Water Accounting Platform{% endblock %}
-    </h1>
+    <!-- App brand. NOT a heading: this partial is {% include %}d, so a
+         {% block page_title %} here never received the per-page overrides (they
+         flow through {% extends %}, not {% include %}). The real per-page <h1>
+         now lives in <main> in base.html, where the override actually applies. -->
+    <div class="app-header-title">Open Water Accounting Platform</div>
 
     <!-- User menu -->
     <div class="app-header-user">

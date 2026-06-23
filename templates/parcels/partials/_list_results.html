@@ -15,6 +15,9 @@
     hx-get="{% url 'parcels:detail' parcel.pk %}"
     hx-target="#detail-body"
     hx-swap="innerHTML"
+    {# a11y (2.1.1): the row is a div, so HTMX's default mouse-click trigger
+       leaves it keyboard-inert. Enter activates it, matching role="link". #}
+    hx-trigger="click, keyup[key=='Enter']"
     hx-push-url="{% url 'parcels:list' %}?selected={{ parcel.pk }}"
     role="link"
     tabindex="0"

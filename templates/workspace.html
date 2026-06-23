@@ -63,17 +63,22 @@
 
 {% block extra_scripts %}
 <script>
-// Keep the clicked row highlighted. Delegated on document so it survives the
+// Keep the activated row highlighted. Delegated on document so it survives the
 // #results list being re-rendered by a search / filter / pagination swap.
+// Handles BOTH mouse click and keyboard Enter (a11y 2.1.1) — the row is a
+// div[role=link], so Enter does not synthesize a click.
 (function () {
-  document.addEventListener('click', function (e) {
+  function selectRow(e) {
+    if (e.type === 'keyup' && e.key !== 'Enter') return;
     var row = e.target.closest ? e.target.closest('[data-row]') : null;
     if (!row) return;
     document.querySelectorAll('[data-row].is-selected').forEach(function (r) {
       r.classList.remove('is-selected');
     });
     row.classList.add('is-selected');
-  });
+  }
+  document.addEventListener('click', selectRow);
+  document.addEventListener('keyup', selectRow);
 })();
 </script>
 {% block workspace_scripts %}{% endblock %}
