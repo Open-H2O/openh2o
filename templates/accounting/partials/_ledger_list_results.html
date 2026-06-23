@@ -99,6 +99,26 @@
       </tr>
       {% endfor %}
     </tbody>
+    {% comment %} Column totals for the WHOLE filtered set (all pages, not just the
+       rows shown). Amounts are signed, so the net is split into credits (supplies,
+       >= 0) and debits (usage, < 0). This is the dense-table "how much, in total?"
+       footer (Bucket 2). {% endcomment %}
+    {% if total_count %}
+    <tfoot>
+      <tr style="border-top: 2px solid var(--color-border); background: var(--color-elevated);">
+        <td colspan="2" class="text-secondary" style="font-weight: 600; white-space: nowrap;">
+          All {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
+        </td>
+        <td class="th-right td-num-bold {% if ledger_total_net >= 0 %}text-supply{% endif %}" style="white-space: nowrap;">
+          {{ ledger_total_net|floatformat:2 }}
+        </td>
+        <td colspan="3" class="text-tertiary text-xs" style="white-space: nowrap;">
+          <span class="text-supply">+{{ ledger_total_credits|floatformat:2 }}</span> credits
+          &middot; {{ ledger_total_debits|floatformat:2 }} debits &middot; net AF
+        </td>
+      </tr>
+    </tfoot>
+    {% endif %}
   </table>
 </div>
 

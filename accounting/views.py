@@ -811,6 +811,20 @@ def ledger_list(request):
         prefix = "-" if direction == "desc" else ""
         queryset = queryset.order_by(f"{prefix}{LEDGER_SORTABLE[sort]}", "-created_at")
 
+    # Column totals over the WHOLE filtered set (every matching row, not just the
+    # visible page) — the "how much, in total?" answer that makes this a dense
+    # data table (Bucket 2, docs/2.0-UX-PATTERN-SPEC.md). Amounts are signed:
+    # supplies/credits are >= 0, debits/usage are < 0, so split the sum into
+    # credits + debits + net. Re-filter by PK to drop the zone M2M join, whose row
+    # duplication (a parcel in N zones) would otherwise multiply amounts in SUM.
+    ledger_totals = ParcelLedger.objects.filter(
+        pk__in=queryset.values("pk")
+    ).aggregate(
+        net=Sum("amount_acre_feet"),
+        credits=Sum("amount_acre_feet", filter=Q(amount_acre_feet__gte=0)),
+        debits=Sum("amount_acre_feet", filter=Q(amount_acre_feet__lt=0)),
+    )
+
     paginator = Paginator(queryset, page_size)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
@@ -818,6 +832,9 @@ def ledger_list(request):
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
+        "ledger_total_net": ledger_totals["net"] or 0,
+        "ledger_total_credits": ledger_totals["credits"] or 0,
+        "ledger_total_debits": ledger_totals["debits"] or 0,
         "q": q,
         "period_id": period_id,
         "source_type": source_type,
