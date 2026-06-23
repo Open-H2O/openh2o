@@ -13,10 +13,16 @@ DEBUG = False
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
-SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# HTTPS-only behaviours. They default ON so a real (TLS) deployment is secure
+# out of the box; a plain-HTTP deployment behind a trusted network — e.g. the
+# Tailscale-only staging box on http://butler:8081 — sets these False in its
+# .env so the browser will actually send the session/CSRF cookies (a Secure
+# cookie is never sent over http, which otherwise 403s every login). Never set
+# these False on a deployment reachable over the public internet.
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=True)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=True)
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
