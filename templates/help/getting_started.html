@@ -23,6 +23,12 @@
     <a href="{% url 'water_balances' %}" class="text-sm" style="color: var(--color-gold);">Read: How Water Balances Work &rarr;</a>
   </div>
 
+  <div class="card-raised">
+    <h2 class="section-header">The fast way: the Setup Wizard</h2>
+    <p class="text-secondary text-base">You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your use areas, wells, recharge basins, and nearby monitoring stations for you &mdash; that&rsquo;s Steps 1, 2, 8, and 9. What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps 3 through 7). So run the wizard first, then come back and work the accounting steps. Read this page as the manual route, or as a map of what the wizard already did and what&rsquo;s left.</p>
+    <a href="{% url 'setup:wizard' %}" class="text-sm" style="color: var(--color-gold);">Run the Setup Wizard &rarr;</a>
+  </div>
+
   <div class="card-raised step-card">
     <span class="step-number">
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -32,7 +38,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 1</span>
+      <span class="step-eyebrow">Step 1 &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Import Your Use Areas</h2>
       <p class="text-secondary text-base">Upload use area boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Use Areas and use the import command. Each use area needs an Assessor Parcel Number (APN).</p>
       <a href="{% url 'parcels:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Areas &rarr;</a>
@@ -52,7 +58,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 2</span>
+      <span class="step-eyebrow">Step 2 &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Import Your Wells</h2>
       <p class="text-secondary text-base">Upload well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
       <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Wells &rarr;</a>
@@ -159,7 +165,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 8</span>
+      <span class="step-eyebrow">Step 8 &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Connect Monitoring Stations</h2>
       <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS wells, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
       <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Monitoring Stations &rarr;</a>
@@ -173,7 +179,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 9</span>
+      <span class="step-eyebrow">Step 9 &middot; the Setup Wizard imports recharge basins for you</span>
       <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection wells.</p>
       <a href="{% url 'surface:pod_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Surface Diversions &rarr;</a>

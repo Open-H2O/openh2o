@@ -777,6 +777,10 @@ def ledger_list(request):
     water_type_id = request.GET.get("water_type", "").strip()
     start_date = request.GET.get("start_date", "").strip()
     end_date = request.GET.get("end_date", "").strip()
+    # "Active Use Areas" preset chip: restrict to ledger rows on a parcel whose
+    # status is active (an inactive use area is not a live water user). Any
+    # truthy value means "on"; the chip sends "1".
+    active_areas = request.GET.get("active_areas", "").strip()
 
     # Phase 63 navigation params: sort column + direction, Zone facet, page size.
     sort = request.GET.get("sort", "").strip()
@@ -804,36 +808,41 @@ def ledger_list(request):
     # calculated rows, so default to the most recent period that HAS calculated
     # rows (falling back to the most recent period with any rows, then to no
     # filter on an empty table). An explicit "All Periods" (period=) is honored.
+    # The "current" period: the most recent period with calculated records, then
+    # any activity, then simply the most recent period. This single value is both
+    # the auto-default target on a bare landing AND the destination of the "This
+    # Period" preset chip, so the two always point at the same period.
+    calculated_period_id = (
+        ParcelLedger.objects.filter(
+            source_type="calculated", reporting_period__isnull=False
+        )
+        .order_by("-reporting_period__start_date")
+        .values_list("reporting_period_id", flat=True)
+        .first()
+    )
+    current_period_id = calculated_period_id or (
+        ParcelLedger.objects.filter(reporting_period__isnull=False)
+        .order_by("-reporting_period__start_date")
+        .values_list("reporting_period_id", flat=True)
+        .first()
+    )
+    if current_period_id is None and periods.exists():
+        current_period_id = periods.first().pk
+
     period_auto_defaulted = False
     auto_default_period_name = ""
-    auto_default_calculated = False
+    auto_default_calculated = calculated_period_id is not None
     no_other_filters = not (
         q or source_type or water_type_id or start_date or end_date or zone_id
+        or active_areas
     )
-    if not period_present and no_other_filters:
-        default_period_id = (
-            ParcelLedger.objects.filter(
-                source_type="calculated", reporting_period__isnull=False
-            )
-            .order_by("-reporting_period__start_date")
-            .values_list("reporting_period_id", flat=True)
-            .first()
+    if not period_present and no_other_filters and current_period_id is not None:
+        period_id = str(current_period_id)
+        period_auto_defaulted = True
+        default_period = next(
+            (p for p in periods if p.pk == current_period_id), None
         )
-        auto_default_calculated = default_period_id is not None
-        if default_period_id is None:
-            default_period_id = (
-                ParcelLedger.objects.filter(reporting_period__isnull=False)
-                .order_by("-reporting_period__start_date")
-                .values_list("reporting_period_id", flat=True)
-                .first()
-            )
-        if default_period_id is not None:
-            period_id = str(default_period_id)
-            period_auto_defaulted = True
-            default_period = next(
-                (p for p in periods if p.pk == default_period_id), None
-            )
-            auto_default_period_name = default_period.name if default_period else ""
+        auto_default_period_name = default_period.name if default_period else ""
 
     if q:
         queryset = queryset.filter(
@@ -849,6 +858,8 @@ def ledger_list(request):
         queryset = queryset.filter(effective_date__gte=start_date)
     if end_date:
         queryset = queryset.filter(effective_date__lte=end_date)
+    if active_areas:
+        queryset = queryset.filter(parcel__status="active")
     if zone_id:
         # parcel ↔ zone is many-to-many through ParcelZone, so a parcel in N
         # zones would duplicate its ledger rows — .distinct() collapses them.
@@ -905,6 +916,8 @@ def ledger_list(request):
         "period_auto_defaulted": period_auto_defaulted,
         "auto_default_period_name": auto_default_period_name,
         "auto_default_calculated": auto_default_calculated,
+        "active_areas": active_areas,
+        "current_period_id": current_period_id,
     }
 
     if request.headers.get("HX-Request"):
@@ -995,6 +1008,7 @@ def ledger_export(request):
     water_type_id = request.GET.get("water_type", "").strip()
     start_date = request.GET.get("start_date", "").strip()
     end_date = request.GET.get("end_date", "").strip()
+    active_areas = request.GET.get("active_areas", "").strip()
 
     queryset = ParcelLedger.objects.select_related(
         "parcel", "water_type", "reporting_period"
@@ -1014,6 +1028,8 @@ def ledger_export(request):
         queryset = queryset.filter(effective_date__gte=start_date)
     if end_date:
         queryset = queryset.filter(effective_date__lte=end_date)
+    if active_areas:
+        queryset = queryset.filter(parcel__status="active")
 
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="ledger_export.csv"'

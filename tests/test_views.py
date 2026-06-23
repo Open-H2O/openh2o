@@ -210,6 +210,52 @@ class TestLedgerDefaultPeriod:
         assert response.context["total_count"] == 2
 
 
+class TestLedgerPresetChips:
+    """Quick-filter chips above the ledger filter bar (Phase E polish): a one-
+    click 'Active Use Areas' filter, and a 'This Period' chip whose destination
+    is the same period the ledger auto-defaults to, so the two never disagree."""
+
+    def test_active_use_areas_filters_to_active_parcels(self, auth_client):
+        from datetime import date
+
+        active_parcel = ParcelFactory(status="active")
+        inactive_parcel = ParcelFactory(status="inactive")
+        ParcelLedgerFactory(parcel=active_parcel, effective_date=date(2024, 6, 1))
+        ParcelLedgerFactory(parcel=inactive_parcel, effective_date=date(2024, 6, 1))
+
+        response = auth_client.get(
+            reverse("accounting:ledger_list") + "?active_areas=1"
+        )
+
+        assert response.status_code == 200
+        # The chip's on-state is driven by this context value.
+        assert response.context["active_areas"] == "1"
+        rows = list(response.context["page_obj"])
+        assert rows, "the active parcel's row should survive the filter"
+        assert all(r.parcel.status == "active" for r in rows)
+        assert all(r.parcel_id != inactive_parcel.pk for r in rows)
+
+    def test_this_period_chip_target_matches_auto_default(self, auth_client):
+        from datetime import date
+
+        # current_period_id is the chip's destination; it must equal the period
+        # the ledger auto-defaults to on a bare landing.
+        period_calc = ReportingPeriodFactory(
+            start_date=date(2024, 6, 1), end_date=date(2024, 6, 30)
+        )
+        ParcelLedgerFactory(
+            reporting_period=period_calc,
+            source_type="calculated",
+            effective_date=date(2024, 6, 15),
+        )
+
+        response = auth_client.get(reverse("accounting:ledger_list"))
+
+        assert response.status_code == 200
+        assert response.context["current_period_id"] == period_calc.pk
+        assert response.context["period_id"] == str(period_calc.pk)
+
+
 class TestAccountDetailBillableLedger:
     """ISS-026: the per-parcel breakdown on account_detail must route through
     billable_ledger so a netted `calculated` row suppresses its gross

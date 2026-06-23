@@ -3811,6 +3811,57 @@ div[id$="-map"] {
     border-color: oklch(0.45 0.12 25 / 0.35);
 }
 
+/* -- Preset filter chips (ledger quick filters) --------------------------- */
+/* One-click toggles above the filter bar. Ghost (quiet outline) when off, a
+   gold-tinted pill when on, so the active preset is obvious at a glance. */
+.filter-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.filter-chip-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+.filter-chip:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-hover);
+}
+
+.filter-chip:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 1px;
+}
+
+.filter-chip.is-active {
+    background-color: oklch(0.45 0.12 85 / 0.18);
+    color: var(--color-gold);
+    border-color: oklch(0.55 0.13 85 / 0.5);
+}
+
 /* -- Skip-to-content link (accessibility, E3) ----------------------------- */
 /* Off-screen until focused; the first Tab from the address bar reveals it and
    jumps a keyboard / screen-reader user past the sidebar+header to #main-content. */

@@ -25,7 +25,7 @@
       </span>
     </div>
     <div class="row-start">
-      <a href="{% url 'accounting:ledger_export' %}?period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}" class="btn-secondary btn-sm">
+      <a href="{% url 'accounting:ledger_export' %}?period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}&active_areas={{ active_areas }}" class="btn-secondary btn-sm">
         Download CSV
       </a>
       <a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">
@@ -52,6 +52,35 @@
        Enter keypress fires the HTMX refresh, not a full-page GET reload. -->
   <form id="ledger-filters" class="ledger-filters-sticky" onsubmit="return false;">
     <div class="card-raised">
+      <!-- Preset filter chips — one-click shortcuts for the two filters an
+           infrequent user reaches for most (USWDS recognition-over-recall). Each
+           chip just drives an existing control: "This Period" sets the period
+           select and fires its change; "Active Use Areas" toggles a hidden input
+           that carries its own HTMX trigger. Both ride the whole filter/sort/
+           paging state via hx-include and keep the URL shareable. -->
+      <div class="filter-chip-row">
+        <span class="filter-chip-label">Quick filters</span>
+        <button type="button" id="chip-this-period"
+                class="filter-chip{% if current_period_id and period_id == current_period_id|stringformat:'d' %} is-active{% endif %}"
+                {% if current_period_id %}data-period="{{ current_period_id }}"{% endif %}
+                aria-pressed="{% if current_period_id and period_id == current_period_id|stringformat:'d' %}true{% else %}false{% endif %}">
+          This Period
+        </button>
+        <button type="button" id="chip-active-areas"
+                class="filter-chip{% if active_areas %} is-active{% endif %}"
+                aria-pressed="{% if active_areas %}true{% else %}false{% endif %}">
+          Active Use Areas
+        </button>
+      </div>
+      <!-- Hidden carrier for the Active-Use-Areas toggle; the chip flips its
+           value and dispatches change, which fires this element's HTMX GET. -->
+      <input type="hidden" name="active_areas" id="filter-active-areas"
+             value="{{ active_areas }}"
+             hx-get="{% url 'accounting:ledger_list' %}"
+             hx-target="#ledger-results"
+             hx-trigger="change"
+             hx-include="#ledger-filters"
+             hx-push-url="true">
       <div class="toolbar-row">
         <!-- Search = the parcel filter (always visible) -->
         <div style="flex: 1; min-width: 200px;">
@@ -247,6 +276,26 @@
   window.syncLedgerHeaderOffset();
   window.addEventListener('resize', window.syncLedgerHeaderOffset);
   document.body.addEventListener('htmx:afterSwap', window.syncLedgerHeaderOffset);
+
+  // Preset chips. "This Period" sets the period select to the current period and
+  // fires its existing change trigger; "Active Use Areas" toggles the hidden
+  // carrier input. Both reuse the form's HTMX wiring, so no new fetch logic.
+  var chipPeriod = document.getElementById('chip-this-period');
+  if (chipPeriod) {
+    chipPeriod.addEventListener('click', function() {
+      var sel = document.getElementById('filter-period');
+      sel.value = this.getAttribute('data-period') || '';
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+  var chipActive = document.getElementById('chip-active-areas');
+  if (chipActive) {
+    chipActive.addEventListener('click', function() {
+      var hidden = document.getElementById('filter-active-areas');
+      hidden.value = hidden.value ? '' : '1';
+      hidden.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
 })();
 </script>
 {% endblock %}
