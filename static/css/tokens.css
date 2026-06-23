@@ -5,11 +5,16 @@
 
 :root {
     /* -- Surface colors -------------------------------------------------- */
+    /* Phase F (2026-06-23): surfaces re-expressed in OKLCH as an even-stepped
+       elevation ladder. Cards now carry a small but real lift above the
+       near-black base — depth comes from BOTH a lighter surface and the
+       pop-shadow, so cards have a readable edge (also fixes audit F6). The
+       near-black base is unchanged; this is the approved "whisper of lift". */
     --color-base: #040608;
-    --color-card: #080b10; /* brand Surface Raised; matches DESIGN.md/CLAUDE.md + VanderDev/VanderOps. Depth comes from the pop-shadow, not from a lighter card. */
-    --color-inset: oklch(0.12 0.010 260); /* ~#12151b */
-    --color-elevated: oklch(0.21 0.012 260); /* ~#242a33 */
-    --color-hover: oklch(0.24 0.012 260); /* ~#2c333d */
+    --color-card: oklch(0.13 0.012 260); /* ~#16191f — lifted from #080b10 */
+    --color-inset: oklch(0.16 0.012 260); /* ~#1c2026 */
+    --color-elevated: oklch(0.22 0.012 260); /* ~#262b34 */
+    --color-hover: oklch(0.25 0.012 260); /* ~#2e343e */
 
     /* -- Accent colors --------------------------------------------------- */
     --color-gold: #E4A317;
@@ -22,7 +27,9 @@
     /* -- Text colors ----------------------------------------------------- */
     --color-text-primary: #e8edf4;
     --color-text-secondary: #8899aa;
-    --color-text-tertiary: #6b7f94;
+    /* Phase F (F2): lifted from #6b7f94 to clear WCAG AA 4.5:1 on the worst
+       surface (elevated). Exact value verified in-browser on the new tokens. */
+    --color-text-tertiary: #8a9bb0;
 
     /* -- Semantic status colors ------------------------------------------- */
     --color-error: #f87171;
@@ -31,6 +38,11 @@
     /* -- Border colors --------------------------------------------------- */
     --color-border: rgba(100, 140, 180, 0.07);
     --color-border-hover: rgba(100, 140, 180, 0.13);
+    /* Phase F (F6): dedicated edge for INTERACTIVE controls (inputs, selects,
+       textareas, search) at >=3:1 against their surface, so their boundary is
+       perceivable. Decorative card edges keep the subtle --color-border above.
+       Exact alpha verified in-browser on the new tokens. */
+    --color-border-interactive: rgba(125, 165, 205, 0.42);
 
     /* -- OKLCH data viz ramps (from DESIGN.json) ------------------------- */
 
@@ -81,9 +93,20 @@
     --space-3xl: 64px;
 
     /* -- Shadows (Pacific Golden single-source, matches VanderDev) ------- */
-    --shadow-pop-sm: 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    --shadow-pop-lg: 0 4px 12px rgba(0, 0, 0, 0.4), 0 12px 28px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    /* Phase F: softened (lower opacity, larger soft radius) now that cards also
+       carry a lighter surface. The two depth cues reinforce instead of the
+       shadow doing all the work — the Apple-dark-mode model. */
+    --shadow-pop-sm: 0 1px 2px rgba(0, 0, 0, 0.30), 0 6px 16px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    --shadow-pop-lg: 0 2px 6px rgba(0, 0, 0, 0.34), 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+
+    /* -- Motion (Phase F) ------------------------------------------------- */
+    /* One easing + two durations applied everywhere instead of ad-hoc values,
+       for the physical, consistent feel of the native app. Honoured only when
+       the user has NOT asked the OS to reduce motion (see app.css F5 guard). */
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --duration-fast: 150ms;
+    --duration-base: 250ms;
 
     /* -- Entity colors (map layer identity) ------------------------------ */
     --color-entity-gold: #E4A317;      /* Wells, Boundary outline */

@@ -328,7 +328,7 @@ a { color: inherit; }
     /* Extra left padding clears the magnifier glyph. */
     padding: var(--space-xs) var(--space-md) var(--space-xs) calc(var(--space-md) + 1.1rem);
     background-color: var(--color-inset);
-    border: 1px solid rgba(120, 150, 185, 0.22);
+    border: 1px solid var(--color-border-interactive); /* Phase F (F6): >=3:1 control edge */
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
     font-size: 0.8125rem;
@@ -440,7 +440,7 @@ a { color: inherit; }
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: var(--space-md);
+    gap: var(--space-lg); /* Phase F: more air between cards (loosen furniture) */
 }
 
 .dashboard-card {
@@ -474,9 +474,15 @@ a { color: inherit; }
 }
 
 .dashboard-card-value {
-    font-size: 1.5rem;
-    font-weight: 800;
-    line-height: 1.2;
+    /* Phase F: stat numbers are near-white (primary), not gold — gold is
+       reserved for the active/selected state and CTAs. Bigger and with tighter
+       tracking for the deliberate, Apple-like display treatment. */
+    color: var(--color-text-primary);
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
     margin-bottom: var(--space-xs);
 }
 
@@ -688,15 +694,18 @@ a { color: inherit; }
 
 .home-stat-value {
     font-size: 1.375rem;
-    font-weight: 800;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     line-height: 1.1;
-    color: var(--color-gold);
+    /* Phase F: resting state near-white; gold appears only on hover, as an
+       interaction cue (gold == state). */
+    color: var(--color-text-primary);
     font-variant-numeric: tabular-nums;
-    transition: color 150ms;
+    transition: color var(--duration-fast) var(--ease-standard);
 }
 
 .home-stat:hover .home-stat-value {
-    color: var(--color-gold-hover);
+    color: var(--color-gold);
 }
 
 .home-stat-label {
@@ -808,7 +817,10 @@ a { color: inherit; }
 }
 
 .data-table-link {
-    color: var(--color-blue);
+    /* Phase F (F2): text-sized blue routed to the brighter Pacific blue
+       (#3DB4E0, 8.26:1 on a card) so identifier links clear WCAG AA. The
+       darker --color-blue stays for borders/fills/large headings. */
+    color: var(--color-blue-bright);
     text-decoration: none;
     font-weight: 600;
 }
@@ -893,7 +905,7 @@ a { color: inherit; }
     width: 100%;
     padding: var(--space-sm) var(--space-md);
     background-color: var(--color-inset);
-    border: 1px solid rgba(120, 150, 185, 0.22);
+    border: 1px solid var(--color-border-interactive); /* Phase F (F6): >=3:1 control edge */
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
     font-size: 0.875rem;
@@ -911,7 +923,7 @@ a { color: inherit; }
     width: 100%;
     padding: var(--space-sm) var(--space-md);
     background-color: var(--color-inset);
-    border: 1px solid rgba(120, 150, 185, 0.22);
+    border: 1px solid var(--color-border-interactive); /* Phase F (F6): >=3:1 control edge */
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
     font-size: 0.875rem;
@@ -934,7 +946,7 @@ a { color: inherit; }
     width: 100%;
     padding: var(--space-sm) var(--space-md);
     background-color: var(--color-inset);
-    border: 1px solid rgba(120, 150, 185, 0.22);
+    border: 1px solid var(--color-border-interactive); /* Phase F (F6): >=3:1 control edge */
     border-radius: var(--radius-md);
     color: var(--color-text-primary);
     font-size: 0.875rem;
@@ -1492,7 +1504,7 @@ a { color: inherit; }
 
 .badge-blue {
     background-color: oklch(0.45 0.12 240 / 0.2);
-    color: var(--color-blue);
+    color: var(--color-blue-bright); /* Phase F (F2): readable blue badge text */
 }
 
 .badge-teal {
@@ -2087,7 +2099,7 @@ div[id$="-map"] {
 }
 
 .text-blue {
-    color: var(--color-blue);
+    color: var(--color-blue-bright); /* Phase F (F2): readable as body text */
 }
 
 .text-furnace {
@@ -3898,4 +3910,20 @@ div[id$="-map"] {
     top: var(--space-md);
     outline: 2px solid #ffffff;
     outline-offset: 2px;
+}
+
+/* -- Reduced motion (Phase F, audit F5) ---------------------------------- */
+/* Honour the OS "reduce motion" setting (WCAG 2.3.3): collapse animations and
+   transitions to near-instant, and stop the HTMX loading-bar / spinner from
+   animating. A baseline expectation for a government tool and a help for users
+   with vestibular sensitivity. Kept last so it overrides everything above. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
