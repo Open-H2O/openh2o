@@ -3581,3 +3581,26 @@ div[id$="-map"] {
     color: oklch(0.72 0.20 25);
     border-color: oklch(0.45 0.12 25 / 0.35);
 }
+
+/* -- Skip-to-content link (accessibility, E3) ----------------------------- */
+/* Off-screen until focused; the first Tab from the address bar reveals it and
+   jumps a keyboard / screen-reader user past the sidebar+header to #main-content. */
+.skip-link {
+    position: absolute;
+    left: var(--space-md);
+    top: -56px;
+    z-index: 2000;
+    padding: 8px 16px;
+    background: var(--color-gold);
+    color: #040608;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: top 130ms ease;
+}
+
+.skip-link:focus {
+    top: var(--space-md);
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}

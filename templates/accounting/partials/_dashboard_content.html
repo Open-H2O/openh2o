@@ -12,6 +12,7 @@
 {% include "accounting/partials/_attention_strip.html" %}
 
 {% url 'water_balances' as wb_help_url %}
+{% url 'budgets_allocations' as budgets_help_url %}
 <div class="budget-panel">
   <div class="budget-panel-head">
     <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. Use{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, estimated from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
@@ -73,10 +74,10 @@
         <th class="th-right">Groundwater (AF)</th>
         <th class="th-right">Precip (AF)</th>
         <th class="th-right">Supplies (AF)</th>
-        <th class="th-right">Net (AF)</th>
+        <th class="th-right">Net (AF){% include "partials/_explainer_popout.html" with title="Net" text="Supplies minus estimated consumptive use for this account — the balance left after the water its crops drank is subtracted from the surface, groundwater, and rainfall that met that demand." link=wb_help_url link_label="How water balances work" %}</th>
         {% if has_allocations %}
-        <th class="th-right">Allocation (AF)</th>
-        <th class="th-right">Remaining (AF)</th>
+        <th class="th-right">Allocation (AF){% include "partials/_explainer_popout.html" with title="Allocation" text="This account's share of the period's water budget, pro-rated by how many of its parcels fall in each zone." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
+        <th class="th-right">Remaining (AF){% include "partials/_explainer_popout.html" with title="Remaining" text="Allocation minus estimated consumptive use. A negative number means the account is over budget — it consumed more than its allocation for the period." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
         {% endif %}
       </tr>
     </thead>

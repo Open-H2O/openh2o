@@ -65,7 +65,7 @@
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <!-- App layout and component styles -->
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=52">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=53">
 
     <!-- MapLibre GL JS (available in map pages via block) -->
     {% block map_styles %}{% endblock %}
@@ -84,6 +84,9 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <!-- Accessibility: the first focusable element jumps a keyboard / screen-reader
+         user straight past the sidebar and header to the page body (E3). -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
     <div id="toast-container" class="toast-container"></div>
     <div class="app-shell">
@@ -94,7 +97,7 @@
 
             {% block breadcrumbs %}{% endblock %}
 
-            <main class="app-content">
+            <main class="app-content" id="main-content">
                 {% block content %}{% endblock %}
             </main>
 

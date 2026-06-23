@@ -434,6 +434,54 @@ class TestDashboardAttentionStrip:
         assert "Needs attention" not in html
 
 
+class TestAccessibilityAndHelp:
+    """E3 (skip-to-content link) + E4 (inline contextual help) — small
+    cross-cutting UX wins that ride on the shared layout and the existing
+    explainer-popout component."""
+
+    def test_skip_link_present_and_targets_main(self, auth_client):
+        """Every page carries a skip-to-content link as an early focusable
+        element, pointing at the #main-content landmark on <main>."""
+        response = auth_client.get(reverse("accounting:dashboard"))
+        html = response.content.decode()
+        assert response.status_code == 200
+        assert 'href="#main-content"' in html
+        assert "Skip to main content" in html
+        assert 'id="main-content"' in html
+
+    def test_dashboard_budget_columns_have_explainers(self, auth_client):
+        """The budget-math columns carry the '?' explainer pop-out, cross-linked
+        to the budgets-and-allocations help page."""
+        from datetime import date
+        from decimal import Decimal
+
+        period = ReportingPeriodFactory(
+            start_date=date(2025, 10, 1), end_date=date(2026, 9, 30)
+        )
+        zone = ZoneFactory()
+        water_type = WaterTypeFactory()
+        parcel = ParcelFactory()
+        ParcelZoneFactory(parcel=parcel, zone=zone)
+        account = WaterAccountFactory()
+        WaterAccountParcelFactory(water_account=account, parcel=parcel)
+        AllocationPlanFactory(
+            zone=zone,
+            water_type=water_type,
+            reporting_period=period,
+            allocation_acre_feet=Decimal("100.0000"),
+        )
+
+        response = auth_client.get(
+            reverse("accounting:dashboard") + f"?period={period.pk}"
+        )
+        html = response.content.decode()
+        assert response.status_code == 200
+        # The explainer button's aria-label is "Explain: <title>".
+        assert "Explain: Allocation" in html
+        assert "Explain: Remaining" in html
+        assert reverse("budgets_allocations") in html
+
+
 class TestAccountingPages:
     def test_dashboard(self, auth_client):
         response = auth_client.get(reverse("accounting:dashboard"))
