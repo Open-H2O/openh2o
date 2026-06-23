@@ -65,20 +65,6 @@ def report_list(request):
         report_template__report_type__startswith="calwatrs",
     ).count()
 
-    # Pre-load the selected submission (deep link / reload) into the detail pane,
-    # so a reload or shared ?selected=<pk> link lands on the same workspace view
-    # the row click pushes. Mirrors accounting.accounts_list (Bucket 1).
-    selected_submission = None
-    selected_raw = request.GET.get("selected", "").strip()
-    if selected_raw:
-        selected_submission = (
-            ReportSubmission.objects.select_related(
-                "report_template", "reporting_period"
-            )
-            .filter(pk=selected_raw)
-            .first()
-        )
-
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
@@ -87,13 +73,11 @@ def report_list(request):
         "gears_count": gears_count,
         "calwatrs_count": calwatrs_count,
         "status_choices": ReportSubmission.STATUS_CHOICES,
-        "selected_submission": selected_submission,
     }
-    if selected_submission is not None:
-        context.update(_report_detail_context(selected_submission))
 
-    # A search / filter / pagination swap re-renders just the history list (the
-    # workspace's #results target); the action-list and detail pane persist.
+    # A search / filter / pagination swap re-renders just the history table (the
+    # #results target); the action cards above persist. Rows link out to each
+    # submission's own detail page, so there is no in-page detail pane to preload.
     if request.headers.get("HX-Request"):
         return render(request, "reporting/partials/_report_history.html", context)
 
@@ -187,8 +171,7 @@ def report_generate(request):
 
 def _report_detail_context(submission):
     """Per-submission detail context, shared by the standalone report_detail
-    page, its in-pane HTMX render, and the reports workspace's pre-loaded
-    ``?selected=`` pane — so all three render identically and never drift
+    page and its in-pane HTMX render, so both render identically and never drift
     (Bucket 3, docs/2.0-UX-PATTERN-SPEC.md)."""
     report_type = submission.report_template.report_type
     return {
@@ -206,10 +189,10 @@ def report_detail(request, pk):
     """A single report submission's detail.
 
     Two render paths off the one shared context:
-      * HX-Request → the ``_report_detail_pane`` body (a row click in the reports
-        workspace swaps this into ``#detail-body``).
-      * No HX-Request → the standalone ``report_detail`` page (deep links, the
-        in-pane "open full page" escape, and no-HTMX clients).
+      * HX-Request → the ``_report_detail_pane`` body (for any in-page HTMX
+        caller that swaps the pane into place).
+      * No HX-Request → the standalone ``report_detail`` page (the reports-history
+        rows link here directly; also deep links and no-HTMX clients).
     """
     submission = get_object_or_404(
         ReportSubmission.objects.select_related("report_template", "reporting_period"),

@@ -1,57 +1,63 @@
 {% comment %}
-  The submission-history master list (the workspace #results target). Compact,
-  two-line clickable rows — a row click swaps that submission's detail into
-  #detail-body and pushes ?selected=<pk> so reload / deep link lands on the same
-  view. Mirrors accounting _accounts_list_results (Bucket 1). Returned on its own
-  for a search / filter / pagination swap; included by report_list for first paint.
+  The submission-history table (the #results target). A full-width finder, mirror
+  of surface _list_results: each row links out to that submission's own detail
+  page. Returned on its own for a search / filter / pagination swap; included by
+  report_list for first paint. (docs/2.0-UX-PATTERN-SPEC.md)
 {% endcomment %}
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
-    report{{ total_count|pluralize }}
+    report{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
   </span>
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised master-list-card">
-  {% for sub in page_obj %}
-  <div
-    data-row
-    class="master-row{% if selected_submission and sub.pk == selected_submission.pk %} is-selected{% endif %}"
-    hx-get="{% url 'reporting:report_detail' pk=sub.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    hx-push-url="{% url 'reporting:report_list' %}?selected={{ sub.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open report {{ sub.report_template.name }} for {{ sub.reporting_period.name }}">
-    <div class="master-row-top">
-      <span class="master-row-id">{{ sub.report_template.name }}</span>
-      {% if sub.status == "filed" %}
-        <span class="badge badge-pill badge-green">{{ sub.get_status_display }}</span>
-      {% elif sub.status == "internally_approved" %}
-        <span class="badge badge-pill badge-orange">{{ sub.get_status_display }}</span>
-      {% elif sub.status == "exported" %}
-        <span class="badge badge-pill badge-blue">{{ sub.get_status_display }}</span>
-      {% else %}
-        <span class="badge badge-pill badge-grey">{{ sub.get_status_display }}</span>
-      {% endif %}
-    </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">
-        {% if 'gears' in sub.report_template.report_type %}
-        <span class="badge badge-pill badge-gold">GEARS</span>
-        {% else %}
-        <span class="badge badge-pill badge-blue">CalWATRS</span>
-        {% endif %}
-        {{ sub.reporting_period.name }}
-      </span>
-      <span class="master-row-acres">
-        {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y" }}{% else %}—{% endif %}
-      </span>
-    </div>
-  </div>
-  {% endfor %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Report</th>
+        <th>Type</th>
+        <th>Period</th>
+        <th>Generated</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sub in page_obj %}
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='{% url 'reporting:report_detail' pk=sub.pk %}';}">
+        <td>
+          <a href="{% url 'reporting:report_detail' pk=sub.pk %}" class="data-table-link">
+            {{ sub.report_template.name }}
+          </a>
+        </td>
+        <td>
+          {% if 'gears' in sub.report_template.report_type %}
+          <span class="badge badge-pill badge-gold">GEARS</span>
+          {% else %}
+          <span class="badge badge-pill badge-blue">CalWATRS</span>
+          {% endif %}
+        </td>
+        <td class="text-secondary text-sm">{{ sub.reporting_period.name }}</td>
+        <td class="text-secondary text-sm tabular-nums">
+          {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y" }}{% else %}—{% endif %}
+        </td>
+        <td>
+          {% if sub.status == "filed" %}
+            <span class="badge badge-pill badge-green">{{ sub.get_status_display }}</span>
+          {% elif sub.status == "internally_approved" %}
+            <span class="badge badge-pill badge-orange">{{ sub.get_status_display }}</span>
+          {% elif sub.status == "exported" %}
+            <span class="badge badge-pill badge-blue">{{ sub.get_status_display }}</span>
+          {% else %}
+            <span class="badge badge-pill badge-grey">{{ sub.get_status_display }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 {% if page_obj.has_other_pages %}

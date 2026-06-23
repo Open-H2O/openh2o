@@ -652,34 +652,32 @@ class TestReportingPages:
         response = client.get(reverse("reporting:report_list"))
         assert response.status_code == 302
 
-    def test_report_list_is_workspace_with_action_list(self, auth_client):
-        """The overview renders the v2.0 workspace shell, leads with the
-        action-list, and rests in the empty detail pane when nothing is picked."""
+    def test_report_list_is_bucket3_finder(self, auth_client):
+        """The overview is a finder, not a master-detail workspace: a full-width
+        page that leads with the 'Start a filing' actions and a history table.
+        A report has no geometry, so there is no map and no in-page detail pane."""
         response = auth_client.get(reverse("reporting:report_list"))
         html = response.content.decode()
         assert response.status_code == 200
-        assert "workspace-split" in html
         assert "Start a filing" in html
-        assert "Select a report from the history" in html  # resting empty pane
-        assert "maplibre-gl.js" not in html  # map-less: MapLibre never loads
+        # No master-detail shell and no map on this screen.
+        assert "workspace-split" not in html
+        assert "detail-body" not in html
+        assert "maplibre-gl.js" not in html
 
-    def test_report_list_deeplink_preloads_detail_pane(self, auth_client):
-        """?selected=<pk> pre-loads that submission into the detail pane (deep
-        link / reload), not the resting empty state."""
+    def test_report_list_rows_link_to_detail_page(self, auth_client):
+        """History rows link out to each submission's own standalone detail page
+        (full navigation), not an in-page pane swap."""
         sub = _report_submission()
-        response = auth_client.get(
-            reverse("reporting:report_list"), {"selected": sub.pk}
-        )
+        response = auth_client.get(reverse("reporting:report_list"))
         html = response.content.decode()
         assert response.status_code == 200
-        assert "pane-header" in html
+        assert reverse("reporting:report_detail", args=[sub.pk]) in html
         assert sub.report_template.name in html
-        assert "is-selected" in html  # the matching history row is highlighted
-        assert "Select a report from the history" not in html
 
     def test_report_list_htmx_returns_history_partial(self, auth_client):
-        """A search/filter swap (HX-Request) returns just the history list, not
-        the whole workspace."""
+        """A search/filter swap (HX-Request) returns just the history table, not
+        the whole page."""
         _report_submission()
         response = auth_client.get(
             reverse("reporting:report_list"), HTTP_HX_REQUEST="true"
@@ -687,11 +685,12 @@ class TestReportingPages:
         html = response.content.decode()
         assert response.status_code == 200
         assert "count-pill" in html
-        assert "workspace-split" not in html
+        assert "data-table" in html
+        assert "<html" not in html.lower()  # fragment, not a full document
 
-    def test_report_detail_htmx_returns_pane_only(self, auth_client):
-        """A row click (HX-Request) swaps in the detail pane partial, with the
-        'open full page' escape — not a full standalone page."""
+    def test_report_detail_htmx_returns_pane_fragment(self, auth_client):
+        """An in-page HTMX caller gets just the detail-pane body fragment, not a
+        full standalone page wrapped in base.html."""
         sub = _report_submission()
         response = auth_client.get(
             reverse("reporting:report_detail", args=[sub.pk]), HTTP_HX_REQUEST="true"
@@ -699,16 +698,15 @@ class TestReportingPages:
         html = response.content.decode()
         assert response.status_code == 200
         assert "pane-header" in html
-        assert "Open full page" in html
-        assert "workspace-split" not in html  # it's the body fragment, not a page
+        assert "<html" not in html.lower()  # it's the body fragment, not a page
 
     def test_report_detail_full_page_wraps_pane(self, auth_client):
-        """The standalone page (deep link / escape) wraps the same pane body with
-        the breadcrumb and a back-link to the overview."""
+        """The standalone page (the history row's link target) wraps the shared
+        pane body with the breadcrumb and a back-link to the overview."""
         sub = _report_submission()
         response = auth_client.get(reverse("reporting:report_detail", args=[sub.pk]))
         html = response.content.decode()
         assert response.status_code == 200
         assert "breadcrumb" in html
         assert "status-section" in html  # the shared pane body is included
-        assert f"?selected={sub.pk}" in html  # back-link returns to the workspace
+        assert reverse("reporting:report_list") in html  # back-link to the overview

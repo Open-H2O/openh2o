@@ -1,19 +1,17 @@
-{% extends "workspace.html" %}
+{% extends "base.html" %}
+{% load static %}
 
 {% block title %}Reports - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Reports{% endblock %}
 
 {% comment %}
-  Reports overview as a Bucket-3 action-list on the v2.0 workspace shell. The
-  left pane leads with what you can START (the action-list: GEARS, CalWATRS, the
-  shared-supply check) and carries the submission history below it; the right
-  pane swaps in a picked submission's detail. A report has no geometry, so this
-  workspace runs map-less — override the shell's map asset blocks to empty so
-  MapLibre never loads and the hidden #detail-map slot just stays hidden.
-  (docs/2.0-UX-PATTERN-SPEC.md)
+  Reports overview as a Bucket-3 *finder*, NOT the master-detail workspace shell.
+  A report has no geometry, so the two-pane map workspace bought nothing here but a
+  hidden map slot and a permanently-empty right pane. Mirrors the Water Rights
+  overview (surface/water_rights_list.html): a full-width page that leads with the
+  filings you can START, then a full-width history table whose rows link out to each
+  submission's own detail page. (docs/2.0-UX-PATTERN-SPEC.md)
 {% endcomment %}
-{% block map_styles %}{% endblock %}
-{% block map_scripts %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -26,47 +24,59 @@
 </div>
 {% endblock %}
 
-{% block master_toolbar %}
-  {% include "reporting/partials/_report_actions.html" %}
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
 
-  <!-- History search + status filter. A change here swaps just the #results list
-       below; the action-list above and the detail pane persist. -->
-  <div style="margin-top: var(--space-md);">
-    <div class="field-label" style="margin-bottom: var(--space-xs);">Report history</div>
-    <div style="display: flex; gap: var(--space-sm);">
-      <input type="search"
-             name="q"
-             value="{{ q }}"
-             placeholder="Search reports..."
-             hx-get="{% url 'reporting:report_list' %}"
-             hx-target="#results"
-             hx-trigger="keyup changed delay:300ms"
-             hx-include="[name='status']"
-             class="form-input search-input-icon"
-             style="flex: 1;">
-      <select name="status"
-              hx-get="{% url 'reporting:report_list' %}"
-              hx-target="#results"
-              hx-trigger="change"
-              hx-include="[name='q']"
-              class="form-select" style="width: auto;">
-        <option value="">All statuses</option>
-        {% for value, label in status_choices %}
-        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
+  <!-- Start a filing: the heavy things you kick off from this screen, given room
+       to breathe as a responsive card grid (Bucket 3). -->
+  <section>
+    <h2 class="section-header">Start a filing</h2>
+    {% include "reporting/partials/_report_actions.html" %}
+  </section>
+
+  <!-- Report history: a full-width finder. Search / status filter swap just the
+       #results table below; rows link out to each submission's own detail page. -->
+  <section>
+    <h2 class="section-header">Report history</h2>
+
+    <div class="card-raised toolbar-row">
+      <div style="flex: 1; min-width: 200px;">
+        <label class="form-label" for="filter-search">Search</label>
+        <input
+          type="text"
+          id="filter-search" name="q"
+          value="{{ q }}"
+          placeholder="Report name or period..."
+          hx-get="{% url 'reporting:report_list' %}"
+          hx-target="#results"
+          hx-trigger="keyup changed delay:300ms"
+          hx-include="[name='status']"
+          autocomplete="off"
+          class="form-input search-input-icon"
+        >
+      </div>
+      <div>
+        <label class="form-label" for="filter-status">Status</label>
+        <select
+          id="filter-status" name="status"
+          hx-get="{% url 'reporting:report_list' %}"
+          hx-target="#results"
+          hx-trigger="change"
+          hx-include="[name='q']"
+          class="form-select"
+        >
+          <option value="" {% if not status %}selected{% endif %}>All statuses</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
-  </div>
-{% endblock %}
 
-{% block master_results %}
-  {% include "reporting/partials/_report_history.html" %}
-{% endblock %}
+    <div id="results">
+      {% include "reporting/partials/_report_history.html" %}
+    </div>
+  </section>
 
-{% block detail_body %}
-  {% if selected_submission %}
-    {% include "reporting/partials/_report_detail_pane.html" %}
-  {% else %}
-    {% include "reporting/partials/_report_detail_empty.html" %}
-  {% endif %}
+</div>
 {% endblock %}
