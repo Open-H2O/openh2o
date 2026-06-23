@@ -10,7 +10,7 @@
 <div class="card-raised master-list-card">
   {% for parcel in page_obj %}
   <div
-    data-parcel-row
+    data-row
     class="master-row{% if selected_parcel and parcel.pk == selected_parcel.pk %} is-selected{% endif %}"
     hx-get="{% url 'parcels:detail' parcel.pk %}"
     hx-target="#detail-body"

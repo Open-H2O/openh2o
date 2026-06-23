@@ -35,8 +35,8 @@
     <a href="{% url 'parcels:list' %}" class="back-link">&larr; Back to Use Areas</a>
   </div>
   <!-- Persistent map host (the shared body partial builds the map into this). -->
-  <div id="parcel-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
-    <div id="parcel-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
   <div id="detail-body">
     {% include "parcels/partials/_detail_pane.html" %}

@@ -1,7 +1,7 @@
 {% comment %}
   Per-parcel detail BODY, swapped into #detail-body on row click (and reused by
   the standalone detail.html page). The map itself is NOT here — it lives as a
-  persistent element (#parcel-map) in the pane shell so it is built ONCE and
+  persistent element (#detail-map) in the pane shell so it is built ONCE and
   merely re-pointed at the new parcel on each switch (no teardown/rebuild, so no
   startup flash). This fragment carries the new parcel's geometry + the small
   script that creates-or-updates that persistent map.
@@ -297,7 +297,7 @@
 </div>
 
 {% comment %}
-  Geometry for the PERSISTENT map (#parcel-map lives in the pane shell). The
+  Geometry for the PERSISTENT map (#detail-map lives in the pane shell). The
   script builds the map once, then on every later swap just re-points it at the
   new parcel via setData + fitBounds — no rebuild, so no startup flash. It is
   defensive: polls until maplibre + the OH2O toolkit are ready, and no-ops if
@@ -310,8 +310,8 @@
     if (typeof maplibregl === 'undefined' || !window.OH2O || !OH2O.basemapStyle) {
       return window.setTimeout(boot, 50);
     }
-    var card = document.getElementById('parcel-map-card');
-    var host = document.getElementById('parcel-map');
+    var card = document.getElementById('detail-map-card');
+    var host = document.getElementById('detail-map');
     var dataEl = document.getElementById('parcel-geojson-data');
     if (!card || !host) return;            // page has no map host
     if (!dataEl) { card.style.display = 'none'; return; }  // parcel has no geometry
@@ -349,7 +349,7 @@
 
     // CREATE once.
     map = new maplibregl.Map({
-      container: 'parcel-map',
+      container: 'detail-map',
       style: OH2O.basemapStyle('aerial'),
       center: center,
       zoom: 13,
