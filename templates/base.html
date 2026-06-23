@@ -98,12 +98,13 @@
             {% block breadcrumbs %}{% endblock %}
 
             <main class="app-content" id="main-content">
-                {# The real per-page H1 (a11y: 1.3.1 / 2.4.6). Visually hidden
-                   because the page subject already shows in the breadcrumb bar;
-                   this gives assistive tech a correct, unique top-level heading
-                   and fixes the heading order. The block lives here, in the
-                   {% extends %} chain, so the per-page overrides apply — inside
-                   the {% include %}d header they silently did not. #}
+                {% comment %}
+                  The real per-page H1 (a11y 1.3.1 / 2.4.6), visually hidden
+                  because the page subject already shows in the breadcrumb bar.
+                  It lives here in the extends chain so the per-page page_title
+                  overrides apply; inside the included header partial they
+                  silently did not.
+                {% endcomment %}
                 <h1 class="sr-only">{% block page_title %}Open Water Accounting Platform{% endblock %}</h1>
                 {% block content %}{% endblock %}
             </main>

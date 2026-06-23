@@ -15,8 +15,7 @@
     hx-get="{% url 'wells:detail' well.pk %}"
     hx-target="#detail-body"
     hx-swap="innerHTML"
-    {# a11y (2.1.1): the row is a div, so HTMX's default mouse-click trigger
-       leaves it keyboard-inert. Enter activates it, matching role="link". #}
+    {# a11y 2.1.1: div[role=link] needs an explicit Enter trigger; HTMX defaults to mouse click only. #}
     hx-trigger="click, keyup[key=='Enter']"
     hx-push-url="{% url 'wells:list' %}?selected={{ well.pk }}"
     role="link"

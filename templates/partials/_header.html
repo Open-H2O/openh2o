@@ -40,10 +40,12 @@
         {% endif %}
     </div>
 
-    <!-- App brand. NOT a heading: this partial is {% include %}d, so a
-         {% block page_title %} here never received the per-page overrides (they
-         flow through {% extends %}, not {% include %}). The real per-page <h1>
-         now lives in <main> in base.html, where the override actually applies. -->
+    {% comment %}
+      App brand, NOT a heading. This partial is included, so a page_title block
+      here never received the per-page overrides (they flow through extends, not
+      include). The real per-page H1 now lives in <main> in base.html, where the
+      override actually applies.
+    {% endcomment %}
     <div class="app-header-title">Open Water Accounting Platform</div>
 
     <!-- User menu -->
