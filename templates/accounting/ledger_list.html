@@ -278,24 +278,49 @@
   document.body.addEventListener('htmx:afterSwap', window.syncLedgerHeaderOffset);
 
   // Preset chips. "This Period" sets the period select to the current period and
-  // fires its existing change trigger; "Active Use Areas" toggles the hidden
+  // fires its existing change trigger; "Active Use Areas" toggles a hidden
   // carrier input. Both reuse the form's HTMX wiring, so no new fetch logic.
+  //
+  // The chips live in the filter bar, OUTSIDE the #ledger-results region HTMX
+  // swaps — so their values persist across a filter refresh, but the server's
+  // is-active class would never re-render. syncChips() drives the on/off look
+  // from the live form values instead, called after every relevant change.
   var chipPeriod = document.getElementById('chip-this-period');
+  var chipActive = document.getElementById('chip-active-areas');
+  var periodSel = document.getElementById('filter-period');
+  var activeHidden = document.getElementById('filter-active-areas');
+
+  function setChip(chip, on) {
+    if (!chip) return;
+    chip.classList.toggle('is-active', on);
+    chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  function syncChips() {
+    if (chipPeriod) {
+      var target = chipPeriod.getAttribute('data-period') || '';
+      setChip(chipPeriod, target !== '' && periodSel && periodSel.value === target);
+    }
+    setChip(chipActive, !!(activeHidden && activeHidden.value));
+  }
+
   if (chipPeriod) {
     chipPeriod.addEventListener('click', function() {
-      var sel = document.getElementById('filter-period');
-      sel.value = this.getAttribute('data-period') || '';
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      periodSel.value = this.getAttribute('data-period') || '';
+      periodSel.dispatchEvent(new Event('change', { bubbles: true }));
+      syncChips();
     });
   }
-  var chipActive = document.getElementById('chip-active-areas');
   if (chipActive) {
     chipActive.addEventListener('click', function() {
-      var hidden = document.getElementById('filter-active-areas');
-      hidden.value = hidden.value ? '' : '1';
-      hidden.dispatchEvent(new Event('change', { bubbles: true }));
+      activeHidden.value = activeHidden.value ? '' : '1';
+      activeHidden.dispatchEvent(new Event('change', { bubbles: true }));
+      syncChips();
     });
   }
+  // Keep "This Period" honest when the period is changed via the select itself.
+  if (periodSel) periodSel.addEventListener('change', syncChips);
+  document.body.addEventListener('htmx:afterSwap', syncChips);
+  syncChips();
 })();
 </script>
 {% endblock %}
