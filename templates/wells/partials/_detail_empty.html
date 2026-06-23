@@ -13,5 +13,12 @@
       <path d="M18 12h4"/>
     </svg>
   </div>
-  <p class="pane-empty-text">Select a well from the list to open its construction record, map, and linked meters.</p>
+  <h2 class="pane-empty-title">Select a well</h2>
+  {% if total_count %}<p class="pane-empty-count">{{ total_count }} well{{ total_count|pluralize }} in this district</p>{% endif %}
+  <p class="pane-empty-text">Choose one from the list to open its detail here. You'll see:</p>
+  <ul class="pane-empty-hints">
+    <li>Construction record</li>
+    <li>Its location on the map</li>
+    <li>Linked meters and readings</li>
+  </ul>
 </div>

@@ -8,5 +8,12 @@
       <circle cx="12" cy="10" r="3"/>
     </svg>
   </div>
-  <p class="pane-empty-text">Select a zone from the list to open its boundary on the map, alongside its assigned use areas and allocation-vs-use.</p>
+  <h2 class="pane-empty-title">Select a zone</h2>
+  {% if total_count %}<p class="pane-empty-count">{{ total_count }} zone{{ total_count|pluralize }} in this district</p>{% endif %}
+  <p class="pane-empty-text">Choose one from the list to open its detail here. You'll see:</p>
+  <ul class="pane-empty-hints">
+    <li>Its boundary on the map</li>
+    <li>Assigned use areas</li>
+    <li>Allocation vs. use</li>
+  </ul>
 </div>

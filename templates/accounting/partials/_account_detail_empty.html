@@ -10,5 +10,12 @@
       <line x1="15" y1="9" x2="15.01" y2="9"/>
     </svg>
   </div>
-  <p class="pane-empty-text">Select an account from the list to open its balance and assigned use areas.</p>
+  <h2 class="pane-empty-title">Select an account</h2>
+  {% if total_count %}<p class="pane-empty-count">{{ total_count }} account{{ total_count|pluralize }} in this district</p>{% endif %}
+  <p class="pane-empty-text">Choose one from the list to open its detail here. You'll see:</p>
+  <ul class="pane-empty-hints">
+    <li>Account balance for the period</li>
+    <li>Assigned use areas</li>
+    <li>Allocation vs. use</li>
+  </ul>
 </div>

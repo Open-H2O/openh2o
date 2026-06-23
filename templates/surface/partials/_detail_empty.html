@@ -10,5 +10,12 @@
       <line x1="16" y1="17" x2="8" y2="17"/>
     </svg>
   </div>
-  <p class="pane-empty-text">Select a diversion point from the list to open its diversion records, map, and linked use areas.</p>
+  <h2 class="pane-empty-title">Select a diversion point</h2>
+  {% if total_count %}<p class="pane-empty-count">{{ total_count }} diversion point{{ total_count|pluralize }} in this district</p>{% endif %}
+  <p class="pane-empty-text">Choose one from the list to open its detail here. You'll see:</p>
+  <ul class="pane-empty-hints">
+    <li>Diversion records</li>
+    <li>Its location on the map</li>
+    <li>Linked use areas</li>
+  </ul>
 </div>

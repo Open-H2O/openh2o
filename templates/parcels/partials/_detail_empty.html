@@ -9,5 +9,12 @@
       <line x1="9" y1="9" x2="9" y2="21"/>
     </svg>
   </div>
-  <p class="pane-empty-text">Select a use area from the list to open its water balance, map, and ledger.</p>
+  <h2 class="pane-empty-title">Select a use area</h2>
+  {% if total_count %}<p class="pane-empty-count">{{ total_count }} use area{{ total_count|pluralize }} in this district</p>{% endif %}
+  <p class="pane-empty-text">Choose one from the list to open its detail here. You'll see:</p>
+  <ul class="pane-empty-hints">
+    <li>Water balance: supplies vs. consumptive use</li>
+    <li>Its parcels on the map</li>
+    <li>Recent ledger entries</li>
+  </ul>
 </div>
