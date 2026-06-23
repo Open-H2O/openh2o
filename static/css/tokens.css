@@ -27,9 +27,10 @@
     /* -- Text colors ----------------------------------------------------- */
     --color-text-primary: #e8edf4;
     --color-text-secondary: #8899aa;
-    /* Phase F (F2): lifted from #6b7f94 to clear WCAG AA 4.5:1 on the worst
-       surface (elevated). Exact value verified in-browser on the new tokens. */
-    --color-text-tertiary: #8a9bb0;
+    /* Phase F (F2): lifted from #6b7f94 to the dimmest value that still clears
+       WCAG AA 4.5:1 on the worst surface (elevated → 4.75:1), so it passes yet
+       stays visibly dimmer than --color-text-secondary. Verified in-browser. */
+    --color-text-tertiary: #7787a0;
 
     /* -- Semantic status colors ------------------------------------------- */
     --color-error: #f87171;
@@ -41,8 +42,9 @@
     /* Phase F (F6): dedicated edge for INTERACTIVE controls (inputs, selects,
        textareas, search) at >=3:1 against their surface, so their boundary is
        perceivable. Decorative card edges keep the subtle --color-border above.
-       Exact alpha verified in-browser on the new tokens. */
-    --color-border-interactive: rgba(125, 165, 205, 0.42);
+       Alpha verified in-browser: composited over the inset control surface it
+       reaches 3.38:1, clearing the 3:1 floor. */
+    --color-border-interactive: rgba(125, 165, 205, 0.6);
 
     /* -- OKLCH data viz ramps (from DESIGN.json) ------------------------- */
 
