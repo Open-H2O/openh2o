@@ -3510,3 +3510,74 @@ div[id$="-map"] {
         overflow-y: visible;
     }
 }
+
+/* -- "What needs attention" strip (dashboard E1) -------------------------- */
+/* A compact, single-row exception bar at the top of the dashboard. Each pill is
+   a clickable route to where you fix the thing; the strip collapses to a quiet
+   "all clear" line when every count is zero (the view hides zero counts). */
+.attention-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm) var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+}
+
+.attention-strip-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+}
+
+.attention-strip-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.attention-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: filter 120ms ease, border-color 120ms ease;
+}
+
+.attention-pill:hover {
+    filter: brightness(1.18);
+}
+
+.attention-pill:focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 1px;
+}
+
+.attention-pill-count {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Periods to close — an administrative reminder, the calmest of the three. */
+.attention-pill-warn {
+    background-color: oklch(0.45 0.12 55 / 0.2);
+    color: var(--furnace-400);
+    border-color: oklch(0.45 0.12 55 / 0.35);
+}
+
+/* Stations down and accounts over budget — genuine problems, red. Distinct
+   labels keep them apart; both read as "fix me now". */
+.attention-pill-down,
+.attention-pill-over {
+    background-color: oklch(0.45 0.12 25 / 0.2);
+    color: oklch(0.72 0.20 25);
+    border-color: oklch(0.45 0.12 25 / 0.35);
+}

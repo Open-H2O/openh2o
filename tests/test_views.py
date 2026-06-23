@@ -380,6 +380,60 @@ class TestDashboardActiveAccountScope:
         assert b"Active Water Accounts" in response.content
 
 
+class TestDashboardAttentionStrip:
+    """E1: the dashboard's 'what needs attention' strip — a compact row of
+    clickable exception pills (periods to close / stations down / accounts over
+    budget) that collapses to an 'all clear' line when every count is zero."""
+
+    def _down_station(self):
+        """An active monitoring station with no data ever — classifies 'dead'."""
+        from django.contrib.gis.geos import Point
+        from datasync.models import DataSource, MonitoredStation
+
+        source = DataSource.objects.create(name="USGS NWIS", code="usgs")
+        return MonitoredStation.objects.create(
+            data_source=source,
+            external_station_id="11303500",
+            station_name="San Joaquin R nr Vernalis",
+            location=Point(-121.27, 37.67),
+            is_active=True,
+            last_data_at=None,
+        )
+
+    def test_strip_flags_unclosed_period(self, auth_client):
+        """A period past its end date and not finalized shows the 'to close'
+        pill, linking to the periods list."""
+        ReportingPeriodFactory()  # default end_date is in the past, not finalized
+        response = auth_client.get(reverse("accounting:dashboard"))
+        html = response.content.decode()
+        assert response.status_code == 200
+        assert "Needs attention" in html
+        assert "to close" in html
+        assert reverse("accounting:periods_list") in html
+
+    def test_strip_flags_down_station(self, auth_client):
+        """An active station with dead data shows the 'station down' pill, linking
+        to the monitoring stations list."""
+        ReportingPeriodFactory(is_finalized=True)  # isolate: no period to close
+        self._down_station()
+        response = auth_client.get(reverse("accounting:dashboard"))
+        html = response.content.decode()
+        assert response.status_code == 200
+        assert "Needs attention" in html
+        assert "down" in html
+        assert reverse("datasync:station_list") in html
+
+    def test_strip_all_clear_when_nothing_flagged(self, auth_client):
+        """A finalized period, no down stations, no over-budget accounts → the
+        strip collapses to the 'All clear' line, with no exception pills."""
+        ReportingPeriodFactory(is_finalized=True)
+        response = auth_client.get(reverse("accounting:dashboard"))
+        html = response.content.decode()
+        assert response.status_code == 200
+        assert "All clear" in html
+        assert "Needs attention" not in html
+
+
 class TestAccountingPages:
     def test_dashboard(self, auth_client):
         response = auth_client.get(reverse("accounting:dashboard"))

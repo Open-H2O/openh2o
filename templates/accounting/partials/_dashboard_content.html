@@ -9,6 +9,8 @@
 </div>
 {% else %}
 
+{% include "accounting/partials/_attention_strip.html" %}
+
 {% url 'water_balances' as wb_help_url %}
 <div class="budget-panel">
   <div class="budget-panel-head">
@@ -55,7 +57,7 @@
 </div>
 {% endif %}
 
-<h2 class="content-section-label">Account Details</h2>
+<h2 class="content-section-label" id="active-accounts">Account Details</h2>
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Active Water Accounts</h2>

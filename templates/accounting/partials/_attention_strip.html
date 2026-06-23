@@ -1,0 +1,41 @@
+{% comment %}
+  E1 "what needs attention" strip: a compact, single-row bar of exception
+  counters for a returning admin. Each counter is a clickable pill that routes to
+  the screen where you act on it, and only renders when its count is non-zero;
+  when everything's fine the whole strip collapses to one quiet "All clear" line.
+  Counts come from the dashboard view (periods_to_close / stations_down /
+  accounts_over_budget / attention_total). Sits at the top of the HTMX-swapped
+  dashboard content, so the period-dependent over-budget count stays correct.
+{% endcomment %}
+<div class="attention-strip card-raised">
+  {% if attention_total %}
+  <span class="attention-strip-label">Needs attention</span>
+
+  {% if periods_to_close %}
+  <a href="{% url 'accounting:periods_list' %}" class="attention-pill attention-pill-warn">
+    <span class="attention-pill-count">{{ periods_to_close }}</span>
+    period{{ periods_to_close|pluralize }} to close
+  </a>
+  {% endif %}
+
+  {% if stations_down %}
+  <a href="{% url 'datasync:station_list' %}" class="attention-pill attention-pill-down">
+    <span class="attention-pill-count">{{ stations_down }}</span>
+    station{{ stations_down|pluralize }} down
+  </a>
+  {% endif %}
+
+  {% if accounts_over_budget %}
+  <a href="#active-accounts" class="attention-pill attention-pill-over">
+    <span class="attention-pill-count">{{ accounts_over_budget }}</span>
+    account{{ accounts_over_budget|pluralize }} over budget
+  </a>
+  {% endif %}
+
+  {% else %}
+  <span class="attention-strip-clear">
+    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    All clear — nothing needs attention right now.
+  </span>
+  {% endif %}
+</div>

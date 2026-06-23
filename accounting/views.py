@@ -26,6 +26,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from core.csv_safe import safe_row
+from datasync import freshness
+from datasync.models import MonitoredStation
 from accounting.calculation import evaluate_chain
 from accounting.forms import (
     AllocationPlanForm,
@@ -234,6 +236,42 @@ def dashboard(request):
     # Bottom-line: supplies minus estimated consumptive use.
     grand_net = grand_supply_total - grand_consumptive_use
 
+    # "What needs attention" strip (E1): three exception counts a returning admin
+    # should see at a glance, each derived from data the dashboard already has.
+    # Lives inside the HTMX-swapped content so the period-dependent over-budget
+    # count refreshes when the period selector changes.
+    attention_now = timezone.now()
+
+    # Periods past their end date that still aren't finalized — filings in waiting.
+    periods_to_close = ReportingPeriod.objects.filter(
+        is_finalized=False, end_date__lt=attention_now.date()
+    ).count()
+
+    # Active monitoring stations whose data has gone dead, judged against each
+    # source's OWN expected cadence (reuses the Monitoring screen's classifier so
+    # the two never disagree). "dead" = down; "stale" (amber) is not counted here.
+    stations_down = sum(
+        1
+        for s in MonitoredStation.objects.filter(is_active=True).select_related(
+            "data_source"
+        )
+        if freshness.classify_freshness(
+            s.data_source.code, s.last_data_at, attention_now
+        )
+        == "dead"
+    )
+
+    # Active accounts whose consumptive use has passed their allocation this
+    # period (only meaningful once the period has allocations; remaining is None
+    # otherwise, so those accounts never count).
+    accounts_over_budget = sum(
+        1
+        for s in account_summaries
+        if s["remaining"] is not None and s["remaining"] < 0
+    )
+
+    attention_total = periods_to_close + stations_down + accounts_over_budget
+
     context = {
         "periods": periods,
         "selected_period": selected_period,
@@ -246,6 +284,10 @@ def dashboard(request):
         "grand_supply_precip": grand_supply_precip,
         "grand_net": grand_net,
         "has_allocations": has_allocations,
+        "periods_to_close": periods_to_close,
+        "stations_down": stations_down,
+        "accounts_over_budget": accounts_over_budget,
+        "attention_total": attention_total,
     }
 
     if request.headers.get("HX-Request"):
