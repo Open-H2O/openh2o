@@ -539,8 +539,9 @@ class TestAccountingPages:
         assert "workspace-split" in body
         assert "data-row" in body
         assert "ACC-DEEP" in body
-        # Resting empty pane before a selection.
-        assert "Select an account from the list" in body
+        # Resting empty pane before a selection (the E6 orientation panel).
+        assert "Select an account" in body
+        assert "Choose one from the list" in body
 
     def test_accounts_list_selected_preloads_detail_pane(self, auth_client):
         """?selected=<pk> renders the chosen account's detail server-side so a
