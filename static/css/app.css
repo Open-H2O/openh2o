@@ -3388,6 +3388,15 @@ div[id$="-map"] {
 .workspace-split .page-grid-2col,
 .workspace-split .page-grid-2col-wide {
     grid-template-columns: 1fr;
+    min-width: 0;
+}
+/* Let the stacked column shrink to the pane width instead of being held open by
+   its widest child's min-content (grid/flex items default to min-width:auto).
+   With this, a wide child like the per-parcel table scrolls inside its own
+   .table-scroll box rather than forcing the whole pane wider than the viewport. */
+.workspace-split .page-grid-2col > *,
+.workspace-split .page-grid-2col-wide > * {
+    min-width: 0;
 }
 .toolbar-stack {
     display: flex;
