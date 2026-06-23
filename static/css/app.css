@@ -2429,6 +2429,18 @@ div[id$="-map"] {
     -webkit-overflow-scrolling: touch;
 }
 
+/* Phone-only horizontal scroll for dense tables (E5). Confines a wide table's
+   sideways scroll to the table itself instead of letting the whole page content
+   scroll sideways. Scoped to phones so it does NOT add an overflow context on
+   desktop — the ledger's sticky <thead> sticks relative to .app-content and
+   would break if its container gained one, so desktop is left exactly as-is. */
+@media (max-width: 767px) {
+    .table-scroll-mobile {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 /* -- Utility: constrained page widths ----------------------------------- */
 
 .page-narrow { max-width: 640px; margin-inline: auto; }

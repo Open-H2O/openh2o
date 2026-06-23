@@ -65,6 +65,7 @@
     <span class="text-tertiary text-xs">Active accounts only — each groups parcels under one water user; zone totals below cover all parcels</span>
   </div>
   {% if account_summaries %}
+  <div class="table-scroll-mobile">
   <table class="data-table">
     <thead>
       <tr>
@@ -122,6 +123,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
   <a href="{% url 'accounting:account_create' %}" class="text-gold text-sm font-semibold" style="text-decoration: none;">+ Create a water account</a>
@@ -135,6 +137,7 @@
     <span class="text-tertiary text-xs">Geographic management areas with allocations</span>
   </div>
   {% if zone_summaries %}
+  <div class="table-scroll-mobile">
   <table class="data-table">
     <thead>
       <tr>
@@ -189,6 +192,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <p class="text-tertiary text-sm">No zones configured yet.</p>
   {% endif %}

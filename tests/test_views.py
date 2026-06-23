@@ -482,6 +482,41 @@ class TestAccessibilityAndHelp:
         assert reverse("budgets_allocations") in html
 
 
+class TestResponsiveTables:
+    """E5: dense tables (ledger, dashboard account/zone) carry the phone-only
+    horizontal-scroll wrapper so a wide table scrolls within itself on a phone
+    instead of dragging the whole page sideways. Desktop is left untouched (the
+    class only adds overflow under 767px)."""
+
+    def test_dashboard_tables_have_mobile_scroll_wrapper(self, auth_client):
+        from datetime import date
+        from decimal import Decimal
+
+        period = ReportingPeriodFactory(
+            start_date=date(2025, 10, 1), end_date=date(2026, 9, 30)
+        )
+        zone = ZoneFactory()
+        water_type = WaterTypeFactory()
+        parcel = ParcelFactory()
+        ParcelZoneFactory(parcel=parcel, zone=zone)
+        account = WaterAccountFactory()
+        WaterAccountParcelFactory(water_account=account, parcel=parcel)
+        AllocationPlanFactory(
+            zone=zone,
+            water_type=water_type,
+            reporting_period=period,
+            allocation_acre_feet=Decimal("100.0000"),
+        )
+
+        response = auth_client.get(
+            reverse("accounting:dashboard") + f"?period={period.pk}"
+        )
+        html = response.content.decode()
+        assert response.status_code == 200
+        # Both the account and the zone table are wrapped.
+        assert html.count("table-scroll-mobile") >= 2
+
+
 class TestAccountingPages:
     def test_dashboard(self, auth_client):
         response = auth_client.get(reverse("accounting:dashboard"))
