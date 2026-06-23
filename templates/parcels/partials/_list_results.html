@@ -68,7 +68,7 @@
   {% if q or status %}
   <p class="empty-state-text">No parcels found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
   {% else %}
-  {% include "partials/_empty_onboarding.html" with what="Use Areas are the parcels you account for — each one's water use is reconciled against the supplies that serve it." add_label="+ Add Use Area" type_param="" %}
+  {% include "partials/_empty_onboarding.html" with what="Use Areas are the parcels you account for. Each one's water use is reconciled against the supplies that serve it." add_label="+ Add Use Area" type_param="" %}
   {% endif %}
 </div>
 {% endif %}

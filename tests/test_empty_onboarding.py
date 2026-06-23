@@ -44,8 +44,9 @@ def _list_partial(client, **params):
 
 @pytest.mark.django_db
 def test_configured_empty_list_offers_add_and_import():
-    """Non-admin (needs_setup never fires) with an empty list: the screen's own
-    Add + Import actions, not the wizard."""
+    """A configured instance (a boundary exists) with an empty list shows the
+    screen's own Add + Import actions, not the wizard."""
+    BoundaryFactory()  # boundary present → not a fresh instance → needs_setup False
     resp = _list_partial(_client())
     body = resp.content.decode()
     assert "+ Add Well" in body
@@ -57,24 +58,13 @@ def test_configured_empty_list_offers_add_and_import():
 
 @pytest.mark.django_db
 def test_fresh_instance_defers_to_setup_wizard():
-    """Admin on an instance with no boundary: the empty list points at the
-    Setup Wizard (the onboarding spine), not a per-screen add."""
-    resp = _list_partial(_client(is_staff=True))
+    """A fresh instance (no boundary) points the empty list at the Setup Wizard
+    — the onboarding spine — instead of a per-screen add."""
+    resp = _list_partial(_client())  # no boundary → needs_setup True
     body = resp.content.decode()
     assert "Set up your watershed" in body
     assert reverse("setup:wizard") in body
     assert "+ Add Well" not in body
-
-
-@pytest.mark.django_db
-def test_admin_with_boundary_is_not_fresh():
-    """Once a boundary exists the instance isn't fresh, so even an admin sees the
-    per-screen Add/Import rather than the wizard CTA."""
-    BoundaryFactory()
-    resp = _list_partial(_client(is_staff=True))
-    body = resp.content.decode()
-    assert "Set up your watershed" not in body
-    assert "+ Add Well" in body
 
 
 @pytest.mark.django_db
