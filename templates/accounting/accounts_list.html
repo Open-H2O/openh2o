@@ -1,7 +1,16 @@
-{% extends "base.html" %}
+{% extends "workspace.html" %}
 
 {% block title %}Water Accounts - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Water Accounts{% endblock %}
+
+{% comment %}
+  Water accounts have no geometry of their own, so this workspace has no map.
+  Override the shell's map asset blocks to empty so MapLibre isn't loaded for a
+  screen that never shows a map; the shell's hidden #detail-map slot just stays
+  hidden.
+{% endcomment %}
+{% block map_styles %}{% endblock %}
+{% block map_scripts %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,59 +19,54 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Accounts</span>
   </nav>
-  <p class="page-description">Water accounts group use areas for tracking and reporting. Each account tracks supply, usage, and balance.</p>
+  <p class="page-description">Water accounts group use areas for tracking and reporting. Pick one to open its balance and assigned use areas alongside the list.</p>
+  <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    <a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ New Account</a>
+  </div>
 </div>
 {% endblock %}
 
-{% block content %}
-<div class="page-stack">
-
-  <!-- Toolbar -->
-  <div class="card-raised toolbar-row">
-    <!-- Search -->
-    <div style="flex: 1; min-width: 200px;">
-      <label class="form-label" for="filter-search">Search</label>
-      <input
-        type="text"
-        id="filter-search" name="q"
-        value="{{ q }}"
-        placeholder="Account number or name..."
-        hx-get="{% url 'accounting:accounts_list' %}"
-        hx-target="#results"
-        hx-trigger="keyup changed delay:300ms"
-        hx-include="[name='status']"
-        class="form-input search-input-icon"
-      >
-    </div>
-
-    <!-- Status filter -->
-    <div>
-      <label class="form-label" for="filter-status">Status</label>
-      <select
-        id="filter-status" name="status"
-        hx-get="{% url 'accounting:accounts_list' %}"
-        hx-target="#results"
-        hx-trigger="change"
-        hx-include="[name='q']"
-        class="form-select"
-      >
-        <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
-        {% for val, label in status_choices %}
-          <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <!-- Create button -->
-    <div>
-      <a href="{% url 'accounting:account_create' %}" class="btn-primary">+ New Account</a>
-    </div>
+{% block master_toolbar %}
+  <div>
+    <label class="form-label" for="filter-search">Search</label>
+    <input
+      type="text"
+      id="filter-search" name="q"
+      value="{{ q }}"
+      placeholder="Account number or name..."
+      hx-get="{% url 'accounting:accounts_list' %}"
+      hx-target="#results"
+      hx-trigger="keyup changed delay:300ms"
+      hx-include="[name='status']"
+      class="form-input search-input-icon"
+    >
   </div>
-
-  <!-- Results -->
-  <div id="results">
-    {% include "accounting/partials/_accounts_list_results.html" %}
+  <div>
+    <label class="form-label" for="filter-status">Status</label>
+    <select
+      id="filter-status" name="status"
+      hx-get="{% url 'accounting:accounts_list' %}"
+      hx-target="#results"
+      hx-trigger="change"
+      hx-include="[name='q']"
+      class="form-select"
+    >
+      <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+      {% for val, label in status_choices %}
+        <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
   </div>
+{% endblock %}
 
-</div>
+{% block master_results %}
+  {% include "accounting/partials/_accounts_list_results.html" %}
+{% endblock %}
+
+{% block detail_body %}
+  {% if selected_account %}
+    {% include "accounting/partials/_account_detail_pane.html" %}
+  {% else %}
+    {% include "accounting/partials/_account_detail_empty.html" %}
+  {% endif %}
 {% endblock %}

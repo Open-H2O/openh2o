@@ -1,5 +1,13 @@
 {% extends "base.html" %}
 
+{% comment %}
+  Standalone page for a single water account. The body is the shared
+  _account_detail_pane partial (the same fragment the workspace swaps into
+  #detail-body), so the page and the in-pane view never drift. This page is the
+  deep-link / direct-URL target and the "open full page" escape from the
+  accounts workspace at accounting:accounts_list.
+{% endcomment %}
+
 {% block title %}{{ account.account_number }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ account.account_number }}{% endblock %}
 
@@ -17,139 +25,13 @@
 
 {% block content %}
 <div class="page-stack">
-
-  <!-- Back link -->
   <div>
     <a href="{% url 'accounting:accounts_list' %}" class="back-link">
       &larr; Back to Water Accounts
     </a>
   </div>
-
-  {% if is_curtailed %}
-  <div class="alert-warning">
-    <strong>Curtailment in effect.</strong>
-    {% for o in curtailment_orders %}{{ o.title }}{% if not forloop.last %}; {% endif %}{% endfor %}
-    Surface deliveries to this account's curtailed parcels stop after the curtailment date; conjunctive growers fall back on groundwater to make up the shortfall.
-  </div>
-  {% endif %}
-
-  <div class="page-grid-2col">
-
-    <!-- Left column: Account Info -->
-    <div class="page-stack">
-
-      <!-- Account Info card -->
-      <div class="card-raised">
-        <h2 class="section-header">
-          Account Information {% include "partials/_demo_marker.html" %}
-        </h2>
-
-        <div class="field-group">
-          <div class="field-label">Account Number</div>
-          <div class="field-value">{{ account.account_number }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Name</div>
-          <div class="field-value">{{ account.name }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Status</div>
-          <div class="field-value">
-            {% if account.status == "active" %}
-              <span class="badge badge-pill badge-green">Active</span>
-            {% elif account.status == "inactive" %}
-              <span class="badge badge-pill badge-grey">Inactive</span>
-            {% elif account.status == "suspended" %}
-              <span class="badge badge-pill badge-red">Suspended</span>
-            {% else %}
-              <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
-            {% endif %}
-          </div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Contact Name</div>
-          <div class="field-value">{{ account.contact_name|default:"—" }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Contact Email</div>
-          <div class="field-value">{{ account.contact_email|default:"—" }}</div>
-        </div>
-
-        {% if account.notes %}
-        <div class="field-group">
-          <div class="field-label">Notes</div>
-          <div class="field-value">{{ account.notes }}</div>
-        </div>
-        {% endif %}
-
-        <!-- Timestamps -->
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ account.created_at|date:"M d, Y" }} &middot; Updated {{ account.updated_at|date:"M d, Y" }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right column: Balances + Use Areas -->
-    <div class="page-stack">
-
-      <!-- Balance card with period selector -->
-      <div class="card-raised">
-        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header-flush">Account Balance</h2>
-          <select name="period"
-                  hx-get="{% url 'accounting:account_detail' account.pk %}"
-                  hx-target="#balance-section"
-                  hx-trigger="change"
-                  class="form-select" style="width: auto; padding: 4px var(--space-sm); font-size: 0.8125rem;">
-            <option value="">All Time</option>
-            {% for p in periods %}
-            <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div id="balance-section">
-          {% include "accounting/partials/_account_balances.html" %}
-        </div>
-      </div>
-
-      <!-- Use Area Assignment card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Assigned Use Areas</h2>
-
-        <div id="parcel-assignments">
-          {% include "accounting/partials/_parcel_assignment.html" %}
-        </div>
-      </div>
-
-      <!-- Assign Use Area search card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Assign Use Area</h2>
-
-        <div class="field-group">
-          <input
-            type="text"
-            name="q"
-            placeholder="Search by parcel number or owner..."
-            hx-get="{% url 'accounting:parcel_search_for_assignment' account.pk %}"
-            hx-target="#parcel-search-results"
-            hx-trigger="keyup changed delay:300ms"
-            class="form-input"
-          >
-        </div>
-
-        <div id="parcel-search-results">
-          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
-        </div>
-      </div>
-
-    </div>
+  <div id="detail-body">
+    {% include "accounting/partials/_account_detail_pane.html" %}
   </div>
 </div>
 {% endblock %}

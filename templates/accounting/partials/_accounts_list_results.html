@@ -7,45 +7,36 @@
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Account Number</th>
-        <th>Name</th>
-        <th>Status</th>
-        <th>Contact</th>
-        <th class="th-right">Use Areas</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for account in page_obj %}
-      <tr>
-        <td>
-          <a href="{% url 'accounting:account_detail' account.pk %}" class="data-table-link">
-            {{ account.account_number }}
-          </a>
-        </td>
-        <td>{{ account.name }}</td>
-        <td>
-          {% if account.status == "active" %}
-            <span class="badge badge-pill badge-green">Active</span>
-          {% elif account.status == "inactive" %}
-            <span class="badge badge-pill badge-grey">Inactive</span>
-          {% elif account.status == "suspended" %}
-            <span class="badge badge-pill badge-red">Suspended</span>
-          {% else %}
-            <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
-          {% endif %}
-        </td>
-        <td class="text-secondary">{{ account.contact_name|default:"—" }}</td>
-        <td class="text-secondary td-num">
-          {{ account.parcel_count }}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card-raised master-list-card">
+  {% for account in page_obj %}
+  <div
+    data-row
+    class="master-row{% if selected_account and account.pk == selected_account.pk %} is-selected{% endif %}"
+    hx-get="{% url 'accounting:account_detail' account.pk %}"
+    hx-target="#detail-body"
+    hx-swap="innerHTML"
+    hx-push-url="{% url 'accounting:accounts_list' %}?selected={{ account.pk }}"
+    role="link"
+    tabindex="0"
+    aria-label="Open account {{ account.account_number }}">
+    <div class="master-row-top">
+      <span class="master-row-id">{{ account.account_number }}</span>
+      {% if account.status == "active" %}
+        <span class="badge badge-pill badge-green">Active</span>
+      {% elif account.status == "inactive" %}
+        <span class="badge badge-pill badge-grey">Inactive</span>
+      {% elif account.status == "suspended" %}
+        <span class="badge badge-pill badge-red">Suspended</span>
+      {% else %}
+        <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
+      {% endif %}
+    </div>
+    <div class="master-row-sub">
+      <span class="master-row-owner">{{ account.name }}</span>
+      <span class="master-row-acres">{{ account.parcel_count }} use area{{ account.parcel_count|pluralize }}</span>
+    </div>
+  </div>
+  {% endfor %}
 </div>
 
 <!-- Pagination -->

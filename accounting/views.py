@@ -404,7 +404,18 @@ def allocation_create(request):
 
 @login_required
 def accounts_list(request):
-    """Paginated list of water accounts with HTMX search and status filter."""
+    """Master-detail workspace for water accounts.
+
+    Left pane: the HTMX-searchable account list. Right pane: the selected
+    account's detail — its info, balance, and assigned use areas — swapped in
+    place when a row is clicked. A ``?selected=<pk>`` query param pre-renders that
+    account server-side so a reload or deep link lands on the same workspace view
+    (the row click pushes that URL). Bucket 1 (docs/2.0-UX-PATTERN-SPEC.md).
+
+    Returns the ``_accounts_list_results`` partial for an HTMX list refresh
+    (search / filter / pagination, which target ``#results``), and the full
+    workspace page otherwise.
+    """
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
 
@@ -424,13 +435,22 @@ def accounts_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Pre-load the selected account (deep link / reload) into the detail pane.
+    selected_account = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_account = WaterAccount.objects.filter(pk=selected_raw).first()
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "q": q,
         "status": status,
         "status_choices": WaterAccount.STATUS_CHOICES,
+        "selected_account": selected_account,
     }
+    if selected_account is not None:
+        context.update(_account_detail_context(selected_account))
 
     if request.headers.get("HX-Request"):
         return render(
@@ -440,10 +460,18 @@ def accounts_list(request):
     return render(request, "accounting/accounts_list.html", context)
 
 
-@login_required
-def account_detail(request, pk):
-    """Detail view for a single water account with assigned parcels and balances."""
-    account = get_object_or_404(WaterAccount, pk=pk)
+def _account_detail_context(account, period_param=None):
+    """Build the per-account detail context.
+
+    Shared by the standalone detail page, the in-pane HTMX render, and the
+    workspace's pre-loaded ``?selected=`` pane so all three are identical.
+
+    ``period_param`` selects the reporting period for the balance card:
+      * ``None``  → default to the period where this account has real activity
+                    (so the page never opens on an empty / allocation-only year).
+      * ``""``    → All Time (no period filter; an explicit user choice).
+      * ``"<pk>"`` → that specific period.
+    """
     assignments = (
         WaterAccountParcel.objects.filter(water_account=account, removed_date__isnull=True)
         .select_related("parcel", "reporting_period")
@@ -452,22 +480,20 @@ def account_detail(request, pk):
     acct_parcel_ids = list(assignments.values_list("parcel_id", flat=True))
 
     # Period selector
-    period_id = request.GET.get("period", "").strip()
     periods = ReportingPeriod.objects.order_by("-start_date")
     selected_period = None
 
-    if period_id:
-        try:
-            selected_period = ReportingPeriod.objects.get(pk=period_id)
-        except ReportingPeriod.DoesNotExist:
-            pass
-    elif not request.GET:
-        # Land on the period where THIS account actually has activity, so the
-        # page never opens on an allocation-only (or empty) year that hides the
-        # supply/usage story — the simple-vs-complex contrast is invisible when
-        # usage reads 0 everywhere. Prefer the most recent period carrying real
-        # transactions (deliveries / extraction / calculated usage) for the
-        # account's parcels; fall back to the most recent open period.
+    if period_param:
+        selected_period = ReportingPeriod.objects.filter(pk=period_param).first()
+    elif period_param is None:
+        # No explicit period: land on the period where THIS account actually has
+        # activity, so the page never opens on an allocation-only (or empty) year
+        # that hides the supply/usage story — the simple-vs-complex contrast is
+        # invisible when usage reads 0 everywhere. Prefer the most recent period
+        # carrying real transactions (deliveries / extraction / calculated usage)
+        # for the account's parcels; fall back to the most recent open period. An
+        # explicit ``period_param == ""`` means the user chose All Time, so we
+        # leave selected_period None and skip this default.
         activity_period_id = (
             ParcelLedger.objects.filter(
                 parcel_id__in=acct_parcel_ids, reporting_period__isnull=False
@@ -534,7 +560,7 @@ def account_detail(request, pk):
             )
         )
 
-    context = {
+    return {
         "account": account,
         "assignments": assignments,
         "balance": balance,
@@ -545,11 +571,34 @@ def account_detail(request, pk):
         "curtailment_orders": curtailment_orders,
     }
 
+
+@login_required
+def account_detail(request, pk):
+    """A single water account's detail.
+
+    Three render paths off the one shared context:
+      * HX-Request with a ``period`` param → just the ``_account_balances``
+        fragment (the in-card period selector swaps this).
+      * Any other HX-Request → the ``_account_detail_pane`` body (a row click in
+        the accounts workspace swaps this into ``#detail-body``).
+      * No HX-Request → the standalone ``account_detail`` page (deep links and
+        no-HTMX clients).
+    """
+    account = get_object_or_404(WaterAccount, pk=pk)
+    # "period" present (even empty = All Time) means an explicit choice; absent
+    # means "default to the activity period" — _account_detail_context maps the
+    # tri-state of None / "" / "<pk>".
+    period_param = request.GET.get("period") if "period" in request.GET else None
+    context = _account_detail_context(account, period_param=period_param)
+
     if request.headers.get("HX-Request") and "period" in request.GET:
         return render(
             request, "accounting/partials/_account_balances.html", context
         )
-
+    if request.headers.get("HX-Request"):
+        return render(
+            request, "accounting/partials/_account_detail_pane.html", context
+        )
     return render(request, "accounting/account_detail.html", context)
 
 

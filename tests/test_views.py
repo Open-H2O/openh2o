@@ -376,6 +376,50 @@ class TestAccountingPages:
         response = auth_client.get(reverse("accounting:accounts_list"))
         assert response.status_code == 200
 
+    # Water Accounts — Bucket 1 master-detail workspace (v2.0 conversion).
+    def test_accounts_list_is_master_detail(self, auth_client):
+        """The list is the shared workspace shell: clickable rows (no flat table)
+        that swap each account's detail into #detail-body, plus a resting empty
+        pane until one is picked."""
+        WaterAccountFactory(account_number="ACC-DEEP", name="Deep Link Farms")
+        response = auth_client.get(reverse("accounting:accounts_list"))
+        assert response.status_code == 200
+        body = response.content.decode()
+        # On the shared shell, with a clickable master row (not the old table).
+        assert "workspace-split" in body
+        assert "data-row" in body
+        assert "ACC-DEEP" in body
+        # Resting empty pane before a selection.
+        assert "Select an account from the list" in body
+
+    def test_accounts_list_selected_preloads_detail_pane(self, auth_client):
+        """?selected=<pk> renders the chosen account's detail server-side so a
+        reload or deep link lands on the same workspace view."""
+        account = WaterAccountFactory(account_number="ACC-SEL", name="Selected Farms")
+        response = auth_client.get(
+            reverse("accounting:accounts_list"), {"selected": account.pk}
+        )
+        assert response.status_code == 200
+        body = response.content.decode()
+        # The pane is pre-rendered: account header + its interactive workflows.
+        assert "Account Balance" in body
+        assert 'id="parcel-assignments"' in body
+        assert "Open full page" in body
+
+    def test_account_detail_hx_request_returns_pane_fragment(self, auth_client):
+        """An HTMX row click (no period param) gets just the detail-pane fragment
+        swapped into #detail-body — not the full standalone page shell."""
+        account = WaterAccountFactory(account_number="ACC-HX")
+        response = auth_client.get(
+            reverse("accounting:account_detail", kwargs={"pk": account.pk}),
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "Account Balance" in body
+        # Fragment, not a full document: no <html> shell from base.html.
+        assert "<html" not in body.lower()
+
     def test_periods_list(self, auth_client):
         response = auth_client.get(reverse("accounting:periods_list"))
         assert response.status_code == 200
