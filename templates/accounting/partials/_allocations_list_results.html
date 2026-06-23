@@ -35,6 +35,22 @@
       </tr>
       {% endfor %}
     </tbody>
+    {% comment %} Total allocated volume for the WHOLE filtered set (all pages, not
+       just the rows shown) — the dense-table "how much, in total?" footer (Bucket 2,
+       docs/2.0-UX-PATTERN-SPEC.md). Allocations are unsigned positive volumes, so
+       this is a single sum, not the ledger's credits/debits split. {% endcomment %}
+    {% if total_count %}
+    <tfoot>
+      <tr style="border-top: 2px solid var(--color-border); background: var(--color-elevated);">
+        <td colspan="4" class="text-secondary" style="font-weight: 600; white-space: nowrap;">
+          All {{ total_count }} allocation{{ total_count|pluralize }}
+        </td>
+        <td class="th-right td-num-bold" style="white-space: nowrap;">
+          {{ allocation_total|floatformat:2 }} AF
+        </td>
+      </tr>
+    </tfoot>
+    {% endif %}
   </table>
 </div>
 
