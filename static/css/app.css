@@ -296,6 +296,143 @@ a { color: inherit; }
     color: var(--color-text-secondary);
 }
 
+/* -- Global search (E2) -------------------------------------------------- */
+
+.app-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    justify-self: start;
+    /* Let the search field shrink rather than push the centered title off. */
+    min-width: 0;
+}
+
+.global-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: clamp(180px, 24vw, 320px);
+}
+
+.global-search-icon {
+    position: absolute;
+    left: var(--space-sm);
+    color: var(--color-text-tertiary);
+    pointer-events: none;
+}
+
+.global-search-input {
+    width: 100%;
+    /* Extra left padding clears the magnifier glyph. */
+    padding: var(--space-xs) var(--space-md) var(--space-xs) calc(var(--space-md) + 1.1rem);
+    background-color: var(--color-inset);
+    border: 1px solid rgba(120, 150, 185, 0.22);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    font-size: 0.8125rem;
+    font-family: var(--font-display);
+    box-shadow: var(--shadow-inset);
+}
+
+.global-search-input::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.global-search-input:focus {
+    outline: none;
+    border-color: var(--color-gold);
+}
+
+/* The dropdown. Empty container (short/blank query) collapses on its own. */
+.global-search-results {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: max(100%, 340px);
+    max-height: 70vh;
+    overflow-y: auto;
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-pop-lg);
+    z-index: 60;
+    padding: var(--space-xs);
+}
+
+.global-search-results:empty {
+    display: none;
+}
+
+.search-group {
+    padding: var(--space-xs) 0;
+}
+
+.search-group + .search-group {
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--space-xs);
+}
+
+.search-group-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    color: var(--color-text-tertiary);
+}
+
+.search-group-icon {
+    display: inline-flex;
+}
+
+.search-group-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.search-result {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--color-text-primary);
+}
+
+.search-result:hover,
+.search-result.is-active {
+    background-color: var(--color-card);
+}
+
+.search-result.is-active {
+    outline: 1px solid var(--color-gold);
+    outline-offset: -1px;
+}
+
+.search-result-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.search-result-sub {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-left: auto;
+    /* Keep a long owner/stream name from wrapping the row. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 55%;
+}
+
+.search-empty {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+}
+
 /* -- Dashboard grid ------------------------------------------------------ */
 
 .dashboard-grid {
@@ -2933,6 +3070,12 @@ div[id$="-map"] {
     }
 
     .app-header-email {
+        display: none;
+    }
+
+    /* Header is too tight on a phone for a search field + its dropdown;
+       findability falls back to the per-screen search. Mobile-polish TODO. */
+    .global-search {
         display: none;
     }
 

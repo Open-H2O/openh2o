@@ -65,7 +65,7 @@
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <!-- App layout and component styles -->
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=56">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=57">
 
     <!-- MapLibre GL JS (available in map pages via block) -->
     {% block map_styles %}{% endblock %}
@@ -205,6 +205,58 @@
         var detail = e.detail || {};
         window.showToast(detail.message || 'Done', detail.type || 'success', detail.duration || 3000);
     });
+    </script>
+
+    <script>
+    // Global search dropdown (E2): open/close state + keyboard navigation.
+    // HTMX fills #global-search-results; this only manages dismissal and the
+    // up/down/enter affordances over whatever links it rendered.
+    (function() {
+        var wrap = document.getElementById('global-search');
+        if (!wrap) return;  // only present for signed-in users
+        var input = document.getElementById('global-search-input');
+        var results = document.getElementById('global-search-results');
+
+        function options() { return results.querySelectorAll('.search-result'); }
+        function clearActive() {
+            results.querySelectorAll('.search-result.is-active')
+                   .forEach(function(el) { el.classList.remove('is-active'); });
+        }
+        function close() {
+            results.innerHTML = '';
+            input.setAttribute('aria-expanded', 'false');
+        }
+
+        // After each HTMX swap, reflect whether the dropdown actually has content.
+        results.addEventListener('htmx:afterSwap', function() {
+            input.setAttribute('aria-expanded', results.children.length ? 'true' : 'false');
+        });
+
+        input.addEventListener('keydown', function(e) {
+            var opts = options();
+            if (e.key === 'Escape') { close(); input.blur(); return; }
+            if (!opts.length) return;
+            var active = results.querySelector('.search-result.is-active');
+            var idx = Array.prototype.indexOf.call(opts, active);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                clearActive();
+                opts[(idx + 1) % opts.length].classList.add('is-active');
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                clearActive();
+                opts[(idx - 1 + opts.length) % opts.length].classList.add('is-active');
+            } else if (e.key === 'Enter') {
+                var target = active || opts[0];
+                if (target) { e.preventDefault(); window.location.href = target.href; }
+            }
+        });
+
+        // Dismiss when focus/click leaves the search component entirely.
+        document.addEventListener('click', function(e) {
+            if (!wrap.contains(e.target)) close();
+        });
+    })();
     </script>
 
     {% block extra_scripts %}{% endblock %}

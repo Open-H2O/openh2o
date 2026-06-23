@@ -4,12 +4,14 @@ import os
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
 from datasync import freshness
 from datasync.models import DataSyncLog, MonitoredStation
+from geography.models import Zone
 from parcels.models import Parcel
 from recharge.models import RechargeSite
 from surface.models import PointOfDiversion
@@ -90,6 +92,115 @@ def set_nav_mode(request):
         "nav_mode", mode, max_age=60 * 60 * 24 * 365, samesite="Lax"
     )
     return response
+
+
+# Global search ---------------------------------------------------------------
+#
+# A returning, infrequent user knows a record exists ("parcel MER-APN-014")
+# but not which screen owns it. The top-bar search spans the six primary
+# entities so they can jump straight there. Each entity is matched on the
+# fields a user would actually type — an identifier or a name — and the top
+# few hits per type link to that record's detail screen.
+
+SEARCH_MIN_LEN = 2       # below this the dropdown stays closed (too noisy)
+SEARCH_GROUP_LIMIT = 6   # max hits shown per entity type, so it stays scannable
+
+
+def _search_groups(q):
+    """Run the per-entity searches and return a list of result groups.
+
+    Each group is ``{"key", "label", "results": [{"label", "sublabel", "url"}]}``;
+    ``key`` selects the matching glyph in the template. Empty groups are dropped
+    so the dropdown only shows entity types that actually matched.
+    """
+    limit = SEARCH_GROUP_LIMIT
+    groups = []
+
+    parcels = Parcel.objects.filter(
+        Q(parcel_number__icontains=q) | Q(owner_name__icontains=q)
+    ).order_by("parcel_number")[:limit]
+    if parcels:
+        groups.append({"key": "parcels", "label": "Use Areas", "results": [
+            {"label": p.parcel_number, "sublabel": p.owner_name,
+             "url": reverse("parcels:detail", args=[p.pk])}
+            for p in parcels
+        ]})
+
+    wells = Well.objects.filter(
+        Q(name__icontains=q)
+        | Q(well_registration_id__icontains=q)
+        | Q(wcr_number__icontains=q)
+        | Q(state_well_number__icontains=q)
+    ).order_by("name")[:limit]
+    if wells:
+        groups.append({"key": "wells", "label": "Wells", "results": [
+            {"label": w.name, "sublabel": w.well_registration_id,
+             "url": reverse("wells:detail", args=[w.pk])}
+            for w in wells
+        ]})
+
+    diversions = PointOfDiversion.objects.filter(
+        Q(name__icontains=q) | Q(stream_name__icontains=q)
+    ).order_by("name")[:limit]
+    if diversions:
+        groups.append({"key": "surface", "label": "Surface Diversions", "results": [
+            {"label": d.name, "sublabel": d.stream_name,
+             "url": reverse("surface:pod_detail", args=[d.pk])}
+            for d in diversions
+        ]})
+
+    stations = MonitoredStation.objects.select_related("data_source").filter(
+        Q(station_name__icontains=q)
+        | Q(external_station_id__icontains=q)
+        | Q(usgs_site_id__icontains=q)
+    ).order_by("station_name")[:limit]
+    if stations:
+        groups.append({"key": "stations", "label": "Monitoring Stations", "results": [
+            {"label": s.station_name, "sublabel": s.external_station_id,
+             "url": reverse("datasync:station_detail", args=[s.pk])}
+            for s in stations
+        ]})
+
+    accounts = WaterAccount.objects.filter(
+        Q(account_number__icontains=q) | Q(name__icontains=q)
+    ).order_by("name")[:limit]
+    if accounts:
+        groups.append({"key": "accounts", "label": "Accounts", "results": [
+            {"label": a.name, "sublabel": a.account_number,
+             "url": reverse("accounting:account_detail", args=[a.pk])}
+            for a in accounts
+        ]})
+
+    zones = Zone.objects.filter(
+        Q(name__icontains=q) | Q(basin_code__icontains=q)
+    ).order_by("name")[:limit]
+    if zones:
+        groups.append({"key": "zones", "label": "Zones", "results": [
+            {"label": z.name, "sublabel": z.get_zone_type_display(),
+             "url": reverse("geography:zone_detail", args=[z.pk])}
+            for z in zones
+        ]})
+
+    return groups
+
+
+@login_required
+def global_search(request):
+    """Top-bar global search across the six primary entities.
+
+    Returns the ``_search_results`` dropdown partial for the header's HTMX
+    input. A query shorter than ``SEARCH_MIN_LEN`` (or empty) returns an empty
+    dropdown so it collapses; otherwise it returns the matched groups.
+    """
+    q = request.GET.get("q", "").strip()
+    groups = _search_groups(q) if len(q) >= SEARCH_MIN_LEN else []
+    total = sum(len(g["results"]) for g in groups)
+    return render(request, "partials/_search_results.html", {
+        "q": q,
+        "groups": groups,
+        "total": total,
+        "min_len": SEARCH_MIN_LEN,
+    })
 
 
 def about(request):
