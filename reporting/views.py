@@ -65,6 +65,20 @@ def report_list(request):
         report_template__report_type__startswith="calwatrs",
     ).count()
 
+    # Pre-load the selected submission (deep link / reload) into the detail pane,
+    # so a reload or shared ?selected=<pk> link lands on the same workspace view
+    # the row click pushes. Mirrors accounting.accounts_list (Bucket 1).
+    selected_submission = None
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        selected_submission = (
+            ReportSubmission.objects.select_related(
+                "report_template", "reporting_period"
+            )
+            .filter(pk=selected_raw)
+            .first()
+        )
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
@@ -73,8 +87,13 @@ def report_list(request):
         "gears_count": gears_count,
         "calwatrs_count": calwatrs_count,
         "status_choices": ReportSubmission.STATUS_CHOICES,
+        "selected_submission": selected_submission,
     }
+    if selected_submission is not None:
+        context.update(_report_detail_context(selected_submission))
 
+    # A search / filter / pagination swap re-renders just the history list (the
+    # workspace's #results target); the action-list and detail pane persist.
     if request.headers.get("HX-Request"):
         return render(request, "reporting/partials/_report_history.html", context)
 
@@ -166,14 +185,13 @@ def report_generate(request):
     })
 
 
-@login_required
-def report_detail(request, pk):
-    submission = get_object_or_404(
-        ReportSubmission.objects.select_related("report_template", "reporting_period"),
-        pk=pk,
-    )
+def _report_detail_context(submission):
+    """Per-submission detail context, shared by the standalone report_detail
+    page, its in-pane HTMX render, and the reports workspace's pre-loaded
+    ``?selected=`` pane — so all three render identically and never drift
+    (Bucket 3, docs/2.0-UX-PATTERN-SPEC.md)."""
     report_type = submission.report_template.report_type
-    context = {
+    return {
         "submission": submission,
         "report_type": report_type,
         "is_gears": report_type.startswith("gears"),
@@ -181,6 +199,25 @@ def report_detail(request, pk):
         # Single-tenant: one agency profile carries the GEARS Correspondence ID.
         "profile": ReportingProfile.objects.first(),
     }
+
+
+@login_required
+def report_detail(request, pk):
+    """A single report submission's detail.
+
+    Two render paths off the one shared context:
+      * HX-Request → the ``_report_detail_pane`` body (a row click in the reports
+        workspace swaps this into ``#detail-body``).
+      * No HX-Request → the standalone ``report_detail`` page (deep links, the
+        in-pane "open full page" escape, and no-HTMX clients).
+    """
+    submission = get_object_or_404(
+        ReportSubmission.objects.select_related("report_template", "reporting_period"),
+        pk=pk,
+    )
+    context = _report_detail_context(submission)
+    if request.headers.get("HX-Request"):
+        return render(request, "reporting/partials/_report_detail_pane.html", context)
     return render(request, "reporting/report_detail.html", context)
 
 

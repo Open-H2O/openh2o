@@ -1,0 +1,134 @@
+{% comment %}
+  Per-submission detail BODY, swapped into #detail-body on a row click in the
+  reports workspace (and reused by the standalone report_detail.html page), so
+  the in-pane view and the full page never drift. Bucket 3 — a heavy, interactive
+  detail (a filing with a workflow), so it keeps an "open full page" escape
+  (docs/2.0-UX-PATTERN-SPEC.md).
+
+  A report submission has no geometry, so this pane has no map; the workspace's
+  map slot just stays hidden.
+
+  The status workflow keeps its element ID so it works the same in-pane as on the
+  full page:
+    #status-section   approve / export / mark-filed re-render here
+{% endcomment %}
+
+<!-- Pane header: which report you're looking at, with the full-page escape. -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">{{ submission.report_template.name }}</div>
+    <div class="pane-header-sub">{{ submission.reporting_period.name }}</div>
+  </div>
+  <div class="pane-header-meta">
+    {% if submission.status == "filed" %}
+      <span class="badge badge-pill badge-green">{{ submission.get_status_display }}</span>
+    {% elif submission.status == "internally_approved" %}
+      <span class="badge badge-pill badge-orange">{{ submission.get_status_display }}</span>
+    {% elif submission.status == "exported" %}
+      <span class="badge badge-pill badge-blue">{{ submission.get_status_display }}</span>
+    {% else %}
+      <span class="badge badge-pill badge-grey">{{ submission.get_status_display }}</span>
+    {% endif %}
+    <a href="{% url 'reporting:report_detail' pk=submission.pk %}" class="text-tertiary text-xs back-link" title="Open this report on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+<div class="pane-stack">
+
+  {% if site_config.demonstration_mode %}
+  <!-- DEMO framing (about the DATA): louder than the gold "who files" box below -->
+  <div class="card-raised card-inset" style="border-left: 6px solid var(--color-error);">
+    <p style="margin: 0; color: var(--color-error); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.03em;">
+      DEMONSTRATION — NOT SUBMITTABLE
+    </p>
+    <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0;">
+      In-development demo data. Not a valid state filing.
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- How filing actually works (persistent, plain-language) -->
+  <div class="card-raised" style="border-left: 3px solid var(--color-gold);">
+    <p class="text-secondary text-sm" style="margin: 0;">
+      <strong style="color: var(--color-text-primary);">OpenH2O prepares your filing.</strong>
+      You submit and certify it in the state portal — OpenH2O never sends data to the
+      Water Board.
+    </p>
+  </div>
+
+  <!-- Metadata -->
+  <div class="card-raised">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--space-sm) var(--space-lg);">
+      <div class="field-group mb-0">
+        <div class="field-label">Report Type</div>
+        <div class="field-value-sm">{{ submission.report_template.name }}</div>
+      </div>
+      <div class="field-group mb-0">
+        <div class="field-label">Period</div>
+        <div class="field-value-sm">{{ submission.reporting_period.name }}</div>
+      </div>
+      <div class="field-group mb-0">
+        <div class="field-label">Generated</div>
+        <div class="field-value-sm">
+          {% if submission.generated_at %}{{ submission.generated_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
+        </div>
+      </div>
+      <div class="field-group mb-0">
+        <div class="field-label">File</div>
+        <div class="field-value-sm">
+          {% if submission.generated_file %}
+          <a href="{% url 'reporting:report_download' pk=submission.pk %}"
+             style="color: var(--color-gold); text-decoration: none; font-weight: 600;">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </a>
+          {% else %}-{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Validation Warnings -->
+  {% if submission.validation_warnings %}
+  <div class="card-raised">
+    <h3 class="section-header-sm">Validation Warnings</h3>
+    <div class="page-stack" style="gap: var(--space-xs);">
+      {% for w in submission.validation_warnings %}
+      {% if w.level == "error" %}
+      <div class="alert-error" style="border: none;">{{ w.message }}</div>
+      {% else %}
+      <div class="alert-warning" style="border: none;">{{ w.message }}</div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Optional aid: pre-fill monthly numbers from OpenET satellite ET. Quiet,
+       inset block — a convenience, not a primary step in filing. -->
+  <div class="card-raised card-inset">
+    {% url 'methods' as methods_help_url %}
+    <div class="row-between" style="gap: var(--space-md); flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 16rem;">
+        <p style="margin: 0; font-weight: 600; color: var(--color-text-secondary); display: flex; align-items: center; gap: var(--space-xs);">Save typing: prepare with OpenET{% include "partials/_explainer_popout.html" with title="Where these numbers come from" text="The monthly values are your crops' consumptive use, estimated from OpenET satellite evapotranspiration — not what you pumped or diverted. Each is an editable estimate you review before certifying." link=methods_help_url link_label="Methods behind the numbers" %}</p>
+        <p class="text-tertiary text-xs" style="margin: var(--space-xs) 0 0;">
+          Pre-fill the monthly values from OpenET satellite evapotranspiration instead
+          of typing them. ET is the water your crops consumed — not what you pumped or
+          diverted — so each value is an editable estimate you review before certifying
+          in the state portal.
+        </p>
+      </div>
+      <a href="{% url 'reporting:report_prefill' pk=submission.pk %}"
+         class="btn-secondary btn-sm" style="text-decoration: none; flex-shrink: 0;">Prepare with OpenET</a>
+    </div>
+  </div>
+
+  <!-- Per-system handoff: how to actually file this -->
+  {% include "reporting/partials/_handoff.html" %}
+
+  <!-- Status and Transitions -->
+  <div id="status-section">
+    {% include "reporting/partials/_status_section.html" %}
+  </div>
+
+</div>

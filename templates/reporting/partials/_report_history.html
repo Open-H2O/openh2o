@@ -1,78 +1,91 @@
-<div class="text-tertiary text-xs mb-sm">
-  {{ total_count }} report{{ total_count|pluralize }}
+{% comment %}
+  The submission-history master list (the workspace #results target). Compact,
+  two-line clickable rows — a row click swaps that submission's detail into
+  #detail-body and pushes ?selected=<pk> so reload / deep link lands on the same
+  view. Mirrors accounting _accounts_list_results (Bucket 1). Returned on its own
+  for a search / filter / pagination swap; included by report_list for first paint.
+{% endcomment %}
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
+    report{{ total_count|pluralize }}
+  </span>
 </div>
 
 {% if page_obj.object_list %}
-<table class="data-table">
-  <thead>
-    <tr>
-      <th>Type</th>
-      <th>Report</th>
-      <th>Period</th>
-      <th>Status</th>
-      <th>Generated</th>
-      <th>Filed</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for sub in page_obj %}
-    <tr>
-      <td>
+<div class="card-raised master-list-card">
+  {% for sub in page_obj %}
+  <div
+    data-row
+    class="master-row{% if selected_submission and sub.pk == selected_submission.pk %} is-selected{% endif %}"
+    hx-get="{% url 'reporting:report_detail' pk=sub.pk %}"
+    hx-target="#detail-body"
+    hx-swap="innerHTML"
+    hx-push-url="{% url 'reporting:report_list' %}?selected={{ sub.pk }}"
+    role="link"
+    tabindex="0"
+    aria-label="Open report {{ sub.report_template.name }} for {{ sub.reporting_period.name }}">
+    <div class="master-row-top">
+      <span class="master-row-id">{{ sub.report_template.name }}</span>
+      {% if sub.status == "filed" %}
+        <span class="badge badge-pill badge-green">{{ sub.get_status_display }}</span>
+      {% elif sub.status == "internally_approved" %}
+        <span class="badge badge-pill badge-orange">{{ sub.get_status_display }}</span>
+      {% elif sub.status == "exported" %}
+        <span class="badge badge-pill badge-blue">{{ sub.get_status_display }}</span>
+      {% else %}
+        <span class="badge badge-pill badge-grey">{{ sub.get_status_display }}</span>
+      {% endif %}
+    </div>
+    <div class="master-row-sub">
+      <span class="master-row-owner">
         {% if 'gears' in sub.report_template.report_type %}
         <span class="badge badge-pill badge-gold">GEARS</span>
         {% else %}
         <span class="badge badge-pill badge-blue">CalWATRS</span>
         {% endif %}
-      </td>
-      <td><a href="{% url 'reporting:report_detail' pk=sub.pk %}" class="data-table-link">{{ sub.report_template.name }}</a></td>
-      <td class="text-secondary">{{ sub.reporting_period.name }}</td>
-      <td>
-        {% if sub.status == "filed" %}
-        <span class="badge badge-green">{{ sub.get_status_display }}</span>
-        {% elif sub.status == "internally_approved" %}
-        <span class="badge badge-orange">{{ sub.get_status_display }}</span>
-        {% elif sub.status == "exported" %}
-        <span class="badge badge-blue">{{ sub.get_status_display }}</span>
-        {% else %}
-        <span class="badge badge-grey">{{ sub.get_status_display }}</span>
-        {% endif %}
-      </td>
-      <td class="text-tertiary text-sm">
-        {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
-      </td>
-      <td class="text-tertiary text-sm">
-        {% if sub.filed_at %}{{ sub.filed_at|date:"M j, Y H:i" }}{% else %}-{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        {{ sub.reporting_period.name }}
+      </span>
+      <span class="master-row-acres">
+        {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y" }}{% else %}—{% endif %}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 
 {% if page_obj.has_other_pages %}
 <div class="pagination-row">
   {% if page_obj.has_previous %}
-  <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
-     class="btn-secondary btn-sm">Previous</a>
+    <button
+      hx-get="{% url 'reporting:report_list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Previous
+    </button>
   {% endif %}
-  <span class="pagination-label text-tertiary text-sm">
+  <span class="pagination-label">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
   </span>
   {% if page_obj.has_next %}
-  <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
-     class="btn-secondary btn-sm">Next</a>
+    <button
+      hx-get="{% url 'reporting:report_list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Next
+    </button>
   {% endif %}
 </div>
 {% endif %}
 
 {% else %}
-<div class="empty-state">
+<div class="card-raised empty-state">
   <div class="empty-state-icon">
     <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
     </svg>
   </div>
-  <p class="empty-state-text">No reports generated yet.</p>
-  <a href="{% url 'reporting:report_generate' %}" class="text-sm" style="color: var(--color-gold); text-decoration: none; font-weight: 600;">Generate your first report</a>
+  <p class="empty-state-text">No reports yet{% if q %} matching "{{ q }}"{% endif %}{% if status %} with that status{% endif %}. Start one from the actions above.</p>
 </div>
 {% endif %}
