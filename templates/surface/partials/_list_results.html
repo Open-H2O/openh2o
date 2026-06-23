@@ -2,38 +2,40 @@
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
-    water right{{ total_count|pluralize }} found
+    water right{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
   </span>
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised master-list-card">
-  {% for right in page_obj %}
-  <div
-    data-row
-    class="master-row{% if selected_right and right.pk == selected_right.pk %} is-selected{% endif %}"
-    hx-get="{% url 'surface:detail' right.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    hx-push-url="{% url 'surface:water_rights_list' %}?selected={{ right.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open water right {{ right.right_id }}">
-    <div class="master-row-top">
-      <span class="master-row-id text-mono">{{ right.right_id }}</span>
-      {% include "surface/partials/_status_badge.html" with status=right.status %}
-    </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">{{ right.holder_name|default:"—" }}</span>
-      {% if right.face_value_acre_feet %}
-      <span class="master-row-acres">{{ right.face_value_acre_feet|floatformat:0 }} AF</span>
-      {% endif %}
-    </div>
-  </div>
-  {% endfor %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Right ID</th>
+        <th>Holder</th>
+        <th>Face Value</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for right in page_obj %}
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='{% url 'surface:detail' right.pk %}';}">
+        <td>
+          <a href="{% url 'surface:detail' right.pk %}" class="data-table-link text-mono">
+            {{ right.right_id }}
+          </a>
+        </td>
+        <td class="text-secondary text-sm">{{ right.holder_name|default:"—" }}</td>
+        <td class="text-secondary text-sm tabular-nums">{% if right.face_value_acre_feet %}{{ right.face_value_acre_feet|floatformat:0 }} AF{% else %}—{% endif %}</td>
+        <td>{% include "surface/partials/_status_badge.html" with status=right.status %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<!-- Pagination -->
+<!-- Pagination (graceful fallback only — the page size shows every right) -->
 {% if page_obj.has_other_pages %}
 <div class="pagination-row">
   {% if page_obj.has_previous %}

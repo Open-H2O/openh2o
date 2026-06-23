@@ -228,17 +228,20 @@ def diversion_record_create(request, pk):
 
 @login_required
 def water_rights_list(request):
-    """Master-detail workspace for water rights.
+    """Water Rights OVERVIEW: a searchable full-width list of every right.
 
-    Left pane: the HTMX-searchable rights list. Right pane: the selected right's
-    detail — its points of diversion mapped, plus diversion records and active
-    curtailments — swapped in place when a row is clicked. A ``?selected=<pk>``
-    query param pre-renders that right server-side so a reload or deep link lands
-    on the same workspace view (the row click pushes that URL).
+    Water rights are a Bucket-3 screen (few items, each heavy): a district has a
+    handful, and each right's detail is rich (its points of diversion mapped,
+    diversion records, active curtailments, place of use). So this screen is a
+    finder, not a master-detail half-pane: the full-width list is for finding one
+    fast, and clicking a row opens that right's own full detail page. Unlike the
+    other Bucket-3 screens there is NO overview map — a water right is a legal
+    entitlement with no geometry of its own; its spatial footprint (the diversion
+    points it authorizes) is shown on its detail page where it has meaning. See
+    ``docs/2.0-UX-PATTERN-SPEC.md``.
 
     Returns the ``_list_results`` partial for an HTMX list refresh (search /
-    filter / pagination, which target ``#results``), and the full workspace page
-    otherwise.
+    filter / pagination, which target ``#results``), and the full page otherwise.
     """
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
@@ -252,19 +255,11 @@ def water_rights_list(request):
     if status:
         queryset = queryset.filter(status=status)
 
-    paginator = Paginator(queryset, 25)
+    # Water rights are bounded and few, so show them all on one page; finding one
+    # is a glance plus a type-to-filter. Pagination stays as a graceful fallback.
+    paginator = Paginator(queryset, 100)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
-
-    # Pre-load the selected right (deep link / reload) into the detail pane.
-    selected_right = None
-    selected_raw = request.GET.get("selected", "").strip()
-    if selected_raw:
-        selected_right = (
-            WaterRight.objects.select_related("right_type")
-            .filter(pk=selected_raw)
-            .first()
-        )
 
     context = {
         "page_obj": page_obj,
@@ -272,10 +267,7 @@ def water_rights_list(request):
         "q": q,
         "status": status,
         "status_choices": WaterRight.STATUS_CHOICES,
-        "selected_right": selected_right,
     }
-    if selected_right is not None:
-        context.update(_water_right_detail_context(selected_right))
 
     return list_response(
         request,

@@ -451,7 +451,7 @@ class TestSurfacePages:
         response = client.get(reverse("surface:water_rights_list"))
         assert response.status_code == 302
 
-    # Water Rights master-detail workspace (v2.0 conversion).
+    # Water Rights — Bucket 3 overview (full-width list -> detail page, no map).
     def test_water_right_detail(self, auth_client):
         right = WaterRightFactory()
         response = auth_client.get(
@@ -459,21 +459,21 @@ class TestSurfacePages:
         )
         assert response.status_code == 200
 
-    def test_water_rights_list_selected_preloads_detail_pane(self, auth_client):
-        """?selected=<pk> renders the chosen right's detail server-side so a
-        reload or deep link lands on the same workspace view (no extra
-        round-trip), with the served PODs' geometry along for the map."""
+    def test_water_rights_list_is_bucket3_overview(self, auth_client):
+        """The overview is a finder, not a master-detail workspace: a full-width
+        list whose rows link to each right's own detail page. Water rights have
+        no geometry, so unlike the other Bucket-3 screens there is no overview
+        map and no in-page detail pane."""
         right = WaterRightFactory(right_id="WR-DEEPLINK")
-        # A located POD on this right so the pane emits the map geometry.
-        PointOfDiversionFactory(water_right=right, name="Deep Link Headgate")
-        response = auth_client.get(
-            reverse("surface:water_rights_list"), {"selected": right.pk}
-        )
+        response = auth_client.get(reverse("surface:water_rights_list"))
         assert response.status_code == 200
         body = response.content.decode()
+        # Rows link out to the standalone detail page...
+        assert reverse("surface:detail", kwargs={"pk": right.pk}) in body
         assert "WR-DEEPLINK" in body
-        # The persistent map's POD geometry rides along in the pre-loaded pane.
-        assert "detail-geojson-data" in body
+        # ...with no master-detail pane shell and no overview map on this screen.
+        assert "detail-body" not in body
+        assert "overview-map" not in body
 
     def test_water_right_detail_hx_request_returns_pane_fragment(self, auth_client):
         """An HTMX row click gets just the detail-pane fragment (swapped into

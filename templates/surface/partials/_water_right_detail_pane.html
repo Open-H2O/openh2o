@@ -1,16 +1,15 @@
 {% comment %}
-  Per-right detail BODY, swapped into #detail-body on row click (and reused by the
-  standalone water_right_detail.html page). The map itself is NOT here — it lives
-  as a persistent element (#detail-map) in the pane shell so it is built ONCE and
-  merely re-pointed at the new right's diversion points on each switch (no
-  teardown, so no startup flash). A right maps MULTIPLE points of diversion, so
-  the geometry below is a FeatureCollection; OH2O.detailPaneMap frames the map
-  across all of them and the onMapLoad hook lays the river/canal flowlines
-  substrate beneath the points.
+  Per-right detail BODY for the standalone water_right_detail.html page (the
+  Bucket-3 detail view — see docs/2.0-UX-PATTERN-SPEC.md). The map itself is NOT
+  here — it lives as a persistent element (#detail-map) in the page shell, which
+  the toolkit points at this right's diversion points. A right maps MULTIPLE
+  points of diversion, so the geometry below is a FeatureCollection;
+  OH2O.detailPaneMap frames the map across all of them and the onMapLoad hook lays
+  the river/canal flowlines substrate beneath the points.
 {% endcomment %}
 {% load static %}
 
-<!-- Pane header: which water right you're looking at. -->
+<!-- Detail header: which water right you're looking at. -->
 <div class="pane-header">
   <div>
     <div class="pane-header-title text-mono">{{ water_right.right_id }}</div>
@@ -18,7 +17,6 @@
   </div>
   <div class="pane-header-meta">
     {% include "surface/partials/_status_badge.html" with status=water_right.status %}
-    <a href="{% url 'surface:detail' water_right.pk %}" class="text-tertiary text-xs back-link" title="Open this water right on its own page">Open full page &rarr;</a>
   </div>
 </div>
 

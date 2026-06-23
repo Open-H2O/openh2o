@@ -2,11 +2,11 @@
 {% load static %}
 
 {% comment %}
-  Standalone page for a single water right. The body is the shared
-  _water_right_detail_pane partial (the same fragment the workspace swaps into
-  #detail-body), so the page and the in-pane view never drift. This page is the
-  deep-link / direct-URL target; day-to-day use happens in the master-detail
-  workspace at surface:water_rights_list.
+  A single water right's full detail page — the Bucket-3 detail view (see
+  docs/2.0-UX-PATTERN-SPEC.md). Reached by clicking a row in the overview list at
+  surface:water_rights_list. The body is the shared _water_right_detail_pane
+  partial; the map host (#detail-map) is built by the toolkit loaded in
+  map_scripts and framed across this right's points of diversion.
 {% endcomment %}
 
 {% block title %}Water Right {{ water_right.right_id }} - Open Water Accounting Platform{% endblock %}
