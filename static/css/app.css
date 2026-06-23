@@ -3378,6 +3378,17 @@ div[id$="-map"] {
 .detail-pane {
     padding-left: var(--space-lg);
 }
+/* Detail panes reuse the full-page two-column layout (.page-grid-2col), but the
+   workspace detail pane is only ~half the content width. At a wide viewport the
+   viewport-keyed 2->1 breakpoint never fires, so two columns get crushed and the
+   balance panel + per-parcel table overflow and clip. Inside the workspace, stack
+   to one column; the standalone full page (no .workspace-split) keeps two. A
+   container query would be the textbook tool here but it forces `contain: layout`,
+   which would break the position:fixed explainer pop-outs in the pane. */
+.workspace-split .page-grid-2col,
+.workspace-split .page-grid-2col-wide {
+    grid-template-columns: 1fr;
+}
 .toolbar-stack {
     display: flex;
     flex-direction: column;

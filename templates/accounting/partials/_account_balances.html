@@ -30,6 +30,7 @@
 <!-- Per-parcel breakdown -->
 {% if parcel_balances %}
 <h3 class="section-header-sm">Per-Parcel Breakdown</h3>
+<div class="table-scroll">
 <table class="data-table">
   <thead>
     <tr>
@@ -72,6 +73,7 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <p class="text-tertiary text-sm">No parcels assigned to this account.</p>
 {% endif %}
