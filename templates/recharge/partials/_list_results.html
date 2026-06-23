@@ -2,38 +2,40 @@
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
-    recharge site{{ total_count|pluralize }} found
+    recharge site{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
   </span>
 </div>
 
 {% if page_obj.object_list %}
-<div class="card-raised master-list-card">
-  {% for site in page_obj %}
-  <div
-    data-row
-    class="master-row{% if selected_site and site.pk == selected_site.pk %} is-selected{% endif %}"
-    hx-get="{% url 'recharge:detail' site.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    hx-push-url="{% url 'recharge:list' %}?selected={{ site.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open recharge site {{ site.name }}">
-    <div class="master-row-top">
-      <span class="master-row-id">{{ site.name }}</span>
-      {% include "recharge/partials/_status_badge.html" with status=site.status %}
-    </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">{{ site.get_site_type_display }}</span>
-      {% if site.capacity_acre_feet %}
-      <span class="master-row-acres">{{ site.capacity_acre_feet|floatformat:0 }} AF</span>
-      {% endif %}
-    </div>
-  </div>
-  {% endfor %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Recharge Site</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th class="th-right">Capacity</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for site in page_obj %}
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='{% url 'recharge:detail' site.pk %}';}">
+        <td>
+          <a href="{% url 'recharge:detail' site.pk %}" class="data-table-link">
+            {{ site.name }}
+          </a>
+        </td>
+        <td class="text-secondary text-sm">{{ site.get_site_type_display }}</td>
+        <td>{% include "recharge/partials/_status_badge.html" with status=site.status %}</td>
+        <td class="td-num text-secondary text-sm">{% if site.capacity_acre_feet %}{{ site.capacity_acre_feet|floatformat:0 }} AF{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<!-- Pagination -->
+<!-- Pagination (graceful fallback only — the page size shows every site) -->
 {% if page_obj.has_other_pages %}
 <div class="pagination-row">
   {% if page_obj.has_previous %}

@@ -2,11 +2,11 @@
 {% load static %}
 
 {% comment %}
-  Standalone page for a single recharge site. The body is the shared
-  _detail_pane partial (the same fragment the workspace swaps into #detail-body),
-  so the page and the in-pane view never drift. This page is the deep-link /
-  direct-URL target; day-to-day use happens in the master-detail workspace at
-  recharge:list.
+  A single recharge site's full detail page — the Bucket-3 detail view (see
+  docs/2.0-UX-PATTERN-SPEC.md). Reached by clicking a basin or point on the
+  overview map, or a row in the overview list, at recharge:list. The body is the
+  shared _detail_pane partial; the persistent map host (#detail-map) is built by
+  the toolkit loaded in map_scripts.
 {% endcomment %}
 
 {% block title %}{{ site.name }} - Open Water Accounting Platform{% endblock %}

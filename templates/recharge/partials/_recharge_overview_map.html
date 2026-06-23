@@ -1,0 +1,153 @@
+{% comment %}
+Recharge overview map: every recharge site at once, on the recharge:list overview
+page.
+
+The Bucket-3 overview map (see docs/2.0-UX-PATTERN-SPEC.md) for the recharge
+screen — the recharge analogue of the Zones boundary map and the Surface
+Diversions point map. Recharge sites are MIXED geometry: most are polygon basins,
+some are single points. So this map draws both, exactly as the big district map
+does (templates/geography/map.html): one GeoJSON source from recharge:sites_geojson
+(which already carries pk in properties), with a fill+outline pair filtered to
+non-points and a glow+circle pair filtered to points. Clicking either opens a
+popup with the site name and a link to its full detail page. Modeled on
+_zones_overview_map.html.
+
+The parent page must provide a <div> with the matching map_id, and must load
+MapLibre GL JS + map-core.js (the map_scripts block) before this include.
+
+Variables:
+  map_id  - ID of the existing <div> container on the page (required)
+{% endcomment %}
+<script>
+(function() {
+  // MapLibre loads in the map_scripts block, which renders AFTER page content,
+  // so on first render this runs before the library exists. Defer until
+  // DOMContentLoaded; on an HTMX content swap the document is already loaded.
+  function init() {
+    if (!window.maplibregl) return;
+    var el = document.getElementById('{{ map_id }}');
+    if (!el || el._mapInit) return;
+    el._mapInit = true;
+
+    var COLOR = OH2O.colors.purple;   // matches the recharge symbology on the big map
+
+    var map = new maplibregl.Map({
+      container: '{{ map_id }}',
+      style: OH2O.basemapStyle('aerial'),
+      zoom: 7,
+      center: [-119.5, 37.3],
+      attributionControl: false
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    OH2O.mountBasemapToggle(map, 'aerial');
+
+    // Walk a GeoJSON geometry's nested coordinate arrays, expanding the running
+    // bbox. Recurses until it reaches a [lng, lat] position, so it handles Point,
+    // Polygon, and MultiPolygon alike — exactly what a mixed recharge layer needs.
+    function extend(bbox, node) {
+      if (typeof node[0] === 'number') {
+        if (node[0] < bbox[0]) bbox[0] = node[0];
+        if (node[1] < bbox[1]) bbox[1] = node[1];
+        if (node[0] > bbox[2]) bbox[2] = node[0];
+        if (node[1] > bbox[3]) bbox[3] = node[1];
+        return;
+      }
+      for (var i = 0; i < node.length; i++) extend(bbox, node[i]);
+    }
+
+    // Resolve the detail URL through Django (a sentinel pk we swap out) so the
+    // link tracks the app's URL prefix instead of hardcoding it.
+    var detailUrl = '{% url "recharge:detail" 0 %}';
+
+    function popupFor(p, lngLat) {
+      var sub = [p.site_type, p.status].filter(Boolean).join(' &middot; ');
+      new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
+        .setLngLat(lngLat)
+        .setHTML(
+          '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+          '<div style="font-weight:600;font-size:13px;">' + (p.name || 'Recharge site') + '</div>' +
+          (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
+          '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
+            'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View recharge site &rarr;</a>' +
+          '</div>'
+        )
+        .addTo(map);
+    }
+
+    map.on('load', function() {
+      fetch('{% url "recharge:sites_geojson" %}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.features || !data.features.length) return;
+
+          var bbox = [Infinity, Infinity, -Infinity, -Infinity];
+          data.features.forEach(function(f) {
+            if (f.geometry && f.geometry.coordinates) extend(bbox, f.geometry.coordinates);
+          });
+          if (isFinite(bbox[0])) {
+            map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, maxZoom: 13 });
+          }
+
+          map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+
+          // Polygon basins: fill + outline. A fill/line layer ignores point
+          // features, so the $type filter keeps the two geometries from colliding.
+          map.addLayer({
+            id: '{{ map_id }}-fill',
+            type: 'fill',
+            source: '{{ map_id }}-source',
+            filter: ['!=', '$type', 'Point'],
+            paint: { 'fill-color': COLOR, 'fill-opacity': 0.22 }
+          });
+          map.addLayer({
+            id: '{{ map_id }}-outline',
+            type: 'line',
+            source: '{{ map_id }}-source',
+            filter: ['!=', '$type', 'Point'],
+            paint: { 'line-color': COLOR, 'line-width': 1.5, 'line-opacity': 0.9 }
+          });
+
+          // Single-point sites: glow + marker, filtered to points.
+          map.addLayer({
+            id: '{{ map_id }}-glow',
+            type: 'circle',
+            source: '{{ map_id }}-source',
+            filter: ['==', '$type', 'Point'],
+            paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
+          });
+          map.addLayer({
+            id: '{{ map_id }}-dots',
+            type: 'circle',
+            source: '{{ map_id }}-source',
+            filter: ['==', '$type', 'Point'],
+            paint: {
+              'circle-radius': 6, 'circle-color': COLOR,
+              'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
+            }
+          });
+
+          // Clicking a basin pops at the click point; clicking a marker pops at
+          // its location.
+          map.on('click', '{{ map_id }}-fill', function(e) {
+            popupFor(e.features[0].properties, e.lngLat);
+          });
+          map.on('click', '{{ map_id }}-dots', function(e) {
+            popupFor(e.features[0].properties, e.features[0].geometry.coordinates);
+          });
+
+          ['{{ map_id }}-fill', '{{ map_id }}-dots'].forEach(function(layer) {
+            map.on('mouseenter', layer, function() { map.getCanvas().style.cursor = 'pointer'; });
+            map.on('mouseleave', layer, function() { map.getCanvas().style.cursor = ''; });
+          });
+        })
+        .catch(function(err) { console.error('Recharge GeoJSON failed:', err); });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

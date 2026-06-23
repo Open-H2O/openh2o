@@ -24,17 +24,19 @@ from recharge.models import RechargeMeasurement, RechargeEvent, RechargeSite
 
 @login_required
 def recharge_sites_list(request):
-    """Master-detail workspace for recharge areas.
+    """Recharge Areas OVERVIEW: a map of every recharge site + a list.
 
-    Left pane: the HTMX-searchable site list. Right pane: the selected site's
-    detail — its geometry mapped (polygon basin or point), plus event history and
-    recent measurements — swapped in place when a row is clicked. A
-    ``?selected=<pk>`` query param pre-renders that site server-side so a reload
-    or deep link lands on the same workspace view (the row click pushes that URL).
+    Recharge sites are a Bucket-3 screen (few items, each heavy): a district has a
+    handful, and each one's detail is rich (its basin or point mapped, its
+    recharge-event history, the diversions that fill it, recent measurements). So
+    this screen is a finder, not a master-detail half-pane: the map up top shows
+    every recharge site at once — polygons as basins, single points as markers —
+    the full-width list below is for finding one fast, and clicking a row (or a
+    feature on the map) opens that site's own full-width detail page. See
+    ``docs/2.0-UX-PATTERN-SPEC.md`` for why this is Bucket 3, not master-detail.
 
     Returns the ``_list_results`` partial for an HTMX list refresh (search /
-    filter / pagination, which target ``#results``), and the full workspace page
-    otherwise.
+    filter / pagination, which target ``#results``), and the full page otherwise.
     """
     q = request.GET.get("q", "").strip()
     site_type = request.GET.get("site_type", "").strip()
@@ -46,15 +48,12 @@ def recharge_sites_list(request):
     if site_type:
         queryset = queryset.filter(site_type=site_type)
 
-    paginator = Paginator(queryset, 25)
+    # Recharge sites are bounded and few, so show them all on one page; finding one
+    # is a glance at the map plus a type-to-filter. Pagination stays as a graceful
+    # fallback for an unusually large district.
+    paginator = Paginator(queryset, 100)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
-
-    # Pre-load the selected site (deep link / reload) into the detail pane.
-    selected_site = None
-    selected_raw = request.GET.get("selected", "").strip()
-    if selected_raw:
-        selected_site = RechargeSite.objects.filter(pk=selected_raw).first()
 
     context = {
         "page_obj": page_obj,
@@ -63,10 +62,7 @@ def recharge_sites_list(request):
         "site_type": site_type,
         "site_type_choices": RechargeSite.SITE_TYPE_CHOICES,
         "status_choices": RechargeSite.STATUS_CHOICES,
-        "selected_site": selected_site,
     }
-    if selected_site is not None:
-        context.update(_recharge_site_detail_context(selected_site))
 
     return list_response(
         request,

@@ -548,6 +548,23 @@ class TestRechargePages:
         response = client.get(reverse("recharge:list"))
         assert response.status_code == 302
 
+    # Recharge — Bucket 3 overview (overview map + list -> detail page).
+    def test_recharge_list_is_bucket3_overview(self, auth_client):
+        """The overview is a finder, not a master-detail workspace: an overview
+        map up top, and list rows that link to each site's own full detail page
+        (no in-page detail pane)."""
+        site = RechargeSiteFactory(name="Deep Link Basin")
+        response = auth_client.get(reverse("recharge:list"))
+        assert response.status_code == 200
+        body = response.content.decode()
+        # Overview map container is present.
+        assert 'id="recharge-overview-map"' in body
+        # Rows link out to the standalone detail page...
+        assert reverse("recharge:detail", kwargs={"pk": site.pk}) in body
+        assert "Deep Link Basin" in body
+        # ...and there is no master-detail pane shell on the overview.
+        assert "detail-body" not in body
+
 
 # ---------------------------------------------------------------------------
 # Datasync pages (login required)
