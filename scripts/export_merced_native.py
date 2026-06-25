@@ -293,6 +293,23 @@ def month_schedule():
     return out
 
 
+def water_year_name(yr, mn):
+    """The reporting period a (year, month) falls in. A water year runs Oct–Sep, so
+    Oct–Dec belong to the year that just started and Jan–Sep to the year before it.
+    Matches the reportingPeriods names emitted in the bundle (e.g. 'WY 2024-2025')."""
+    start = yr if mn >= 10 else yr - 1
+    return f"WY {start}-{start + 1}"
+
+
+# Display meters minted for metered wells (mirrors seed_merced_details._mint_meters: a
+# real Meter behind every metered well, so the native app shows a linked device beside
+# the rolled-up volume instead of "No meter linked").
+METER_MAKES = [
+    ("McCrometer", "FS100"), ("Netafim", "Octave"),
+    ("Seametrics", "AG2000"), ("Badger", "Recordall M2000"),
+]
+
+
 # --- Geometry helpers (pure, no GDAL) --------------------------------------
 
 def _iter_positions(coords):
@@ -500,6 +517,7 @@ def build_bundle():
 
     # --- Wells (one per shared group / per solo groundwater field) ---
     wells = []
+    meters = []               # one display Meter + WellMeter link per metered well
     metered_parcels = set()   # parcels whose well is metered -> meter_reading rows
     well_seq = 0
     for key, members in sorted(well_members.items()):
@@ -528,6 +546,20 @@ def build_bundle():
         })
         if metered:
             metered_parcels.update(members)
+            reg = f"MER-W-{well_seq:03d}"
+            make, model = METER_MAKES[well_seq % len(METER_MAKES)]
+            meters.append({
+                "serialNumber": f"MTR-{reg}",
+                "wellRegistrationID": reg,
+                "meterType": "totalizer",
+                "unit": "acre_feet",
+                "manufacturer": make,
+                "model": model,
+                "status": "active",
+                "lastCalibrationDate": f"2024-{(well_seq % 12) + 1:02d}-15",
+                "installedDate": "2005-06-01",
+                "isCurrent": True,
+            })
 
     # --- Ledger: 12 months of recorded surface deliveries + meter readings ---
     ledger = []
@@ -559,6 +591,7 @@ def build_bundle():
                             "transactionDate": day, "effectiveDate": day,
                             "amountAcreFeet": f"-{amt}",
                             "sourceType": "surface_diversion",
+                            "periodName": water_year_name(yr, mn),
                             "detail": ("Managed recharge flood delivery"
                                        if is_flood else "Canal delivery"),
                         })
@@ -573,6 +606,7 @@ def build_bundle():
                         "transactionDate": day, "effectiveDate": day,
                         "amountAcreFeet": f"-{amt}",
                         "sourceType": "meter_reading",
+                        "periodName": water_year_name(yr, mn),
                         "detail": "Monthly metered groundwater extraction",
                     })
 
@@ -669,6 +703,7 @@ def build_bundle():
             "district": "Merced Subbasin GSA",
             "parcelCount": len(parcels),
             "wellCount": len(wells),
+            "meterCount": len(meters),
             "monitoringWellCount": len(monitoring_wells),
             "accountCount": len(accounts),
             "ledgerRows": len(ledger),
@@ -717,6 +752,7 @@ def build_bundle():
         "zones": zones,
         "parcels": parcels,
         "wells": wells,
+        "meters": meters,
         "monitoringWells": monitoring_wells,
         "dataSources": data_sources,
         "monitoredStations": monitored_stations,
