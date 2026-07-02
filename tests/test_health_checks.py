@@ -319,3 +319,29 @@ class TestHealthDemoMode:
         ParcelLedgerFactory(amount_acre_feet=Decimal("0"))
         result = check_ledger_integrity()
         assert result["status"] == "yellow"
+
+
+# ---------------------------------------------------------------------------
+# Liveness probe (M1) — DB-free 200 for the Docker HEALTHCHECK + Caddy gate.
+# ---------------------------------------------------------------------------
+
+
+class TestLivenessProbe:
+    @pytest.mark.django_db
+    def test_livez_returns_ok_with_no_health_rows(self, client):
+        """Must be 200 even when zero HealthCheckResult rows exist and regardless
+        of subsystem status — it reports process liveness, not aggregate health."""
+        from django.urls import reverse
+
+        resp = client.get(reverse("health:live"))
+        assert resp.status_code == 200
+        assert resp.content == b"ok"
+
+    def test_livez_does_not_query_the_database(self):
+        """No @django_db mark and no DB access: the probe must never depend on the
+        database, so a DB hiccup can't flap the container unhealthy."""
+        from django.test import Client
+        from django.urls import reverse
+
+        resp = Client().get(reverse("health:live"))
+        assert resp.status_code == 200

@@ -8,11 +8,24 @@ rolling the latest HealthCheckResult per category into one overall status
 status only; per-subsystem messages are withheld unless the caller is
 authenticated.
 """
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.db.models import Max
 
 from .models import HealthCheckResult
+
+
+def livez(request):
+    """Container liveness probe: 200 the instant gunicorn can serve a request.
+
+    Deliberately touches NO database and rolls up NO subsystem health — it answers
+    only "is the web process up and handling HTTP." The Docker HEALTHCHECK and the
+    Caddy readiness gate (depends_on: service_healthy) key off this, so it must not
+    depend on anything that could be transiently red: a stale "unhealthy" row in
+    the nightly golden.dump must never keep Caddy from starting. Subsystem health
+    lives on the /health/ dashboard and /health/api/ endpoint instead.
+    """
+    return HttpResponse("ok", content_type="text/plain")
 
 
 def health_dashboard(request):

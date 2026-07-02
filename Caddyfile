@@ -17,6 +17,12 @@
     handle {
         reverse_proxy web:8000 {
             header_up X-Forwarded-Proto https
+            # Ride out a brief web outage (nightly DB reset, a manual or
+            # deploy-time restart) instead of 502-ing the visitor: retry the
+            # upstream for up to 10 s, so a request that arrives mid-restart
+            # waits for web to come back rather than failing.
+            lb_try_duration 10s
+            lb_try_interval 250ms
         }
     }
 }

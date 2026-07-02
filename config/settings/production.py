@@ -49,6 +49,17 @@ if not ALLOWED_HOSTS:  # noqa: F405
         "(e.g. ALLOWED_HOSTS=water.example.org). See DEPLOY.md."
     )
 
+# The Docker HEALTHCHECK curls the liveness probe on the loopback interface from
+# INSIDE the container, so its Host header is 127.0.0.1 — allow it. Appended AFTER
+# the guard above so an empty operator-supplied ALLOWED_HOSTS still fails fast;
+# loopback is unreachable from outside the container, so this widens nothing real.
+ALLOWED_HOSTS = ALLOWED_HOSTS + ["127.0.0.1", "localhost"]  # noqa: F405
+
+# ...and exempt that probe from the HTTPS redirect. SECURE_SSL_REDIRECT would
+# otherwise answer the plain-HTTP in-container probe with a 301, which a strict
+# healthcheck reads as failure. Everything else still redirects to HTTPS.
+SECURE_REDIRECT_EXEMPT = [r"^health/live/?$"]
+
 # -- Logging -----------------------------------------------------------------
 # With DEBUG=False, Django renders the generic 500 page but writes the traceback
 # nowhere by default — an unhandled exception in production leaves zero trace

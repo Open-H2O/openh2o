@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     python3-dev \
     curl \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # GeoDjango library paths (Debian bookworm)
@@ -37,6 +38,22 @@ RUN ./tailwindcss-linux-x64 -i static/css/input.css -o static/css/output.css --m
 ARG APP_VERSION=dev
 ENV APP_VERSION=$APP_VERSION
 
+# Unprivileged runtime user. The image builds as root (apt, pip, collectstatic);
+# the entrypoint drops to this user before exec-ing gunicorn so the request-serving
+# process that touches untrusted uploads never runs as root. Own the writable dirs
+# in the image so a FRESH named volume inherits app ownership (existing volumes are
+# re-chowned at startup by the entrypoint).
+RUN useradd --system --create-home --uid 1000 app \
+    && mkdir -p /app/media /app/staticfiles \
+    && chown -R app:app /app/media /app/staticfiles \
+    && chmod +x /app/entrypoint.sh
+
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py collectstatic --noinput --clear && python manage.py migrate --noinput && python manage.py createcachetable && python manage.py ensure_superuser && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2"]
+# Liveness: 200 the moment gunicorn is serving. Caddy's readiness gate
+# (depends_on: service_healthy) and any restart key off this, so a boot never
+# forwards traffic to a not-yet-listening web container (no boot-time 502s).
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:8000/health/live/ || exit 1
+
+ENTRYPOINT ["/app/entrypoint.sh"]

@@ -9,4 +9,6 @@ app_name = "health"
 urlpatterns = [
     path("", views.health_dashboard, name="dashboard"),
     path("api/", views.health_api, name="api"),
+    # DB-free liveness probe for the Docker HEALTHCHECK + Caddy readiness gate.
+    path("live/", views.livez, name="live"),
 ]
