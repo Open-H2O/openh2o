@@ -17,10 +17,26 @@ from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
 
+from PIL import Image
+
 from .forwarder import forward_async
 from .models import Feedback, FeedbackAttachment
 
 logger = logging.getLogger("feedback")
+
+# Raster formats we accept, mapped to the ONLY content-type we will ever store
+# or serve for them. SVG is deliberately absent: it is an XML document that can
+# carry <script>, so a stored SVG streamed back to a staff viewer on preview is
+# a stored-XSS vector. We whitelist by the bytes Pillow actually decodes, never
+# by the upload's declared Content-Type — that field is attacker-controlled, and
+# setting it to "image/svg+xml" is exactly how an SVG slips past a naive
+# `startswith("image/")` check.
+_ALLOWED_IMAGE_FORMATS = {
+    "PNG": "image/png",
+    "JPEG": "image/jpeg",
+    "GIF": "image/gif",
+    "WEBP": "image/webp",
+}
 
 # Limit defaults. Read LIVE from settings inside each request (via _limit) so a
 # deployment can tune them by env, and so override_settings works in tests —
@@ -153,10 +169,19 @@ def attachment(request, pk):
     if not (user.is_authenticated and user.is_staff):
         raise Http404
     att = get_object_or_404(FeedbackAttachment, pk=pk)
-    return FileResponse(
+    resp = FileResponse(
         att.image.open("rb"),
         content_type=att.content_type or "application/octet-stream",
+        as_attachment=True,
+        filename=f"feedback-attachment-{att.pk}",
     )
+    # Defense in depth for anything stored BEFORE byte-validation landed (e.g. a
+    # legacy SVG): as_attachment forces a download and nosniff stops the browser
+    # from second-guessing the content-type, so user-supplied markup can never
+    # render inline in a staff session. The admin's <img> preview is unaffected —
+    # Content-Disposition does not suppress subresource image loads.
+    resp["X-Content-Type-Options"] = "nosniff"
+    return resp
 
 
 def _parse_diagnostics(raw):
@@ -173,26 +198,52 @@ def _parse_diagnostics(raw):
     return data if isinstance(data, dict) else {"_value": data}
 
 
+def _validated_image_type(upload):
+    """Return the safe, server-derived MIME for an upload whose ACTUAL bytes decode
+    to a whitelisted raster image — or None to reject it.
+
+    We never trust ``upload.content_type`` (the browser-supplied Content-Type):
+    an SVG uploaded as ``image/svg+xml`` would pass any prefix check yet execute
+    script when previewed. Pillow refuses to identify an SVG (or any non-raster),
+    so decoding the bytes is what actually filters the XSS vector out.
+    """
+    try:
+        upload.seek(0)
+        im = Image.open(upload)
+        fmt = im.format
+        im.verify()  # detect truncated / malformed payloads
+    except Exception:
+        return None
+    finally:
+        try:
+            upload.seek(0)  # verify() consumes the file; rewind for the real save
+        except Exception:
+            pass
+    return _ALLOWED_IMAGE_FORMATS.get(fmt)
+
+
 def _save_attachments(request, fb):
     """Persist up to FEEDBACK_MAX_ATTACHMENTS image files; skip anything that
-    isn't a sane-sized image rather than failing the whole submission."""
+    isn't a sane-sized, byte-validated raster image rather than failing the whole
+    submission."""
     max_count = _limit("FEEDBACK_MAX_ATTACHMENTS")
     max_bytes = _limit("FEEDBACK_MAX_ATTACHMENT_BYTES")
     saved = 0
     for upload in request.FILES.getlist("attachments"):
         if saved >= max_count:
             break
-        ctype = (upload.content_type or "").lower()
-        if not ctype.startswith("image/"):
-            continue
         if upload.size and upload.size > max_bytes:
+            continue
+        safe_ctype = _validated_image_type(upload)
+        if safe_ctype is None:
             continue
         try:
             FeedbackAttachment.objects.create(
                 feedback=fb,
                 image=upload,
                 original_name=(upload.name or "")[:255],
-                content_type=ctype[:100],
+                # Store the type Pillow DECODED, never the client's claim.
+                content_type=safe_ctype,
                 size=upload.size or 0,
             )
             saved += 1

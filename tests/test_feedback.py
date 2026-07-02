@@ -205,3 +205,53 @@ def test_disabled_returns_404(client, settings):
     resp = client.post(SUBMIT_URL, {"message": "nope"})
     assert resp.status_code == 404
     assert Feedback.objects.count() == 0
+
+
+# ---------------------------------------------------------------------------
+# P2-2 — SVG stored-XSS: uploads are byte-validated, not Content-Type-trusted;
+# attachments are served as forced downloads with nosniff.
+# ---------------------------------------------------------------------------
+
+
+_SVG_XSS = (
+    b'<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">'
+    b"<script>alert(document.cookie)</script></svg>"
+)
+
+
+@pytest.mark.django_db
+def test_svg_upload_rejected_even_when_declared_image(client):
+    """An SVG uploaded with Content-Type image/svg+xml passes the old naive
+    prefix check but must be refused — its bytes don't decode to a raster image."""
+    svg = SimpleUploadedFile("x.svg", _SVG_XSS, content_type="image/svg+xml")
+    resp = client.post(SUBMIT_URL, {"message": "svg attempt", "attachments": svg})
+    assert resp.status_code == 200
+    fb = Feedback.objects.latest("id")
+    assert fb.attachments.count() == 0, "SVG must never be stored"
+
+
+@pytest.mark.django_db
+def test_stored_content_type_is_server_derived_not_client_claim(client):
+    """Real PNG bytes uploaded with a LYING Content-Type are stored under the
+    type Pillow decoded (image/png), never the attacker's claim."""
+    lying = SimpleUploadedFile("shot.png", _png_bytes(), content_type="image/svg+xml")
+    resp = client.post(SUBMIT_URL, {"message": "png but lies", "attachments": lying})
+    assert resp.status_code == 200
+    att = Feedback.objects.latest("id").attachments.get()
+    assert att.content_type == "image/png"
+
+
+@pytest.mark.django_db
+def test_attachment_served_as_download_with_nosniff(client):
+    img = SimpleUploadedFile("shot.png", _png_bytes(), content_type="image/png")
+    client.post(SUBMIT_URL, {"message": "shot", "attachments": img})
+    att = Feedback.objects.latest("id").attachments.get()
+
+    staff = User.objects.create_user(
+        username="reviewer", email="rev@example.com", password="x", is_staff=True
+    )
+    client.force_login(staff)
+    resp = client.get(reverse("feedback:attachment", args=[att.pk]))
+    assert resp.status_code == 200
+    assert resp["X-Content-Type-Options"] == "nosniff"
+    assert resp["Content-Disposition"].startswith("attachment")
