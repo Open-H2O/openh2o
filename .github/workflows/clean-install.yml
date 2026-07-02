@@ -46,6 +46,15 @@ jobs:
       - name: Build web image
         run: docker compose build web
 
+      # Fails the build if any app has model changes with no matching migration.
+      # A drifted schema means the deployed database can silently diverge from the
+      # code, and the next `migrate` applies surprises. Keep migrations in lockstep.
+      - name: Guard against un-generated migrations (model drift)
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py makemigrations --check --dry-run
+
       - name: Migrate (fresh schema)
         run: >-
           docker compose run --rm
