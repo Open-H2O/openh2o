@@ -594,3 +594,78 @@ class TestDemonstrationFramingScreens:
         body = resp.content.decode()
         assert DEMO_BANNER not in body
         assert "OpenH2O prepares your filing." in body
+
+
+# ---------------------------------------------------------------------------
+# ISS-031d — CalWATRS Volume/Return Flow columns format identically on every
+# row, and never emit scientific notation ("0E-8") for an exact-zero value.
+#
+# The linked (parcel-fraction) branch rendered Volume/Return Flow at 8 decimals;
+# the parcel-less branch emitted raw 4-decimal Decimals in the same columns — a
+# visible inconsistency in a state file. Separately, the linked branch multiplies
+# volume by a normalized fraction, so a zero-volume row produced Decimal("0E-8")
+# in the Volume column. Both are fixed by routing both branches through
+# _calwatrs_data_row with :.8f formatting.
+# ---------------------------------------------------------------------------
+
+
+VOLUME_COL = 7  # "Volume (AF)"
+RETURN_FLOW_COL = 11  # "Return Flow (AF)"
+
+
+@pytest.mark.django_db
+class TestCalwatrsColumnFormatting:
+    def test_parcel_less_pod_matches_linked_8_decimal_format(self):
+        """A POD with no parcel links must render Volume and Return Flow as fixed
+        8-decimal strings — the same format the parcel-linked rows already use —
+        not raw 4-decimal Decimals."""
+        period = _period()
+        pod = PointOfDiversionFactory(water_right=WaterRightFactory())  # NO links
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("300.0000"),
+            returned_af=Decimal("0.0000"),
+            diversion_type="direct_use",
+        )
+
+        rows = _data_rows(generate_calwatrs_csv(period, template_type="a1").read())
+        assert len(rows) == 1
+        row = rows[0]
+        # Pre-fix these were "300.0000" and "0.0000"; both must now be 8-decimal.
+        assert row[VOLUME_COL] == "300.00000000"
+        assert row[RETURN_FLOW_COL] == "0.00000000"
+        # Value is unchanged — only the presentation widened.
+        assert Decimal(row[VOLUME_COL]) == Decimal("300")
+        assert Decimal(row[RETURN_FLOW_COL]) == Decimal("0")
+
+    def test_zero_volume_linked_pod_does_not_emit_scientific_notation(self):
+        """A zero-volume diversion split across two parcels used to write
+        Decimal("0E-8") into the Volume column (volume * fraction at a sub-1e-6
+        exponent). No cell in the file may contain scientific notation."""
+        period = _period()
+        pod = PointOfDiversionFactory(water_right=WaterRightFactory())
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=ParcelFactory(), fraction=Decimal("1.0000")
+        )
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=ParcelFactory(), fraction=Decimal("1.0000")
+        )
+        DiversionRecordFactory(
+            point_of_diversion=pod,
+            reporting_period=period,
+            month=date(2024, 3, 1),
+            volume_acre_feet=Decimal("0.0000"),
+            returned_af=Decimal("0.0000"),
+            diversion_type="direct_use",
+        )
+
+        rows = _data_rows(generate_calwatrs_csv(period, template_type="a1").read())
+        assert rows, "expected the split-parcel rows to be emitted"
+        for row in rows:
+            # Pre-fix the Volume cell was Decimal("0E-8") -> "0E-8".
+            assert row[VOLUME_COL] == "0.00000000", f"got {row[VOLUME_COL]!r}"
+            assert row[RETURN_FLOW_COL] == "0.00000000"
+            assert "E" not in row[VOLUME_COL].upper()
+            assert "E" not in row[RETURN_FLOW_COL].upper()

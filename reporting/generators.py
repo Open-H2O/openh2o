@@ -451,6 +451,32 @@ def generate_gears_csv(reporting_period, method="by_well"):
     return output
 
 
+def _calwatrs_data_row(entry, fraction, combined_use):
+    """Build one CalWATRS data row.
+
+    Both the parcel-linked and the parcel-less branches of generate_calwatrs_csv
+    route through here so the two can never drift in column formatting again
+    (they previously did: linked rows carried 8-decimal Volume/Return Flow while
+    parcel-less rows emitted raw 4-decimal Decimals in the same columns).
+
+    Volume and Return Flow are rendered as fixed 8-decimal strings. A Decimal
+    whose value is an exact zero at a sub-1e-6 exponent — e.g. a zero volume or
+    return multiplied by a normalized fraction — renders in Python as the
+    scientific-notation string "0E-8", which looks malformed in a state file.
+    Formatting with ``:.8f`` keeps full Decimal precision (it never routes
+    through float) while guaranteeing a plain fixed-point column for every row.
+    """
+    pod = entry["pod"]
+    return [
+        entry["right_id"], entry["holder"], pod.name,
+        float(fraction),
+        pod.location.y, pod.location.x, entry["month"],
+        f"{entry['volume'] * fraction:.8f}",
+        entry["max_flow"], entry["type"], combined_use,
+        f"{entry['return_flow'] * fraction:.8f}",
+    ]
+
+
 def generate_calwatrs_csv(reporting_period, template_type="a1"):
     output = io.StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
@@ -545,27 +571,11 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
                     combined_use = "GW Only"
                 else:
                     combined_use = "SW Only"
-                rows.append([
-                    entry["right_id"], entry["holder"], pod.name,
-                    float(fraction),
-                    pod.location.y, pod.location.x, entry["month"],
-                    entry["volume"] * fraction,
-                    entry["max_flow"], entry["type"], combined_use,
-                    # Fixed-decimal string so an exact-zero return reads
-                    # "0.00000000" — Decimal renders zero at this precision as the
-                    # scientific-notation "0E-8", which looks wrong in a state file.
-                    f"{entry['return_flow'] * fraction:.8f}",
-                ])
+                rows.append(_calwatrs_data_row(entry, fraction, combined_use))
         else:
-            # POD not linked to any parcel — emit row with fraction 1.0, SW Only
-            rows.append([
-                entry["right_id"], entry["holder"], pod.name,
-                1.0,
-                pod.location.y, pod.location.x, entry["month"],
-                entry["volume"],
-                entry["max_flow"], entry["type"], "SW Only",
-                entry["return_flow"],
-            ])
+            # POD not linked to any parcel — emit a single row at fraction 1.0,
+            # SW Only. Same helper as the linked branch so the columns match.
+            rows.append(_calwatrs_data_row(entry, Decimal("1"), "SW Only"))
 
     for row in rows:
         writer.writerow(safe_row(row))
