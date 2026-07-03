@@ -47,6 +47,18 @@ class Command(BaseCommand):
         if adapter is None:
             raise CommandError(f"No adapter registered for source code '{code}'.")
 
+        # An inactive source is OFF, not a mock: skip it entirely rather than
+        # syncing (previously an inactive source silently served canned fixtures
+        # and stamped a fresh last_data_at, making a dead source look healthy).
+        if not data_source.is_active and not options["mock"]:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"{data_source.name} is inactive — skipping (no fetch, no "
+                    "publish). Reactivate the source to sync it."
+                )
+            )
+            return
+
         # Parse dates
         end_date = date.today()
         start_date = end_date - timedelta(days=7)
@@ -54,11 +66,6 @@ class Command(BaseCommand):
             start_date = date.fromisoformat(options["start"])
         if options["end"]:
             end_date = date.fromisoformat(options["end"])
-
-        # If --mock, temporarily force mock mode on the source
-        original_active = data_source.is_active
-        if options["mock"]:
-            data_source.is_active = False
 
         stations = MonitoredStation.objects.filter(
             data_source=data_source, is_active=True
@@ -107,7 +114,9 @@ class Command(BaseCommand):
         failures = 0
         for station in stations:
             self.stdout.write(f"  {station.external_station_id}: {station.station_name}")
-            result = adapter.sync(station, start_date, end_date, sync_log=sync_log)
+            result = adapter.sync(
+                station, start_date, end_date, sync_log=sync_log, mock=options["mock"]
+            )
             if result.error_message:
                 failures += 1
                 self.stdout.write(self.style.ERROR(f"    Error: {result.error_message}"))
@@ -122,13 +131,21 @@ class Command(BaseCommand):
             sync_log.status = "failed"
         elif failures > 0:
             sync_log.status = "partial"
+        elif sync_log.records_fetched > 0 and sync_log.records_staged == 0:
+            # Every station returned data but none of it staged (an upstream
+            # format change silently dropping records). Not a clean success.
+            sync_log.status = "partial"
+            if not sync_log.error_message:
+                sync_log.error_message = (
+                    f"{sync_log.records_fetched} records fetched but 0 staged "
+                    "across all stations (all dropped in validate/stage)."
+                )
         else:
             sync_log.status = "success"
 
         sync_log.save()
 
         # Update source timestamp
-        data_source.is_active = original_active
         data_source.last_sync_at = timezone.now()
         data_source.save()
 

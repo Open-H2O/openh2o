@@ -1133,3 +1133,24 @@ class TestRunStationProviderStep:
         assert count == 0
         assert errors == []
         adapter.discover_stations.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# P3-3 — a step failing mid-run must report the run INCOMPLETE (non-zero exit),
+# never a green SUCCESS with an undercount.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestAutoPopulateFailureReporting:
+    @patch("geography.management.commands.auto_populate.query_by_boundary")
+    def test_step_api_failure_raises_command_error(self, mock_query, boundary):
+        mock_query.side_effect = RuntimeError("upstream API down")
+        with pytest.raises(CommandError, match="did not complete"):
+            call_command(
+                "auto_populate",
+                boundary=str(boundary.pk),
+                steps="basins",
+                stdout=StringIO(),
+                stderr=StringIO(),
+            )

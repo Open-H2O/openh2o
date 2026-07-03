@@ -135,10 +135,15 @@ class BaseAdapter(ABC):
             data = json.load(f)
         return data.get("records", [])
 
-    def _use_mock(self, data_source):
-        """Decide whether to use mock mode."""
-        mock_setting = getattr(settings, "DATASYNC_MOCK_MODE", False)
-        return mock_setting or not data_source.is_active
+    def _use_mock(self, data_source, mock=False):
+        """Decide whether to use mock fixtures.
+
+        Mock is an EXPLICIT choice — the global DATASYNC_MOCK_MODE setting or a
+        per-run mock flag — never a side effect of a source being inactive. An
+        inactive source must be SKIPPED entirely by the caller, not served
+        fabricated fixtures that make a dead source look freshly synced.
+        """
+        return mock or getattr(settings, "DATASYNC_MOCK_MODE", False)
 
     # ── HTTP helpers ────────────────────────────────────────────────────
 
@@ -272,7 +277,7 @@ class BaseAdapter(ABC):
 
     # ── Orchestrator ────────────────────────────────────────────────────
 
-    def sync(self, station, start_date, end_date, sync_log=None):
+    def sync(self, station, start_date, end_date, sync_log=None, mock=False):
         """
         Run the full pipeline for one station:
         fetch -> parse -> validate -> stage -> publish
@@ -288,7 +293,7 @@ class BaseAdapter(ABC):
 
         try:
             # Fetch
-            if self._use_mock(data_source):
+            if self._use_mock(data_source, mock=mock):
                 raw_data = self.fetch_mock(station, start_date, end_date)
                 logger.info("%s: using mock data for %s", self.source_code, station)
             else:
@@ -315,7 +320,20 @@ class BaseAdapter(ABC):
             sync_log.records_published += published_count
 
             if own_log:
-                sync_log.status = "success"
+                if sync_log.records_fetched > 0 and sync_log.records_staged == 0:
+                    # Data came back but none of it staged — e.g. an upstream
+                    # date-format change makes every record fail in stage. Report
+                    # this honestly rather than a green success with 0 published.
+                    # (All-duplicates is NOT this case: those still stage, so
+                    # records_staged > 0.)
+                    sync_log.status = "partial"
+                    if not sync_log.error_message:
+                        sync_log.error_message = (
+                            f"{sync_log.records_fetched} fetched but 0 staged — "
+                            "all records dropped in validate/stage."
+                        )
+                else:
+                    sync_log.status = "success"
 
         except FileNotFoundError as exc:
             logger.error("%s: fixture missing: %s", self.source_code, exc)

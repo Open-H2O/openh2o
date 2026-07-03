@@ -135,6 +135,7 @@ class Command(BaseCommand):
         )
 
         total_created = 0
+        had_failure = False
         for step_name, step_fn in step_registry.items():
             self.stdout.write(f"\n--- Step: {step_name} ---")
             try:
@@ -144,10 +145,25 @@ class Command(BaseCommand):
                     self.style.SUCCESS(f"  {step_name}: {count} record(s) created.")
                 )
             except Exception as exc:
+                had_failure = True
                 self.stdout.write(
                     self.style.ERROR(f"  {step_name} failed: {exc}")
                 )
                 logger.exception("Step %s failed", step_name)
+
+        if had_failure:
+            # A step failed mid-run (e.g. an upstream API died between pages). Do
+            # NOT report a green "Done" with an undercount — exit non-zero so a
+            # cron/operator sees the run as incomplete. Rows created before the
+            # failure persist; re-running finishes the rest (imports are idempotent).
+            self.stdout.write(
+                self.style.ERROR(
+                    f"\nINCOMPLETE: one or more steps failed (see errors above). "
+                    f"{total_created} record(s) created before the failure(s); "
+                    "re-run to finish."
+                )
+            )
+            raise CommandError("auto_populate did not complete: a step failed.")
 
         self.stdout.write(
             self.style.SUCCESS(f"\nDone. {total_created} total record(s) created.")
@@ -182,9 +198,11 @@ class Command(BaseCommand):
         try:
             features = query_by_boundary(B118_BASINS_URL, boundary.geometry)
         except Exception as exc:
+            # Surface the failure to handle() so the run is reported incomplete,
+            # not a green success with zero/partial records.
             self.stdout.write(self.style.ERROR(f"  API query failed: {exc}"))
             logger.exception("B118 API query failed")
-            return 0
+            raise
 
         self.stdout.write(f"  Found {len(features)} basin(s) intersecting boundary.")
 
@@ -342,8 +360,11 @@ class Command(BaseCommand):
                     )
 
         except Exception as exc:
+            # Propagate so a mid-pagination failure is reported incomplete, not a
+            # green success with an undercount. Pages created so far persist.
             self.stdout.write(self.style.ERROR(f"  API query failed: {exc}"))
             logger.exception("LightBox parcels API query failed")
+            raise
 
         return created_total
 
@@ -443,8 +464,11 @@ class Command(BaseCommand):
                     )
 
         except Exception as exc:
+            # Propagate so a mid-pagination failure is reported incomplete, not a
+            # green success with an undercount. Pages created so far persist.
             self.stdout.write(self.style.ERROR(f"  API query failed: {exc}"))
             logger.exception("3DHP flowlines API query failed")
+            raise
 
         return created_total
 
