@@ -676,11 +676,21 @@ def assign_parcel(request, pk):
     parcel_id = request.POST.get("parcel_id")
     parcel = get_object_or_404(Parcel, pk=parcel_id)
 
-    WaterAccountParcel.objects.get_or_create(
+    wap, created = WaterAccountParcel.objects.get_or_create(
         water_account=account,
         parcel=parcel,
         reporting_period=None,
     )
+    # Re-assigning a previously-removed parcel: remove_parcel soft-deletes by
+    # setting removed_date, and the (water_account, parcel, reporting_period)
+    # unique key means get_or_create returns that tombstoned row unchanged. Clear
+    # the tombstone and re-stamp added_date so the parcel actually reappears in
+    # the removed_date__isnull=True list below (otherwise the assign is a silent
+    # no-op the operator cannot recover from).
+    if not created and wap.removed_date is not None:
+        wap.removed_date = None
+        wap.added_date = timezone.now().date()
+        wap.save(update_fields=["removed_date", "added_date"])
 
     assignments = (
         WaterAccountParcel.objects.filter(water_account=account, removed_date__isnull=True)
