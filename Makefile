@@ -37,7 +37,11 @@ build: guard-prod ## Rebuild containers without starting (refuses in prod — us
 deploy: ## Ship origin/main to THIS checkout (rebuild web, reset the demo to golden at the new schema, re-stamp the snapshot)
 	git fetch origin
 	git reset --hard origin/main
-	APP_VERSION=$$(git describe --tags --always --dirty 2>/dev/null || echo dev) $(COMPOSE) up -d --build web
+	# up the WHOLE stack, not just web: caddy must be recreated so it picks up
+	# the readiness gate (depends_on: service_healthy) and reloads the Caddyfile
+	# (the lb_try_duration retry). `up -d --build web` alone leaves caddy on its
+	# old config, so a Caddyfile/compose change would silently never deploy.
+	APP_VERSION=$$(git describe --tags --always --dirty 2>/dev/null || echo dev) $(COMPOSE) up -d --build
 	@echo ""
 	@echo "Promoting demo: restore golden, migrate forward to the new schema, re-stamp the snapshot…"
 	FORCE=1 bash scripts/reset-demo.sh
