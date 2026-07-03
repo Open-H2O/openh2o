@@ -291,6 +291,22 @@ def infrastructure_import_commit(request):
             {"error": "No rows to import — please re-upload your file and try again."},
         )
 
+    # Re-enforce the row cap on COMMIT, not just on preview. rows_json is a hidden
+    # field the browser posts back, so a logged-in user can hand-edit it to submit
+    # far more rows than the upload parser allowed — a cheap way to push tens of
+    # thousands of rows through on a 2-4GB VPS. The upload cap is meaningless if
+    # commit doesn't check it too. (Raw payload size is separately bounded by
+    # Django's DATA_UPLOAD_MAX_MEMORY_SIZE before this view runs.)
+    if len(rows) > importer.MAX_ROWS:
+        return render(
+            request,
+            "infrastructure/partials/_import_result.html",
+            {"error": (
+                f"Import is {len(rows)} rows, over the {importer.MAX_ROWS}-row cap. "
+                "Re-upload a smaller file."
+            )},
+        )
+
     # Rebuild the field -> column mapping from the confirmed <select> values.
     mapping = {
         key[len("map:"):]: val

@@ -330,6 +330,30 @@ class TestImportFlowViews:
         assert created.tested_yield_gpm == Decimal("500")
         assert created.pump_type == "submersible"
 
+    def test_commit_re_enforces_row_cap(self, auth_client):
+        import json as _json
+
+        # rows_json is a client-controlled hidden field, so a user can hand-edit
+        # it to blow past the upload parser's MAX_ROWS cap. Commit must re-check it.
+        rows = [
+            {"name": f"W{i}", "LAT": "37.20", "LON": "-119.50"}
+            for i in range(importer.MAX_ROWS + 1)
+        ]
+        before = Well.objects.count()
+        resp = auth_client.post(
+            reverse("infrastructure:import_commit"),
+            {
+                "infra_type": "well",
+                "rows_json": _json.dumps(rows),
+                "map:name": "name",
+                "map:latitude": "LAT",
+                "map:longitude": "LON",
+            },
+        )
+        assert resp.status_code == 200
+        assert str(importer.MAX_ROWS) in resp.content.decode()
+        assert Well.objects.count() == before, "no rows may be created over the cap"
+
     def test_old_upload_route_is_gone(self):
         from django.urls import NoReverseMatch
 
