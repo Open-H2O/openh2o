@@ -192,23 +192,27 @@ class OpenETAdapter(BaseAdapter):
             parcel=parcel,
             start_date__lte=start_date,
             end_date__gte=end_date,
-        ).order_by("-queried_at").first()
+        ).exclude(model_name=OpenETCache.PENDING_MARKER).order_by("-queried_at").first()
 
         if existing and not existing.is_stale():
             logger.info("OpenET cache hit for parcel %s", parcel.pk)
             return existing.et_data
 
-        can_query, used, limit = OpenETCache.check_budget()
-        if not can_query:
-            logger.warning(
-                "OpenET budget exceeded (%d/%d), skipping parcel %s",
-                used, limit, parcel.pk,
-            )
+        # Reserve the budget slot BEFORE fetching so two concurrent syncs near the
+        # ceiling can't both pass the check and both spend (P2-6). The reservation
+        # is a PENDING row that counts immediately; we finalize or release it below.
+        reservation = OpenETCache.reserve_query_slot(
+            parcel, parcel.geometry, start_date, end_date
+        )
+        if reservation is None:
+            logger.warning("OpenET budget exceeded, skipping parcel %s", parcel.pk)
             return None
 
         try:
             raw_data = self.fetch_polygon(parcel.geometry, start_date, end_date)
         except Exception as exc:
+            # Release the slot: a failed call should not count against the budget.
+            reservation.delete()
             logger.error("OpenET fetch failed for parcel %s: %s", parcel.pk, exc)
             return None
 
@@ -224,15 +228,10 @@ class OpenETAdapter(BaseAdapter):
             for r in valid
         ]
 
-        OpenETCache.objects.create(
-            parcel=parcel,
-            geometry=parcel.geometry,
-            start_date=start_date,
-            end_date=end_date,
-            variable="ET",
-            model_name="Ensemble",
-            et_data=et_data,
-        )
+        # Finalize the reservation into a real cache row.
+        reservation.model_name = "Ensemble"
+        reservation.et_data = et_data
+        reservation.save(update_fields=["model_name", "et_data"])
         logger.info("OpenET cache miss, stored %d records for parcel %s", len(et_data), parcel.pk)
         return et_data
 
@@ -247,7 +246,7 @@ class OpenETAdapter(BaseAdapter):
                 parcel=parcel,
                 start_date__lte=start_date,
                 end_date__gte=end_date,
-            ).order_by("-queried_at").first()
+            ).exclude(model_name=OpenETCache.PENDING_MARKER).order_by("-queried_at").first()
 
             if existing and not existing.is_stale():
                 summary["cached"] += 1

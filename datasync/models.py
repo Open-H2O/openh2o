@@ -133,6 +133,15 @@ class DataRecordStaging(models.Model):
 
 
 class OpenETCache(models.Model):
+    # A reservation row carries this marker in model_name until its fetch lands.
+    # It counts toward the monthly budget the moment it is created (see
+    # reserve_query_slot) but is EXCLUDED from cache reads, so an in-flight
+    # reservation is never served as an empty cache hit.
+    PENDING_MARKER = "__PENDING__"
+    # Stable key for the transaction-scoped advisory lock that serializes budget
+    # reservations so the count-then-create can't race.
+    _BUDGET_LOCK_KEY = 0x0E7B0001
+
     parcel = models.ForeignKey(
         "parcels.Parcel", null=True, blank=True, on_delete=models.CASCADE
     )
@@ -177,3 +186,36 @@ class OpenETCache(models.Model):
         limit = budget or getattr(django_settings, "OPENET_MONTHLY_BUDGET", 400)
         used = cls.monthly_query_count()
         return used < limit, used, limit
+
+    @classmethod
+    def reserve_query_slot(cls, parcel, geometry, start_date, end_date, budget=None):
+        """Atomically reserve one OpenET query slot against the monthly budget.
+
+        check_budget() + create-row was check-then-act: two concurrent syncs near
+        the ceiling both passed and both spent, defeating the only guard against
+        an unbounded external-API bill. Serialize the check-and-reserve with a
+        transaction-scoped Postgres advisory lock and materialize the reservation
+        as a PENDING row so it counts immediately. Returns the pending row, or
+        None if the budget is exhausted.
+
+        The caller MUST then either finalize the row (fill et_data + real
+        model_name) or delete it, releasing the slot, once the fetch resolves.
+        The lock is held only across the count + insert, never across the fetch.
+        """
+        from django.db import connection, transaction
+
+        with transaction.atomic():
+            with connection.cursor() as cur:
+                cur.execute("SELECT pg_advisory_xact_lock(%s)", [cls._BUDGET_LOCK_KEY])
+            can_query, _used, _limit = cls.check_budget(budget=budget)
+            if not can_query:
+                return None
+            return cls.objects.create(
+                parcel=parcel,
+                geometry=geometry,
+                start_date=start_date,
+                end_date=end_date,
+                variable="ET",
+                model_name=cls.PENDING_MARKER,
+                et_data=[],
+            )

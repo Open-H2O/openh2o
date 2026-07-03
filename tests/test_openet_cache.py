@@ -207,3 +207,78 @@ class TestOpenETValidateThresholds:
         assert len(rejected) == 1
         assert "2000mm" in rejected[0]["rejection_reason"]
         assert "annual" in rejected[0]["rejection_reason"]
+
+
+# ---------------------------------------------------------------------------
+# P2-6 — budget slot is reserved atomically BEFORE the fetch, so concurrent
+# syncs near the ceiling can't both spend; a failed fetch releases the slot.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestOpenETBudgetReservation:
+    _REC = {
+        "station_id": "t", "observation_date": "2024-06",
+        "parameter_code": "ET", "value": 55.0, "unit": "mm",
+    }
+
+    def _drive(self, adapter, parcel):
+        from datetime import date
+
+        with patch.object(adapter, "fetch_polygon", return_value=[self._REC]), \
+             patch.object(adapter, "parse", return_value=[self._REC]), \
+             patch.object(adapter, "validate", return_value=([self._REC], [])):
+            return adapter.sync_with_cache(parcel, date(2024, 1, 1), date(2024, 12, 31))
+
+    def test_budget_is_not_overspent_across_syncs(self, sample_geometry, settings):
+        from parcels.models import Parcel
+
+        settings.OPENET_MONTHLY_BUDGET = 2
+        adapter = OpenETAdapter()
+        parcels = [
+            Parcel.objects.create(
+                parcel_number=f"B-{i}", geometry=sample_geometry, status="active"
+            )
+            for i in range(3)
+        ]
+        results = [self._drive(adapter, p) for p in parcels]
+
+        assert results[0] is not None and results[1] is not None
+        assert results[2] is None, "the 3rd sync must be budget-blocked"
+        # Exactly two real (non-pending) cache rows — no overshoot.
+        assert (
+            OpenETCache.objects.exclude(model_name=OpenETCache.PENDING_MARKER).count()
+            == 2
+        )
+
+    def test_failed_fetch_releases_the_reserved_slot(self, parcel, settings):
+        from datetime import date
+
+        settings.OPENET_MONTHLY_BUDGET = 5
+        adapter = OpenETAdapter()
+        before = OpenETCache.monthly_query_count()
+        with patch.object(adapter, "fetch_polygon", side_effect=RuntimeError("boom")):
+            result = adapter.sync_with_cache(parcel, date(2024, 1, 1), date(2024, 12, 31))
+
+        assert result is None
+        # A failed call must not permanently consume budget.
+        assert OpenETCache.monthly_query_count() == before
+
+    def test_pending_reservation_is_not_served_as_a_cache_hit(
+        self, parcel, sample_geometry
+    ):
+        from datetime import date
+
+        OpenETCache.objects.create(
+            parcel=parcel, geometry=sample_geometry,
+            start_date=date(2024, 1, 1), end_date=date(2024, 12, 31),
+            variable="ET", model_name=OpenETCache.PENDING_MARKER, et_data=[],
+        )
+        adapter = OpenETAdapter()
+        with patch.object(adapter, "fetch_polygon", return_value=[self._REC]) as mock_fetch, \
+             patch.object(adapter, "parse", return_value=[self._REC]), \
+             patch.object(adapter, "validate", return_value=([self._REC], [])):
+            result = adapter.sync_with_cache(parcel, date(2024, 1, 1), date(2024, 12, 31))
+
+        mock_fetch.assert_called_once()  # pending row is invisible to cache reads
+        assert result is not None
