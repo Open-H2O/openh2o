@@ -33,6 +33,9 @@ services:
       # a report's attachments are not lost on the next deploy. Lives only on the
       # server; never served on the public web (n8n receives the bytes directly).
       - media_files:/app/media
+      # Production logs (rotating file handler). A named volume so tracebacks
+      # survive a container recreate/redeploy — see config/settings/production.py.
+      - logs_data:/app/logs
       # Earth Engine service-account key dir (OPENET_MODE=gee only). Read-only.
       # Mount the directory, not the file: a single-file bind to a path that
       # does not exist yet would make Docker create a stray directory and break
@@ -63,5 +66,6 @@ volumes:
   db_data:
   static_files:
   media_files:
+  logs_data:
   caddy_data:
   caddy_config:

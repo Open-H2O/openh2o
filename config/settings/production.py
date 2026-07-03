@@ -69,9 +69,16 @@ SECURE_REDIRECT_EXEMPT = [r"^health/live/?$"]
 # WARNING. This lives in production.py because local already surfaces tracebacks
 # via DEBUG=True, so this is the minimal correct home.
 #
-# Logs go to stdout only and do NOT survive container restarts. A future
-# follow-up could ship them to a durable volume or an aggregator — out of scope
-# here, and no external logging dependency is added.
+# Tracebacks go to BOTH the container stdout (so `docker compose logs web` still
+# works live) AND a rotating file on a mounted volume, so they survive a container
+# recreate/redeploy — a launch-week incident stays debuggable instead of vanishing
+# with the old container. LOG_DIR is a mounted volume (see docker-compose.yml); the
+# entrypoint owns it to the non-root app user. No external logging dependency.
+import os  # noqa: E402
+
+LOG_DIR = env("LOG_DIR", default="/app/logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -86,16 +93,23 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(LOG_DIR, "openh2o.log"),
+            "maxBytes": 10 * 1024 * 1024,  # 10 MB per file
+            "backupCount": 5,               # keep ~50 MB of history, bounded
+            "formatter": "verbose",
+        },
     },
     "loggers": {
         "django.request": {
-            "handlers": ["console"],
+            "handlers": ["console", "file"],
             "level": "ERROR",
             "propagate": False,
         },
     },
     "root": {
-        "handlers": ["console"],
+        "handlers": ["console", "file"],
         "level": "WARNING",
     },
 }

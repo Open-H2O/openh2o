@@ -19,7 +19,7 @@ python manage.py ensure_superuser
 # a prior root-run deployment); hand them to `app` so the non-root worker can
 # still write user uploads and static output. Best-effort: a read-only mount
 # would fail here and that is fine to ignore.
-chown -R app:app /app/media /app/staticfiles 2>/dev/null || true
+chown -R app:app /app/media /app/staticfiles /app/logs 2>/dev/null || true
 
 # Dynamic request concurrency. gthread lets each worker serve several requests
 # while views wait on the DB or an external API (OpenET/CIMIS), so a press spike

@@ -18,9 +18,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY pyproject.toml .
-RUN pip install --no-cache-dir ".[dev]"
+# Install Python dependencies from the hash-locked lockfile. --require-hashes
+# makes the build reproducible and tamper-evident: pip refuses any wheel whose
+# hash is not pinned in requirements.lock, so a rebuild can never silently pull a
+# newer or compromised release. Regenerate the lock after changing pyproject with:
+#   uv pip compile pyproject.toml --extra dev --generate-hashes --universal \
+#     --python-version 3.12 -o requirements.lock
+COPY requirements.lock .
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 
 # Download Tailwind standalone binary
 RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
@@ -44,8 +49,8 @@ ENV APP_VERSION=$APP_VERSION
 # in the image so a FRESH named volume inherits app ownership (existing volumes are
 # re-chowned at startup by the entrypoint).
 RUN useradd --system --create-home --uid 1000 app \
-    && mkdir -p /app/media /app/staticfiles \
-    && chown -R app:app /app/media /app/staticfiles \
+    && mkdir -p /app/media /app/staticfiles /app/logs \
+    && chown -R app:app /app/media /app/staticfiles /app/logs \
     && chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
