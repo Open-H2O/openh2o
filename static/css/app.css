@@ -2145,6 +2145,17 @@ div[id$="-map"] {
     color: var(--color-gold);
 }
 
+/* Accent link — auth pages and inline "do this" links. */
+.link-accent {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+.link-accent:hover {
+    color: var(--color-accent-hover);
+    text-decoration: underline;
+}
+
 .text-blue {
     color: var(--color-blue-bright); /* Phase F (F2): readable as body text */
 }

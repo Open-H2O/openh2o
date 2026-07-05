@@ -33,7 +33,7 @@
         <button type="submit" class="btn-primary w-full mb-md">Create Account</button>
     </form>
     <p class="text-sm text-center text-secondary">
-        Already have an account? <a href="{% url 'account_login' %}" class="text-blue">Log in</a>
+        Already have an account? <a href="{% url 'account_login' %}" class="link-accent">Log in</a>
     </p>
     {% if site_config and site_config.allow_google_oauth %}
     <div class="border-separator pt-sm" style="margin-top: var(--space-md);">

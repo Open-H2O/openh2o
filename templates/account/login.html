@@ -29,12 +29,12 @@
             <label class="row-start text-sm text-secondary" for="id_remember">
                 <input type="checkbox" id="id_remember" name="remember"> Remember me
             </label>
-            <a href="{% url 'account_reset_password' %}" class="text-sm text-blue">Forgot password?</a>
+            <a href="{% url 'account_reset_password' %}" class="text-sm link-accent">Forgot password?</a>
         </div>
         <button type="submit" class="btn-primary" style="width: 100%;">Log In</button>
     </form>
     <p class="text-sm text-secondary pt-md" style="text-align: center;">
-        No account yet? <a href="{% url 'account_signup' %}" class="text-blue">Create one</a>
+        No account yet? <a href="{% url 'account_signup' %}" class="link-accent">Create one</a>
     </p>
     {% if site_config and site_config.allow_google_oauth %}
     <div class="border-separator pt-sm">
