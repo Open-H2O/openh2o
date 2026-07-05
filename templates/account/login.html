@@ -4,11 +4,11 @@
 {% load static %}
 <div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); width: 100%; max-width: 420px;">
 <a href="/" style="display: flex; align-items: center; gap: var(--space-sm); text-decoration: none;">
-    <img src="{% static 'img/favicon-192.png' %}" alt="" height="40" style="width: auto;">
-    <span style="font-size: 1.6rem; font-weight: 800; color: var(--color-gold); letter-spacing: -0.02em;">OpenH2O</span>
+    <img src="{% static 'img/favicon-192.png' %}?v=3" alt="" height="40" style="width: auto; border-radius: 10px; box-shadow: var(--shadow-raised-sm), 0 0 0 1px var(--ring);">
+    <span style="font-size: 1.6rem; font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.02em;">Open<span style="color: var(--color-accent);">H2O</span></span>
 </a>
 <div class="card-raised" style="width: 100%;">
-    <h1 class="section-header" style="border: none; color: var(--color-gold);">Log In</h1>
+    <h1 class="section-header" style="border: none; color: var(--color-accent);">Log In</h1>
     <p class="text-sm mb-md text-secondary">Sign in to your water-data dashboard.</p>
     {% if form.errors %}
     <div class="form-error-box mb-md">

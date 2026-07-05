@@ -5,16 +5,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Open Water Accounting Platform{% endblock %}</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23E4A317' d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/></svg>">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon.png' %}?v=3">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/favicon-192.png' %}?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}?v=3">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Design tokens (loaded separately for cache control) -->
-    <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=10">
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=11">
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=62">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=63">
 
     {# Umami analytics: renders only when UMAMI_WEBSITE_ID is set (see base.html). #}
     {% if umami_website_id %}
@@ -24,7 +26,7 @@
 <body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: var(--space-lg);">
     {% block content %}{% endblock %}
     <footer style="position: fixed; bottom: 0; left: 0; right: 0; padding: 0.6rem; text-align: center; font-size: 0.78rem;">
-        <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer" style="color:#8899aa; text-decoration:none;">OpenH2O — Source code (AGPL-3.0)</a>
+        <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer" style="color:var(--color-text-secondary); text-decoration:none;">OpenH2O — Source code (AGPL-3.0)</a>
     </footer>
 </body>
 </html>

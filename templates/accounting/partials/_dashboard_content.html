@@ -1,4 +1,4 @@
-{% load static %}
+{% load static humanize %}
 {% if not selected_period %}
 <!-- No reporting periods exist yet -->
 <div class="empty-state">
@@ -21,23 +21,23 @@
   <div class="budget-panel-row">
     <div class="budget-seg">
       <div class="budget-seg-label">Supplies</div>
-      <div class="budget-seg-value text-supply">{{ grand_supply_total|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+      <div class="budget-seg-value text-supply">{{ grand_supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
     </div>
     <div class="budget-op">&minus;</div>
     <div class="budget-seg">
       <div class="budget-seg-label">Consumptive use</div>
-      <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+      <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
     </div>
     <div class="budget-op">&equals;</div>
     <div class="budget-seg">
       <div class="budget-seg-label">Balance</div>
-      <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+      <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
     </div>
   </div>
   <div class="budget-panel-foot">
-    <span>Surface <b>{{ grand_supply_surface|floatformat:2 }}</b></span>
-    <span>Groundwater <b>{{ grand_supply_groundwater|floatformat:2 }}</b></span>
-    <span>Rain <b>{{ grand_supply_precip|floatformat:2 }}</b></span>
+    <span>Surface <b>{{ grand_supply_surface|floatformat:2|intcomma }}</b></span>
+    <span>Groundwater <b>{{ grand_supply_groundwater|floatformat:2|intcomma }}</b></span>
+    <span>Rain <b>{{ grand_supply_precip|floatformat:2|intcomma }}</b></span>
   </div>
 </div>
 
@@ -51,7 +51,7 @@
 
 {% if not has_allocations %}
 <!-- Info banner: no allocations for this period -->
-<div class="card-raised" style="border-left: 3px solid var(--color-gold); padding: var(--space-md);">
+<div class="card-raised" style="border-left: 3px solid var(--color-accent); padding: var(--space-md);">
   <p class="text-secondary text-sm" style="margin: 0;">
     No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Create an allocation</a> to enable allocation tracking.
   </p>
@@ -65,11 +65,11 @@
     <span class="text-tertiary text-xs">Active accounts only — each groups parcels under one water user; zone totals below cover all parcels</span>
   </div>
   {% if account_summaries %}
-  <div class="table-scroll-mobile">
+  <div class="table-scroll">
   <table class="data-table">
     <thead>
       <tr>
-        <th>Account</th>
+        <th style="min-width: 200px;">Account</th>
         <th class="th-right">Consumptive Use (AF)</th>
         <th class="th-right">Surface (AF)</th>
         <th class="th-right">Groundwater (AF)</th>
@@ -94,29 +94,29 @@
           {% endif %}
         </td>
         <td class="td-num text-usage">
-          {{ row.consumptive_use_gross|floatformat:2 }}
+          {{ row.consumptive_use_gross|floatformat:2|intcomma }}
         </td>
         <td class="td-num text-supply">
-          {{ row.surface|floatformat:2 }}
+          {{ row.surface|floatformat:2|intcomma }}
         </td>
         <td class="td-num text-supply">
-          {{ row.groundwater|floatformat:2 }}
+          {{ row.groundwater|floatformat:2|intcomma }}
         </td>
         <td class="td-num text-supply">
-          {{ row.precip|floatformat:2 }}
+          {{ row.precip|floatformat:2|intcomma }}
         </td>
         <td class="td-num-bold text-supply">
-          {{ row.supply_total|floatformat:2 }}
+          {{ row.supply_total|floatformat:2|intcomma }}
         </td>
         <td class="td-num-bold {% if row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.net_vs_supply|floatformat:2 }}
+          {{ row.net_vs_supply|floatformat:2|intcomma }}
         </td>
         {% if has_allocations %}
         <td class="td-num">
-          {{ row.allocation|floatformat:2 }}
+          {{ row.allocation|floatformat:2|intcomma }}
         </td>
         <td class="td-num-bold {% if row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.remaining|floatformat:2 }}
+          {{ row.remaining|floatformat:2|intcomma }}
         </td>
         {% endif %}
       </tr>
@@ -137,11 +137,11 @@
     <span class="text-tertiary text-xs">Geographic management areas with allocations</span>
   </div>
   {% if zone_summaries %}
-  <div class="table-scroll-mobile">
+  <div class="table-scroll">
   <table class="data-table">
     <thead>
       <tr>
-        <th>Zone</th>
+        <th style="min-width: 240px;">Zone</th>
         <th class="th-right">Consumptive Use (AF)</th>
         <th class="th-right">Surface (AF)</th>
         <th class="th-right">Groundwater (AF)</th>
@@ -160,32 +160,32 @@
       <tr>
         <td class="font-semibold">{{ row.zone.name }}</td>
         <td class="td-num text-usage">
-          {{ row.consumptive_use_gross|floatformat:2 }}
+          {{ row.consumptive_use_gross|floatformat:2|intcomma }}
         </td>
         <td class="td-num text-supply">
-          {{ row.surface|floatformat:2 }}
+          {{ row.surface|floatformat:2|intcomma }}
         </td>
         <td class="td-num text-supply">
-          {{ row.groundwater|floatformat:2 }}
+          {{ row.groundwater|floatformat:2|intcomma }}
         </td>
         <td class="td-num text-supply">
-          {{ row.precip|floatformat:2 }}
+          {{ row.precip|floatformat:2|intcomma }}
         </td>
         <td class="td-num-bold text-supply">
-          {{ row.supply_total|floatformat:2 }}
+          {{ row.supply_total|floatformat:2|intcomma }}
         </td>
         <td class="td-num-bold {% if row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.net_vs_supply|floatformat:2 }}
+          {{ row.net_vs_supply|floatformat:2|intcomma }}
         </td>
         {% if has_allocations %}
         <td class="td-num">
-          {{ row.allocation|floatformat:2 }}
+          {{ row.allocation|floatformat:2|intcomma }}
         </td>
         <td class="td-num {% if row.carryover > 0 %}text-surplus{% elif row.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
-          {% if row.carryover > 0 %}+{% endif %}{{ row.carryover|floatformat:2 }}
+          {% if row.carryover > 0 %}+{% endif %}{{ row.carryover|floatformat:2|intcomma }}
         </td>
         <td class="td-num-bold {% if row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.remaining|floatformat:2 }}
+          {{ row.remaining|floatformat:2|intcomma }}
         </td>
         {% endif %}
       </tr>

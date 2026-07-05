@@ -122,7 +122,7 @@
       <!-- Curtailment Status card -->
       {% if active_curtailments %}
       <div class="card-raised">
-        <h2 class="section-header mb-md" style="color: var(--color-gold);">
+        <h2 class="section-header mb-md" style="color: var(--color-accent);">
           Active Curtailments Affecting This Right
           {% include "partials/_demo_marker.html" %}
         </h2>
@@ -139,7 +139,7 @@
             {% if curtailment.watershed %}&middot; {{ curtailment.watershed }}{% endif %}
           </div>
           {% if curtailment.priority_date_cutoff %}
-            <div class="text-xs" style="color: var(--color-gold); margin-top: 2px;">
+            <div class="text-xs" style="color: var(--color-accent); margin-top: 2px;">
               Priority cutoff: {{ curtailment.priority_date_cutoff|date:"M d, Y" }}
             </div>
           {% endif %}

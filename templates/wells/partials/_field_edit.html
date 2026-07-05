@@ -15,20 +15,20 @@ Replaces the content of #field-<fieldname>.
   {% endif %}
 
   {% if field_meta.type == "select" %}
-    <select name="value" class="form-select" style="flex: 1; border-color: var(--color-gold);">
+    <select name="value" class="form-select" style="flex: 1; border-color: var(--color-accent);">
       {% for choice_val, choice_label in field_meta.choices %}
         <option value="{{ choice_val }}" {% if choice_val == value|stringformat:"s" %}selected{% endif %}>{{ choice_label }}</option>
       {% endfor %}
     </select>
   {% elif field_meta.type == "textarea" %}
-    <textarea name="value" rows="3" class="form-textarea" style="flex: 1; border-color: var(--color-gold); min-height: 0;">{{ value }}</textarea>
+    <textarea name="value" rows="3" class="form-textarea" style="flex: 1; border-color: var(--color-accent); min-height: 0;">{{ value }}</textarea>
   {% elif field_meta.type == "number" %}
     <input type="number" name="value" value="{{ value }}"
       step="{{ field_meta.step|default:'1' }}"
-      class="form-input" style="flex: 1; border-color: var(--color-gold);">
+      class="form-input" style="flex: 1; border-color: var(--color-accent);">
   {% else %}
     <input type="text" name="value" value="{{ value }}"
-      class="form-input" style="flex: 1; border-color: var(--color-gold);">
+      class="form-input" style="flex: 1; border-color: var(--color-accent);">
   {% endif %}
 
   <button type="submit" class="btn-primary btn-sm">Save</button>

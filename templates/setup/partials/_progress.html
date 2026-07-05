@@ -64,7 +64,7 @@
           <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
           <div class="wizard-step-body">
             <div class="wizard-step-name">{{ step_label }}</div>
-            <div class="wizard-step-count" style="color: var(--color-gold);">{% if active_provider_label %}Checking {{ active_provider_label }}…{% else %}{{ step_desc }}{% endif %}</div>
+            <div class="wizard-step-count" style="color: var(--color-accent);">{% if active_provider_label %}Checking {{ active_provider_label }}…{% else %}{{ step_desc }}{% endif %}</div>
           </div>
         </div>
       {% else %}
@@ -90,7 +90,7 @@
         <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
         <div class="wizard-step-body">
           <div class="wizard-step-name">{{ step_label }}</div>
-          <div class="wizard-step-count" style="color: var(--color-gold);">{{ step_desc }}</div>
+          <div class="wizard-step-count" style="color: var(--color-accent);">{{ step_desc }}</div>
         </div>
       </div>
     {% else %}

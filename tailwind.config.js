@@ -1,34 +1,44 @@
 /** @type {import('tailwindcss').Config} */
+// Color values MUST mirror static/css/tokens.css (the source of truth).
+// The 2026-07-05 Deep Water overhaul unified these; do not let them drift.
 module.exports = {
   content: ['./templates/**/*.html'],
   theme: {
     extend: {
       colors: {
-        base: '#040608',
-        card: '#080b10',
-        inset: '#050709',
-        elevated: '#0e1219',
-        hover: '#141a22',
+        base: '#090E14',
+        tile: '#111A24',
+        card: '#141E2A',
+        inset: '#0E1620',
+        elevated: '#1A2633',
+        hover: '#22303F',
+        accent: {
+          DEFAULT: '#46B3C4',
+          hover: '#5FC2D2',
+        },
         gold: {
-          DEFAULT: '#E4A317',
-          hover: '#D4952A',
+          DEFAULT: '#E0A446',
+          hover: '#EAB25E',
         },
         blue: {
           DEFAULT: '#1B7FAF',
           bright: '#3DB4E0',
         },
-        'text-primary': '#e8edf4',
-        'text-secondary': '#8899aa',
-        'text-tertiary': '#4d5e6f',
+        supply: '#55B678',
+        deficit: '#D1742E',
+        'text-primary': '#E7EEF2',
+        'text-secondary': '#8FA3AE',
+        'text-tertiary': '#7E93A4',
       },
       fontFamily: {
         display: ["'Public Sans'", 'sans-serif'],
-        mono: ["'JetBrains Mono'", 'monospace'],
+        mono: ["'Public Sans'", 'sans-serif'],
       },
       borderRadius: {
         sm: '6px',
         md: '10px',
-        lg: '16px',
+        lg: '14px',
+        xl: '16px',
       },
       spacing: {
         xs: '4px',

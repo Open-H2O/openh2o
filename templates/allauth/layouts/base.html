@@ -5,22 +5,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block head_title %}Account{% endblock %} — OpenH2O</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23E4A317' d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/></svg>">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon.png' %}?v=3">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/favicon-192.png' %}?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}?v=3">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=10">
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v=11">
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=62">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=63">
     {% block extra_head %}{% endblock %}
 </head>
 <body style="display:flex; align-items:center; justify-content:center; min-height:100vh; padding:var(--space-lg);">
     <div style="display:flex; flex-direction:column; align-items:center; gap:var(--space-lg); width:100%; max-width:440px;">
         <a href="/" style="display:flex; align-items:center; gap:var(--space-sm); text-decoration:none;">
-            <img src="{% static 'img/favicon-192.png' %}" alt="" height="40" style="width:auto;">
-            <span style="font-size:1.6rem; font-weight:800; color:var(--color-gold); letter-spacing:-0.02em;">OpenH2O</span>
+            <img src="{% static 'img/favicon-192.png' %}?v=3" alt="" height="40" style="width:auto; border-radius:10px; box-shadow: var(--shadow-raised-sm), 0 0 0 1px var(--ring);">
+            <span style="font-size:1.6rem; font-weight:800; color:var(--color-text-primary); letter-spacing:-0.02em;">Open<span style="color:var(--color-accent);">H2O</span></span>
         </a>
         <div class="card-raised" style="width:100%;">
             {% if messages %}

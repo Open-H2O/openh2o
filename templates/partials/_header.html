@@ -41,12 +41,11 @@
     </div>
 
     {% comment %}
-      App brand, NOT a heading. This partial is included, so a page_title block
-      here never received the per-page overrides (they flow through extends, not
-      include). The real per-page H1 now lives in <main> in base.html, where the
-      override actually applies.
+      Deep Water overhaul (2026-07-05): the centered platform title is retired —
+      the sidebar wordmark already carries the brand, and the breadcrumb bar
+      names the page. The empty center cell keeps the 3-column grid symmetric.
     {% endcomment %}
-    <div class="app-header-title">Open Water Accounting Platform</div>
+    <div></div>
 
     <!-- User menu -->
     <div class="app-header-user">

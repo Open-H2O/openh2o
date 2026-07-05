@@ -20,13 +20,13 @@
   <div class="card-raised">
     <h2 class="section-header">Start with the concept</h2>
     <p class="text-secondary text-base">Before the steps below, it helps to know what the platform is actually computing. It measures the water your crops consumed &mdash; from satellites &mdash; and reconciles that against the water that supplied them: surface deliveries, groundwater, and rain. A few minutes on the concept makes every step that follows click into place.</p>
-    <a href="{% url 'water_balances' %}" class="text-sm" style="color: var(--color-gold);">Read: How Water Balances Work &rarr;</a>
+    <a href="{% url 'water_balances' %}" class="text-sm" style="color: var(--color-accent);">Read: How Water Balances Work &rarr;</a>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">The fast way: the Setup Wizard</h2>
     <p class="text-secondary text-base">You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your use areas, wells, recharge basins, and nearby monitoring stations for you &mdash; that&rsquo;s Steps 1, 2, 8, and 9. What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps 3 through 7). So run the wizard first, then come back and work the accounting steps. Read this page as the manual route, or as a map of what the wizard already did and what&rsquo;s left.</p>
-    <a href="{% url 'setup:wizard' %}" class="text-sm" style="color: var(--color-gold);">Run the Setup Wizard &rarr;</a>
+    <a href="{% url 'setup:wizard' %}" class="text-sm" style="color: var(--color-accent);">Run the Setup Wizard &rarr;</a>
   </div>
 
   <div class="card-raised step-card">
@@ -41,7 +41,7 @@
       <span class="step-eyebrow">Step 1 &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Import Your Use Areas</h2>
       <p class="text-secondary text-base">Upload use area boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Use Areas and use the import command. Each use area needs an Assessor Parcel Number (APN).</p>
-      <a href="{% url 'parcels:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Areas &rarr;</a>
+      <a href="{% url 'parcels:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Use Areas &rarr;</a>
     </div>
   </div>
 
@@ -61,7 +61,7 @@
       <span class="step-eyebrow">Step 2 &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Import Your Wells</h2>
       <p class="text-secondary text-base">Upload well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
-      <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Wells &rarr;</a>
+      <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Wells &rarr;</a>
     </div>
   </div>
 
@@ -77,7 +77,7 @@
       <span class="step-eyebrow">Step 3</span>
       <h2 class="section-header">Set Up Water Accounts</h2>
       <p class="text-secondary text-base">Create water accounts to group use areas for tracking. Go to Administration &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
-      <a href="{% url 'accounting:accounts_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Accounts &rarr;</a>
+      <a href="{% url 'accounting:accounts_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Water Accounts &rarr;</a>
     </div>
   </div>
 
@@ -94,7 +94,7 @@
       <span class="step-eyebrow">Step 4</span>
       <h2 class="section-header">Create a Water Year</h2>
       <p class="text-secondary text-base">Define the time window for accounting. Go to Compliance &gt; Water Years. Most agencies use the water year (October 1 through September 30).</p>
-      <a href="{% url 'accounting:periods_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Water Years &rarr;</a>
+      <a href="{% url 'accounting:periods_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Water Years &rarr;</a>
     </div>
   </div>
 
@@ -109,7 +109,7 @@
       <span class="step-eyebrow">Step 5</span>
       <h2 class="section-header">Define Management Zones</h2>
       <p class="text-secondary text-base">A management zone is a sub-area of your district that carries its own allocation &mdash; each use area belongs to a zone. Zones are a prerequisite for the next step: an allocation is set per zone, so at least one zone must exist before you can allocate water. Go to Administration &gt; Zones and create your zones, then assign use areas to each.</p>
-      <a href="{% url 'geography:zone_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Zones &rarr;</a>
+      <a href="{% url 'geography:zone_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Zones &rarr;</a>
     </div>
   </div>
 
@@ -126,7 +126,7 @@
       <span class="step-eyebrow">Step 6</span>
       <h2 class="section-header">Set Allocation Ceilings</h2>
       <p class="text-secondary text-base">An allocation ceiling is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Set a ceiling for each zone, water type, and period. New to the difference between a ceiling and an account&rsquo;s allocation? See the short guide linked at the bottom of this page.</p>
-      <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Allocations &rarr;</a>
+      <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Allocations &rarr;</a>
     </div>
   </div>
 
@@ -144,9 +144,9 @@
       <span class="step-eyebrow">Step 7</span>
       <h2 class="section-header">Enter Use Ledger Data</h2>
       <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. Usage can also be derived from satellite evapotranspiration (ET) &mdash; how that calculation works is configured on your Methodology page. The use ledger is the core record of your water data.</p>
-      <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Use Ledger &rarr;</a>
+      <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Use Ledger &rarr;</a>
       <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
-      <a href="{% url 'accounting:methodology_settings' %}" class="text-sm" style="color: var(--color-gold);">View the Methodology &rarr;</a>
+      <a href="{% url 'accounting:methodology_settings' %}" class="text-sm" style="color: var(--color-accent);">View the Methodology &rarr;</a>
     </div>
   </div>
 
@@ -168,7 +168,7 @@
       <span class="step-eyebrow">Step 8 &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Connect Monitoring Stations</h2>
       <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS wells, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
-      <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Monitoring Stations &rarr;</a>
+      <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Monitoring Stations &rarr;</a>
     </div>
   </div>
 
@@ -182,9 +182,9 @@
       <span class="step-eyebrow">Step 9 &middot; the Setup Wizard imports recharge basins for you</span>
       <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection wells.</p>
-      <a href="{% url 'surface:pod_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Surface Diversions &rarr;</a>
+      <a href="{% url 'surface:pod_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Surface Diversions &rarr;</a>
       <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
-      <a href="{% url 'recharge:list' %}" class="text-sm" style="color: var(--color-gold);">Go to Recharge Areas &rarr;</a>
+      <a href="{% url 'recharge:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Recharge Areas &rarr;</a>
     </div>
   </div>
 
@@ -201,20 +201,20 @@
       <span class="step-eyebrow">Step 10</span>
       <h2 class="section-header">Generate State Reports</h2>
       <p class="text-secondary text-base">When your reporting period is complete, generate GEARS CSV (per-well or by-ET extraction) and CalWATRS CSV (surface diversions) for submission to the Water Board. Go to Reports &gt; Generate.</p>
-      <a href="{% url 'reporting:report_list' %}" class="text-sm" style="color: var(--color-gold);">Go to Reports &rarr;</a>
+      <a href="{% url 'reporting:report_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Reports &rarr;</a>
     </div>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">New to allocations and ceilings?</h2>
     <p class="text-secondary text-base">If the difference between a zone&rsquo;s allocation ceiling and an account&rsquo;s allocation is unclear, this short guide walks through how the platform turns one into the other, with a worked example.</p>
-    <a href="{% url 'budgets_allocations' %}" class="text-sm" style="color: var(--color-gold);">Read: Allocations &amp; Ceilings &rarr;</a>
+    <a href="{% url 'budgets_allocations' %}" class="text-sm" style="color: var(--color-accent);">Read: Allocations &amp; Ceilings &rarr;</a>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Setting up surface deliveries?</h2>
     <p class="text-secondary text-base">Two agency-wide settings shape how the platform counts canal deliveries: how much of a delivery the crop actually uses, and what happens to a district&rsquo;s unused water at year-end. This guide explains both in plain language and shows how one district can differ from the agency default.</p>
-    <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-gold);">Read: Surface Delivery Settings &rarr;</a>
+    <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-accent);">Read: Surface Delivery Settings &rarr;</a>
   </div>
 
   <div class="card-raised">
@@ -222,15 +222,15 @@
     <p class="text-secondary text-base">The platform measures the water your crops consumed and reconciles it against the water that supplied them. These three guides explain the idea, the arithmetic, and every setting that shapes the numbers &mdash; one click each.</p>
     <div class="card-grid">
       <a href="{% url 'water_balances' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: estimated use vs. supplies.</p>
       </a>
       <a href="{% url 'methods' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The calculation chain and how shared deliveries and wells are split.</p>
       </a>
       <a href="{% url 'settings_explained' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings, explained</span><span style="color: var(--color-gold);">&rarr;</span></div>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings, explained</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Every agency-wide knob: what it does, who sets it, when to change it.</p>
       </a>
     </div>

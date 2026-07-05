@@ -1,52 +1,87 @@
 /*
- * VanderDev Design Tokens
- * Ported from VanderDev-Website DESIGN.md and DESIGN.json
+ * OpenH2O Design Tokens — "Deep Water"
+ * Direction A of the 2026-07-05 UI overhaul (Brent-approved mockups:
+ * ~/Documents/Vadose/Products/openh2o/design-mockups-2026-07-05/).
+ *
+ * OpenH2O joins the Vadose Deep Water master colorway: blue-navy surfaces,
+ * water-teal accent (the family's free/public-benefit line color), with
+ * California Gold reserved for primary actions. The material rules:
+ *   - depth = dual-source raised shadow + a 1px top-edge light catch
+ *   - interaction = light moves (surface brightens, soft bloom); geometry never
+ *   - deficits are burnt orange, never alarm red (red = hard errors only)
  */
 
 :root {
-    /* -- Surface colors -------------------------------------------------- */
-    /* Phase F (2026-06-23): surfaces re-expressed in OKLCH as an even-stepped
-       elevation ladder. Cards now carry a small but real lift above the
-       near-black base — depth comes from BOTH a lighter surface and the
-       pop-shadow, so cards have a readable edge (also fixes audit F6). The
-       near-black base is unchanged; this is the approved "whisper of lift". */
-    --color-base: #040608;
-    --color-card: oklch(0.13 0.012 260); /* ~#16191f — lifted from #080b10 */
-    --color-inset: oklch(0.16 0.012 260); /* ~#1c2026 */
-    --color-elevated: oklch(0.22 0.012 260); /* ~#262b34 */
-    --color-hover: oklch(0.25 0.012 260); /* ~#2e343e */
+    /* -- Surface colors: the Deep Water elevation ladder ------------------ */
+    /* Values match vadosehq.com brand/tokens.css exactly (bg/panel/panel-hi/
+       tile), with inset and hover steps derived for app use. */
+    --color-base: #090E14;      /* page ground */
+    --color-nav: #0B121B;       /* sidebar ground, one step below base */
+    --color-tile: #111A24;      /* low-lift tiles, nav active */
+    --color-card: #141E2A;      /* panels and cards */
+    --color-inset: #0E1620;     /* recessed: fields, wells for content */
+    --color-elevated: #1A2633;  /* raised chips, hover-lit surfaces */
+    --color-hover: #22303F;     /* topmost interactive lift */
 
-    /* -- Accent colors --------------------------------------------------- */
-    --color-gold: #E4A317;
-    --color-gold-hover: #D4952A;
-    --color-gold-muted: rgba(228, 163, 23, 0.08);
-    --color-blue: #1B7FAF; /* brand Pacific Blue (was the muddier #2E6B96); matches --color-entity-blue + VanderDev/VanderOps */
-    --color-blue-bright: #3DB4E0; /* brand Pacific Bright */
-    --color-blue-muted: rgba(27, 127, 175, 0.10); /* tint of the new --color-blue */
+    /* -- Accent system ----------------------------------------------------- */
+    /* Teal leads (nav, links, focus, section kickers, table headers);
+       gold acts (primary CTAs only). */
+    --color-accent: #46B3C4;
+    --color-accent-hover: #5FC2D2;
+    --color-accent-muted: rgba(70, 179, 196, 0.10);
+    --color-accent-soft: rgba(70, 179, 196, 0.18);
+    --color-ink-on-accent: #06141C; /* text on a teal fill (7.6:1) */
 
-    /* -- Text colors ----------------------------------------------------- */
-    --color-text-primary: #e8edf4;
-    --color-text-secondary: #8899aa;
-    /* Phase F (F2): lifted from #6b7f94 to the dimmest value that still clears
-       WCAG AA 4.5:1 on the worst surface (elevated → 4.75:1), so it passes yet
-       stays visibly dimmer than --color-text-secondary. Verified in-browser. */
-    --color-text-tertiary: #7787a0;
+    --color-gold: #E0A446;          /* California Gold, Deep Water tuning */
+    --color-gold-hover: #EAB25E;
+    --color-gold-muted: rgba(224, 164, 70, 0.10);
+    --color-ink-on-gold: #201607;   /* text on a gold fill */
 
-    /* -- Semantic status colors ------------------------------------------- */
+    --color-blue: #1B7FAF;        /* Pacific Blue — parcels, links to water data */
+    --color-blue-bright: #3DB4E0; /* Pacific Bright — outlines, hover */
+
+    /* -- Text colors ------------------------------------------------------- */
+    --color-text-primary: #E7EEF2;
+    --color-text-secondary: #8FA3AE;
+    /* Dimmest ink that still clears WCAG AA 4.5:1 on the worst surface
+       (--color-elevated); verify in-browser after any surface change. */
+    --color-text-tertiary: #7E93A4;
+
+    /* -- Water-balance + status semantics ---------------------------------- */
+    /* Family rule (documented in the native app's Theme.swift): a deficit is
+       burnt orange, NOT alarm red. Red is reserved for hard errors. */
+    --color-supply: #55B678;
+    --color-deficit: #D1742E;
     --color-error: #f87171;
     --color-warning: #fbbf24;
 
-    /* -- Border colors --------------------------------------------------- */
-    --color-border: rgba(100, 140, 180, 0.07);
-    --color-border-hover: rgba(100, 140, 180, 0.13);
-    /* Phase F (F6): dedicated edge for INTERACTIVE controls (inputs, selects,
-       textareas, search) at >=3:1 against their surface, so their boundary is
-       perceivable. Decorative card edges keep the subtle --color-border above.
-       Alpha verified in-browser: composited over the inset control surface it
-       reaches 3.38:1, clearing the 3:1 floor. */
+    /* -- Borders & edges ---------------------------------------------------- */
+    --color-border: rgba(255, 255, 255, 0.07);        /* hairline */
+    --color-border-hover: rgba(255, 255, 255, 0.13);
+    /* Interactive controls keep a >=3:1 perceivable boundary (a11y F6). */
     --color-border-interactive: rgba(125, 165, 205, 0.6);
+    --edge: rgba(255, 255, 255, 0.10);  /* the top-edge light catch */
+    --ring: rgba(255, 255, 255, 0.16);  /* hairline ring on elevated squares */
 
-    /* -- OKLCH data viz ramps (from DESIGN.json) ------------------------- */
+    /* -- Depth primitives (Deep Water dual-source recipes) ------------------ */
+    --sh-d: rgba(0, 0, 0, 0.6);
+    --sh-l: rgba(255, 255, 255, 0.028);
+    --shadow-raised: -3px -3px 8px var(--sh-l), 5px 6px 16px var(--sh-d);
+    --shadow-raised-sm: -2px -2px 5px var(--sh-l), 2px 3px 7px var(--sh-d);
+    --shadow-raised-lg: -4px -4px 11px var(--sh-l), 7px 9px 22px var(--sh-d);
+    --shadow-raised-hov: -5px -5px 14px var(--sh-l), 10px 14px 30px var(--sh-d);
+    --shadow-inset-sm: inset 2px 2px 7px var(--sh-d), inset -2px -2px 5px var(--sh-l);
+    /* Legacy aliases: app.css still references the pop/inset names. */
+    --shadow-pop-sm: var(--shadow-raised), inset 0 1px 0 var(--edge);
+    --shadow-pop-lg: var(--shadow-raised-lg), inset 0 1px 0 var(--edge);
+    --shadow-inset: var(--shadow-inset-sm);
+
+    /* -- Ambient page light -------------------------------------------------- */
+    /* One static teal radial wash at the top of the page; no motion, no grain. */
+    --ambient: radial-gradient(110% 78% at 50% -14%,
+        rgba(70, 179, 196, 0.07), transparent 62%);
+
+    /* -- OKLCH data viz ramps (unchanged) ----------------------------------- */
 
     /* Furnace Orange */
     --furnace-100: oklch(0.15 0.03 50);
@@ -94,23 +129,14 @@
     --space-2xl: 48px;
     --space-3xl: 64px;
 
-    /* -- Shadows (Pacific Golden single-source, matches VanderDev) ------- */
-    /* Phase F: softened (lower opacity, larger soft radius) now that cards also
-       carry a lighter surface. The two depth cues reinforce instead of the
-       shadow doing all the work — the Apple-dark-mode model. */
-    --shadow-pop-sm: 0 1px 2px rgba(0, 0, 0, 0.30), 0 6px 16px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    --shadow-pop-lg: 0 2px 6px rgba(0, 0, 0, 0.34), 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.4);
-
-    /* -- Motion (Phase F) ------------------------------------------------- */
-    /* One easing + two durations applied everywhere instead of ad-hoc values,
-       for the physical, consistent feel of the native app. Honoured only when
-       the user has NOT asked the OS to reduce motion (see app.css F5 guard). */
+    /* -- Motion ------------------------------------------------------------ */
+    /* One easing + two durations applied everywhere. Honoured only when the
+       user has NOT asked the OS to reduce motion (see app.css guard). */
     --ease-standard: cubic-bezier(0.2, 0, 0, 1);
     --duration-fast: 150ms;
     --duration-base: 250ms;
 
-    /* -- Entity colors (map layer identity) ------------------------------ */
+    /* -- Entity colors (map layer identity, unchanged) -------------------- */
     --color-entity-gold: #E4A317;      /* Wells, Boundary outline */
     --color-entity-teal: #4ECDC4;      /* Points of Diversion */
     --color-entity-purple: #7B68EE;    /* Recharge Sites */
@@ -120,5 +146,7 @@
     /* -- Border radius --------------------------------------------------- */
     --radius-sm: 6px;
     --radius-md: 10px;
-    --radius-lg: 12px;
+    --radius-lg: 14px;
+    --radius-xl: 16px;
+    --radius-pill: 100px;
 }

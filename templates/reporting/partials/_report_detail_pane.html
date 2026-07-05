@@ -48,7 +48,7 @@
   {% endif %}
 
   <!-- How filing actually works (persistent, plain-language) -->
-  <div class="card-raised" style="border-left: 3px solid var(--color-gold);">
+  <div class="card-raised" style="border-left: 3px solid var(--color-accent);">
     <p class="text-secondary text-sm" style="margin: 0;">
       <strong style="color: var(--color-text-primary);">OpenH2O prepares your filing.</strong>
       You submit and certify it in the state portal — OpenH2O never sends data to the
@@ -78,7 +78,7 @@
         <div class="field-value-sm">
           {% if submission.generated_file %}
           <a href="{% url 'reporting:report_download' pk=submission.pk %}"
-             style="color: var(--color-gold); text-decoration: none; font-weight: 600;">
+             style="color: var(--color-accent); text-decoration: none; font-weight: 600;">
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download
           </a>

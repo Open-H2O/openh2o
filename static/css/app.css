@@ -22,6 +22,46 @@ a { color: inherit; }
 
 [hidden] { display: none !important; }
 
+html { color-scheme: dark; }
+
+::selection { background: var(--color-accent-soft); }
+
+/* One global keyboard-focus treatment (buttons/forms may override offset). */
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+}
+
+/* Ambient page light: a static teal wash at the top of the page joins the
+   backdrop to the overhead light the raised shadows imply. No motion. */
+.app-main {
+    position: relative;
+}
+.app-main::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 420px;
+    pointer-events: none;
+    z-index: 0;
+    background: var(--ambient);
+}
+.app-main > * { position: relative; z-index: 1; }
+
+/* Styled scrollbars — kills the bare white strips on dark surfaces. */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-elevated) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+    background: var(--color-elevated);
+    border-radius: 6px;
+    border: 2px solid var(--color-base);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--color-hover); }
+
 /* -- Card ---------------------------------------------------------------- */
 
 .card-raised {
@@ -35,18 +75,21 @@ a { color: inherit; }
 
 .card-raised:hover {
     border-color: var(--color-border-hover);
-    transform: translateY(-1px);
+    background-color: var(--color-elevated);
+    box-shadow: var(--shadow-raised-hov), 0 0 12px var(--color-accent-muted), inset 0 1px 0 var(--edge);
 }
 
 /* -- Buttons ------------------------------------------------------------- */
 
+/* Primary = California Gold, the one action color. Carries the caught-light
+   top edge; hover adds a soft bloom (light moves, geometry never does). */
 .btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: var(--space-sm) var(--space-lg);
     background-color: var(--color-gold);
-    color: var(--color-base);
+    color: var(--color-ink-on-gold);
     font-family: var(--font-display);
     font-weight: 600;
     font-size: 0.875rem;
@@ -55,16 +98,18 @@ a { color: inherit; }
     cursor: pointer;
     text-decoration: none;
     white-space: nowrap;
-    transition: background-color 250ms cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: var(--shadow-raised-sm), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    transition: background-color 250ms cubic-bezier(0.25, 1, 0.5, 1), box-shadow 250ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .btn-primary:hover {
     background-color: var(--color-gold-hover);
+    box-shadow: var(--shadow-raised-sm), inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 14px var(--color-gold-muted);
 }
 
 .btn-primary:focus-visible {
-    outline: 2px solid var(--color-gold);
-    outline-offset: 2px;
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
 }
 
 .btn-secondary {
@@ -91,7 +136,7 @@ a { color: inherit; }
 }
 
 .btn-secondary:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
 }
 
@@ -133,7 +178,7 @@ a { color: inherit; }
 
 .sidebar {
     width: 240px;
-    background-color: var(--color-card);
+    background-color: var(--color-nav);
     border-right: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
@@ -152,11 +197,21 @@ a { color: inherit; }
     align-items: center;
     gap: var(--space-sm);
     padding: calc(var(--space-md) + 4px) var(--space-md);
-    color: var(--color-gold);
+    color: var(--color-text-primary);
     font-weight: 800;
     font-size: 1.125rem;
+    letter-spacing: -0.01em;
     white-space: nowrap;
     border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-brand-accent {
+    color: var(--color-accent);
+}
+
+.sidebar-brand-icon img {
+    border-radius: 9px;
+    box-shadow: var(--shadow-raised-sm), 0 0 0 1px var(--ring);
 }
 
 .sidebar[data-collapsed="true"] .sidebar-brand-icon img {
@@ -204,16 +259,16 @@ a { color: inherit; }
 }
 
 .sidebar-link.active {
-    color: var(--color-gold);
-    /* Gold nav-glow: a soft halo + inset gold ring on the active item, matching
-       VanderOps. The 8% gold-muted fill alone was too faint to register as
-       "selected"; the ring + halo make the active page unmistakable. */
-    background-color: rgba(228, 163, 23, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(228, 163, 23, 0.22), 0 0 18px rgba(228, 163, 23, 0.10);
+    color: var(--color-accent);
+    /* Deep Water selected state: the item rises off the nav — a lit tile with
+       the raised shadow + edge catch — rather than a colored halo. */
+    background-color: var(--color-tile);
+    box-shadow: var(--shadow-raised-sm), inset 0 1px 0 var(--edge);
+    font-weight: 600;
 }
 
 .sidebar-link:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: -2px;
 }
 
@@ -267,7 +322,7 @@ a { color: inherit; }
 }
 
 .sidebar-toggle:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
 }
 
@@ -342,7 +397,7 @@ a { color: inherit; }
 
 .global-search-input:focus {
     outline: none;
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
 }
 
 /* The dropdown. Empty container (short/blank query) collapses on its own. */
@@ -409,7 +464,7 @@ a { color: inherit; }
 }
 
 .search-result.is-active {
-    outline: 1px solid var(--color-gold);
+    outline: 1px solid var(--color-accent);
     outline-offset: -1px;
 }
 
@@ -457,8 +512,8 @@ a { color: inherit; }
 
 .dashboard-card:hover {
     border-color: var(--color-border-hover);
-    box-shadow: var(--shadow-pop-lg);
-    transform: translateY(-1px);
+    background-color: var(--color-elevated);
+    box-shadow: var(--shadow-raised-hov), 0 0 12px var(--color-accent-muted), inset 0 1px 0 var(--edge);
 }
 
 .dashboard-card-wide {
@@ -512,28 +567,17 @@ a { color: inherit; }
     margin-top: var(--space-2xl);
 }
 
-/* Status hero — a console header. Blue structural rule on the left edge;
-   the agency name leads, with live data health beneath. */
+/* Status hero — a clean Deep Water panel: the agency name leads, live data
+   health beneath. Depth comes from the raised shadow + edge catch alone. */
 .home-hero {
     position: relative;
     overflow: hidden;
     background-color: var(--color-card);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg) var(--space-xl);
     box-shadow: var(--shadow-pop-sm);
     margin-bottom: var(--space-xl);
-}
-
-/* Topographic contour texture — the visual language of a watershed / depth
-   map. Sits behind the hero text at low opacity (a domain signature, not a
-   generic accent stripe); the text rides above it via .home-hero-inner. */
-.home-hero-contour {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
 }
 
 .home-hero-inner {
@@ -542,18 +586,19 @@ a { color: inherit; }
 }
 
 .home-hero-greeting {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-text-tertiary);
+    color: var(--color-accent);
     margin-bottom: var(--space-xs);
 }
 
 .home-hero-title {
-    font-size: 1.625rem;
-    font-weight: 700;
-    line-height: 1.15;
+    font-size: clamp(1.625rem, 1.2rem + 1.2vw, 2.125rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
     color: var(--color-text-primary);
     margin: 0 0 var(--space-sm);
 }
@@ -610,8 +655,8 @@ a { color: inherit; }
 
 .home-task-card:hover {
     border-color: var(--color-border-hover);
-    box-shadow: var(--shadow-pop-lg);
-    transform: translateY(-2px);
+    background-color: var(--color-elevated);
+    box-shadow: var(--shadow-raised-hov), 0 0 12px var(--color-accent-muted), inset 0 1px 0 var(--edge);
 }
 
 /* Emphasis is carried by the icon, not an edge stripe. Secondary actions get
@@ -633,7 +678,7 @@ a { color: inherit; }
 .home-task-card--primary .home-task-icon {
     background-color: var(--color-gold);
     border-color: transparent;
-    color: #040608;
+    color: var(--color-ink-on-gold);
 }
 
 /* On hover, a tile's icon lights up to the gold chip — a satisfying response
@@ -642,7 +687,7 @@ a { color: inherit; }
 .home-task-card:hover .home-task-icon {
     background-color: var(--color-gold);
     border-color: transparent;
-    color: #040608;
+    color: var(--color-ink-on-gold);
 }
 
 /* Gold follows the cursor: while any tile is hovered, the primary surrenders
@@ -705,7 +750,7 @@ a { color: inherit; }
 }
 
 .home-stat:hover .home-stat-value {
-    color: var(--color-gold);
+    color: var(--color-accent);
 }
 
 .home-stat-label {
@@ -786,20 +831,22 @@ a { color: inherit; }
 }
 
 .data-table th {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    /* Deep Water header: teal label on a faint teal-tinted band, so every
+       table carries the accent the way the mockups do. */
+    color: var(--color-accent);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     padding: 10px var(--space-md);
     text-align: left;
-    border-bottom: 2px solid rgba(100, 140, 180, 0.25);
-    background-color: var(--color-card);
+    border-bottom: 2px solid var(--color-accent-muted);
+    background-color: color-mix(in srgb, var(--color-accent) 7%, var(--color-card));
 }
 
 .data-table td {
     padding: 10px var(--space-md);
-    border-bottom: 1px solid rgba(100, 140, 180, 0.12);
+    border-bottom: 1px solid var(--color-border);
     font-size: 0.875rem;
     color: var(--color-text-primary);
     transition: background-color 0.12s ease;
@@ -809,11 +856,11 @@ a { color: inherit; }
    perceptible but still quiet, so wide rows (parcel/owner/acres/status/zones)
    are easier to track across. One rule lifts every list page at once. */
 .data-table tbody tr:nth-child(even) td {
-    background-color: rgba(120, 150, 185, 0.055);
+    background-color: color-mix(in srgb, var(--color-elevated) 45%, transparent);
 }
 
 .data-table tbody tr:hover td {
-    background-color: var(--color-hover);
+    background-color: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
 .data-table-link {
@@ -826,7 +873,7 @@ a { color: inherit; }
 }
 
 .data-table-link:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 1px;
     border-radius: 2px;
 }
@@ -848,9 +895,9 @@ a { color: inherit; }
     position: sticky;
     top: 0;
     z-index: 10;
-    /* th already carries an opaque var(--color-card) background so rows can't
-       bleed through; add depth on the stuck header. */
-    box-shadow: 0 2px 4px rgba(4, 6, 8, 0.45);
+    /* th already carries an opaque background so rows can't bleed through;
+       add depth on the stuck header. */
+    box-shadow: 0 2px 4px rgba(5, 8, 12, 0.45);
 }
 
 .th-sortable {
@@ -863,7 +910,7 @@ a { color: inherit; }
 }
 
 .th-sortable:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: -2px;
 }
 
@@ -882,7 +929,7 @@ a { color: inherit; }
 
 .back-link:focus-visible,
 .breadcrumb a:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
     border-radius: 2px;
 }
@@ -914,9 +961,9 @@ a { color: inherit; }
 }
 
 .form-input:focus {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     outline: none;
-    box-shadow: 0 0 0 2px var(--color-gold-muted);
+    box-shadow: 0 0 0 2px var(--color-accent-muted);
 }
 
 .form-select {
@@ -937,9 +984,9 @@ a { color: inherit; }
 }
 
 .form-select:focus {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     outline: none;
-    box-shadow: 0 0 0 2px var(--color-gold-muted);
+    box-shadow: 0 0 0 2px var(--color-accent-muted);
 }
 
 .form-textarea {
@@ -957,9 +1004,9 @@ a { color: inherit; }
 }
 
 .form-textarea:focus {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     outline: none;
-    box-shadow: 0 0 0 2px var(--color-gold-muted);
+    box-shadow: 0 0 0 2px var(--color-accent-muted);
 }
 
 /* Placeholder text was browser-default (near-invisible on dark); give it a
@@ -995,7 +1042,7 @@ a { color: inherit; }
 
 /* Show a focus ring on the button when the hidden input is keyboard-focused. */
 .file-picker-button:focus-within {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
 }
 
@@ -1155,7 +1202,7 @@ a { color: inherit; }
 }
 
 .deep-dive-caret {
-    color: var(--color-gold);
+    color: var(--color-accent);
     font-size: 0.75rem;
     transition: transform 150ms;
 }
@@ -1199,7 +1246,7 @@ a { color: inherit; }
 
 .explainer-popout:hover .explainer-icon,
 .explainer-popout:focus-within .explainer-icon {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     color: var(--color-text-secondary);
 }
 
@@ -1262,7 +1309,7 @@ a { color: inherit; }
 .explainer-link {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--color-gold);
+    color: var(--color-accent);
     text-decoration: none;
     margin-top: var(--space-xs);
 }
@@ -1271,7 +1318,7 @@ a { color: inherit; }
 
 /* Inline research link inside prose — visibly a link, opens references. */
 .prose-link {
-    color: var(--color-gold);
+    color: var(--color-accent);
     text-decoration: underline;
     text-underline-offset: 2px;
     text-decoration-thickness: 1px;
@@ -1341,7 +1388,7 @@ a { color: inherit; }
     display: block;
     font-size: 0.9375rem;
     font-weight: 700;
-    color: var(--color-gold);
+    color: var(--color-accent);
     margin-bottom: var(--space-xs);
 }
 
@@ -1358,7 +1405,7 @@ a { color: inherit; }
    hairline rather than an accent stripe — color suffuses the box instead of
    flagging its edge. */
 .callout-rule {
-    background: var(--color-gold-muted);
+    background: var(--color-accent-muted);
     border: 1px solid rgba(228, 163, 23, 0.18);
     border-radius: var(--radius-sm);
     padding: var(--space-md) var(--space-lg);
@@ -1383,7 +1430,7 @@ a { color: inherit; }
     height: 36px;
     border-radius: 50%;
     background: oklch(0.45 0.12 80 / 0.15);
-    color: var(--color-gold);
+    color: var(--color-accent);
     font-size: 0.9375rem;
     font-weight: 700;
     flex-shrink: 0;
@@ -1395,7 +1442,7 @@ a { color: inherit; }
     font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.04em;
-    color: var(--color-gold);
+    color: var(--color-accent);
     margin-bottom: 2px;
 }
 
@@ -1549,7 +1596,7 @@ a { color: inherit; }
 
 .badge-gold {
     background-color: rgba(228, 163, 23, 0.15);
-    color: var(--color-gold);
+    color: var(--color-accent);
 }
 
 /* Phase 64: flag-gated meta-label marking demo sample data (e.g. a "Curtailed"
@@ -1597,11 +1644,11 @@ a { color: inherit; }
 }
 
 .edit-btn:hover {
-    color: var(--color-gold);
+    color: var(--color-accent);
 }
 
 .edit-btn:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
 }
 
@@ -1664,7 +1711,7 @@ a { color: inherit; }
 }
 
 .stat-card-accent-balance {
-    border-top: 3px solid var(--color-gold);
+    border-top: 3px solid var(--color-accent);
 }
 
 /* -- Budget panel -------------------------------------------------------- */
@@ -1850,7 +1897,7 @@ a { color: inherit; }
 /* Identity now rides entirely in the icon chip (functional colour), not an
    edge stripe — the report type reads from its gold/blue glyph. */
 .accent-card--gold .accent-card-icon {
-    color: var(--color-gold);
+    color: var(--color-accent);
     background: rgba(228, 163, 23, 0.12);
 }
 .accent-card--blue .accent-card-icon {
@@ -2113,7 +2160,7 @@ div[id$="-map"] {
 /* -- Semantic water accounting colors ------------------------------------ */
 
 .text-supply {
-    color: var(--forest-400);
+    color: var(--color-supply);
 }
 
 .text-usage {
@@ -2123,11 +2170,12 @@ div[id$="-map"] {
 }
 
 .text-surplus {
-    color: var(--forest-400);
+    color: var(--color-supply);
 }
 
 .text-deficit {
-    color: oklch(0.65 0.20 25);
+    /* Family rule: a deficit is burnt orange, never alarm red. */
+    color: var(--color-deficit);
 }
 
 .text-neutral {
@@ -2141,11 +2189,11 @@ div[id$="-map"] {
    text-usage stays neutral — a usage figure is a plain total, not a warning. */
 .data-table td.text-supply,
 .data-table td.text-surplus {
-    color: var(--forest-400);
+    color: var(--color-supply);
 }
 
 .data-table td.text-deficit {
-    color: oklch(0.65 0.20 25);
+    color: var(--color-deficit);
 }
 
 .data-table td.text-usage {
@@ -2157,7 +2205,7 @@ div[id$="-map"] {
     margin-bottom: var(--space-md);
 }
 .credit-card--lead {
-    border-top: 3px solid var(--color-gold);
+    border-top: 3px solid var(--color-accent);
 }
 .credit-eyebrow {
     display: block;
@@ -2168,7 +2216,7 @@ div[id$="-map"] {
     margin-bottom: var(--space-sm);
 }
 .credit-card--lead .credit-eyebrow {
-    color: var(--color-gold);
+    color: var(--color-accent);
 }
 .credit-title {
     font-size: 1.0625rem;
@@ -2189,13 +2237,13 @@ div[id$="-map"] {
     margin: 0;
 }
 .text-link {
-    color: var(--color-gold);
+    color: var(--color-accent);
     text-decoration: underline;
     text-underline-offset: 2px;
     text-decoration-thickness: 1px;
 }
 .text-link:hover {
-    color: var(--color-gold-hover);
+    color: var(--color-accent-hover);
 }
 
 /* -- Form error box ------------------------------------------------------ */
@@ -2284,7 +2332,7 @@ div[id$="-map"] {
     background-color: var(--color-hover);
 }
 .nav-mode-option.active {
-    color: var(--color-gold);
+    color: var(--color-accent);
     background-color: rgba(228, 163, 23, 0.14);
     box-shadow: inset 0 0 0 1px rgba(228, 163, 23, 0.25);
 }
@@ -2309,7 +2357,7 @@ div[id$="-map"] {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-decoration: none;
-    color: var(--color-gold);
+    color: var(--color-accent);
     background-color: rgba(228, 163, 23, 0.14);
     box-shadow: inset 0 0 0 1px rgba(228, 163, 23, 0.30);
     transition: background-color 150ms;
@@ -2502,9 +2550,9 @@ div[id$="-map"] {
 }
 
 .step-badge-active {
-    background: var(--color-gold);
+    background: var(--color-accent);
     color: var(--color-base);
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
 }
 
 /* -- HTMX indicator (hidden until request in flight) -------------------- */
@@ -2527,7 +2575,7 @@ div[id$="-map"] {
     left: 0;
     width: 100%;
     height: 3px;
-    background: var(--color-gold);
+    background: var(--color-accent);
     transform: scaleX(0);
     transform-origin: left;
     z-index: 9999;
@@ -2693,7 +2741,7 @@ div[id$="-map"] {
 .about-title {
     font-size: 2rem;
     font-weight: 800;
-    color: var(--color-gold);
+    color: var(--color-accent);
     margin: 0 0 var(--space-xs) 0;
 }
 
@@ -2731,7 +2779,7 @@ div[id$="-map"] {
     top: 0;
     bottom: 0;
     width: 2px;
-    background: var(--color-gold);
+    background: var(--color-accent);
     border-radius: 1px;
 }
 
@@ -2748,13 +2796,13 @@ div[id$="-map"] {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: var(--color-gold);
+    background: var(--color-accent);
     border: 2px solid var(--color-base);
 }
 
 .timeline-year {
     display: inline-block;
-    background: var(--color-gold);
+    background: var(--color-accent);
     color: var(--color-base);
     font-size: 0.75rem;
     font-weight: 700;
@@ -2867,7 +2915,7 @@ div[id$="-map"] {
 
 .filter-tab.active {
     color: var(--color-text-primary);
-    border-bottom-color: var(--color-gold);
+    border-bottom-color: var(--color-accent);
 }
 
 /* -- Freshness dots ------------------------------------------------------ */
@@ -2935,7 +2983,7 @@ div[id$="-map"] {
 }
 
 .wizard-step--active .wizard-step-icon {
-    background: var(--color-gold);
+    background: var(--color-accent);
     color: var(--color-base);
 }
 
@@ -2981,7 +3029,7 @@ div[id$="-map"] {
     width: 14px;
     height: 14px;
     border: 2px solid var(--color-border);
-    border-top-color: var(--color-gold);
+    border-top-color: var(--color-accent);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
     flex-shrink: 0;
@@ -3005,8 +3053,8 @@ div[id$="-map"] {
 
 .upload-zone:hover,
 .upload-zone.dragover {
-    border-color: var(--color-gold);
-    background: var(--color-gold-muted);
+    border-color: var(--color-accent);
+    background: var(--color-accent-muted);
     color: var(--color-text-secondary);
 }
 
@@ -3138,14 +3186,14 @@ div[id$="-map"] {
 }
 
 .infra-type-card:hover {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     background: var(--color-surface-elevated);
 }
 
 .infra-type-card.active {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     background: var(--color-surface-elevated);
-    box-shadow: 0 0 0 1px var(--color-gold);
+    box-shadow: 0 0 0 1px var(--color-accent);
 }
 
 .infra-type-label {
@@ -3182,13 +3230,13 @@ div[id$="-map"] {
 }
 
 .draw-btn:hover {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     color: var(--color-text-primary);
 }
 
 .draw-btn.active {
-    border-color: var(--color-gold);
-    color: var(--color-gold);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
     background: var(--color-surface-elevated);
 }
 
@@ -3216,7 +3264,7 @@ div[id$="-map"] {
 
 .upload-zone:hover,
 .upload-zone.drag-over {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     background: var(--color-surface-elevated);
 }
 
@@ -3297,7 +3345,7 @@ div[id$="-map"] {
     height: 28px;
     border-radius: 50%;
     background: oklch(0.45 0.12 80 / 0.15);
-    color: var(--color-gold);
+    color: var(--color-accent);
     font-size: 0.8125rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -3365,7 +3413,7 @@ div[id$="-map"] {
     font-weight: 800;
     font-family: var(--font-display);
     font-variant-numeric: tabular-nums;
-    color: var(--color-gold);
+    color: var(--color-accent);
     line-height: 1;
     white-space: nowrap;
 }
@@ -3391,7 +3439,7 @@ div[id$="-map"] {
     border-color: var(--color-border-hover);
 }
 .radio-option:has(input:checked) {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
     background: rgba(228, 163, 23, 0.06);
 }
 .radio-option input[type="radio"] {
@@ -3407,11 +3455,11 @@ div[id$="-map"] {
     transition: border-color 120ms, background 120ms;
 }
 .radio-option input[type="radio"]:checked {
-    border-color: var(--color-gold);
-    background: radial-gradient(circle, var(--color-gold) 0 42%, transparent 48%);
+    border-color: var(--color-accent);
+    background: radial-gradient(circle, var(--color-accent) 0 42%, transparent 48%);
 }
 .radio-option input[type="radio"]:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
 }
 
@@ -3437,7 +3485,7 @@ div[id$="-map"] {
     box-shadow: none;
 }
 .input-suffix:focus-within {
-    border-color: var(--color-gold);
+    border-color: var(--color-accent);
 }
 .input-suffix-unit {
     display: flex;
@@ -3585,10 +3633,10 @@ div[id$="-map"] {
 }
 .master-row.is-selected {
     background-color: rgba(228, 163, 23, 0.10);
-    border-left-color: var(--color-gold);
+    border-left-color: var(--color-accent);
 }
 .master-row:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: -2px;
 }
 .master-row-top {
@@ -3680,7 +3728,7 @@ div[id$="-map"] {
     border-radius: 50%;
     background: var(--color-inset);
     border: 1px solid var(--color-border);
-    color: var(--color-gold);
+    color: var(--color-accent);
 }
 .pane-empty-title {
     font-size: 1.125rem;
@@ -3725,7 +3773,7 @@ div[id$="-map"] {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--color-gold);
+    background: var(--color-accent);
     opacity: 0.75;
     flex-shrink: 0;
 }
@@ -3798,7 +3846,7 @@ div[id$="-map"] {
 }
 
 .attention-pill:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 1px;
 }
 
@@ -3864,13 +3912,13 @@ div[id$="-map"] {
 }
 
 .filter-chip:focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-accent);
     outline-offset: 1px;
 }
 
 .filter-chip.is-active {
     background-color: oklch(0.45 0.12 85 / 0.18);
-    color: var(--color-gold);
+    color: var(--color-accent);
     border-color: oklch(0.55 0.13 85 / 0.5);
 }
 
@@ -3899,7 +3947,7 @@ div[id$="-map"] {
     z-index: 2000;
     padding: 8px 16px;
     background: var(--color-gold);
-    color: #040608;
+    color: var(--color-ink-on-gold);
     font-weight: 700;
     text-decoration: none;
     border-radius: 6px;
@@ -3910,6 +3958,36 @@ div[id$="-map"] {
     top: var(--space-md);
     outline: 2px solid #ffffff;
     outline-offset: 2px;
+}
+
+/* -- App footer (Deep Water overhaul: tokenized, brand-colored links) ------ */
+
+.app-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0 var(--space-lg);
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    border-top: 1px solid var(--color-border);
+    text-align: center;
+}
+
+.app-footer a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-border);
+    transition: color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+}
+
+.app-footer a:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.app-footer .app-footer-version {
+    color: var(--color-text-tertiary);
 }
 
 /* -- Reduced motion (Phase F, audit F5) ---------------------------------- */
