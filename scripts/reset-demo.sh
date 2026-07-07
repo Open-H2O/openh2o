@@ -82,6 +82,32 @@ fi
 pre_counts="$(demo_row_counts || true)"
 pre_total="$(printf '%s\n' "$pre_counts" | demo_row_total)"
 
+# ---------------------------------------------------------------------------
+# Preserve in-app feedback across the wipe.
+# openh2o.com is a single shared DB, and the DROP+restore below would take real
+# visitor feedback down with it — the report is saved to THIS database first and
+# only best-effort forwarded onward, so a dropped forward would otherwise be an
+# unrecoverable loss. Dump the feedback tables' DATA now (their schema comes back
+# with the golden restore + migrate) and reload it afterward. The screenshot
+# FILES already live in the media volume, which the DB wipe never touches.
+FB_DUMP_DIR="${FB_DUMP_DIR:-$HOME/openh2o-feedback-preserve}"
+mkdir -p "$FB_DUMP_DIR"
+fb_dump="$FB_DUMP_DIR/feedback-$(date '+%Y%m%dT%H%M%S').sql"
+fb_saved=0
+if docker compose exec -T db sh -c '
+      pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --data-only --no-owner \
+        -t feedback_feedback -t feedback_feedbackattachment' > "$fb_dump" 2>>"$LOG"; then
+  fb_saved=1
+  log "reset-demo: preserved feedback ($(wc -c <"$fb_dump" | tr -d ' ') bytes) -> $fb_dump"
+else
+  log "WARN: pg_dump of feedback tables failed — feedback preservation SKIPPED this run"
+  demo_ntfy high "OpenH2O feedback preserve FAILED" \
+    "Could not dump feedback tables on $(hostname) before the demo reset; pending feedback may be lost. Check $LOG."
+fi
+# Keep only the 30 most recent preserve dumps (tiny files; a safety trail).
+# `|| true` so an empty glob can't trip `set -e`/pipefail before the restore.
+{ ls -1t "$FB_DUMP_DIR"/feedback-*.sql 2>/dev/null | tail -n +31 | xargs -r rm -f; } || true
+
 log "reset-demo: restoring $SNAP into the demo DB"
 
 # Pause web so no app connections hold locks or write during the swap.
@@ -120,6 +146,37 @@ fi
 # fine, the limit is a brake, not an auth control.
 if ! docker compose exec -T web python manage.py createcachetable >>"$LOG" 2>&1; then
   log "WARN: createcachetable after restore returned nonzero (check $LOG)"
+fi
+
+# ---------------------------------------------------------------------------
+# Reload the preserved feedback into the freshly restored DB.
+# session_replication_role=replica disables FK/triggers for the load so a report
+# whose demo user_id vanished with the golden restore still comes back; we then
+# null any now-orphaned user_id (the report keeps its name/email regardless) and
+# advance the id sequences past the restored rows so new submissions don't clash.
+# A failure here must NOT fail the reset (the demo is already restored) — it logs
+# loudly, alerts, and KEEPS the dump file for manual recovery.
+# ---------------------------------------------------------------------------
+if [ "$fb_saved" = "1" ]; then
+  if {
+        echo "SET session_replication_role = replica;"
+        echo "SET search_path = public;"
+        echo "TRUNCATE feedback_feedbackattachment, feedback_feedback RESTART IDENTITY;"
+        cat "$fb_dump"
+        # pg_dump sets an empty search_path; restore it before our own statements.
+        echo "SET search_path = public;"
+        echo "UPDATE feedback_feedback SET user_id = NULL WHERE user_id IS NOT NULL AND user_id NOT IN (SELECT id FROM core_user);"
+        echo "SELECT setval(pg_get_serial_sequence('feedback_feedback','id'), GREATEST((SELECT COALESCE(max(id),0) FROM feedback_feedback),1));"
+        echo "SELECT setval(pg_get_serial_sequence('feedback_feedbackattachment','id'), GREATEST((SELECT COALESCE(max(id),0) FROM feedback_feedbackattachment),1));"
+        echo "SET session_replication_role = DEFAULT;"
+      } | docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' >>"$LOG" 2>&1; then
+    fb_kept="$(docker compose exec -T db sh -c 'psql -tAqc "SELECT count(*) FROM feedback_feedback" -U "$POSTGRES_USER" -d "$POSTGRES_DB"' 2>/dev/null | tr -d '[:space:]')"
+    log "reset-demo: feedback reloaded — feedback_feedback now holds ${fb_kept:-?} rows"
+  else
+    log "ERROR: reloading preserved feedback FAILED — dump kept at $fb_dump for manual recovery"
+    demo_ntfy high "OpenH2O feedback reload FAILED" \
+      "Preserved feedback did NOT reload on $(hostname) after the demo reset. Dump kept at $fb_dump. Restore by hand. Check $LOG."
+  fi
 fi
 
 # ---------------------------------------------------------------------------
