@@ -15,6 +15,7 @@ on:
 jobs:
   clean-install:
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # backstop: a hung step fails in 15 min instead of running to the 6h runner limit (which showed up as "cancelled")
     env:
       # Throwaway values for CI only — not secrets. base.py requires SECRET_KEY
       # with no default; local settings boot without real credentials.
@@ -53,7 +54,7 @@ jobs:
         run: >-
           docker compose run --rm
           -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
-          web python manage.py makemigrations --check --dry-run
+          web python manage.py makemigrations --check --dry-run --no-input
 
       - name: Migrate (fresh schema)
         run: >-
