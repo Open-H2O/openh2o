@@ -345,3 +345,31 @@ class TestLivenessProbe:
 
         resp = Client().get(reverse("health:live"))
         assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# DB probe (ISS-008) — SELECT 1 so external monitors measure DB health.
+# ---------------------------------------------------------------------------
+
+
+class TestDbProbe:
+    @pytest.mark.django_db
+    def test_dbz_returns_ok_when_db_reachable(self, client):
+        from django.urls import reverse
+
+        resp = client.get(reverse("health:db"))
+        assert resp.status_code == 200
+        assert resp.content == b"ok"
+
+    def test_dbz_returns_503_when_db_unreachable(self, monkeypatch):
+        """Simulate a dead connection: the probe must degrade to 503, never raise."""
+        from django.test import Client
+        from django.urls import reverse
+        from django.db import connection
+
+        def boom(*a, **k):
+            raise RuntimeError("connection refused")
+
+        monkeypatch.setattr(connection, "cursor", boom)
+        resp = Client().get(reverse("health:db"))
+        assert resp.status_code == 503
