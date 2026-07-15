@@ -10,6 +10,18 @@
 # gunicorn under it.
 set -e
 
+# One-off management commands (the CI clean-install steps, or any manual
+# `docker compose run web python manage.py ...`) arrive here as arguments. Run
+# that command as the app user and exit — do NOT fall through to the server boot.
+# Without this the entrypoint ignored its arguments and always exec'd gunicorn,
+# so every `docker compose run web <cmd>` silently started the web server and hung
+# forever. That is what wedged the clean-install-guard CI (makemigrations --check
+# never ran; the job just timed out). The no-argument path below is unchanged, so
+# production `docker compose up` still boots and serves exactly as before.
+if [ "$#" -gt 0 ]; then
+    exec gosu app "$@"
+fi
+
 python manage.py collectstatic --noinput --clear
 python manage.py migrate --noinput
 python manage.py createcachetable
