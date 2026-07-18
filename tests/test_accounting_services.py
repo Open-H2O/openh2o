@@ -473,17 +473,26 @@ class TestParseLedgerCsv:
         assert result["error_count"] == 1
         assert "invalid amount" in result["errors"][0]["messages"][0]
 
-    def test_csv_positive_meter_reading_rejected(self):
-        """Positive amount for a usage source_type (meter_reading) is rejected."""
+    def test_csv_positive_meter_reading_normalized(self):
+        """A positive meter_reading is NORMALIZED to the ledger's debit sign.
+
+        Meters read positive, so a real district export carries unsigned
+        magnitudes; rejecting the file would fail exactly the files this exists
+        to load. The coercion is reported via sign_normalized so the operator
+        sees it in the upload preview rather than having it applied silently.
+        """
         ParcelFactory(parcel_number="P-SIGN-1")
         csv_text = (
             "parcel_number,effective_date,amount_acre_feet,source_type\n"
             "P-SIGN-1,2024-01-15,10.0,meter_reading\n"
         )
         result = parse_ledger_csv(self._csv_file(csv_text))
-        assert result["error_count"] == 1
-        assert "positive amount" in result["errors"][0]["messages"][0]
-        assert "usage" in result["errors"][0]["messages"][0]
+        assert result["error_count"] == 0
+        assert result["created_count"] == 1
+        assert result["sign_normalized"] == 1
+        assert ParcelLedger.objects.get(
+            parcel__parcel_number="P-SIGN-1"
+        ).amount_acre_feet == Decimal("-10.0000")
 
     def test_csv_negative_meter_reading_accepted(self):
         """Negative amount for meter_reading is accepted."""
@@ -508,16 +517,20 @@ class TestParseLedgerCsv:
         assert result["created_count"] == 1
         assert result["error_count"] == 0
 
-    def test_csv_positive_surface_diversion_rejected(self):
-        """A positive surface_diversion violates the stored-negative convention."""
+    def test_csv_positive_surface_diversion_normalized(self):
+        """A positive surface_diversion is normalized to the stored-negative
+        convention, and counted so the operator can see it happened."""
         ParcelFactory(parcel_number="P-SURF-2")
         csv_text = (
             "parcel_number,effective_date,amount_acre_feet,source_type\n"
             "P-SURF-2,2025-05-15,2.5,surface_diversion\n"
         )
         result = parse_ledger_csv(self._csv_file(csv_text))
-        assert result["error_count"] == 1
-        assert "positive amount" in result["errors"][0]["messages"][0]
+        assert result["error_count"] == 0
+        assert result["sign_normalized"] == 1
+        assert ParcelLedger.objects.get(
+            parcel__parcel_number="P-SURF-2"
+        ).amount_acre_feet == Decimal("-2.5000")
 
     def test_csv_positive_recharge_accepted(self):
         """Positive amount for a supply source_type (recharge) is accepted."""
@@ -529,6 +542,100 @@ class TestParseLedgerCsv:
         result = parse_ledger_csv(self._csv_file(csv_text))
         assert result["created_count"] == 1
         assert result["error_count"] == 0
+
+    def test_csv_positive_calculated_normalized_not_crashed(self):
+        """A positive 'calculated' row must be handled, not blow up.
+
+        The web path's old usage set omitted 'calculated', so this row passed
+        validation and then failed against the ParcelLedger sign constraint —
+        an IntegrityError (a 500 on upload) instead of a handled row.
+        """
+        ParcelFactory(parcel_number="P-CALC-1")
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-CALC-1,2024-01-15,7.5,calculated\n"
+        )
+        result = parse_ledger_csv(self._csv_file(csv_text))
+        assert result["error_count"] == 0
+        assert result["sign_normalized"] == 1
+        assert ParcelLedger.objects.get(
+            parcel__parcel_number="P-CALC-1"
+        ).amount_acre_feet == Decimal("-7.5000")
+
+
+class TestParseLedgerCsvSharedGuards:
+    """The web upload inherits the CLI's guards (math eval item 3).
+
+    Each of these was absent from the upload path: re-uploading a file doubled
+    every row, and a file could write into a period already filed with the state.
+    """
+
+    def _csv_file(self, text):
+        return io.BytesIO(text.encode("utf-8"))
+
+    def test_reupload_is_idempotent(self):
+        ParcelFactory(parcel_number="P-DUP-1")
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-DUP-1,2024-01-15,-10.0,meter_reading\n"
+        )
+        first = parse_ledger_csv(self._csv_file(csv_text))
+        assert first["created_count"] == 1
+
+        second = parse_ledger_csv(self._csv_file(csv_text))
+        assert second["created_count"] == 0
+        assert second["skipped_duplicate"] == 1
+        assert ParcelLedger.objects.filter(
+            parcel__parcel_number="P-DUP-1"
+        ).count() == 1
+
+    def test_duplicate_rows_within_one_file_collapse(self):
+        ParcelFactory(parcel_number="P-DUP-2")
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-DUP-2,2024-01-15,-10.0,meter_reading\n"
+            "P-DUP-2,2024-01-15,-10.0,meter_reading\n"
+        )
+        result = parse_ledger_csv(self._csv_file(csv_text))
+        assert result["created_count"] == 1
+        assert result["skipped_duplicate"] == 1
+
+    def test_corrected_amount_still_lands(self):
+        """Dedup keys on amount, so a real correction is not swallowed."""
+        ParcelFactory(parcel_number="P-DUP-3")
+        base = "parcel_number,effective_date,amount_acre_feet,source_type\n"
+        parse_ledger_csv(
+            self._csv_file(base + "P-DUP-3,2024-01-15,-10.0,meter_reading\n")
+        )
+        corrected = parse_ledger_csv(
+            self._csv_file(base + "P-DUP-3,2024-01-15,-12.5,meter_reading\n")
+        )
+        assert corrected["created_count"] == 1
+        assert ParcelLedger.objects.filter(
+            parcel__parcel_number="P-DUP-3"
+        ).count() == 2
+
+    def test_row_inside_finalized_period_is_refused(self):
+        from accounting.models import ReportingPeriod
+
+        ParcelFactory(parcel_number="P-FIN-1")
+        ReportingPeriod.objects.create(
+            name="WY 2024 (filed)",
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 12, 31),
+            is_finalized=True,
+        )
+        csv_text = (
+            "parcel_number,effective_date,amount_acre_feet,source_type\n"
+            "P-FIN-1,2024-06-15,-10.0,meter_reading\n"
+        )
+        result = parse_ledger_csv(self._csv_file(csv_text))
+        assert result["created_count"] == 0
+        assert result["error_count"] == 1
+        assert "finalized" in result["errors"][0]["messages"][0]
+        assert ParcelLedger.objects.filter(
+            parcel__parcel_number="P-FIN-1"
+        ).count() == 0
 
 
 # ---------------------------------------------------------------------------

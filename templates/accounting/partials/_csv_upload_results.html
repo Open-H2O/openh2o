@@ -34,6 +34,32 @@
     </div>
   </div>
 
+  <!-- Import notes: things the importer decided, which must never be silent.
+       Sign normalization is a judgement about the file (usage debits, supply
+       credits); duplicate skipping is why a re-upload creates nothing. -->
+  {% if results.sign_normalized or results.skipped_duplicate %}
+  <div class="card-raised">
+    <h3 class="section-header-sm">Import notes</h3>
+    {% if results.sign_normalized %}
+    <p class="text-base" style="margin: 0;">
+      <strong>{{ results.sign_normalized }}</strong>
+      row{{ results.sign_normalized|pluralize }} had the sign
+      {% if dry_run %}that would be{% else %}{% endif %} corrected to the ledger
+      convention: use is recorded as a debit, supply as a credit. Magnitudes are
+      unchanged.
+    </p>
+    {% endif %}
+    {% if results.skipped_duplicate %}
+    <p class="text-base" style="margin: 0;">
+      <strong>{{ results.skipped_duplicate }}</strong>
+      row{{ results.skipped_duplicate|pluralize }} already existed with the same
+      parcel, date, source and amount, and {% if dry_run %}would be{% else %}were{% endif %}
+      skipped. Re-importing the same file does not double your entries.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- Errors table -->
   {% if results.errors %}
   <div class="card-raised">
