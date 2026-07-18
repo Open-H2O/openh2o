@@ -15,7 +15,12 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from accounting.models import ReportingPeriod, WaterType
-from parcels.models import Parcel, ParcelLedger
+from parcels.models import (
+    NON_POSITIVE_SOURCE_TYPES,
+    POSITIVE_SOURCE_TYPES,
+    Parcel,
+    ParcelLedger,
+)
 
 
 class Command(BaseCommand):
@@ -112,6 +117,7 @@ class Command(BaseCommand):
 
         created_count = 0
         skipped_count = 0
+        sign_normalized = 0
         error_rows = []
         entries_to_create = []
 
@@ -172,6 +178,28 @@ class Command(BaseCommand):
                         amount = Decimal(amount_raw)
                     except InvalidOperation:
                         errors.append(f"invalid amount: {amount_raw}")
+
+                # SIGN RULE (math eval 2026-07-18, F-data-04). The ledger nets to
+                # a balance, so a sign-flipped row does not read as wrong — it
+                # moves the balance by twice its magnitude. Usage rows must debit
+                # (<= 0), supply rows must credit (> 0); the check constraints on
+                # ParcelLedger now enforce it, so an un-normalized row is a hard
+                # IntegrityError rather than a quiet error in the balance.
+                #
+                # NORMALIZE rather than reject: meters read positive, so real
+                # district exports overwhelmingly carry unsigned magnitudes, and
+                # rejecting them would make the importer useless for exactly the
+                # files it exists to load. Our own ledger_export already emits the
+                # canonical signs, so a round-trip is unaffected. Every coercion
+                # is COUNTED and reported at the end — normalizing is a judgement
+                # about the file, and the operator has to be able to see it.
+                if amount is not None and source_type:
+                    if source_type in NON_POSITIVE_SOURCE_TYPES and amount > 0:
+                        amount = -amount
+                        sign_normalized += 1
+                    elif source_type in POSITIVE_SOURCE_TYPES and amount < 0:
+                        amount = -amount
+                        sign_normalized += 1
 
                 # Validate effective_date
                 effective_date = None
@@ -314,6 +342,15 @@ class Command(BaseCommand):
                 f"{skipped_duplicate} skipped as duplicates"
             )
         )
+        if sign_normalized:
+            # Surfaced, never silent: the operator needs to know the file's signs
+            # did not match the ledger's convention before they trust the totals.
+            self.stdout.write(
+                self.style.WARNING(
+                    f"  {sign_normalized} row(s) had their sign normalized to the "
+                    f"ledger convention (usage debits, supply credits)"
+                )
+            )
 
     @staticmethod
     def _parse_date(date_str):
