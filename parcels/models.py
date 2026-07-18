@@ -49,6 +49,26 @@ class Parcel(models.Model):
         return self.parcel_number
 
 
+# Sign is semantic, not cosmetic: the ledger nets to a balance, so a sign-flipped
+# row does not look wrong — it quietly moves the balance by twice its magnitude.
+# These two sets are what ParcelLedger's check constraints enforce (math eval
+# 2026-07-18, F-data-04). Module scope because ParcelLedger.Meta needs them and a
+# nested class body cannot see the enclosing class's namespace.
+#
+# SUPPLY rows credit water and must be > 0.
+POSITIVE_SOURCE_TYPES = ("allocation", "recharge")
+# USAGE rows debit water and must be <= 0. Zero is legitimate and common: a meter
+# that did not advance, or a month with no measured diversion.
+NON_POSITIVE_SOURCE_TYPES = (
+    "meter_reading",
+    "et_estimate",
+    "surface_diversion",
+    "calculated",
+)
+# Everything else (manual_entry, csv_import, adjustment) is deliberately
+# unconstrained — an operator correction has to be able to go either way.
+
+
 class ParcelLedger(models.Model):
     SOURCE_TYPE_CHOICES = [
         ("meter_reading", "Meter Reading"),
@@ -79,23 +99,11 @@ class ParcelLedger(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Sign is semantic, not cosmetic: the ledger nets to a balance, so a
-    # sign-flipped row does not look wrong — it quietly moves the balance by
-    # twice its magnitude. These three sets are what the constraint below
-    # enforces (math eval 2026-07-18, F-data-04).
-    #
-    # SUPPLY rows credit water and must be > 0.
-    POSITIVE_SOURCE_TYPES = ("allocation", "recharge")
-    # USAGE rows debit water and must be <= 0. Zero is legitimate and common: a
-    # meter that did not advance, or a month with no measured diversion.
-    NON_POSITIVE_SOURCE_TYPES = (
-        "meter_reading",
-        "et_estimate",
-        "surface_diversion",
-        "calculated",
-    )
-    # Everything else (manual_entry, csv_import, adjustment) is deliberately
-    # unconstrained — an operator correction has to be able to go either way.
+    # Re-exported from module scope (see above ParcelLedger) so callers can say
+    # ParcelLedger.POSITIVE_SOURCE_TYPES; Meta itself must use the module names,
+    # because a nested class body cannot see the enclosing class's namespace.
+    POSITIVE_SOURCE_TYPES = POSITIVE_SOURCE_TYPES  # noqa: F821
+    NON_POSITIVE_SOURCE_TYPES = NON_POSITIVE_SOURCE_TYPES  # noqa: F821
 
     class Meta:
         ordering = ["-effective_date", "-created_at"]
