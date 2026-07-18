@@ -13,19 +13,52 @@
         {% endif %}
         <h1 class="about-title">OpenH2O</h1>
         <p class="about-tagline">Open-source water-data management for California</p>
-        <p class="about-purpose">
+        <p class="about-purpose card-raised">
             OpenH2O is an open-source water-data management platform built for Groundwater Sustainability Agencies
             and water districts. It brings an agency's water data — measurements, deliveries, wells, surface
             diversions, managed aquifer recharge, and mixed-use accounting — into a single system the agency owns
-            and understands. It also organizes the monitoring data that the state's GEARS and CalWATRS systems require — preparing the data, not filing the reports. The
+            and understands. The
             entire platform runs on a $15-a-month virtual private server and can be
             deployed by an AI coding assistant pointed at <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">this repository</a>.
         </p>
     </section>
 
+    <!-- Standing on GAP -->
+    <section>
+        <h2 class="section-header">Standing on the Groundwater Accounting Platform</h2>
+        <div class="about-narrative">
+            <p>
+                OpenH2O exists because the Groundwater Accounting Platform (GAP) proved something that was far
+                from obvious when it started: that a partnership across public agencies, a nonprofit, and private
+                firms could build and sustain shared, open-source infrastructure for water management &mdash; and
+                hold it to a standard that raised the bar for every tool in the field.
+            </p>
+            <p>
+                GAP was originated in 2018 by the <strong>Environmental Defense Fund</strong> with the
+                <strong>Rosedale-Rio Bravo Water Storage District</strong>, engineered by
+                <strong>Sitka Technology Group</strong> &mdash; now part of <strong>Environmental Science
+                Associates (ESA)</strong> &mdash; and opened and scaled to agencies statewide by the
+                <strong>California Water Data Consortium</strong>. Years of that work are the example OpenH2O
+                learned from.
+            </p>
+            <p>
+                GAP also made the hard part clear. Standing up the software is the easy half; the decisive work
+                is everything around it &mdash; training, outreach, and the patient support that turns a tool
+                into a system an agency actually trusts. OpenH2O treats that human and institutional work as the
+                real work, not an afterthought.
+            </p>
+            <p>
+                Where GAP focused, by design, on groundwater and SGMA, OpenH2O extends the same open,
+                partnership-minded approach across all of water &mdash; surface water, groundwater, and the
+                reporting the state requires. OpenH2O is an independent reimplementation on an open stack,
+                indebted to GAP's example and glad to keep learning from the people who built it.
+            </p>
+        </div>
+    </section>
+
     <!-- Policy Timeline -->
     <section>
-        <h2 class="content-section-label">Policy Timeline</h2>
+        <h2 class="section-header">Policy Timeline</h2>
         <div class="timeline">
             <div class="timeline-entry">
                 <span class="timeline-year">2014</span>
@@ -82,7 +115,7 @@
     <!-- Quick Access (authenticated only) -->
     {% if user.is_authenticated %}
     <section>
-        <h2 class="content-section-label">Quick Access</h2>
+        <h2 class="section-header">Quick Access</h2>
         <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">
             <a href="{% url 'getting_started' %}" class="dashboard-card">
                 <div class="dashboard-card-label">Guide</div>
@@ -105,7 +138,7 @@
 
     <!-- Credits -->
     <section class="about-credits">
-        <h2 class="content-section-label">Credits</h2>
+        <h2 class="section-header">Credits</h2>
 
         <div class="card-raised credit-card">
             <span class="credit-eyebrow">Open water data</span>
@@ -117,8 +150,8 @@
             </p>
             <p class="credit-note">
                 The open-source Groundwater Accounting Platform whose methodology OpenH2O independently reimplements was
-                co-developed by the Environmental Defense Fund and the Rosedale-Rio Bravo Water Storage District, then
-                opened and scaled statewide by the Consortium.
+                originated by the Environmental Defense Fund with the Rosedale-Rio Bravo Water Storage District,
+                engineered by Sitka Technology Group (now ESA), then opened and scaled statewide by the Consortium.
             </p>
         </div>
 
@@ -132,7 +165,7 @@
         <div class="card-raised credit-card">
             <span class="credit-eyebrow">Prior art</span>
             <h3 class="credit-title">Open-Source Foundations</h3>
-            <p class="credit-body">Environmental Science Associates, Sitka Technology Group (the open-source Qanat platform)</p>
+            <p class="credit-body">Environmental Science Associates (formerly Sitka Technology Group) &mdash; the open-source Qanat platform</p>
             <p class="credit-note">Community-licensed (AGPL) codebases studied as prior art. OpenH2O's design most closely parallels the current Qanat platform; its methodology was independently reimplemented in a different language and stack, with none of their source code copied.</p>
         </div>
 
@@ -141,7 +174,6 @@
             <h3 class="credit-title">Data Infrastructure</h3>
             <p class="credit-body">OpenET (NASA, USGS, Desert Research Institute, Environmental Defense Fund), California Data Exchange Center (CDEC), USGS National Water Information System</p>
             <p class="credit-note">Public data services that put satellite and sensor measurements within reach of any agency.</p>
-            <a href="https://github.com/Open-H2O/satellite-et-research" target="_blank" rel="noopener noreferrer" class="text-sm" style="color: var(--color-accent);">Read the research: the accuracy &amp; policy case for satellite ET &rarr;</a>
         </div>
 
         <div class="card-raised credit-card">

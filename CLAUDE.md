@@ -107,6 +107,37 @@ Design tokens live in `static/css/tokens.css`:
 
 Tailwind config extends the default theme with these tokens. CSS is compiled by the Tailwind standalone binary during Docker build (no Node.js required).
 
+### Before ANY visual change (BLOCKING)
+
+This site has a written design system and a named component vocabulary. Follow
+it — do not eyeball a new look.
+
+1. **Read `DESIGN.md` first**, then find the existing component before writing CSS.
+   The house "concept" components live in `static/css/app.css` and are catalogued
+   in `DESIGN.md` → *House "concept" components*: `.callout-rule` (gold left-rule
+   for "the rule" of a page), `.accent-card`, `.budget-panel`, `.concept-panel`,
+   `.result-card`, `.step-card`, `.card-raised`/`.card-inset`. The same idea must
+   always look the same — reuse the component, don't reinvent it.
+2. **Emphasize prose with the site's own panel, never a bespoke accent box.**
+   Body and intro text is plain left-aligned prose at a 65–75ch measure (see
+   `.about-purpose`, Help page bodies). To lift a passage, wrap it in a plain
+   `.card-raised` — the same panel the credit cards and Help "short version"
+   blocks use — with **no colored left-stripe**. A colored stripe or filled
+   accent box around a lone paragraph is the generic-AI-callout look; that is
+   exactly what to avoid.
+3. **Accent discipline (authority: `static/css/tokens.css`).** Teal
+   (`--color-accent`, `#46B3C4`) is the PRIMARY accent and OpenH2O's identity —
+   logo, title, links, active states, everyday emphasis. Gold (`--color-gold`,
+   `#E0A446`) is for primary CTAs ONLY, used sparingly ("gold acts"); do NOT use
+   it as general emphasis. Pacific Blue (`--color-blue`, `#1B7FAF`) is parcels
+   and links to water data. `.callout-rule` hardcodes a legacy pre-Deep-Water
+   gold — treat it as legacy, not the pattern to copy.
+4. **Casing:** section headers, eyebrows, and labels are sentence case (the two
+   exceptions are data-table column headers and map/legend labels).
+5. **Preview on staging and screenshot before calling it done** — Tailscale-only
+   at `http://butler.tail7ae369.ts.net:8081`. Compare against the surrounding
+   page, not in isolation.
+
 ## Testing
 
 The suite uses pytest + pytest-django + factory_boy and lives in `tests/`.

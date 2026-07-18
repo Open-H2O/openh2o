@@ -16,11 +16,30 @@ as a tonal stack rather than near-black. Values from `static/css/tokens.css`:
 - Hover: oklch(0.24 0.012 260) — ~#2c333d (hover states)
 
 ### Accent
-- California Gold: #E4A317 (primary accent, CTAs, active states)
-- Gold Hover: #D4952A
-- Gold Muted: rgba(228, 163, 23, 0.08) (subtle gold backgrounds)
-- Pacific Blue: #2E6B96 (secondary accent, links, map elements)
-- Blue Bright: #5A95BC (hover state for blue elements)
+
+OpenH2O is on the Vadose **Deep Water** colorway. Three accents, each with a
+distinct job — authoritative values live in `static/css/tokens.css`:
+
+- **Water Teal — the PRIMARY accent.** `--color-accent: #46B3C4` (hover
+  `#5FC2D2`, muted `rgba(70,179,196,0.10)`, soft `rgba(70,179,196,0.18)`). This
+  is the family's free/public-benefit line color and OpenH2O's identity: logo,
+  page title, links, active states, and the everyday emphasis accent. When in
+  doubt, the accent is teal.
+- **California Gold — CTAs ONLY, used sparingly.** `--color-gold: #E0A446`
+  (hover `#EAB25E`, muted `rgba(224,164,70,0.10)`). Reserved for "gold acts" —
+  primary call-to-action buttons and the single figure a page produces
+  (`.result-card`). Do **not** use gold as a general-purpose emphasis or callout
+  color; that is the mistake that makes a page look off-brand. (Note: some older
+  components such as `.callout-rule` still hardcode the pre-Deep-Water gold
+  `#E4A317` — treat that as legacy, not as the pattern to copy.)
+- **Pacific Blue — data affordances.** `--color-blue: #1B7FAF` (bright
+  `#3DB4E0`). Parcels, map elements, and links that point out to water data.
+
+**Emphasizing prose:** do not reach for a color at all. Body and intro text is
+plain left-aligned prose; when a passage needs lifting, wrap it in the same
+`.card-raised` panel the credit cards and Help "short version" blocks use — no
+colored left-stripe. A colored stripe or filled accent box around a lone
+paragraph reads as a generic AI callout, not this design system.
 
 ### Text
 - Primary: #e8edf4 (body text, headings)
