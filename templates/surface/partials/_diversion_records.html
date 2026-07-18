@@ -1,4 +1,7 @@
 <h2 class="section-header mb-md">Diversion Records</h2>
+{% if period_warning %}
+<p class="text-sm mb-md text-deficit" role="alert">{{ period_warning }}</p>
+{% endif %}
 {% if diversion_records %}
 <table class="data-table text-sm">
   <thead>

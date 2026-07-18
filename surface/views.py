@@ -188,6 +188,7 @@ def diversion_record_create(request, pk):
     """HTMX POST endpoint: create a DiversionRecord for a POD."""
     pod = get_object_or_404(PointOfDiversion, pk=pk)
     form = DiversionRecordForm(request.POST)
+    period_warning = None
 
     if form.is_valid():
         record = form.save(commit=False)
@@ -201,6 +202,14 @@ def diversion_record_create(request, pk):
         ).first()
         record.reporting_period = period
         record.save()
+        if period is None:
+            # The record saved, but with no reporting period it is invisible to
+            # every period-scoped filing — say so now, not at filing time.
+            period_warning = (
+                f"Saved, but no reporting period covers {month:%B %Y} — this record "
+                "will not appear in any CalWATRS filing until a period covering that "
+                "month exists (it will attach automatically on re-save)."
+            )
         # Saved cleanly — hand back a blank form for the next entry.
         form = DiversionRecordForm()
 
@@ -218,6 +227,7 @@ def diversion_record_create(request, pk):
         "pod": pod,
         "diversion_records": diversion_records,
         "form": form,
+        "period_warning": period_warning,
     })
 
 

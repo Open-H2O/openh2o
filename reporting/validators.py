@@ -244,6 +244,43 @@ def validate_report(reporting_period, report_type):
                 ),
             })
 
+        # A record saved while no reporting period covered its month carries
+        # reporting_period=None and is invisible to every period-scoped filing —
+        # it exists on the POD page but would silently never reach CalWATRS.
+        orphans_in_range = DiversionRecord.objects.filter(
+            reporting_period__isnull=True,
+            diversion_type=diversion_type,
+            month__gte=reporting_period.start_date,
+            month__lte=reporting_period.end_date,
+        ).count()
+        if orphans_in_range > 0:
+            warnings.append({
+                "level": "error",
+                "message": (
+                    f"{orphans_in_range} diversion record(s) dated inside this period are "
+                    "attached to NO reporting period — they would be silently missing from "
+                    "this CalWATRS filing. Re-save them (or edit and save) so they attach "
+                    "to the period."
+                ),
+            })
+
+        orphans_elsewhere = DiversionRecord.objects.filter(
+            reporting_period__isnull=True,
+            diversion_type=diversion_type,
+        ).exclude(
+            month__gte=reporting_period.start_date,
+            month__lte=reporting_period.end_date,
+        ).count()
+        if orphans_elsewhere > 0:
+            warnings.append({
+                "level": "warning",
+                "message": (
+                    f"{orphans_elsewhere} diversion record(s) outside this period belong to "
+                    "NO reporting period at all — they will never appear in any filing "
+                    "until a period covering their month exists."
+                ),
+            })
+
         dupes = (
             DiversionRecord.objects.filter(
                 reporting_period=reporting_period,
