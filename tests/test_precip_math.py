@@ -6,9 +6,12 @@ This file is DELIBERATELY Django-free. accounting/precip_math.py imports only
 Python on a Mac that has neither Django nor Docker (all DB tests run in the web container).
 It is also collected normally by pytest in the ``web`` container.
 
-The expected values are the published anchor vectors from 38-03-PLAN.md's
-reference table (USDA-SCS / TR-21, soil-storage D = 3.0 in), recomputed here as
-the spec the implementation must satisfy — not the implementation's own output.
+The expected values are recomputed from the published USDA-SCS / TR-21 (FAO-25)
+mm-form relationship at soil-storage D = 3.0 in — the spec the implementation
+must satisfy, not the implementation's own output. (2026-07-18: the previous
+anchors, inherited from 38-03-PLAN.md's table, were the mm-form evaluated on
+raw INCH magnitudes — a unit mix that denied ~all credit below 2.81 in/month
+of rain. The correct zero-credit threshold is ~0.111 in.)
 
 Run locally (no pytest needed):  python3 tests/test_precip_math.py
 """
@@ -38,21 +41,37 @@ def _close(got, expected, tol=TOL):
 
 
 def test_usda_scs_core_formula_no_cap():
-    # P=4.0 in, ET=6.0 in -> Pe ~= 1.001 in (core TR-21, neither cap binds)
+    # P=4.0 in (101.6 mm), ET=6.0 in (152.4 mm) -> Pe ~= 2.940 in (74.68 mm);
+    # neither cap binds.
     got = effective_precip_inches(Decimal("4.0"), Decimal("6.0"), method="usda_scs")
-    assert _close(got, "1.001"), f"expected ~1.001, got {got}"
+    assert _close(got, "2.940"), f"expected ~2.940, got {got}"
+
+
+def test_usda_scs_moderate_rain_month():
+    # P=2.0 in (50.8 mm), ET=6.0 in -> Pe ~= 1.591 in. This case returned 0 under
+    # the pre-2026-07-18 unit mix; it pins the regression.
+    got = effective_precip_inches(Decimal("2.0"), Decimal("6.0"), method="usda_scs")
+    assert _close(got, "1.591"), f"expected ~1.591, got {got}"
 
 
 def test_usda_scs_et_cap_binds():
-    # P=10.0, ET=2.0 -> raw formula ~= 5.43 but min(Pe, P, ET) caps at ET = 2.000
+    # P=10.0, ET=2.0 -> raw formula ~= 5.149 but min(Pe, P, ET) caps at ET = 2.000
     got = effective_precip_inches(Decimal("10.0"), Decimal("2.0"), method="usda_scs")
     assert _close(got, "2.000"), f"expected 2.000 (ET cap), got {got}"
 
 
 def test_usda_scs_zero_floor():
-    # P=1.0, ET=6.0 -> 1.25*1 - 2.93 = -1.68 < 0 -> max(0, ...) = 0.000
-    got = effective_precip_inches(Decimal("1.0"), Decimal("6.0"), method="usda_scs")
+    # P=0.05 in (1.27 mm), ET=6.0 -> 1.25*1.27**0.824 - 2.93 < 0 -> floor 0.000.
+    # (The mm-form's zero-credit threshold is 2.81 mm ~= 0.111 in of monthly rain.)
+    got = effective_precip_inches(Decimal("0.05"), Decimal("6.0"), method="usda_scs")
     assert _close(got, "0.000"), f"expected 0.000 (floor), got {got}"
+
+
+def test_usda_scs_light_rain_still_credits():
+    # P=1.0 in (25.4 mm), ET=6.0 -> Pe ~= 0.828 in. Under the pre-fix unit mix a
+    # 1-inch rain month was floored to zero; it must credit.
+    got = effective_precip_inches(Decimal("1.0"), Decimal("6.0"), method="usda_scs")
+    assert _close(got, "0.828"), f"expected ~0.828, got {got}"
 
 
 def test_usda_scs_never_exceeds_rainfall_or_et():
@@ -108,7 +127,7 @@ def test_usda_scs_stable_at_ledger_resolution():
     assert len(set(runs)) == 1, f"non-deterministic TR-21 output: {set(runs)}"
     q = Decimal(runs[0]).quantize(ledger)
     assert q == Decimal(runs[0]).quantize(ledger)  # quantization is stable
-    assert _close(q, "1.001"), f"drifted from published anchor ~1.001: {q}"
+    assert _close(q, "2.9403"), f"drifted from published anchor ~2.9403: {q}"
     assert Decimal("0") < q <= Decimal("4.0")  # within (0, P], cap holds
 
 

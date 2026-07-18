@@ -18,13 +18,18 @@ Three methods (see 38-DESIGN.md Step 3):
   - fraction : Pe = fraction * P     (flat haircut; default fraction 0.70)
   - usda_scs : USDA-SCS / TR-21, capped at both P and ET   (default)
 
-USDA-SCS / TR-21 (P and ET in INCHES, monthly):
-    Pe = SF * (1.25 * P**0.824 - 2.93) * 10**(0.000955 * ET)
-    SF = 0.531747 + 0.295164*D - 0.057697*D**2 + 0.003804*D**3   (D = soil_storage_in)
+USDA-SCS / TR-21 (core coefficients are calibrated for MILLIMETER magnitudes;
+this module's public API is inches, so the core converts in/out at 25.4 mm/in):
+    Pe_mm = SF * (1.25 * P_mm**0.824 - 2.93) * 10**(0.000955 * ET_mm)
+    SF = 0.531747 + 0.295164*D - 0.057697*D**2 + 0.003804*D**3   (D = soil_storage_in, INCHES —
+         SF is dimensionless; these are the inch-form SF coefficients, SF(3.0 in) = 1.000674,
+         equivalent to the mm-form SF at D = 76.2 mm)
     Pe = max(0, min(Pe, P, ET))                                  (cap at P and ET, floor at 0)
 
-Reference: USDA-SCS TR-21 / FAO Irrigation & Drainage Paper 25; soil storage
-factor SF(3.0 in) = 1.000674.
+Reference: USDA-SCS TR-21 / FAO Irrigation & Drainage Paper 25 (mm form). The
+equivalent published inch form is SF*(0.70917*P**0.82416 - 0.11556)*10**(0.02426*ET)
+(0.000955*25.4 = 0.02426) — same relationship, different unit calibration; the
+core below evaluates in mm so the constants match the cited FAO-25 text verbatim.
 """
 
 import math
@@ -71,8 +76,12 @@ def effective_precip_inches(
         return _dec(fraction) * p
     if method == "usda_scs":
         sf = _storage_factor(soil_storage_in)
-        pf = float(p)
-        etf = float(et)
+        # The TR-21 coefficients below (1.25 / 2.93 / 0.000955) are calibrated
+        # for MILLIMETER magnitudes; the public API is inches, so the core
+        # evaluates in mm and converts the result back.
+        mm_per_in = 25.4
+        pf = float(p) * mm_per_in
+        etf = float(et) * mm_per_in
         # TR-21's P**0.824 term is only defined for non-negative rainfall.
         p_pow = math.pow(pf, 0.824) if pf > 0 else 0.0
         # ISS-032: the TR-21 core is evaluated in binary float (math.pow needs a
@@ -82,7 +91,7 @@ def effective_precip_inches(
         # immediately below, so the float core can never move a billed figure at
         # ledger precision. The cap + sub-resolution error is the bound that makes
         # the float route safe; locked by test_usda_scs_stable_at_ledger_resolution.
-        pe = sf * (1.25 * p_pow - 2.93) * math.pow(10, 0.000955 * etf)
+        pe = sf * (1.25 * p_pow - 2.93) * math.pow(10, 0.000955 * etf) / mm_per_in
         pe_d = _dec(pe)
         # Cap at both rainfall and ET, then floor at zero.
         capped = min(pe_d, p, et)
