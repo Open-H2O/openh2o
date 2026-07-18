@@ -5,8 +5,9 @@ Each ``check_*`` function returns a category/status/message/details dict (green,
 yellow, or red) covering database connectivity, disk usage, data-sync freshness,
 ledger integrity, unassigned parcels, duplicated OpenET cache coverage,
 point-of-diversion fraction splits, unallocated surface deliveries,
-reporting-period month alignment, SSL certificate expiry, the expected database,
-and pending migrations; ``run_all_checks`` runs them all in order.
+reporting-period month alignment, satellite-ET-versus-meter agreement, SSL
+certificate expiry, the expected database, and pending migrations;
+``run_all_checks`` runs them all in order.
 """
 import shutil
 import ssl
@@ -20,6 +21,18 @@ from django.db import connection
 from django.db.models import Count, Sum
 from django.core.management import call_command
 from django.utils import timezone
+
+
+# Irrigation-efficiency bands for check_et_meter_agreement (math eval item 9).
+# These come from published irrigation efficiency ranges — roughly 0.70-0.95 for
+# drip/micro and 0.55-0.75 for flood/furrow — NOT from our own data, which cannot
+# validate them (see that function's docstring on demo circularity).
+ET_METER_GREEN_LOW = Decimal("0.60")
+ET_METER_GREEN_HIGH = Decimal("1.00")
+ET_METER_RED_LOW = Decimal("0.45")
+ET_METER_RED_HIGH = Decimal("1.15")
+# Below this many comparable parcel-periods the aggregate is anecdote, not signal.
+ET_METER_MIN_SAMPLE = 3
 
 
 def check_database():
@@ -573,6 +586,198 @@ def check_period_month_alignment():
     }
 
 
+def check_et_meter_agreement():
+    """Cross-check satellite ET against physical meters — the one test closure cannot do.
+
+    Item 9 (math eval 2026-07-18). Every ET number in this system comes from one
+    place: OpenET actual ET (``variable="ET"``, ``model="Ensemble"``), read by
+    accounting.steps.et_gross. The mass-balance closure metric CANNOT validate
+    that magnitude, because the residual method defines groundwater extraction as
+    whatever makes the identity balance — inflate ET and both sides inflate
+    together. Measured 2026-06-05: doubling gross ET moved closure by 0.07%.
+
+    A meter is the only instrument in the database that is independent of OpenET.
+    It measures water that physically moved through a pipe and has no opinion
+    about satellites. So on parcels the district actually meters we can ask a
+    question closure cannot: does the crop demand we derived from space agree
+    with the water somebody pumped?
+
+    THE RATIO IS IRRIGATION EFFICIENCY. Net consumptive use (gross ET minus
+    effective precipitation) divided by applied water (metered groundwater plus
+    delivered surface water) is the fraction of applied water the crop actually
+    consumed; the rest goes to deep percolation, runoff and evaporation. Published
+    ranges run roughly 0.70-0.95 for drip and micro-sprinkler and 0.55-0.75 for
+    flood and furrow, so the bands below come from agronomy, NOT from our data.
+    Above 1.0 the crop consumed more than was supplied, which needs soil-moisture
+    carryover or a measurement error to explain.
+
+    Sensitivity is the whole point: a parcel sitting at 0.93 today lands at 1.86
+    if ET doubles. That is deep in the red band and impossible to miss.
+
+    WARNING — THE DEMO CANNOT VALIDATE THIS CHECK. seed_merced_ledgers writes each
+    meter reading as the parcel's own ET-derived need times a ratio drawn from
+    [1.05, 1.18], so demo ratios land on the inverse of that band (0.861-0.952,
+    aggregate 0.9288) no matter how wrong ET is. That is circular by construction:
+    on demo data this measures the seeder. It only becomes a real test against a
+    district's own meters. Do not "tune" the bands to make demo numbers prettier.
+
+    Status comes from the AGGREGATE ratio, because a systematic ET error is what
+    this exists to catch and that is what moves the aggregate. Individual parcels
+    outside the band are listed as a data-quality signal and can raise a green
+    aggregate to yellow, but one odd parcel does not turn the system red.
+
+    This is a plausibility rail, never a correction factor: nothing here feeds
+    back into CalculationRun or any filed number.
+    """
+    from accounting.models import CalculationRun, ReportingPeriod
+    from accounting.services import runs_in_period
+    from parcels.models import ParcelLedger
+
+    periods = []
+    total_cu = Decimal("0")
+    total_applied = Decimal("0")
+    out_of_band = []
+    comparable_parcels = 0
+
+    for period in ReportingPeriod.objects.all().order_by("start_date"):
+        runs = runs_in_period(
+            CalculationRun.objects.filter(residual_disposition="metered"), period
+        )
+        months = set(runs.values_list("period", flat=True))
+        parcel_ids = set(runs.values_list("parcel_id", flat=True))
+        if not parcel_ids:
+            continue
+
+        # Meter rows are matched by the MONTH their effective_date falls in, the
+        # same normalization accounting.services.billable_ledger uses; the runs
+        # themselves are selected by runs_in_period so period membership has
+        # exactly one definition (item 6).
+        metered = {}
+        for pid, eff, amt in ParcelLedger.objects.filter(
+            source_type="meter_reading", parcel_id__in=parcel_ids
+        ).values_list("parcel_id", "effective_date", "amount_acre_feet"):
+            if eff.strftime("%Y-%m") in months:
+                metered[pid] = metered.get(pid, Decimal("0")) + abs(amt)
+
+        cu_by_parcel = {}
+        surface_by_parcel = {}
+        for run in runs:
+            cu_by_parcel[run.parcel_id] = cu_by_parcel.get(
+                run.parcel_id, Decimal("0")
+            ) + (run.net_consumptive_use_af or Decimal("0"))
+            surface_by_parcel[run.parcel_id] = surface_by_parcel.get(
+                run.parcel_id, Decimal("0")
+            ) + (run.surface_water_af or Decimal("0"))
+
+        period_cu = Decimal("0")
+        period_applied = Decimal("0")
+        for pid in parcel_ids:
+            cu = cu_by_parcel.get(pid, Decimal("0"))
+            applied = metered.get(pid, Decimal("0")) + surface_by_parcel.get(
+                pid, Decimal("0")
+            )
+            if applied <= 0 or cu <= 0:
+                continue
+            comparable_parcels += 1
+            period_cu += cu
+            period_applied += applied
+            ratio = cu / applied
+            if not (ET_METER_GREEN_LOW <= ratio <= ET_METER_GREEN_HIGH):
+                out_of_band.append(
+                    {
+                        "parcel_id": pid,
+                        "period": period.name,
+                        "ratio": str(ratio.quantize(Decimal("0.001"))),
+                        "consumptive_use_af": str(cu),
+                        "applied_water_af": str(applied),
+                    }
+                )
+
+        if period_applied > 0:
+            periods.append(
+                {
+                    "period": period.name,
+                    "ratio": str((period_cu / period_applied).quantize(Decimal("0.001"))),
+                    "consumptive_use_af": str(period_cu),
+                    "applied_water_af": str(period_applied),
+                }
+            )
+            total_cu += period_cu
+            total_applied += period_applied
+
+    out_of_band.sort(key=lambda row: abs(Decimal(row["ratio"]) - Decimal("1")), reverse=True)
+    details = {
+        "comparable_parcel_periods": comparable_parcels,
+        "by_period": periods,
+        "out_of_band": out_of_band[:20],
+        "expected_range": f"{ET_METER_GREEN_LOW}-{ET_METER_GREEN_HIGH}",
+        "sufficient_sample": comparable_parcels >= ET_METER_MIN_SAMPLE,
+    }
+
+    if total_applied <= 0:
+        # No meters is not a fault. A district with no metered parcels simply
+        # cannot run this test, and saying so plainly beats a false all-clear.
+        return {
+            "category": "et_meter_agreement",
+            "status": "green",
+            "message": (
+                "No metered parcels with applied water — satellite ET has nothing "
+                "independent to check against here"
+            ),
+            "details": details,
+        }
+
+    aggregate = total_cu / total_applied
+    details["aggregate_ratio"] = str(aggregate.quantize(Decimal("0.0001")))
+    details["total_consumptive_use_af"] = str(total_cu)
+    details["total_applied_water_af"] = str(total_applied)
+
+    pct = (aggregate * 100).quantize(Decimal("0.1"))
+    band = (
+        f"expected {int(ET_METER_GREEN_LOW * 100)}-{int(ET_METER_GREEN_HIGH * 100)}% "
+        f"for irrigated agriculture"
+    )
+
+    if comparable_parcels < ET_METER_MIN_SAMPLE:
+        status = "green"
+        msg = (
+            f"Satellite ET is {pct}% of measured supply ({band}), but only "
+            f"{comparable_parcels} metered parcel-period(s) — too small to judge"
+        )
+    elif aggregate < ET_METER_RED_LOW or aggregate > ET_METER_RED_HIGH:
+        status = "red"
+        msg = (
+            f"Satellite ET is {pct}% of measured supply — outside anything "
+            f"irrigation efficiency explains ({band}); check ET magnitude and "
+            f"meter readings before filing"
+        )
+    elif aggregate < ET_METER_GREEN_LOW or aggregate > ET_METER_GREEN_HIGH:
+        status = "yellow"
+        msg = (
+            f"Satellite ET is {pct}% of measured supply, outside the usual "
+            f"{band}"
+        )
+    elif out_of_band:
+        status = "yellow"
+        msg = (
+            f"Satellite ET is {pct}% of measured supply overall ({band}), but "
+            f"{len(out_of_band)} parcel-period(s) fall outside that range"
+        )
+    else:
+        status = "green"
+        msg = (
+            f"Satellite ET is {pct}% of measured supply across "
+            f"{comparable_parcels} metered parcel-period(s) ({band})"
+        )
+
+    return {
+        "category": "et_meter_agreement",
+        "status": status,
+        "message": msg,
+        "details": details,
+    }
+
+
 def run_all_checks():
     return [
         check_database(),
@@ -584,6 +789,7 @@ def run_all_checks():
         check_pod_fractions(),
         check_unallocated_delivery(),
         check_period_month_alignment(),
+        check_et_meter_agreement(),
         check_ssl(),
         check_docker(),
         check_migrations(),

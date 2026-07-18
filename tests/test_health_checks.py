@@ -267,6 +267,7 @@ EXPECTED_CATEGORIES = {
     "pod_fractions",
     "unallocated_delivery",
     "period_alignment",
+    "et_meter_agreement",
     "ssl",
     "docker",
     "migrations",
