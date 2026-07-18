@@ -4,9 +4,9 @@
 Each ``check_*`` function returns a category/status/message/details dict (green,
 yellow, or red) covering database connectivity, disk usage, data-sync freshness,
 ledger integrity, unassigned parcels, duplicated OpenET cache coverage,
-point-of-diversion fraction splits, unallocated surface deliveries, SSL
-certificate expiry, the expected database, and pending migrations;
-``run_all_checks`` runs them all in order.
+point-of-diversion fraction splits, unallocated surface deliveries,
+reporting-period month alignment, SSL certificate expiry, the expected database,
+and pending migrations; ``run_all_checks`` runs them all in order.
 """
 import shutil
 import ssl
@@ -520,6 +520,59 @@ def check_unallocated_delivery():
     }
 
 
+def check_period_month_alignment():
+    """Flag reporting periods whose boundaries fall mid-month.
+
+    P1-5 (math eval 2026-07-18, item 6). The calculation engine produces one run
+    per WHOLE month, so a period that starts or ends mid-month cannot be honoured
+    exactly: the partial months at each end are counted in full. That is the
+    honest behaviour — pro-rating would invent daily resolution the data does not
+    have — but it must not be invisible, because the filed total then covers more
+    days than the period claims.
+
+    Yellow, not red: the numbers are correct for the months included, and most
+    districts run month-aligned periods where this never arises.
+    """
+    import calendar
+
+    from accounting.models import ReportingPeriod
+
+    offenders = []
+    for period in ReportingPeriod.objects.all():
+        start_ok = period.start_date.day == 1
+        last_day = calendar.monthrange(period.end_date.year, period.end_date.month)[1]
+        end_ok = period.end_date.day == last_day
+        if not (start_ok and end_ok):
+            offenders.append(
+                {
+                    "period": period.name,
+                    "start_date": str(period.start_date),
+                    "end_date": str(period.end_date),
+                    "is_finalized": period.is_finalized,
+                }
+            )
+
+    details = {"periods_checked": ReportingPeriod.objects.count(), "offenders": offenders}
+
+    if offenders:
+        status = "yellow"
+        msg = (
+            f"{len(offenders)} reporting period(s) start or end mid-month; monthly "
+            f"calculation runs are counted whole, so those periods include more "
+            f"days than they state"
+        )
+    else:
+        status = "green"
+        msg = "All reporting periods are month-aligned"
+
+    return {
+        "category": "period_alignment",
+        "status": status,
+        "message": msg,
+        "details": details,
+    }
+
+
 def run_all_checks():
     return [
         check_database(),
@@ -530,6 +583,7 @@ def run_all_checks():
         check_cache_duplication(),
         check_pod_fractions(),
         check_unallocated_delivery(),
+        check_period_month_alignment(),
         check_ssl(),
         check_docker(),
         check_migrations(),

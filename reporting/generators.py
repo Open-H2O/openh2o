@@ -21,7 +21,7 @@ from django.db.models import Sum
 
 from accounting.allocation_math import apportion_shared_supply
 from accounting.models import CalculationRun
-from accounting.services import billable_ledger
+from accounting.services import billable_ledger, runs_in_period
 from core.csv_safe import safe_row
 from core.models import SiteConfig
 from parcels.models import Parcel, ParcelLedger
@@ -93,16 +93,15 @@ def _period_demand_by_parcel(reporting_period):
     0. ``reporting_period is None`` returns an empty map, so every parcel reads as
     demand 0 — that is what makes a no-period call reproduce today's static split.
 
-    CalculationRun.period is a "YYYY-MM" string; matching ``parcel_net_consumptive_use``
-    in accounting.services, we select the parcel-months by a lexical string range
-    from the period's start month to its end month.
+    Period selection goes through ``accounting.services.runs_in_period`` — the
+    one canonical selector (math eval item 6) — so the filed number and the
+    on-screen balance can never disagree about which months belong to a period.
+    See that function for the whole-month membership rule.
     """
     if reporting_period is None:
         return {}
-    start = f"{reporting_period.start_date.year}-{reporting_period.start_date.month:02d}"
-    end = f"{reporting_period.end_date.year}-{reporting_period.end_date.month:02d}"
     rows = (
-        CalculationRun.objects.filter(period__gte=start, period__lte=end)
+        runs_in_period(CalculationRun.objects.all(), reporting_period)
         .values("parcel_id")
         .annotate(demand=Sum("net_consumptive_use_af"))
     )

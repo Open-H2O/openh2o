@@ -266,6 +266,7 @@ EXPECTED_CATEGORIES = {
     "cache_duplication",
     "pod_fractions",
     "unallocated_delivery",
+    "period_alignment",
     "ssl",
     "docker",
     "migrations",

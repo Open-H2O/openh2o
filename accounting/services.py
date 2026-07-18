@@ -614,20 +614,47 @@ def _incidental_recharge_af(breakdown):
     return Decimal("0")
 
 
-def _calculation_runs_for_period(parcel, reporting_period):
-    """CalculationRun rows for a parcel within a reporting period.
+def runs_in_period(queryset, reporting_period):
+    """Narrow a ``CalculationRun`` queryset to one reporting period, by DATE.
 
-    CalculationRun.period is a "YYYY-MM" string; ReportingPeriod spans dates.
-    "YYYY-MM" sorts lexically, so a string range from the period's start month
-    to its end month selects the right parcel-months. ``reporting_period=None``
-    returns every run for the parcel.
+    THE single way to ask "which runs belong to this period" (math eval item 6).
+    Before this, the codebase asked three different ways — a reporting_period FK
+    on ledger rows, real date comparisons, and a LEXICAL string range over the
+    ``"YYYY-MM"`` text column — and the string form is the one that could not
+    express a period boundary falling mid-month.
+
+    MEMBERSHIP RULE, stated plainly because it is a real limitation and not an
+    accident: a CalculationRun covers a WHOLE month, so a month is included when
+    it OVERLAPS the period at all. A period running 15 Mar – 15 Sep therefore
+    pulls all of March and all of September, not half of each. Monthly runs
+    cannot be split without pro-rating, and pro-rating would invent daily
+    resolution the data does not have.
+
+    This reproduces exactly the set the old lexical range selected — deliberately,
+    so filed numbers do not shift underneath anyone — but it is now expressed in
+    dates, and the truncation it implies is surfaced rather than hidden: see
+    ``ReportingPeriod``'s mid-month check in ``health.checks``.
+
+    ``reporting_period=None`` is a no-op (every run in the queryset).
     """
-    runs = CalculationRun.objects.filter(parcel=parcel)
-    if reporting_period is not None:
-        start = f"{reporting_period.start_date.year}-{reporting_period.start_date.month:02d}"
-        end = f"{reporting_period.end_date.year}-{reporting_period.end_date.month:02d}"
-        runs = runs.filter(period__gte=start, period__lte=end)
-    return runs
+    if reporting_period is None:
+        return queryset
+    first_month = reporting_period.start_date.replace(day=1)
+    return queryset.filter(
+        period_start__gte=first_month,
+        period_start__lte=reporting_period.end_date,
+    )
+
+
+def _calculation_runs_for_period(parcel, reporting_period):
+    """CalculationRun rows for one parcel within a reporting period.
+
+    Thin per-parcel wrapper over ``runs_in_period``; see it for the membership
+    rule. ``reporting_period=None`` returns every run for the parcel.
+    """
+    return runs_in_period(
+        CalculationRun.objects.filter(parcel=parcel), reporting_period
+    )
 
 
 def parcel_net_consumptive_use(parcel, reporting_period=None):

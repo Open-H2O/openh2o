@@ -417,6 +417,18 @@ class CalculationRun(models.Model):
 
     parcel = models.ForeignKey("parcels.Parcel", on_delete=models.CASCADE)
     period = models.CharField(max_length=7, help_text="Month, as YYYY-MM.")
+    # P1-5 (math eval 2026-07-18 item 6): the real date behind the "YYYY-MM"
+    # string, so period selection is DATE membership instead of a lexical string
+    # range. `period` stays the stable display/URL key (the audit drill-down is
+    # keyed on (parcel_id, period)); this is the queryable form. Derived in
+    # save() — never set it by hand.
+    period_start = models.DateField(
+        null=True,
+        blank=True,
+        editable=False,
+        db_index=True,
+        help_text="First day of `period`'s month. Derived; do not set directly.",
+    )
     gross_et_af = models.DecimalField(
         max_digits=12,
         decimal_places=4,
@@ -512,6 +524,29 @@ class CalculationRun(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    @staticmethod
+    def period_to_date(period):
+        """"YYYY-MM" → the first day of that month, or None if unparseable."""
+        import datetime as dt
+
+        try:
+            year, month = str(period).split("-")
+            return dt.date(int(year), int(month), 1)
+        except (ValueError, AttributeError):
+            return None
+
+    def save(self, *args, **kwargs):
+        # Keep period_start in lockstep with period. Derived here rather than
+        # left to callers so no write path can produce a run that the date-based
+        # period queries cannot see (a silently invisible parcel-month).
+        self.period_start = self.period_to_date(self.period)
+        if "update_fields" in kwargs and kwargs["update_fields"] is not None:
+            fields = set(kwargs["update_fields"])
+            if "period" in fields:
+                fields.add("period_start")
+                kwargs["update_fields"] = fields
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.parcel} {self.period} → {self.final_af} AF"
