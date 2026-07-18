@@ -79,8 +79,42 @@ class ParcelLedger(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Sign is semantic, not cosmetic: the ledger nets to a balance, so a
+    # sign-flipped row does not look wrong — it quietly moves the balance by
+    # twice its magnitude. These three sets are what the constraint below
+    # enforces (math eval 2026-07-18, F-data-04).
+    #
+    # SUPPLY rows credit water and must be > 0.
+    POSITIVE_SOURCE_TYPES = ("allocation", "recharge")
+    # USAGE rows debit water and must be <= 0. Zero is legitimate and common: a
+    # meter that did not advance, or a month with no measured diversion.
+    NON_POSITIVE_SOURCE_TYPES = (
+        "meter_reading",
+        "et_estimate",
+        "surface_diversion",
+        "calculated",
+    )
+    # Everything else (manual_entry, csv_import, adjustment) is deliberately
+    # unconstrained — an operator correction has to be able to go either way.
+
     class Meta:
         ordering = ["-effective_date", "-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    ~models.Q(source_type__in=POSITIVE_SOURCE_TYPES)
+                    | models.Q(amount_acre_feet__gt=0)
+                ),
+                name="parcelledger_supply_rows_positive",
+            ),
+            models.CheckConstraint(
+                check=(
+                    ~models.Q(source_type__in=NON_POSITIVE_SOURCE_TYPES)
+                    | models.Q(amount_acre_feet__lte=0)
+                ),
+                name="parcelledger_usage_rows_non_positive",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.parcel} {self.amount_acre_feet:+} AF {self.effective_date}"

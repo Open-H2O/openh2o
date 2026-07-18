@@ -3,17 +3,20 @@
 
 Each ``check_*`` function returns a category/status/message/details dict (green,
 yellow, or red) covering database connectivity, disk usage, data-sync freshness,
-ledger integrity, unassigned parcels, SSL certificate expiry, the expected
+ledger integrity, unassigned parcels, duplicated OpenET cache coverage,
+point-of-diversion fraction splits, SSL certificate expiry, the expected
 database, and pending migrations; ``run_all_checks`` runs them all in order.
 """
 import shutil
 import ssl
 import socket
+from decimal import Decimal
 from io import StringIO
 from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.db import connection
+from django.db.models import Count, Sum
 from django.core.management import call_command
 from django.utils import timezone
 
@@ -341,6 +344,130 @@ def check_migrations():
         }
 
 
+def check_cache_duplication():
+    """Catch OpenETCache rows that cover the same parcel-month more than once.
+
+    F-math-08 (math eval 2026-07-18). Two cache rows spanning one parcel-month
+    hold the SAME measurement fetched twice, so the engine reads the newer and
+    ignores the older — but duplicates still mean a writer bypassed the upsert,
+    and before that fix they were summed into a doubled gross ET. This is the
+    check that would have caught the doubling, because the closure metric never
+    will: the residual method absorbs multiplicative ET error almost invisibly
+    (doubling ET moved closure by 0.07%).
+
+    The uniqueness constraint blocks identical windows; this also catches the
+    case the constraint cannot see — DIFFERENT spans that overlap (a January-June
+    window plus a March-only window both covering March).
+    """
+    from datasync.models import OpenETCache
+
+    exact_duplicates = (
+        OpenETCache.objects.exclude(model_name=OpenETCache.PENDING_MARKER)
+        .values("parcel_id", "start_date", "end_date", "variable", "model_name")
+        .annotate(n=Count("id"))
+        .filter(n__gt=1)
+        .count()
+    )
+
+    # Overlapping-but-not-identical spans, per parcel/variable/model. Small
+    # table (one row per parcel-window), so the self-join is cheap.
+    with connection.cursor() as cur:
+        cur.execute(
+            """
+            SELECT count(*) FROM datasync_openetcache a
+            JOIN datasync_openetcache b
+              ON a.parcel_id = b.parcel_id
+             AND a.variable = b.variable
+             AND a.model_name = b.model_name
+             AND a.id < b.id
+             AND a.start_date <= b.end_date
+             AND b.start_date <= a.end_date
+            WHERE a.model_name <> %s AND a.parcel_id IS NOT NULL
+            """,
+            [OpenETCache.PENDING_MARKER],
+        )
+        overlapping = cur.fetchone()[0]
+
+    details = {
+        "exact_duplicate_groups": exact_duplicates,
+        "overlapping_span_pairs": overlapping,
+    }
+
+    if exact_duplicates or overlapping:
+        status = "red"
+        msg = (
+            f"OpenET cache covers some parcel-months twice "
+            f"({exact_duplicates} duplicate windows, {overlapping} overlapping "
+            f"spans) — ET and precip may be overstated"
+        )
+    else:
+        status = "green"
+        msg = "No duplicated OpenET cache coverage"
+
+    return {
+        "category": "cache_duplication",
+        "status": status,
+        "message": msg,
+        "details": details,
+    }
+
+
+def check_pod_fractions():
+    """Verify each point of diversion splits to ~100% across its served parcels.
+
+    F-data-06 (math eval 2026-07-18). A POD's diverted volume is apportioned to
+    parcels by PointOfDiversionParcel.fraction. If the fractions sum to less than
+    one, diverted water silently vanishes from the ledger; more than one and it
+    is invented. Neither shows up as an error anywhere else.
+
+    TOLERANCE IS REQUIRED, not laziness: fraction is a 4-decimal field, so an
+    even split across 18 parcels cannot sum to exactly 1 (the live demo sits at
+    1.0008, 0.9999 and 1.0003). We allow one unit in the last place per link,
+    with a small floor, and flag anything beyond that as real misconfiguration.
+    """
+    from surface.models import PointOfDiversionParcel
+
+    sums = (
+        PointOfDiversionParcel.objects.values("point_of_diversion_id")
+        .annotate(total=Sum("fraction"), n=Count("id"))
+        .order_by("point_of_diversion_id")
+    )
+
+    offenders = []
+    for row in sums:
+        # 0.0001 per link is the most 4-decimal rounding can drift, floored at
+        # 0.001 so a 2-parcel split still gets a sane band.
+        tolerance = max(Decimal("0.001"), Decimal("0.0001") * row["n"])
+        drift = abs((row["total"] or Decimal("0")) - Decimal("1"))
+        if drift > tolerance:
+            offenders.append(
+                {
+                    "point_of_diversion_id": row["point_of_diversion_id"],
+                    "fraction_sum": str(row["total"]),
+                    "links": row["n"],
+                }
+            )
+
+    details = {"pods_checked": len(sums), "offenders": offenders[:20]}
+
+    if offenders:
+        status = "red"
+        msg = (
+            f"{len(offenders)} point(s) of diversion do not split to 100% — "
+            f"diverted water is being lost or invented"
+        )
+    else:
+        status = "green"
+        msg = f"All {len(sums)} points of diversion split to 100%"
+
+    return {
+        "category": "pod_fractions",
+        "status": status,
+        "message": msg,
+        "details": details,
+    }
+
+
 def run_all_checks():
     return [
         check_database(),
@@ -348,6 +475,8 @@ def run_all_checks():
         check_sync_freshness(),
         check_ledger_integrity(),
         check_orphans(),
+        check_cache_duplication(),
+        check_pod_fractions(),
         check_ssl(),
         check_docker(),
         check_migrations(),

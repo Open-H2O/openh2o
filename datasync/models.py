@@ -132,12 +132,18 @@ class DataRecordStaging(models.Model):
         return f"{self.station} {self.observation_date}: {self.parameter_code}={self.value}"
 
 
+# Module scope, not just a class attribute: OpenETCache.Meta's uniqueness
+# condition needs it, and a nested class body cannot see the enclosing class's
+# namespace. OpenETCache.PENDING_MARKER stays the name the rest of the code uses.
+PENDING_MARKER = "__PENDING__"
+
+
 class OpenETCache(models.Model):
     # A reservation row carries this marker in model_name until its fetch lands.
     # It counts toward the monthly budget the moment it is created (see
     # reserve_query_slot) but is EXCLUDED from cache reads, so an in-flight
     # reservation is never served as an empty cache hit.
-    PENDING_MARKER = "__PENDING__"
+    PENDING_MARKER = PENDING_MARKER  # noqa: F821 — resolves to the module constant
     # Stable key for the transaction-scoped advisory lock that serializes budget
     # reservations so the count-then-create can't race.
     _BUDGET_LOCK_KEY = 0x0E7B0001
@@ -157,6 +163,27 @@ class OpenETCache(models.Model):
         indexes = [
             models.Index(fields=["parcel", "start_date", "end_date"]),
             models.Index(fields=["queried_at"]),
+        ]
+        constraints = [
+            # F-math-08 (math eval 2026-07-18): at most ONE real cache row per
+            # parcel-window-variable-model. The GEE re-fetch path used to create a
+            # second row over the same span and the engine summed both, doubling
+            # gross ET and effective precip. Writers upsert on exactly this tuple.
+            #
+            # PENDING reservation rows are EXCLUDED: reserve_query_slot
+            # materializes a placeholder to charge the OpenET budget the moment a
+            # fetch is in flight, and two in-flight reservations for one window
+            # must not raise IntegrityError — the budget lock, not this
+            # constraint, is what governs them.
+            #
+            # Rows with parcel=NULL (ad-hoc geometry queries) are not covered:
+            # Postgres treats NULLs as distinct. That is fine — every engine read
+            # filters on a concrete parcel.
+            models.UniqueConstraint(
+                fields=["parcel", "start_date", "end_date", "variable", "model_name"],
+                condition=~models.Q(model_name=PENDING_MARKER),
+                name="openetcache_one_row_per_parcel_window",
+            ),
         ]
 
     def __str__(self):

@@ -87,13 +87,23 @@ def _record(step_type, input_af, output_af, detail):
 
 
 def _read_cache_mm(parcel, period, variable, model, key):
-    """Sum OpenETCache <key> values (mm) for one parcel-month.
+    """Total OpenETCache <key> values (mm) for one parcel-month.
 
     The single shared cache read behind BOTH et_gross and the precip step, so the
     two can never drift on the variable/model/key strings (the silent-zero trap of
     38-01/38-02: a wrong string matches zero rows and quietly zeroes the parcel).
-    Matches rows whose [start_date, end_date] span covers the period, then sums the
+    Matches rows whose [start_date, end_date] span covers the period, then totals the
     et_data list items whose "date" starts with the period and whose <key> is set.
+
+    F-math-08 (math eval 2026-07-18): rows are deduplicated by item date, NEWEST
+    ROW WINS — they are never summed across rows. Two cache rows covering the same
+    parcel-month hold the SAME physical measurement re-fetched (the GEE re-fetch
+    path wrote a second row for any non-finalized month), not two additive
+    components, so summing them silently doubled gross ET and effective precip.
+    Overlapping spans are prevented at write time now (update_or_create + the
+    OpenETCache uniqueness constraint), but the read stays defensive: cache rows
+    are derived data an operator can hand-load, and a doubled ET is invisible in
+    the closure metric (the residual method absorbs multiplicative ET error).
 
     Returns (total_mm: Decimal, months_matched: int, row_count: int).
     A parcel with no matching rows returns (Decimal("0"), 0, 0).
@@ -111,10 +121,11 @@ def _read_cache_mm(parcel, period, variable, model, key):
         model_name=model,
         start_date__lte=period_first,
         end_date__gte=period_first,
-    )
+    ).order_by("queried_at", "pk")
 
-    total_mm = Decimal("0")
-    matched = 0
+    # date string -> (value_mm, source row pk). Ordered oldest-first above, so a
+    # later (newer) row's value for the same date REPLACES the older one.
+    by_date = {}
     for row in rows:
         for item in row.et_data or []:
             if not isinstance(item, dict):
@@ -141,10 +152,28 @@ def _read_cache_mm(parcel, period, variable, model, key):
                 )
                 continue
             if item_date.startswith(period) and item.get(key) is not None:
-                total_mm += Decimal(str(item[key]))
-                matched += 1
+                prior = by_date.get(item_date)
+                if prior is not None and prior[1] != row.pk:
+                    logger.warning(
+                        "OpenETCache duplicate coverage: parcel=%s %s/%s %s is "
+                        "carried by rows %s and %s — using the newer row %s "
+                        "(%s mm, was %s mm). Summing these would double the "
+                        "parcel's %s.",
+                        getattr(parcel, "parcel_number", parcel),
+                        variable,
+                        model,
+                        item_date,
+                        prior[1],
+                        row.pk,
+                        row.pk,
+                        item[key],
+                        prior[0],
+                        variable,
+                    )
+                by_date[item_date] = (Decimal(str(item[key])), row.pk)
 
-    return total_mm, matched, rows.count()
+    total_mm = sum((v for v, _pk in by_date.values()), Decimal("0"))
+    return total_mm, len(by_date), rows.count()
 
 
 def et_gross(running_af, parcel, period, ctx, config):

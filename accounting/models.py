@@ -14,6 +14,10 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.gis.db import models
+from django.contrib.postgres.constraints import ExclusionConstraint
+from django.contrib.postgres.fields import DateRangeField
+from django.contrib.postgres.fields.ranges import RangeOperators
+from django.db.models import Func
 
 
 class WaterType(models.Model):
@@ -44,7 +48,29 @@ class ReportingPeriod(models.Model):
             models.CheckConstraint(
                 check=models.Q(start_date__lt=models.F("end_date")),
                 name="reporting_period_start_before_end",
-            )
+            ),
+            # F-data-05 (math eval 2026-07-18): reporting periods must not
+            # overlap. A ledger row belongs to exactly one period, and the
+            # date-containment lookups that resolve "which period is this in"
+            # take .first() — with overlapping periods that answer is arbitrary,
+            # so a volume could be reported in one period and closed in another.
+            # Bounds are INCLUSIVE ("[]"): a period ending 2024-09-30 and the next
+            # starting 2024-10-01 are adjacent, not overlapping.
+            ExclusionConstraint(
+                name="reporting_period_no_overlap",
+                expressions=[
+                    (
+                        Func(
+                            models.F("start_date"),
+                            models.F("end_date"),
+                            models.Value("[]"),
+                            function="daterange",
+                            output_field=DateRangeField(),
+                        ),
+                        RangeOperators.OVERLAPS,
+                    ),
+                ],
+            ),
         ]
 
     def __str__(self):

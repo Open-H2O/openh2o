@@ -169,14 +169,22 @@ class GEEOpenETAdapter(OpenETAdapter):
                 summary["failed"] += 1
                 continue
 
-            OpenETCache.objects.create(
+            # F-math-08: UPSERT, never create. A re-fetch of a window whose months
+            # are not yet finalized used to write a SECOND row over the same span;
+            # the engine then read both and doubled the parcel's gross ET. Keyed on
+            # the same tuple the uniqueness constraint enforces, so the re-fetch
+            # refreshes the window in place. Matches sync_precip_parcels, which has
+            # always upserted.
+            OpenETCache.objects.update_or_create(
                 parcel=parcel,
-                geometry=parcel.geometry,
                 start_date=win_start,
                 end_date=win_end,
                 variable="ET",
                 model_name="Ensemble",
-                et_data=build_et_data(et_by_month),
+                defaults={
+                    "geometry": parcel.geometry,
+                    "et_data": build_et_data(et_by_month),
+                },
             )
             summary["fetched"] += 1
 

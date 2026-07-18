@@ -186,6 +186,8 @@ class OpenETAdapter(BaseAdapter):
 
     def sync_with_cache(self, parcel, start_date, end_date):
         """Cache-aware OpenET sync for a single parcel."""
+        from django.db import transaction
+
         from datasync.models import OpenETCache
 
         existing = OpenETCache.objects.filter(
@@ -229,9 +231,24 @@ class OpenETAdapter(BaseAdapter):
         ]
 
         # Finalize the reservation into a real cache row.
-        reservation.model_name = "Ensemble"
-        reservation.et_data = et_data
-        reservation.save(update_fields=["model_name", "et_data"])
+        #
+        # F-math-08: retire any STALE row for the identical window first. We only
+        # get here on a miss, and the miss that reaches a same-span row is the
+        # is_stale() refresh — leaving the old row would both trip the
+        # openetcache_one_row_per_parcel_window constraint on save and, before
+        # that constraint existed, leave two rows the engine summed into a
+        # doubled ET. The refreshed values supersede the stale ones outright.
+        with transaction.atomic():
+            OpenETCache.objects.filter(
+                parcel=parcel,
+                start_date=reservation.start_date,
+                end_date=reservation.end_date,
+                variable=reservation.variable,
+                model_name="Ensemble",
+            ).exclude(pk=reservation.pk).delete()
+            reservation.model_name = "Ensemble"
+            reservation.et_data = et_data
+            reservation.save(update_fields=["model_name", "et_data"])
         logger.info("OpenET cache miss, stored %d records for parcel %s", len(et_data), parcel.pk)
         return et_data
 
