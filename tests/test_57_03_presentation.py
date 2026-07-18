@@ -107,9 +107,17 @@ def _calculated_row(parcel, rp, magnitude, eff_date=JAN):
 
 
 def _meter_row(parcel, magnitude, eff_date=JAN):
+    """A meter_reading entry, stored NEGATIVE like production writes it.
+
+    The argument is a magnitude of use; the sign is the ledger's, not the
+    caller's. Every meter_reading row in the live demo is negative and the
+    parcelledger_usage_rows_non_positive constraint now requires it — passing
+    the magnitude through unsigned built rows production never produces.
+    """
     return ParcelLedgerFactory(
         parcel=parcel, effective_date=eff_date, transaction_date=eff_date,
-        amount_acre_feet=Decimal(str(magnitude)), source_type="meter_reading",
+        amount_acre_feet=-abs(Decimal(str(magnitude))),
+        source_type="meter_reading",
     )
 
 

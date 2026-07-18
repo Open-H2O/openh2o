@@ -60,10 +60,15 @@ def _run(parcel, net_demand, period="2024-01"):
 
 
 def _meter(parcel, af):
+    """A meter_reading entry, stored negative like production writes it.
+
+    Mirrors _et below: the caller passes a magnitude of use and the helper owns
+    the ledger's sign convention (usage debits).
+    """
     return ParcelLedgerFactory(
         parcel=parcel,
         source_type="meter_reading",
-        amount_acre_feet=Decimal(af),
+        amount_acre_feet=-abs(Decimal(af)),
         effective_date=JAN,
         transaction_date=JAN,
     )

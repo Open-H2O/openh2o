@@ -212,7 +212,13 @@ class TestImportLedgerCsvIdempotency:
 
         # original 2 rows + the corrected (different amount) row = 3
         assert ParcelLedger.objects.count() == 3
+        # Stored NEGATIVE: the CSV carries an unsigned meter magnitude and the
+        # importer applies the ledger's sign rule (usage debits). A positive
+        # meter row would credit water instead of debiting it.
         assert ParcelLedger.objects.filter(
+            amount_acre_feet=Decimal("-99.0000")
+        ).exists()
+        assert not ParcelLedger.objects.filter(
             amount_acre_feet=Decimal("99.0000")
         ).exists()
 
