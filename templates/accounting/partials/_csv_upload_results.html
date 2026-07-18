@@ -43,10 +43,10 @@
     {% if results.sign_normalized %}
     <p class="text-base" style="margin: 0;">
       <strong>{{ results.sign_normalized }}</strong>
-      row{{ results.sign_normalized|pluralize }} had the sign
-      {% if dry_run %}that would be{% else %}{% endif %} corrected to the ledger
-      convention: use is recorded as a debit, supply as a credit. Magnitudes are
-      unchanged.
+      row{{ results.sign_normalized|pluralize }}
+      {% if dry_run %}would have their{% else %}had their{% endif %} sign
+      corrected to the ledger convention: use is recorded as a debit, supply as a
+      credit. Magnitudes are unchanged.
     </p>
     {% endif %}
     {% if results.skipped_duplicate %}
