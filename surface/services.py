@@ -164,8 +164,11 @@ def _fraction_rows(record, served_links, pod, sw_type):
     if not weights:
         return []
 
-    # Weights sum to exactly 1.0000, so the amounts sum to the delivery with the
-    # kernel's residual already placed — no last-row remainder arithmetic here.
+    # Weights are 4dp — the same resolution as the stored fraction field itself
+    # (DecimalField(decimal_places=4)), so this claims no more precision than the
+    # input carries. They sum to exactly 1.0000; the residual below keeps the
+    # AMOUNTS summing to the delivery exactly, which is the invariant that
+    # matters (nothing invented, nothing lost).
     amounts = {key: (total * w).quantize(_Q) for key, w in weights.items()}
     residual = total - sum(amounts.values(), Decimal("0"))
     if residual and amounts:

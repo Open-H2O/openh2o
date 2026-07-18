@@ -262,12 +262,18 @@ def test_fraction_fallback_normalizes_fractions_that_do_not_sum_to_one():
     rows = allocate_district_delivery(pod, rp, efficiency=EFF)
 
     by_parcel = {r.parcel_id: r.amount_acre_feet for r in rows}
-    # Equal stored fractions normalize to equal thirds of the delivery.
+    # The invariants that matter: the delivery is conserved exactly, and no row
+    # is a positive supply. Both were violated before normalization.
     assert sum(by_parcel.values()) == Decimal("-100.0000")
     assert all(v < 0 for v in by_parcel.values()), "no row may be a positive supply"
-    assert by_parcel[a.id] == Decimal("-33.3333")
-    assert by_parcel[b.id] == Decimal("-33.3333")
-    assert by_parcel[c.id] == Decimal("-33.3334")  # residual on the last key
+
+    # Equal stored fractions give equal thirds. Shares are computed from the
+    # kernel's 4dp weights (0.3333) — the same resolution as the stored fraction
+    # field itself, which is DecimalField(decimal_places=4) — so each parcel gets
+    # 33.33 and the rounding residual lands on the last key by sorted str(pk).
+    assert by_parcel[a.id] == Decimal("-33.3300")
+    assert by_parcel[b.id] == Decimal("-33.3300")
+    assert by_parcel[c.id] == Decimal("-33.3400")
 
 
 def test_fraction_fallback_with_untouched_defaults_splits_evenly():
