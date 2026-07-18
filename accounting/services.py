@@ -512,38 +512,53 @@ def billable_ledger(queryset):
 
     The calculation engine (Phase 38) writes a netted ``calculated`` row per
     parcel-month alongside the pre-existing gross ``et_estimate`` row. Both are
-    stored negative, so summing every row double-counts ET. This applies the
-    settled prefer-calculated-else-et_estimate rule:
+    stored negative, so summing every row double-counts ET. A metered parcel has
+    the same shape one layer down: the meter row is the authoritative usage
+    (58-03 — the engine deliberately writes NO ``calculated`` row for it), yet
+    ``sync_openet_to_ledger`` still writes the parcel's ``et_estimate`` row, so
+    summing both double-counts the metered month. This applies the settled
+    authority ladder — calculated ≻ meter_reading ≻ et_estimate:
 
-      - Where a ``calculated`` row exists for a ``(parcel_id, effective_date)``,
-        the matching ``et_estimate`` row is suppressed (the netted row bills).
-      - Where no ``calculated`` row exists, the ``et_estimate`` row stands in so
-        no parcel-month silently drops to zero (the fallback).
-      - Every other row (meter_reading, surface_diversion, recharge, the
-        calculated rows themselves) passes through unchanged.
+      - Where a ``calculated`` row exists for a ``(parcel_id, month)``, the
+        matching ``et_estimate`` row is suppressed (the netted row bills).
+      - Where a ``meter_reading`` row exists for a ``(parcel_id, month)``, the
+        matching ``et_estimate`` row is likewise suppressed (measured pumping
+        outranks the satellite estimate of the same month's use).
+      - Where neither exists, the ``et_estimate`` row stands in so no
+        parcel-month silently drops to zero (the fallback).
+      - Every other row (meter_reading itself, surface_diversion, recharge, the
+        calculated rows) passes through unchanged.
 
-    The join key is ``(parcel_id, effective_date)``: both ET-family rows are
-    dated to the first of the month, so the pair matches exactly. The
-    suppression is source-type-driven (not reporting-period-driven), so it holds
-    whether or not a period filter has already been applied to ``queryset``.
+    Join keys: ET-family rows are dated to the first of the month, so
+    ``calculated`` pairs on exact ``(parcel_id, effective_date)``;
+    ``meter_reading`` rows carry the reading's real in-month date, so their key
+    is normalized to the first of the month before matching. The suppression is
+    source-type-driven (not reporting-period-driven), so it holds whether or not
+    a period filter has already been applied to ``queryset``.
 
     Empty queryset → empty.
     """
-    calculated_keys = list(
+    suppression_keys = set(
         queryset.filter(source_type="calculated").values_list(
             "parcel_id", "effective_date"
         )
     )
-    if not calculated_keys:
+    suppression_keys.update(
+        (parcel_id, effective_date.replace(day=1))
+        for parcel_id, effective_date in queryset.filter(
+            source_type="meter_reading"
+        ).values_list("parcel_id", "effective_date")
+    )
+    if not suppression_keys:
         return queryset
 
     # OR of EXACT (parcel_id, effective_date) pairs. A flat
     # ``parcel_id__in + effective_date__in`` would over-exclude the cross-product
-    # (any calculated parcel × any calculated date), wrongly suppressing an
-    # et_estimate row that has no calculated counterpart of its own. District
-    # scale is monthly and small, so the per-pair OR is cheap and correct.
+    # (any suppressing parcel × any suppressing date), wrongly suppressing an
+    # et_estimate row that has no counterpart of its own. District scale is
+    # monthly and small, so the per-pair OR is cheap and correct.
     suppression = Q()
-    for parcel_id, effective_date in calculated_keys:
+    for parcel_id, effective_date in suppression_keys:
         suppression |= Q(parcel_id=parcel_id, effective_date=effective_date)
 
     return queryset.exclude(Q(source_type="et_estimate") & suppression)

@@ -120,7 +120,7 @@ class TestBillableLedger:
         assert list(result) == []
 
     def test_meter_only_queryset_unchanged(self):
-        """No calculated keys → nothing excluded (regression)."""
+        """No suppression keys → nothing excluded (regression)."""
         parcel = ParcelFactory()
         ParcelLedgerFactory(
             parcel=parcel, source_type="meter_reading",
@@ -128,6 +128,38 @@ class TestBillableLedger:
         )
         result = billable_ledger(ParcelLedger.objects.all())
         assert [r.source_type for r in result] == ["meter_reading"]
+
+    def test_meter_suppresses_matching_et_without_calculated(self):
+        """Metered parcel-month with a synced et_estimate bills the METER only.
+
+        58-03 makes the meter authoritative (the engine writes no calculated
+        row), but sync_openet_to_ledger still writes the et_estimate row —
+        before the meter joined the suppression keys, that month billed
+        meter + estimate (~2x actual). The meter row carries its real
+        mid-month reading date; the key normalizes to the first of the month.
+        """
+        parcel = ParcelFactory()
+        ParcelLedgerFactory(
+            parcel=parcel, source_type="meter_reading",
+            effective_date=date(2024, 6, 17), amount_acre_feet=Decimal("-12"),
+        )
+        _et(parcel, "-10")  # dated JUNE (first of month)
+
+        result = billable_ledger(ParcelLedger.objects.all())
+        assert [r.source_type for r in result] == ["meter_reading"]
+
+    def test_meter_does_not_suppress_other_month_et(self):
+        """A June meter reading must NOT suppress a July et_estimate."""
+        parcel = ParcelFactory()
+        ParcelLedgerFactory(
+            parcel=parcel, source_type="meter_reading",
+            effective_date=date(2024, 6, 17), amount_acre_feet=Decimal("-12"),
+        )
+        _et(parcel, "-10", effective_date=JULY)
+
+        result = billable_ledger(ParcelLedger.objects.all())
+        survivors = sorted(r.source_type for r in result)
+        assert survivors == ["et_estimate", "meter_reading"]
 
     def test_does_not_suppress_across_months(self):
         """A calculated June row must NOT suppress a July et_estimate (exact pair)."""
