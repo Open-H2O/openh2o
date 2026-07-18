@@ -223,3 +223,69 @@ class CurtailmentOrder(models.Model):
 
     def __str__(self):
         return self.order_id
+
+
+class UnallocatedDelivery(models.Model):
+    """Delivered surface water that no served parcel's crop demand can explain.
+
+    T4 (math eval 2026-07-18). When a POD's delivery for a month exceeds what the
+    served parcels could beneficially use (each capped at demand / irrigation
+    efficiency), the allocator hands out the caps and the remainder used to go
+    nowhere: no ledger row, no pool, no log. The internal ledger then disagreed
+    with the DiversionRecord that CalWATRS files from, and district conservation
+    silently failed to balance.
+
+    The surplus is recorded HERE rather than on a parcel because that is the
+    honest statement: the water was delivered, and crop demand does not account
+    for it. Attributing it to parcels would claim consumption the ET data
+    contradicts; crediting it to the basin pool would assume percolation nobody
+    measured. In practice a non-zero value is usually a data-quality signal — an
+    overstated diversion, understated ET, or real non-crop use (spill, stock,
+    a recharge basin) that should be recorded as such.
+
+    ``ParcelLedger`` cannot hold this: its ``parcel`` FK is not nullable, and
+    making it nullable to fit one parcel-less case would weaken every ledger
+    query. A surplus belongs to the point of diversion, not to a parcel.
+    """
+
+    point_of_diversion = models.ForeignKey(
+        "surface.PointOfDiversion", on_delete=models.CASCADE
+    )
+    reporting_period = models.ForeignKey(
+        "accounting.ReportingPeriod",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    month = models.DateField(help_text="First of the month this surplus arose in.")
+    amount_acre_feet = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="Positive magnitude of delivered water not explained by demand.",
+    )
+    delivery_acre_feet = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        help_text="The month's total consumed delivery, for context.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-month", "point_of_diversion_id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["point_of_diversion", "month"],
+                name="unallocated_delivery_one_per_pod_month",
+            ),
+            models.CheckConstraint(
+                check=models.Q(amount_acre_feet__gt=0),
+                name="unallocated_delivery_amount_positive",
+            ),
+        ]
+        verbose_name_plural = "unallocated deliveries"
+
+    def __str__(self):
+        return (
+            f"{self.point_of_diversion} {self.month:%Y-%m}: "
+            f"{self.amount_acre_feet} AF unallocated"
+        )

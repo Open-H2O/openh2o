@@ -229,3 +229,136 @@ def test_fraction_fallback_rows_carry_surface_water_type():
     assert "static fraction fallback" in rows[0].description  # confirm the path taken
     assert all(r.water_type is not None for r in rows)
     assert all(r.water_type.code == "SW" for r in rows)
+
+
+# ---------------------------------------------------------------------------
+# T3/T4 (math eval 2026-07-18): the fraction split must normalize, and the
+# ample-delivery surplus must be recorded instead of vanishing.
+# ---------------------------------------------------------------------------
+
+
+def test_fraction_fallback_normalizes_fractions_that_do_not_sum_to_one():
+    """Raw fractions summing to 1.8 must not invent a positive supply row.
+
+    Nothing in the model forces a POD's fractions to sum to 1. The old split
+    multiplied by the raw fraction and dropped the remainder on the last row, so
+    [0.6, 0.6, 0.6] on 100 AF produced 60/60/-20 — the last row came out POSITIVE,
+    a phantom supply row on a diversion.
+    """
+    rp = ReportingPeriodFactory()
+    a = ParcelFactory(parcel_number="APN-N1")
+    b = ParcelFactory(parcel_number="APN-N2")
+    c = ParcelFactory(parcel_number="APN-N3")
+    pod = PointOfDiversionFactory()
+    for p in (a, b, c):
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=p, fraction=Decimal("0.6")
+        )
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("100"),
+    )
+
+    rows = allocate_district_delivery(pod, rp, efficiency=EFF)
+
+    by_parcel = {r.parcel_id: r.amount_acre_feet for r in rows}
+    # Equal stored fractions normalize to equal thirds of the delivery.
+    assert sum(by_parcel.values()) == Decimal("-100.0000")
+    assert all(v < 0 for v in by_parcel.values()), "no row may be a positive supply"
+    assert by_parcel[a.id] == Decimal("-33.3333")
+    assert by_parcel[b.id] == Decimal("-33.3333")
+    assert by_parcel[c.id] == Decimal("-33.3334")  # residual on the last key
+
+
+def test_fraction_fallback_with_untouched_defaults_splits_evenly():
+    """Default fractions (1.0 each) must not hand parcel 1 the whole delivery."""
+    rp = ReportingPeriodFactory()
+    a = ParcelFactory(parcel_number="APN-D1")
+    b = ParcelFactory(parcel_number="APN-D2")
+    pod = PointOfDiversionFactory()
+    for p in (a, b):
+        PointOfDiversionParcelFactory(
+            point_of_diversion=pod, parcel=p, fraction=Decimal("1.0")
+        )
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("80"),
+    )
+
+    rows = allocate_district_delivery(pod, rp, efficiency=EFF)
+
+    by_parcel = {r.parcel_id: r.amount_acre_feet for r in rows}
+    assert by_parcel[a.id] == Decimal("-40.0000")
+    assert by_parcel[b.id] == Decimal("-40.0000")
+
+
+def test_ample_surplus_is_recorded_as_unallocated_delivery():
+    """The leftover above sum(caps) is recorded against the POD, not dropped."""
+    from surface.models import UnallocatedDelivery
+
+    rp = ReportingPeriodFactory()
+    a = ParcelFactory(parcel_number="APN-S1")
+    b = ParcelFactory(parcel_number="APN-S2")
+    pod = PointOfDiversionFactory()
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("0.5"))
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=b, fraction=Decimal("0.5"))
+    _run(a, "2024-01", 10)  # cap 13.3333
+    _run(b, "2024-01", 20)  # cap 26.6667
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("50"),  # 50 delivered vs 40 of caps
+    )
+
+    rows = allocate_district_delivery(pod, rp, efficiency=EFF)
+
+    assert sum(r.amount_acre_feet for r in rows) == Decimal("-40.0000")
+    surplus = UnallocatedDelivery.objects.get(point_of_diversion=pod, month=JAN)
+    assert surplus.amount_acre_feet == Decimal("10.0000")
+    assert surplus.delivery_acre_feet == Decimal("50.0000")
+    assert surplus.reporting_period == rp
+    # Parcel rows plus the recorded surplus account for the whole delivery.
+    assert (
+        abs(sum(r.amount_acre_feet for r in rows)) + surplus.amount_acre_feet
+        == Decimal("50.0000")
+    )
+
+
+def test_short_district_records_no_unallocated_surplus():
+    """A short delivery is fully distributed, so there is nothing to record."""
+    from surface.models import UnallocatedDelivery
+
+    rp = ReportingPeriodFactory()
+    a = ParcelFactory(parcel_number="APN-S3")
+    pod = PointOfDiversionFactory()
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("1.0"))
+    _run(a, "2024-01", 100)  # cap 133.33, delivery well under it
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("20"),
+    )
+
+    allocate_district_delivery(pod, rp, efficiency=EFF)
+
+    assert not UnallocatedDelivery.objects.filter(point_of_diversion=pod).exists()
+
+
+def test_rerun_does_not_duplicate_or_strand_unallocated_surplus():
+    """Re-allocation clears the prior surplus rather than stacking another."""
+    from surface.models import UnallocatedDelivery
+
+    rp = ReportingPeriodFactory()
+    a = ParcelFactory(parcel_number="APN-S4")
+    pod = PointOfDiversionFactory()
+    PointOfDiversionParcelFactory(point_of_diversion=pod, parcel=a, fraction=Decimal("1.0"))
+    _run(a, "2024-01", 10)  # cap 13.3333
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("50"),
+    )
+
+    allocate_district_delivery(pod, rp, efficiency=EFF)
+    allocate_district_delivery(pod, rp, efficiency=EFF)
+
+    rows = UnallocatedDelivery.objects.filter(point_of_diversion=pod, month=JAN)
+    assert rows.count() == 1
+    assert rows.first().amount_acre_feet == Decimal("36.6667")

@@ -4,8 +4,9 @@
 Each ``check_*`` function returns a category/status/message/details dict (green,
 yellow, or red) covering database connectivity, disk usage, data-sync freshness,
 ledger integrity, unassigned parcels, duplicated OpenET cache coverage,
-point-of-diversion fraction splits, SSL certificate expiry, the expected
-database, and pending migrations; ``run_all_checks`` runs them all in order.
+point-of-diversion fraction splits, unallocated surface deliveries, SSL
+certificate expiry, the expected database, and pending migrations;
+``run_all_checks`` runs them all in order.
 """
 import shutil
 import ssl
@@ -468,6 +469,57 @@ def check_pod_fractions():
     }
 
 
+def check_unallocated_delivery():
+    """Surface delivered water that crop demand cannot account for.
+
+    T4 (math eval 2026-07-18). The allocator now records a surplus rather than
+    dropping it, but a recorded surplus still needs a face: it means the internal
+    ledger does not fully explain what the DiversionRecord says was delivered.
+    Usually that is a data-quality signal — an overstated diversion volume, an
+    understated ET estimate, or genuine non-crop use that should be entered as
+    such — so it is a yellow, not a red: the number is recorded and reconcilable,
+    it just is not attributed yet.
+    """
+    from surface.models import UnallocatedDelivery
+
+    rows = UnallocatedDelivery.objects.all()
+    total = rows.aggregate(total=Sum("amount_acre_feet"))["total"] or Decimal("0")
+    count = rows.count()
+
+    worst = [
+        {
+            "point_of_diversion": str(r.point_of_diversion),
+            "month": str(r.month),
+            "unallocated_af": str(r.amount_acre_feet),
+            "delivery_af": str(r.delivery_acre_feet),
+        }
+        for r in rows.order_by("-amount_acre_feet")[:10]
+    ]
+
+    details = {
+        "records": count,
+        "total_unallocated_af": str(total),
+        "largest": worst,
+    }
+
+    if count:
+        status = "yellow"
+        msg = (
+            f"{total} AF delivered across {count} POD-month(s) is not explained "
+            f"by crop demand — check diversion volumes, ET estimates, non-crop use"
+        )
+    else:
+        status = "green"
+        msg = "All delivered surface water is accounted for by demand"
+
+    return {
+        "category": "unallocated_delivery",
+        "status": status,
+        "message": msg,
+        "details": details,
+    }
+
+
 def run_all_checks():
     return [
         check_database(),
@@ -477,6 +529,7 @@ def run_all_checks():
         check_orphans(),
         check_cache_duplication(),
         check_pod_fractions(),
+        check_unallocated_delivery(),
         check_ssl(),
         check_docker(),
         check_migrations(),

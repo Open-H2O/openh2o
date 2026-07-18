@@ -265,6 +265,7 @@ EXPECTED_CATEGORIES = {
     "orphans",
     "cache_duplication",
     "pod_fractions",
+    "unallocated_delivery",
     "ssl",
     "docker",
     "migrations",

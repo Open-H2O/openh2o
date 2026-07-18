@@ -43,10 +43,14 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from accounting.allocation_math import allocate_by_demand
+from accounting.allocation_math import allocate_by_demand, apportion_shared_supply
 from accounting.models import CalculationRun, WaterType
 from parcels.models import ParcelLedger
-from surface.models import DiversionRecord, PointOfDiversionParcel
+from surface.models import (
+    DiversionRecord,
+    PointOfDiversionParcel,
+    UnallocatedDelivery,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -127,22 +131,52 @@ def _demand_rows(record, shares, pod, sw_type):
 def _fraction_rows(record, served_links, pod, sw_type):
     """Unsaved static-fraction fallback rows (NEGATIVE) — the no-ET-demand path.
 
-    Mirrors ``accounting.services.create_diversion_ledger_entries`` exactly (split
-    by each link's ``fraction``, rounding residual on the LAST row) but builds
-    unsaved instances rather than writing, so ``dry_run`` can preview it and the
-    single delete-then-bulk_create path stays idempotent.
+    Builds unsaved instances rather than writing, so ``dry_run`` can preview it
+    and the single delete-then-bulk_create path stays idempotent.
+
+    T3 (math eval 2026-07-18): the split now runs through
+    ``apportion_shared_supply`` — the SAME normalized kernel the report layer
+    uses — instead of multiplying by each link's raw ``fraction``. Raw fractions
+    are not guaranteed to sum to 1, and nothing in the model forces them to, so
+    the old math invented or lost water whenever they did not:
+
+      * [0.6, 0.6, 0.6] on 100 AF gave 60/60/-20 — the last row took the
+        remainder and came out POSITIVE, a phantom supply row on a diversion.
+      * The untouched default [1.0, 1.0] gave parcel 1 the entire delivery and
+        parcel 2 nothing.
+
+    This path runs whenever no served parcel has ET demand for the month — i.e.
+    every month before the engine first runs — so it is the common case, not an
+    edge. State filings were already correct (the report layer normalizes), which
+    is exactly why the internal ledger could be wrong for the same data without
+    anything visibly breaking.
+
+    Passing demand=0 for every member is deliberate and accurate: this is the
+    no-demand fallback, so the kernel's ladder resolves to hand-set fractions
+    when the district set any, and an even split when they are untouched.
     """
     total = record.consumed_acre_feet()
     today = timezone.now().date()
+
+    weights = apportion_shared_supply(
+        (link.parcel.pk, link.fraction, Decimal("0")) for link in served_links
+    )
+    if not weights:
+        return []
+
+    # Weights sum to exactly 1.0000, so the amounts sum to the delivery with the
+    # kernel's residual already placed — no last-row remainder arithmetic here.
+    amounts = {key: (total * w).quantize(_Q) for key, w in weights.items()}
+    residual = total - sum(amounts.values(), Decimal("0"))
+    if residual and amounts:
+        last_key = sorted(amounts, key=str)[-1]
+        amounts[last_key] += residual
+
     rows = []
-    distributed = Decimal("0")
-    last = len(served_links) - 1
-    for i, link in enumerate(served_links):
-        if i == last:
-            amount = total - distributed
-        else:
-            amount = (total * link.fraction).quantize(_Q)
-            distributed += amount
+    for link in served_links:
+        amount = amounts.get(link.parcel.pk)
+        if amount is None:
+            continue
         rows.append(
             ParcelLedger(
                 parcel=link.parcel,
@@ -153,7 +187,8 @@ def _fraction_rows(record, served_links, pod, sw_type):
                 description=(
                     f"Diversion from {pod.name}: {record.volume_acre_feet} AF "
                     f"({record.get_diversion_type_display()}) — static fraction "
-                    f"fallback (no ET demand), fraction={link.fraction}"
+                    f"fallback (no ET demand), normalized share="
+                    f"{weights[link.parcel.pk]} (stored fraction={link.fraction})"
                 ),
                 reporting_period=record.reporting_period,
                 water_type=sw_type,
@@ -206,6 +241,7 @@ def allocate_district_delivery(
     records = list(_records_for_period(pod, reporting_period))
 
     to_write = []
+    unallocated = []
     for record in records:
         delivery_total = record.consumed_acre_feet()
         demand_by_parcel = {p: _month_demand(p, record.month) for p in served}
@@ -214,6 +250,34 @@ def allocate_district_delivery(
         if shares:
             to_write.extend(_demand_rows(record, shares, pod, sw_type))
             path = "demand-weighted"
+
+            # T4 (math eval 2026-07-18): in the AMPLE case the kernel hands out
+            # each parcel's cap and documents that the caller routes the leftover
+            # — and this, the only caller, never did. The surplus vanished: no
+            # row, no pool, no log, so the internal ledger silently disagreed
+            # with the DiversionRecord CalWATRS files from. Record it explicitly
+            # against the POD instead of dropping it or inventing a destination.
+            surplus = delivery_total - sum(shares.values(), Decimal("0"))
+            if surplus > 0:
+                unallocated.append(
+                    UnallocatedDelivery(
+                        point_of_diversion=pod,
+                        reporting_period=record.reporting_period,
+                        month=record.month,
+                        amount_acre_feet=surplus,
+                        delivery_acre_feet=delivery_total,
+                    )
+                )
+                logger.warning(
+                    "allocate_district_delivery POD=%s month=%s: %s AF of %s AF "
+                    "delivered is not explained by crop demand — recorded as "
+                    "unallocated delivery. Check the diversion volume, the ET "
+                    "estimate, and any non-crop use at this POD.",
+                    pod.name,
+                    record.month,
+                    surplus,
+                    delivery_total,
+                )
         else:
             to_write.extend(_fraction_rows(record, served_links, pod, sw_type))
             path = "static-fraction fallback (no ET demand)"
@@ -241,4 +305,13 @@ def allocate_district_delivery(
                 effective_date__in=months,
                 source_type="surface_diversion",
             ).delete()
+        # Unallocated surplus is owned by this service for the same POD-months,
+        # and is cleared on every run so a re-allocation that now balances does
+        # not leave a stale surplus behind.
+        if months:
+            UnallocatedDelivery.objects.filter(
+                point_of_diversion=pod, month__in=months
+            ).delete()
+            if unallocated:
+                UnallocatedDelivery.objects.bulk_create(unallocated)
         return list(ParcelLedger.objects.bulk_create(to_write))
