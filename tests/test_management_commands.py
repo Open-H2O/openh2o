@@ -115,7 +115,9 @@ class TestRunHealthChecks:
         output = out.getvalue()
         data = json.loads(output)
         assert isinstance(data, list)
-        assert len(data) == 8
+        from health.checks import run_all_checks
+
+        assert len(data) == len(run_all_checks())
 
     def test_run_health_checks_category_filter(self):
         """--category flag filters to a single result."""
@@ -309,15 +311,35 @@ class TestSyncOpenetIntraRunDedup:
         from tests.factories import ParcelFactory, _box
 
         parcel = ParcelFactory()
-        # Two cache rows, each carrying an ET value dated 2024-06 for this parcel.
-        for _ in range(2):
-            OpenETCache.objects.create(
-                parcel=parcel,
-                geometry=_box(),
-                start_date=date(2024, 6, 1),
-                end_date=date(2024, 6, 30),
-                et_data=[{"date": "2024-06", "et": 100.0, "unit": "mm"}],
-            )
+        # Spans DIFFER but both cover 2024-06. Identical spans are now blocked by
+        # openetcache_one_row_per_parcel_window, so overlapping-but-distinct
+        # windows are the only duplicate coverage still reachable — a wide
+        # backfill plus a single-month refresh, which is exactly how the GEE
+        # re-fetch path used to produce them.
+        OpenETCache.objects.create(
+            parcel=parcel,
+            geometry=_box(),
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 6, 30),
+            et_data=[{"date": "2024-06", "et": 100.0, "unit": "mm"}],
+        )
+        OpenETCache.objects.create(
+            parcel=parcel,
+            geometry=_box(),
+            start_date=date(2024, 6, 1),
+            end_date=date(2024, 6, 30),
+            et_data=[{"date": "2024-06", "et": 100.0, "unit": "mm"}],
+        )
+
+        # Control parcel: identical geometry, ONE cache row, same 100 mm value.
+        solo = ParcelFactory()
+        OpenETCache.objects.create(
+            parcel=solo,
+            geometry=_box(),
+            start_date=date(2024, 6, 1),
+            end_date=date(2024, 6, 30),
+            et_data=[{"date": "2024-06", "et": 100.0, "unit": "mm"}],
+        )
 
         call_command(
             "sync_openet_to_ledger",
@@ -329,3 +351,13 @@ class TestSyncOpenetIntraRunDedup:
             parcel=parcel, source_type="et_estimate"
         )
         assert rows.count() == 1  # one row despite two overlapping cache rows
+
+        # F-math-08: and that row must carry the ONE-row VALUE. Row count alone
+        # never caught the doubling — the duplicate coverage was summed into a
+        # single row of twice the magnitude. Compared against the control rather
+        # than a hardcoded number so it stays true if the mm->AF math changes.
+        solo_rows = ParcelLedger.objects.filter(
+            parcel=solo, source_type="et_estimate"
+        )
+        assert solo_rows.count() == 1
+        assert rows.first().amount_acre_feet == solo_rows.first().amount_acre_feet

@@ -255,14 +255,30 @@ class TestCheckDocker:
         assert "expected" in result["details"] or "error" in result["details"]
 
 
+# One source of truth for the check roster, so adding a check updates the count
+# assertion and the category assertion together instead of drifting apart.
+EXPECTED_CATEGORIES = {
+    "database",
+    "disk",
+    "sync_freshness",
+    "ledger_integrity",
+    "orphans",
+    "cache_duplication",
+    "pod_fractions",
+    "ssl",
+    "docker",
+    "migrations",
+}
+
+
 class TestRunAllChecks:
     def test_returns_list(self):
         results = run_all_checks()
         assert isinstance(results, list)
 
-    def test_returns_eight_checks(self):
+    def test_returns_all_checks(self):
         results = run_all_checks()
-        assert len(results) == 8
+        assert len(results) == len(EXPECTED_CATEGORIES)
 
     def test_all_have_required_keys(self):
         results = run_all_checks()
@@ -280,19 +296,9 @@ class TestRunAllChecks:
             )
 
     def test_categories_are_all_present(self):
-        expected_categories = {
-            "database",
-            "disk",
-            "sync_freshness",
-            "ledger_integrity",
-            "orphans",
-            "ssl",
-            "docker",
-            "migrations",
-        }
         results = run_all_checks()
         actual_categories = {r["category"] for r in results}
-        assert actual_categories == expected_categories
+        assert actual_categories == EXPECTED_CATEGORIES
 
 
 class TestHealthDemoMode:

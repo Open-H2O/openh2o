@@ -5,6 +5,8 @@ from decimal import Decimal
 
 from django.contrib.gis.geos import LineString, MultiLineString, MultiPolygon, Point, Polygon
 
+from parcels.models import NON_POSITIVE_SOURCE_TYPES
+
 
 def _box(cx=-119.5, cy=36.5, size=0.01):
     half = size / 2
@@ -158,8 +160,22 @@ class ParcelLedgerFactory(factory.django.DjangoModelFactory):
     parcel = factory.SubFactory(ParcelFactory)
     transaction_date = factory.LazyFunction(date.today)
     effective_date = factory.LazyFunction(date.today)
-    amount_acre_feet = Decimal("10.0000")
     source_type = "manual_entry"
+
+    # The default amount's SIGN follows source_type, because the ledger's sign
+    # rule is now enforced by check constraints (math eval 2026-07-18): usage
+    # rows debit and must be <= 0, supply rows credit and must be > 0. A flat
+    # positive default silently built usage rows production never writes — every
+    # real meter_reading and surface_diversion row in the live demo is negative.
+    # Magnitude stays 10 either way, so magnitude-based assertions are unchanged.
+    # An explicit amount_acre_feet passed by a test still wins over this.
+    amount_acre_feet = factory.LazyAttribute(
+        lambda o: (
+            Decimal("-10.0000")
+            if o.source_type in NON_POSITIVE_SOURCE_TYPES
+            else Decimal("10.0000")
+        )
+    )
 
 
 class WaterRightTypeFactory(factory.django.DjangoModelFactory):
