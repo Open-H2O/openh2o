@@ -35,6 +35,9 @@ def _metered_parcel(period_month, *, consumptive_use, metered, surface="0"):
         gross_et_af=consumptive_use,
         net_consumptive_use_af=consumptive_use,
         surface_water_af=surface,
+        # What the chain would bill: the residual after surface water, floored at
+        # zero. Not read by this check, but the column is NOT NULL.
+        final_af=max(consumptive_use - surface, Decimal("0")),
         residual_disposition="metered",
     )
     if Decimal(metered) > 0:
@@ -148,6 +151,7 @@ class TestAgreement:
             period="2024-01",
             gross_et_af=Decimal("500"),
             net_consumptive_use_af=Decimal("500"),
+            final_af=Decimal("500"),
             residual_disposition="groundwater",
         )
         result = check_et_meter_agreement()
