@@ -1,19 +1,19 @@
 {% comment %}
-Ensemble agreement for one parcel-month of satellite ET.
+Ensemble provenance for one parcel-month of satellite ET: how many of the six
+member models survived OpenET's outlier filter, and the range those survivors
+spanned.
 
-`confidence` is an accounting.confidence.EnsembleConfidence. The count is
-always rendered as text so the signal survives greyscale printing and
-colour-vision deficiency; the colour ramp only reinforces it.
+The styling carries NO verdict. There is deliberately no confidence ramp here —
+see accounting/confidence.py for why the earlier graded version was withdrawn.
+The badge has exactly two states, and both are factual rather than evaluative:
+retrieved, or not retrieved.
 
-`title` carries the plain-English label rather than a jargon string — an
-operator hovering "4/6" should read "Notable disagreement", not a variable name.
-
-NOTE: Django's hash-style comment is SINGLE-LINE only. Spanning one across
-several lines does not strip it — it renders into the page. That is exactly
-what happened here, so this block uses comment/endcomment instead.
+Django's hash-style comment is SINGLE-LINE only. Spanning one across several
+lines does not strip it — it renders into the page. That happened here once,
+which is why this block uses comment/endcomment.
 {% endcomment %}
-<span class="badge badge-pill badge-agreement badge-agreement-{{ confidence.level }}"
-      title="{{ confidence.label }}">
+<span class="badge badge-pill badge-agreement{% if not confidence.has_agreement %} badge-agreement-absent{% endif %}"
+      title="Member models retained by OpenET's outlier filter, out of {{ 6 }}">
   {{ confidence.token }}
 </span>
 {% if confidence.has_range %}

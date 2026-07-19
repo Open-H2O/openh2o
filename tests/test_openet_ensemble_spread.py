@@ -237,40 +237,6 @@ class TestSpreadFetch:
         for variable in SPREAD_VARIABLES:
             assert OpenETCache.objects.filter(parcel=parcel, variable=variable).exists()
 
-
-class TestConfidenceBands:
-    """Pure band logic — no database needed."""
-
-    @pytest.mark.parametrize(
-        "count,level",
-        [(6, "high"), (5, "moderate"), (4, "guarded"), (3, "low"), (1, "low")],
-    )
-    def test_levels(self, count, level):
-        assert EnsembleConfidence(model_count=count).level == level
-
-    def test_token_is_always_text(self):
-        assert EnsembleConfidence(model_count=4).token == "4/6"
-
-    def test_missing_count_is_unknown_not_zero(self):
-        """Absent and zero are different facts. A missing count must not render
-        as "0/6", which would read as total model disagreement."""
-        confidence = EnsembleConfidence(model_count=None)
-
-        assert confidence.level == "unknown"
-        assert confidence.token == "—"
-        assert not confidence.has_agreement
-
-    def test_range_requires_both_bounds(self):
-        assert not EnsembleConfidence(low_mm=70.0, high_mm=None).has_range
-        assert not EnsembleConfidence(low_mm=None, high_mm=104.0).has_range
-        assert EnsembleConfidence(low_mm=70.0, high_mm=104.0).has_range
-
-    def test_zero_width_range_is_not_a_range(self):
-        """Equal bounds would render as a point estimate with implied perfect
-        precision. Suppress it rather than overstate certainty."""
-        assert not EnsembleConfidence(low_mm=88.0, high_mm=88.0).has_range
-
-
 @pytest.mark.django_db
 class TestConfidenceFromCache:
     def test_assembles_all_four_components(self, parcel, sample_geometry):
@@ -285,19 +251,20 @@ class TestConfidenceFromCache:
         assert float(confidence.low_mm) == 70.0
         assert float(confidence.high_mm) == 104.0
         assert confidence.model_count == 5
-        assert confidence.level == "moderate"
         assert confidence.token == "5/6"
+        assert confidence.has_range
 
-    def test_et_without_spread_reports_unknown_not_certain(self, parcel, sample_geometry):
-        """The pre-existing state of every parcel: ET fetched, spread never
-        collected. That must read as "unknown", never as a tight range."""
+    def test_et_without_spread_reports_absent_not_narrow(self, parcel, sample_geometry):
+        """The pre-existing state of every parcel: ET fetched, provenance never
+        collected. That must read as absent, never as a tight range."""
         _row(parcel, sample_geometry, "ET", "et", 88.0)
 
         confidence = parcel_ensemble_confidence(parcel, "2025-01")
 
         assert float(confidence.value_mm) == 88.0
         assert not confidence.has_range
-        assert confidence.level == "unknown"
+        assert not confidence.is_known
+        assert confidence.token == "—"
 
     def test_missing_bound_does_not_become_zero(self, parcel, sample_geometry):
         """_read_cache_mm returns Decimal("0") on a miss, which is a real value
@@ -352,9 +319,20 @@ class TestConfidenceRendering:
         # The count is TEXT, not colour alone — this is the WCAG 1.4.1 contract
         # and the reason the badge survives a greyscale print of a filing.
         assert "4/6" in body
-        assert "Notable disagreement" in body
-        assert "badge-agreement-guarded" in body
         assert "70&ndash;104 mm" in body or "70–104 mm" in body
+
+        # No VERDICT. The page reports what the models said; it does not grade
+        # them. Scoring spread into a confidence label was withdrawn because
+        # relative width tracks the size of the number, not model disagreement
+        # (accounting/confidence.py). Colour must not smuggle the claim back in
+        # either, hence no per-level badge class.
+        for verdict in [
+            "Models agree closely", "Minor disagreement",
+            "Notable disagreement", "Models diverge",
+        ]:
+            assert verdict not in body, f"a withdrawn confidence verdict returned: {verdict!r}"
+        for graded in ["agreement-high", "agreement-moderate", "agreement-guarded", "agreement-low"]:
+            assert graded not in body, f"graded badge styling returned: {graded!r}"
 
     def test_missing_spread_renders_honest_unknown(
         self, auth_client, parcel, sample_geometry
@@ -369,9 +347,9 @@ class TestConfidenceRendering:
         url = reverse("accounting:calculation_run_detail", args=[parcel.pk, "2025-01"])
         body = auth_client.get(url).content.decode()
 
-        assert "badge-agreement-unknown" in body
+        assert "badge-agreement-absent" in body
         assert "Not yet collected" in body
-        assert "mm" not in body.split("Satellite model agreement")[1][:400]
+        assert "mm" not in body.split("Satellite models behind")[1][:400]
 
 
     def test_no_template_comment_leaks_into_the_page(
@@ -398,61 +376,3 @@ class TestConfidenceRendering:
         ]:
             assert leak not in body, f"template comment leaked into the page: {leak!r}"
 
-
-class TestCountAndSpreadDisagree:
-    """The count and the width are different questions. Either alone can flatter."""
-
-    def test_all_six_models_retained_but_wildly_spread_is_not_agreement(self):
-        """The real case that caught this: MER-APN-062, 2025-07 on the live
-        Merced demo. All six member models survived OpenET's outlier filter —
-        a perfect 6/6 — yet they spanned 1.2 to 50.8 mm around a value of 21.1.
-
-        Counting survivors said "agree closely". The models disagreed by 42x.
-        """
-        c = EnsembleConfidence(
-            value_mm=21.06, low_mm=1.20, high_mm=50.84, model_count=6
-        )
-
-        assert c.count_level == "high"        # nothing was an outlier...
-        assert c.spread_level == "low"        # ...and they still diverge
-        assert c.level == "low"               # report the cautious one
-        assert c.label == "Models diverge — verify"
-        assert c.token == "6/6"               # the count is still shown honestly
-
-    def test_narrow_spread_does_not_rescue_a_poor_count(self):
-        """Symmetric guard: a tight range must not upgrade a parcel-month where
-        half the models were thrown out as outliers."""
-        c = EnsembleConfidence(
-            value_mm=100.0, low_mm=98.0, high_mm=102.0, model_count=3
-        )
-
-        assert c.spread_level == "high"
-        assert c.count_level == "low"
-        assert c.level == "low"
-
-    def test_both_good_stays_high(self):
-        c = EnsembleConfidence(
-            value_mm=100.0, low_mm=95.0, high_mm=105.0, model_count=6
-        )
-        assert c.level == "high"
-
-    def test_spread_alone_still_yields_a_level(self):
-        """Bounds without a count is a real signal, not an unknown."""
-        c = EnsembleConfidence(value_mm=100.0, low_mm=20.0, high_mm=180.0)
-
-        assert not c.has_agreement
-        assert c.token == "—"
-        assert c.level == "low"
-        assert c.is_known
-
-    def test_zero_value_does_not_explode(self):
-        """A range around zero has no meaningful relative width."""
-        c = EnsembleConfidence(value_mm=0, low_mm=0.0, high_mm=4.0, model_count=6)
-
-        assert c.relative_width is None
-        assert c.level == "high"   # falls back to the count alone
-
-    def test_nothing_retrieved_is_unknown(self):
-        c = EnsembleConfidence(value_mm=88.0)
-        assert c.level == "unknown"
-        assert not c.is_known

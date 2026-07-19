@@ -4036,56 +4036,31 @@ div[id$="-map"] {
 }
 
 /* ---------------------------------------------------------------------------
-   Ensemble agreement badge
+   Ensemble provenance badge
    ---------------------------------------------------------------------------
-   How many of OpenET's six member models survived its outlier filter for this
-   parcel-month. Deliberately NOT the green/yellow/red used elsewhere for health:
-   that palette means "system fault", and low model agreement is uncertainty,
-   not error. Painting it red would teach operators to read a wide spread as a
-   broken number.
+   How many of OpenET's six member models survived its outlier filter.
 
-   So the ramp varies WEIGHT within a single hue (reservoir teal, the water-data
-   accent) rather than shifting hue: strong fill = models agree, faint outline =
-   they diverge. Confidence reads as intensity, which is what it is.
+   There is NO confidence ramp here, and that is deliberate. An earlier version
+   graded this into a five-step scale; it was withdrawn because the grade was
+   not defensible (see accounting/confidence.py). Styling that varied by
+   "confidence" would reintroduce the same claim through colour that we removed
+   from the words.
 
-   Colour is never the only carrier — the badge always prints its count as text
-   ("4/6"), and the lowest band adds a dashed border so the bands stay
-   distinguishable in greyscale and under colour-vision deficiency (WCAG 1.4.1).
-   These figures end up in printed filings. */
+   So there are two states, both factual: retrieved, or not retrieved. The count
+   always renders as text, so the signal never depends on colour at all
+   (WCAG 1.4.1) — these figures reach printed filings.
+
+   Text colour is reservoir-700, measured 8.76:1 on the card surface.
+   (reservoir-400, which .badge-teal uses, measures 1.30:1 and would fail.) */
 .badge-agreement {
     font-variant-numeric: tabular-nums;
-    /* One text colour across every band, measured at 8.76:1 on the card surface.
-       The ramp is carried by FILL and BORDER weight alone, so contrast never
-       degrades as confidence drops — the least-certain badge is exactly as
-       legible as the most certain one. (reservoir-400, which .badge-teal uses,
-       measures 1.30:1 here and would not have been readable.) */
     color: var(--reservoir-700);
-}
-
-.badge-agreement.badge-agreement-high {
-    background-color: oklch(0.45 0.10 200 / 0.30);
-    border-color: oklch(0.72 0.10 200 / 0.85);
-}
-
-.badge-agreement.badge-agreement-moderate {
-    background-color: oklch(0.45 0.10 200 / 0.16);
+    background-color: oklch(0.45 0.10 200 / 0.18);
     border-color: oklch(0.72 0.10 200 / 0.62);
 }
 
-.badge-agreement.badge-agreement-guarded {
-    background-color: transparent;
-    border-color: oklch(0.72 0.10 200 / 0.72);
-}
-
-/* Dashed, not red. The pattern is a second (non-colour) channel saying "this
-   one is different" without claiming the value is wrong. */
-.badge-agreement.badge-agreement-low {
-    background-color: transparent;
-    border-style: dashed;
-    border-color: oklch(0.72 0.09 200 / 0.90);
-}
-
-.badge-agreement.badge-agreement-unknown {
+/* Not retrieved. Dotted and grey: an absence, not a low score. */
+.badge-agreement.badge-agreement-absent {
     background-color: transparent;
     border-style: dotted;
     border-color: rgba(160, 176, 192, 0.62);

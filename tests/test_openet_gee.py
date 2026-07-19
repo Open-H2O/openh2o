@@ -304,4 +304,3 @@ class TestEnsembleSpread:
         # 5.4 pixels-averaged models rounds to a 5/6 badge.
         assert c.model_count == 5
         assert c.token == "5/6"
-        assert c.level == "moderate"

@@ -60,13 +60,13 @@
       the whole derivation, not one row of it.
       {% endcomment %}
       <p class="text-sm" style="margin: var(--space-sm) 0 0; color: var(--color-text-secondary);">
-        Satellite model agreement:
+        Satellite models behind this estimate:
         {% include "accounting/partials/_agreement_badge.html" with confidence=confidence %}
         <span class="text-tertiary">
           {% if confidence.is_known %}
-            {{ confidence.label }}. The badge counts how many models passed OpenET's outlier filter; the range is how far those surviving models actually spread. A high count with a wide range still means the estimate is soft.
+            OpenET averages six independent models after discarding outliers. The badge is how many were kept; the range is the lowest and highest of those kept. The figure above uses their average.
           {% else %}
-            Not yet collected for this parcel-month, so the estimate above carries no measured spread.
+            Not yet collected for this parcel-month, so the estimate above carries no recorded model range.
           {% endif %}
         </span>
       </p>
