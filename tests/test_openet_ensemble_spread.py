@@ -47,12 +47,14 @@ def parcel(sample_geometry):
 def auth_client(db):
     """Logged-in client. Mirrors the fixture in test_57_03_presentation — the
     audit page is login-gated, so an anonymous client only ever sees a redirect."""
+    from django.contrib.auth import get_user_model
     from django.test import Client
 
-    from tests.factories import UserFactory
-
+    user = get_user_model().objects.create_user(
+        username="spread-tester", password="x"
+    )
     client = Client()
-    client.force_login(UserFactory())
+    client.force_login(user)
     return client
 
 
