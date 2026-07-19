@@ -59,8 +59,19 @@ _BETWEEN_TAGS = re.compile(r">\s+<")
 _MAIN = re.compile(r"<main\b.*?</main>", re.S)
 
 
+#: Database-assigned primary keys leak into the markup (account detail links,
+#: the period <option> values) and they depend on how many rows earlier tests
+#: created. Left in, the fixture passes when this file runs alone and fails
+#: inside the full suite — a flake that teaches everyone to distrust the gate.
+#: Structure is what we are pinning, so identity gets scrubbed.
+_URL_PK = re.compile(r"/\d+/")
+_VALUE_PK = re.compile(r'value="\d+"')
+
+
 def normalize(html: str) -> str:
-    return _BETWEEN_TAGS.sub("><", html.strip())
+    html = _BETWEEN_TAGS.sub("><", html.strip())
+    html = _URL_PK.sub("/<pk>/", html)
+    return _VALUE_PK.sub('value="<pk>"', html)
 
 
 def main_region(html: str) -> str:
