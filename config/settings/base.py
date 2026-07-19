@@ -260,13 +260,22 @@ _google_client_secret = env("GOOGLE_OAUTH_CLIENT_SECRET", default="")
 
 DATASYNC_MOCK_MODE = env.bool("DATASYNC_MOCK_MODE", default=False)
 OPENET_CACHE_DAYS = int(os.environ.get("OPENET_CACHE_DAYS", "30"))
-# Raised from 400 when ensemble-spread collection landed. The API takes one
-# variable per call, so a parcel-window that used to cost 1 call now costs up to
-# 4 (ET + et_mad_min + et_mad_max + model_count). At the demo's ~76 parcels that
-# is ~304 calls for a single annual window, which would have sat at 76% of the
-# old ceiling with no headroom for a stale-cache refresh. Spread collection is
-# opt-in per sync, so deployments that skip it are unaffected by the higher cap.
-OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "1200"))
+# 400 mirrors OpenET's OWN Tier 2 monthly query limit (Tier 1 is 100; Tier 2,
+# which requires linking an Earth Engine account, is 400). This is not a
+# spending cap — OpenET does not bill per call — it is a scarce fixed allowance
+# that resets on the 1st.
+#
+# Therefore this number must NEVER be set above the tier the deployment actually
+# holds. Its whole job is to stop us before OpenET does, so that we fail in a
+# place we control (a logged budget_blocked skip) rather than as opaque API
+# errors mid-sync. A value above the real quota is not a bigger budget, it is a
+# disabled guard.
+#
+# Ensemble-spread collection costs up to 4 calls per parcel-window instead of 1
+# (one variable per call), so it is opt-in rather than automatic: at 76 parcels
+# it consumes ~304 of the 400 available. Deployments on Tier 1 should lower this
+# to 100.
+OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "400"))
 
 # OpenET source selection: "api" = OpenET REST API (default, the live path);
 # "gee" = pull the same OpenET Ensemble collection directly from Google Earth
