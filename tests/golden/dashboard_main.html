@@ -1,0 +1,51 @@
+<main class="app-content" id="main-content"><h1 class="sr-only">Overview</h1><div class="page-stack"><!-- Period selector --><div style="display: flex; justify-content: flex-end;"><label class="text-secondary text-sm" style="display: flex; align-items: center; gap: var(--space-sm);">
+      Period
+      <select name="period"
+              hx-get="/accounting/dashboard/"
+              hx-target="#dashboard-content"
+              hx-trigger="change"
+              class="form-select"
+              style="min-width: 200px;"><option value="1" selected>Water Year 2025-2026</option></select></label></div><!-- HTMX-swappable content area --><div id="dashboard-content"><div class="attention-strip card-raised"><span class="attention-strip-clear"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    All clear — nothing needs attention right now.
+  </span></div><div class="budget-panel"><div class="budget-panel-head"><span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. Use
+<span class="explainer-popout"><button type="button" class="explainer-icon" aria-label="Explain: How this balance is built">?</button><span class="explainer-panel" role="tooltip"><span class="explainer-title">How this balance is built</span><span class="explainer-text">Consumptive use — the water crops actually drank, estimated from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This panel shows the demand, the supplies, and the gap between them.</span><a href="/help/water-balances/" class="explainer-link">How water balances work &rarr;</a></span></span></span><span class="budget-panel-period">Water Year 2025-2026</span></div><div class="budget-panel-row"><div class="budget-seg"><div class="budget-seg-label">Supplies</div><div class="budget-seg-value text-supply">0.00<span class="budget-seg-unit">AF</span></div></div><div class="budget-op">&minus;</div><div class="budget-seg"><div class="budget-seg-label">Consumptive use</div><div class="budget-seg-value text-usage">0.00<span class="budget-seg-unit">AF</span></div></div><div class="budget-op">&equals;</div><div class="budget-seg"><div class="budget-seg-label">Balance</div><div class="budget-seg-value text-surplus">0.00<span class="budget-seg-unit">AF</span></div></div></div><div class="budget-panel-foot"><span>Surface <b>0.00</b></span><span>Groundwater <b>0.00</b></span><span>Rain <b>0.00</b></span></div></div><!-- Consumptive-use model explainer --><div class="card-raised card-inset"><p class="text-tertiary text-sm" style="margin: 0;"><strong class="text-secondary">How this summary works:</strong><span class="text-supply">Consumptive use</span> — the water crops actually consumed, estimated from satellite evapotranspiration (ET) — is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. The columns below show each area's consumptive use beside the supplies that met it; the balance is the supplies minus consumptive use.
+  </p></div><h2 class="content-section-label" id="active-accounts">Account Details</h2><div class="card-raised"><div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);"><h2 class="section-header-flush">Active Water Accounts</h2><span class="text-tertiary text-xs">Active accounts only — each groups parcels under one water user; zone totals below cover all parcels</span></div><div class="table-scroll"><table class="data-table"><thead><tr><th style="min-width: 200px;">Account</th><th class="th-right">Consumptive Use (AF)</th><th class="th-right">Surface (AF)</th><th class="th-right">Groundwater (AF)</th><th class="th-right">Precip (AF)</th><th class="th-right">Supplies (AF)</th><th class="th-right">Net (AF)
+<span class="explainer-popout"><button type="button" class="explainer-icon" aria-label="Explain: Net">?</button><span class="explainer-panel" role="tooltip"><span class="explainer-title">Net</span><span class="explainer-text">Supplies minus estimated consumptive use for this account — the balance left after the water its crops drank is subtracted from the surface, groundwater, and rainfall that met that demand.</span><a href="/help/water-balances/" class="explainer-link">How water balances work &rarr;</a></span></span></th><th class="th-right">Allocation (AF)
+<span class="explainer-popout"><button type="button" class="explainer-icon" aria-label="Explain: Allocation">?</button><span class="explainer-panel" role="tooltip"><span class="explainer-title">Allocation</span><span class="explainer-text">This account's share of the period's water budget, pro-rated by how many of its parcels fall in each zone.</span><a href="/help/budgets-allocations/" class="explainer-link">How budgets & allocations work &rarr;</a></span></span></th><th class="th-right">Remaining (AF)
+<span class="explainer-popout"><button type="button" class="explainer-icon" aria-label="Explain: Remaining">?</button><span class="explainer-panel" role="tooltip"><span class="explainer-title">Remaining</span><span class="explainer-text">Allocation minus estimated consumptive use. A negative number means the account is over budget — it consumed more than its allocation for the period.</span><a href="/help/budgets-allocations/" class="explainer-link">How budgets & allocations work &rarr;</a></span></span></th></tr></thead><tbody><tr><td><a href="/accounting/accounts/1/" class="data-table-link">
+            GF-0001
+          </a><span class="block text-secondary text-sm">Golden Fixture Account</span></td><td class="td-num text-usage">
+          0.00
+        </td><td class="td-num text-supply">
+          0.00
+        </td><td class="td-num text-supply">
+          0.00
+        </td><td class="td-num text-supply">
+          0.00
+        </td><td class="td-num-bold text-supply">
+          0.00
+        </td><td class="td-num-bold text-surplus">
+          0.00
+        </td><td class="td-num">
+          100.00
+        </td><td class="td-num-bold text-surplus">
+          100.00
+        </td></tr></tbody></table></div></div><h2 class="content-section-label">Zone Details</h2><div class="card-raised"><div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);"><h2 class="section-header-flush">Zones</h2><span class="text-tertiary text-xs">Geographic management areas with allocations</span></div><div class="table-scroll"><table class="data-table"><thead><tr><th style="min-width: 240px;">Zone</th><th class="th-right">Consumptive Use (AF)</th><th class="th-right">Surface (AF)</th><th class="th-right">Groundwater (AF)</th><th class="th-right">Precip (AF)</th><th class="th-right">Supplies (AF)</th><th class="th-right">Net (AF)</th><th class="th-right">Allocation (AF)</th><th class="th-right">Carried fwd (AF)</th><th class="th-right">Remaining (AF)</th></tr></thead><tbody><tr><td class="font-semibold">Golden Fixture Zone</td><td class="td-num text-usage">
+          0.00
+        </td><td class="td-num text-supply">
+          0.00
+        </td><td class="td-num text-supply">
+          0.00
+        </td><td class="td-num text-supply">
+          0.00
+        </td><td class="td-num-bold text-supply">
+          0.00
+        </td><td class="td-num-bold text-surplus">
+          0.00
+        </td><td class="td-num">
+          100.00
+        </td><td class="td-num text-tertiary">
+          0.00
+        </td><td class="td-num-bold text-surplus">
+          100.00
+        </td></tr></tbody></table></div></div></div></div></main>

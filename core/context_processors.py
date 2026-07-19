@@ -57,15 +57,19 @@ def modules(request):
     ``admin_mode``, ``agency_admin``, ``setup_gate``) and the template applies
     it, exactly as the hand-written sidebar does today.
 
-    Registered now so 77-02's template rewrite is a single isolated change; this
-    plan renders nothing from it.
+    ``module_dashboard_cards`` is the flat list of template partials the enabled
+    modules contribute to the overview dashboard, in registry order. It is empty
+    on a default deployment — no module ships a dashboard card today, and the
+    honest answer for a module without one is nothing at all rather than an
+    invented tile. Phase 78's drinking-water module adds the first real entry.
     """
-    from core.modules import enabled_modules, nav_sections_for
+    from core.modules import dashboard_cards_for, enabled_modules, nav_sections_for
 
     specs = enabled_modules()
     return {
         "enabled_modules": [spec.name for spec in specs],
         "nav_sections": nav_sections_for(specs),
+        "module_dashboard_cards": dashboard_cards_for(specs),
     }
 
 

@@ -151,7 +151,11 @@ class ModuleSpec:
     url_module: Optional[str] = None
     url_order: int = 0
     nav: tuple = ()
-    dashboard_cards: tuple = ()  # 77-02 populates
+    #: Template partial paths this module contributes to the overview dashboard,
+    #: e.g. ``("drinking/partials/_dashboard_card.html",)``. Empty for every
+    #: module today — see `dashboard_cards_for` for why that is the right answer
+    #: and not an omission.
+    dashboard_cards: tuple = ()
     seed_commands: tuple = ()
     required: bool = False
     #: Why this module cannot be disabled. Surfaced verbatim in the startup
@@ -647,6 +651,25 @@ def url_specs_for(modules) -> list:
     routed = [m for m in modules if m.url_prefix and m.url_module]
     routed.sort(key=lambda m: m.url_order)
     return [(m.url_prefix, m.url_module) for m in routed]
+
+
+def dashboard_cards_for(modules) -> list:
+    """Template partials the enabled modules contribute to the overview dashboard.
+
+    Flat, in registry order, so the dashboard renders them with a plain
+    ``{% include %}`` loop and never names a module.
+
+    Empty on a default deployment, and that is the correct answer rather than a
+    gap: the overview's existing panels — the supply-vs-use rollup, the account
+    table, the zone table — are accounting-domain summaries that belong to
+    ``accounting``, not per-module tiles wearing a shared costume. Manufacturing
+    a card for every module to make the list look populated would invent UI
+    nobody asked for. Phase 78 adds the first genuine one.
+    """
+    cards: list = []
+    for spec in modules:
+        cards.extend(spec.dashboard_cards)
+    return cards
 
 
 def nav_sections_for(modules) -> list:
