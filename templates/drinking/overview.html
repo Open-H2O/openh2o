@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Drinking Water - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Drinking water{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Drinking Water</span>
+  </nav>
+  <p class="page-description">The public water system this agency operates, its facilities, and the wells behind them. Where the rest of the platform accounts for how much water there is, this domain records what is in it.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  {% for system in systems %}
+  <div class="card-raised">
+
+    <!-- Identity. Every value is the regulator's own published vocabulary,
+         shown as published — see drinking/models.py on why none of it is
+         translated into friendlier local wording. -->
+    <h2 class="section-header">{{ system.name }}</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">PWSID</div>
+        <div class="field-value-mono">{{ system.pwsid }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Status</div>
+        <div class="field-value">{{ system.get_activity_status_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">System type</div>
+        <div class="field-value">{{ system.get_pws_type_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">State classification</div>
+        <div class="field-value">{{ system.get_state_classification_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Owner type</div>
+        <div class="field-value">{{ system.get_owner_type_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Primary source</div>
+        <div class="field-value">{{ system.get_primary_source_code_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Regulating agency</div>
+        <div class="field-value">{{ system.regulating_agency|default:"—" }}</div>
+      </div>
+      {% if system.seller_pwsid %}
+      <div class="field-group">
+        <div class="field-label">Buys water from</div>
+        <div class="field-value-mono">{{ system.seller_pwsid }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Population served</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Residential</div>
+        <div class="field-value-mono">{{ system.population_residential|default_if_none:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Non-transient</div>
+        <div class="field-value-mono">{{ system.population_non_transient|default_if_none:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Transient</div>
+        <div class="field-value-mono">{{ system.population_transient|default_if_none:"—" }}</div>
+      </div>
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Service connections</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Residential</div>
+        <div class="field-value-mono">{{ system.connections_residential|default_if_none:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Commercial</div>
+        <div class="field-value-mono">{{ system.connections_commercial|default_if_none:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Industrial</div>
+        <div class="field-value-mono">{{ system.connections_industrial|default_if_none:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Agricultural</div>
+        <div class="field-value-mono">{{ system.connections_agricultural|default_if_none:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Combined</div>
+        <div class="field-value-mono">{{ system.connections_combined|default_if_none:"—" }}</div>
+      </div>
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Facilities</h2>
+    {% if system.facilities.all %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Facility ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Water Type</th>
+            <th>Sampling Points</th>
+            <th>Well</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for facility in system.facilities.all %}
+          <tr>
+            <td class="text-mono">{{ facility.facility_id }}</td>
+            <td>{{ facility.name|default:"—" }}</td>
+            <td class="text-secondary text-sm">{{ facility.get_facility_type_display|default:"—" }}</td>
+            <td class="text-secondary text-sm">{{ facility.get_activity_status_display|default:"—" }}</td>
+            <td class="text-secondary text-sm">{{ facility.get_water_type_display|default:"—" }}</td>
+            <td class="text-secondary text-sm tabular-nums">{{ facility.sampling_point_count }}</td>
+            <td>
+              {# The quality-to-quantity join made visible: ONE physical well,
+                 sampled on this side and metered on the wells side. Guarded on
+                 enabled_modules so dropping `wells` degrades to plain text
+                 rather than NoReverseMatch (the 77-02 template-guard rule). #}
+              {% if facility.well and 'wells' in enabled_modules %}
+                <a href="{% url 'wells:detail' facility.well.pk %}" class="data-table-link">{{ facility.well.name }}</a>
+              {% elif facility.well %}
+                {{ facility.well.name }}
+              {% else %}
+                <span class="text-tertiary">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-secondary text-sm">No facilities recorded for this system yet.</p>
+    {% endif %}
+  </div>
+  {% empty %}
+  {% include "drinking/partials/_empty_drinking.html" with what="A water system is the public water system this agency operates — its PWSID, the facilities that make it up, and the wells behind them." %}
+  {% endfor %}
+
+</div>
+{% endblock %}

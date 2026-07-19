@@ -1,0 +1,62 @@
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
+    sample result{{ total_count|pluralize }} found
+  </span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Sample Date</th>
+        <th>PS Code</th>
+        <th>Analyte</th>
+        <th>Result</th>
+        <th>Method</th>
+        <th>Laboratory</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for result in page_obj %}
+      <tr>
+        <td class="text-secondary text-sm tabular-nums">{{ result.event.sample_date|date:"Y-m-d" }}</td>
+        <td class="text-mono">{{ result.event.sampling_point.ps_code }}</td>
+        <td>{{ result.analyte.name }}</td>
+        {# Rendered through result_kind, never as a raw number. The unit lives
+           with the value because several limits are percentages, not
+           concentrations (total coliform is "% positive samples"). #}
+        <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
+        <td class="text-secondary text-sm">{{ result.method|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ result.lab_name|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-row">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&analyte={{ analyte_id }}&sampling_point={{ point_id }}&date_from={{ date_from }}&date_to={{ date_to }}"
+       class="btn-secondary btn-sm">Previous</a>
+  {% endif %}
+  <span class="pagination-label">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&analyte={{ analyte_id }}&sampling_point={{ point_id }}&date_from={{ date_from }}&date_to={{ date_to }}"
+       class="btn-secondary btn-sm">Next</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% elif has_any %}
+<div class="card-raised empty-state">
+  <p class="empty-state-text">No sample results match these filters.</p>
+</div>
+
+{% else %}
+{% include "drinking/partials/_empty_drinking.html" with what="A sample result is one analyte's finding within a sample event — a measured concentration, a non-detect, or a present/absent reading." %}
+{% endif %}

@@ -543,9 +543,12 @@ MODULE_REGISTRY: dict = {
         name="drinking",
         label="Drinking Water",
         apps=("drinking",),
-        # Model-only for now: views, URLs and nav arrive in 78-02. Registered
-        # last in app order deliberately — a new domain must not displace an
-        # existing app on a duplicate template or static path.
+        # Registered last in app order deliberately — a new domain must not
+        # displace an existing app on a duplicate template or static path.
+        url_prefix="drinking/",
+        url_module="drinking.urls",
+        # 140: the next free value after feedback's 130, spaced by 10.
+        url_order=140,
         seed_commands=("seed_drinking",),
         requires=("wells", "standards"),
         # The first Phase-78-era module, and droppable by construction: nothing

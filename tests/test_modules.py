@@ -69,6 +69,11 @@ HISTORICAL_URL_SPECS = [
     ("feedback/", "feedback.urls"),
 ]
 
+# Today's default URL includes. Same discipline as DEFAULT_LOCAL_APPS above: the
+# historical 13 stay unedited as the parity baseline, and 78-02 appends
+# `drinking` at url_order 140 — the next free value after feedback's 130.
+DEFAULT_URL_SPECS = HISTORICAL_URL_SPECS + [("drinking/", "drinking.urls")]
+
 
 class TestDefaultParity:
     """The default module list must reproduce the pre-registry behavior."""
@@ -83,10 +88,16 @@ class TestDefaultParity:
         assert list(tail) == DEFAULT_LOCAL_APPS
 
     def test_url_specs_match_historical_order(self):
-        assert mod.url_specs_for(mod.enabled_modules()) == HISTORICAL_URL_SPECS
+        specs = mod.url_specs_for(mod.enabled_modules())
+        assert specs == DEFAULT_URL_SPECS
+        # The pre-registry order is still a prefix: drinking was appended, and
+        # no existing include was reordered or re-prefixed around it.
+        assert specs[: len(HISTORICAL_URL_SPECS)] == HISTORICAL_URL_SPECS
 
     def test_model_only_modules_contribute_no_urls(self):
-        for name in ("measurements", "standards", "drinking"):
+        # `drinking` was model-only in 78-01 and is deliberately NOT in this
+        # list any more — 78-02 gave it three pages, a URL module and nav.
+        for name in ("measurements", "standards"):
             spec = mod.MODULE_REGISTRY[name]
             assert spec.url_prefix is None
             assert spec.url_module is None
@@ -119,7 +130,7 @@ class TestDisabledModule:
     def test_dropped_module_registers_no_urls(self):
         specs = mod.url_specs_for(mod.enabled_modules(self.without_reporting))
         assert ("reporting/", "reporting.urls") not in specs
-        assert len(specs) == len(HISTORICAL_URL_SPECS) - 1
+        assert len(specs) == len(DEFAULT_URL_SPECS) - 1
 
     def test_dropped_module_contributes_no_nav(self):
         sections = mod.nav_sections_for(mod.enabled_modules(self.without_reporting))

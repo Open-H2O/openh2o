@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Sample Results - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Sample results{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Sample Results</span>
+  </nav>
+  <p class="page-description">Every laboratory finding recorded for this system, newest first. Results are shown as the lab reported them; this platform prepares submissions and does not determine compliance.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  {# Plain GET form rather than HTMX-per-control: four filters that are usually
+     set together, and a submitted filter set stays a shareable URL. #}
+  <form class="card-raised toolbar-row" method="get" action="{% url 'drinking:results' %}">
+    <div style="min-width: 200px;">
+      <label class="form-label" for="filter-analyte">Analyte</label>
+      <select id="filter-analyte" name="analyte" class="form-select">
+        <option value="">All Analytes</option>
+        {% for analyte in analytes %}
+          <option value="{{ analyte.pk }}" {% if analyte_id == analyte.pk|stringformat:"s" %}selected{% endif %}>{{ analyte.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="min-width: 200px;">
+      <label class="form-label" for="filter-point">Sampling point</label>
+      <select id="filter-point" name="sampling_point" class="form-select">
+        <option value="">All Sampling Points</option>
+        {% for point in sampling_points %}
+          <option value="{{ point.pk }}" {% if point_id == point.pk|stringformat:"s" %}selected{% endif %}>{{ point.ps_code }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="form-label" for="filter-date-from">Sampled from</label>
+      <input type="date" id="filter-date-from" name="date_from" value="{{ date_from }}" class="form-input">
+    </div>
+    <div>
+      <label class="form-label" for="filter-date-to">Sampled to</label>
+      <input type="date" id="filter-date-to" name="date_to" value="{{ date_to }}" class="form-input">
+    </div>
+    <div class="row-end" style="gap: var(--space-sm); align-self: flex-end;">
+      <button type="submit" class="btn-primary btn-sm">Apply</button>
+      <a href="{% url 'drinking:results' %}" class="btn-secondary btn-sm">Clear</a>
+    </div>
+  </form>
+
+  <div id="results">
+    {% include "drinking/partials/_result_results.html" %}
+  </div>
+
+</div>
+{% endblock %}

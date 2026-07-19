@@ -1,0 +1,75 @@
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
+    sampling point{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
+  </span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>PS Code</th>
+        <th>Name</th>
+        <th>Facility</th>
+        <th>Type</th>
+        <th>Latest Sample</th>
+        <th>Results</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for point in page_obj %}
+      <tr>
+        <td class="text-mono">{{ point.ps_code }}</td>
+        <td>{{ point.name|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ point.facility.facility_id }}{% if point.facility.name %} — {{ point.facility.name }}{% endif %}</td>
+        <td class="text-secondary text-sm">{{ point.get_point_type_display|default:"—" }}</td>
+        <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|default:"—" }}</td>
+        <td class="text-secondary text-sm tabular-nums">
+          {% if point.result_count %}
+            <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">{{ point.result_count }}</a>
+          {% else %}
+            0
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-row">
+  {% if page_obj.has_previous %}
+    <button
+      hx-get="{% url 'drinking:sampling_points' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&point_type={{ point_type }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Previous
+    </button>
+  {% endif %}
+  <span class="pagination-label">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+    <button
+      hx-get="{% url 'drinking:sampling_points' %}?page={{ page_obj.next_page_number }}&q={{ q }}&point_type={{ point_type }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Next
+    </button>
+  {% endif %}
+</div>
+{% endif %}
+
+{% elif has_any %}
+{# Filters are on and matched nothing. Not an onboarding moment — the operator
+   has data, just not this slice — so say so and leave the toolbar alone. #}
+<div class="card-raised empty-state">
+  <p class="empty-state-text">No sampling points found{% if q %} matching "{{ q }}"{% endif %}{% if point_type %} of that point type{% endif %}.</p>
+</div>
+
+{% else %}
+{% include "drinking/partials/_empty_drinking.html" with what="A sampling point is where a sample is physically drawn — a source, an entry point, a distribution location or a tap — identified by its state-published PS code." %}
+{% endif %}

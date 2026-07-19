@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Sampling Points - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Sampling points{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Sampling Points</span>
+  </nav>
+  <p class="page-description">Every location where a sample is physically drawn, identified by the PS code the state publishes. Each point belongs to one facility and carries its own sampling history.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  <div class="card-raised toolbar-row">
+    <div style="flex: 1; min-width: 200px;">
+      <label class="form-label" for="filter-search">Search</label>
+      <input
+        type="text"
+        id="filter-search" name="q"
+        value="{{ q }}"
+        placeholder="PS code or name..."
+        hx-get="{% url 'drinking:sampling_points' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='point_type']"
+        autocomplete="off"
+        class="form-input search-input-icon"
+      >
+    </div>
+    <div>
+      <label class="form-label" for="filter-point-type">Point type</label>
+      <select
+        id="filter-point-type" name="point_type"
+        hx-get="{% url 'drinking:sampling_points' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q']"
+        class="form-select"
+      >
+        <option value="" {% if not point_type %}selected{% endif %}>All Point Types</option>
+        {% for val, label in point_type_choices %}
+          <option value="{{ val }}" {% if point_type == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div id="results">
+    {% include "drinking/partials/_sampling_point_results.html" %}
+  </div>
+
+</div>
+{% endblock %}

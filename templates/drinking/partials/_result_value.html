@@ -1,0 +1,25 @@
+{% load drinking_display %}{% comment %}
+  One sample result, rendered through its own `result_kind`.
+
+  This partial is the single place the platform decides how a lab finding reads,
+  and it deliberately renders THREE different things rather than one number with
+  decorations:
+
+    • presence_absence → "Present" / "Absent". Never a number, never a "< RL".
+      Total coliform is reported present or absent; showing it as 0 would be a
+      claim the lab did not make.
+    • numeric, non-detect (`less_than_rl`) → "< {reporting level} {unit}", or a
+      bare "< RL" when no reporting level was captured. A non-detect is a bound,
+      not a value, and it must never render as its reporting level alone.
+    • numeric → value + unit.
+
+  Values go through `plain_decimal`, not `floatformat`: the column stores six
+  decimal places, so 3.2 mg/L comes back as Decimal("3.200000") and rendering it
+  raw would show precision the lab never reported.
+
+  **No verdict.** There is no comparison to a RegulatoryLimit here and no
+  pass/fail coloring — this platform prepares submissions, it does not determine
+  compliance. Any styling added below must stay neutral.
+
+  Caller supplies: `result` (a SampleResult).
+{% endcomment %}{% if result.result_kind == "presence_absence" %}{% if result.presence is True %}Present{% elif result.presence is False %}Absent{% else %}—{% endif %}{% elif result.less_than_rl %}{% if result.reporting_level is not None %}&lt; {{ result.reporting_level|plain_decimal }} {{ result.unit }}{% else %}&lt; RL{% endif %}{% elif result.result_value is not None %}{{ result.result_value|plain_decimal }} {{ result.unit }}{% else %}—{% endif %}

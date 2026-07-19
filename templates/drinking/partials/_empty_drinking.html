@@ -1,0 +1,27 @@
+{% comment %}
+  The drinking domain's "nothing here yet" state.
+
+  Deliberately NOT `partials/_empty_onboarding.html`: that partial routes an
+  operator to the Setup Wizard or to infrastructure's Add/Import screens, and
+  neither of those knows anything about water systems, sampling points or lab
+  results. Pointing there would be a dead end wearing a helpful coat.
+
+  So this names the two ways drinking data actually gets in today. The CSV
+  import is described in words and deliberately NOT linked — 78-03 builds it,
+  and a link to a URL that does not exist is worse than no link at all.
+
+  Caller supplies: `what` (one plain-English line about the missing entity).
+{% endcomment %}
+<div class="card-raised empty-state">
+  <div class="empty-state-icon">
+    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+    </svg>
+  </div>
+  <p class="empty-state-text" style="max-width: 460px; margin-left: auto; margin-right: auto;">{{ what }}</p>
+  <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
+    There are two ways to add it. You can enter records directly in the Django
+    admin now, or wait for the lab-file import — it reads the state's own
+    sampling and results files, and it arrives in the next update.
+  </p>
+</div>
