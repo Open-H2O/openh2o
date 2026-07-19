@@ -1173,21 +1173,12 @@ def calculation_run_detail(request, parcel_id, period):
         .order_by("credit__origin_period")
     )
 
-    # How much the satellite models actually agreed on this parcel-month. This
-    # page exists to make one calculated number checkable, and the gross ET it
-    # starts from is a modeled estimate — showing it without its spread states
-    # more precision than OpenET ever claimed. Two cheap indexed reads.
-    from accounting.confidence import parcel_ensemble_confidence
-
-    confidence = parcel_ensemble_confidence(parcel, period)
-
     context = {
         "parcel": parcel,
         "period": period,
         "run": run,
         "steps": steps,
         "draws": draws,
-        "confidence": confidence,
         "has_banking": run.banked_af > 0 or run.drawn_af > 0,
         # 42-01: the methodology fingerprint behind this number. Blank on a
         # pre-42 run, which the template renders as dashes (honest: "ran before

@@ -1,17 +1,24 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Tests for OpenET ensemble-spread collection and the confidence signal.
+Tests for OpenET ensemble-spread collection and the stored-bounds accessor.
 
-Three concerns:
+The bounds are COLLECTED and STORED but are NOT shown to users. They were
+briefly rendered on the calculation audit page and that was withdrawn: this is
+a water-balance application, the MAD-filtered ensemble IS the platform's
+answer to model spread, and publishing the member bounds beside the governing
+figure hands a regulated party a lower official-looking number to argue from.
+See accounting/confidence.py.
+
+What remains under test:
 
 1. The variable-leak regression. OpenETCache is a multi-variable table, and the
    ET read paths used to match on parcel + window only. A fresher non-ET row
    for the same window therefore read as an ET cache hit and suppressed the ET
-   fetch entirely.
-2. Spread fetch/parse. One variable per API call, each stored in its own row,
-   values keyed by variable name.
-3. The confidence bands, including the cases where a bound or a count is
-   MISSING — absent must never render as a confident zero-width range.
+   fetch entirely. That bug predates this work and is the real find.
+2. Spread fetch/parse on the REST tier: one variable per call, each stored in
+   its own row, values keyed by variable name.
+3. The accessor that reads those rows back, including the cases where a bound
+   or a count is MISSING — absent must stay distinguishable from zero.
 """
 
 from datetime import date, timedelta
@@ -41,21 +48,6 @@ def parcel(sample_geometry):
         status="active",
         area_acres=100,
     )
-
-
-@pytest.fixture
-def auth_client(db):
-    """Logged-in client. Mirrors the fixture in test_57_03_presentation — the
-    audit page is login-gated, so an anonymous client only ever sees a redirect."""
-    from django.contrib.auth import get_user_model
-    from django.test import Client
-
-    user = get_user_model().objects.create_user(
-        username="spread-tester", password="x"
-    )
-    client = Client()
-    client.force_login(user)
-    return client
 
 
 def _row(parcel, geometry, variable, key, value, model_name="Ensemble"):
@@ -277,102 +269,3 @@ class TestConfidenceFromCache:
 
         assert confidence.low_mm is None
         assert not confidence.has_range
-
-
-@pytest.mark.django_db
-class TestConfidenceRendering:
-    """The audit page must state its own uncertainty, and state it in text."""
-
-    def _run_for(self, parcel, period="2025-01"):
-        from accounting.models import CalculationRun
-
-        from decimal import Decimal
-
-        return CalculationRun.objects.create(
-            parcel=parcel,
-            period=period,
-            gross_et_af=Decimal("10"),
-            net_consumptive_use_af=Decimal("8"),
-            effective_precip_af=Decimal("1"),
-            surface_water_af=Decimal("0"),
-            banked_af=Decimal("0"),
-            drawn_af=Decimal("0"),
-            # final_af is NOT NULL with no default — a hand-built run must set it.
-            final_af=Decimal("8"),
-            breakdown=[],
-        )
-
-    def test_renders_agreement_token_as_text(
-        self, auth_client, parcel, sample_geometry
-    ):
-        from django.urls import reverse
-
-        self._run_for(parcel)
-        _row(parcel, sample_geometry, "ET", "et", 88.0)
-        _row(parcel, sample_geometry, "et_mad_min", "et_mad_min", 70.0)
-        _row(parcel, sample_geometry, "et_mad_max", "et_mad_max", 104.0)
-        _row(parcel, sample_geometry, "model_count", "model_count", 4)
-
-        url = reverse("accounting:calculation_run_detail", args=[parcel.pk, "2025-01"])
-        body = auth_client.get(url).content.decode()
-
-        # The count is TEXT, not colour alone — this is the WCAG 1.4.1 contract
-        # and the reason the badge survives a greyscale print of a filing.
-        assert "4/6" in body
-        assert "70&ndash;104 mm" in body or "70–104 mm" in body
-
-        # No VERDICT. The page reports what the models said; it does not grade
-        # them. Scoring spread into a confidence label was withdrawn because
-        # relative width tracks the size of the number, not model disagreement
-        # (accounting/confidence.py). Colour must not smuggle the claim back in
-        # either, hence no per-level badge class.
-        for verdict in [
-            "Models agree closely", "Minor disagreement",
-            "Notable disagreement", "Models diverge",
-        ]:
-            assert verdict not in body, f"a withdrawn confidence verdict returned: {verdict!r}"
-        for graded in ["agreement-high", "agreement-moderate", "agreement-guarded", "agreement-low"]:
-            assert graded not in body, f"graded badge styling returned: {graded!r}"
-
-    def test_missing_spread_renders_honest_unknown(
-        self, auth_client, parcel, sample_geometry
-    ):
-        """Every parcel is in this state until spread is collected. It must say
-        so rather than implying a tight, confident estimate."""
-        from django.urls import reverse
-
-        self._run_for(parcel)
-        _row(parcel, sample_geometry, "ET", "et", 88.0)
-
-        url = reverse("accounting:calculation_run_detail", args=[parcel.pk, "2025-01"])
-        body = auth_client.get(url).content.decode()
-
-        assert "badge-agreement-absent" in body
-        assert "Not yet collected" in body
-        assert "mm" not in body.split("Satellite models behind")[1][:400]
-
-
-    def test_no_template_comment_leaks_into_the_page(
-        self, auth_client, parcel, sample_geometry
-    ):
-        """Django's hash-comment is SINGLE-LINE. A multi-line one is not
-        stripped and renders developer commentary into the page — it shipped
-        that way once and nothing caught it, because a leaked comment looks
-        like ordinary whitespace in a browser."""
-        from django.urls import reverse
-
-        self._run_for(parcel)
-        _row(parcel, sample_geometry, "ET", "et", 88.0)
-        _row(parcel, sample_geometry, "model_count", "model_count", 6)
-
-        url = reverse("accounting:calculation_run_detail", args=[parcel.pk, "2025-01"])
-        body = auth_client.get(url).content.decode()
-
-        for leak in [
-            "EnsembleConfidence",
-            "colour ramp only reinforces",
-            "qualifies the whole derivation",
-            "SINGLE-LINE",
-        ]:
-            assert leak not in body, f"template comment leaked into the page: {leak!r}"
-

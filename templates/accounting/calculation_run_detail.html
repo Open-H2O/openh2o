@@ -53,23 +53,6 @@
         <strong style="color: var(--color-accent);">Derived extraction estimate — not measured pumping.</strong>
         This figure is computed from satellite evapotranspiration, not read from a meter. The steps below show every adjustment so the number can be checked.
       </p>
-      {% comment %}
-      The same honesty, one level deeper: the gross ET this waterfall starts
-      from is itself an ensemble of six models, and they do not always agree.
-      Belongs in this panel rather than beside the steps table — it qualifies
-      the whole derivation, not one row of it.
-      {% endcomment %}
-      <p class="text-sm" style="margin: var(--space-sm) 0 0; color: var(--color-text-secondary);">
-        Satellite models behind this estimate:
-        {% include "accounting/partials/_agreement_badge.html" with confidence=confidence %}
-        <span class="text-tertiary">
-          {% if confidence.is_known %}
-            OpenET averages six independent models after discarding outliers. The badge is how many were kept; the range is the lowest and highest of those kept. The figure above uses their average.
-          {% else %}
-            Not yet collected for this parcel-month, so the estimate above carries no recorded model range.
-          {% endif %}
-        </span>
-      </p>
     </div>
   </div>
 
