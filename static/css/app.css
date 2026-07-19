@@ -4064,17 +4064,17 @@ div[id$="-map"] {
 
 .badge-agreement.badge-agreement-high {
     background-color: oklch(0.45 0.10 200 / 0.30);
-    border-color: oklch(0.60 0.10 200 / 0.60);
+    border-color: oklch(0.72 0.10 200 / 0.85);
 }
 
 .badge-agreement.badge-agreement-moderate {
     background-color: oklch(0.45 0.10 200 / 0.16);
-    border-color: oklch(0.60 0.10 200 / 0.40);
+    border-color: oklch(0.72 0.10 200 / 0.62);
 }
 
 .badge-agreement.badge-agreement-guarded {
     background-color: transparent;
-    border-color: oklch(0.60 0.10 200 / 0.50);
+    border-color: oklch(0.72 0.10 200 / 0.72);
 }
 
 /* Dashed, not red. The pattern is a second (non-colour) channel saying "this
@@ -4082,13 +4082,13 @@ div[id$="-map"] {
 .badge-agreement.badge-agreement-low {
     background-color: transparent;
     border-style: dashed;
-    border-color: oklch(0.65 0.09 200 / 0.75);
+    border-color: oklch(0.72 0.09 200 / 0.90);
 }
 
 .badge-agreement.badge-agreement-unknown {
     background-color: transparent;
     border-style: dotted;
-    border-color: rgba(148, 163, 184, 0.4);
+    border-color: rgba(160, 176, 192, 0.62);
     color: var(--color-text-tertiary);
 }
 
