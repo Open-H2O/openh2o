@@ -95,7 +95,7 @@ ACTIVE_PATHS = [
 
 
 def render_sidebar(path="/", nav_mode="operations", user_is_admin=False,
-                   access_enforced=False):
+                   access_enforced=False, module_names=None):
     """Render the sidebar with an explicit context.
 
     Deliberately does NOT go through RequestContext/context processors: the
@@ -104,7 +104,7 @@ def render_sidebar(path="/", nav_mode="operations", user_is_admin=False,
     `enabled_modules` are passed from the start so this helper is unchanged
     before and after the registry rewrite.
     """
-    specs = enabled_modules()
+    specs = enabled_modules(module_names)
     return render_to_string(
         SIDEBAR,
         {
@@ -188,6 +188,53 @@ def test_diversions_not_active_on_water_rights_page():
     assert "active" in link_classes(on_surface, "/surface/")
     assert "active" not in link_classes(on_rights, "/surface/")
     assert "active" in link_classes(on_rights, "/surface/rights/")
+
+
+def test_disabling_a_module_removes_only_its_own_nav():
+    """The point of the whole phase: omit a module, lose exactly its links.
+
+    Uses `reporting`, `health` and `setup` because those are genuinely droppable
+    today (see OPTIONAL_MODULE_NAMES). The plan's example, `recharge`, is marked
+    required=True by 77-01 after ~100 cross-app module-scope imports were found,
+    so dropping it is a startup error, not a nav change.
+
+    `reporting` is the interesting one: it is the ONLY entry in its section, so
+    dropping it must take the "Reporting" heading with it rather than leaving an
+    empty labelled block.
+    """
+    from core.modules import ALL_MODULE_NAMES
+
+    dropped = {"reporting", "health", "setup"}
+    kept = [n for n in ALL_MODULE_NAMES if n not in dropped]
+
+    full = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
+                          access_enforced=False)
+    trimmed = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
+                             access_enforced=False, module_names=kept)
+
+    gone = ["Reports", "Site Health", "Setup Wizard"]
+    for label in gone:
+        assert f">{label}</span>" in full, f"{label} should be in the full sidebar"
+        assert f">{label}</span>" not in trimmed, f"{label} survived its module being dropped"
+
+    # The section with no surviving entries disappears heading and all.
+    assert "sidebar-section-label\">Reporting</span>" in full
+    assert "sidebar-section-label\">Reporting</span>" not in trimmed
+
+    # Sections that still have entries keep their headings.
+    for label in ("Water Data", "Administration"):
+        assert f"sidebar-section-label\">{label}</span>" in trimmed
+
+    # Nothing else moved: every other entry survives, in the same order.
+    # Compare only module-owned labels on both sides; Home and the Help links
+    # are hand-written and belong to neither module.
+    survivors = {e.label for spec in enabled_modules(kept) for e in spec.nav}
+    keep_only = lambda html: [l for l in _labels_in_order(html) if l in survivors]
+    assert keep_only(trimmed) == keep_only(full)
+
+
+def _labels_in_order(html):
+    return re.findall(r'<span class="sidebar-link-text">([^<]+)</span>', html)
 
 
 def test_every_registry_icon_key_has_a_partial():

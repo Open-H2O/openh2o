@@ -12,7 +12,32 @@
 
     <!-- Navigation -->
     <nav class="sidebar-nav">
+{% comment %}
+  The module nav below is GENERATED from the module registry (core/modules.py),
+  reached here as `nav_sections` via the `modules` context processor. Do not add
+  a link by hand: add a NavEntry to the owning module's ModuleSpec instead, or a
+  deployment that switches that module off will still show a dead link.
 
+  Everything outside the loop — the brand, Home, the Help section, the view-mode
+  toggle, the mobile-collapse script — is not module-owned and stays written out
+  longhand.
+
+  Two gates, deliberately at different levels. A section carrying
+  `requires_admin_mode` is hidden wholesale in Operations mode — that is the
+  Administration block. An entry's own `visibility` is an ADDITIONAL predicate
+  applied inside a visible section, and it is written below as empty guard
+  branches ("hidden" cases first, render in the {% templatetag openblock %} else {% templatetag closeblock %}) so the link markup
+  appears exactly once.
+
+  The `<!-- SECTION -->` landmarks are emitted OUTSIDE the admin gate, which is
+  where the hand-written file had them: view-source showed "ADMINISTRATION
+  (Admin view only)" in both modes, and the golden fixtures caught the one
+  version that tidied it inside.
+
+  `tests/test_nav_golden.py` pins this file's rendered output byte-for-byte
+  against fixtures captured before the rewrite. Change the markup here and that
+  suite tells you exactly which permutation moved.
+{% endcomment %}
         <!-- OVERVIEW (no label) -->
         <a href="{% url 'index' %}"
            class="sidebar-link{% if request.path == '/' %} active{% endif %}">
@@ -22,227 +47,16 @@
             </svg>
             <span class="sidebar-link-text">Home</span>
         </a>
-        <a href="{% url 'accounting:dashboard' %}"
-           class="sidebar-link{% if '/accounting/dashboard' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-            </svg>
-            <span class="sidebar-link-text">Dashboard</span>
-        </a>
-        <a href="{% url 'geography:map' %}"
-           class="sidebar-link{% if '/map/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-                <line x1="8" y1="2" x2="8" y2="18"/>
-                <line x1="16" y1="6" x2="16" y2="22"/>
-            </svg>
-            <span class="sidebar-link-text">Map</span>
-        </a>
-
-        <!-- WATER DATA -->
+{% for section in nav_sections %}{% if section.label %}
+        <!-- {{ section.label|upper }}{% if section.requires_admin_mode %} (Admin view only){% endif %} -->{% endif %}{% if not section.requires_admin_mode or nav_mode == 'admin' %}{% if section.label %}
         <div class="sidebar-section">
-            <span class="sidebar-link-text sidebar-section-label">Water Data</span>
-        </div>
-        <a href="{% url 'accounting:ledger_list' %}"
-           class="sidebar-link{% if '/accounting/ledger' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <line x1="10" y1="9" x2="8" y2="9"/>
-            </svg>
-            <span class="sidebar-link-text">Use Ledger</span>
-        </a>
-        <a href="{% url 'parcels:list' %}"
-           class="sidebar-link{% if '/parcels/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="3" y1="9" x2="21" y2="9"/>
-                <line x1="9" y1="3" x2="9" y2="21"/>
-            </svg>
-            <span class="sidebar-link-text">Use Areas</span>
-        </a>
-        <a href="{% url 'wells:list' %}"
-           class="sidebar-link{% if '/wells/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 2v4"/>
-                <path d="M12 18v4"/>
-                <path d="M4.93 4.93l2.83 2.83"/>
-                <path d="M16.24 16.24l2.83 2.83"/>
-                <path d="M2 12h4"/>
-                <path d="M18 12h4"/>
-            </svg>
-            <span class="sidebar-link-text">Wells</span>
-        </a>
-        <a href="{% url 'surface:pod_list' %}"
-           class="sidebar-link{% if '/surface/' in request.path and '/surface/rights' not in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            <span class="sidebar-link-text">Surface Diversions</span>
-        </a>
-        <a href="{% url 'recharge:list' %}"
-           class="sidebar-link{% if '/recharge/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-            </svg>
-            <span class="sidebar-link-text">Recharge Areas</span>
-        </a>
-        <a href="{% url 'datasync:station_list' %}"
-           class="sidebar-link{% if '/datasync/stations' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M3 12h3"/>
-                <path d="M18 12h3"/>
-                <path d="M12 3v3"/>
-                <path d="M12 18v3"/>
-                <path d="M5.64 5.64l2.12 2.12"/>
-                <path d="M16.24 16.24l2.12 2.12"/>
-                <path d="M5.64 18.36l2.12-2.12"/>
-                <path d="M16.24 7.76l2.12-2.12"/>
-            </svg>
-            <span class="sidebar-link-text">Monitoring Stations</span>
-        </a>
-
-        <!-- ADMINISTRATION (Admin view only) -->
-        {% if nav_mode == 'admin' %}
-        <div class="sidebar-section">
-            <span class="sidebar-link-text sidebar-section-label">Administration</span>
-        </div>
-        <a href="{% url 'surface:water_rights_list' %}"
-           class="sidebar-link{% if '/surface/rights' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="8" r="6"/>
-                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
-            </svg>
-            <span class="sidebar-link-text">Water Rights</span>
-        </a>
-        <a href="{% url 'accounting:accounts_list' %}"
-           class="sidebar-link{% if '/accounting/accounts' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="4" width="20" height="16" rx="2"/>
-                <path d="M2 10h20"/>
-                <path d="M6 16h4"/>
-            </svg>
-            <span class="sidebar-link-text">Accounts</span>
-        </a>
-        <a href="{% url 'accounting:periods_list' %}"
-           class="sidebar-link{% if '/accounting/reporting-periods' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-            <span class="sidebar-link-text">Water Years</span>
-        </a>
-        <a href="{% url 'accounting:allocations_list' %}"
-           class="sidebar-link{% if '/accounting/allocations' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 2a10 10 0 0 1 0 20"/>
-                <path d="M12 2v20"/>
-                <path d="M2 12h10"/>
-            </svg>
-            <span class="sidebar-link-text">Allocations</span>
-        </a>
-        <a href="{% url 'geography:zone_list' %}"
-           class="sidebar-link{% if '/map/zones' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-            </svg>
-            <span class="sidebar-link-text">Zones</span>
-        </a>
-        {% if user_is_admin %}
-        <a href="{% url 'core:users_list' %}"
-           class="sidebar-link{% if '/users/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            <span class="sidebar-link-text">Users</span>
-        </a>
-        {% endif %}
-        {% if user_is_admin %}
-        <a href="{% url 'accounting:methodology_settings' %}"
-           class="sidebar-link{% if '/accounting/methodology' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="4" y1="21" x2="4" y2="14"/>
-                <line x1="4" y1="10" x2="4" y2="3"/>
-                <line x1="12" y1="21" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12" y2="3"/>
-                <line x1="20" y1="21" x2="20" y2="16"/>
-                <line x1="20" y1="12" x2="20" y2="3"/>
-                <line x1="1" y1="14" x2="7" y2="14"/>
-                <line x1="9" y1="8" x2="15" y2="8"/>
-                <line x1="17" y1="16" x2="23" y2="16"/>
-            </svg>
-            <span class="sidebar-link-text">Methodology</span>
-        </a>
-        {% endif %}
-        {% if user_is_admin %}
-        <a href="{% url 'accounting:delivery_settings' %}"
-           class="sidebar-link{% if '/accounting/delivery-settings' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 12h20"/>
-                <path d="M2 6h20"/>
-                <path d="M2 18h20"/>
-                <circle cx="8" cy="6" r="2" fill="currentColor"/>
-                <circle cx="16" cy="12" r="2" fill="currentColor"/>
-                <circle cx="7" cy="18" r="2" fill="currentColor"/>
-            </svg>
-            <span class="sidebar-link-text">Delivery Settings</span>
-        </a>
-        {% endif %}
-        <a href="{% url 'health:dashboard' %}"
-           class="sidebar-link{% if '/health/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-            <span class="sidebar-link-text">Site Health</span>
-        </a>
-        {% if not access_enforced or user_is_admin %}
-        <a href="{% url 'setup:wizard' %}"
-           class="sidebar-link{% if '/setup/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.07 4.93a10 10 0 0 1 1.36 13.37"/>
-                <path d="M4.93 4.93a10 10 0 0 0-1.36 13.37"/>
-                <path d="M12 2v3"/>
-                <path d="M12 19v3"/>
-                <path d="M2 12h3"/>
-                <path d="M19 12h3"/>
-            </svg>
-            <span class="sidebar-link-text">Setup Wizard</span>
-        </a>
-        {% endif %}
-        {% endif %}{# end nav_mode == 'admin' #}
-
-        <!-- REPORTING -->
-        <div class="sidebar-section">
-            <span class="sidebar-link-text sidebar-section-label">Reporting</span>
-        </div>
-        <a href="{% url 'reporting:report_list' %}"
-           class="sidebar-link{% if '/reporting/' in request.path %} active{% endif %}">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="9" y1="15" x2="15" y2="15"/>
-                <line x1="9" y1="11" x2="13" y2="11"/>
-            </svg>
-            <span class="sidebar-link-text">Reports</span>
-        </a>
+            <span class="sidebar-link-text sidebar-section-label">{{ section.label }}</span>
+        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% else %}
+        <a href="{% url entry.url_name %}"
+           class="sidebar-link{% if entry.active_match in request.path %}{% if not entry.active_exclude or entry.active_exclude not in request.path %} active{% endif %}{% endif %}">
+            {% include "partials/_nav_icon.html" with icon_key=entry.icon %}
+            <span class="sidebar-link-text">{{ entry.label }}</span>
+        </a>{% endif %}{% endfor %}{% endif %}{% endfor %}
 
         <!-- HELP (collapsed by default; auto-opens on a help/about page) -->
         <details class="sidebar-collapsible"{% if '/help/' in request.path or request.path == '/about/' %} open{% endif %}>
