@@ -64,7 +64,7 @@
         {% include "accounting/partials/_agreement_badge.html" with confidence=confidence %}
         <span class="text-tertiary">
           {% if confidence.is_known %}
-            {{ confidence.label }} — the badge counts models that passed OpenET's outlier filter; the range is how far those models actually spread.
+            {{ confidence.label }}. The badge counts how many models passed OpenET's outlier filter; the range is how far those surviving models actually spread. A high count with a wide range still means the estimate is soft.
           {% else %}
             Not yet collected for this parcel-month, so the estimate above carries no measured spread.
           {% endif %}
