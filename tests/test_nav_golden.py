@@ -190,6 +190,24 @@ def test_diversions_not_active_on_water_rights_page():
     assert "active" in link_classes(on_rights, "/surface/rights/")
 
 
+def test_every_registry_icon_key_has_a_partial():
+    """A missing icon file must fail here, not render an empty slot.
+
+    `_nav_icon.html` resolves its target by string-building the path from the
+    entry's `icon` key. Django raises TemplateDoesNotExist for a missing file,
+    so the real risk is not silence — it is a 500 on a page nobody tested. This
+    turns that into a named failure at suite time.
+    """
+    icon_dir = Path(__file__).parent.parent / "templates" / "partials" / "icons"
+    missing = [
+        entry.icon
+        for spec in enabled_modules()
+        for entry in spec.nav
+        if not (icon_dir / f"_{entry.icon}.html").exists()
+    ]
+    assert not missing, f"Registry icon keys with no partial: {sorted(set(missing))}"
+
+
 def test_every_nav_entry_is_rendered():
     """All 19 module-owned entries appear when every gate is open.
 
