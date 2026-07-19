@@ -261,3 +261,86 @@ class RechargeEventFactory(factory.django.DjangoModelFactory):
     recharge_site = factory.SubFactory(RechargeSiteFactory)
     start_date = factory.LazyFunction(lambda: date(2024, 1, 1))
     volume_acre_feet = Decimal("100.0000")
+
+
+# -- drinking (Phase 78) -----------------------------------------------------
+
+
+class WaterSystemFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "drinking.WaterSystem"
+
+    pwsid = factory.Sequence(lambda n: f"CA19{n:05d}")
+    name = factory.Sequence(lambda n: f"Water System {n}")
+    activity_status = "A"
+    pws_type = "CWS"
+    state_classification = "C"
+    primary_source_code = "GW"
+
+
+class SystemFacilityFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "drinking.SystemFacility"
+
+    system = factory.SubFactory(WaterSystemFactory)
+    facility_id = factory.Sequence(lambda n: f"F{n:04d}")
+    name = factory.Sequence(lambda n: f"Facility {n}")
+    facility_type = "WL"
+    activity_status = "A"
+    is_source = True
+    water_type = "GW"
+    availability = "P"
+
+
+class SamplingPointFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "drinking.SamplingPoint"
+
+    ps_code = factory.Sequence(lambda n: f"CA1900001_F{n:04d}_001")
+    name = factory.Sequence(lambda n: f"Sampling Point {n}")
+    facility = factory.SubFactory(SystemFacilityFactory)
+    point_type = "source"
+
+
+class AnalyteFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "drinking.Analyte"
+
+    # ddw_code stays NULL by default: the reference data dictionary publishes
+    # no code list, so a factory default would be a fabricated code.
+    ddw_code = None
+    name = factory.Sequence(lambda n: f"Analyte {n}")
+
+
+class RegulatoryLimitFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "drinking.RegulatoryLimit"
+
+    analyte = factory.SubFactory(AnalyteFactory)
+    limit_type = "mcl"
+    value = Decimal("0.010000")
+    unit = "mg/L"
+    jurisdiction = "federal"
+    effective_start = factory.LazyFunction(lambda: date(2000, 1, 1))
+    effective_end = None
+
+
+class SampleEventFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "drinking.SampleEvent"
+
+    sampling_point = factory.SubFactory(SamplingPointFactory)
+    sample_date = factory.LazyFunction(lambda: date(2024, 6, 1))
+    sample_type = "routine"
+
+
+class SampleResultFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "drinking.SampleResult"
+
+    event = factory.SubFactory(SampleEventFactory)
+    analyte = factory.SubFactory(AnalyteFactory)
+    result_kind = "numeric"
+    result_value = Decimal("0.001000")
+    unit = "mg/L"
+    less_than_rl = False
