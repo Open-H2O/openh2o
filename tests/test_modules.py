@@ -42,6 +42,15 @@ HISTORICAL_LOCAL_APPS = [
     "feedback",
 ]
 
+# Today's default local tail. The historical list is kept above, unedited, as
+# the parity baseline; every module added since is appended here explicitly so
+# the diff of a phase that adds a domain shows the addition as one line rather
+# than as an edit to the historical record.
+#
+# Phase 78 appends `drinking` — last in app order, so a new domain cannot
+# displace an existing app on a duplicate template or static-file path.
+DEFAULT_LOCAL_APPS = HISTORICAL_LOCAL_APPS + ["drinking"]
+
 # The 13 local URL includes, in the prefix order config/urls.py used before the
 # registry composed them.
 HISTORICAL_URL_SPECS = [
@@ -65,17 +74,19 @@ class TestDefaultParity:
     """The default module list must reproduce the pre-registry behavior."""
 
     def test_local_apps_match_historical_list(self):
-        assert mod.local_apps_for(mod.enabled_modules()) == HISTORICAL_LOCAL_APPS
+        assert mod.local_apps_for(mod.enabled_modules()) == DEFAULT_LOCAL_APPS
+        # The pre-registry list is still a prefix: nothing was reordered.
+        assert DEFAULT_LOCAL_APPS[: len(HISTORICAL_LOCAL_APPS)] == HISTORICAL_LOCAL_APPS
 
     def test_installed_apps_ends_with_historical_local_tail(self, settings):
-        tail = settings.INSTALLED_APPS[-len(HISTORICAL_LOCAL_APPS) :]
-        assert list(tail) == HISTORICAL_LOCAL_APPS
+        tail = settings.INSTALLED_APPS[-len(DEFAULT_LOCAL_APPS) :]
+        assert list(tail) == DEFAULT_LOCAL_APPS
 
     def test_url_specs_match_historical_order(self):
         assert mod.url_specs_for(mod.enabled_modules()) == HISTORICAL_URL_SPECS
 
     def test_model_only_modules_contribute_no_urls(self):
-        for name in ("measurements", "standards"):
+        for name in ("measurements", "standards", "drinking"):
             spec = mod.MODULE_REGISTRY[name]
             assert spec.url_prefix is None
             assert spec.url_module is None
@@ -103,7 +114,7 @@ class TestDisabledModule:
         apps = mod.local_apps_for(mod.enabled_modules(self.without_reporting))
         assert "reporting" not in apps
         # Every other app survives, in order.
-        assert apps == [a for a in HISTORICAL_LOCAL_APPS if a != "reporting"]
+        assert apps == [a for a in DEFAULT_LOCAL_APPS if a != "reporting"]
 
     def test_dropped_module_registers_no_urls(self):
         specs = mod.url_specs_for(mod.enabled_modules(self.without_reporting))
@@ -192,6 +203,9 @@ class TestDroppabilityPromise:
             "setup",
             "infrastructure",
             "feedback",
+            # Phase 78. Droppable by construction, not by later decoupling:
+            # nothing outside `drinking/` imports it at module scope.
+            "drinking",
         )
 
     def test_required_modules_are_pinned(self):

@@ -84,5 +84,8 @@ def test_optional_module_names_is_what_we_think():
     """
     assert set(OPTIONAL_MODULE_NAMES) == {
         "reporting", "health", "setup", "infrastructure", "feedback",
+        # Phase 78. Droppable from the day it lands, by construction rather
+        # than by later decoupling — nothing outside `drinking/` imports it.
+        "drinking",
     }
     assert all(not MODULE_REGISTRY[n].required for n in OPTIONAL_MODULE_NAMES)
