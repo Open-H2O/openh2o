@@ -372,3 +372,28 @@ class TestConfidenceRendering:
         assert "badge-agreement-unknown" in body
         assert "Not yet collected" in body
         assert "mm" not in body.split("Satellite model agreement")[1][:400]
+
+
+    def test_no_template_comment_leaks_into_the_page(
+        self, auth_client, parcel, sample_geometry
+    ):
+        """Django's hash-comment is SINGLE-LINE. A multi-line one is not
+        stripped and renders developer commentary into the page — it shipped
+        that way once and nothing caught it, because a leaked comment looks
+        like ordinary whitespace in a browser."""
+        from django.urls import reverse
+
+        self._run_for(parcel)
+        _row(parcel, sample_geometry, "ET", "et", 88.0)
+        _row(parcel, sample_geometry, "model_count", "model_count", 6)
+
+        url = reverse("accounting:calculation_run_detail", args=[parcel.pk, "2025-01"])
+        body = auth_client.get(url).content.decode()
+
+        for leak in [
+            "EnsembleConfidence",
+            "colour ramp only reinforces",
+            "qualifies the whole derivation",
+            "SINGLE-LINE",
+        ]:
+            assert leak not in body, f"template comment leaked into the page: {leak!r}"

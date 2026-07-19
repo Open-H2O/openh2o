@@ -53,10 +53,12 @@
         <strong style="color: var(--color-accent);">Derived extraction estimate — not measured pumping.</strong>
         This figure is computed from satellite evapotranspiration, not read from a meter. The steps below show every adjustment so the number can be checked.
       </p>
-      {# The same honesty, one level deeper: the gross ET this waterfall starts
-         from is itself an ensemble of six models, and they do not always agree.
-         Belongs in this panel rather than beside the steps table — it qualifies
-         the whole derivation, not one row of it. #}
+      {% comment %}
+      The same honesty, one level deeper: the gross ET this waterfall starts
+      from is itself an ensemble of six models, and they do not always agree.
+      Belongs in this panel rather than beside the steps table — it qualifies
+      the whole derivation, not one row of it.
+      {% endcomment %}
       <p class="text-sm" style="margin: var(--space-sm) 0 0; color: var(--color-text-secondary);">
         Satellite model agreement:
         {% include "accounting/partials/_agreement_badge.html" with confidence=confidence %}
