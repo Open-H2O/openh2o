@@ -22,13 +22,20 @@ from datetime import date, datetime, timedelta
 
 from datasync.adapters import register_adapter
 from datasync.adapters.gee import (
+    EE_BAND_TO_VARIABLE,
     _first_of_month,
     _first_of_next_month,
     build_et_data,
     init_earth_engine,
     reduce_et_by_parcel,
+    reduce_et_with_spread_by_parcel,
 )
-from datasync.adapters.openet import OpenETAdapter
+from datasync.adapters.openet import UNITLESS_VARIABLES, OpenETAdapter
+
+
+def _spread_unit(variable):
+    """Millimetres of water, except the model tally which counts models."""
+    return "count" if variable in UNITLESS_VARIABLES else "mm"
 from datasync.freshness import EXPECTED_DATA_INTERVAL_HOURS
 
 logger = logging.getLogger(__name__)
@@ -113,12 +120,19 @@ class GEEOpenETAdapter(OpenETAdapter):
             needs[parcel.pk] = to_fetch
         return needs
 
-    def sync_parcel_et(self, parcels, start_date, end_date, today=None):
+    def sync_parcel_et(
+        self, parcels, start_date, end_date, today=None, collect_spread=True
+    ):
         """Batched live entry point — overrides the REST per-parcel loop.
 
         One Earth Engine compute job per month over ALL parcels that still need
         work, written into OpenETCache in the exact REST-shaped et_data so the
         unchanged sync_openet_to_ledger contract consumes it as-is.
+
+        ``collect_spread`` defaults TRUE here and would default false on the REST
+        tier: the spread bands ride along on images this reduce already touches,
+        so on Earth Engine they cost no extra queries. Filing a modeled ET number
+        with its spread available and unrecorded is the thing worth avoiding.
         """
         from datasync.models import OpenETCache
 
@@ -194,7 +208,62 @@ class GEEOpenETAdapter(OpenETAdapter):
             )
             summary["fetched"] += 1
 
+        if collect_spread:
+            summary["spread"] = self._sync_spread(
+                ee, parcels_with_work, win_start, win_end, needs
+            )
+
         return summary
+
+    def _sync_spread(self, ee, parcels, win_start, win_end, needs):
+        """Store the ensemble spread bands alongside the ET rows.
+
+        Separate reduction from the ET path above rather than a merged one: the
+        ET write is the number the ledger bills on, and it must not fail or
+        change shape because a spread band was unavailable for some month. A
+        spread failure degrades to "no confidence signal", never to a missing or
+        altered ET value.
+
+        Costs no additional queries against any quota — the bands ride on images
+        Earth Engine is reducing regardless.
+        """
+        written = 0
+        try:
+            spread = reduce_et_with_spread_by_parcel(ee, parcels, win_start, win_end)
+        except Exception as exc:
+            logger.warning("Ensemble spread reduce failed (ET unaffected): %s", exc)
+            return {"written": 0, "failed": True}
+
+        for parcel in parcels:
+            per_month = spread.get(parcel.pk, {})
+            if not per_month:
+                continue
+            wanted = set(needs.get(parcel.pk, []))
+            for band, (variable, key) in EE_BAND_TO_VARIABLE.items():
+                if variable == "ET":
+                    # Already written by the ET path above, from its own reduce.
+                    # Writing it twice here would race the two values against the
+                    # uniqueness constraint for no benefit.
+                    continue
+                values = [
+                    {"date": month, key: bands[band], "unit": _spread_unit(variable)}
+                    for month, bands in sorted(per_month.items())
+                    if month in wanted and band in bands
+                ]
+                if not values:
+                    continue
+                OpenETCache.objects.update_or_create(
+                    parcel=parcel,
+                    start_date=win_start,
+                    end_date=win_end,
+                    variable=variable,
+                    model_name="Ensemble",
+                    defaults={"geometry": parcel.geometry, "et_data": values},
+                )
+                written += 1
+
+        logger.info("Ensemble spread: wrote %d cache rows", written)
+        return {"written": written, "failed": False}
 
 
 register_adapter("openet_gee", GEEOpenETAdapter)

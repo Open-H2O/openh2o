@@ -191,3 +191,117 @@ class TestAdapterSelector:
         adapter = get_openet_adapter()
         assert isinstance(adapter, OpenETAdapter)
         assert not isinstance(adapter, GEEOpenETAdapter)
+
+
+# ---------------------------------------------------------------------------
+# 5. Ensemble spread rides along on the Earth Engine reduce (no extra queries)
+# ---------------------------------------------------------------------------
+
+SPREAD_REDUCE = "datasync.adapters.openet_gee.reduce_et_with_spread_by_parcel"
+
+
+@pytest.mark.django_db
+class TestEnsembleSpread:
+    """The spread bands live on the SAME images as the value, so collecting
+    them costs no additional Earth Engine queries — hence default-on here,
+    unlike the REST tier where each variable is its own billable call."""
+
+    def _canned_spread(self, parcel):
+        return {
+            parcel.pk: {
+                "2024-06": {
+                    "et_ensemble_mad": 142.23,
+                    "et_ensemble_mad_min": 118.40,
+                    "et_ensemble_mad_max": 171.05,
+                    "et_ensemble_mad_count": 5.4,
+                }
+            }
+        }
+
+    def test_writes_one_row_per_spread_variable(self, parcel):
+        adapter = GEEOpenETAdapter()
+
+        with patch(INIT_EE, return_value=MagicMock()), patch(
+            REDUCE, return_value={parcel.pk: {"2024-06": 142.23}}
+        ), patch(SPREAD_REDUCE, return_value=self._canned_spread(parcel)):
+            summary = adapter.sync_parcel_et(
+                [parcel], date(2024, 6, 1), date(2024, 6, 30), today=date(2024, 7, 1)
+            )
+
+        assert summary["spread"]["written"] == 3
+        by_var = {r.variable: r for r in OpenETCache.objects.filter(parcel=parcel)}
+        assert set(by_var) == {"ET", "et_mad_min", "et_mad_max", "model_count"}
+        assert by_var["et_mad_min"].et_data == [
+            {"date": "2024-06", "et_mad_min": 118.40, "unit": "mm"}
+        ]
+        # The tally counts models, not millimetres of water.
+        assert by_var["model_count"].et_data[0]["unit"] == "count"
+
+    def test_et_row_is_written_once_by_the_et_path_only(self, parcel):
+        """The spread pass must not rewrite ET. Two writers racing the same
+        uniqueness tuple buys nothing and risks disagreeing values."""
+        adapter = GEEOpenETAdapter()
+
+        with patch(INIT_EE, return_value=MagicMock()), patch(
+            REDUCE, return_value={parcel.pk: {"2024-06": 142.23}}
+        ), patch(SPREAD_REDUCE, return_value=self._canned_spread(parcel)):
+            adapter.sync_parcel_et(
+                [parcel], date(2024, 6, 1), date(2024, 6, 30), today=date(2024, 7, 1)
+            )
+
+        et_rows = OpenETCache.objects.filter(parcel=parcel, variable="ET")
+        assert et_rows.count() == 1
+        # Value came from the ET reduce, not the spread reduce's copy of the band.
+        assert et_rows.first().et_data == [{"date": "2024-06", "et": 142.23, "unit": "mm"}]
+
+    def test_spread_failure_leaves_et_intact(self, parcel):
+        """A spread problem degrades to 'no confidence signal'. It must never
+        cost us the ET value the ledger bills on."""
+        adapter = GEEOpenETAdapter()
+
+        with patch(INIT_EE, return_value=MagicMock()), patch(
+            REDUCE, return_value={parcel.pk: {"2024-06": 142.23}}
+        ), patch(SPREAD_REDUCE, side_effect=RuntimeError("EE spread blew up")):
+            summary = adapter.sync_parcel_et(
+                [parcel], date(2024, 6, 1), date(2024, 6, 30), today=date(2024, 7, 1)
+            )
+
+        assert summary["fetched"] == 1
+        assert summary["spread"]["failed"] is True
+        assert OpenETCache.objects.filter(parcel=parcel, variable="ET").count() == 1
+
+    def test_collect_spread_false_skips_it(self, parcel):
+        adapter = GEEOpenETAdapter()
+
+        with patch(INIT_EE, return_value=MagicMock()), patch(
+            REDUCE, return_value={parcel.pk: {"2024-06": 142.23}}
+        ), patch(SPREAD_REDUCE) as spread:
+            adapter.sync_parcel_et(
+                [parcel], date(2024, 6, 1), date(2024, 6, 30),
+                today=date(2024, 7, 1), collect_spread=False,
+            )
+
+        spread.assert_not_called()
+        assert OpenETCache.objects.filter(parcel=parcel).count() == 1
+
+    def test_confidence_reads_the_gee_written_rows(self, parcel):
+        """End-to-end: what the GEE tier writes must be what the confidence
+        service reads, with no shape translation in between."""
+        from accounting.confidence import parcel_ensemble_confidence
+
+        adapter = GEEOpenETAdapter()
+        with patch(INIT_EE, return_value=MagicMock()), patch(
+            REDUCE, return_value={parcel.pk: {"2024-06": 142.23}}
+        ), patch(SPREAD_REDUCE, return_value=self._canned_spread(parcel)):
+            adapter.sync_parcel_et(
+                [parcel], date(2024, 6, 1), date(2024, 6, 30), today=date(2024, 7, 1)
+            )
+
+        c = parcel_ensemble_confidence(parcel, "2024-06")
+        assert c.has_range
+        assert float(c.low_mm) == 118.40
+        assert float(c.high_mm) == 171.05
+        # 5.4 pixels-averaged models rounds to a 5/6 badge.
+        assert c.model_count == 5
+        assert c.token == "5/6"
+        assert c.level == "moderate"

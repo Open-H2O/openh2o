@@ -30,6 +30,34 @@ EE_COLLECTION = "projects/openet/assets/ensemble/conus/gridmet/monthly/v2_1"
 EE_BAND = "et_ensemble_mad"
 EE_SCALE = 30  # OpenET native resolution (m). Polygon mean, not centroid point.
 
+# Ensemble spread, carried on the SAME images as the value above. OpenET's
+# ensemble is the mean of the six member models left after a median-absolute-
+# deviation outlier filter (Melton et al. 2022); these bands expose what that
+# filter did instead of discarding it.
+#
+# Verified against the live asset (bandNames() on v2_1): the collection also
+# carries et_ensemble_mad_index and et_ensemble_sam, which we do not use.
+#
+# NOTE ON THE COUNT BAND: reduceRegions(mean) averages per-pixel values across
+# the parcel, so the count comes back FRACTIONAL (e.g. 5.4 = most pixels kept 5
+# models, some kept 6). That is a genuine spatial mean, not a defect; the display
+# rounds it, and the underlying value stays in the cache row.
+EE_SPREAD_BANDS = [
+    "et_ensemble_mad",       # the ensemble value itself
+    "et_ensemble_mad_min",   # lowest surviving member
+    "et_ensemble_mad_max",   # highest surviving member
+    "et_ensemble_mad_count",  # how many of the six survived
+]
+
+# Earth Engine band name -> (OpenETCache.variable, payload key). Mirrors the REST
+# tier exactly so accounting.confidence reads one shape regardless of faucet.
+EE_BAND_TO_VARIABLE = {
+    "et_ensemble_mad": ("ET", "et"),
+    "et_ensemble_mad_min": ("et_mad_min", "et_mad_min"),
+    "et_ensemble_mad_max": ("et_mad_max", "et_mad_max"),
+    "et_ensemble_mad_count": ("model_count", "model_count"),
+}
+
 # GRIDMET precipitation. The OpenET ensemble above is BUILT on gridmet, but the
 # ensemble collection carries only ET bands — raw precip lives in the source
 # GRIDMET collection, and its `pr` band is DAILY mm. So the precip path sums each
@@ -188,6 +216,82 @@ def _reduce_images_by_parcel(ee, parcels, monthly_images, scale):
             if pid is not None and mean is not None:
                 result[pid][month_key] = mean
     return result
+
+
+def _reduce_multiband_by_parcel(ee, parcels, monthly_images, scale, bands):
+    """Multi-band sibling of _reduce_images_by_parcel.
+
+    A SINGLE-band reduceRegions writes its output to a property called "mean";
+    a MULTI-band one writes one property per band name instead. That difference
+    is the whole reason this is a separate function rather than a flag — reading
+    "mean" off a multi-band result silently yields nothing.
+
+    Returns ``{parcel_id: {"YYYY-MM": {band: value}}}``.
+    """
+    features = []
+    for parcel in parcels:
+        geojson = json.loads(parcel.geometry.geojson)
+        features.append(ee.Feature(ee.Geometry(geojson), {"parcel_id": parcel.pk}))
+    fc = ee.FeatureCollection(features)
+
+    result = defaultdict(dict)
+    for month_key, img in monthly_images:
+        reduced = img.reduceRegions(
+            collection=fc,
+            reducer=ee.Reducer.mean(),
+            scale=scale,
+        ).getInfo()
+        for feat in reduced.get("features", []):
+            props = feat.get("properties", {})
+            pid = props.get("parcel_id")
+            if pid is None:
+                continue
+            values = {b: props.get(b) for b in bands if props.get(b) is not None}
+            if values:
+                result[pid][month_key] = values
+    return result
+
+
+def reduce_et_with_spread_by_parcel(ee, parcels, start, end):
+    """ET plus its ensemble spread, in ONE pass over the same images.
+
+    The Earth Engine ensemble asset already carries the spread alongside the
+    value — et_ensemble_mad_min / _max are the envelope of member models that
+    survived OpenET's outlier filter, and _count is how many survived. Selecting
+    them costs no additional queries, only additional bands on a reduction we
+    were running anyway. (The REST tier has to pay one call per variable; here
+    it is free, which is why spread collection defaults ON in GEE mode.)
+
+    Returns ``{parcel_id: {"YYYY-MM": {band: value}}}``, values in mm except the
+    count band.
+    """
+    parcels = list(parcels)
+    filter_start = _first_of_month(start).isoformat()
+    filter_end = _first_of_next_month(end).isoformat()
+    ic = ee.ImageCollection(EE_COLLECTION).filterDate(filter_start, filter_end)
+    bbox = _parcels_bbox(parcels)
+    if bbox is not None:
+        ic = ic.filterBounds(_bbox_to_ee(ee, bbox))
+    ic = ic.select(EE_SPREAD_BANDS)
+
+    image_list = ic.toList(ic.size())
+    count = int(ic.size().getInfo())
+    if count == 0:
+        raise RuntimeError(
+            f"Earth Engine returned 0 monthly images for {filter_start}.."
+            f"{filter_end}. Check the date window against the collection's "
+            "coverage."
+        )
+
+    monthly_images = []
+    for i in range(count):
+        img = ee.Image(image_list.get(i))
+        month_key = ee.Date(img.get("system:time_start")).format("YYYY-MM").getInfo()
+        monthly_images.append((month_key, img))
+
+    return _reduce_multiband_by_parcel(
+        ee, parcels, monthly_images, EE_SCALE, EE_SPREAD_BANDS
+    )
 
 
 def reduce_et_by_parcel(ee, parcels, start, end):
