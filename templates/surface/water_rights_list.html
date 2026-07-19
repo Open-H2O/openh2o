@@ -13,8 +13,10 @@
   </nav>
   <p class="page-description">Surface water rights issued by the State Water Board. Pick a right to open the points of diversion it serves on the map, alongside its diversion records and any active curtailments.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    {% if 'infrastructure' in enabled_modules %}
     <a href="{% url 'infrastructure:import' %}?type=diversion" class="btn-secondary btn-sm">Import</a>
     <a href="{% url 'infrastructure:add' %}?type=diversion" class="btn-primary btn-sm">+ Add Diversion</a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

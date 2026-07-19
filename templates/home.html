@@ -48,6 +48,7 @@
                 <span class="home-task-sublabel">See supplies against uses by account and zone</span>
             </span>
         </a>
+        {% if 'reporting' in enabled_modules %}
         <a href="{% url 'reporting:report_list' %}" class="home-task-card">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -57,6 +58,7 @@
                 <span class="home-task-sublabel">Generate GEARS and CalWATRS exports</span>
             </span>
         </a>
+        {% endif %}
         <a href="{% url 'geography:map' %}" class="home-task-card">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
@@ -66,7 +68,7 @@
                 <span class="home-task-sublabel">Every well, parcel, and diversion on one basin view</span>
             </span>
         </a>
-        {% if not access_enforced or user_is_admin %}
+        {% if 'setup' in enabled_modules %}{% if not access_enforced or user_is_admin %}
         <a href="{% url 'setup:wizard' %}" class="home-task-card">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -76,7 +78,7 @@
                 <span class="home-task-sublabel">Boundaries, zones, and bringing your data in</span>
             </span>
         </a>
-        {% endif %}
+        {% endif %}{% endif %}
         <a href="{% url 'getting_started' %}" class="home-task-card">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>

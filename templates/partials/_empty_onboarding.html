@@ -17,7 +17,7 @@
 <p class="empty-state-text" style="max-width: 460px; margin-left: auto; margin-right: auto;">{{ what }}</p>
 {% if needs_setup %}
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
-    <a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>
+    {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>{% endif %}
   </div>
   <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
     Setup imports your parcels, wells, basins, and the monitoring stations near
@@ -25,7 +25,9 @@
   </p>
 {% else %}
   <div class="form-footer" style="justify-content: center; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-md);">
+    {% if 'infrastructure' in enabled_modules %}
     <a href="{% url 'infrastructure:add' %}{% if type_param %}?type={{ type_param }}{% endif %}" class="btn-primary">{{ add_label }}</a>
     <a href="{% url 'infrastructure:import' %}{% if type_param %}?type={{ type_param }}{% endif %}" class="btn-secondary">Import</a>
+    {% endif %}
   </div>
 {% endif %}

@@ -23,8 +23,10 @@
   </nav>
   <p class="page-description">Points of diversion from streams and canals. The map shows every diversion point at once; pick one from the map or the list to open its diversion records, location, and linked use areas.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    {% if 'infrastructure' in enabled_modules %}
     <a href="{% url 'infrastructure:import' %}?type=diversion" class="btn-secondary btn-sm">Import</a>
     <a href="{% url 'infrastructure:add' %}?type=diversion" class="btn-primary btn-sm">+ Add Diversion</a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

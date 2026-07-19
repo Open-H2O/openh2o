@@ -123,7 +123,7 @@
               sticky box can ride the document scroll and settle into the footer.
               The panel + JS in this partial are position:fixed / inert in flow.
             {% endcomment %}
-            {% include "partials/_feedback_widget.html" %}
+            {% if 'feedback' in enabled_modules %}{% include "partials/_feedback_widget.html" %}{% endif %}
         </div>
     </div>
 

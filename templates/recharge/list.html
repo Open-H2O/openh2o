@@ -23,8 +23,10 @@
   </nav>
   <p class="page-description">Managed aquifer recharge areas where water is applied to replenish groundwater. The map shows every recharge site at once; pick one from the map or the list to open its basin, recharge event history, and recent measurements.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    {% if 'infrastructure' in enabled_modules %}
     <a href="{% url 'infrastructure:import' %}?type=recharge_site" class="btn-secondary btn-sm">Import</a>
     <a href="{% url 'infrastructure:add' %}?type=recharge_site" class="btn-primary btn-sm">+ Add Recharge Site</a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

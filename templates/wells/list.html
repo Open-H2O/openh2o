@@ -12,8 +12,10 @@
   </nav>
   <p class="page-description">Groundwater wells tracked in the system. Pick one to open its construction record, map, and linked meters alongside the list.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
+    {% if 'infrastructure' in enabled_modules %}
     <a href="{% url 'infrastructure:import' %}?type=well" class="btn-secondary btn-sm">Import</a>
     <a href="{% url 'infrastructure:add' %}?type=well" class="btn-primary btn-sm">+ Add Well</a>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

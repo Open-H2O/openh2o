@@ -34,7 +34,7 @@
       everything the dashboard needs to start tracking water.
     </p>
     <div class="form-footer" style="justify-content: center; margin-top: var(--space-lg);">
-      <a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>
+      {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>{% endif %}
     </div>
   </div>
   {% endif %}
