@@ -43,6 +43,19 @@ def parcel(sample_geometry):
     )
 
 
+@pytest.fixture
+def auth_client(db):
+    """Logged-in client. Mirrors the fixture in test_57_03_presentation — the
+    audit page is login-gated, so an anonymous client only ever sees a redirect."""
+    from django.test import Client
+
+    from tests.factories import UserFactory
+
+    client = Client()
+    client.force_login(UserFactory())
+    return client
+
+
 def _row(parcel, geometry, variable, key, value, model_name="Ensemble"):
     return OpenETCache.objects.create(
         parcel=parcel,
