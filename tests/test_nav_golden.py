@@ -36,9 +36,12 @@ import pytest
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 
-from core.modules import enabled_modules, nav_sections_for
+from core.modules import SECTION_WATER_DATA, enabled_modules, nav_sections_for
 
 GOLDEN_DIR = Path(__file__).parent / "golden"
+
+#: Any valid section key; the is_active unit tests never look at the section.
+SECTION_FOR_TEST = SECTION_WATER_DATA
 
 #: Set GOLDEN_UPDATE=1 to rewrite the fixtures. See the module docstring — this
 #: is for a deliberate nav change, never for making a red test go green.
@@ -78,6 +81,12 @@ ACTIVE_PATHS = [
     "/surface/",
     "/surface/rights/",
     "/recharge/",
+    # Phase 78's three. The overview's prefix is a prefix of both sub-pages, so
+    # all three are listed for the same reason /surface/ and /surface/rights/
+    # both are: the exclusion is the easy thing to regress invisibly.
+    "/drinking/",
+    "/drinking/sampling-points/",
+    "/drinking/results/",
     "/datasync/stations/",
     "/accounting/accounts/",
     "/accounting/reporting-periods/",
@@ -190,6 +199,61 @@ def test_diversions_not_active_on_water_rights_page():
     assert "active" in link_classes(on_rights, "/surface/rights/")
 
 
+def test_drinking_water_not_active_on_its_own_sub_pages():
+    """The two-exclude case, asserted directly rather than only via fixture.
+
+    Same failure mode as Surface Diversions, one step worse: `/drinking/` is a
+    prefix of BOTH sub-pages, so a single exclusion silently fixes one of them
+    and leaves the other lit. Stated here so a regression names itself.
+    """
+    pages = {
+        p: render_sidebar(path=p, nav_mode="admin", user_is_admin=True)
+        for p in ("/drinking/", "/drinking/sampling-points/", "/drinking/results/")
+    }
+
+    def link_classes(html, url):
+        match = re.search(
+            r'<a href="' + re.escape(url) + r'"\s*\n?\s*class="([^"]*)"', html
+        )
+        assert match, f"No sidebar link found for {url}"
+        return match.group(1)
+
+    # The overview lights up on its own page only.
+    assert "active" in link_classes(pages["/drinking/"], "/drinking/")
+    assert "active" not in link_classes(pages["/drinking/sampling-points/"], "/drinking/")
+    assert "active" not in link_classes(pages["/drinking/results/"], "/drinking/")
+
+    # And each sub-page lights up its own entry.
+    assert "active" in link_classes(
+        pages["/drinking/sampling-points/"], "/drinking/sampling-points/"
+    )
+    assert "active" in link_classes(pages["/drinking/results/"], "/drinking/results/")
+
+
+def test_nav_entry_is_active_handles_multiple_excludes():
+    """The resolver itself, independent of any template."""
+    from core.modules import NavEntry
+
+    entry = NavEntry(
+        url_name="x:y", label="X", icon="x", section=SECTION_FOR_TEST, order=10,
+        active_match="/drinking/",
+        active_excludes=("/drinking/sampling-points", "/drinking/results"),
+    )
+    assert entry.is_active("/drinking/") is True
+    assert entry.is_active("/drinking/sampling-points/") is False
+    assert entry.is_active("/drinking/results/") is False
+    assert entry.is_active("/wells/") is False
+
+    # A no-exclude entry is a plain substring match, exactly as before 78-02.
+    plain = NavEntry(
+        url_name="x:y", label="X", icon="x", section=SECTION_FOR_TEST, order=10,
+        active_match="/wells/",
+    )
+    assert plain.is_active("/wells/") is True
+    assert plain.is_active("/wells/3/") is True
+    assert plain.is_active("/parcels/") is False
+
+
 def test_disabling_a_module_removes_only_its_own_nav():
     """The point of the whole phase: omit a module, lose exactly its links.
 
@@ -256,15 +320,18 @@ def test_every_registry_icon_key_has_a_partial():
 
 
 def test_every_nav_entry_is_rendered():
-    """All 19 module-owned entries appear when every gate is open.
+    """All 22 module-owned entries appear when every gate is open.
 
     Guards the failure mode a byte-diff cannot: if the registry loop silently
     drops an entry AND the fixture were regenerated, this still fails.
+
+    19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
+    Results to the Water Data section.
     """
     html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
                           access_enforced=False)
     expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 19
+    assert len(expected) == 22
     for entry in expected:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"

@@ -1,4 +1,4 @@
-{% load static %}
+{% load static nav %}
 <aside id="sidebar" aria-label="Main navigation"
        class="sidebar"
        data-collapsed="false">
@@ -53,7 +53,7 @@
             <span class="sidebar-link-text sidebar-section-label">{{ section.label }}</span>
         </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% else %}
         <a href="{% url entry.url_name %}"
-           class="sidebar-link{% if entry.active_match in request.path %}{% if not entry.active_exclude or entry.active_exclude not in request.path %} active{% endif %}{% endif %}">
+           class="sidebar-link{% if entry|nav_active:request.path %} active{% endif %}">
             {% include "partials/_nav_icon.html" with icon_key=entry.icon %}
             <span class="sidebar-link-text">{{ entry.label }}</span>
         </a>{% endif %}{% endfor %}{% endif %}{% endfor %}

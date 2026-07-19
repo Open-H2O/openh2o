@@ -116,13 +116,20 @@ VALID_SECTIONS = frozenset(s.key for s in NAV_SECTIONS)
 class NavEntry:
     """One sidebar link contributed by a module.
 
-    `active_match` / `active_exclude` reproduce today's path-substring active
-    state. The exclude exists for exactly one case: Surface Diversions matches
-    ``/surface/`` but must NOT light up on ``/surface/rights``, which is its own
-    entry.
+    `active_match` / `active_excludes` reproduce today's path-substring active
+    state. An exclude is needed whenever a section landing page's prefix is also
+    a prefix of its own sub-pages: Surface Diversions matches ``/surface/`` but
+    must NOT light up on ``/surface/rights``, which is its own entry.
 
-    `icon` is a short stable key; 77-02 maps it to an icon partial. This plan
-    only requires the keys be stable and unique.
+    **`active_excludes` is a tuple, not a single string.** 77-02 had exactly one
+    exclusion to express and a lone string covered it. Phase 78's Drinking Water
+    entry needs two — ``/drinking/`` is a prefix of both ``/drinking/results/``
+    and ``/drinking/sampling-points/`` — and there is no single substring that
+    covers both. A one-element tuple is exactly as expressive as the old string,
+    so the existing entry's rendered output is unchanged; the golden fixtures
+    are what prove that rather than assert it.
+
+    `icon` is a short stable key that `_nav_icon.html` maps to an icon partial.
     """
 
     url_name: str
@@ -131,8 +138,20 @@ class NavEntry:
     section: str
     order: int
     active_match: str
-    active_exclude: Optional[str] = None
+    active_excludes: tuple = ()
     visibility: str = VISIBILITY_ALWAYS
+
+    def is_active(self, path: str) -> bool:
+        """Whether this entry should render as the active link for `path`.
+
+        Pure string work on purpose — no request object, no reverse(), nothing
+        that would drag Django's app registry into a module imported from
+        settings. `core/templatetags/nav.py` is the thin filter that lets a
+        template ask this question.
+        """
+        if self.active_match not in path:
+            return False
+        return not any(exclude in path for exclude in self.active_excludes)
 
 
 @dataclass(frozen=True)
@@ -396,7 +415,7 @@ MODULE_REGISTRY: dict = {
                 active_match="/surface/",
                 # Must not light up on the Water Rights page, which lives under
                 # the same prefix and owns its own entry.
-                active_exclude="/surface/rights",
+                active_excludes=("/surface/rights",),
             ),
             NavEntry(
                 url_name="surface:water_rights_list",
@@ -549,6 +568,35 @@ MODULE_REGISTRY: dict = {
         url_module="drinking.urls",
         # 140: the next free value after feedback's 130, spaced by 10.
         url_order=140,
+        nav=(
+            NavEntry(
+                url_name="drinking:overview",
+                label="Drinking Water",
+                icon="drinking",
+                section=SECTION_WATER_DATA,
+                order=70,
+                active_match="/drinking/",
+                # Two excludes, not one: `/drinking/` is a prefix of both
+                # sub-pages, each of which owns its own entry below.
+                active_excludes=("/drinking/sampling-points", "/drinking/results"),
+            ),
+            NavEntry(
+                url_name="drinking:sampling_points",
+                label="Sampling Points",
+                icon="sampling-point",
+                section=SECTION_WATER_DATA,
+                order=80,
+                active_match="/drinking/sampling-points",
+            ),
+            NavEntry(
+                url_name="drinking:results",
+                label="Sample Results",
+                icon="sample-result",
+                section=SECTION_WATER_DATA,
+                order=90,
+                active_match="/drinking/results",
+            ),
+        ),
         seed_commands=("seed_drinking",),
         requires=("wells", "standards"),
         # The first Phase-78-era module, and droppable by construction: nothing

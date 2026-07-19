@@ -257,9 +257,10 @@ class TestNavResolution:
 
     def test_nav_entry_count_matches_todays_sidebar(self):
         entries = [e for s in mod.enabled_modules() for e in s.nav]
-        # 19 module-owned links. The sidebar also renders `index`, the nav-mode
-        # toggle and six static help/about pages, none of which are module-owned.
-        assert len(entries) == 19
+        # 22 module-owned links: 19 through Phase 77, plus the three 78-02 adds
+        # to Water Data. The sidebar also renders `index`, the nav-mode toggle
+        # and six static help/about pages, none of which are module-owned.
+        assert len(entries) == 22
 
     def test_icon_keys_are_unique(self):
         icons = [e.icon for s in mod.enabled_modules() for e in s.nav]
@@ -281,14 +282,40 @@ class TestNavResolution:
         assert sections["water_data"].requires_admin_mode is False
 
     def test_surface_diversions_excludes_the_water_rights_path(self):
-        """The one compound active-state case in the whole sidebar."""
+        """The original compound active-state case.
+
+        Was the ONLY one through Phase 77, which is why `active_exclude` was a
+        single string. 78-02's Drinking Water entry needs two exclusions, so the
+        field became the tuple `active_excludes`; a one-element tuple says
+        exactly what the string said, and the golden fixtures prove the rendered
+        sidebar did not move.
+        """
         entry = next(
             e
             for e in mod.MODULE_REGISTRY["surface"].nav
             if e.url_name == "surface:pod_list"
         )
         assert entry.active_match == "/surface/"
-        assert entry.active_exclude == "/surface/rights"
+        assert entry.active_excludes == ("/surface/rights",)
+        assert entry.is_active("/surface/") is True
+        assert entry.is_active("/surface/rights/") is False
+
+    def test_drinking_water_excludes_both_of_its_sub_pages(self):
+        """The case that forced the tuple: one exclusion would not have done.
+
+        `/drinking/` is a prefix of BOTH sub-pages, so a single exclude fixes
+        one and leaves the other permanently lit.
+        """
+        entry = next(
+            e
+            for e in mod.MODULE_REGISTRY["drinking"].nav
+            if e.url_name == "drinking:overview"
+        )
+        assert entry.active_match == "/drinking/"
+        assert len(entry.active_excludes) == 2
+        assert entry.is_active("/drinking/") is True
+        assert entry.is_active("/drinking/sampling-points/") is False
+        assert entry.is_active("/drinking/results/") is False
 
 
 class TestContextProcessor:
