@@ -10,6 +10,13 @@ from pathlib import Path
 
 import environ
 
+from core.modules import (
+    ALL_MODULE_NAMES,
+    enabled_module_names,
+    enabled_modules,
+    local_apps_for,
+)
+
 # -- Paths -------------------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -41,7 +48,31 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 # tiny (auth + flash messages), well under the ~4 KB cookie limit.
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
+# -- Modules -----------------------------------------------------------------
+# Which OpenH2O domains this deployment runs. A "flavor" of the platform — a
+# district that carries drinking water but not recharge, say — is a SETTING, not
+# a code edit, so an agency stays on upstream forever instead of forking its
+# install and breaking `git pull`.
+#
+# Omitting a module means its tables are never migrated, its URLs are never
+# registered (its paths genuinely 404), and its nav never renders. See
+# core/modules.py for the registry, the required modules, and the dependency
+# rules — all of which are validated below and fail LOUDLY at startup rather
+# than silently dropping a domain someone notices weeks later.
+_modules_env = os.environ.get("OPENH2O_MODULES", "")
+OPENH2O_MODULES = [m.strip() for m in _modules_env.split(",") if m.strip()] or list(
+    ALL_MODULE_NAMES
+)
+
+# Validates and normalises to registry order; raises ImproperlyConfigured on an
+# unknown name, an omitted required module, or an unmet dependency.
+OPENH2O_MODULES = list(enabled_module_names(OPENH2O_MODULES))
+
 # -- Application definition -------------------------------------------------
+# The Django contrib and third-party blocks stay fixed literals — only the local
+# tail is composed from the registry. App order affects template and static-file
+# resolution, so composing only the tail keeps the change surface small and the
+# ordering provably identical to the pre-registry list.
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -60,23 +91,8 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-    # Local
-    "core",
-    "geography",
-    "parcels",
-    "wells",
-    "measurements",
-    "standards",
-    "accounting",
-    "surface",
-    "recharge",
-    "datasync",
-    "reporting",
-    "health",
-    "setup",
-    "infrastructure",
-    "feedback",
-]
+    # Local — composed from OPENH2O_MODULES via the registry.
+] + local_apps_for(enabled_modules(OPENH2O_MODULES))
 
 SITE_ID = 1
 
@@ -111,6 +127,7 @@ TEMPLATES = [
                 "core.context_processors.feedback",
                 "core.context_processors.access_flags",
                 "core.context_processors.nav_mode",
+                "core.context_processors.modules",
                 "core.context_processors.setup_status",
                 "core.context_processors.app_version",
             ],

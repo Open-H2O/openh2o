@@ -48,6 +48,27 @@ def nav_mode(request):
     return {"nav_mode": mode}
 
 
+def modules(request):
+    """Expose the enabled-module list and the composed nav to every template.
+
+    ``nav_sections`` is the sidebar rebuilt from the registry: sections in
+    display order, each carrying its ordered entries. Visibility is deliberately
+    NOT evaluated here — every entry carries its predicate key (``always``,
+    ``admin_mode``, ``agency_admin``, ``setup_gate``) and the template applies
+    it, exactly as the hand-written sidebar does today.
+
+    Registered now so 77-02's template rewrite is a single isolated change; this
+    plan renders nothing from it.
+    """
+    from core.modules import enabled_modules, nav_sections_for
+
+    specs = enabled_modules()
+    return {
+        "enabled_modules": [spec.name for spec in specs],
+        "nav_sections": nav_sections_for(specs),
+    }
+
+
 def setup_status(request):
     """Flag a brand-new install so the dashboard can point an admin at setup.
 
