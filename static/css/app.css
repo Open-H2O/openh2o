@@ -4034,3 +4034,69 @@ div[id$="-map"] {
         scroll-behavior: auto !important;
     }
 }
+
+/* ---------------------------------------------------------------------------
+   Ensemble agreement badge
+   ---------------------------------------------------------------------------
+   How many of OpenET's six member models survived its outlier filter for this
+   parcel-month. Deliberately NOT the green/yellow/red used elsewhere for health:
+   that palette means "system fault", and low model agreement is uncertainty,
+   not error. Painting it red would teach operators to read a wide spread as a
+   broken number.
+
+   So the ramp varies WEIGHT within a single hue (reservoir teal, the water-data
+   accent) rather than shifting hue: strong fill = models agree, faint outline =
+   they diverge. Confidence reads as intensity, which is what it is.
+
+   Colour is never the only carrier — the badge always prints its count as text
+   ("4/6"), and the lowest band adds a dashed border so the bands stay
+   distinguishable in greyscale and under colour-vision deficiency (WCAG 1.4.1).
+   These figures end up in printed filings. */
+.badge-agreement {
+    font-variant-numeric: tabular-nums;
+    /* One text colour across every band, measured at 8.76:1 on the card surface.
+       The ramp is carried by FILL and BORDER weight alone, so contrast never
+       degrades as confidence drops — the least-certain badge is exactly as
+       legible as the most certain one. (reservoir-400, which .badge-teal uses,
+       measures 1.30:1 here and would not have been readable.) */
+    color: var(--reservoir-700);
+}
+
+.badge-agreement.badge-agreement-high {
+    background-color: oklch(0.45 0.10 200 / 0.30);
+    border-color: oklch(0.60 0.10 200 / 0.60);
+}
+
+.badge-agreement.badge-agreement-moderate {
+    background-color: oklch(0.45 0.10 200 / 0.16);
+    border-color: oklch(0.60 0.10 200 / 0.40);
+}
+
+.badge-agreement.badge-agreement-guarded {
+    background-color: transparent;
+    border-color: oklch(0.60 0.10 200 / 0.50);
+}
+
+/* Dashed, not red. The pattern is a second (non-colour) channel saying "this
+   one is different" without claiming the value is wrong. */
+.badge-agreement.badge-agreement-low {
+    background-color: transparent;
+    border-style: dashed;
+    border-color: oklch(0.65 0.09 200 / 0.75);
+}
+
+.badge-agreement.badge-agreement-unknown {
+    background-color: transparent;
+    border-style: dotted;
+    border-color: rgba(148, 163, 184, 0.4);
+    color: var(--color-text-tertiary);
+}
+
+/* The spread itself, rendered beside the value it qualifies. Tertiary weight:
+   it must not compete with the number a filing actually reports. */
+.et-spread {
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+}

@@ -1,0 +1,16 @@
+{# Ensemble agreement for one parcel-month of satellite ET.
+
+   `confidence` is an accounting.confidence.EnsembleConfidence. The count is
+   always rendered as text so the signal survives greyscale printing and
+   colour-vision deficiency; the colour ramp only reinforces it.
+
+   `title` carries the plain-English label rather than a jargon string — an
+   operator hovering "4/6" should read "Notable disagreement", not a variable
+   name. #}
+<span class="badge badge-pill badge-agreement badge-agreement-{{ confidence.level }}"
+      title="{{ confidence.label }}">
+  {{ confidence.token }}
+</span>
+{% if confidence.has_range %}
+  <span class="et-spread">{{ confidence.low_mm|floatformat:0 }}&ndash;{{ confidence.high_mm|floatformat:0 }} mm</span>
+{% endif %}

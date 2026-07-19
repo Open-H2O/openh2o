@@ -295,3 +295,65 @@ class TestConfidenceFromCache:
 
         assert confidence.low_mm is None
         assert not confidence.has_range
+
+
+@pytest.mark.django_db
+class TestConfidenceRendering:
+    """The audit page must state its own uncertainty, and state it in text."""
+
+    def _run_for(self, parcel, period="2025-01"):
+        from accounting.models import CalculationRun
+
+        from decimal import Decimal
+
+        return CalculationRun.objects.create(
+            parcel=parcel,
+            period=period,
+            gross_et_af=Decimal("10"),
+            net_consumptive_use_af=Decimal("8"),
+            effective_precip_af=Decimal("1"),
+            surface_water_af=Decimal("0"),
+            banked_af=Decimal("0"),
+            drawn_af=Decimal("0"),
+            # final_af is NOT NULL with no default — a hand-built run must set it.
+            final_af=Decimal("8"),
+            breakdown=[],
+        )
+
+    def test_renders_agreement_token_as_text(
+        self, auth_client, parcel, sample_geometry
+    ):
+        from django.urls import reverse
+
+        self._run_for(parcel)
+        _row(parcel, sample_geometry, "ET", "et", 88.0)
+        _row(parcel, sample_geometry, "et_mad_min", "et_mad_min", 70.0)
+        _row(parcel, sample_geometry, "et_mad_max", "et_mad_max", 104.0)
+        _row(parcel, sample_geometry, "model_count", "model_count", 4)
+
+        url = reverse("accounting:calculation_run_detail", args=[parcel.pk, "2025-01"])
+        body = auth_client.get(url).content.decode()
+
+        # The count is TEXT, not colour alone — this is the WCAG 1.4.1 contract
+        # and the reason the badge survives a greyscale print of a filing.
+        assert "4/6" in body
+        assert "Notable disagreement" in body
+        assert "badge-agreement-guarded" in body
+        assert "70&ndash;104 mm" in body or "70–104 mm" in body
+
+    def test_missing_spread_renders_honest_unknown(
+        self, auth_client, parcel, sample_geometry
+    ):
+        """Every parcel is in this state until spread is collected. It must say
+        so rather than implying a tight, confident estimate."""
+        from django.urls import reverse
+
+        self._run_for(parcel)
+        _row(parcel, sample_geometry, "ET", "et", 88.0)
+
+        url = reverse("accounting:calculation_run_detail", args=[parcel.pk, "2025-01"])
+        body = auth_client.get(url).content.decode()
+
+        assert "badge-agreement-unknown" in body
+        assert "Not yet collected" in body
+        assert "mm" not in body.split("Satellite model agreement")[1][:400]
