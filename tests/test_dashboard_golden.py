@@ -133,44 +133,112 @@ def test_dashboard_main_region_unchanged(dashboard_html):
 
 
 def test_dashboard_context_exposes_module_cards(db):
-    """The card list reaches the template, even though it is empty today.
+    """The card list reaches the template, carrying drinking's card.
 
-    Asserted on the context rather than the HTML on purpose: the wrapper is
-    deliberately not rendered when there are no cards, so the default page stays
-    byte-identical. That means the rendered page cannot distinguish "wired up
-    and empty" from "never wired up" — this can.
+    Was `== []` through Phase 77, when no module shipped one. 78-02 makes
+    `drinking` the first real user of the hook.
     """
     client = Client()
     client.force_login(UserFactory())
     response = client.get(reverse("accounting:dashboard"))
     assert response.status_code == 200
     assert "module_dashboard_cards" in response.context
-    assert list(response.context["module_dashboard_cards"]) == []
+    assert list(response.context["module_dashboard_cards"]) == [
+        "drinking/partials/_dashboard_card.html"
+    ]
 
 
 def test_dashboard_renders_a_supplied_module_card():
-    """Prove the loop actually renders, without waiting for Phase 78.
+    """The include loop itself, fed a real partial through the same context key.
 
-    Feeds the template a real existing partial through the same context key a
-    ModuleSpec would populate. If the include loop were wrong, this is where it
-    shows up — a year before anyone ships a card would otherwise be a long time
-    to carry a broken hook.
+    Renders `accounting/dashboard.html` rather than the content partial: 78-02
+    moved the block up out of `_dashboard_content.html` so a module's card does
+    not depend on an accounting reporting period existing.
     """
     from django.template.loader import render_to_string
 
     html = render_to_string(
-        "accounting/partials/_dashboard_content.html",
-        {
-            "selected_period": type("P", (), {"name": "Water Year 2025-2026"})(),
-            "module_dashboard_cards": ["partials/_demo_marker.html"],
-        },
+        "accounting/dashboard.html",
+        {"module_dashboard_cards": ["partials/_demo_marker.html"]},
     )
     assert 'id="module-dashboard-cards"' in html
 
 
-def test_dashboard_card_wrapper_absent_when_no_cards(dashboard_html):
-    """The empty case emits nothing at all — that is what keeps the diff clean."""
-    assert 'id="module-dashboard-cards"' not in dashboard_html
+def test_module_card_renders_without_any_reporting_period():
+    """The regression 78-02 fixed, stated plainly.
+
+    No `periods`, so the template takes its no-periods branch — the state a
+    drinking-only deployment is permanently in. The card must still render.
+    """
+    from django.template.loader import render_to_string
+
+    html = render_to_string(
+        "accounting/dashboard.html",
+        {"module_dashboard_cards": ["partials/_demo_marker.html"], "periods": []},
+    )
+    assert 'id="module-dashboard-cards"' in html
+
+
+def test_dashboard_card_wrapper_absent_when_no_module_supplies_one():
+    """The no-cards case still emits nothing at all.
+
+    Rendered directly with an empty card list rather than through the live
+    dashboard, because `drinking` now supplies one on a default deployment. The
+    branch still matters: it is what a deployment that drops `drinking` gets.
+    """
+    from django.template.loader import render_to_string
+
+    html = render_to_string(
+        "accounting/dashboard.html", {"module_dashboard_cards": []}
+    )
+    assert 'id="module-dashboard-cards"' not in html
+
+
+def test_drinking_card_renders_nothing_until_a_system_exists(dashboard_html):
+    """An unused module must not put a panel of zeroes on the dashboard.
+
+    The wrapper is present (drinking supplies a card path) but the card itself
+    renders empty, so a deployment carrying the module without using it sees the
+    dashboard it had before.
+    """
+    main = main_region(dashboard_html)
+    assert 'id="module-dashboard-cards"' in main
+    # Scoped to <main>: the sidebar legitimately carries a "Drinking Water" nav
+    # link now, so a whole-page check would test the wrong thing.
+    assert "Drinking Water" not in main
+
+
+@pytest.mark.django_db
+def test_drinking_card_renders_counts_once_a_system_exists():
+    """The card's actual content, with data behind it."""
+    from datetime import date as _date
+
+    from tests.factories import (
+        SampleEventFactory,
+        SampleResultFactory,
+        SamplingPointFactory,
+        SystemFacilityFactory,
+        WaterSystemFactory,
+    )
+
+    system = WaterSystemFactory(pwsid="CA1910067", name="Cedar Grove Water District")
+    facility = SystemFacilityFactory(system=system)
+    point = SamplingPointFactory(facility=facility)
+    event = SampleEventFactory(sampling_point=point, sample_date=_date(2025, 4, 2))
+    SampleResultFactory(event=event)
+
+    client = Client()
+    client.force_login(UserFactory())
+    main = main_region(client.get(reverse("accounting:dashboard")).content.decode())
+
+    # No ReportingPeriod is created here on purpose: a drinking-only deployment
+    # does no groundwater accounting, and its card must still render.
+    assert "Cedar Grove Water District" in main
+    assert "CA1910067" in main
+    assert "2025-04-02" in main
+    # Counts only. The card must never grow a verdict.
+    for verdict in ("exceed", "violation", "compliant"):
+        assert verdict not in main.lower()
 
 
 def test_dashboard_cards_for_concatenates_in_registry_order():
@@ -186,17 +254,27 @@ def test_dashboard_cards_for_concatenates_in_registry_order():
     assert dashboard_cards_for(specs) == ["a/one.html", "c/one.html", "c/two.html"]
 
 
-def test_no_module_ships_a_dashboard_card_yet(db):
+def test_drinking_is_the_only_module_shipping_a_dashboard_card(db):
     """Pins the honest answer for the default deployment.
 
-    Every ModuleSpec.dashboard_cards is empty today. Phase 78 adds the first
-    real one; when it does, this test names itself as the thing to update rather
-    than silently passing on a stale assumption.
+    Was `== {}` through Phase 77. 78-02 makes `drinking` the first and only
+    module with a card; the next one to add one lands here rather than slipping
+    onto the dashboard unreviewed.
     """
     from core.modules import enabled_modules
 
     with_cards = {s.name: s.dashboard_cards for s in enabled_modules() if s.dashboard_cards}
-    assert with_cards == {}, (
-        f"A module now ships a dashboard card: {with_cards}. Update this test "
-        f"and add a golden fixture covering the new tile."
+    assert with_cards == {
+        "drinking": ("drinking/partials/_dashboard_card.html",)
+    }, (
+        f"The set of modules shipping a dashboard card changed: {with_cards}. "
+        f"Update this test and regenerate the dashboard golden fixture."
     )
+
+
+def test_dropping_drinking_removes_its_card(db):
+    """The card disappears with the module, like everything else it owns."""
+    from core.modules import ALL_MODULE_NAMES, dashboard_cards_for, enabled_modules
+
+    kept = [n for n in ALL_MODULE_NAMES if n != "drinking"]
+    assert dashboard_cards_for(enabled_modules(kept)) == []

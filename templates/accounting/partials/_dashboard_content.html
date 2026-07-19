@@ -197,19 +197,11 @@
   <p class="text-tertiary text-sm">No zones configured yet.</p>
   {% endif %}
 </div>
+{% endif %}
 {% comment %}
-  Module-contributed dashboard cards, from ModuleSpec.dashboard_cards via the
-  `modules` context processor. Empty on a default deployment: everything above
-  is an accounting-domain rollup, not a per-module tile. A new domain appends
-  its card by declaring it in the registry — never by editing this file.
-
-  The wrapper renders only when a module actually supplies a card, so the
-  default dashboard keeps exactly the markup it had before Phase 77.
+  Module-contributed dashboard cards used to render here. 78-02 moved them up to
+  `accounting/dashboard.html`, OUTSIDE the `periods.exists` gate — this partial
+  is only included once an accounting reporting period exists, so a card left
+  here was invisible to any deployment that does not do groundwater accounting.
+  See the block there.
 {% endcomment %}
-{% if module_dashboard_cards %}
-<div id="module-dashboard-cards" class="page-stack">
-  {% for card in module_dashboard_cards %}{% include card %}{% endfor %}
-</div>
-{% endif %}
-
-{% endif %}

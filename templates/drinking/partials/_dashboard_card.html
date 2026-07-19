@@ -1,0 +1,49 @@
+{% load drinking_display %}{% comment %}
+  The drinking domain's dashboard card — the first real user of 77-02's
+  `dashboard_cards` hook.
+
+  It is here because of ONE registry line (`dashboard_cards=(...)` on the
+  ModuleSpec); the dashboard template was not edited to make room for it, and it
+  disappears with the module.
+
+  Data comes from a template tag rather than view context because the hook hands
+  a module a template path and nothing else — see `drinking_summary`.
+
+  **Counts only, no verdicts.** How many facilities, points and results exist,
+  and when the last sample was taken. Nothing here compares a result to a limit
+  or summarises "compliance", because the platform does not determine it.
+{% endcomment %}{% drinking_summary as summary %}{% if summary %}
+<h2 class="content-section-label">Drinking Water</h2>
+<div class="card-raised">
+  <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="section-header-flush">{{ summary.system.name }}</h2>
+    <span class="text-tertiary text-xs">
+      {{ summary.system.pwsid }}{% if summary.system_count > 1 %} · {{ summary.system_count }} systems carried{% endif %}
+    </span>
+  </div>
+
+  <div class="stat-grid-4col">
+    <div class="card-raised card-inset stat-card">
+      <div class="stat-card-label">Facilities</div>
+      <div class="stat-card-value-sm">{{ summary.facility_count }}</div>
+    </div>
+    <div class="card-raised card-inset stat-card">
+      <div class="stat-card-label">Sampling points</div>
+      <div class="stat-card-value-sm">{{ summary.sampling_point_count }}</div>
+    </div>
+    <div class="card-raised card-inset stat-card">
+      <div class="stat-card-label">Sample results</div>
+      <div class="stat-card-value-sm">{{ summary.result_count }}</div>
+    </div>
+    <div class="card-raised card-inset stat-card">
+      <div class="stat-card-label">Most recent sample</div>
+      <div class="stat-card-value-sm">{{ summary.latest_sample_date|date:"Y-m-d"|default:"—" }}</div>
+    </div>
+  </div>
+
+  <div class="row-end" style="margin-top: var(--space-md); gap: var(--space-sm);">
+    <a href="{% url 'drinking:results' %}" class="btn-secondary btn-sm">Sample results</a>
+    <a href="{% url 'drinking:overview' %}" class="btn-secondary btn-sm">System overview</a>
+  </div>
+</div>
+{% endif %}

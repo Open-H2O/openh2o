@@ -93,5 +93,30 @@
 
   {% endif %}
 
+  {% comment %}
+    Module-contributed dashboard cards, from ModuleSpec.dashboard_cards via the
+    `modules` context processor. Everything above is accounting's own domain — a
+    new domain appends its card by declaring it in the registry, never by
+    editing this file.
+
+    **Deliberately outside every branch above.** 77-02 put this block inside
+    `_dashboard_content.html`, which is only included once a reporting period
+    exists. 78-02 found the consequence: a district that carries drinking water
+    but does no groundwater accounting — precisely the flavor the module
+    registry exists to enable — has no reporting period, so it would never see
+    the card it configured. A module's card must not depend on another module's
+    data. It also sits outside `#dashboard-content` because it does not vary
+    with the selected period and should not be re-fetched on every period swap.
+
+    The wrapper renders only when a module actually supplies a card, so a
+    deployment that drops every card-shipping module keeps exactly the markup it
+    had before Phase 77.
+  {% endcomment %}
+  {% if module_dashboard_cards %}
+  <div id="module-dashboard-cards" class="page-stack">
+    {% for card in module_dashboard_cards %}{% include card %}{% endfor %}
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

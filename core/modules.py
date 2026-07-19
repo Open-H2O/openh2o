@@ -597,6 +597,10 @@ MODULE_REGISTRY: dict = {
                 active_match="/drinking/results",
             ),
         ),
+        # The first module to ship a dashboard card. It renders only when a
+        # WaterSystem exists, so a deployment that carries the module but has
+        # not started using it still sees the pre-78 dashboard.
+        dashboard_cards=("drinking/partials/_dashboard_card.html",),
         seed_commands=("seed_drinking",),
         requires=("wells", "standards"),
         # The first Phase-78-era module, and droppable by construction: nothing
