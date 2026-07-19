@@ -96,12 +96,15 @@ class TestVariableLeakRegression:
     def test_ledger_sync_ignores_non_et_rows(self, parcel, sample_geometry):
         """sync_openet_to_ledger files what it reads as et_estimate.
 
-        Non-ET rows previously fell through only because they key their value
-        under a different name. The queryset now excludes them outright.
+        The row here is deliberately hostile: variable="et_mad_max" but the
+        payload keyed under "et", which is what any future writer reusing
+        build_et_data would produce. That defeats the `et_value is None`
+        fall-through that spared non-ET rows before, so this test fails unless
+        the QUERYSET itself scopes to variable="ET".
         """
         from django.core.management import call_command
 
-        _row(parcel, sample_geometry, "et_mad_max", "et_mad_max", 999.0)
+        _row(parcel, sample_geometry, "et_mad_max", "et", 999.0)
 
         call_command(
             "sync_openet_to_ledger",
@@ -109,7 +112,7 @@ class TestVariableLeakRegression:
             "--end", "2025-12-31",
         )
 
-        from accounting.models import ParcelLedger
+        from parcels.models import ParcelLedger
 
         assert not ParcelLedger.objects.filter(
             parcel=parcel, source_type="et_estimate"
