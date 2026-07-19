@@ -63,8 +63,8 @@
         Satellite model agreement:
         {% include "accounting/partials/_agreement_badge.html" with confidence=confidence %}
         <span class="text-tertiary">
-          {% if confidence.has_agreement %}
-            {{ confidence.label }} — OpenET averages the member models that pass its outlier filter.
+          {% if confidence.is_known %}
+            {{ confidence.label }} — the badge counts models that passed OpenET's outlier filter; the range is how far those models actually spread.
           {% else %}
             Not yet collected for this parcel-month, so the estimate above carries no measured spread.
           {% endif %}

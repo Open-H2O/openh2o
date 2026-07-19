@@ -397,3 +397,62 @@ class TestConfidenceRendering:
             "SINGLE-LINE",
         ]:
             assert leak not in body, f"template comment leaked into the page: {leak!r}"
+
+
+class TestCountAndSpreadDisagree:
+    """The count and the width are different questions. Either alone can flatter."""
+
+    def test_all_six_models_retained_but_wildly_spread_is_not_agreement(self):
+        """The real case that caught this: MER-APN-062, 2025-07 on the live
+        Merced demo. All six member models survived OpenET's outlier filter —
+        a perfect 6/6 — yet they spanned 1.2 to 50.8 mm around a value of 21.1.
+
+        Counting survivors said "agree closely". The models disagreed by 42x.
+        """
+        c = EnsembleConfidence(
+            value_mm=21.06, low_mm=1.20, high_mm=50.84, model_count=6
+        )
+
+        assert c.count_level == "high"        # nothing was an outlier...
+        assert c.spread_level == "low"        # ...and they still diverge
+        assert c.level == "low"               # report the cautious one
+        assert c.label == "Models diverge — verify"
+        assert c.token == "6/6"               # the count is still shown honestly
+
+    def test_narrow_spread_does_not_rescue_a_poor_count(self):
+        """Symmetric guard: a tight range must not upgrade a parcel-month where
+        half the models were thrown out as outliers."""
+        c = EnsembleConfidence(
+            value_mm=100.0, low_mm=98.0, high_mm=102.0, model_count=3
+        )
+
+        assert c.spread_level == "high"
+        assert c.count_level == "low"
+        assert c.level == "low"
+
+    def test_both_good_stays_high(self):
+        c = EnsembleConfidence(
+            value_mm=100.0, low_mm=95.0, high_mm=105.0, model_count=6
+        )
+        assert c.level == "high"
+
+    def test_spread_alone_still_yields_a_level(self):
+        """Bounds without a count is a real signal, not an unknown."""
+        c = EnsembleConfidence(value_mm=100.0, low_mm=20.0, high_mm=180.0)
+
+        assert not c.has_agreement
+        assert c.token == "—"
+        assert c.level == "low"
+        assert c.is_known
+
+    def test_zero_value_does_not_explode(self):
+        """A range around zero has no meaningful relative width."""
+        c = EnsembleConfidence(value_mm=0, low_mm=0.0, high_mm=4.0, model_count=6)
+
+        assert c.relative_width is None
+        assert c.level == "high"   # falls back to the count alone
+
+    def test_nothing_retrieved_is_unknown(self):
+        c = EnsembleConfidence(value_mm=88.0)
+        assert c.level == "unknown"
+        assert not c.is_known

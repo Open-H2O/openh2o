@@ -35,12 +35,41 @@ MODEL_TOTAL = 6
 # meaningful instead of universal.
 UNKNOWN_LEVEL = "unknown"
 AGREEMENT_BANDS = (
-    # (minimum surviving models, level, plain-English label)
-    (6, "high", "Models agree closely"),
-    (5, "moderate", "Minor disagreement"),
-    (4, "guarded", "Notable disagreement"),
-    (0, "low", "Models diverge — verify"),
+    # (minimum surviving models, level)
+    (6, "high"),
+    (5, "moderate"),
+    (4, "guarded"),
+    (0, "low"),
 )
+
+# Relative spread — (high - low) / value — banded independently of the count.
+#
+# THIS IS NOT REDUNDANT WITH THE COUNT, and assuming it was is a mistake real
+# data caught. The count answers "how many models survived the outlier filter";
+# the width answers "how far apart are the survivors". They come apart badly:
+# a live Merced parcel (MER-APN-062, 2025-07) retained ALL SIX models — a
+# perfect 6/6 — while spanning 1.2 to 50.8 mm around a value of 21.1. Nothing
+# was an outlier by MAD, and the models still disagreed by a factor of 42.
+#
+# Reporting that as "Models agree closely" because the count was 6 would state
+# exactly the false precision this whole feature exists to remove. So the level
+# is the WORSE of the two bands, never the flattering one.
+SPREAD_BANDS = (
+    # (maximum relative width, level)
+    (0.25, "high"),
+    (0.50, "moderate"),
+    (1.00, "guarded"),
+    (float("inf"), "low"),
+)
+
+# Ordered worst-last so max() picks the more cautious of two levels.
+LEVEL_ORDER = ("high", "moderate", "guarded", "low")
+LEVEL_LABELS = {
+    "high": "Models agree closely",
+    "moderate": "Minor disagreement",
+    "guarded": "Notable disagreement",
+    "low": "Models diverge — verify",
+}
 UNKNOWN_LABEL = "Agreement not retrieved"
 
 
@@ -70,24 +99,66 @@ class EnsembleConfidence:
         return self.model_count is not None
 
     @property
-    def level(self):
+    def is_known(self):
+        """Whether ANY confidence signal was retrieved.
+
+        Broader than has_agreement: a parcel-month with bounds but no count
+        still has a real, reportable level derived from the spread.
+        """
+        return self.level != UNKNOWN_LEVEL
+
+    @property
+    def relative_width(self):
+        """Spread as a fraction of the value it qualifies, or None.
+
+        Guards a zero/absent value: a range around zero has no meaningful
+        relative width, and dividing would either explode or invent certainty.
+        """
+        if not self.has_range or not self.value_mm:
+            return None
+        value = abs(float(self.value_mm))
+        if value == 0:
+            return None
+        return (float(self.high_mm) - float(self.low_mm)) / value
+
+    @property
+    def count_level(self):
         if not self.has_agreement:
-            return UNKNOWN_LEVEL
+            return None
         count = int(self.model_count)
-        for threshold, level, _label in AGREEMENT_BANDS:
+        for threshold, level in AGREEMENT_BANDS:
             if count >= threshold:
                 return level
-        return UNKNOWN_LEVEL
+        return None
+
+    @property
+    def spread_level(self):
+        width = self.relative_width
+        if width is None:
+            return None
+        for threshold, level in SPREAD_BANDS:
+            if width <= threshold:
+                return level
+        return None
+
+    @property
+    def level(self):
+        """The more cautious of the count and spread bands.
+
+        Taking the worse of the two is the whole point: either signal alone can
+        look reassuring while the other says the number is soft.
+        """
+        levels = [x for x in (self.count_level, self.spread_level) if x]
+        if not levels:
+            return UNKNOWN_LEVEL
+        return max(levels, key=LEVEL_ORDER.index)
 
     @property
     def label(self):
-        if not self.has_agreement:
+        level = self.level
+        if level == UNKNOWN_LEVEL:
             return UNKNOWN_LABEL
-        count = int(self.model_count)
-        for threshold, _level, label in AGREEMENT_BANDS:
-            if count >= threshold:
-                return label
-        return UNKNOWN_LABEL
+        return LEVEL_LABELS[level]
 
     @property
     def token(self):
