@@ -227,6 +227,8 @@ class GEEOpenETAdapter(OpenETAdapter):
         Costs no additional queries against any quota — the bands ride on images
         Earth Engine is reducing regardless.
         """
+        from datasync.models import OpenETCache
+
         written = 0
         try:
             spread = reduce_et_with_spread_by_parcel(ee, parcels, win_start, win_end)
