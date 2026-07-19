@@ -3,24 +3,27 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
+from core.modules import enabled_modules, url_specs_for
+
 from config.views import about, index, getting_started, glossary, budgets_allocations, surface_deliveries, water_balances, methods, settings_explained, profile, set_nav_mode, global_search
 
+# Module-owned routes, composed from OPENH2O_MODULES via the registry, in the
+# same prefix order the hand-written list used. A DISABLED module's paths are
+# simply never registered, so they 404 for free — there is deliberately no
+# catch-all and no friendly "module disabled" page. A route that does not exist
+# should not exist.
+_module_urls = [
+    path(prefix, include(url_module))
+    for prefix, url_module in url_specs_for(enabled_modules())
+]
+
+# Everything below is hand-written and NOT module-owned: the Django admin,
+# allauth, the root index, the static help/about pages, the nav-mode toggle and
+# global search.
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
-    path("accounting/", include("accounting.urls")),
-    path("parcels/", include("parcels.urls")),
-    path("wells/", include("wells.urls")),
-    path("surface/", include("surface.urls")),
-    path("recharge/", include("recharge.urls")),
-    path("map/", include("geography.urls")),
-    path("datasync/", include("datasync.urls")),
-    path("reporting/", include("reporting.urls")),
-    path("health/", include("health.urls")),
-    path("setup/", include("setup.urls")),
-    path("infrastructure/", include("infrastructure.urls")),
-    path("users/", include("core.urls")),
-    path("feedback/", include("feedback.urls")),
+] + _module_urls + [
     path("about/", about, name="about"),
     path("help/getting-started/", getting_started, name="getting_started"),
     path("help/glossary/", glossary, name="glossary"),
