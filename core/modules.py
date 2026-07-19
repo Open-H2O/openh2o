@@ -25,6 +25,26 @@ Three orderings are encoded, and they are genuinely different from one another:
 
 Order values are spaced by 10 so a later module can be inserted without
 renumbering its neighbours.
+
+**Not every module is droppable yet, and the registry says so out loud.** Two
+different reasons put a module in the ``required`` set:
+
+* *Structural* — ``core`` owns ``AUTH_USER_MODEL``; ``geography`` owns the
+  boundary/zone spine; ``measurements`` and ``standards`` are vocabulary tables
+  other modules FK into. These are required by design.
+* *Not yet decoupled* — ``parcels``, ``wells``, ``accounting``, ``surface``,
+  ``recharge`` and ``datasync`` are imported at module scope by roughly a
+  hundred call sites in apps that stay enabled (``config/views.py``,
+  ``geography/views.py``, ``reporting/generators.py``, the seed commands, and
+  the accounting/surface calculation services). Omitting one does remove it from
+  ``INSTALLED_APPS``, and then the very next model import raises. They are
+  marked required so that misconfiguration fails at startup with an explanation
+  instead of an opaque ``app_label`` RuntimeError. Making them genuinely
+  optional is a decoupling job, tracked separately and deliberately out of scope
+  for v2.1.
+
+Everything else — ``reporting``, ``health``, ``setup``, ``infrastructure``,
+``feedback``, and every module added from Phase 78 onward — is droppable today.
 """
 
 from dataclasses import dataclass
@@ -134,6 +154,10 @@ class ModuleSpec:
     dashboard_cards: tuple = ()  # 77-02 populates
     seed_commands: tuple = ()
     required: bool = False
+    #: Why this module cannot be disabled. Surfaced verbatim in the startup
+    #: error, so an operator is told the actual reason rather than left to
+    #: reverse-engineer it.
+    required_reason: str = ""
     requires: tuple = ()
 
 
@@ -171,6 +195,9 @@ MODULE_REGISTRY: dict = {
         # AUTH_USER_MODEL = 'core.User'. Disabling core is not a configuration,
         # it is a broken install.
         required=True,
+        required_reason=(
+            "core owns AUTH_USER_MODEL; disabling it is a broken install, not a configuration"
+        ),
     ),
     "geography": ModuleSpec(
         name="geography",
@@ -200,6 +227,9 @@ MODULE_REGISTRY: dict = {
         ),
         # Owns the boundary/zone spine every spatial model and the map lean on.
         required=True,
+        required_reason=(
+            "geography owns the boundary/zone spine the map and every spatial model lean on"
+        ),
     ),
     "parcels": ModuleSpec(
         name="parcels",
@@ -219,6 +249,10 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         requires=("geography",),
+        required=True,
+        required_reason=(
+            "not yet decoupled: parcels.models is imported at module scope by accounting, reporting, geography, surface, setup, infrastructure and config views"
+        ),
     ),
     "wells": ModuleSpec(
         name="wells",
@@ -239,6 +273,10 @@ MODULE_REGISTRY: dict = {
         ),
         seed_commands=("seed_well_types",),
         requires=("geography",),
+        required=True,
+        required_reason=(
+            "not yet decoupled: wells.models is imported at module scope by reporting, geography, infrastructure and config views"
+        ),
     ),
     "measurements": ModuleSpec(
         name="measurements",
@@ -246,6 +284,9 @@ MODULE_REGISTRY: dict = {
         apps=("measurements",),
         # Model-only: no views, no nav.
         required=True,
+        required_reason=(
+            "measurements is a vocabulary table other modules FK into"
+        ),
     ),
     "standards": ModuleSpec(
         name="standards",
@@ -253,6 +294,9 @@ MODULE_REGISTRY: dict = {
         apps=("standards",),
         # Model-only: the observed-property vocabulary other modules FK into.
         required=True,
+        required_reason=(
+            "standards is the observed-property vocabulary other modules FK into"
+        ),
     ),
     "accounting": ModuleSpec(
         name="accounting",
@@ -326,6 +370,10 @@ MODULE_REGISTRY: dict = {
         ),
         seed_commands=("seed_water_types",),
         requires=("parcels",),
+        required=True,
+        required_reason=(
+            "not yet decoupled: accounting models and services are imported at module scope by reporting, parcels, surface and geography views"
+        ),
     ),
     "surface": ModuleSpec(
         name="surface",
@@ -358,6 +406,10 @@ MODULE_REGISTRY: dict = {
         ),
         seed_commands=("seed_water_right_types",),
         requires=("parcels",),
+        required=True,
+        required_reason=(
+            "not yet decoupled: surface.models is imported at module scope by accounting, reporting, geography, infrastructure and config views"
+        ),
     ),
     "recharge": ModuleSpec(
         name="recharge",
@@ -377,6 +429,10 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         requires=("parcels",),
+        required=True,
+        required_reason=(
+            "not yet decoupled: recharge models and geometry are imported at module scope by config views, infrastructure views and geography.placement"
+        ),
     ),
     "datasync": ModuleSpec(
         name="datasync",
@@ -397,6 +453,10 @@ MODULE_REGISTRY: dict = {
         ),
         seed_commands=("seed_data_sources",),
         requires=("geography",),
+        required=True,
+        required_reason=(
+            "not yet decoupled: datasync models, freshness and adapters are imported at module scope by accounting, health, setup, standards, geography and config views"
+        ),
     ),
     "reporting": ModuleSpec(
         name="reporting",
@@ -480,9 +540,16 @@ MODULE_REGISTRY: dict = {
 #: Every module name, in app order. The default value of ``OPENH2O_MODULES``.
 ALL_MODULE_NAMES: tuple = tuple(MODULE_REGISTRY.keys())
 
-#: Modules that cannot be switched off.
+#: Modules that cannot be switched off — some structurally, some because they
+#: are not yet decoupled. See the module docstring for the distinction.
 REQUIRED_MODULE_NAMES: tuple = tuple(
     name for name, spec in MODULE_REGISTRY.items() if spec.required
+)
+
+#: Modules a deployment can genuinely omit today. This is the honest promise of
+#: OPENH2O_MODULES, and tests/test_modules.py pins it.
+OPTIONAL_MODULE_NAMES: tuple = tuple(
+    name for name, spec in MODULE_REGISTRY.items() if not spec.required
 )
 
 
@@ -514,9 +581,12 @@ def validate_module_names(names) -> tuple:
 
     for required in REQUIRED_MODULE_NAMES:
         if required not in seen:
+            reason = MODULE_REGISTRY[required].required_reason
+            because = f" ({reason})" if reason else ""
             raise ImproperlyConfigured(
                 f"OPENH2O_MODULES omits required module {required!r}, which "
-                f"cannot be disabled. Valid modules are: {valid}."
+                f"cannot be disabled{because}. Modules that CAN be omitted: "
+                f"{', '.join(OPTIONAL_MODULE_NAMES)}."
             )
 
     for name in names:
