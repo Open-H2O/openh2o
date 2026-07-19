@@ -546,6 +546,7 @@ MODULE_REGISTRY: dict = {
         # Model-only for now: views, URLs and nav arrive in 78-02. Registered
         # last in app order deliberately — a new domain must not displace an
         # existing app on a duplicate template or static path.
+        seed_commands=("seed_drinking",),
         requires=("wells", "standards"),
         # The first Phase-78-era module, and droppable by construction: nothing
         # outside `drinking/` imports it at module scope. ISS-072 discipline.
