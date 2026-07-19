@@ -260,7 +260,13 @@ _google_client_secret = env("GOOGLE_OAUTH_CLIENT_SECRET", default="")
 
 DATASYNC_MOCK_MODE = env.bool("DATASYNC_MOCK_MODE", default=False)
 OPENET_CACHE_DAYS = int(os.environ.get("OPENET_CACHE_DAYS", "30"))
-OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "400"))
+# Raised from 400 when ensemble-spread collection landed. The API takes one
+# variable per call, so a parcel-window that used to cost 1 call now costs up to
+# 4 (ET + et_mad_min + et_mad_max + model_count). At the demo's ~76 parcels that
+# is ~304 calls for a single annual window, which would have sat at 76% of the
+# old ceiling with no headroom for a stale-cache refresh. Spread collection is
+# opt-in per sync, so deployments that skip it are unaffected by the higher cap.
+OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "1200"))
 
 # OpenET source selection: "api" = OpenET REST API (default, the live path);
 # "gee" = pull the same OpenET Ensemble collection directly from Google Earth

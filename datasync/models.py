@@ -215,7 +215,9 @@ class OpenETCache(models.Model):
         return used < limit, used, limit
 
     @classmethod
-    def reserve_query_slot(cls, parcel, geometry, start_date, end_date, budget=None):
+    def reserve_query_slot(
+        cls, parcel, geometry, start_date, end_date, budget=None, variable="ET"
+    ):
         """Atomically reserve one OpenET query slot against the monthly budget.
 
         check_budget() + create-row was check-then-act: two concurrent syncs near
@@ -242,7 +244,7 @@ class OpenETCache(models.Model):
                 geometry=geometry,
                 start_date=start_date,
                 end_date=end_date,
-                variable="ET",
+                variable=variable,
                 model_name=cls.PENDING_MARKER,
                 et_data=[],
             )

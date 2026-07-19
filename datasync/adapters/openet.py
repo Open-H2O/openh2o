@@ -25,6 +25,30 @@ logger = logging.getLogger(__name__)
 POINT_URL = "https://openet-api.org/raster/timeseries/point"
 POLYGON_URL = "https://openet-api.org/raster/timeseries/polygon"
 
+# Ensemble spread. OpenET's "Ensemble" is NOT a plain average of the six member
+# models (DisALEXI, eeMETRIC, geeSEBAL, PT-JPL, SIMS, SSEBop): it drops outliers
+# with a median-absolute-deviation filter and averages whatever survives
+# (Melton et al. 2022). These variables expose that filtering, which is
+# otherwise discarded — we would be filing a modeled number as though it were
+# exact.
+#
+#   et_mad_min / et_mad_max — the lowest / highest SURVIVING member, i.e. the
+#       envelope of models the filter kept. Note this is not a symmetric error
+#       bar: the ensemble value can sit anywhere inside the range.
+#   model_count            — how many of the six survived. 6 means the models
+#       agree closely; 3 means half were thrown out as outliers and the value
+#       deserves a second look.
+#
+# Fetching all three is 3 extra calls per parcel-window, because the API takes
+# one variable per call. That is still far cheaper than the 5 extra calls that
+# querying each member model separately would cost, and the bounds come from
+# OpenET's own filter rather than from us re-deriving it.
+SPREAD_VARIABLES = ("et_mad_min", "et_mad_max", "model_count")
+
+# model_count is a tally of models, not a depth of water. Keeping it out of the
+# mm-based validation thresholds and unit labels.
+UNITLESS_VARIABLES = frozenset({"model_count"})
+
 
 class OpenETAdapter(BaseAdapter):
     source_code = "openet"
@@ -64,13 +88,19 @@ class OpenETAdapter(BaseAdapter):
         )
         return resp.json()
 
-    def parse(self, raw_data):
+    def parse(self, raw_data, variable="ET"):
         """Parse OpenET timeseries response.
 
         OpenET returns ET in millimeters (mm). To convert to acre-feet consumed:
           ET (AF) = ET (mm) x area (acres) / 304.8
         See accounting.services.et_mm_to_acre_feet() for the full derivation.
         Reference: USGS Water Science School; California Department of Water Resources unit conversion tables.
+
+        ``variable`` selects which key to read out of each timeseries item. The
+        API echoes the requested variable back as the value key, so an
+        et_mad_min request returns {"time": ..., "et_mad_min": ...}. We try the
+        requested name first and only then fall back to the generic keys, so a
+        spread request can never silently read the ET column.
         """
         records = []
         if isinstance(raw_data, dict):
@@ -80,12 +110,25 @@ class OpenETAdapter(BaseAdapter):
         else:
             return records
 
+        key = variable.lower()
         for item in timeseries:
+            if key in item:
+                value = item[key]
+            elif variable in item:
+                value = item[variable]
+            else:
+                # Single-variable responses sometimes use a bare "value" column.
+                # Only fall back to "et" for an ET request — doing so for a
+                # spread request would file the ensemble mean as if it were a
+                # bound, which reads as a zero-width (falsely certain) range.
+                value = item.get("value")
+                if value is None and key == "et":
+                    value = item.get("et")
             records.append({
                 "station_id": item.get("field_id", item.get("station_id", "openet")),
                 "observation_date": item.get("date", item.get("time", "")),
-                "parameter_code": "ET",
-                "value": item.get("et", item.get("value")),
+                "parameter_code": variable,
+                "value": value,
                 "unit": "mm",
             })
         return records
@@ -147,12 +190,17 @@ class OpenETAdapter(BaseAdapter):
             poly = geometry
         return [list(coord) for coord in poly.exterior_ring.coords]
 
-    def fetch_polygon(self, geometry, start_date, end_date):
-        """Fetch monthly ET for a polygon.
+    def fetch_polygon(self, geometry, start_date, end_date, variable="ET"):
+        """Fetch a monthly OpenET timeseries for a polygon.
 
         Synchronous single POST. OpenET wants the polygon ring as a flat
         coordinate list [lon, lat, lon, lat, ...]. Falls back to the centroid
         point if the polygon request is rejected.
+
+        ``variable`` is one of ET (the ensemble value) or a member of
+        SPREAD_VARIABLES. The API takes exactly ONE variable and ONE model per
+        call, which is why the spread costs additional calls rather than riding
+        along on the ET request.
         """
         ring = self._geometry_to_geojson_coords(geometry)
         flat_coords = [value for vertex in ring for value in vertex]
@@ -164,7 +212,7 @@ class OpenETAdapter(BaseAdapter):
             "interval": "monthly",
             "geometry": flat_coords,
             "model": "Ensemble",
-            "variable": "ET",
+            "variable": variable,
             "reference_et": "gridMET",
             "units": "mm",
             "file_format": "JSON",
@@ -190,8 +238,15 @@ class OpenETAdapter(BaseAdapter):
 
         from datasync.models import OpenETCache
 
+        # The variable filter is load-bearing, not defensive. OpenETCache is a
+        # multi-variable table: it already holds variable="precip" rows, and the
+        # ensemble-spread work adds et_mad_min / et_mad_max / model_count. Without
+        # this filter the newest row for the window wins regardless of what it
+        # measures, so a fresh precip row reads as an ET cache hit and the ET fetch
+        # is skipped outright — the parcel silently keeps whatever ET it had.
         existing = OpenETCache.objects.filter(
             parcel=parcel,
+            variable="ET",
             start_date__lte=start_date,
             end_date__gte=end_date,
         ).exclude(model_name=OpenETCache.PENDING_MARKER).order_by("-queried_at").first()
@@ -252,6 +307,111 @@ class OpenETAdapter(BaseAdapter):
         logger.info("OpenET cache miss, stored %d records for parcel %s", len(et_data), parcel.pk)
         return et_data
 
+    def sync_spread_variable(self, parcel, start_date, end_date, variable):
+        """Cache-aware sync of ONE ensemble-spread variable for a parcel.
+
+        Mirrors sync_with_cache — same budget reservation, same stale-row
+        retirement — but writes its own row keyed on ``variable``. Each spread
+        variable is stored separately rather than folded into the ET row so that
+        a partial fetch (bounds retrieved, count refused) degrades to "no
+        confidence signal" instead of corrupting the ET value itself.
+
+        Payload values are keyed by the variable name, matching the convention
+        build_precip_data established: a row's values live under a key named for
+        what they measure, never a generic "et".
+        """
+        from django.db import transaction
+
+        from datasync.models import OpenETCache
+
+        if variable not in SPREAD_VARIABLES:
+            raise ValueError(
+                f"{variable!r} is not an ensemble-spread variable; "
+                f"expected one of {SPREAD_VARIABLES}"
+            )
+
+        existing = OpenETCache.objects.filter(
+            parcel=parcel,
+            variable=variable,
+            start_date__lte=start_date,
+            end_date__gte=end_date,
+        ).exclude(model_name=OpenETCache.PENDING_MARKER).order_by("-queried_at").first()
+
+        if existing and not existing.is_stale():
+            logger.info("OpenET %s cache hit for parcel %s", variable, parcel.pk)
+            return existing.et_data
+
+        reservation = OpenETCache.reserve_query_slot(
+            parcel, parcel.geometry, start_date, end_date, variable=variable
+        )
+        if reservation is None:
+            logger.warning(
+                "OpenET budget exceeded, skipping %s for parcel %s", variable, parcel.pk
+            )
+            return None
+
+        try:
+            raw_data = self.fetch_polygon(
+                parcel.geometry, start_date, end_date, variable=variable
+            )
+        except Exception as exc:
+            reservation.delete()
+            logger.error(
+                "OpenET %s fetch failed for parcel %s: %s", variable, parcel.pk, exc
+            )
+            return None
+
+        parsed = self.parse(raw_data, variable=variable)
+        if variable in UNITLESS_VARIABLES:
+            # A model tally has no mm threshold to clear; the ET validators would
+            # be measuring the wrong thing entirely.
+            valid = [r for r in parsed if r.get("value") is not None]
+        else:
+            valid, _rejected = self.validate(parsed, temporal_resolution="monthly")
+
+        unit = "count" if variable in UNITLESS_VARIABLES else "mm"
+        values = [
+            {
+                "date": r.get("observation_date", ""),
+                variable: r.get("value"),
+                "unit": unit,
+            }
+            for r in valid
+        ]
+
+        with transaction.atomic():
+            OpenETCache.objects.filter(
+                parcel=parcel,
+                start_date=reservation.start_date,
+                end_date=reservation.end_date,
+                variable=variable,
+                model_name="Ensemble",
+            ).exclude(pk=reservation.pk).delete()
+            reservation.model_name = "Ensemble"
+            reservation.et_data = values
+            reservation.save(update_fields=["model_name", "et_data"])
+
+        logger.info(
+            "OpenET %s stored %d records for parcel %s", variable, len(values), parcel.pk
+        )
+        return values
+
+    def sync_spread(self, parcel, start_date, end_date):
+        """Fetch every ensemble-spread variable for one parcel.
+
+        Returns {variable: payload or None}. A None means that variable was not
+        retrieved (budget exhausted or the call failed); callers must treat a
+        missing bound as "spread unknown" and show no range, never as a
+        zero-width range.
+        """
+        results = {}
+        for variable in SPREAD_VARIABLES:
+            self._rate_limit()
+            results[variable] = self.sync_spread_variable(
+                parcel, start_date, end_date, variable
+            )
+        return results
+
     def sync_parcel_et(self, parcels, start_date, end_date):
         """Batch sync ET data for multiple parcels with rate limiting."""
         summary = {"cached": 0, "fetched": 0, "budget_blocked": 0, "failed": 0}
@@ -259,8 +419,12 @@ class OpenETAdapter(BaseAdapter):
         for parcel in parcels:
             from datasync.models import OpenETCache
 
+            # Same variable filter as sync_with_cache — this is the pre-check that
+            # decides whether to spend a budget slot at all, so a precip row read
+            # as ET here skips the parcel before sync_with_cache ever sees it.
             existing = OpenETCache.objects.filter(
                 parcel=parcel,
+                variable="ET",
                 start_date__lte=start_date,
                 end_date__gte=end_date,
             ).exclude(model_name=OpenETCache.PENDING_MARKER).order_by("-queried_at").first()

@@ -68,8 +68,14 @@ class GEEOpenETAdapter(OpenETAdapter):
         from datasync.models import OpenETCache
 
         pids = [p.pk for p in parcels]
+        # Scope to ET rows. Other variables in this table (precip, and the
+        # ensemble-spread bounds) carry their value under their own payload key,
+        # so today they merely fall through the `item.get("et") is None` guard
+        # below — the filter makes that an explicit contract instead of a
+        # coincidence of key naming.
         rows = OpenETCache.objects.filter(
             parcel_id__in=pids,
+            variable="ET",
             start_date__lte=end,
             end_date__gte=start,
         )

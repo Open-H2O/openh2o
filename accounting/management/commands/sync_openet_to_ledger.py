@@ -71,7 +71,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("[DRY RUN] No database writes will occur."))
 
         # Find all OpenETCache records that overlap the requested date range
+        # variable="ET" only. This command writes every row it reads into the
+        # ledger as source_type="et_estimate", so an unscoped read files whatever
+        # else lives in OpenETCache as consumptive use. Non-ET rows are currently
+        # spared only because they key their value under a different name and hit
+        # the `et_value is None` continue below; that is a naming accident, and
+        # the ensemble-spread bounds are close enough to ET in shape that relying
+        # on it is not acceptable.
         cache_qs = OpenETCache.objects.filter(
+            variable="ET",
             start_date__lte=end_date,
             end_date__gte=start_date,
             parcel__isnull=False,
