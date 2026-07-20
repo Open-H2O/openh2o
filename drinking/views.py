@@ -560,4 +560,60 @@ def onboard_lookup(request):
 @require_POST
 def onboard_commit(request):
     """Re-fetch the session's PWSID from cache and write the system + facilities."""
-    raise NotImplementedError
+    pwsid = request.session.get(SESSION_KEY_ONBOARD_PWSID)
+    if not pwsid:
+        # A stale tab or an expired cookie is an ordinary event, not an error.
+        # Sending an operator to a 500 for closing their laptop overnight would
+        # be the wizard's fault, not theirs.
+        return render(
+            request,
+            "drinking/partials/_onboard_result.html",
+            {"expired": True},
+        )
+
+    # Same order as the lookup, and for the same reason. The fetch is a cache
+    # hit (EnvirofactsCache, 30-day TTL) so this costs a DB read, not a second
+    # federal round-trip — but the cache can legitimately have been refreshed or
+    # the service can have gone down between the two steps, so all three
+    # failures still have to be handled here.
+    try:
+        collected = _collect_federal_record(pwsid)
+    except envirofacts.PwsidNotFound as exc:
+        return render(
+            request,
+            "drinking/partials/_onboard_result.html",
+            {"error_kind": "not_found", "error": str(exc), "pwsid": pwsid},
+        )
+    except envirofacts.EnvirofactsUnavailable as exc:
+        return render(
+            request,
+            "drinking/partials/_onboard_result.html",
+            {"error_kind": "unavailable", "error": str(exc), "pwsid": pwsid},
+        )
+    except envirofacts.EnvirofactsError as exc:
+        return render(
+            request,
+            "drinking/partials/_onboard_result.html",
+            {"error_kind": "service_error", "error": str(exc), "pwsid": pwsid},
+        )
+
+    # `commit_system` is already @transaction.atomic, so a bad facility payload
+    # cannot leave a half-onboarded system behind. Deliberately NOT wrapped in a
+    # second transaction and given no compensating cleanup — both would fight a
+    # guarantee that already holds. It also takes the RAW payloads and maps them
+    # itself, which is why `_collect_federal_record` keeps them.
+    result = envirofacts_mapping.commit_system(
+        collected["system_row"], collected["facility_rows"]
+    )
+
+    del request.session[SESSION_KEY_ONBOARD_PWSID]
+
+    return render(
+        request,
+        "drinking/partials/_onboard_result.html",
+        {
+            "result": result,
+            "pwsid": pwsid,
+            "epa_facility_count": len(collected["facility_rows"]),
+        },
+    )

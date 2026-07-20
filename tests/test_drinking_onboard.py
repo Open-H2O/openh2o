@@ -292,3 +292,85 @@ class TestLookupFailureModes:
         self._raise(monkeypatch, envirofacts.PwsidNotFound(PWSID))
         client_in.post(reverse("drinking:onboard_lookup"), {"pwsid": PWSID})
         assert views.SESSION_KEY_ONBOARD_PWSID not in client_in.session
+
+
+# -- Task 3: commit + result -------------------------------------------------
+
+
+class TestCommit:
+    def _lookup_then_commit(self, client):
+        client.post(reverse("drinking:onboard_lookup"), {"pwsid": PWSID})
+        return client.post(reverse("drinking:onboard_commit"))
+
+    def test_commit_writes_the_system_and_its_writable_facilities(self, client_in, epa):
+        response = self._lookup_then_commit(client_in)
+
+        assert response.status_code == 200
+        system = WaterSystem.objects.get(pwsid=PWSID)
+        # 36 from EPA, one with a NULL state key: 35 can be given a PS Code.
+        assert system.facilities.count() == 35
+        assert "System created" in response.content.decode()
+
+    def test_a_second_commit_refreshes_and_duplicates_nothing(self, client_in, epa):
+        self._lookup_then_commit(client_in)
+        response = self._lookup_then_commit(client_in)
+        body = response.content.decode()
+
+        assert WaterSystem.objects.count() == 1
+        assert SystemFacility.objects.count() == 35
+        assert "System refreshed" in body
+        assert "35 refreshed" in body
+
+    def test_a_well_link_survives_a_re_commit(self, client_in, epa):
+        """The 79-02 guard, re-proved at the view layer.
+
+        `SystemFacility.well` is the quality-to-quantity join and linking one is
+        a deliberate operator act. A refresh erasing it would silently destroy
+        that work with nothing failing loudly.
+        """
+        from tests.factories import WellFactory
+
+        self._lookup_then_commit(client_in)
+        facility = SystemFacility.objects.get(facility_id="010")
+        well = WellFactory()
+        facility.well = well
+        facility.save(update_fields=["well"])
+
+        self._lookup_then_commit(client_in)
+
+        facility.refresh_from_db()
+        assert facility.well_id == well.pk
+
+    def test_the_session_is_cleared_after_a_successful_commit(self, client_in, epa):
+        self._lookup_then_commit(client_in)
+        assert views.SESSION_KEY_ONBOARD_PWSID not in client_in.session
+
+    def test_the_skipped_facility_is_reported_on_the_result_too(self, client_in, epa):
+        """Not only on the review — someone who clicked past it still needs the record."""
+        body = self._lookup_then_commit(client_in).content.decode()
+
+        assert "Facilities that were not written" in body
+        assert "state_facility_id" in body
+
+    def test_the_result_names_the_next_step(self, client_in, epa):
+        body = self._lookup_then_commit(client_in).content.decode()
+        assert "sampling points" in body.lower()
+
+    def test_a_missing_session_pwsid_starts_again_rather_than_500s(self, client_in, epa):
+        response = client_in.post(reverse("drinking:onboard_commit"))
+
+        assert response.status_code == 200
+        assert "Start again" in response.content.decode()
+        assert WaterSystem.objects.count() == 0
+
+    def test_a_failed_re_fetch_writes_nothing(self, client_in, epa, monkeypatch):
+        client_in.post(reverse("drinking:onboard_lookup"), {"pwsid": PWSID})
+
+        def boom(pwsid, refresh=False):
+            raise envirofacts.EnvirofactsUnavailable("EPA timed out")
+
+        monkeypatch.setattr(envirofacts, "fetch_water_system", boom)
+        response = client_in.post(reverse("drinking:onboard_commit"))
+
+        assert "EPA did not answer in time" in response.content.decode()
+        assert WaterSystem.objects.count() == 0

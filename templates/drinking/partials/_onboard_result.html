@@ -1,0 +1,133 @@
+{% comment %}
+  Outcome of onboarding one water system. Three shapes:
+    - expired: the session lost its PWSID (stale tab, expired cookie)
+    - error_kind + error: the re-fetch failed between review and commit
+    - result: the CommitResult, rendered field for field
+
+  The skipped list and the notes appear HERE as well as on the review. An
+  operator who clicked straight through still needs the record of what did not
+  get written; a result screen that only counts successes quietly loses that.
+
+  Caller supplies `expired`, or `error_kind` + `error` + `pwsid`, or `result` +
+  `pwsid` + `epa_facility_count`.
+{% endcomment %}
+{% if expired %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Start again</h2>
+  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    This page no longer knows which system you were reviewing &mdash; the tab has
+    been open a while, or the sign-in session rolled over. Nothing was written.
+    Look the PWSID up again and the review will come back as it was.
+  </p>
+  <div class="row-start" style="margin-top: var(--space-lg);">
+    <a href="{% url 'drinking:onboard' %}" class="btn-primary">Look up a system</a>
+  </div>
+</div>
+{% elif error_kind %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">
+    {% if error_kind == "not_found" %}EPA no longer has that system
+    {% elif error_kind == "unavailable" %}EPA did not answer in time
+    {% else %}EPA answered with an error{% endif %}
+  </h2>
+  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    Nothing was written. The record for
+    <span class="text-mono">{{ pwsid }}</span> could not be read again at the
+    moment of committing.
+    {% if error_kind == "unavailable" %}
+      EPA's service is routinely slow; a retry in a few minutes usually works.
+    {% endif %}
+  </p>
+  {% if error %}
+  <div class="card-inset" style="margin-top: var(--space-md);">
+    <p class="text-sm text-secondary" style="margin: 0;">{{ error }}</p>
+  </div>
+  {% endif %}
+  <div class="row-start" style="margin-top: var(--space-lg);">
+    <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Try again</a>
+  </div>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">
+    {% if result.created %}System created{% else %}System refreshed{% endif %}
+  </h2>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+    {% if result.created %}
+      <span class="badge badge-green">Created</span>
+    {% else %}
+      <span class="badge badge-blue">Refreshed from EPA</span>
+    {% endif %}
+    <span class="badge badge-green">{{ result.facilities_created }} facilit{{ result.facilities_created|pluralize:"y,ies" }} created</span>
+    <span class="badge badge-grey">{{ result.facilities_updated }} refreshed</span>
+    {% if result.skipped %}<span class="badge badge-orange">{{ result.skipped|length }} skipped</span>{% endif %}
+    {% if result.warnings %}<span class="badge badge-orange">{{ result.warnings|length }} note{{ result.warnings|length|pluralize }}</span>{% endif %}
+  </div>
+
+  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <strong>{{ result.system.name|default:pwsid }}</strong>
+    (<span class="text-mono">{{ result.system.pwsid }}</span>)
+    {% if result.created %}is now carried here{% else %}was already carried here and its EPA-derived fields were refreshed{% endif %}.
+    Of the {{ epa_facility_count }} facilit{{ epa_facility_count|pluralize:"y,ies" }} EPA sent,
+    {{ result.facilities_created }} {{ result.facilities_created|pluralize:"was,were" }} created and
+    {{ result.facilities_updated }} {{ result.facilities_updated|pluralize:"was,were" }} refreshed.
+    {% if result.skipped %}
+      {{ result.skipped|length }} could not be written &mdash; listed below.
+    {% endif %}
+  </p>
+
+  {% if result.skipped %}
+  <h3 class="section-header" style="margin-top: var(--space-lg);">Facilities that were not written</h3>
+  <table class="data-table" style="margin-top: var(--space-sm);">
+    <thead>
+      <tr><th>Why it was skipped</th></tr>
+    </thead>
+    <tbody>
+      {% for reason in result.skipped %}
+      <tr><td class="text-secondary">{{ reason }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if result.warnings %}
+  <h3 class="section-header" style="margin-top: var(--space-lg);">Notes on this record</h3>
+  <table class="data-table" style="margin-top: var(--space-sm);">
+    <thead>
+      <tr><th>Note</th></tr>
+    </thead>
+    <tbody>
+      {% for warning in result.warnings %}
+      <tr><td class="text-secondary">{{ warning }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% comment %}
+    The next step, stated plainly, because a system with facilities and no
+    sampling points looks finished and is not: the lab import matches rows on PS
+    Code, and a PS Code lives on a sampling point.
+
+    PLACEHOLDER — the sampling-point builder ships in plan 80-03, which replaces
+    the paragraph below with a real link to its route. No URL is invented here:
+    a {% url %} to a route that does not exist raises NoReverseMatch and takes
+    the whole result screen down with it.
+  {% endcomment %}
+  <div class="card-inset" style="margin-top: var(--space-lg);">
+    <p class="text-base text-secondary" style="margin: 0;">
+      <strong>Next: sampling points.</strong> This system now has its facilities,
+      but no sampling points &mdash; and lab results cannot be imported until it
+      has them, because every result row is matched to a monitoring location by
+      its PS Code. The sampling-point builder is not built yet; until it is, add
+      points in the Django admin.
+    </p>
+  </div>
+
+  <div class="row-start" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    <a href="{% url 'drinking:overview' %}" class="btn-primary">View the water system</a>
+    <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Onboard another system</a>
+  </div>
+</div>
+{% endif %}
