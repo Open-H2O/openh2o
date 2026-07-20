@@ -17,11 +17,32 @@ make dropping the ``infrastructure`` app crash ``drinking`` — the exact coupli
 Phase 77 quarantined. Lab CSVs need none of the GDAL/shapefile machinery
 anyway, so this is stdlib ``csv`` only.
 
-The file layout is DDW's, so a raw state export maps with zero clicks. The
+The file layout is DDW's, so a raw California export maps with zero clicks. The
 column names come from the *Data Dictionary for SDWIS.CSV Files* (rev 12/2021),
 but the **files themselves are now tab-delimited `SDWIS1-4.tab` inside `.zip`**
 — the EDT Library retired the `.CSV` extracts the dictionary describes. Both
 are accepted: the delimiter is chosen from the extension (see `_DELIMITERS`).
+
+**California is the reference implementation, not the only target.** This
+platform is meant to serve agencies in any state, so it is worth knowing which
+parts of this module are national and which are one state's shape:
+
+  NATIONAL (expected to work anywhere, do not "de-Californianize" these):
+    - `_parse_lab_date` — ISO plus the ordinary US month-first convention.
+    - `_SDWIS_SAMPLE_TYPES` — EPA's own CMDP codes, verified in four states.
+    - Non-detect handling — a blank result plus a below-reporting-level flag
+      plus a bound is general lab practice, not a DDW invention.
+    - Delimiter selection — driven by extension, so a state shipping `.csv`
+      or `.txt` already works.
+
+  CALIFORNIA-SHAPED (expect to generalize these when a second state is real):
+    - `ALIASES` — tuned to DDW's header spellings. Extensible by adding
+      entries; other states mostly need names added, not code changed.
+    - `Analyte.ddw_code` — the state-side analyte code. The DESIGN is right
+      (a state code and the federal `storet_code` stored side by side); only
+      the field name assumes California.
+    - PS Code composition, which lives in the onboarding wizard rather than
+      here. That one is genuinely per-state. See ISS-077.
 
 Verified against the live `SDWIS4.tab` on 2026-07-19 (ISS-073): 29 columns,
 two more than the dictionary lists. `Water System Classification` split into
@@ -104,19 +125,38 @@ _ABSENT_TOKENS = {"a", "absent", "neg", "negative", "nd", "non-detect"}
 
 _SAMPLE_TYPES = {code for code, _label in SAMPLE_TYPE_CHOICES}
 
-# DDW's own sample-type codes -> this platform's vocabulary. Keyed lowercase.
+# FEDERAL sample-type codes -> this platform's vocabulary. Keyed lowercase.
 #
-# MEASURED (2026-07-20, ISS-074): all 40 rows of the real `SDWIS4.tab` slice
-# carry `Sample Type = RT`, which is DDW's code for a routine sample. Without
-# this map a genuine export warns on EVERY row, which teaches an operator to
-# ignore the warning column — the one place a real problem would show up.
+# These are EPA's, NOT California's. They come from CMDP (the Compliance
+# Monitoring Data Portal — the federal system labs submit sampling data through,
+# which feeds national SDWIS), and states across the country report with them.
+# VERIFIED 2026-07-20 against primary sources in four states: Vermont's
+# monitoring instructions define them verbatim ("Routine 'RT', Special Purpose
+# 'SP', Triggered 'TG', or Repeat 'RP'"), and the Texas TCEQ CMDP reference
+# guide, Virginia's reporting template and Ohio EPA's lab reporting tips carry
+# the same set. So this map is NOT a California quirk to be swapped out per
+# state — it is the one part of the import path that already travels.
 #
-# `RT` is the ONLY entry, deliberately. It is the sole code observed in a real
-# export, and DDW publishes no code list we have been able to verify. Guessing
-# at `RP`/`CF`/`SP` would silently relabel, say, a confirmation sample as
-# routine — a wrong answer stated confidently, which is strictly worse than the
-# warning it would replace. Extend this map from an OBSERVED export only.
-_DDW_SAMPLE_TYPES = {"rt": "routine"}
+# MEASURED (2026-07-20, ISS-074): all 40 rows of the real California `SDWIS4.tab`
+# slice carry `RT`. Without this map a genuine export warns on EVERY row, which
+# teaches an operator to ignore the warning column — the one place a real
+# problem would show up.
+#
+# `TG` (triggered source monitoring — a groundwater source sample required after
+# a coliform-positive routine sample) is DELIBERATELY ABSENT. It has no home in
+# `SAMPLE_TYPE_CHOICES`, and mapping it to `routine` or `special` would silently
+# relabel a sample with its own regulatory meaning under the Ground Water Rule.
+# It needs a vocabulary entry, not a mapping — see ISS-076. Until then it warns,
+# honestly, that we do not have a place to put it.
+#
+# Extend this map from EPA's published CMDP code set or an OBSERVED real export.
+# Never by inference: a wrongly-mapped code is a confident wrong answer, which is
+# strictly worse than the warning it replaces.
+_SDWIS_SAMPLE_TYPES = {
+    "rt": "routine",
+    "rp": "repeat",
+    "sp": "special",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -329,19 +369,26 @@ def missing_required(mapping):
 _DATE_FORMAT_HELP = "YYYY-MM-DD or MM-DD-YYYY"
 
 
-def _parse_ddw_date(raw):
-    """A date from an ISO or a DDW-style cell, or None if it is neither.
+def _parse_lab_date(raw):
+    """A date from an ISO or a US month-first cell, or None if it is neither.
+
+    NOT California-specific: `MM-DD-YYYY` is the ordinary US convention, so this
+    is expected to serve any state's lab export. ISO is accepted alongside it.
 
     TWO explicit formats, in a fixed order — ISO first (the layout the retired
     `SDWIS*.CSV` extracts and our own fixtures use), then `%m-%d-%Y` (the layout
     the live `SDWIS*.tab` extracts use). No `dateutil`, no sniffing, no fallback
     chain.
 
-    The strictness is the point. MEASURED (2026-07-20, ISS-074) on the real
-    40-row CA1010001 slice: 32 of the 40 sample dates carry a second component
-    greater than 12 (`01-13-2026` and the like), which is impossible to read as
-    `DD-MM`. That is what proves the state writes month-first — it was not
-    assumed. A permissive parser that ALSO accepted `DD-MM-YYYY` would resolve
+    The strictness is the point, and it only gets MORE important as more states
+    are supported: more format variance means more chances for a permissive
+    parser to guess silently and wrongly.
+
+    MEASURED (2026-07-20, ISS-074) on the real 40-row CA1010001 slice: 32 of the
+    40 sample dates carry a second component greater than 12 (`01-13-2026` and
+    the like), which is impossible to read as `DD-MM`. That is what proves the
+    state writes month-first — it was not assumed. A permissive parser that
+    ALSO accepted `DD-MM-YYYY` would resolve
     the remaining 8 by guessing, and a guess that swaps month and day misdates
     lab evidence while looking perfectly well-formed. The ambiguity is invisible
     for 12 days of every month, so it would not surface as a bug report; it
@@ -560,7 +607,7 @@ def validate_rows(rows, mapping):
 
         # --- event identity -------------------------------------------------
         raw_date = src("sample_date")
-        sample_date = _parse_ddw_date(raw_date) if raw_date else None
+        sample_date = _parse_lab_date(raw_date) if raw_date else None
         if not raw_date:
             errors.append("Sample date is required (blank or unmapped).")
         elif sample_date is None:
@@ -582,8 +629,8 @@ def validate_rows(rows, mapping):
         raw_sample_type = src("sample_type")
         sample_type = raw_sample_type.lower() or "routine"
         if sample_type not in _SAMPLE_TYPES:
-            # DDW's own code vocabulary, before we give up and warn.
-            sample_type = _DDW_SAMPLE_TYPES.get(sample_type, sample_type)
+            # EPA's federal CMDP code vocabulary, before we give up and warn.
+            sample_type = _SDWIS_SAMPLE_TYPES.get(sample_type, sample_type)
         if sample_type not in _SAMPLE_TYPES:
             warnings.append(
                 f"Sample type '{raw_sample_type}' is not a standard type; "
@@ -633,7 +680,7 @@ def validate_rows(rows, mapping):
         data["counting_error"] = _decimal_or_none(src("counting_error"))
 
         raw_analysis = src("analysis_date")
-        analysis_date = _parse_ddw_date(raw_analysis) if raw_analysis else None
+        analysis_date = _parse_lab_date(raw_analysis) if raw_analysis else None
         if raw_analysis and analysis_date is None:
             warnings.append(
                 f"Analysis date '{raw_analysis}' was not readable; ignored."

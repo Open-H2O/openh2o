@@ -955,6 +955,64 @@ class TestRealDDWSampleType:
         assert "'ZQ'" in warning
 
 
+class TestFederalSampleTypeCodes:
+    """The sample-type codes are EPA's (CMDP), not California's, so they are
+    expected to arrive from any state's lab export — not just DDW's.
+
+    VERIFIED 2026-07-20 against primary sources in four states. Vermont's
+    monitoring instructions state the set verbatim: Routine "RT", Special
+    Purpose "SP", Triggered "TG", Repeat "RP".
+    """
+
+    @pytest.mark.parametrize(
+        "code,expected",
+        [
+            ("RT", "routine"),
+            ("RP", "repeat"),
+            ("SP", "special"),
+        ],
+    )
+    def test_federal_cmdp_codes_map_without_a_warning(
+        self, ddw_system, code, expected
+    ):
+        row = _validate_one(**{"Sample Type": code})
+        assert row["data"]["sample_type"] == expected
+        assert not [w for w in row["warnings"] if "Sample type" in w]
+
+    @pytest.mark.parametrize("code", ["rt", "rp", "sp", "Rp", "sP"])
+    def test_the_codes_are_case_insensitive(self, ddw_system, code):
+        """Real exports are not consistent about casing, and a state that
+        lowercases its codes must not fall through to the warning path."""
+        row = _validate_one(**{"Sample Type": code})
+        assert not [w for w in row["warnings"] if "Sample type" in w]
+
+    def test_a_repeat_sample_is_no_longer_silently_recorded_as_routine(
+        self, ddw_system
+    ):
+        """The correctness half of ISS-074 Gap 3. Before the federal map, `RP`
+        fell through to the warning path and was RECORDED AS ROUTINE — a repeat
+        sample, taken because a routine one came back positive, filed as though
+        it were the routine sample itself."""
+        row = _validate_one(**{"Sample Type": "RP"})
+        assert row["data"]["sample_type"] == "repeat"
+
+    def test_triggered_is_deliberately_unmapped_and_warns(self, ddw_system):
+        """`TG` (triggered source monitoring) has NO home in
+        `SAMPLE_TYPE_CHOICES`. Mapping it to `routine` or `special` would
+        silently relabel a sample with its own regulatory meaning under the
+        Ground Water Rule, so it must keep warning until the vocabulary gains
+        an entry for it (ISS-076).
+
+        This test is a GUARD, not an endorsement. If `triggered` is added to
+        `SAMPLE_TYPE_CHOICES`, change this test deliberately — do not let a
+        convenience mapping to an existing value slip in to make it pass.
+        """
+        row = _validate_one(**{"Sample Type": "TG"})
+        assert row["data"]["sample_type"] == "routine"
+        warning = next(w for w in row["warnings"] if "Sample type" in w)
+        assert "'TG'" in warning
+
+
 class TestTheRealDDWSliceValidatesClean:
     """Phase 80's acceptance gate: feed the state's genuine export through the
     importer and get zero row errors, so PS Codes are actually exercised."""
