@@ -10,16 +10,21 @@ colors a row by it. Showing a result and separately showing what the limit is
 are both facts; rendering a verdict is a regulatory determination this platform
 does not make. See ``drinking/models.py``.
 
-Django admin is the write path until 78-03 ships the CSV importer, so these are
-deliberately read-only — no inline ``edit_field`` surface yet.
+The three read surfaces are deliberately read-only — no inline ``edit_field``
+surface. The write path is the lab-file import at the bottom of this module,
+plus Django admin for one-off corrections.
 """
+import json
+
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Prefetch, Q
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
+from django.views.decorators.http import require_GET, require_POST
 
 from core.workspace import list_response
+from drinking import importer
 from drinking.models import (
     POINT_TYPE_CHOICES,
     Analyte,
@@ -161,5 +166,198 @@ def results(request):
             "analytes": Analyte.objects.filter(results__isnull=False).distinct(),
             "sampling_points": SamplingPoint.objects.order_by("ps_code"),
             "has_any": SampleResult.objects.exists(),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Lab-file import: page -> preview -> commit
+# ---------------------------------------------------------------------------
+#
+# Thin glue over ``drinking.importer``'s four functions, mirroring the
+# infrastructure import flow's shape and error idiom. The one deliberate
+# difference: infrastructure offers a manual column-mapping step, and this does
+# not. The DDW SDWIS.CSV layout is a published spec, so auto-mapping is right
+# essentially always; a mapping UI would be five clicks of ceremony to confirm
+# what the header row already said. When a REQUIRED column cannot be found, the
+# preview says exactly which one rather than offering a grid of dropdowns.
+
+
+@login_required
+@require_GET
+def import_page(request):
+    """The lab-file upload page (the dropzone)."""
+    return render(request, "drinking/import.html", {"max_rows": importer.MAX_ROWS})
+
+
+def _preview_rows(rows, mapping, validated):
+    """Zip validated rows back to their source values for the preview table."""
+    def src(row, field):
+        col = mapping.get(field)
+        return (row.get(col) or "").strip() if col else ""
+
+    shaped = []
+    for item in validated:
+        row = rows[item["index"]]
+        shaped.append(
+            {
+                "index": item["index"] + 1,  # 1-based: matches the file's rows
+                "ps_code": src(row, "ps_code"),
+                "sample_date": src(row, "sample_date"),
+                "analyte": src(row, "analyte_name"),
+                "result": src(row, "result"),
+                "unit": src(row, "unit"),
+                "errors": item["errors"],
+                "warnings": item["warnings"],
+            }
+        )
+    return shaped
+
+
+@login_required
+@require_POST
+def import_preview(request):
+    """Parse, auto-map and validate the upload; show what a commit would do."""
+    uploaded = request.FILES.get("file")
+    if not uploaded:
+        return render(
+            request,
+            "drinking/partials/_import_result.html",
+            {"error": "No file provided. Choose a CSV of lab results."},
+        )
+
+    try:
+        parsed = importer.parse_upload(uploaded, uploaded.name)
+    except ImportError as exc:
+        return render(
+            request,
+            "drinking/partials/_import_result.html",
+            {"error": str(exc)},
+        )
+
+    columns = parsed["columns"]
+    rows = parsed["rows"]
+    mapping = importer.auto_map_columns(columns)
+
+    missing = importer.missing_required(mapping)
+    if missing:
+        return render(
+            request,
+            "drinking/partials/_import_result.html",
+            {
+                "error": (
+                    "This file is missing column"
+                    f"{'s' if len(missing) > 1 else ''} the import needs: "
+                    f"{', '.join(missing)}. The expected layout is the state's "
+                    "own SDWIS.CSV lab-results format."
+                )
+            },
+        )
+
+    validated = importer.validate_rows(rows, mapping)
+    preview = _preview_rows(rows, mapping, validated)
+
+    error_rows = [r for r in preview if r["errors"]]
+    warning_rows = [r for r in preview if r["warnings"] and not r["errors"]]
+    duplicate_count = sum(
+        1 for item in validated if item["data"].get("is_duplicate")
+    )
+    new_analytes = sorted(
+        {
+            item["data"]["analyte_name"]
+            for item in validated
+            if not item["errors"] and item["data"].get("analyte_id") is None
+            and item["data"].get("analyte_name")
+        }
+    )
+    committable = sum(
+        1
+        for item in validated
+        if not item["errors"] and not item["data"].get("is_duplicate")
+    )
+
+    return render(
+        request,
+        "drinking/partials/_import_preview.html",
+        {
+            "recognised": [
+                (importer.FIELD_LABELS[field], col)
+                for field, col in mapping.items()
+            ],
+            "preview_rows": preview[:200],
+            "shown_count": min(len(preview), 200),
+            "error_rows": error_rows,
+            "warning_rows": warning_rows,
+            "row_count": len(rows),
+            "error_count": len(error_rows),
+            "duplicate_count": duplicate_count,
+            "new_analytes": new_analytes,
+            "committable": committable,
+            "rows_json": json.dumps(rows),
+        },
+    )
+
+
+@login_required
+@require_POST
+def import_commit(request):
+    """Re-validate the posted rows and write them."""
+    try:
+        rows = json.loads(request.POST.get("rows_json", "") or "[]")
+    except json.JSONDecodeError:
+        rows = []
+
+    if not rows:
+        return render(
+            request,
+            "drinking/partials/_import_result.html",
+            {"error": "No rows to import — please re-upload your file and try again."},
+        )
+
+    # Re-enforce the row cap on COMMIT, not just on preview. `rows_json` is a
+    # hidden field the browser posts back, so a logged-in user can hand-edit it
+    # to submit far more rows than the upload parser allowed. The upload cap is
+    # meaningless if commit does not check it too.
+    if len(rows) > importer.MAX_ROWS:
+        return render(
+            request,
+            "drinking/partials/_import_result.html",
+            {
+                "error": (
+                    f"Import is {len(rows)} rows, over the {importer.MAX_ROWS}-row "
+                    "cap. Re-upload a smaller file."
+                )
+            },
+        )
+
+    if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
+        return render(
+            request,
+            "drinking/partials/_import_result.html",
+            {"error": "The import data was malformed — please re-upload your file."},
+        )
+
+    # Re-derive the mapping and re-validate from scratch. The preview's verdict
+    # is never trusted: between preview and commit another operator may have
+    # added the very sampling point a row was rejected for, or the duplicate a
+    # row is about to become.
+    columns = list(rows[0].keys())
+    mapping = importer.auto_map_columns(columns)
+    validated = importer.validate_rows(rows, mapping)
+    counts = importer.commit_rows(validated)
+
+    skipped = [
+        {"index": item["index"] + 1, "errors": item["errors"]}
+        for item in validated
+        if item["errors"]
+    ]
+
+    return render(
+        request,
+        "drinking/partials/_import_result.html",
+        {
+            "counts": counts,
+            "skipped": skipped,
+            "total": len(validated),
         },
     )

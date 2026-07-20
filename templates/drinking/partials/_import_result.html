@@ -1,0 +1,76 @@
+{% comment %}
+  Outcome of a lab-file import. Two shapes:
+    - error: a file/parse problem, before any row was considered
+    - success: what was created, what was skipped and why
+
+  The counts are deliberately itemised rather than rolled into one number:
+  "42 results" and "42 results across 6 events, 2 new analytes" answer different
+  questions, and an operator re-importing a file needs to see that the second
+  run created nothing.
+
+  Caller supplies either `error`, or `counts` + `skipped` + `total`.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Import complete</h2>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+    <span class="badge badge-green">{{ counts.results }} result{{ counts.results|pluralize }}</span>
+    <span class="badge badge-green">{{ counts.events }} sample event{{ counts.events|pluralize }}</span>
+    {% if counts.analytes %}<span class="badge badge-blue">{{ counts.analytes }} new analyte{{ counts.analytes|pluralize }}</span>{% endif %}
+    {% if counts.duplicates %}<span class="badge badge-orange">{{ counts.duplicates }} already recorded</span>{% endif %}
+    {% if counts.skipped %}<span class="badge badge-orange">{{ counts.skipped }} skipped</span>{% endif %}
+    <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
+  </div>
+
+  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    {% if counts.results %}
+      Created {{ counts.results }} sample result{{ counts.results|pluralize }} across
+      {{ counts.events }} sample event{{ counts.events|pluralize }}.
+    {% else %}
+      No new results were created.
+    {% endif %}
+    {% if counts.duplicates %}
+      {{ counts.duplicates }} row{{ counts.duplicates|pluralize }} {{ counts.duplicates|pluralize:"was,were" }} already on file and {{ counts.duplicates|pluralize:"was,were" }} skipped.
+    {% endif %}
+    {% if counts.analytes %}
+      {{ counts.analytes }} analyte{{ counts.analytes|pluralize }} {{ counts.analytes|pluralize:"was,were" }} added to the vocabulary from this file.
+    {% endif %}
+  </p>
+
+  {% if skipped %}
+  <h3 class="text-base" style="margin-top: var(--space-lg);">Rows that were skipped</h3>
+  <table class="data-table" style="margin-top: var(--space-sm);">
+    <thead>
+      <tr>
+        <th style="width: 5rem;">Row</th>
+        <th>Why it was skipped</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in skipped %}
+      <tr>
+        <td class="text-mono">{{ row.index }}</td>
+        <td>
+          {% for err in row.errors %}<div class="text-furnace">{{ err }}</div>{% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+    Fix these rows in your file and import it again &mdash; the rows that
+    already landed will be recognised and skipped.
+  </p>
+  {% endif %}
+
+  <div class="row-start" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    <a href="{% url 'drinking:results' %}" class="btn-primary">View sample results</a>
+    <a href="{% url 'drinking:import' %}" class="btn-secondary">Import another file</a>
+  </div>
+</div>
+{% endif %}

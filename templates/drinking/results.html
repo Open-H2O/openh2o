@@ -18,6 +18,23 @@
 <div class="page-stack" style="max-width: 1400px;">
 
   {% comment %}
+    Import is the page's one primary action, so it gets the gold — "gold acts".
+    It sits above the filter bar rather than inside it: the filter toolbar is a
+    utility over the data, and burying the only write path in it would read as
+    another control on the view rather than the way results get here.
+  {% endcomment %}
+  {% comment %}
+    Explicit flex rather than the `.row-end` class used elsewhere in this file:
+    `.row-end` has no rule in app.css (it is used in five templates and defined
+    in none), so it lays out nothing and every existing use is carried by its
+    inline style. Pre-existing and out of scope to fix here, but not something
+    to build a new alignment on.
+  {% endcomment %}
+  <div style="display: flex; justify-content: flex-end;">
+    <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
+  </div>
+
+  {% comment %}
     Plain GET form rather than HTMX-per-control: four filters that are usually
     set together, and a submitted filter set stays a shareable URL.
   {% endcomment %}

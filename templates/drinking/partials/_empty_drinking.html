@@ -6,11 +6,17 @@
   neither of those knows anything about water systems, sampling points or lab
   results. Pointing there would be a dead end wearing a helpful coat.
 
-  So this names the two ways drinking data actually gets in today. The CSV
-  import is described in words and deliberately NOT linked — 78-03 builds it,
-  and a link to a URL that does not exist is worse than no link at all.
+  The lab-file import shipped in 78-03, so this now links it — but only where it
+  is actually the answer. The importer creates sample events and results; it
+  deliberately never creates a water system, a facility or a sampling point,
+  because inventing system structure from a lab file would let a typo
+  manufacture a monitoring location. So an empty RESULTS page offers the import,
+  and the empty system and sampling-point pages honestly do not: importing a lab
+  file there would produce nothing but a page of row errors.
 
-  Caller supplies: `what` (one plain-English line about the missing entity).
+  Caller supplies:
+    `what`        — one plain-English line about the missing entity
+    `import_link` — truthy only on the results page, where import is the answer
 {% endcomment %}
 <div class="card-raised empty-state">
   <div class="empty-state-icon">
@@ -19,9 +25,21 @@
     </svg>
   </div>
   <p class="empty-state-text" style="max-width: 460px; margin-left: auto; margin-right: auto;">{{ what }}</p>
+
+  {% if import_link %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
-    There are two ways to add it. You can enter records directly in the Django
-    admin now, or wait for the lab-file import — it reads the state's own
-    sampling and results files, and it arrives in the next update.
+    Import a laboratory results file in the state's own SDWIS.CSV layout, or
+    enter results directly in the Django admin. Import needs its sampling points
+    to exist first.
   </p>
+  <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
+    <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
+  </div>
+  {% else %}
+  <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
+    Add it in the Django admin. The lab-file import creates sample events and
+    results, but never system structure &mdash; a mistyped code must not be able
+    to invent a facility or a monitoring location.
+  </p>
+  {% endif %}
 </div>

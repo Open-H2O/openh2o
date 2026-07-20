@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Import Lab Results - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Import lab results{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:results' %}">Sample Results</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Import</span>
+  </nav>
+  <p class="page-description">Upload a laboratory results file, review exactly what will and will not be created, then commit.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'drinking:results' %}" class="back-link">&larr; Back to Sample Results</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Import lab results</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      Upload a <strong>CSV</strong> of laboratory findings in the state's own
+      SDWIS.CSV lab-results layout &mdash; the same columns a DDW extract or a
+      CLIP lab submission carries. Column headers are detected automatically, so
+      an unmodified export needs no mapping. Nothing is written until you review
+      the preview and confirm.
+    </p>
+
+    {% comment %}
+      Two limits stated plainly and up front, because both are rejections at
+      upload time rather than warnings: an operator should learn the cap before
+      waiting on a parse that is going to fail.
+    {% endcomment %}
+    <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+      Up to {{ max_rows }} rows per file, 25 MB maximum.
+    </p>
+
+    <form
+      id="drinking-import-form"
+      method="post"
+      action="{% url 'drinking:import_preview' %}"
+      enctype="multipart/form-data"
+      hx-post="{% url 'drinking:import_preview' %}"
+      hx-target="#import-area"
+      hx-encoding="multipart/form-data"
+      hx-indicator="#import-spinner"
+      style="margin-top: var(--space-lg);">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="import-file">Lab results file <span class="required-mark">*</span></label>
+        <div class="file-picker">
+          <label class="btn-secondary file-picker-button">
+            Choose file
+            <input type="file" id="import-file" name="file" accept=".csv"
+                   required class="file-picker-input">
+          </label>
+          <span class="file-picker-name text-tertiary text-sm" id="import-file-name">No file chosen</span>
+        </div>
+        <div class="form-help">CSV only.</div>
+      </div>
+
+      <div class="row-start pt-sm">
+        <button type="submit" class="btn-primary">Upload &amp; preview</button>
+        <span id="import-spinner" class="htmx-indicator text-tertiary text-sm">Reading the file&hellip;</span>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">What the import will and will not create</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      Sample events and results are created from the file. Analytes the file
+      names but this system has never seen are added to the vocabulary, because
+      the analyte list belongs to the regulator and the state's own file is the
+      authority on it &mdash; the preview lists every one before you commit.
+    </p>
+    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+      Sampling points and facilities are <strong>never</strong> created. A PS
+      Code this system does not carry is reported as a row error, so a mistyped
+      code cannot silently invent a monitoring location. Add the facility and
+      sampling point first, then re-import.
+    </p>
+    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+      Re-importing a file you have already imported is safe. Results matching
+      one already recorded are flagged as duplicates in the preview and skipped
+      on commit.
+    </p>
+  </div>
+
+  {% comment %}Preview and results are swapped in here by HTMX.{% endcomment %}
+  <div id="import-area"></div>
+
+</div>
+
+<script>
+  // Show the chosen filename beside the styled "Choose file" button.
+  (function() {
+    var input = document.getElementById('import-file');
+    var name = document.getElementById('import-file-name');
+    if (!input || !name) return;
+    input.addEventListener('change', function() {
+      name.textContent = (input.files && input.files.length)
+        ? input.files[0].name
+        : 'No file chosen';
+    });
+  })();
+</script>
+{% endblock %}

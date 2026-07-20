@@ -1,0 +1,173 @@
+{% comment %}
+  The preview: what a commit WOULD do, before anything is written.
+
+  The whole point of this screen is that an operator can see the consequences
+  before accepting them, so it separates the two outcomes that are easy to
+  confuse:
+
+    • ERRORS block a row. It will not be created, and the reason is stated in
+      the row's own language ("PS Code X is not a known sampling point").
+    • WARNINGS do not block anything. They are the two things an operator should
+      know happened but that are not mistakes: an analyte being added to the
+      vocabulary, and a result already on file being skipped.
+
+  Deliberately no verdict language anywhere: this counts rows, it does not judge
+  results.
+
+  Caller supplies: recognised, preview_rows, error_rows, warning_rows,
+  row_count, error_count, duplicate_count, new_analytes, committable, rows_json.
+{% endcomment %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Preview</h2>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+    <span class="badge badge-grey">{{ row_count }} row{{ row_count|pluralize }} read</span>
+    <span class="badge badge-green">{{ committable }} to create</span>
+    {% if duplicate_count %}<span class="badge badge-orange">{{ duplicate_count }} already recorded</span>{% endif %}
+    {% if error_count %}<span class="badge badge-orange">{{ error_count }} with errors</span>{% endif %}
+    {% if new_analytes %}<span class="badge badge-blue">{{ new_analytes|length }} new analyte{{ new_analytes|length|pluralize }}</span>{% endif %}
+  </div>
+
+  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    {% if committable %}
+      Committing will create <strong>{{ committable }}</strong> result{{ committable|pluralize }}.
+    {% else %}
+      Nothing here would be created.
+    {% endif %}
+    {% if duplicate_count %}
+      {{ duplicate_count }} row{{ duplicate_count|pluralize }} {{ duplicate_count|pluralize:"is,are" }} already recorded and will be skipped.
+    {% endif %}
+    {% if error_count %}
+      {{ error_count }} row{{ error_count|pluralize }} cannot be imported &mdash; fix {{ error_count|pluralize:"it,them" }} in your file and re-import.
+    {% endif %}
+  </p>
+
+  {% if new_analytes %}
+  <div class="card-inset" style="margin-top: var(--space-md);">
+    <p class="text-sm text-secondary" style="margin: 0;">
+      <strong>New analytes.</strong> These are named in your file but not yet in
+      this system's vocabulary. Committing adds them, using the name and code
+      the file itself carries:
+      <span class="text-mono">{{ new_analytes|join:", " }}</span>
+    </p>
+  </div>
+  {% endif %}
+
+  {% if recognised %}
+  <details style="margin-top: var(--space-md);">
+    <summary class="text-sm text-tertiary">Columns recognised in your file ({{ recognised|length }})</summary>
+    <table class="data-table" style="margin-top: var(--space-sm);">
+      <thead>
+        <tr><th>Field</th><th>Your column</th></tr>
+      </thead>
+      <tbody>
+        {% for label, column in recognised %}
+        <tr><td>{{ label }}</td><td class="text-mono">{{ column }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+
+  {% if error_rows %}
+  <h3 class="text-base" style="margin-top: var(--space-lg);">Rows that cannot be imported</h3>
+  <table class="data-table" style="margin-top: var(--space-sm);">
+    <thead>
+      <tr>
+        <th style="width: 5rem;">Row</th>
+        <th>PS Code</th>
+        <th>Analyte</th>
+        <th>What is wrong</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in error_rows %}
+      <tr>
+        <td class="text-mono">{{ row.index }}</td>
+        <td class="text-mono">{{ row.ps_code|default:"—" }}</td>
+        <td>{{ row.analyte|default:"—" }}</td>
+        <td>
+          {% for err in row.errors %}<div class="text-furnace">{{ err }}</div>{% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if warning_rows %}
+  <h3 class="text-base" style="margin-top: var(--space-lg);">Rows to be aware of</h3>
+  <table class="data-table" style="margin-top: var(--space-sm);">
+    <thead>
+      <tr>
+        <th style="width: 5rem;">Row</th>
+        <th>PS Code</th>
+        <th>Analyte</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in warning_rows %}
+      <tr>
+        <td class="text-mono">{{ row.index }}</td>
+        <td class="text-mono">{{ row.ps_code|default:"—" }}</td>
+        <td>{{ row.analyte|default:"—" }}</td>
+        <td>
+          {% for warn in row.warnings %}<div class="text-secondary">{{ warn }}</div>{% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h3 class="text-base" style="margin-top: var(--space-lg);">All rows{% if shown_count < row_count %} (first {{ shown_count }}){% endif %}</h3>
+  <table class="data-table" style="margin-top: var(--space-sm);">
+    <thead>
+      <tr>
+        <th style="width: 5rem;">Row</th>
+        <th>PS Code</th>
+        <th>Sample date</th>
+        <th>Analyte</th>
+        <th>Result</th>
+        <th>Units</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in preview_rows %}
+      <tr>
+        <td class="text-mono">{{ row.index }}</td>
+        <td class="text-mono">{{ row.ps_code|default:"—" }}</td>
+        <td>{{ row.sample_date|default:"—" }}</td>
+        <td>{{ row.analyte|default:"—" }}</td>
+        <td class="text-mono">{{ row.result|default:"—" }}</td>
+        <td>{{ row.unit|default:"—" }}</td>
+        <td>
+          {% if row.errors %}<span class="badge badge-orange">Error</span>
+          {% elif row.warnings %}<span class="badge badge-blue">Note</span>
+          {% else %}<span class="badge badge-green">Will create</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <form
+    method="post"
+    action="{% url 'drinking:import_commit' %}"
+    hx-post="{% url 'drinking:import_commit' %}"
+    hx-target="#import-area"
+    hx-indicator="#commit-spinner"
+    style="margin-top: var(--space-lg);">
+    {% csrf_token %}
+    <input type="hidden" name="rows_json" value="{{ rows_json }}">
+    <div class="row-start" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-primary" {% if not committable %}disabled{% endif %}>
+        Commit {{ committable }} result{{ committable|pluralize }}
+      </button>
+      <a href="{% url 'drinking:import' %}" class="btn-secondary">Choose a different file</a>
+      <span id="commit-spinner" class="htmx-indicator text-tertiary text-sm">Saving&hellip;</span>
+    </div>
+  </form>
+</div>

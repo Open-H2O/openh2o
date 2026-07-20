@@ -10,4 +10,7 @@ urlpatterns = [
     path("", views.overview, name="overview"),
     path("sampling-points/", views.sampling_points, name="sampling_points"),
     path("results/", views.results, name="results"),
+    path("import/", views.import_page, name="import"),
+    path("import/preview/", views.import_preview, name="import_preview"),
+    path("import/commit/", views.import_commit, name="import_commit"),
 ]
