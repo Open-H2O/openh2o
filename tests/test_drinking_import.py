@@ -45,6 +45,16 @@ from tests.factories import SamplingPointFactory, SystemFacilityFactory, WaterSy
 
 FIXTURE = Path(__file__).parent / "fixtures" / "drinking_sample_results.csv"
 
+# The format the state ACTUALLY publishes: a slice cut verbatim out of DDW's
+# real `SDWIS4.zip` (EDT Library, refreshed 2026-06-23) for CA1010001, Bakman
+# Water Company. The .csv fixture above is a faithful copy of a layout DDW
+# retired; this one is the layout an operator downloads today. Both are kept
+# deliberately — one proves the legacy path still works, one proves the live
+# path works at all.
+TAB_FIXTURE = Path(__file__).parent / "fixtures" / "drinking_sdwis4_slice.tab"
+TAB_COLUMNS = 29  # the live header; the 2021 dictionary described 27
+TAB_ROWS = 40
+
 # What the fixture is built to produce on a clean import. Stated once, here, so
 # a change to the file has to change these numbers deliberately.
 EXPECTED_EVENTS = 6
@@ -113,6 +123,11 @@ def system(db):
 
 
 @pytest.fixture
+def tab_fixture_text():
+    return TAB_FIXTURE.read_text(encoding="utf-8")
+
+
+@pytest.fixture
 def parsed(fixture_text):
     return importer.parse_upload(_csv_file(fixture_text), "lab.csv")
 
@@ -166,6 +181,88 @@ class TestParseUpload:
         bloated = "\n".join([header] + [first] * (importer.MAX_ROWS + 1))
         with pytest.raises(ImportError, match="row import cap"):
             importer.parse_upload(_csv_file(bloated), "lab.csv")
+
+
+class TestParseUploadReadsTheStatesRealFormat:
+    """DDW retired `SDWIS*.CSV`; the EDT Library ships `SDWIS*.tab` today.
+
+    An operator who downloads the correct file must not be told their file is
+    the wrong format — and must not have it silently mis-parsed either, which
+    is the more dangerous of the two failures. See ISS-073.
+    """
+
+    def test_a_tab_extract_parses_into_its_real_columns_and_rows(
+        self, tab_fixture_text
+    ):
+        result = importer.parse_upload(
+            _csv_file(tab_fixture_text), "SDWIS4.tab"
+        )
+        assert len(result["columns"]) == TAB_COLUMNS
+        assert len(result["rows"]) == TAB_ROWS
+        assert result["columns"][0] == "Regulating Agency"
+        assert "PS Code" in result["columns"]
+        assert "Analyte Name" in result["columns"]
+
+    def test_a_comma_inside_a_tab_delimited_value_stays_one_field(
+        self, tab_fixture_text
+    ):
+        """The test that proves the DELIMITER changed, not just the gate.
+
+        `1,2,3-Trichloropropane` and `1,1-Dichloroethane` are real regulated
+        analytes. Under a comma reader a renamed .tab file does not merely
+        parse badly — it shreds analyte names into extra columns and carries
+        on, which is a silent data defect rather than a loud failure.
+        """
+        result = importer.parse_upload(
+            _csv_file(tab_fixture_text), "SDWIS4.tab"
+        )
+        names = {row["Analyte Name"] for row in result["rows"]}
+        commas = {n for n in names if "," in n}
+        assert commas, "fixture must carry a comma-bearing analyte name"
+        assert "1,1-DICHLOROETHANE" in commas
+        # Every row keeps the full 29-key shape: nothing spilled into surplus
+        # cells, and no row was padded out from a short split.
+        for row in result["rows"]:
+            assert len(row) == TAB_COLUMNS
+
+    def test_a_txt_extract_is_read_as_tab_delimited(self, tab_fixture_text):
+        result = importer.parse_upload(
+            _csv_file(tab_fixture_text), "extract.txt"
+        )
+        assert len(result["columns"]) == TAB_COLUMNS
+        assert len(result["rows"]) == TAB_ROWS
+
+    def test_the_legacy_csv_path_is_untouched(self, fixture_text):
+        """Regression guard: widening the gate must not move the .csv path."""
+        result = importer.parse_upload(_csv_file(fixture_text), "results.csv")
+        assert len(result["rows"]) == TOTAL_ROWS
+        assert result["columns"][0] == "Regulating Agency"
+
+    def test_the_rejection_message_names_every_accepted_format(
+        self, tab_fixture_text
+    ):
+        """The old copy named .csv as the only true format — actively
+        misleading an operator holding the state's own .tab download."""
+        with pytest.raises(ImportError) as exc:
+            importer.parse_upload(_csv_file(tab_fixture_text), "results.xlsx")
+        message = str(exc.value)
+        assert ".csv" in message
+        assert ".tab" in message
+        assert ".txt" in message
+
+    def test_the_real_header_maps_with_no_manual_assignment(
+        self, tab_fixture_text
+    ):
+        """ISS-073's good news, pinned: the live header needs no new aliases."""
+        result = importer.parse_upload(
+            _csv_file(tab_fixture_text), "SDWIS4.tab"
+        )
+        mapping = importer.auto_map_columns(result["columns"])
+        assert importer.missing_required(mapping) == []
+        assert mapping["ps_code"] == "PS Code"
+        assert mapping["analyte_name"] == "Analyte Name"
+        assert mapping["sample_date"] == "Sample Date"
+        assert mapping["result"] == "Result"
 
 
 # ---------------------------------------------------------------------------
