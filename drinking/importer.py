@@ -143,11 +143,11 @@ _SAMPLE_TYPES = {code for code, _label in SAMPLE_TYPE_CHOICES}
 # problem would show up.
 #
 # `TG` (triggered source monitoring — a groundwater source sample required after
-# a coliform-positive routine sample) is DELIBERATELY ABSENT. It has no home in
-# `SAMPLE_TYPE_CHOICES`, and mapping it to `routine` or `special` would silently
-# relabel a sample with its own regulatory meaning under the Ground Water Rule.
-# It needs a vocabulary entry, not a mapping — see ISS-076. Until then it warns,
-# honestly, that we do not have a place to put it.
+# a coliform-positive routine sample) maps to its OWN vocabulary entry,
+# `triggered`, added in ISS-076. It carries its own regulatory meaning under the
+# Ground Water Rule, so it is NOT folded into `routine` or `special` — that would
+# be the silent-relabeling failure this whole map exists to avoid. It earned a
+# `SAMPLE_TYPE_CHOICES` entry rather than a convenience mapping.
 #
 # Extend this map from EPA's published CMDP code set or an OBSERVED real export.
 # Never by inference: a wrongly-mapped code is a confident wrong answer, which is
@@ -156,6 +156,7 @@ _SDWIS_SAMPLE_TYPES = {
     "rt": "routine",
     "rp": "repeat",
     "sp": "special",
+    "tg": "triggered",
 }
 
 

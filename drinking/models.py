@@ -141,6 +141,11 @@ SAMPLE_TYPE_CHOICES = [
     ("repeat", "Repeat"),
     ("confirmation", "Confirmation"),
     ("special", "Special"),
+    # A groundwater source sample required after a coliform-positive routine
+    # sample. It carries its own regulatory meaning under the Ground Water Rule,
+    # so it gets its own entry rather than being folded into routine/special
+    # (EPA CMDP code `TG`). Added for ISS-076.
+    ("triggered", "Triggered"),
 ]
 
 RESULT_KIND_NUMERIC = "numeric"

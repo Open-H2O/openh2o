@@ -970,6 +970,7 @@ class TestFederalSampleTypeCodes:
             ("RT", "routine"),
             ("RP", "repeat"),
             ("SP", "special"),
+            ("TG", "triggered"),
         ],
     )
     def test_federal_cmdp_codes_map_without_a_warning(
@@ -996,21 +997,20 @@ class TestFederalSampleTypeCodes:
         row = _validate_one(**{"Sample Type": "RP"})
         assert row["data"]["sample_type"] == "repeat"
 
-    def test_triggered_is_deliberately_unmapped_and_warns(self, ddw_system):
-        """`TG` (triggered source monitoring) has NO home in
-        `SAMPLE_TYPE_CHOICES`. Mapping it to `routine` or `special` would
-        silently relabel a sample with its own regulatory meaning under the
-        Ground Water Rule, so it must keep warning until the vocabulary gains
-        an entry for it (ISS-076).
+    def test_triggered_maps_to_its_own_type_not_routine(self, ddw_system):
+        """ISS-076: `TG` (triggered source monitoring) now has its own home in
+        `SAMPLE_TYPE_CHOICES` — `triggered` — because it carries its own
+        regulatory meaning under the Ground Water Rule.
 
-        This test is a GUARD, not an endorsement. If `triggered` is added to
-        `SAMPLE_TYPE_CHOICES`, change this test deliberately — do not let a
-        convenience mapping to an existing value slip in to make it pass.
+        This was previously a GUARD test asserting `TG` stayed unmapped and
+        warned, with an explicit instruction to flip it the day `triggered` was
+        added. That day is ISS-076. The point it guards is unchanged: `TG` must
+        NEVER be silently folded into `routine` — it must land on its own value,
+        with no warning, now that a home exists.
         """
         row = _validate_one(**{"Sample Type": "TG"})
-        assert row["data"]["sample_type"] == "routine"
-        warning = next(w for w in row["warnings"] if "Sample type" in w)
-        assert "'TG'" in warning
+        assert row["data"]["sample_type"] == "triggered"
+        assert not [w for w in row["warnings"] if "Sample type" in w]
 
 
 class TestTheRealDDWSliceValidatesClean:
