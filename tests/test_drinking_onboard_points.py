@@ -136,7 +136,7 @@ class TestDuplicates:
             client_logged_in, PWSID, dst, point_number="LCR", name="Typed again"
         )
         assert response.status_code == 200
-        assert b"already here" in response.content
+        assert b"already listed" in response.content
 
         assert SamplingPoint.objects.filter(ps_code="CA1010001_DST_LCR").count() == 1
         # The skip is a skip: the first point's name is not overwritten.

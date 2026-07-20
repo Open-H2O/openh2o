@@ -52,36 +52,82 @@
   </div>
 </div>
 {% else %}
-<div class="card-raised">
-  <h2 class="card-header-ruled">Review before committing</h2>
+{% comment %}
+  Rewritten 2026-07-20 after review. Everything below was present before and was
+  still missed, because the page gave the same visual weight to the heading, the
+  address, the population figures, the skip notice and a 35-row table — so
+  nothing stood out. Two things now lead the page, at a size the table cannot
+  compete with: that NOTHING HAS BEEN SAVED, and what will be left out.
 
-  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
-    {% if already_onboarded %}
-      <span class="badge badge-blue">Refresh &mdash; already onboarded</span>
-    {% else %}
-      <span class="badge badge-green">New system</span>
-    {% endif %}
-    <span class="badge badge-grey">{{ epa_facility_count }} facilit{{ epa_facility_count|pluralize:"y,ies" }} from EPA</span>
-    <span class="badge badge-green">{{ facility_count }} to write</span>
-    {% if skipped %}<span class="badge badge-orange">{{ skipped|length }} skipped</span>{% endif %}
-    {% if warnings %}<span class="badge badge-orange">{{ warnings|length }} note{{ warnings|length|pluralize }}</span>{% endif %}
-  </div>
+  The "nothing saved" statement matters more than it looks. A lookup really does
+  fetch a pile of real records, so the screen legitimately feels like something
+  happened. Saying "review before committing" was not enough to counter that.
+{% endcomment %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Nothing has been saved yet</h2>
+
+  <p class="text-base" style="margin-top: var(--space-md); font-size: 1.05rem;">
+    This is what EPA holds for <span class="text-mono">{{ pwsid }}</span>. It has
+    been read and shown to you &mdash; <strong>nothing has been written to this
+    system</strong>. Close this page and nothing will have changed.
+  </p>
 
   <p class="text-base text-secondary" style="margin-top: var(--space-md);">
     {% if already_onboarded %}
-      This system is already carried here with {{ existing_facility_count }}
-      facilit{{ existing_facility_count|pluralize:"y,ies" }}. Committing
-      <strong>refreshes</strong> it from EPA's current record rather than
+      You already carry this system, with {{ existing_facility_count }}
+      facilit{{ existing_facility_count|pluralize:"y,ies" }}. The button at the
+      bottom <strong>updates</strong> it from EPA's current record rather than
       creating a second copy. Any well links you have made are left alone.
     {% else %}
-      Committing <strong>creates</strong> this system and
-      {{ facility_count }} facilit{{ facility_count|pluralize:"y,ies" }}.
-    {% endif %}
-    {% if skipped %}
-      {{ skipped|length }} of the {{ epa_facility_count }} facilities EPA sent
-      cannot be written &mdash; see below for each one and why.
+      The button at the bottom of this page is what saves it. It would create the
+      water system and {{ facility_count }} of its
+      facilit{{ epa_facility_count|pluralize:"y,ies" }}.
     {% endif %}
   </p>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+    {% if already_onboarded %}
+      <span class="badge badge-blue">Already carried &mdash; would refresh</span>
+    {% else %}
+      <span class="badge badge-green">New system</span>
+    {% endif %}
+    <span class="badge badge-grey">{{ epa_facility_count }} facilit{{ epa_facility_count|pluralize:"y,ies" }} sent by EPA</span>
+    <span class="badge badge-green">{{ facility_count }} would be saved</span>
+    {% if skipped %}<span class="badge badge-orange">{{ skipped|length }} would be left out</span>{% endif %}
+    {% if warnings %}<span class="badge badge-orange">{{ warnings|length }} note{{ warnings|length|pluralize }}</span>{% endif %}
+  </div>
+</div>
+
+{% comment %}
+  The skip, as its own panel rather than a section buried mid-page. A facility
+  that will not exist is a different class of fact from the data around it, and
+  on 2026-07-20 it was missed entirely when it sat between the mailing address
+  and a 35-row table.
+{% endcomment %}
+{% if skipped %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">{{ skipped|length }} of EPA's {{ epa_facility_count }} facilities will be left out</h2>
+  <p class="text-base" style="margin-top: var(--space-md); font-size: 1.05rem;">
+    EPA sent {{ epa_facility_count }} facilities. <strong>{{ facility_count }} will be
+    saved and {{ skipped|length }} will not.</strong> This is not an error &mdash; the
+    facilities below are missing the state-assigned id that sample codes are
+    built from, so no lab result could ever be filed against them.
+  </p>
+  <table class="data-table" style="margin-top: var(--space-md);">
+    <thead>
+      <tr><th>Which one, and why it cannot be saved</th></tr>
+    </thead>
+    <tbody>
+      {% for reason in skipped %}
+      <tr><td class="text-secondary">{{ reason }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="card-raised">
+  <h2 class="card-header-ruled">What EPA holds for this system</h2>
 
   {% comment %}
     Identity. Every value is the regulator's own published vocabulary, shown as
@@ -149,24 +195,11 @@
     source that genuinely breaks them down is imported.
   </p>
 
-  {% if skipped %}
   {% comment %}
-    The gap between "36 from EPA" and "35 to write", stated rather than left to
-    arithmetic. An operator shown only "35 facilities" would reasonably conclude
-    EPA sent 35.
+    The skipped facilities used to be listed here. They now lead the page as
+    their own panel — see the top of this template. Listing them twice would
+    make the page longer without making it clearer.
   {% endcomment %}
-  <h3 class="section-header" style="margin-top: var(--space-lg);">Facilities that will be skipped</h3>
-  <table class="data-table" style="margin-top: var(--space-sm);">
-    <thead>
-      <tr><th>Why it cannot be written</th></tr>
-    </thead>
-    <tbody>
-      {% for reason in skipped %}
-      <tr><td class="text-secondary">{{ reason }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% endif %}
 
   {% if warnings %}
   <h3 class="section-header" style="margin-top: var(--space-lg);">Notes on this record</h3>

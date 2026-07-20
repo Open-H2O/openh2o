@@ -25,7 +25,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 
 from core.workspace import list_response
-from drinking import envirofacts, envirofacts_mapping, importer
+from drinking import envirofacts, envirofacts_mapping, glossary, importer
 from drinking.ps_codes import compose_ps_code
 from drinking.models import (
     ACTIVITY_STATUS_CHOICES,
@@ -694,6 +694,17 @@ def _facility_panels(system):
     )
 
 
+def _describe(facility):
+    """Attach the plain-English sentence for what this facility physically is.
+
+    Set on the instance rather than resolved in the template so the same
+    description is available whether the panel is rendered by the page or
+    swapped in by an add.
+    """
+    facility.plain_type = glossary.facility_type_plain(facility.facility_type)
+    return facility
+
+
 @login_required
 @require_GET
 def onboard_points(request, pwsid):
@@ -714,8 +725,8 @@ def onboard_points(request, pwsid):
         )
         return redirect("drinking:onboard")
 
-    facilities = _facility_panels(system)
-    if not facilities.exists():
+    facilities = [_describe(f) for f in _facility_panels(system)]
+    if not facilities:
         messages.warning(
             request,
             f"{pwsid} is carried here but has no facilities, so there is "
@@ -724,16 +735,31 @@ def onboard_points(request, pwsid):
         )
         return redirect("drinking:onboard")
 
+    # Split rather than list all 35. A real system carries far more facilities
+    # than ever take samples — Bakman has 35, of which 14 are sampled — and
+    # rendering 21 identical empty forms buries the ones that matter. The empty
+    # ones stay reachable behind a toggle; they are not hidden, just not first.
+    with_points = [f for f in facilities if f.sampling_points.all()]
+    without_points = [f for f in facilities if not f.sampling_points.all()]
+
     return render(
         request,
         "drinking/onboard_points.html",
         {
             "system": system,
             "facilities": facilities,
+            "facilities_with_points": with_points,
+            "facilities_without_points": without_points,
             "point_type_choices": POINT_TYPE_CHOICES,
             "point_count": SamplingPoint.objects.filter(
                 facility__system=system
             ).count(),
+            # Only the abbreviations that actually appear on this page.
+            "shorthand": glossary.shorthand_in_use(
+                [f.name for f in facilities]
+                + [f.facility_id for f in facilities]
+                + [p.name for f in facilities for p in f.sampling_points.all()]
+            ),
         },
     )
 
@@ -769,7 +795,7 @@ def onboard_points_add(request, pwsid):
 
     panel = {
         "system": system,
-        "facility": facility,
+        "facility": _describe(facility),
         "point_type_choices": POINT_TYPE_CHOICES,
     }
 

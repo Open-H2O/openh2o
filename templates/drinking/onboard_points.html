@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Sampling Points - {{ system.pwsid }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Add sampling points{% endblock %}
+{% block page_title %}Tell the system where samples are taken{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -12,14 +12,20 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Sampling points</span>
   </nav>
-  <p class="page-description">Walk the facilities of {{ system.name|default:system.pwsid }} and add the points its lab results are reported against.</p>
+  <p class="page-description">List the places {{ system.name|default:system.pwsid }} draws water samples from, so lab results have somewhere to file themselves.</p>
 </div>
 {% endblock %}
 
 {% comment %}
-  Matched to the onboard and import pages at 1400px: this is the third screen of
-  the same flow and a narrower measure would make the step feel like a different
-  application.
+  Rewritten 2026-07-20 after review. The previous version listed all 35
+  facilities as identical open forms and used the domain's shorthand untranslated
+  ("DST", "LCR"). The verdict was that it did not read to a human and that its
+  purpose was not discoverable from the page. Three changes:
+    1. The page says what it is FOR, first, in one sentence.
+    2. Every code is translated where it appears; EPA's own names are labelled
+       as EPA's rather than presented as if we wrote them.
+    3. Facilities that have sampling points come first; the rest are behind a
+       toggle instead of 21 identical empty boxes.
 {% endcomment %}
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
@@ -27,28 +33,21 @@
   <a href="{% url 'drinking:onboard' %}" class="back-link">&larr; Back to Onboard</a>
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">Why this step exists</h2>
+    <h2 class="card-header-ruled">What this page is for</h2>
     <p class="text-base text-secondary" style="margin-top: var(--space-md);">
-      Every row of a lab file names a <strong>PS Code</strong> &mdash; the
-      state's identifier for the exact place a sample was drawn, written as
-      <span class="text-mono">{{ system.pwsid }}_{facility}_{point}</span>. The
-      import matches on it and never invents one, so a system with facilities but
-      no sampling points cannot take a lab file at all: every row would come back
-      as an unknown PS Code.
+      A laboratory tests water and sends back a file. Every line of that file
+      says <em>where</em> the water was taken from &mdash; a particular well, or
+      a particular tap out in the neighbourhood. This page is where you tell the
+      system what those places are, so the lab's results have somewhere to land.
     </p>
     <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
-      You supply the last part &mdash; a point number and a name. The PWSID and
-      the facility are already known, so the full code is composed for you and
-      stored exactly as shown.
+      Until a place is listed here, a lab result naming it cannot be filed. The
+      import will report it and skip it rather than guess.
     </p>
     <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
-      <strong>&ldquo;Facility&rdquo; here does not only mean a well.</strong> A
-      system's distribution system is a facility too &mdash; usually
-      <span class="text-mono">DST</span> &mdash; and the Lead &amp; Copper and
-      disinfection-byproduct points that sit out in the pipes hang off it, with
-      point numbers like <span class="text-mono">LCR</span> or
-      <span class="text-mono">900</span>. Those are ordinary points on an
-      ordinary facility; add them the same way.
+      Each place gets a code, built from three parts: the water system's id, the
+      facility it belongs to, and a number or short label you choose. You supply
+      only the last part &mdash; the rest is already known.
     </p>
   </div>
 
@@ -57,33 +56,95 @@
       <h2 class="card-header-ruled" style="margin: 0; border: 0;">{{ system.name|default:system.pwsid }}</h2>
       <div class="row-start" style="gap: var(--space-xs); flex-wrap: wrap;">
         <span class="badge badge-blue text-mono">{{ system.pwsid }}</span>
-        <span class="badge badge-grey">{{ facilities|length }} facilit{{ facilities|length|pluralize:"y,ies" }}</span>
-        <span class="badge {% if point_count %}badge-green{% else %}badge-orange{% endif %}">{{ point_count }} sampling point{{ point_count|pluralize }}</span>
+        <span class="badge badge-grey">{{ facilities|length }} facilit{{ facilities|length|pluralize:"y,ies" }} on record</span>
+        <span class="badge {% if point_count %}badge-green{% else %}badge-orange{% endif %}">{{ point_count }} sampling place{{ point_count|pluralize }} listed</span>
       </div>
     </div>
   </div>
 
-  {% for facility in facilities %}
+  {% comment %}
+    Facilities that already have sampling places, first and open. These are the
+    ones an operator is actually working with.
+  {% endcomment %}
+  {% if facilities_with_points %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Facilities that have sampling places ({{ facilities_with_points|length }})</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      Lab results naming any of the codes below will file correctly.
+    </p>
+  </div>
+  {% for facility in facilities_with_points %}
     {% include "drinking/partials/_onboard_points.html" %}
   {% endfor %}
+  {% endif %}
+
+  {% comment %}
+    The rest, collapsed. Most facilities in a real system are never sampled —
+    Bakman has 35 on record and 14 that take samples. Showing the other 21 as
+    open forms buried the ones that matter. They stay one click away.
+  {% endcomment %}
+  {% if facilities_without_points %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Facilities with no sampling places yet ({{ facilities_without_points|length }})</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      These are on the system's record but no sample location has been listed for
+      them. That is normal &mdash; most facilities in a water system are never
+      sampled directly. Open this only if a lab file names one of them.
+    </p>
+    <details style="margin-top: var(--space-md);">
+      <summary class="text-base" style="cursor: pointer;">Show these {{ facilities_without_points|length }} facilities</summary>
+      <div class="page-stack" style="margin-top: var(--space-md);">
+        {% for facility in facilities_without_points %}
+          {% include "drinking/partials/_onboard_points.html" %}
+        {% endfor %}
+      </div>
+    </details>
+  </div>
+  {% endif %}
+
+  {% comment %}
+    Only the abbreviations that actually appear above. EPA's names are their
+    record and are shown verbatim; this explains them rather than rewriting them.
+  {% endcomment %}
+  {% if shorthand %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">What the abbreviations mean</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      These come from EPA's own records and are shown exactly as EPA writes them.
+      Only the ones appearing on this page are listed.
+    </p>
+    <table class="data-table" style="margin-top: var(--space-md);">
+      <thead>
+        <tr><th style="width: 10rem;">Abbreviation</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        {% for term, meaning in shorthand %}
+        <tr>
+          <td class="text-mono">{{ term }}</td>
+          <td class="text-secondary">{{ meaning }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">When you have added the points you need</h2>
+    <h2 class="card-header-ruled">When you have listed the places you need</h2>
     <p class="text-base text-secondary" style="margin-top: var(--space-md);">
       {% if point_count %}
-        This system now carries {{ point_count }} PS Code{{ point_count|pluralize }}, so a lab
+        This system has {{ point_count }} sampling place{{ point_count|pluralize }} listed, so a lab
         file naming {{ point_count|pluralize:"it,any of them" }} will import. You do not have to
-        add every point first &mdash; rows naming a point you have not added yet
+        list every place first &mdash; results naming a place you have not added
         are reported and skipped, and you can come back and add them.
       {% else %}
-        No sampling points exist for this system yet, so a lab file would come
-        back with every row unmatched. Add at least the points your file names
-        before importing.
+        No sampling places are listed yet, so every line of a lab file would come
+        back unmatched. Add at least the places your file names before importing.
       {% endif %}
     </p>
     <div class="row-start" style="margin-top: var(--space-lg); gap: var(--space-sm);">
       <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
-      <a href="{% url 'drinking:sampling_points' %}" class="btn-secondary">View all sampling points</a>
+      <a href="{% url 'drinking:sampling_points' %}" class="btn-secondary">View all sampling places</a>
     </div>
   </div>
 

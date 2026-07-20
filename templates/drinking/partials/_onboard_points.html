@@ -1,21 +1,22 @@
 {% comment %}
-  One facility's panel in the sampling-point builder: the points already on it,
-  the add form, and the outcome of the last add.
+  One facility's panel: what this facility physically is, the sampling places
+  already listed on it, and the form to add another.
 
-  This partial is both the initial render (looped by onboard_points.html) and
-  the HTMX swap target after an add, so the form and the list stay in one place
-  and cannot drift apart.
+  This partial is both the initial render (looped by onboard_points.html) and the
+  HTMX swap target after an add, so the form and the list stay in one place and
+  cannot drift apart.
 
-  Caller supplies `facility` + `system` + `point_type_choices`, optionally with
-  one of `added` / `duplicate` / `error`.
+  Caller supplies `facility` (with `.plain_type` set by views._describe) +
+  `system` + `point_type_choices`, optionally one of `added` / `duplicate` /
+  `error`.
 
-  The composed PS Code is shown as a fixed prefix beside the input rather than
-  assembled in JavaScript. The server's compose_ps_code is the only authority on
-  what gets stored; a JS copy of those rules would drift from it and show the
-  operator a code that is not the one written.
+  Rewritten 2026-07-20: the heading used to read "DST — DISTRIBUTION SYSTEM",
+  which is two codes side by side and explains nothing. It now leads with what
+  the facility IS in a sentence, and treats the id and EPA's name as reference
+  detail rather than as the headline.
 
-  A request that names no facility this system owns has no panel to render, so
-  it degrades to the bare alert below. Rendering the panel anyway would reach
+  A request that names no facility this system owns has no panel to render, so it
+  degrades to the bare alert below. Rendering the panel anyway would reach
   `{% url ... system.pwsid %}` with nothing in context and raise NoReverseMatch,
   taking the whole screen down over one malformed field.
 {% endcomment %}
@@ -26,24 +27,29 @@
 
   <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
     <h3 class="section-header" style="margin: 0;">
-      <span class="text-mono">{{ facility.facility_id }}</span>
-      {% if facility.name %}&mdash; {{ facility.name }}{% endif %}
+      {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}
+      {% if facility.name %}&mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %}
     </h3>
     <div class="row-start" style="gap: var(--space-xs); flex-wrap: wrap;">
-      {% if facility.facility_type %}<span class="badge badge-grey">{{ facility.get_facility_type_display }}</span>{% endif %}
-      {% if facility.is_source %}<span class="badge badge-blue">Source</span>{% endif %}
-      <span class="badge badge-grey">{{ facility.sampling_points.count }} point{{ facility.sampling_points.count|pluralize }}</span>
+      {% if facility.is_source %}<span class="badge badge-blue">Water comes from here</span>{% endif %}
+      <span class="badge {% if facility.sampling_points.all %}badge-green{% else %}badge-grey{% endif %}">
+        {{ facility.sampling_points.all|length }} sampling place{{ facility.sampling_points.all|length|pluralize }}
+      </span>
     </div>
   </div>
 
+  {% if facility.plain_type %}
+  <p class="text-base text-secondary" style="margin-top: var(--space-xs);">{{ facility.plain_type }}</p>
+  {% endif %}
+
   {% comment %}
-    The facility id shown plainly, because it is the middle segment of every PS
-    Code built here — an operator who already knows a PS Code can check it
-    against this before typing anything.
+    The id and EPA's raw name, labelled as what they are. The id matters because
+    it is the middle part of every code built here, so an operator who already
+    knows a code can check it — but it is reference detail, not the headline.
   {% endcomment %}
   <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">
-    Points on this facility are named
-    <span class="text-mono">{{ system.pwsid }}_{{ facility.facility_id }}_&hellip;</span>
+    Facility id <span class="text-mono">{{ facility.facility_id }}</span>{% if facility.name %} &middot; EPA records this as &ldquo;{{ facility.name }}&rdquo;{% endif %}.
+    Codes here begin <span class="text-mono">{{ system.pwsid }}_{{ facility.facility_id }}_</span>
   </p>
 
   {% if error %}
@@ -58,18 +64,17 @@
 
   {% if duplicate %}
   <div class="alert-warning" style="margin-top: var(--space-md);">
-    <span class="text-mono">{{ duplicate.ps_code }}</span> is already here
-    {% if duplicate.facility_id != facility.pk %}(on facility
-    <span class="text-mono">{{ duplicate.facility.facility_id }}</span>){% endif %}
-    &mdash; nothing was changed. Re-walking a system you had partly finished is
-    ordinary; this is not an error.
+    <span class="text-mono">{{ duplicate.ps_code }}</span> is already listed
+    {% if duplicate.facility_id != facility.pk %}(on a different facility){% endif %}
+    &mdash; nothing was changed. Coming back to a system you had partly finished
+    is ordinary; this is not an error.
   </div>
   {% endif %}
 
   {% if facility.sampling_points.all %}
   <table class="data-table" style="margin-top: var(--space-md);">
     <thead>
-      <tr><th>PS Code</th><th>Name</th><th>Type</th></tr>
+      <tr><th>Code a lab file would use</th><th>What it is</th><th>Kind of place</th></tr>
     </thead>
     <tbody>
       {% for point in facility.sampling_points.all %}
@@ -81,11 +86,6 @@
       {% endfor %}
     </tbody>
   </table>
-  {% else %}
-  <p class="text-sm text-secondary" style="margin-top: var(--space-md);">
-    No sampling points yet. Lab rows naming this facility will not import until
-    it has at least one.
-  </p>
   {% endif %}
 
   <form
@@ -100,28 +100,29 @@
 
     <div class="form-row" style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: flex-end;">
 
-      <div class="form-group" style="margin: 0; flex: 0 0 14rem;">
-        <label class="form-label" for="point-number-{{ facility.pk }}">Point number <span class="required-mark">*</span></label>
+      <div class="form-group" style="margin: 0; flex: 0 0 15rem;">
+        <label class="form-label" for="point-number-{{ facility.pk }}">Number or label <span class="required-mark">*</span></label>
         {% comment %}
-          type="text", never type="number". Real point numbers include LCR and
-          900 — a number input silently refuses the letters and would drop every
-          Lead & Copper and disinfection-byproduct point.
+          type="text", never type="number". Real labels include LCR and 900 — a
+          number input silently refuses letters and would drop every lead-testing
+          and disinfection-byproduct place.
         {% endcomment %}
         <input type="text" id="point-number-{{ facility.pk }}" name="point_number" required
                class="form-input" autocomplete="off" spellcheck="false"
-               placeholder="e.g. {{ facility.facility_id }} or LCR">
-        <div class="form-help">Letters and digits both. <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are real.</div>
+               placeholder="{{ facility.facility_id }}">
+        <div class="form-help">Whatever the state uses for this spot. Letters are fine &mdash; <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are both real.</div>
       </div>
 
       <div class="form-group" style="margin: 0; flex: 1 1 18rem;">
-        <label class="form-label" for="point-name-{{ facility.pk }}">Name</label>
+        <label class="form-label" for="point-name-{{ facility.pk }}">Description</label>
         <input type="text" id="point-name-{{ facility.pk }}" name="name"
                class="form-input" autocomplete="off"
-               placeholder="e.g. LCR Tap Sample">
+               placeholder="e.g. Lead testing tap">
+        <div class="form-help">For people to read. Anything that identifies the spot.</div>
       </div>
 
-      <div class="form-group" style="margin: 0; flex: 0 0 12rem;">
-        <label class="form-label" for="point-type-{{ facility.pk }}">Point type</label>
+      <div class="form-group" style="margin: 0; flex: 0 0 13rem;">
+        <label class="form-label" for="point-type-{{ facility.pk }}">Kind of place</label>
         <select id="point-type-{{ facility.pk }}" name="point_type" class="form-input">
           <option value="">&mdash;</option>
           {% for value, label in point_type_choices %}
@@ -131,7 +132,7 @@
       </div>
 
       <div class="form-group" style="margin: 0;">
-        <button type="submit" class="btn-secondary">Add point</button>
+        <button type="submit" class="btn-secondary">Add this place</button>
       </div>
 
     </div>
