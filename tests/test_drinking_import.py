@@ -1,0 +1,569 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""
+Tests for the lab sample-result importer (drinking.importer).
+
+Four functions the import UI is thin glue over, mirroring
+``infrastructure.importer``'s contract:
+
+  parse_upload(file, filename)  -> {"columns": [...], "rows": [...]}
+  auto_map_columns(columns)     -> {logical_field: source_column}
+  validate_rows(rows, mapping)  -> [{index, data, errors, warnings}]
+  commit_rows(valid_results)    -> {"events", "results", "analytes", ...}
+
+These lock the contract the views depend on, and three promises that are the
+whole reason this importer is separate from a generic CSV loader:
+
+  1. A result is stored as the shape the lab reported — a number, a bound, or a
+     presence/absence reading — and NEVER coerced into a number it isn't.
+  2. Sampling points are never invented from a lab file; analytes are.
+  3. Re-importing the same file is a no-op, not a doubling.
+
+The fixture is a realistic 30-row file in the DDW SDWIS.CSV layout for the
+obviously-fictional PWSID CA0000042.
+"""
+
+import io
+from decimal import Decimal
+from pathlib import Path
+
+import factory
+import pytest
+from django.contrib.auth.hashers import make_password
+from django.core.management import call_command
+from django.test import Client
+from django.urls import reverse
+
+from drinking import importer
+from drinking.models import (
+    RESULT_KIND_NUMERIC,
+    RESULT_KIND_PRESENCE_ABSENCE,
+    Analyte,
+    SampleEvent,
+    SampleResult,
+)
+from tests.factories import SamplingPointFactory, SystemFacilityFactory, WaterSystemFactory
+
+FIXTURE = Path(__file__).parent / "fixtures" / "drinking_sample_results.csv"
+
+# What the fixture is built to produce on a clean import. Stated once, here, so
+# a change to the file has to change these numbers deliberately.
+EXPECTED_EVENTS = 6
+EXPECTED_RESULTS = 27
+EXPECTED_NEW_ANALYTES = 1  # Perchlorate — named in the file, not in the seed
+EXPECTED_DUPLICATES = 1  # row 29 exactly repeats row 1
+EXPECTED_ERRORS = 2  # row 28 unknown PS Code, row 30 unreadable result
+TOTAL_ROWS = 30
+
+
+class _UserFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "core.User"
+
+    username = factory.Sequence(lambda n: f"labimporter{n}")
+    email = factory.Sequence(lambda n: f"labimporter{n}@example.com")
+    password = factory.LazyFunction(lambda: make_password("testpass123"))
+    is_active = True
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def fixture_text():
+    return FIXTURE.read_text(encoding="utf-8")
+
+
+def _csv_file(text, name="lab.csv"):
+    """A file-like object standing in for an uploaded CSV."""
+    buf = io.BytesIO(text.encode("utf-8"))
+    buf.name = name
+    return buf
+
+
+@pytest.fixture
+def system(db):
+    """The three sampling points the fixture references, and the seeded
+    federal analyte vocabulary 78-01 ships.
+
+    The real seed command is used rather than hand-built analytes on purpose:
+    the fixture matches analytes BY NAME, so if a seeded name is ever reworded
+    this test fails loudly instead of quietly creating duplicate vocabulary.
+    """
+    call_command("seed_drinking", verbosity=0)
+    ws = WaterSystemFactory(pwsid="CA0000042", name="Demonstration Water District")
+    well = SystemFacilityFactory(system=ws, facility_id="001", facility_type="WL")
+    plant = SystemFacilityFactory(system=ws, facility_id="002", facility_type="TP")
+    dist = SystemFacilityFactory(system=ws, facility_id="DS", facility_type="DS")
+    return {
+        "system": ws,
+        "points": [
+            SamplingPointFactory(
+                ps_code="CA0000042_001_001", facility=well, point_type="source"
+            ),
+            SamplingPointFactory(
+                ps_code="CA0000042_002_001", facility=plant, point_type="entry_point"
+            ),
+            SamplingPointFactory(
+                ps_code="CA0000042_DS_001", facility=dist, point_type="distribution"
+            ),
+        ],
+    }
+
+
+@pytest.fixture
+def parsed(fixture_text):
+    return importer.parse_upload(_csv_file(fixture_text), "lab.csv")
+
+
+@pytest.fixture
+def auth_client(db):
+    c = Client()
+    c.force_login(_UserFactory())
+    return c
+
+
+# ---------------------------------------------------------------------------
+# parse_upload
+# ---------------------------------------------------------------------------
+
+
+class TestParseUpload:
+    def test_reads_every_row_and_column(self, parsed):
+        assert len(parsed["rows"]) == TOTAL_ROWS
+        # The DDW layout's 27 published fields, headers verbatim.
+        assert parsed["columns"][0] == "Regulating Agency"
+        assert "PS Code" in parsed["columns"]
+        assert "Analyte Name" in parsed["columns"]
+        assert "Less Than Reporting Level" in parsed["columns"]
+
+    def test_tolerates_a_utf8_bom(self, fixture_text):
+        """Excel writes a BOM; the first column name must not absorb it."""
+        with_bom = "﻿" + fixture_text
+        result = importer.parse_upload(_csv_file(with_bom), "lab.csv")
+        assert result["columns"][0] == "Regulating Agency"
+        assert len(result["rows"]) == TOTAL_ROWS
+
+    def test_rejects_a_non_csv(self, fixture_text):
+        with pytest.raises(ImportError, match="Unsupported format"):
+            importer.parse_upload(_csv_file(fixture_text), "results.xlsx")
+
+    def test_rejects_an_empty_file(self):
+        header = "PS Code,Sample Date,Analyte Name,Result\n"
+        with pytest.raises(ImportError, match="No rows"):
+            importer.parse_upload(_csv_file(header), "lab.csv")
+
+    def test_rejects_an_oversize_upload_before_parsing(self, fixture_text):
+        f = _csv_file(fixture_text)
+        f.size = importer.MAX_UPLOAD_BYTES + 1
+        with pytest.raises(ImportError, match="too large"):
+            importer.parse_upload(f, "lab.csv")
+
+    def test_rejects_more_than_max_rows(self, fixture_text):
+        lines = fixture_text.strip().split("\n")
+        header, first = lines[0], lines[1]
+        bloated = "\n".join([header] + [first] * (importer.MAX_ROWS + 1))
+        with pytest.raises(ImportError, match="row import cap"):
+            importer.parse_upload(_csv_file(bloated), "lab.csv")
+
+
+# ---------------------------------------------------------------------------
+# auto_map_columns
+# ---------------------------------------------------------------------------
+
+
+class TestAutoMapColumns:
+    def test_raw_ddw_headers_map_with_no_manual_assignment(self, parsed):
+        mapping = importer.auto_map_columns(parsed["columns"])
+        assert mapping["ps_code"] == "PS Code"
+        assert mapping["sample_date"] == "Sample Date"
+        assert mapping["sample_time"] == "Sample Time"
+        assert mapping["analyte_name"] == "Analyte Name"
+        assert mapping["ddw_code"] == "Analyte Code"
+        assert mapping["result"] == "Result"
+        assert mapping["unit"] == "Units of Measure"
+        assert mapping["less_than_rl"] == "Less Than Reporting Level"
+        assert mapping["reporting_level"] == "Reporting Level"
+        assert mapping["counting_error"] == "Counting Error (±)"
+        assert mapping["lab_cert_no"] == "ELAP Cert#"
+        assert mapping["method"] == "Method"
+        assert importer.missing_required(mapping) == []
+
+    def test_matching_ignores_case_and_punctuation(self):
+        mapping = importer.auto_map_columns(
+            ["ps_code", "SAMPLE DATE", "analyte name", "Result"]
+        )
+        assert mapping["ps_code"] == "ps_code"
+        assert mapping["sample_date"] == "SAMPLE DATE"
+        assert mapping["analyte_name"] == "analyte name"
+
+    def test_the_regulatory_limit_columns_are_deliberately_not_mapped(self, parsed):
+        """MCL and DLR are limits, not findings.
+
+        Storing a limit on the result row beside the value is one template
+        change away from a compliance verdict, and RegulatoryLimit is the
+        versioned home for what a limit was on a given date.
+        """
+        mapping = importer.auto_map_columns(parsed["columns"])
+        assert "MCL" not in mapping.values()
+        assert "DLR" not in mapping.values()
+
+    def test_missing_required_columns_are_named(self):
+        mapping = importer.auto_map_columns(["Analyte Name", "Result"])
+        missing = importer.missing_required(mapping)
+        assert "PS Code" in missing
+        assert "Sample date" in missing
+
+
+# ---------------------------------------------------------------------------
+# validate_rows — the error / warning taxonomy
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def validated(system, parsed):
+    mapping = importer.auto_map_columns(parsed["columns"])
+    return importer.validate_rows(parsed["rows"], mapping)
+
+
+class TestValidateRows:
+    def test_the_taxonomy_lands_on_exactly_the_right_rows(self, validated):
+        errored = [v["index"] for v in validated if v["errors"]]
+        # 0-based indexes of file rows 28 and 30.
+        assert errored == [27, 29]
+
+    def test_an_unknown_ps_code_is_a_row_error_not_an_auto_create(self, validated):
+        row = validated[27]
+        assert any("not a known sampling point" in e for e in row["errors"])
+
+    def test_an_unreadable_result_is_rejected_never_coerced_to_zero(self, validated):
+        row = validated[29]
+        assert any("neither a number nor a presence/absence" in e for e in row["errors"])
+        assert row["data"].get("result_value") is None
+
+    def test_an_unknown_analyte_is_a_warning_not_an_error(self, validated):
+        row = validated[10]  # Perchlorate
+        assert row["errors"] == []
+        assert any("new analyte" in w for w in row["warnings"])
+        assert row["data"].get("analyte_id") is None
+
+    def test_a_repeated_row_is_flagged_duplicate_within_the_same_file(self, validated):
+        row = validated[28]  # exact repeat of row 1
+        assert row["errors"] == []
+        assert row["data"]["is_duplicate"] is True
+        assert any("repeats an earlier row" in w for w in row["warnings"])
+
+    def test_a_plain_numeric_result_keeps_its_value_and_unit(self, validated):
+        row = validated[0]  # Nitrate 3.2 mg/L
+        assert row["data"]["result_kind"] == RESULT_KIND_NUMERIC
+        assert row["data"]["result_value"] == Decimal("3.2")
+        assert row["data"]["less_than_rl"] is False
+        assert row["data"]["unit"] == "mg/L"
+
+    def test_a_less_than_prefix_becomes_a_bound_not_a_measurement(self, validated):
+        row = validated[2]  # Selenium <0.005
+        assert row["data"]["less_than_rl"] is True
+        assert row["data"]["reporting_level"] == Decimal("0.005")
+        # The number on a non-detect row is the level the lab could report down
+        # to, not a concentration anybody measured.
+        assert row["data"]["result_value"] is None
+
+    def test_the_less_than_rl_column_also_marks_a_non_detect(self, validated):
+        row = validated[5]  # Cadmium, Result 0.001 with LT RL = Y
+        assert row["data"]["less_than_rl"] is True
+        assert row["data"]["result_value"] is None
+        assert row["data"]["reporting_level"] == Decimal("0.001")
+
+    def test_presence_and_absence_are_read_as_presence_absence(self, validated):
+        absent = validated[16]  # Total Coliforms, "A"
+        present = validated[18]  # Total Coliforms, "P"
+        assert absent["data"]["result_kind"] == RESULT_KIND_PRESENCE_ABSENCE
+        assert absent["data"]["presence"] is False
+        assert present["data"]["presence"] is True
+        # Neither may carry a number or the non-detect flag: "absent" is not
+        # "below reporting level".
+        for row in (absent, present):
+            assert row["data"]["result_value"] is None
+            assert row["data"]["less_than_rl"] is False
+
+    def test_a_radionuclide_keeps_its_counting_error(self, validated):
+        row = validated[20]  # Gross Alpha 2.4 ± 0.8 pCi/L
+        assert row["data"]["result_value"] == Decimal("2.4")
+        assert row["data"]["counting_error"] == Decimal("0.8")
+        assert row["data"]["unit"] == "pCi/L"
+
+    def test_lab_provenance_is_carried_through(self, validated):
+        row = validated[0]
+        assert row["data"]["lab_name"] == "Central Valley Analytical"
+        assert row["data"]["lab_cert_no"] == "1234"
+        assert row["data"]["method"] == "EPA 300.0"
+
+    def test_a_blank_result_is_an_error(self, system):
+        mapping = {"ps_code": "PS Code", "sample_date": "Sample Date",
+                   "analyte_name": "Analyte Name", "result": "Result"}
+        rows = [{"PS Code": "CA0000042_001_001", "Sample Date": "2026-03-10",
+                 "Analyte Name": "Arsenic", "Result": ""}]
+        out = importer.validate_rows(rows, mapping)
+        assert any("Result is blank" in e for e in out[0]["errors"])
+
+    def test_an_unparseable_sample_date_is_an_error(self, system):
+        mapping = {"ps_code": "PS Code", "sample_date": "Sample Date",
+                   "analyte_name": "Analyte Name", "result": "Result"}
+        rows = [{"PS Code": "CA0000042_001_001", "Sample Date": "March 10th",
+                 "Analyte Name": "Arsenic", "Result": "1.0"}]
+        out = importer.validate_rows(rows, mapping)
+        assert any("is not a date" in e for e in out[0]["errors"])
+
+
+# ---------------------------------------------------------------------------
+# commit_rows
+# ---------------------------------------------------------------------------
+
+
+class TestCommitRows:
+    def test_counts_are_correct(self, validated):
+        counts = importer.commit_rows(validated)
+        assert counts["events"] == EXPECTED_EVENTS
+        assert counts["results"] == EXPECTED_RESULTS
+        assert counts["analytes"] == EXPECTED_NEW_ANALYTES
+        assert counts["duplicates"] == EXPECTED_DUPLICATES
+        assert counts["skipped"] == EXPECTED_ERRORS
+        assert SampleResult.objects.count() == EXPECTED_RESULTS
+        assert SampleEvent.objects.count() == EXPECTED_EVENTS
+
+    def test_events_group_by_point_date_and_time(self, validated):
+        importer.commit_rows(validated)
+        # The 11-row inorganics batch is ONE event, not eleven.
+        event = SampleEvent.objects.get(
+            sampling_point__ps_code="CA0000042_001_001",
+            sample_date="2026-03-10",
+        )
+        assert event.results.count() == 11
+        # Same point, different date = a different event.
+        assert SampleEvent.objects.filter(
+            sampling_point__ps_code="CA0000042_001_001"
+        ).count() == 2
+
+    def test_presence_absence_rows_store_no_numeric_value(self, validated):
+        importer.commit_rows(validated)
+        coliform = SampleResult.objects.filter(
+            analyte__name="Total Coliforms"
+        ).order_by("event__sample_date")
+        assert coliform.count() == 2
+        for result in coliform:
+            assert result.result_kind == RESULT_KIND_PRESENCE_ABSENCE
+            assert result.result_value is None
+            assert result.less_than_rl is False
+        assert [r.presence for r in coliform] == [False, True]
+
+    def test_a_non_detect_stores_the_bound_not_a_value(self, validated):
+        importer.commit_rows(validated)
+        selenium = SampleResult.objects.get(analyte__name="Selenium")
+        assert selenium.less_than_rl is True
+        assert selenium.reporting_level == Decimal("0.005000")
+        assert selenium.result_value is None
+
+    def test_an_unknown_analyte_is_created_from_the_files_own_vocabulary(
+        self, validated
+    ):
+        assert not Analyte.objects.filter(name="Perchlorate").exists()
+        importer.commit_rows(validated)
+        perchlorate = Analyte.objects.get(name="Perchlorate")
+        # Name AND code come from the file — that is DDW's vocabulary, not ours.
+        assert perchlorate.ddw_code == "1095"
+
+    def test_a_code_is_learned_for_an_analyte_seeded_without_one(self, validated):
+        """78-01 seeded every ddw_code NULL because DDW publishes no code list.
+        A file that carries one teaches it."""
+        assert Analyte.objects.get(name="Arsenic").ddw_code is None
+        importer.commit_rows(validated)
+        assert Analyte.objects.get(name="Arsenic").ddw_code == "1005"
+
+    def test_no_sampling_point_is_ever_created(self, validated, system):
+        before = set(
+            SamplingPointFactory._meta.model.objects.values_list("ps_code", flat=True)
+        )
+        importer.commit_rows(validated)
+        after = set(
+            SamplingPointFactory._meta.model.objects.values_list("ps_code", flat=True)
+        )
+        assert before == after
+        assert "CA0000042_999_001" not in after
+
+    def test_errored_and_duplicate_rows_are_not_written(self, validated):
+        importer.commit_rows(validated)
+        # The unknown-PS-Code row's analyte/date combination must not exist.
+        assert not SampleEvent.objects.filter(
+            sampling_point__ps_code="CA0000042_999_001"
+        ).exists()
+        # Nitrate at the duplicated event appears once, not twice.
+        assert SampleResult.objects.filter(
+            analyte__name="Nitrate (as N)",
+            event__sample_date="2026-03-10",
+        ).count() == 1
+
+
+class TestIdempotency:
+    def test_a_second_import_of_the_same_file_creates_nothing(
+        self, system, fixture_text
+    ):
+        def run():
+            parsed = importer.parse_upload(_csv_file(fixture_text), "lab.csv")
+            mapping = importer.auto_map_columns(parsed["columns"])
+            return importer.commit_rows(
+                importer.validate_rows(parsed["rows"], mapping)
+            )
+
+        first = run()
+        assert first["results"] == EXPECTED_RESULTS
+
+        second = run()
+        assert second["results"] == 0
+        assert second["events"] == 0
+        assert second["analytes"] == 0
+        # Everything that was committable the first time is now a duplicate.
+        assert second["duplicates"] == EXPECTED_RESULTS + EXPECTED_DUPLICATES
+
+        assert SampleResult.objects.count() == EXPECTED_RESULTS
+        assert SampleEvent.objects.count() == EXPECTED_EVENTS
+
+
+# ---------------------------------------------------------------------------
+# The view flow
+# ---------------------------------------------------------------------------
+
+
+class TestImportViews:
+    def test_the_import_page_renders(self, auth_client):
+        response = auth_client.get(reverse("drinking:import"))
+        assert response.status_code == 200
+        assert b"Import lab results" in response.content
+
+    def test_upload_preview_commit_end_to_end(
+        self, auth_client, system, fixture_text
+    ):
+        preview = auth_client.post(
+            reverse("drinking:import_preview"),
+            {"file": _csv_file(fixture_text)},
+        )
+        assert preview.status_code == 200
+        body = preview.content.decode()
+        # The preview must show what will happen BEFORE anything is written.
+        assert "Perchlorate" in body  # the new-analyte warning
+        assert "not a known sampling point" in body  # the blocking error
+        assert SampleResult.objects.count() == 0
+
+        rows_json = preview.context["rows_json"]
+        assert preview.context["committable"] == EXPECTED_RESULTS
+        assert preview.context["error_count"] == EXPECTED_ERRORS
+        assert preview.context["duplicate_count"] == EXPECTED_DUPLICATES
+
+        commit = auth_client.post(
+            reverse("drinking:import_commit"), {"rows_json": rows_json}
+        )
+        assert commit.status_code == 200
+        assert commit.context["counts"]["results"] == EXPECTED_RESULTS
+        assert SampleResult.objects.count() == EXPECTED_RESULTS
+
+    def test_the_results_page_shows_imported_rows(
+        self, auth_client, system, fixture_text
+    ):
+        parsed = importer.parse_upload(_csv_file(fixture_text), "lab.csv")
+        importer.commit_rows(
+            importer.validate_rows(
+                parsed["rows"], importer.auto_map_columns(parsed["columns"])
+            )
+        )
+        response = auth_client.get(reverse("drinking:results"))
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "Nitrate (as N)" in body
+        assert "Absent" in body  # a presence/absence row rendered honestly
+        assert "&lt; 0.005 mg/L" in body or "< 0.005 mg/L" in body  # the bound
+
+    def test_a_file_missing_required_columns_is_refused_by_name(self, auth_client):
+        bad = "Analyte Name,Result\nArsenic,0.004\n"
+        response = auth_client.post(
+            reverse("drinking:import_preview"), {"file": _csv_file(bad)}
+        )
+        assert response.status_code == 200
+        assert "PS Code" in response.content.decode()
+
+    def test_a_missing_file_is_reported_not_crashed(self, auth_client):
+        response = auth_client.post(reverse("drinking:import_preview"), {})
+        assert response.status_code == 200
+        assert "No file provided" in response.content.decode()
+
+    def test_commit_re_enforces_the_row_cap(self, auth_client, system):
+        """rows_json is a hidden field the browser posts back, so the cap has
+        to hold on commit too — otherwise it is trivially bypassed."""
+        import json
+
+        rows = [
+            {"PS Code": "CA0000042_001_001", "Sample Date": "2026-03-10",
+             "Analyte Name": "Arsenic", "Result": "0.004"}
+        ] * (importer.MAX_ROWS + 1)
+        response = auth_client.post(
+            reverse("drinking:import_commit"), {"rows_json": json.dumps(rows)}
+        )
+        assert "over the" in response.content.decode()
+        assert SampleResult.objects.count() == 0
+
+    @pytest.mark.parametrize(
+        "url_name", ["import", "import_preview", "import_commit"]
+    )
+    def test_anonymous_users_are_rejected(self, db, url_name):
+        client = Client()
+        url = reverse(f"drinking:{url_name}")
+        response = client.get(url) if url_name == "import" else client.post(url, {})
+        assert response.status_code in (302, 403)
+        if response.status_code == 302:
+            assert "/login" in response.url or "login" in response.url
+
+    def test_preview_rejects_a_get(self, auth_client):
+        assert auth_client.get(reverse("drinking:import_preview")).status_code == 405
+
+    def test_commit_rejects_a_get(self, auth_client):
+        assert auth_client.get(reverse("drinking:import_commit")).status_code == 405
+
+
+class TestEntryPoints:
+    def test_the_results_page_links_the_import(self, auth_client, system):
+        response = auth_client.get(reverse("drinking:results"))
+        assert reverse("drinking:import") in response.content.decode()
+
+    def test_the_empty_results_state_offers_the_import(self, auth_client, db):
+        response = auth_client.get(reverse("drinking:results"))
+        body = response.content.decode()
+        assert reverse("drinking:import") in body
+
+    def test_the_empty_system_state_does_not_offer_the_import(self, auth_client, db):
+        """Importing a lab file cannot create a water system, so offering it
+        there would be a dead end."""
+        response = auth_client.get(reverse("drinking:overview"))
+        assert reverse("drinking:import") not in response.content.decode()
+
+
+class TestNoComplianceVerdict:
+    """The importer reads MCL and DLR columns from the file and stores neither.
+    Nothing it writes can be read as a compliance determination."""
+
+    def test_no_limit_value_is_stored_on_a_result(self, validated):
+        importer.commit_rows(validated)
+        nitrate = SampleResult.objects.get(
+            analyte__name="Nitrate (as N)", event__sample_date="2026-03-10"
+        )
+        # The file's MCL cell for this row was 10; nothing on the result carries it.
+        stored = [nitrate.result_value, nitrate.reporting_level, nitrate.counting_error]
+        assert Decimal("10") not in [v for v in stored if v is not None]
+
+    def test_the_import_pages_render_no_verdict_language(
+        self, auth_client, system, fixture_text
+    ):
+        preview = auth_client.post(
+            reverse("drinking:import_preview"), {"file": _csv_file(fixture_text)}
+        )
+        body = preview.content.decode().lower()
+        for word in ("exceed", "violation", "compliant", "non-compliant", "pass", "fail"):
+            assert word not in body

@@ -157,14 +157,33 @@ class TestPagesRender:
         """The empty path renders rather than 500-ing on a missing system."""
         response = client_in.get(reverse(url_name))
         assert response.status_code == 200
-        # The onboarding copy names the two real ways in, and deliberately does
-        # not link a CSV import that 78-03 has not built yet.
+        # The onboarding copy names the real way in. It named a "next update"
+        # through 78-02 because the importer did not exist; 78-03 shipped it, so
+        # the promise is gone and the results page carries the real link.
         text = _squash(response.content.decode())
         assert "Django admin" in text
-        assert "next update" in text
-        assert "infrastructure/import" not in text, (
-            "The empty state links an import URL that does not exist until 78-03"
+        assert "next update" not in text, (
+            "The empty state still promises an import that has already shipped"
         )
+        assert "infrastructure/import" not in text, (
+            "The drinking empty state must never route to infrastructure's import"
+        )
+
+    def test_only_the_results_empty_state_offers_the_import(self, client_in):
+        """Import creates events and results, never system structure.
+
+        Offering it on the system or sampling-point pages would be a dead end:
+        a lab file uploaded there produces nothing but a page of row errors.
+        """
+        import_url = reverse("drinking:import")
+        results = client_in.get(reverse("drinking:results")).content.decode()
+        assert import_url in results
+
+        for url_name in ("drinking:overview", "drinking:sampling_points"):
+            body = client_in.get(reverse(url_name)).content.decode()
+            assert import_url not in body, (
+                f"{url_name}'s empty state offers an import that cannot help there"
+            )
 
 
 # -- Honest rendering --------------------------------------------------------
