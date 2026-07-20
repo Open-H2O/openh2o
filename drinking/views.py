@@ -198,6 +198,47 @@ def import_page(request):
     return render(request, "drinking/import.html", {"max_rows": importer.MAX_ROWS})
 
 
+def _unknown_ps_code_routes(validated):
+    """Which PS Codes the file names that this deployment does not carry.
+
+    The single most likely real-world failure: a partially-walked system. On its
+    own that dead-ends in a row error with nowhere to go, so each unknown code is
+    resolved back to the system it belongs to and, when that system is onboarded,
+    to the sampling-point builder that can create it.
+
+    Detected structurally — a row that carried a PS Code but got no
+    ``sampling_point_id`` — rather than by matching the error string, so a
+    reworded message cannot silently switch this off.
+
+    The PWSID is the first segment of the composite by construction. A code too
+    malformed to split is still reported, just without a link: it is a typo in
+    the file, not a missing sampling point.
+    """
+    unknown = sorted(
+        {
+            item["data"]["ps_code"]
+            for item in validated
+            if item["data"].get("ps_code")
+            and item["data"].get("sampling_point_id") is None
+        }
+    )
+    if not unknown:
+        return []
+
+    onboarded = set(WaterSystem.objects.values_list("pwsid", flat=True))
+    routes = []
+    for ps_code in unknown:
+        pwsid = ps_code.split("_")[0] if "_" in ps_code else ""
+        routes.append(
+            {
+                "ps_code": ps_code,
+                "pwsid": pwsid,
+                "is_onboarded": pwsid in onboarded,
+            }
+        )
+    return routes
+
+
 def _preview_rows(rows, mapping, validated):
     """Zip validated rows back to their source values for the preview table."""
     def src(row, field):
@@ -301,6 +342,7 @@ def import_preview(request):
             "duplicate_count": duplicate_count,
             "new_analytes": new_analytes,
             "committable": committable,
+            "unknown_ps_codes": _unknown_ps_code_routes(validated),
             "rows_json": json.dumps(rows),
         },
     )

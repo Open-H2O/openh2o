@@ -109,24 +109,19 @@
     The next step, stated plainly, because a system with facilities and no
     sampling points looks finished and is not: the lab import matches rows on PS
     Code, and a PS Code lives on a sampling point.
-
-    PLACEHOLDER — the sampling-point builder ships in plan 80-03, which replaces
-    the paragraph below with a real link to its route. No URL is invented here:
-    a {% url %} to a route that does not exist raises NoReverseMatch and takes
-    the whole result screen down with it.
   {% endcomment %}
   <div class="card-inset" style="margin-top: var(--space-lg);">
     <p class="text-base text-secondary" style="margin: 0;">
       <strong>Next: sampling points.</strong> This system now has its facilities,
       but no sampling points &mdash; and lab results cannot be imported until it
       has them, because every result row is matched to a monitoring location by
-      its PS Code. The sampling-point builder is not built yet; until it is, add
-      points in the Django admin.
+      its PS Code. Walk the facilities and add the points your lab file names.
     </p>
   </div>
 
   <div class="row-start" style="margin-top: var(--space-lg); gap: var(--space-sm);">
-    <a href="{% url 'drinking:overview' %}" class="btn-primary">View the water system</a>
+    <a href="{% url 'drinking:onboard_points' result.system.pwsid %}" class="btn-primary">Add sampling points</a>
+    <a href="{% url 'drinking:overview' %}" class="btn-secondary">View the water system</a>
     <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Onboard another system</a>
   </div>
 </div>

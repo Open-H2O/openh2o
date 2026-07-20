@@ -42,6 +42,52 @@
     {% endif %}
   </p>
 
+  {% comment %}
+    A PS Code the deployment does not carry is the most likely real failure here
+    — a system whose sampling points were only partly walked. Without this the
+    operator gets a row error naming a code and no way to act on it, which is a
+    dead end rather than a diagnosis.
+  {% endcomment %}
+  {% if unknown_ps_codes %}
+  <div class="card-inset" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary" style="margin: 0 0 var(--space-sm) 0;">
+      <strong>{{ unknown_ps_codes|length }} PS Code{{ unknown_ps_codes|length|pluralize }} in this file
+      {{ unknown_ps_codes|length|pluralize:"is,are" }} not carried here.</strong>
+      A lab file never creates system structure, so these rows cannot be matched
+      to a monitoring location until the sampling point exists. Add the point and
+      re-import &mdash; nothing about the file needs to change.
+    </p>
+    <table class="data-table" style="margin-top: var(--space-sm);">
+      <thead>
+        <tr><th>PS Code</th><th>Where to add it</th></tr>
+      </thead>
+      <tbody>
+        {% for route in unknown_ps_codes %}
+        <tr>
+          <td class="text-mono">{{ route.ps_code }}</td>
+          <td>
+            {% if route.is_onboarded %}
+              <a href="{% url 'drinking:onboard_points' route.pwsid %}">Add sampling points for {{ route.pwsid }}</a>
+            {% elif route.pwsid %}
+              <span class="text-secondary">
+                <span class="text-mono">{{ route.pwsid }}</span> is not onboarded yet &mdash;
+                <a href="{% url 'drinking:onboard' %}">look the system up first</a>.
+              </span>
+            {% else %}
+              <span class="text-secondary">
+                This is not a readable PS Code
+                (<span class="text-mono">{pwsid}_{facility}_{point}</span>) &mdash;
+                check the file rather than adding a point.
+              </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
   {% if new_analytes %}
   <div class="card-inset" style="margin-top: var(--space-md);">
     <p class="text-sm text-secondary" style="margin: 0;">
