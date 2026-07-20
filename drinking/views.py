@@ -24,7 +24,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 
 from core.workspace import list_response
-from drinking import importer
+from drinking import envirofacts, envirofacts_mapping, importer
 from drinking.models import (
     POINT_TYPE_CHOICES,
     Analyte,
@@ -361,3 +361,51 @@ def import_commit(request):
             "total": len(validated),
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# System onboarding: page -> lookup -> commit
+# ---------------------------------------------------------------------------
+#
+# The operator-facing door onto Phase 79's Envirofacts adapter. Same three-step
+# shape as the lab import above, for the same reason: nothing is written until
+# the operator has seen exactly what a commit would do, including what it would
+# SKIP.
+#
+# **The session holds only the PWSID.** Sessions are `signed_cookies` (ISS-069)
+# — there is no server-side store, the session IS the cookie, and a browser caps
+# a cookie at roughly 4 KB. Bakman alone returns 36 facilities against a ~45-field
+# WaterSystem; stashing the mapped payloads would blow that ceiling, and the
+# failure mode is a silently dropped or truncated cookie rather than a clean
+# exception — you would be debugging "the wizard forgets everything on step 2".
+#
+# Re-fetching on commit costs nothing: `fetch_water_system` / `fetch_facilities`
+# / `fetch_geographic_area` are cache-backed by `EnvirofactsCache` (30-day TTL),
+# so the commit step reads the same cached rows the review step read, with no
+# second network call. It also guarantees review and commit see the same bytes,
+# which a session copy could not if the cache refreshed in between.
+
+#: The ONLY thing the wizard puts in the session. Read the block above before
+#: adding a second key that carries a payload.
+SESSION_KEY_ONBOARD_PWSID = "drinking_onboard_pwsid"
+
+
+@login_required
+@require_GET
+def onboard_page(request):
+    """The PWSID entry screen — one input and an honest note about scope."""
+    return render(request, "drinking/onboard.html", {})
+
+
+@login_required
+@require_POST
+def onboard_lookup(request):
+    """Fetch and map a PWSID's federal record, and render the review. Writes nothing."""
+    raise NotImplementedError
+
+
+@login_required
+@require_POST
+def onboard_commit(request):
+    """Re-fetch the session's PWSID from cache and write the system + facilities."""
+    raise NotImplementedError

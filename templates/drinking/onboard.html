@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Onboard a Water System - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Onboard a water system{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Onboard</span>
+  </nav>
+  <p class="page-description">Enter a PWSID, review everything EPA's federal record holds for that system, then decide whether to write it.</p>
+</div>
+{% endblock %}
+
+{% comment %}
+  Wider than `page-medium` for the same reason the import page is: the review
+  swaps a four-column facility table into this page, and Bakman alone carries 36
+  rows. Matched to the import page's 1400px so the two sibling flows read at the
+  same scale.
+{% endcomment %}
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  <a href="{% url 'drinking:overview' %}" class="back-link">&larr; Back to Drinking Water</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Look up a public water system</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      A <strong>PWSID</strong> is the identifier the regulator carries for a
+      public water system &mdash; <span class="text-mono">CA1010001</span>, for
+      example. Enter it and this looks the system up in EPA's Envirofacts SDWIS
+      record. Nothing is written until you review what came back and confirm.
+    </p>
+
+    <form
+      id="drinking-onboard-form"
+      method="post"
+      action="{% url 'drinking:onboard_lookup' %}"
+      hx-post="{% url 'drinking:onboard_lookup' %}"
+      hx-target="#onboard-area"
+      hx-indicator="#onboard-spinner"
+      style="margin-top: var(--space-lg);">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="onboard-pwsid">PWSID <span class="required-mark">*</span></label>
+        <input type="text" id="onboard-pwsid" name="pwsid" required
+               class="form-input" style="max-width: 20rem;"
+               autocomplete="off" spellcheck="false"
+               placeholder="CA1010001">
+        {% comment %}
+          No format hint beyond an example, and no client-side pattern: EPA's
+          formats genuinely vary (CA1010001 vs 083090017), and an invented
+          pattern would reject valid tribal and territory identifiers. The API's
+          own empty answer is the authority on whether an id exists.
+        {% endcomment %}
+        <div class="form-help">The identifier as the regulator publishes it. Case does not matter.</div>
+      </div>
+
+      <div class="row-start pt-sm">
+        <button type="submit" class="btn-primary">Look up system</button>
+        <span id="onboard-spinner" class="htmx-indicator text-tertiary text-sm">Asking EPA&hellip; this can take 15&ndash;30 seconds.</span>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">What onboarding does and does not do</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      It creates the water system and its facilities from EPA's federal record,
+      and re-running it against a system you already carry refreshes those same
+      fields from EPA. That is the whole of it.
+    </p>
+    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+      It does <strong>not</strong> determine compliance. EPA's SDWIS extract is a
+      federal copy, not the primacy agency's authoritative file, and nothing here
+      compares a system against a requirement.
+    </p>
+    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+      It does <strong>not</strong> link facilities to the wells this platform
+      meters. That join is a deliberate operator act, made in the Django admin,
+      and an onboarding refresh never touches a link you have already made.
+    </p>
+    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+      It does <strong>not</strong> fill in the population and service-connection
+      breakdowns. EPA sends one total for each; splitting a total into
+      residential, non-transient and transient shares would be inventing
+      numbers, so those fields stay empty until a source that genuinely breaks
+      them down is imported.
+    </p>
+  </div>
+
+  {% comment %}Review and result are swapped in here by HTMX.{% endcomment %}
+  <div id="onboard-area"></div>
+
+</div>
+{% endblock %}
