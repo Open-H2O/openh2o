@@ -1014,3 +1014,20 @@ class TestTheRealDDWSliceValidatesClean:
             SampleResult.objects.filter(result_value__isnull=False).count()
             == DDW_VALUE_ROWS
         )
+
+    def test_every_ps_code_in_the_file_is_actually_exercised(
+        self, ddw_validated, ddw_system
+    ):
+        """Phase 80's gate is not merely "no errors" — it is that the PS Codes
+        get exercised at all. Until this plan landed, every row died on its date
+        or its blank Result BEFORE the sampling-point lookup meant anything, so
+        a clean run proved nothing about the lookup. Assert the file's 18
+        distinct codes each carried at least one result through to the DB."""
+        importer.commit_rows(ddw_validated)
+        landed = set(
+            SampleEvent.objects.values_list(
+                "sampling_point__ps_code", flat=True
+            )
+        )
+        assert landed == set(ddw_system["points"])
+        assert len(landed) == DDW_PS_CODE_COUNT
