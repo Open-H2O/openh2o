@@ -60,12 +60,26 @@ from drinking.models import (
 # Hard cap on a single import. Higher than infrastructure's 500 for the same
 # small-VPS rationale: one well is one row, but one sample event is a dozen-plus
 # analyte rows, so a single quarter of routine monitoring is already hundreds of
-# rows. 5000 keeps a realistic annual lab extract in one file while still
-# bounding the work.
+# rows.
+#
+# MEASURED, not assumed (2026-07-19, ISS-073): every row for CA1010001 (Bakman
+# Water Company, Fresno — 17,393 people, 2,675 connections, 18 sampling points)
+# was counted out of the state's real `SDWIS4.tab` export. That system's whole
+# 2023-to-present history is **2,471 rows / 721,121 bytes**, so a genuine
+# single-system slice clears this cap with 2x headroom and the byte ceiling with
+# 35x. The cap therefore stands as written.
+#
+# The one case it would NOT clear: DDW publishes the archive in four files
+# (SDWIS1 2011-2014, SDWIS2 2015-2018, SDWIS3 2019-2022, SDWIS4 2023-present).
+# An operator who concatenated all four into a single 15-year upload would land
+# near ~10,000 rows and be refused. That is the intended behaviour — the refusal
+# names the cap and says to split the file — but it is why this number is
+# documented rather than merely chosen.
 MAX_ROWS = 5000
 
 # Raw-upload byte ceiling, mirroring infrastructure's rationale: MAX_ROWS is
 # only checked AFTER a full parse, so it is no defense against a 5GB file.
+# The measured single-system slice above is 0.69 MB, well inside this.
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
 
 # Result-column tokens meaning "present" / "absent".
