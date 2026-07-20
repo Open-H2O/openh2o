@@ -702,6 +702,12 @@ def _describe(facility):
     swapped in by an add.
     """
     facility.plain_type = glossary.facility_type_plain(facility.facility_type)
+    # EPA's name is often just the type again ("DISTRIBUTION SYSTEM" on a
+    # facility already typed Distribution System). Showing both produced the
+    # heading "Distribution System — DISTRIBUTION SYSTEM", which is the exact
+    # code-soup this rewrite exists to remove.
+    label = (facility.get_facility_type_display() or "").strip().lower()
+    facility.name_adds_nothing = (facility.name or "").strip().lower() == label
     return facility
 
 

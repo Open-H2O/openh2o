@@ -28,7 +28,7 @@
   <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
     <h3 class="section-header" style="margin: 0;">
       {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}
-      {% if facility.name %}&mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %}
+      {% if facility.name and not facility.name_adds_nothing %}&mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %}
     </h3>
     <div class="row-start" style="gap: var(--space-xs); flex-wrap: wrap;">
       {% if facility.is_source %}<span class="badge badge-blue">Water comes from here</span>{% endif %}
@@ -48,7 +48,7 @@
     knows a code can check it — but it is reference detail, not the headline.
   {% endcomment %}
   <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">
-    Facility id <span class="text-mono">{{ facility.facility_id }}</span>{% if facility.name %} &middot; EPA records this as &ldquo;{{ facility.name }}&rdquo;{% endif %}.
+    Facility id <span class="text-mono">{{ facility.facility_id }}</span>{% if facility.name and not facility.name_adds_nothing %} &middot; EPA records this as &ldquo;{{ facility.name }}&rdquo;{% endif %}.
     Codes here begin <span class="text-mono">{{ system.pwsid }}_{{ facility.facility_id }}_</span>
   </p>
 
@@ -109,7 +109,7 @@
         {% endcomment %}
         <input type="text" id="point-number-{{ facility.pk }}" name="point_number" required
                class="form-input" autocomplete="off" spellcheck="false"
-               placeholder="{{ facility.facility_id }}">
+               placeholder="{% if facility.is_source %}{{ facility.facility_id }}{% else %}LCR{% endif %}">
         <div class="form-help">Whatever the state uses for this spot. Letters are fine &mdash; <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are both real.</div>
       </div>
 
