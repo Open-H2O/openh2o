@@ -17,9 +17,17 @@ make dropping the ``infrastructure`` app crash ``drinking`` — the exact coupli
 Phase 77 quarantined. Lab CSVs need none of the GDAL/shapefile machinery
 anyway, so this is stdlib ``csv`` only.
 
-The file layout is DDW's *Data Dictionary for SDWIS.CSV Files* (rev 12/2021):
-the same columns the state's own SDWIS1/2/3.CSV extracts carry, so a raw DDW
-export maps with zero clicks.
+The file layout is DDW's, so a raw state export maps with zero clicks. The
+column names come from the *Data Dictionary for SDWIS.CSV Files* (rev 12/2021),
+but the **files themselves are now tab-delimited `SDWIS1-4.tab` inside `.zip`**
+— the EDT Library retired the `.CSV` extracts the dictionary describes. Both
+are accepted: the delimiter is chosen from the extension (see `_DELIMITERS`).
+
+Verified against the live `SDWIS4.tab` on 2026-07-19 (ISS-073): 29 columns,
+two more than the dictionary lists. `Water System Classification` split into
+`Federal`/`State` variants, and `Sample Type` is present in the real file
+though absent from the 2021 layout. All are system- or event-level; every
+required field still maps through `ALIASES` unchanged.
 
 Three rules govern what this engine will and will not do.
 
@@ -101,11 +109,25 @@ _SAMPLE_TYPES = {code for code, _label in SAMPLE_TYPE_CHOICES}
 # ---------------------------------------------------------------------------
 
 
-def parse_upload(file, filename):
-    """Parse an uploaded lab CSV into {"columns": [...], "rows": [dict, ...]}.
+# Accepted extensions and the delimiter each implies.
+#
+# Extension-first, sniffing only where the extension genuinely cannot say.
+# DDW's EDT Library publishes `SDWIS1-4.tab` — tab-delimited — and retired the
+# `SDWIS*.CSV` files the 2021 dictionary described. Both must work: operators
+# hold archived .csv exports as well as today's .tab downloads.
+#
+# `None` means "ambiguous, go sniff." Only `.txt` earns that, because only
+# `.txt` says nothing about its own delimiter.
+_DELIMITERS = {".csv": ",", ".tab": "\t", ".txt": None}
 
-    CSV only — a lab result file is tabular by nature and the spatial formats
-    the infrastructure importer accepts have no meaning here.
+
+def parse_upload(file, filename):
+    """Parse an uploaded lab file into {"columns": [...], "rows": [dict, ...]}.
+
+    Delimited text only — a lab result file is tabular by nature and the
+    spatial formats the infrastructure importer accepts have no meaning here.
+    Accepts `.csv` (comma), `.tab` (tab, the state's current export), and
+    `.txt` (sniffed).
 
     Raises ImportError on: oversize upload, unsupported extension, no rows, or
     more than MAX_ROWS rows.
@@ -122,13 +144,15 @@ def parse_upload(file, filename):
             "smaller files."
         )
 
-    if not name.endswith(".csv"):
+    extension = next((ext for ext in _DELIMITERS if name.endswith(ext)), None)
+    if extension is None:
         raise ImportError(
-            "Unsupported format. Lab results import from a .csv file — the "
-            "layout the state's own SDWIS.CSV extracts use."
+            "Unsupported format. Lab results import from a delimited text "
+            "file: .tab (the state's own SDWIS extract from the DDW EDT "
+            "Library), .csv, or .txt."
         )
 
-    rows, columns = _parse_csv(file)
+    rows, columns = _parse_csv(file, _DELIMITERS[extension])
 
     if len(rows) > MAX_ROWS:
         raise ImportError(
@@ -141,11 +165,29 @@ def parse_upload(file, filename):
     return {"columns": columns, "rows": rows}
 
 
-def _parse_csv(file):
+def _sniff_delimiter(sample):
+    """Comma or tab for an extension that will not say which. `.txt` only.
+
+    Deliberately NOT run on every upload. ``csv.Sniffer`` raises
+    ``_csv.Error: Could not determine delimiter`` on a small or single-column
+    sample, so sniffing unconditionally would turn a working .csv upload into a
+    hard failure — trading a known bug for an unknown one. Tab is the fallback
+    because a `.txt` lab extract in the wild is overwhelmingly a renamed state
+    export.
+    """
+    try:
+        return csv.Sniffer().sniff(sample, delimiters=",\t").delimiter
+    except csv.Error:
+        return "\t"
+
+
+def _parse_csv(file, delimiter=","):
     raw = file.read()
     if isinstance(raw, bytes):
         raw = raw.decode("utf-8-sig")  # tolerate a BOM from Excel exports
-    reader = csv.DictReader(io.StringIO(raw))
+    if delimiter is None:
+        delimiter = _sniff_delimiter(raw[:8192])
+    reader = csv.DictReader(io.StringIO(raw), delimiter=delimiter)
     columns = list(reader.fieldnames or [])
     rows = []
     for row in reader:
