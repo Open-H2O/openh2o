@@ -20,6 +20,7 @@ import json
 from pathlib import Path
 
 import pytest
+from django.db import DataError
 
 from drinking import envirofacts_mapping as mapping
 from drinking.models import SystemFacility, WaterSystem
@@ -375,8 +376,15 @@ def test_an_operator_well_link_survives_a_re_run(system_payload, facility_payloa
 @pytest.mark.django_db
 def test_commit_is_atomic_across_system_and_facilities(system_payload):
     """A facility payload that blows up must not leave a half-onboarded system
-    behind for the operator to clean up by hand."""
-    with pytest.raises(Exception):
-        mapping.commit_system(system_payload, [{"nonsense": True}])
+    behind for the operator to clean up by hand.
+
+    An over-long state key is a real failure rather than a contrived one: the
+    column is varchar(30), so Postgres rejects the write outright — this is not
+    the "no state key" case, which is skipped and reported instead of raised.
+    """
+    oversized = {"facility_id": "1", "state_facility_id": "X" * 40}
+
+    with pytest.raises(DataError):
+        mapping.commit_system(system_payload, [oversized])
 
     assert WaterSystem.objects.count() == 0
