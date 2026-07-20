@@ -198,6 +198,23 @@ class WaterSystem(models.Model):
     connections_industrial = models.IntegerField(null=True, blank=True)
     connections_residential = models.IntegerField(null=True, blank=True)
 
+    # EPA's administrative contact block, address only. Phone, fax, email,
+    # admin_name and org_name are deliberately NOT carried: they are a named
+    # individual's contact details and carry a privacy/retention cost this
+    # platform does not take on (scope call, 2026-07-19).
+    mailing_address_line1 = models.CharField(max_length=100, blank=True)
+    mailing_address_line2 = models.CharField(max_length=100, blank=True)
+    mailing_city = models.CharField(max_length=100, blank=True)
+    mailing_state = models.CharField(
+        max_length=2, blank=True,
+        help_text="The ADMINISTRATOR'S MAILING state, NOT the primacy state. "
+        "EPA's WATER_SYSTEM.state_code is the address on file: PWSID 083090017 "
+        "is a Colorado system (primacy_agency_code 08) whose state_code is CA "
+        "because its administrator's address is in Anaheim. Never filter "
+        "jurisdiction by this field — use primacy agency.",
+    )
+    mailing_zip = models.CharField(max_length=10, blank=True)
+
     regulating_agency = models.CharField(
         max_length=100, blank=True,
         help_text="DDW district office or Local Primacy Agency; NM: NMED DWB.",
@@ -225,7 +242,19 @@ class SystemFacility(models.Model):
         WaterSystem, on_delete=models.CASCADE, related_name="facilities"
     )
     facility_id = models.CharField(
-        max_length=30, help_text="State-assigned facility ID."
+        max_length=30,
+        help_text="State-assigned facility ID — the segment DDW's PS Codes are "
+        "built from (CA1010001_010_010). From EPA this is state_facility_id, "
+        "NEVER EPA's own facility_id. Not always numeric: DST is real.",
+    )
+    # EPA's internal key for the same facility, kept so a federal re-fetch can be
+    # traced, but never used to compose a PS Code. For the facility above EPA
+    # says 14042 while the state says 010; using 14042 would compose
+    # CA1010001_14042_001 and match nothing in a real lab file.
+    epa_facility_id = models.CharField(
+        max_length=20, blank=True, db_index=True,
+        help_text="EPA's own facility ID. Provenance only — never a PS Code "
+        "segment. See .planning/phases/79-envirofacts-adapter/79-RESEARCH.md.",
     )
     name = models.CharField(max_length=200, blank=True)
     facility_type = models.CharField(
