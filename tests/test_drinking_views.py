@@ -160,8 +160,16 @@ class TestPagesRender:
         # The onboarding copy names the real way in. It named a "next update"
         # through 78-02 because the importer did not exist; 78-03 shipped it, so
         # the promise is gone and the results page carries the real link.
+        #
+        # 80-02 gives the SYSTEM page its own real way in — the onboarding
+        # wizard — so that page no longer sends an operator to the admin. The
+        # other two still do, because onboarding creates a system and its
+        # facilities and deliberately never creates a sampling point.
         text = _squash(response.content.decode())
-        assert "Django admin" in text
+        if url_name == "drinking:overview":
+            assert "Onboard a water system" in text
+        else:
+            assert "Django admin" in text
         assert "next update" not in text, (
             "The empty state still promises an import that has already shipped"
         )

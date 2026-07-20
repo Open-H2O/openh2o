@@ -576,9 +576,15 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=70,
                 active_match="/drinking/",
-                # Two excludes, not one: `/drinking/` is a prefix of both
-                # sub-pages, each of which owns its own entry below.
-                active_excludes=("/drinking/sampling-points", "/drinking/results"),
+                # Three excludes, not two: `/drinking/` is a prefix of every
+                # sub-page, each of which owns its own entry below. Adding a
+                # sub-route without adding its exclusion leaves Overview lit
+                # while the operator is somewhere else.
+                active_excludes=(
+                    "/drinking/sampling-points",
+                    "/drinking/results",
+                    "/drinking/onboard",
+                ),
             ),
             NavEntry(
                 url_name="drinking:sampling_points",
@@ -595,6 +601,17 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=90,
                 active_match="/drinking/results",
+            ),
+            NavEntry(
+                url_name="drinking:onboard",
+                label="Onboard System",
+                # Its own icon key, not a reuse: `test_icon_keys_are_unique`
+                # holds one glyph to one destination, so a shared icon would
+                # make two different nav rows look like the same place.
+                icon="onboard",
+                section=SECTION_WATER_DATA,
+                order=100,
+                active_match="/drinking/onboard",
             ),
         ),
         # The first module to ship a dashboard card. It renders only when a

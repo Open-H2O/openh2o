@@ -374,3 +374,42 @@ class TestCommit:
 
         assert "EPA did not answer in time" in response.content.decode()
         assert WaterSystem.objects.count() == 0
+
+
+# -- Task 4: reachability ----------------------------------------------------
+
+
+class TestReachable:
+    """A page nobody can find is not shipped."""
+
+    def test_the_empty_system_page_offers_onboarding(self, client_in):
+        body = client_in.get(reverse("drinking:overview")).content.decode()
+
+        assert "Onboard a water system" in body
+        assert reverse("drinking:onboard") in body
+
+    def test_the_empty_sampling_point_page_does_not_offer_onboarding(self, client_in):
+        """Onboarding creates a system and facilities, never a sampling point.
+
+        Offering it here would be a dead end wearing a helpful coat — the same
+        reason this partial does not link the Setup Wizard.
+        """
+        body = client_in.get(reverse("drinking:sampling_points")).content.decode()
+        assert "Onboard a water system" not in body
+
+    def test_the_wizard_has_a_nav_entry(self):
+        from core.modules import MODULE_REGISTRY
+
+        entries = MODULE_REGISTRY["drinking"].nav
+        assert any(e.url_name == "drinking:onboard" for e in entries)
+
+    def test_overview_is_not_active_on_the_wizard(self):
+        """The third exclusion. `/drinking/` is a prefix of `/drinking/onboard/`."""
+        from core.modules import MODULE_REGISTRY
+
+        overview_entry = next(
+            e for e in MODULE_REGISTRY["drinking"].nav
+            if e.url_name == "drinking:overview"
+        )
+        assert overview_entry.is_active("/drinking/") is True
+        assert overview_entry.is_active("/drinking/onboard/") is False

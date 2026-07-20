@@ -14,9 +14,16 @@
   and the empty system and sampling-point pages honestly do not: importing a lab
   file there would produce nothing but a page of row errors.
 
+  80-02 adds the same idea for the system page. An operator with no water
+  system at all is looking at the one screen where onboarding IS the answer, so
+  that page — and only that page — offers it. The sampling-point and results
+  pages still do not: onboarding creates a system and its facilities and
+  deliberately never creates a sampling point.
+
   Caller supplies:
-    `what`        — one plain-English line about the missing entity
-    `import_link` — truthy only on the results page, where import is the answer
+    `what`         — one plain-English line about the missing entity
+    `import_link`  — truthy only on the results page, where import is the answer
+    `onboard_link` — truthy only on the system page, where onboarding is
 {% endcomment %}
 <div class="card-raised empty-state">
   <div class="empty-state-icon">
@@ -34,6 +41,15 @@
   </p>
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
     <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
+  </div>
+  {% elif onboard_link %}
+  <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
+    Onboard one from EPA's federal record: enter its PWSID, review everything
+    EPA holds for it, and only then write the system and its facilities. Nothing
+    is created until you have seen it.
+  </p>
+  <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
+    <a href="{% url 'drinking:onboard' %}" class="btn-primary">Onboard a water system</a>
   </div>
   {% else %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">

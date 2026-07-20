@@ -18,7 +18,7 @@ Two axes are covered, because they fail in different ways:
 * **Visibility** — every combination of ``nav_mode`` x ``user_is_admin`` x
   ``access_enforced`` (8), rendered at ``/``. These pin the four predicates the
   registry loop has to reproduce.
-* **Active state** — one representative path per nav entry (22), rendered at a
+* **Active state** — one representative path per nav entry (23), rendered at a
   fixed permutation that shows every link. These pin the ``active`` class. The
   pair ``/surface/`` and ``/surface/rights/`` is the whole reason this axis
   exists: Surface Diversions matches on ``/surface/`` but must NOT light up on
@@ -87,6 +87,9 @@ ACTIVE_PATHS = [
     "/drinking/",
     "/drinking/sampling-points/",
     "/drinking/results/",
+    # 80-02's wizard. Same reason as the two above: `/drinking/` is a prefix of
+    # it too, so it needs its own exclusion on the Overview entry.
+    "/drinking/onboard/",
     "/datasync/stations/",
     "/accounting/accounts/",
     "/accounting/reporting-periods/",
@@ -208,7 +211,12 @@ def test_drinking_water_not_active_on_its_own_sub_pages():
     """
     pages = {
         p: render_sidebar(path=p, nav_mode="admin", user_is_admin=True)
-        for p in ("/drinking/", "/drinking/sampling-points/", "/drinking/results/")
+        for p in (
+            "/drinking/",
+            "/drinking/sampling-points/",
+            "/drinking/results/",
+            "/drinking/onboard/",
+        )
     }
 
     def link_classes(html, url):
@@ -222,12 +230,14 @@ def test_drinking_water_not_active_on_its_own_sub_pages():
     assert "active" in link_classes(pages["/drinking/"], "/drinking/")
     assert "active" not in link_classes(pages["/drinking/sampling-points/"], "/drinking/")
     assert "active" not in link_classes(pages["/drinking/results/"], "/drinking/")
+    assert "active" not in link_classes(pages["/drinking/onboard/"], "/drinking/")
 
     # And each sub-page lights up its own entry.
     assert "active" in link_classes(
         pages["/drinking/sampling-points/"], "/drinking/sampling-points/"
     )
     assert "active" in link_classes(pages["/drinking/results/"], "/drinking/results/")
+    assert "active" in link_classes(pages["/drinking/onboard/"], "/drinking/onboard/")
 
 
 def test_nav_entry_is_active_handles_multiple_excludes():
@@ -320,18 +330,18 @@ def test_every_registry_icon_key_has_a_partial():
 
 
 def test_every_nav_entry_is_rendered():
-    """All 22 module-owned entries appear when every gate is open.
+    """All 23 module-owned entries appear when every gate is open.
 
     Guards the failure mode a byte-diff cannot: if the registry loop silently
     drops an entry AND the fixture were regenerated, this still fails.
 
     19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
-    Results to the Water Data section.
+    Results to the Water Data section, and 80-02 adds Onboard System.
     """
     html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
                           access_enforced=False)
     expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 22
+    assert len(expected) == 23
     for entry in expected:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"
