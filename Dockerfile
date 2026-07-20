@@ -27,15 +27,24 @@ WORKDIR /app
 COPY requirements.lock .
 RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 
-# Download Tailwind standalone binary
-RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
-    && chmod +x tailwindcss-linux-x64
+# Download the Tailwind standalone binary — architecture-aware so the image
+# builds NATIVELY on both amd64 servers and arm64 (Apple-silicon) dev machines.
+# A hardcoded -x64 binary crashes with exit 133 (illegal instruction) on arm64;
+# that failure aborts the build, leaves the PREVIOUS image serving, and `make
+# test` then runs stale code and reports green against source that no longer
+# exists (ISS-075). `uname -m` reflects the platform the build actually runs on,
+# so no build arg is required. `curl -f` makes a failed download fail the build
+# instead of silently saving an HTML error page as the "binary".
+RUN tw_arch="$(uname -m | sed -e 's/x86_64/x64/' -e 's/aarch64/arm64/')" \
+    && curl -sfLO "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-$tw_arch" \
+    && mv "tailwindcss-linux-$tw_arch" tailwindcss \
+    && chmod +x tailwindcss
 
 # Copy project code
 COPY . .
 
 # Compile Tailwind CSS (standalone binary, no Node.js)
-RUN ./tailwindcss-linux-x64 -i static/css/input.css -o static/css/output.css --minify
+RUN ./tailwindcss -i static/css/input.css -o static/css/output.css --minify
 
 # Build version stamp (git describe, passed at build time) — baked into the image
 # so the running app can report exactly which commit it is. Defaults to "dev" for
