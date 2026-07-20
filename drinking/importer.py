@@ -50,6 +50,7 @@ row beside the value is one template change away from a compliance verdict, and
 
 import csv
 import io
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -102,6 +103,20 @@ _PRESENT_TOKENS = {"p", "present", "pos", "positive", "detected"}
 _ABSENT_TOKENS = {"a", "absent", "neg", "negative", "nd", "non-detect"}
 
 _SAMPLE_TYPES = {code for code, _label in SAMPLE_TYPE_CHOICES}
+
+# DDW's own sample-type codes -> this platform's vocabulary. Keyed lowercase.
+#
+# MEASURED (2026-07-20, ISS-074): all 40 rows of the real `SDWIS4.tab` slice
+# carry `Sample Type = RT`, which is DDW's code for a routine sample. Without
+# this map a genuine export warns on EVERY row, which teaches an operator to
+# ignore the warning column — the one place a real problem would show up.
+#
+# `RT` is the ONLY entry, deliberately. It is the sole code observed in a real
+# export, and DDW publishes no code list we have been able to verify. Guessing
+# at `RP`/`CF`/`SP` would silently relabel, say, a confirmation sample as
+# routine — a wrong answer stated confidently, which is strictly worse than the
+# warning it would replace. Extend this map from an OBSERVED export only.
+_DDW_SAMPLE_TYPES = {"rt": "routine"}
 
 
 # ---------------------------------------------------------------------------
@@ -310,6 +325,47 @@ def missing_required(mapping):
 # ---------------------------------------------------------------------------
 
 
+# The two date formats this importer accepts, in the order it tries them.
+_DATE_FORMAT_HELP = "YYYY-MM-DD or MM-DD-YYYY"
+
+
+def _parse_ddw_date(raw):
+    """A date from an ISO or a DDW-style cell, or None if it is neither.
+
+    TWO explicit formats, in a fixed order — ISO first (the layout the retired
+    `SDWIS*.CSV` extracts and our own fixtures use), then `%m-%d-%Y` (the layout
+    the live `SDWIS*.tab` extracts use). No `dateutil`, no sniffing, no fallback
+    chain.
+
+    The strictness is the point. MEASURED (2026-07-20, ISS-074) on the real
+    40-row CA1010001 slice: 32 of the 40 sample dates carry a second component
+    greater than 12 (`01-13-2026` and the like), which is impossible to read as
+    `DD-MM`. That is what proves the state writes month-first — it was not
+    assumed. A permissive parser that ALSO accepted `DD-MM-YYYY` would resolve
+    the remaining 8 by guessing, and a guess that swaps month and day misdates
+    lab evidence while looking perfectly well-formed. The ambiguity is invisible
+    for 12 days of every month, so it would not surface as a bug report; it
+    would surface as a wrong sampling history years later.
+
+    An unreadable date is therefore None, and the caller says so out loud.
+    """
+    text = (raw or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = parse_date(text)
+    except ValueError:
+        # `parse_date` lets a well-formed-but-impossible ISO date (`2023-13-01`)
+        # raise. An unreadable cell is a row error, never a 500.
+        parsed = None
+    if parsed is not None:
+        return parsed
+    try:
+        return datetime.strptime(text, "%m-%d-%Y").date()
+    except ValueError:
+        return None
+
+
 def _decimal_or_none(raw):
     """Decimal from a lab-formatted number, or None if it is not one.
 
@@ -344,7 +400,37 @@ def _parse_result(raw_result, raw_lt_rl, raw_rl, errors):
     lt_flag = (raw_lt_rl or "").strip().lower() in {"y", "yes", "true", "1"}
     reporting_level = _decimal_or_none(raw_rl)
 
+    # --- blank cell: sometimes a non-detect, sometimes an absence -----------
+    #
+    # MEASURED (2026-07-20, ISS-074): 30 of the 40 rows in the real
+    # `SDWIS4.tab` slice report a non-detect exactly this way — an EMPTY
+    # `Result` cell with `Less Than Reporting Level = Y` and the bound carried
+    # in `Reporting Level`. The check used to fire before `lt_flag` was ever
+    # consulted, so three quarters of a genuine state export errored out.
+    #
+    # Reordered, not duplicated: this is the same non-detect shape the `<0.5`
+    # branch below produces, and `result_value` stays NULL in both. A
+    # non-detect is a BOUND. It is never zero.
     if not text:
+        if lt_flag and reporting_level is not None:
+            return {
+                "result_kind": RESULT_KIND_NUMERIC,
+                "presence": None,
+                "result_value": None,
+                "less_than_rl": True,
+                "reporting_level": reporting_level,
+            }
+        if lt_flag:
+            # A bound with nothing to bound against is not information. The DB
+            # would take it and `_result_value.html` would render it as
+            # "< None", so it is refused here instead.
+            errors.append(
+                "Result is blank and marked below the reporting level, but no "
+                "Reporting Level was given."
+            )
+            return None
+        # No flag: the lab did not report a finding. That is not the same claim
+        # as "the lab looked and found nothing below its reporting level."
         errors.append("Result is blank.")
         return None
 
@@ -474,11 +560,14 @@ def validate_rows(rows, mapping):
 
         # --- event identity -------------------------------------------------
         raw_date = src("sample_date")
-        sample_date = parse_date(raw_date) if raw_date else None
+        sample_date = _parse_ddw_date(raw_date) if raw_date else None
         if not raw_date:
             errors.append("Sample date is required (blank or unmapped).")
         elif sample_date is None:
-            errors.append(f"Sample date '{raw_date}' is not a date (use YYYY-MM-DD).")
+            errors.append(
+                f"Sample date '{raw_date}' is not a date "
+                f"(use {_DATE_FORMAT_HELP})."
+            )
         data["sample_date"] = sample_date
 
         raw_time = src("sample_time")
@@ -487,11 +576,18 @@ def validate_rows(rows, mapping):
             warnings.append(f"Sample time '{raw_time}' was not readable; ignored.")
         data["sample_time"] = sample_time
 
-        sample_type = src("sample_type").lower() or "routine"
+        # Keep the raw spelling for the warning: an operator searches their own
+        # file for the string we show them, and `rt` does not appear in a file
+        # that says `RT`.
+        raw_sample_type = src("sample_type")
+        sample_type = raw_sample_type.lower() or "routine"
+        if sample_type not in _SAMPLE_TYPES:
+            # DDW's own code vocabulary, before we give up and warn.
+            sample_type = _DDW_SAMPLE_TYPES.get(sample_type, sample_type)
         if sample_type not in _SAMPLE_TYPES:
             warnings.append(
-                f"Sample type '{sample_type}' is not a standard type; recorded "
-                "as routine."
+                f"Sample type '{raw_sample_type}' is not a standard type; "
+                "recorded as routine."
             )
             sample_type = "routine"
         data["sample_type"] = sample_type
@@ -537,7 +633,7 @@ def validate_rows(rows, mapping):
         data["counting_error"] = _decimal_or_none(src("counting_error"))
 
         raw_analysis = src("analysis_date")
-        analysis_date = parse_date(raw_analysis) if raw_analysis else None
+        analysis_date = _parse_ddw_date(raw_analysis) if raw_analysis else None
         if raw_analysis and analysis_date is None:
             warnings.append(
                 f"Analysis date '{raw_analysis}' was not readable; ignored."
