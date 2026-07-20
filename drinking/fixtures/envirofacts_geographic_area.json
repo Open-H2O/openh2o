@@ -1,0 +1,17 @@
+[
+{
+  "pwsid": "CA1010001",
+  "geo_id": null,
+  "primacy_agency_code": "CA",
+  "epa_region": "09",
+  "pws_activity_code": "A",
+  "pws_type_code": "CWS",
+  "tribal_code": null,
+  "state_served": null,
+  "ansi_entity_code": null,
+  "zip_code_served": null,
+  "city_served": null,
+  "area_type_code": "CN",
+  "county_served": "Fresno"
+}
+]
