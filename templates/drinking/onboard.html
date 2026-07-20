@@ -25,6 +25,13 @@
 
   <a href="{% url 'drinking:overview' %}" class="back-link">&larr; Back to Drinking Water</a>
 
+  {% comment %}
+    The sampling-point builder redirects here when it is asked for a system that
+    was never onboarded. Without this include that redirect would land silently
+    on the lookup form and read as the page simply having forgotten the request.
+  {% endcomment %}
+  {% include "partials/_messages.html" %}
+
   <div class="card-raised">
     <h2 class="card-header-ruled">Look up a public water system</h2>
     <p class="text-base text-secondary" style="margin-top: var(--space-md);">

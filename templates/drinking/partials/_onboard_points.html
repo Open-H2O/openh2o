@@ -1,0 +1,140 @@
+{% comment %}
+  One facility's panel in the sampling-point builder: the points already on it,
+  the add form, and the outcome of the last add.
+
+  This partial is both the initial render (looped by onboard_points.html) and
+  the HTMX swap target after an add, so the form and the list stay in one place
+  and cannot drift apart.
+
+  Caller supplies `facility` + `system` + `point_type_choices`, optionally with
+  one of `added` / `duplicate` / `error`.
+
+  The composed PS Code is shown as a fixed prefix beside the input rather than
+  assembled in JavaScript. The server's compose_ps_code is the only authority on
+  what gets stored; a JS copy of those rules would drift from it and show the
+  operator a code that is not the one written.
+
+  A request that names no facility this system owns has no panel to render, so
+  it degrades to the bare alert below. Rendering the panel anyway would reach
+  `{% url ... system.pwsid %}` with nothing in context and raise NoReverseMatch,
+  taking the whole screen down over one malformed field.
+{% endcomment %}
+{% if not facility %}
+<div class="alert-error">{{ error|default:"That request could not be read." }}</div>
+{% else %}
+<div id="facility-{{ facility.pk }}" class="card-inset">
+
+  <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
+    <h3 class="section-header" style="margin: 0;">
+      <span class="text-mono">{{ facility.facility_id }}</span>
+      {% if facility.name %}&mdash; {{ facility.name }}{% endif %}
+    </h3>
+    <div class="row-start" style="gap: var(--space-xs); flex-wrap: wrap;">
+      {% if facility.facility_type %}<span class="badge badge-grey">{{ facility.get_facility_type_display }}</span>{% endif %}
+      {% if facility.is_source %}<span class="badge badge-blue">Source</span>{% endif %}
+      <span class="badge badge-grey">{{ facility.sampling_points.count }} point{{ facility.sampling_points.count|pluralize }}</span>
+    </div>
+  </div>
+
+  {% comment %}
+    The facility id shown plainly, because it is the middle segment of every PS
+    Code built here — an operator who already knows a PS Code can check it
+    against this before typing anything.
+  {% endcomment %}
+  <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">
+    Points on this facility are named
+    <span class="text-mono">{{ system.pwsid }}_{{ facility.facility_id }}_&hellip;</span>
+  </p>
+
+  {% if error %}
+  <div class="alert-error" style="margin-top: var(--space-md);">{{ error }}</div>
+  {% endif %}
+
+  {% if added %}
+  <div class="alert-success" style="margin-top: var(--space-md);">
+    Added <span class="text-mono">{{ added.ps_code }}</span>{% if added.name %} &mdash; {{ added.name }}{% endif %}.
+  </div>
+  {% endif %}
+
+  {% if duplicate %}
+  <div class="alert-warning" style="margin-top: var(--space-md);">
+    <span class="text-mono">{{ duplicate.ps_code }}</span> is already here
+    {% if duplicate.facility_id != facility.pk %}(on facility
+    <span class="text-mono">{{ duplicate.facility.facility_id }}</span>){% endif %}
+    &mdash; nothing was changed. Re-walking a system you had partly finished is
+    ordinary; this is not an error.
+  </div>
+  {% endif %}
+
+  {% if facility.sampling_points.all %}
+  <table class="data-table" style="margin-top: var(--space-md);">
+    <thead>
+      <tr><th>PS Code</th><th>Name</th><th>Type</th></tr>
+    </thead>
+    <tbody>
+      {% for point in facility.sampling_points.all %}
+      <tr>
+        <td class="text-mono">{{ point.ps_code }}</td>
+        <td>{{ point.name|default:"&mdash;" }}</td>
+        <td class="text-secondary">{{ point.get_point_type_display|default:"&mdash;" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-sm text-secondary" style="margin-top: var(--space-md);">
+    No sampling points yet. Lab rows naming this facility will not import until
+    it has at least one.
+  </p>
+  {% endif %}
+
+  <form
+    method="post"
+    action="{% url 'drinking:onboard_points_add' system.pwsid %}"
+    hx-post="{% url 'drinking:onboard_points_add' system.pwsid %}"
+    hx-target="#facility-{{ facility.pk }}"
+    hx-swap="outerHTML"
+    style="margin-top: var(--space-lg);">
+    {% csrf_token %}
+    <input type="hidden" name="facility" value="{{ facility.pk }}">
+
+    <div class="form-row" style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: flex-end;">
+
+      <div class="form-group" style="margin: 0; flex: 0 0 14rem;">
+        <label class="form-label" for="point-number-{{ facility.pk }}">Point number <span class="required-mark">*</span></label>
+        {% comment %}
+          type="text", never type="number". Real point numbers include LCR and
+          900 — a number input silently refuses the letters and would drop every
+          Lead & Copper and disinfection-byproduct point.
+        {% endcomment %}
+        <input type="text" id="point-number-{{ facility.pk }}" name="point_number" required
+               class="form-input" autocomplete="off" spellcheck="false"
+               placeholder="e.g. {{ facility.facility_id }} or LCR">
+        <div class="form-help">Letters and digits both. <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are real.</div>
+      </div>
+
+      <div class="form-group" style="margin: 0; flex: 1 1 18rem;">
+        <label class="form-label" for="point-name-{{ facility.pk }}">Name</label>
+        <input type="text" id="point-name-{{ facility.pk }}" name="name"
+               class="form-input" autocomplete="off"
+               placeholder="e.g. LCR Tap Sample">
+      </div>
+
+      <div class="form-group" style="margin: 0; flex: 0 0 12rem;">
+        <label class="form-label" for="point-type-{{ facility.pk }}">Point type</label>
+        <select id="point-type-{{ facility.pk }}" name="point_type" class="form-input">
+          <option value="">&mdash;</option>
+          {% for value, label in point_type_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <button type="submit" class="btn-secondary">Add point</button>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endif %}

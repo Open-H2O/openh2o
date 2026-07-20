@@ -19,4 +19,18 @@ urlpatterns = [
     path("onboard/", views.onboard_page, name="onboard"),
     path("onboard/lookup/", views.onboard_lookup, name="onboard_lookup"),
     path("onboard/commit/", views.onboard_commit, name="onboard_commit"),
+    # The PWSID is in the path, not the session. Onboarding's session key is
+    # deleted on commit, and this is the step *after* commit — so the builder
+    # has to be reachable, bookmarkable and re-enterable on its own, which a
+    # session-scoped route would not be.
+    path(
+        "onboard/<str:pwsid>/points/",
+        views.onboard_points,
+        name="onboard_points",
+    ),
+    path(
+        "onboard/<str:pwsid>/points/add/",
+        views.onboard_points_add,
+        name="onboard_points_add",
+    ),
 ]

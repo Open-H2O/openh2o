@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Sampling Points - {{ system.pwsid }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Add sampling points{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:onboard' %}">Onboard</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Sampling points</span>
+  </nav>
+  <p class="page-description">Walk the facilities of {{ system.name|default:system.pwsid }} and add the points its lab results are reported against.</p>
+</div>
+{% endblock %}
+
+{% comment %}
+  Matched to the onboard and import pages at 1400px: this is the third screen of
+  the same flow and a narrower measure would make the step feel like a different
+  application.
+{% endcomment %}
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  <a href="{% url 'drinking:onboard' %}" class="back-link">&larr; Back to Onboard</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Why this step exists</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      Every row of a lab file names a <strong>PS Code</strong> &mdash; the
+      state's identifier for the exact place a sample was drawn, written as
+      <span class="text-mono">{{ system.pwsid }}_{facility}_{point}</span>. The
+      import matches on it and never invents one, so a system with facilities but
+      no sampling points cannot take a lab file at all: every row would come back
+      as an unknown PS Code.
+    </p>
+    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+      You supply the last part &mdash; a point number and a name. The PWSID and
+      the facility are already known, so the full code is composed for you and
+      stored exactly as shown.
+    </p>
+    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+      <strong>&ldquo;Facility&rdquo; here does not only mean a well.</strong> A
+      system's distribution system is a facility too &mdash; usually
+      <span class="text-mono">DST</span> &mdash; and the Lead &amp; Copper and
+      disinfection-byproduct points that sit out in the pipes hang off it, with
+      point numbers like <span class="text-mono">LCR</span> or
+      <span class="text-mono">900</span>. Those are ordinary points on an
+      ordinary facility; add them the same way.
+    </p>
+  </div>
+
+  <div class="card-raised">
+    <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
+      <h2 class="card-header-ruled" style="margin: 0; border: 0;">{{ system.name|default:system.pwsid }}</h2>
+      <div class="row-start" style="gap: var(--space-xs); flex-wrap: wrap;">
+        <span class="badge badge-blue text-mono">{{ system.pwsid }}</span>
+        <span class="badge badge-grey">{{ facilities|length }} facilit{{ facilities|length|pluralize:"y,ies" }}</span>
+        <span class="badge {% if point_count %}badge-green{% else %}badge-orange{% endif %}">{{ point_count }} sampling point{{ point_count|pluralize }}</span>
+      </div>
+    </div>
+  </div>
+
+  {% for facility in facilities %}
+    {% include "drinking/partials/_onboard_points.html" %}
+  {% endfor %}
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">When you have added the points you need</h2>
+    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      {% if point_count %}
+        This system now carries {{ point_count }} PS Code{{ point_count|pluralize }}, so a lab
+        file naming {{ point_count|pluralize:"it,any of them" }} will import. You do not have to
+        add every point first &mdash; rows naming a point you have not added yet
+        are reported and skipped, and you can come back and add them.
+      {% else %}
+        No sampling points exist for this system yet, so a lab file would come
+        back with every row unmatched. Add at least the points your file names
+        before importing.
+      {% endif %}
+    </p>
+    <div class="row-start" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+      <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
+      <a href="{% url 'drinking:sampling_points' %}" class="btn-secondary">View all sampling points</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

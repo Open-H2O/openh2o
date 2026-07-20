@@ -16,15 +16,17 @@ plus Django admin for one-off corrections.
 """
 import json
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Prefetch, Q
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 
 from core.workspace import list_response
 from drinking import envirofacts, envirofacts_mapping, importer
+from drinking.ps_codes import compose_ps_code
 from drinking.models import (
     ACTIVITY_STATUS_CHOICES,
     FACILITY_TYPE_CHOICES,
@@ -615,5 +617,154 @@ def onboard_commit(request):
             "result": result,
             "pwsid": pwsid,
             "epa_facility_count": len(collected["facility_rows"]),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Sampling-point builder: the second half of onboarding
+# ---------------------------------------------------------------------------
+#
+# Onboarding creates a system and its facilities. That looks finished and is
+# not: `drinking.importer` matches every lab row on PS Code, and a PS Code lives
+# on a SamplingPoint. Until points exist, a real lab file cannot import at all —
+# every row is an unknown-PS-Code error. This is the surface that closes it.
+#
+# **Points are created here and only here** — by explicit operator action, never
+# as an import side effect. The importer's refusal to invent structure is the
+# guarantee that makes an unknown PS Code meaningful, so an "auto-create on
+# import" convenience would quietly destroy the thing it appears to help.
+#
+# **Distribution-system program points need no special case.** LCR and DBPR
+# points hang off the distribution system rather than a source facility, but the
+# distribution system arrives from EPA as an ordinary SystemFacility
+# (`facility_id` = `DST`). So `CA1010001_DST_LCR` is a normal point on a normal
+# facility. The only thing this owes it is copy that does not assume "facility"
+# means "well", and a point-number field that accepts letters.
+
+
+def _facility_panels(system):
+    """Every committed facility for one system, with the points already on it."""
+    return (
+        system.facilities
+        .prefetch_related("sampling_points")
+        .order_by("facility_id")
+    )
+
+
+@login_required
+@require_GET
+def onboard_points(request, pwsid):
+    """The per-facility sampling-point builder.
+
+    Guarded rather than rendered empty: a system that was never onboarded has no
+    facilities to hang points on, and an empty page would read as "this system
+    has no facilities" instead of "you have not onboarded this system yet".
+    """
+    pwsid = (pwsid or "").strip().upper()
+    system = WaterSystem.objects.filter(pwsid=pwsid).first()
+
+    if system is None:
+        messages.warning(
+            request,
+            f"{pwsid} has not been onboarded yet, so it has no facilities to "
+            "add sampling points to. Look the system up first.",
+        )
+        return redirect("drinking:onboard")
+
+    facilities = _facility_panels(system)
+    if not facilities.exists():
+        messages.warning(
+            request,
+            f"{pwsid} is carried here but has no facilities, so there is "
+            "nothing to hang a sampling point on. Re-run the lookup to refresh "
+            "its facilities from EPA.",
+        )
+        return redirect("drinking:onboard")
+
+    return render(
+        request,
+        "drinking/onboard_points.html",
+        {
+            "system": system,
+            "facilities": facilities,
+            "point_type_choices": POINT_TYPE_CHOICES,
+            "point_count": SamplingPoint.objects.filter(
+                facility__system=system
+            ).count(),
+        },
+    )
+
+
+@login_required
+@require_POST
+def onboard_points_add(request, pwsid):
+    """Add one sampling point to one facility. Renders that facility's panel back.
+
+    A duplicate is reported and skipped, not raised: an operator re-walking a
+    partially-completed system is the ordinary case, not an error. ``get_or_create``
+    rather than an ``exists()`` check so two operators racing the same code get a
+    plain "already there" instead of an IntegrityError 500.
+    """
+    pwsid = (pwsid or "").strip().upper()
+    system = WaterSystem.objects.filter(pwsid=pwsid).first()
+    if system is None:
+        return render(
+            request,
+            "drinking/partials/_onboard_points.html",
+            {"error": f"{pwsid} is not a system carried here."},
+        )
+
+    facility = system.facilities.filter(
+        pk=(request.POST.get("facility") or "").strip() or None
+    ).first()
+    if facility is None:
+        return render(
+            request,
+            "drinking/partials/_onboard_points.html",
+            {"error": "That facility is not part of this system."},
+        )
+
+    panel = {
+        "system": system,
+        "facility": facility,
+        "point_type_choices": POINT_TYPE_CHOICES,
+    }
+
+    point_number = (request.POST.get("point_number") or "").strip()
+    name = (request.POST.get("name") or "").strip()
+    point_type = (request.POST.get("point_type") or "").strip()
+
+    # Composition is the validator. Rather than re-implementing the rules here
+    # (and drifting from them), the ValueError text is shown as-is — it already
+    # names which part was wrong and why.
+    try:
+        ps_code = compose_ps_code(system.pwsid, facility.facility_id, point_number)
+    except ValueError as exc:
+        return render(
+            request,
+            "drinking/partials/_onboard_points.html",
+            {**panel, "error": str(exc)},
+        )
+
+    if point_type and point_type not in dict(POINT_TYPE_CHOICES):
+        return render(
+            request,
+            "drinking/partials/_onboard_points.html",
+            {**panel, "error": "That is not a point type this platform carries."},
+        )
+
+    point, created = SamplingPoint.objects.get_or_create(
+        ps_code=ps_code,
+        defaults={"facility": facility, "name": name, "point_type": point_type},
+    )
+
+    return render(
+        request,
+        "drinking/partials/_onboard_points.html",
+        {
+            **panel,
+            "added": point if created else None,
+            "duplicate": None if created else point,
         },
     )
