@@ -510,3 +510,54 @@ class SampleResult(models.Model):
                 )
             if errors:
                 raise ValidationError(errors)
+
+
+class EnvirofactsCache(models.Model):
+    """A raw EPA Envirofacts response, kept on a row so it survives a demo reset.
+
+    Why a real table and not ``django.core.cache``: the cache backend is
+    ``DatabaseCache`` on the ``feedback_cache`` table
+    (``config/settings/base.py``), and ``createcachetable`` drops and recreates
+    it on every demo reset (``scripts/reset-demo.sh``). An onboarding cache has
+    to outlive that. ``datasync.models.OpenETCache`` set this precedent for the
+    same reason, and this model deliberately mirrors its shape.
+
+    Why the payload is stored VERBATIM and never pre-mapped: caching a mapped
+    result would freeze Plan 79-02's mapping decisions into the cache, so a
+    later mapping bug would survive the code fix until every row expired.
+    Storing what EPA sent means a mapping change takes effect on the next read.
+
+    TTL is 30 days by default, matching ``OPENET_CACHE_DAYS``, because SDWIS is
+    a periodic federal extract rather than live telemetry. EPA's actual refresh
+    cadence is NOT documented — ``epa.gov/enviro/sdwis-model`` 404s — so this is
+    a deliberate, overridable choice (``ENVIROFACTS_CACHE_DAYS``) and not a
+    claim about how often the federal data changes.
+    """
+
+    pwsid = models.CharField(max_length=20, db_index=True)
+    table_name = models.CharField(
+        max_length=40,
+        help_text="WATER_SYSTEM | WATER_SYSTEM_FACILITY | GEOGRAPHIC_AREA",
+    )
+    payload = models.JSONField(help_text="The raw Envirofacts response, verbatim")
+    queried_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Envirofacts cache entry"
+        verbose_name_plural = "Envirofacts cache entries"
+        # One row per (system, table) so update_or_create can never duplicate:
+        # a stale entry is refreshed in place, never shadowed by a second row.
+        unique_together = [("pwsid", "table_name")]
+
+    def __str__(self):
+        return f"{self.pwsid} {self.table_name} @ {self.queried_at:%Y-%m-%d}"
+
+    def is_stale(self, max_age_days=None):
+        """Mirrors ``OpenETCache.is_stale``: older than the TTL, in whole days."""
+        from django.conf import settings as django_settings
+        from django.utils import timezone
+
+        max_days = max_age_days or getattr(
+            django_settings, "ENVIROFACTS_CACHE_DAYS", 30
+        )
+        return (timezone.now() - self.queried_at).days > max_days
