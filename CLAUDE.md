@@ -135,8 +135,17 @@ it — do not eyeball a new look.
 4. **Casing:** section headers, eyebrows, and labels are sentence case (the two
    exceptions are data-table column headers and map/legend labels).
 5. **Preview on staging and screenshot before calling it done** — Tailscale-only
-   at `http://butler.tail7ae369.ts.net:8081`. Compare against the surrounding
-   page, not in isolation.
+   at **`https://butler.tail7ae369.ts.net`** (HTTPS, no port number). Compare
+   against the surrounding page, not in isolation.
+
+   **Use that URL, not `http://…:8081`.** 8081 is the internal Caddy port; the
+   canonical URL is `tailscale serve` terminating real Let's Encrypt TLS on 443
+   and proxying to it. Django's production settings force
+   `SECURE_SSL_REDIRECT` / `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`, so
+   over plain `http://…:8081` the browser drops the secure cookies and **login
+   fails with a CSRF 403** — pages you can reach without logging in will render,
+   which makes the port URL look like it works right up until it doesn't.
+   Full rationale: `~/dotfiles/docs/INFRASTRUCTURE.md` (OpenH2O staging).
 
 ## Testing
 
