@@ -132,6 +132,27 @@ class TestPagesRender:
         "url_name",
         ["drinking:overview", "drinking:sampling_points", "drinking:results"],
     )
+    def test_no_template_syntax_leaks_into_the_page(
+        self, client_in, sampled_system, url_name
+    ):
+        """A developer comment must never reach the reader.
+
+        Django's `{# ... #}` comments only to the END OF ITS LINE. A multi-line
+        note written that way silently renders its second line onward as page
+        text, and it renders in a plausible-looking spot, so a passing test suite
+        and a quick glance both miss it. This shipped into the Facilities table
+        during 78-02 and only a screenshot caught it — hence this test.
+        """
+        html = client_in.get(reverse(url_name)).content.decode()
+        for leak in ("{#", "#}", "{% comment", "endcomment", "{{", "{%"):
+            assert leak not in html, (
+                f"{url_name} leaked template syntax {leak!r} into the rendered page"
+            )
+
+    @pytest.mark.parametrize(
+        "url_name",
+        ["drinking:overview", "drinking:sampling_points", "drinking:results"],
+    )
     def test_page_renders_with_no_data_at_all(self, client_in, url_name):
         """The empty path renders rather than 500-ing on a missing system."""
         response = client_in.get(reverse(url_name))

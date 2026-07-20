@@ -24,9 +24,11 @@
         <td class="text-secondary text-sm tabular-nums">{{ result.event.sample_date|date:"Y-m-d" }}</td>
         <td class="text-mono">{{ result.event.sampling_point.ps_code }}</td>
         <td>{{ result.analyte.name }}</td>
-        {# Rendered through result_kind, never as a raw number. The unit lives
-           with the value because several limits are percentages, not
-           concentrations (total coliform is "% positive samples"). #}
+        {% comment %}
+          Rendered through result_kind, never as a raw number. The unit lives
+          with the value because several limits are percentages, not
+          concentrations (total coliform is "% positive samples").
+        {% endcomment %}
         <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
         <td class="text-secondary text-sm">{{ result.method|default:"—" }}</td>
         <td class="text-secondary text-sm">{{ result.lab_name|default:"—" }}</td>

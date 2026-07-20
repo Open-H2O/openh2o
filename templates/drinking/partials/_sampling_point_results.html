@@ -64,8 +64,10 @@
 {% endif %}
 
 {% elif has_any %}
-{# Filters are on and matched nothing. Not an onboarding moment — the operator
-   has data, just not this slice — so say so and leave the toolbar alone. #}
+{% comment %}
+  Filters are on and matched nothing. Not an onboarding moment — the operator
+  has data, just not this slice — so say so and leave the toolbar alone.
+{% endcomment %}
 <div class="card-raised empty-state">
   <p class="empty-state-text">No sampling points found{% if q %} matching "{{ q }}"{% endif %}{% if point_type %} of that point type{% endif %}.</p>
 </div>

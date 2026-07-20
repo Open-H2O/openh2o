@@ -17,8 +17,10 @@
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
 
-  {# Plain GET form rather than HTMX-per-control: four filters that are usually
-     set together, and a submitted filter set stays a shareable URL. #}
+  {% comment %}
+    Plain GET form rather than HTMX-per-control: four filters that are usually
+    set together, and a submitted filter set stays a shareable URL.
+  {% endcomment %}
   <form class="card-raised toolbar-row" method="get" action="{% url 'drinking:results' %}">
     <div style="min-width: 200px;">
       <label class="form-label" for="filter-analyte">Analyte</label>
@@ -46,8 +48,14 @@
       <label class="form-label" for="filter-date-to">Sampled to</label>
       <input type="date" id="filter-date-to" name="date_to" value="{{ date_to }}" class="form-input">
     </div>
+    {% comment %}
+      Both secondary, not a gold Apply. Gold is for primary CTAs only ("gold
+      acts") and no other list page puts it in a filter toolbar — the ledger's
+      filter controls are all btn-secondary. The data is this page's subject;
+      the filter bar is a utility above it.
+    {% endcomment %}
     <div class="row-end" style="gap: var(--space-sm); align-self: flex-end;">
-      <button type="submit" class="btn-primary btn-sm">Apply</button>
+      <button type="submit" class="btn-secondary btn-sm">Apply</button>
       <a href="{% url 'drinking:results' %}" class="btn-secondary btn-sm">Clear</a>
     </div>
   </form>

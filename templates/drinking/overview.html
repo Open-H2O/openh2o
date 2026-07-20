@@ -125,11 +125,17 @@
             <td class="text-secondary text-sm">{{ facility.get_activity_status_display|default:"—" }}</td>
             <td class="text-secondary text-sm">{{ facility.get_water_type_display|default:"—" }}</td>
             <td class="text-secondary text-sm tabular-nums">{{ facility.sampling_point_count }}</td>
+            {% comment %}
+              The quality-to-quantity join made visible: ONE physical well,
+              sampled on this side and metered on the wells side. Guarded on
+              enabled_modules so dropping `wells` degrades to plain text rather
+              than NoReverseMatch (the 77-02 template-guard rule).
+
+              {% comment %}, not {# #}: the hash form comments only to the end of
+              its LINE, so a multi-line note written that way leaks its 2nd line
+              onward into the page as visible text.
+            {% endcomment %}
             <td>
-              {# The quality-to-quantity join made visible: ONE physical well,
-                 sampled on this side and metered on the wells side. Guarded on
-                 enabled_modules so dropping `wells` degrades to plain text
-                 rather than NoReverseMatch (the 77-02 template-guard rule). #}
               {% if facility.well and 'wells' in enabled_modules %}
                 <a href="{% url 'wells:detail' facility.well.pk %}" class="data-table-link">{{ facility.well.name }}</a>
               {% elif facility.well %}
