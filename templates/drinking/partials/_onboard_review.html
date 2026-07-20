@@ -1,0 +1,240 @@
+{% comment %}
+  The review: everything EPA's federal record holds for this PWSID, and exactly
+  what a commit would write, before anything is written.
+
+  Two shapes, the same idiom as `_import_result.html`:
+    - error_kind + error: the lookup did not produce a record
+    - the full review: system, facilities, skips, and a commit button
+
+  The three error kinds are kept apart because they are three genuinely
+  different situations for an operator, and telling them apart is the whole
+  reason `drinking/envirofacts.py` has three exception types.
+
+  Deliberately no verdict language: this reports what EPA sent and what would be
+  written. It does not assess compliance, and EPA's SDWIS extract is a federal
+  copy rather than the primacy agency's authoritative file.
+{% endcomment %}
+{% if error_kind %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">
+    {% if error_kind == "not_found" %}No system with that PWSID
+    {% elif error_kind == "unavailable" %}EPA did not answer in time
+    {% elif error_kind == "service_error" %}EPA answered with an error
+    {% else %}Nothing to look up{% endif %}
+  </h2>
+
+  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    {% if error_kind == "not_found" %}
+      EPA's Envirofacts record has no water system with the identifier
+      <span class="text-mono">{{ pwsid }}</span>. Check the id against the
+      regulator's own listing and try again &mdash; this is an answer from a
+      working service, not a sign that EPA is down.
+    {% elif error_kind == "unavailable" %}
+      EPA's Envirofacts service was too slow or could not be reached. Your PWSID
+      may be perfectly good; this service is routinely slow, and a lookup taking
+      15 to 30 seconds is normal for it. Try again in a few minutes.
+    {% elif error_kind == "service_error" %}
+      EPA's service answered, but not with a record we can read. Nothing about
+      the identifier you entered is necessarily wrong. What EPA reported:
+    {% else %}
+      Enter a PWSID and look it up.
+    {% endif %}
+  </p>
+
+  {% if error_kind == "service_error" or error_kind == "unavailable" %}
+  <div class="card-inset" style="margin-top: var(--space-md);">
+    <p class="text-sm text-secondary" style="margin: 0;">{{ error }}</p>
+  </div>
+  {% endif %}
+
+  <div class="row-start" style="margin-top: var(--space-lg);">
+    <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Try another PWSID</a>
+  </div>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Review before committing</h2>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+    {% if already_onboarded %}
+      <span class="badge badge-blue">Refresh &mdash; already onboarded</span>
+    {% else %}
+      <span class="badge badge-green">New system</span>
+    {% endif %}
+    <span class="badge badge-grey">{{ epa_facility_count }} facilit{{ epa_facility_count|pluralize:"y,ies" }} from EPA</span>
+    <span class="badge badge-green">{{ facility_count }} to write</span>
+    {% if skipped %}<span class="badge badge-orange">{{ skipped|length }} skipped</span>{% endif %}
+    {% if warnings %}<span class="badge badge-orange">{{ warnings|length }} note{{ warnings|length|pluralize }}</span>{% endif %}
+  </div>
+
+  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    {% if already_onboarded %}
+      This system is already carried here with {{ existing_facility_count }}
+      facilit{{ existing_facility_count|pluralize:"y,ies" }}. Committing
+      <strong>refreshes</strong> it from EPA's current record rather than
+      creating a second copy. Any well links you have made are left alone.
+    {% else %}
+      Committing <strong>creates</strong> this system and
+      {{ facility_count }} facilit{{ facility_count|pluralize:"y,ies" }}.
+    {% endif %}
+    {% if skipped %}
+      {{ skipped|length }} of the {{ epa_facility_count }} facilities EPA sent
+      cannot be written &mdash; see below for each one and why.
+    {% endif %}
+  </p>
+
+  {% comment %}
+    Identity. Every value is the regulator's own published vocabulary, shown as
+    published, matching the overview page.
+  {% endcomment %}
+  <h3 class="section-header" style="margin-top: var(--space-lg);">{{ name|default:"(EPA sent no system name)" }}</h3>
+  <div class="form-grid-2col">
+    <div class="field-group">
+      <div class="field-label">PWSID</div>
+      <div class="field-value-mono">{{ pwsid }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Status</div>
+      <div class="field-value">{{ activity_status|default:"—" }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">System type</div>
+      <div class="field-value">{{ pws_type|default:"—" }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Owner type</div>
+      <div class="field-value">{{ owner_type|default:"—" }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Primary source</div>
+      <div class="field-value">{{ primary_source|default:"—" }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">County served</div>
+      <div class="field-value">{{ geography.county_served|default:"—" }}</div>
+    </div>
+  </div>
+
+  {% comment %}
+    Labelled "mailing address", never "state": EPA's state_code is the
+    ADMINISTRATOR'S mailing state, not the primacy state. PWSID 083090017 is a
+    Colorado system whose state_code is "CA". Calling this the regulating state
+    would be a fabricated fact on the face of the screen.
+  {% endcomment %}
+  <h3 class="section-header" style="margin-top: var(--space-lg);">Mailing address</h3>
+  <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    {{ mailing.mailing_address_line1|default:"—" }}{% if mailing.mailing_address_line2 %}, {{ mailing.mailing_address_line2 }}{% endif %}<br>
+    {{ mailing.mailing_city }}{% if mailing.mailing_state %}, {{ mailing.mailing_state }}{% endif %} {{ mailing.mailing_zip }}
+  </p>
+  <p class="text-tertiary text-sm" style="margin-top: var(--space-xs);">
+    This is the address EPA carries for the system's administrative contact. It
+    is not a statement about which agency regulates the system.
+  </p>
+
+  <h3 class="section-header" style="margin-top: var(--space-lg);">What EPA reports for size</h3>
+  <div class="form-grid-2col">
+    <div class="field-group">
+      <div class="field-label">Population served (EPA total)</div>
+      <div class="field-value-mono">{{ epa_population_served|default_if_none:"—" }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Service connections (EPA total)</div>
+      <div class="field-value-mono">{{ epa_service_connections|default_if_none:"—" }}</div>
+    </div>
+  </div>
+  <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+    Shown, not written. This platform records population across three categories
+    and connections across five; EPA sends one total for each. Dividing a total
+    into shares would be inventing numbers, so those fields stay empty until a
+    source that genuinely breaks them down is imported.
+  </p>
+
+  {% if skipped %}
+  {% comment %}
+    The gap between "36 from EPA" and "35 to write", stated rather than left to
+    arithmetic. An operator shown only "35 facilities" would reasonably conclude
+    EPA sent 35.
+  {% endcomment %}
+  <h3 class="section-header" style="margin-top: var(--space-lg);">Facilities that will be skipped</h3>
+  <table class="data-table" style="margin-top: var(--space-sm);">
+    <thead>
+      <tr><th>Why it cannot be written</th></tr>
+    </thead>
+    <tbody>
+      {% for reason in skipped %}
+      <tr><td class="text-secondary">{{ reason }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if warnings %}
+  <h3 class="section-header" style="margin-top: var(--space-lg);">Notes on this record</h3>
+  <table class="data-table" style="margin-top: var(--space-sm);">
+    <thead>
+      <tr><th>Note</th></tr>
+    </thead>
+    <tbody>
+      {% for warning in warnings %}
+      <tr><td class="text-secondary">{{ warning }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h3 class="section-header" style="margin-top: var(--space-lg);">Facilities to be written ({{ facility_count }})</h3>
+  {% if facilities %}
+  <div class="table-scroll">
+    <table class="data-table" style="margin-top: var(--space-sm);">
+      <thead>
+        <tr>
+          <th>Facility ID</th>
+          <th>EPA ID</th>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Water Type</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for facility in facilities %}
+        <tr>
+          <td class="text-mono">{{ facility.facility_id }}</td>
+          <td class="text-mono text-tertiary">{{ facility.epa_facility_id|default:"—" }}</td>
+          <td>{{ facility.name|default:"—" }}</td>
+          <td class="text-secondary text-sm">{{ facility.facility_type|default:"—" }}</td>
+          <td class="text-secondary text-sm">{{ facility.water_type|default:"—" }}</td>
+          <td class="text-secondary text-sm">{% if facility.is_source %}Yes{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+    Facility ID is the <strong>state's</strong> key, which is the segment a PS
+    Code is built from. EPA's own key is kept alongside it for provenance.
+  </p>
+  {% else %}
+  <p class="text-secondary text-sm" style="margin-top: var(--space-sm);">
+    EPA carries no writable facility for this system.
+  </p>
+  {% endif %}
+
+  <form
+    method="post"
+    action="{% url 'drinking:onboard_commit' %}"
+    hx-post="{% url 'drinking:onboard_commit' %}"
+    hx-target="#onboard-area"
+    hx-indicator="#onboard-commit-spinner"
+    style="margin-top: var(--space-lg);">
+    {% csrf_token %}
+    <div class="row-start" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-primary">
+        {% if already_onboarded %}Refresh{% else %}Create{% endif %} {{ name|default:pwsid }}
+      </button>
+      <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Look up a different system</a>
+      <span id="onboard-commit-spinner" class="htmx-indicator text-tertiary text-sm">Writing&hellip;</span>
+    </div>
+  </form>
+</div>
+{% endif %}

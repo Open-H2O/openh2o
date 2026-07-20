@@ -26,7 +26,13 @@ from django.views.decorators.http import require_GET, require_POST
 from core.workspace import list_response
 from drinking import envirofacts, envirofacts_mapping, importer
 from drinking.models import (
+    ACTIVITY_STATUS_CHOICES,
+    FACILITY_TYPE_CHOICES,
+    OWNER_TYPE_CHOICES,
     POINT_TYPE_CHOICES,
+    PRIMARY_SOURCE_CHOICES,
+    PWS_TYPE_CHOICES,
+    WATER_TYPE_CHOICES,
     Analyte,
     SampleResult,
     SamplingPoint,
@@ -397,11 +403,157 @@ def onboard_page(request):
     return render(request, "drinking/onboard.html", {})
 
 
+def _code_label(code, choices):
+    """Show the published label, falling back to the raw code.
+
+    A code that survived ``_coded`` is always in the vocabulary, so the fallback
+    only fires for a value the mapping deliberately dropped — in which case
+    showing the code beats showing an empty cell.
+    """
+    return dict(choices).get(code, code)
+
+
+def _collect_federal_record(pwsid):
+    """Fetch all three EPA tables for one PWSID and map them. **Writes nothing.**
+
+    The single place the wizard talks to Envirofacts, so review and commit ask
+    the same question the same way. Every call is cache-backed, so the commit
+    step's repeat of this work is a DB read, not a second federal round-trip.
+
+    Returns the raw rows alongside the mapped ones: ``commit_system`` takes raw
+    payloads (it maps internally, so a mapping fix reaches it without a caller
+    change), while the review screen needs the mapped values plus the two raw
+    EPA aggregates that are deliberately never written.
+    """
+    warnings = []
+
+    system_row = envirofacts.fetch_water_system(pwsid)
+    facility_rows = envirofacts.fetch_facilities(pwsid)
+    geography_row = envirofacts.fetch_geographic_area(pwsid)
+
+    mapped_system = envirofacts_mapping.map_water_system(system_row, warnings=warnings)
+
+    facilities = []
+    skipped = []
+    for row in facility_rows:
+        try:
+            mapped = envirofacts_mapping.map_facility(row, warnings=warnings)
+        except envirofacts_mapping.UnmappableFacility as exc:
+            # Kept as its own list rather than folded into `warnings`: a skip is
+            # a facility that will not exist, which is a different fact from a
+            # code that was not recognised.
+            skipped.append(str(exc))
+            continue
+        facilities.append(
+            {
+                "facility_id": mapped["facility_id"],
+                "epa_facility_id": mapped.get("epa_facility_id", ""),
+                "name": mapped.get("name", ""),
+                "facility_type": _code_label(
+                    mapped.get("facility_type", ""), FACILITY_TYPE_CHOICES
+                ),
+                "water_type": _code_label(
+                    mapped.get("water_type", ""), WATER_TYPE_CHOICES
+                ),
+                "is_source": mapped.get("is_source", False),
+            }
+        )
+
+    return {
+        "pwsid": pwsid,
+        "system_row": system_row,
+        "facility_rows": facility_rows,
+        "mapped_system": mapped_system,
+        "facilities": facilities,
+        "skipped": skipped,
+        "geography": envirofacts_mapping.map_geography(geography_row),
+        "warnings": warnings,
+    }
+
+
+def _review_context(collected):
+    """Shape one collected federal record for the review partial."""
+    mapped = collected["mapped_system"]
+    raw = collected["system_row"]
+    pwsid = collected["pwsid"]
+
+    existing = WaterSystem.objects.filter(pwsid=pwsid).first()
+
+    return {
+        "pwsid": pwsid,
+        "name": mapped.get("name", ""),
+        "activity_status": _code_label(
+            mapped.get("activity_status", ""), ACTIVITY_STATUS_CHOICES
+        ),
+        "pws_type": _code_label(mapped.get("pws_type", ""), PWS_TYPE_CHOICES),
+        "owner_type": _code_label(mapped.get("owner_type", ""), OWNER_TYPE_CHOICES),
+        "primary_source": _code_label(
+            mapped.get("primary_source_code", ""), PRIMARY_SOURCE_CHOICES
+        ),
+        "mailing": mapped,
+        # Straight off EPA's row, NOT off the model: these two aggregates are
+        # shown because an operator should see what EPA holds, and are not
+        # written because the model carries a 3-way and a 5-way split that no
+        # single total can honestly be divided into.
+        "epa_population_served": raw.get("population_served_count"),
+        "epa_service_connections": raw.get("service_connections_count"),
+        "geography": collected["geography"],
+        "facilities": collected["facilities"],
+        "facility_count": len(collected["facilities"]),
+        "epa_facility_count": len(collected["facility_rows"]),
+        "skipped": collected["skipped"],
+        "warnings": collected["warnings"],
+        "already_onboarded": existing is not None,
+        "existing_facility_count": (
+            existing.facilities.count() if existing is not None else 0
+        ),
+    }
+
+
 @login_required
 @require_POST
 def onboard_lookup(request):
     """Fetch and map a PWSID's federal record, and render the review. Writes nothing."""
-    raise NotImplementedError
+    pwsid = (request.POST.get("pwsid") or "").strip().upper()
+    if not pwsid:
+        return render(
+            request,
+            "drinking/partials/_onboard_review.html",
+            {"error_kind": "empty", "error": "Enter a PWSID to look up."},
+        )
+
+    # Specific first. PwsidNotFound and EnvirofactsUnavailable both subclass
+    # EnvirofactsError, so putting the base class first would swallow both and
+    # tell an operator holding a perfectly good PWSID that EPA has no such
+    # system. Order here is load-bearing, not stylistic.
+    try:
+        collected = _collect_federal_record(pwsid)
+    except envirofacts.PwsidNotFound as exc:
+        return render(
+            request,
+            "drinking/partials/_onboard_review.html",
+            {"error_kind": "not_found", "error": str(exc), "pwsid": pwsid},
+        )
+    except envirofacts.EnvirofactsUnavailable as exc:
+        return render(
+            request,
+            "drinking/partials/_onboard_review.html",
+            {"error_kind": "unavailable", "error": str(exc), "pwsid": pwsid},
+        )
+    except envirofacts.EnvirofactsError as exc:
+        return render(
+            request,
+            "drinking/partials/_onboard_review.html",
+            {"error_kind": "service_error", "error": str(exc), "pwsid": pwsid},
+        )
+
+    # Only the id, and only after a lookup actually succeeded. See the block at
+    # the top of this section on why nothing else goes in here.
+    request.session[SESSION_KEY_ONBOARD_PWSID] = pwsid
+
+    return render(
+        request, "drinking/partials/_onboard_review.html", _review_context(collected)
+    )
 
 
 @login_required
