@@ -23,6 +23,7 @@ obviously-fictional PWSID CA0000042.
 """
 
 import io
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
@@ -664,3 +665,352 @@ class TestNoComplianceVerdict:
         body = preview.content.decode().lower()
         for word in ("exceed", "violation", "compliant", "non-compliant", "pass", "fail"):
             assert word not in body
+
+
+# ---------------------------------------------------------------------------
+# The real DDW row conventions (ISS-074)
+# ---------------------------------------------------------------------------
+#
+# 80-01 made the state's real `.tab` file PARSE. These lock the three
+# value-level conventions the retired 2021 `.csv` fixture invented differently,
+# and which therefore stayed invisible right through v2.1:
+#
+#   1. dates are `MM-DD-YYYY`, not ISO      (40/40 rows)
+#   2. a non-detect is a BLANK `Result` plus the
+#      `Less Than Reporting Level` flag     (30/40 rows)
+#   3. the sample type is DDW's code `RT`   (40/40 rows)
+#
+# Everything here is asserted against `drinking_sdwis4_slice.tab` — 40 genuine
+# CA1010001 rows — rather than a hand-built file, because a hand-built fixture
+# is exactly how these gaps hid for a whole milestone. The synthetic single
+# rows below exist ONLY for the negative guards: the real file, being real,
+# contains no `13-01-2026` and no blank result without the flag.
+
+
+# What the 40 real rows are built to produce. Measured on the file during
+# planning, not inferred.
+DDW_NON_DETECT_ROWS = 30  # blank Result + Less Than Reporting Level = Y
+DDW_VALUE_ROWS = 10  # a number in the Result cell
+DDW_PS_CODE_COUNT = 18
+DDW_EVENTS = 28  # distinct (point, date, time, type)
+
+
+def _ddw_parse():
+    """The real `.tab` fixture, through the importer's own front door."""
+    return importer.parse_upload(
+        _csv_file(TAB_FIXTURE.read_text(encoding="utf-8")), "SDWIS4.tab"
+    )
+
+
+# Facility type code -> the sampling-point vocabulary this platform uses.
+_DDW_POINT_TYPES = {"WL": "source", "TP": "entry_point", "DS": "distribution"}
+
+
+@pytest.fixture
+def ddw_parsed(db):
+    return _ddw_parse()
+
+
+@pytest.fixture
+def ddw_system(db, ddw_parsed):
+    """CA1010001 with every sampling point the real file references.
+
+    The PS Codes are READ OUT OF THE FIXTURE at test time rather than pasted
+    in as a literal list. A hardcoded list silently rots the day the fixture is
+    re-cut from a fresh state download, and the row-error count — the thing
+    this phase's acceptance gate turns on — would start measuring the staleness
+    of the list instead of the behaviour of the importer.
+    """
+    call_command("seed_drinking", verbosity=0)
+    ws = WaterSystemFactory(pwsid="CA1010001", name="BAKMAN WATER COMPANY")
+
+    facilities = {}
+    points = {}
+    for row in ddw_parsed["rows"]:
+        ps_code = row["PS Code"].strip()
+        if ps_code in points:
+            continue
+        facility_id = ps_code.split("_")[1]
+        facility_type = row["Facility Type"].strip()
+        if facility_id not in facilities:
+            facilities[facility_id] = SystemFacilityFactory(
+                system=ws, facility_id=facility_id, facility_type=facility_type
+            )
+        points[ps_code] = SamplingPointFactory(
+            ps_code=ps_code,
+            name=row["Sampling Point Name"].strip(),
+            facility=facilities[facility_id],
+            point_type=_DDW_POINT_TYPES.get(facility_type, "source"),
+        )
+
+    assert len(points) == DDW_PS_CODE_COUNT
+    return {"system": ws, "points": points}
+
+
+@pytest.fixture
+def ddw_validated(ddw_system, ddw_parsed):
+    mapping = importer.auto_map_columns(ddw_parsed["columns"])
+    return importer.validate_rows(ddw_parsed["rows"], mapping)
+
+
+# The mapping and row shape for the negative guards. Same logical fields the
+# real header maps to, so a guard cannot pass by dodging the real code path.
+_SYNTHETIC_MAPPING = {
+    "ps_code": "PS Code",
+    "sample_date": "Sample Date",
+    "sample_type": "Sample Type",
+    "analysis_date": "Analysis Date",
+    "analyte_name": "Analyte Name",
+    "result": "Result",
+    "less_than_rl": "Less Than Reporting Level",
+    "reporting_level": "Reporting Level",
+}
+
+
+def _synthetic_row(**overrides):
+    row = {
+        "PS Code": "CA1010001_011_011",
+        "Sample Date": "03-27-2023",
+        "Sample Type": "RT",
+        "Analysis Date": "",
+        "Analyte Name": "NITRATE",
+        "Result": "1.0",
+        "Less Than Reporting Level": "",
+        "Reporting Level": "",
+    }
+    row.update(overrides)
+    return row
+
+
+def _validate_one(**overrides):
+    return importer.validate_rows(
+        [_synthetic_row(**overrides)], _SYNTHETIC_MAPPING
+    )[0]
+
+
+class TestRealDDWDates:
+    """Gap 1 — 40/40 real rows carry `MM-DD-YYYY`, which `parse_date` rejects.
+
+    32 of those 40 sample dates carry a second component greater than 12
+    (`01-13-2026` and the like), which is impossible to read as `DD-MM`. That
+    measurement is why a STRICT `%m-%d-%Y` is correct and a permissive or
+    sniffing parser is not: a format that can silently swap month and day
+    misdates lab evidence, and the swap is invisible for 12 days of every month.
+    """
+
+    def test_a_real_sample_date_is_read_as_month_first(self, ddw_validated):
+        row = ddw_validated[0]  # Sample Date 03-27-2023
+        assert row["errors"] == []
+        assert row["data"]["sample_date"] == date(2023, 3, 27)
+
+    def test_no_real_row_errors_on_its_sample_date(self, ddw_validated):
+        offenders = [
+            v["index"]
+            for v in ddw_validated
+            if any("is not a date" in e for e in v["errors"])
+        ]
+        assert offenders == []
+
+    def test_a_real_analysis_date_is_read_without_a_warning(self, ddw_validated):
+        row = ddw_validated[0]  # Analysis Date 03-28-2023
+        assert row["data"]["analysis_date"] == date(2023, 3, 28)
+        assert not [w for w in row["warnings"] if "Analysis date" in w]
+
+    def test_iso_dates_still_parse(self, ddw_system):
+        """Regression guard — the legacy `.csv` path is ISO and must not move."""
+        row = _validate_one(
+            **{"Sample Date": "2023-03-27", "Analysis Date": "2023-03-28"}
+        )
+        assert row["errors"] == []
+        assert row["data"]["sample_date"] == date(2023, 3, 27)
+        assert row["data"]["analysis_date"] == date(2023, 3, 28)
+
+    def test_a_day_first_date_is_rejected_not_silently_swapped(self, ddw_system):
+        """THE test that proves a strict `%m-%d-%Y` was added, not a permissive
+        parser. `13-01-2026` has no month 13, so it is unreadable — not a
+        licence to read it as 13 January."""
+        row = _validate_one(**{"Sample Date": "13-01-2026"})
+        assert any("is not a date" in e for e in row["errors"])
+        assert row["data"]["sample_date"] is None
+
+    def test_genuine_garbage_is_an_error_naming_both_accepted_formats(
+        self, ddw_system
+    ):
+        row = _validate_one(**{"Sample Date": "not-a-date"})
+        message = next(e for e in row["errors"] if "is not a date" in e)
+        assert "YYYY-MM-DD" in message
+        assert "MM-DD-YYYY" in message
+
+
+class TestRealDDWNonDetects:
+    """Gap 2 — 30/40 real rows report a non-detect as a BLANK `Result` cell
+    plus `Less Than Reporting Level = Y` and a `Reporting Level`.
+
+    Today the blank-cell check fires before the flag is ever consulted, so
+    three quarters of a genuine export errors out. A non-detect is a BOUND:
+    `result_value` stays NULL and the bound lives in `reporting_level`. It is
+    never coerced to zero, and an absent result is still not a non-detect.
+    """
+
+    def test_a_blank_result_with_the_flag_is_a_bound_not_an_error(
+        self, ddw_validated
+    ):
+        row = ddw_validated[0]  # blank Result, LT RL = Y, RL 0.500000000
+        assert row["errors"] == []
+        assert row["data"]["result_kind"] == RESULT_KIND_NUMERIC
+        assert row["data"]["result_value"] is None
+        assert row["data"]["less_than_rl"] is True
+        assert row["data"]["reporting_level"] == Decimal("0.5")
+
+    def test_no_real_row_errors_on_a_blank_result(self, ddw_validated):
+        offenders = [
+            v["index"]
+            for v in ddw_validated
+            if any("Result is blank" in e for e in v["errors"])
+        ]
+        assert offenders == []
+
+    def test_a_blank_result_without_the_flag_is_still_an_error(self, ddw_system):
+        """Absence of a result is not a non-detect. Nothing about an empty cell
+        says the lab looked and found nothing."""
+        row = _validate_one(**{"Result": "", "Less Than Reporting Level": ""})
+        assert any("Result is blank" in e for e in row["errors"])
+
+    def test_a_flagged_blank_with_no_reporting_level_is_an_error(self, ddw_system):
+        """A bound with no level is not information. Nothing downstream stops
+        it from rendering as `< None`, so it is refused at the door."""
+        row = _validate_one(
+            **{
+                "Result": "",
+                "Less Than Reporting Level": "Y",
+                "Reporting Level": "",
+            }
+        )
+        assert row["errors"], "a flagged blank with no level must not pass"
+        assert any("Reporting Level" in e for e in row["errors"])
+        assert row["data"].get("result_value") is None
+
+    def test_the_retired_less_than_prefix_still_works(self, ddw_system):
+        row = _validate_one(**{"Result": "<0.5"})
+        assert row["errors"] == []
+        assert row["data"]["less_than_rl"] is True
+        assert row["data"]["result_value"] is None
+        assert row["data"]["reporting_level"] == Decimal("0.5")
+
+    def test_a_real_numeric_result_is_still_stored_as_a_value(self, ddw_validated):
+        row = ddw_validated[1]  # CHROMIUM, HEX 2.5, LT RL = N
+        assert row["errors"] == []
+        assert row["data"]["result_value"] == Decimal("2.5")
+        assert row["data"]["less_than_rl"] is False
+
+
+class TestRealDDWSampleType:
+    """Gap 3 — 40/40 real rows carry `Sample Type = RT`, DDW's code for a
+    routine sample. Non-blocking, but it warns on every single row of a genuine
+    export, which trains an operator to ignore the warning column entirely."""
+
+    def test_the_ddw_routine_code_is_recognised_with_no_warning(
+        self, ddw_validated
+    ):
+        row = ddw_validated[0]
+        assert row["data"]["sample_type"] == "routine"
+        assert not [w for w in row["warnings"] if "Sample type" in w]
+
+    def test_no_real_row_warns_about_its_sample_type(self, ddw_validated):
+        offenders = [
+            v["index"]
+            for v in ddw_validated
+            if any("Sample type" in w for w in v["warnings"])
+        ]
+        assert offenders == []
+
+    @pytest.mark.parametrize(
+        "raw,expected",
+        [
+            ("routine", "routine"),
+            ("Repeat", "repeat"),
+            ("CONFIRMATION", "confirmation"),
+            ("Special", "special"),
+        ],
+    )
+    def test_the_platforms_own_vocabulary_still_passes_through(
+        self, ddw_system, raw, expected
+    ):
+        row = _validate_one(**{"Sample Type": raw})
+        assert row["data"]["sample_type"] == expected
+        assert not [w for w in row["warnings"] if "Sample type" in w]
+
+    def test_an_unrecognised_code_still_warns_and_records_routine(
+        self, ddw_system
+    ):
+        row = _validate_one(**{"Sample Type": "ZQ"})
+        assert row["data"]["sample_type"] == "routine"
+        assert any("Sample type" in w for w in row["warnings"])
+
+    def test_the_warning_echoes_the_code_as_the_file_wrote_it(self, ddw_system):
+        """An operator searches their file for the string the warning shows.
+        Lowercasing it means the search finds nothing."""
+        row = _validate_one(**{"Sample Type": "ZQ"})
+        warning = next(w for w in row["warnings"] if "Sample type" in w)
+        assert "'ZQ'" in warning
+
+
+class TestTheRealDDWSliceValidatesClean:
+    """Phase 80's acceptance gate: feed the state's genuine export through the
+    importer and get zero row errors, so PS Codes are actually exercised."""
+
+    def test_every_real_row_validates_without_an_error(self, ddw_validated):
+        errored = [
+            (v["index"], v["errors"]) for v in ddw_validated if v["errors"]
+        ]
+        assert errored == []
+        assert len(ddw_validated) == TAB_ROWS
+
+    def test_the_rows_were_read_correctly_not_merely_uncomplained_about(
+        self, ddw_validated
+    ):
+        """Zero errors is only half the claim. The SHAPE of the result set is
+        the other half: 30 bounded non-detects and 10 measured values."""
+        non_detects = [
+            v
+            for v in ddw_validated
+            if v["data"]["less_than_rl"] and v["data"]["result_value"] is None
+        ]
+        values = [v for v in ddw_validated if v["data"]["result_value"] is not None]
+        assert len(non_detects) == DDW_NON_DETECT_ROWS
+        assert len(values) == DDW_VALUE_ROWS
+        # Every non-detect carries the bound it is a bound OF.
+        for row in non_detects:
+            assert row["data"]["reporting_level"] is not None
+
+    def test_only_new_analyte_warnings_remain(self, ddw_validated):
+        """New-analyte warnings are the vocabulary-extension path working as
+        designed. Nothing else should be left."""
+        other = [
+            w
+            for v in ddw_validated
+            for w in v["warnings"]
+            if "new analyte" not in w
+        ]
+        assert other == []
+
+    def test_the_whole_slice_commits_without_tripping_a_check_constraint(
+        self, ddw_validated
+    ):
+        counts = importer.commit_rows(ddw_validated)
+        assert counts["skipped"] == 0
+        assert counts["results"] == TAB_ROWS
+        assert counts["events"] == DDW_EVENTS
+        assert SampleResult.objects.count() == TAB_ROWS
+        assert SampleEvent.objects.count() == DDW_EVENTS
+        # The bounds survived the write as bounds.
+        assert (
+            SampleResult.objects.filter(
+                less_than_rl=True, result_value__isnull=True
+            ).count()
+            == DDW_NON_DETECT_ROWS
+        )
+        assert (
+            SampleResult.objects.filter(result_value__isnull=False).count()
+            == DDW_VALUE_ROWS
+        )
