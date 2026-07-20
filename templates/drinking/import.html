@@ -16,8 +16,15 @@
 </div>
 {% endblock %}
 
+{% comment %}
+  Wider than `page-medium` (the usual form width) because the preview swaps a
+  seven-column, thirty-row table into this page. At the narrower measure the
+  status column wrapped "Will create" onto two lines for every row, which made
+  a clean import look like a page of warnings. Matches the results page's
+  1400px so preview and destination read at the same scale.
+{% endcomment %}
 {% block content %}
-<div class="page-stack page-medium">
+<div class="page-stack" style="max-width: 1400px;">
 
   <a href="{% url 'drinking:results' %}" class="back-link">&larr; Back to Sample Results</a>
 
