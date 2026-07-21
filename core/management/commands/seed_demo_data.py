@@ -5,6 +5,16 @@ Seed realistic demo data for a fictional California GSA.
 Creates a complete dataset spanning geography, parcels, wells, meters,
 water accounts, surface water rights, recharge sites, and ledger entries.
 Idempotent: skips creation if "Demo Valley GSA" boundary already exists.
+
+**REQUIRES A FULL DEPLOYMENT — every module enabled.** This is deliberate and
+is not the same promise ``seed_data`` makes. ``seed_data`` loads the reference
+vocabularies an operator needs whatever domains they run, so it is gated module
+by module. A demo, by contrast, exists to show the whole platform: it writes
+wells, meters, surface water rights and recharge sites, and a partial demo would
+be a different and less useful artifact rather than a smaller one. Run it on a
+default install; on a demoted deployment it will write rows into a switched-off
+module's tables, which is exactly what
+``test_schema_resident_module_tables_are_present_and_empty`` forbids.
 """
 import random
 from datetime import date, timedelta

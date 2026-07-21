@@ -13,14 +13,25 @@ from core.modules import is_enabled
 SEED_COMMANDS = [
     "seed_roles",
     "seed_water_types",
-    "seed_well_types",
-    "seed_data_sources",
 ]
 
 #: Seed commands owned by a module a deployment can switch off. Gated rather
 #: than listed above, so a district running without `drinking` still seeds
 #: cleanly instead of failing on a management command that does not exist.
 OPTIONAL_SEED_COMMANDS = [
+    # Phase 88-02, and this pair fails DIFFERENTLY from the three below it.
+    # `surface` and `reporting` are truly removable, so their commands cease to
+    # exist and `make seed` died loudly. `wells` and `datasync` are demoted
+    # model-only: the apps stay in INSTALLED_APPS, management commands are
+    # discovered from INSTALLED_APPS, so these two still exist and still run —
+    # quietly filling the tables of a switched-off module. A crash announces
+    # itself; this does not, and only
+    # `test_schema_resident_module_tables_are_present_and_empty` can see it.
+    #
+    # Listed FIRST so the resolved order on a full deployment is unchanged:
+    # roles, water types, well types, data sources, then the three below.
+    ("wells", "seed_well_types"),
+    ("datasync", "seed_data_sources"),
     ("drinking", "seed_drinking"),
     # Phase 87. `seed_water_right_types` is owned by `surface`; with the module
     # dropped the command does not exist and `make seed` died on it. Running it

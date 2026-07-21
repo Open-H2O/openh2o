@@ -3,6 +3,15 @@
 Run the full Merced Subbasin demonstration seed in dependency order, so a
 fresh server reproduces the whole demo with one command (``make merced``).
 
+**REQUIRES A FULL DEPLOYMENT — every module enabled**, and unlike ``seed_data``
+that is a deliberate answer rather than an oversight. ``seed_data`` loads
+reference vocabularies and is gated module by module so any configuration seeds
+cleanly. The Merced demo is a single interlocking story — wells feeding parcels
+feeding accounts, surface rights and diversions beside them — and a version of
+it with a domain removed would not be a smaller demo, it would be a broken one.
+On a demoted deployment it writes rows into a switched-off module's tables,
+which ``test_schema_resident_module_tables_are_present_and_empty`` forbids.
+
 Order matters:
   1. seed_merced_base       — the subbasin boundary (the spatial canvas).
   2. auto_populate          — real rivers/canals + monitoring stations from

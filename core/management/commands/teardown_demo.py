@@ -11,6 +11,13 @@ dashboard-totals commingling as a side effect.
 It is DELETE-ONLY (no reseed) and IDEMPOTENT: a second run, or a run against a
 basin that is already gone, is a clean no-op, not a crash.
 
+Unlike ``seed_demo_data`` and ``seed_merced``, this command does NOT require a
+full deployment. Its module-scope ``wells``/``datasync`` imports keep resolving
+under demotion (those apps stay in INSTALLED_APPS, model-only), and a delete
+against an empty table is the no-op the paragraph above already promises. A
+deletion command cannot leave a switched-off module populated, so there is
+nothing here for the schema-residency assertions to catch.
+
 WHY it is a new command and not a chain of the existing ``--flush`` paths.
 ``seed_demo_data._flush`` deletes every ``WY ...`` ReportingPeriod — the SHARED
 water-year buckets Merced also lives in — and both existing flushes delete their
