@@ -132,6 +132,37 @@ LIST_PAGES = tuple(
     if owner is None or owner in ENABLED_NAMES
 )
 
+#: Pages a visitor who is NOT signed in actually reaches, paired with their owner.
+#:
+#: Every render assertion in this file used ``auth_client`` until Plan 88-01.
+#: That left a real hole rather than a theoretical one: ``config/views.py::index``
+#: serves ``templates/home.html`` to a signed-in user and
+#: ``templates/index.html`` to an anonymous one, so **the public landing page had
+#: never been rendered under any drop configuration.** Two different templates
+#: live at the same URL and the harness only ever saw one of them.
+#:
+#: That gap has a name. ``/`` fails for ``wells`` via ``home.html``'s link, but
+#: NOT for ``datasync`` — even though ``index.html`` reverses
+#: ``datasync:station_list`` with no guard at all. The 88-02 failure list is
+#: understated by one page for exactly this reason.
+#:
+#: **Declared, and deliberately short.** Re-running every ``KEPT_PAGES`` entry
+#: anonymously would look like coverage and prove nothing: measured 2026-07-21,
+#: every other page 302s to login, and asserting a redirect proves the login
+#: wall works rather than that the page is honest. These three are the ones that
+#: return 200 without a session.
+_ANON_PAGES = (
+    ("/", None),
+    ("/about/", None),
+    # Public by design since Phase 7 — the health dashboard needs no login so an
+    # operator can check a sick instance they cannot sign in to.
+    ("/health/", "health"),
+)
+
+ANON_PAGES = tuple(
+    path for path, owner in _ANON_PAGES if owner is None or owner in ENABLED_NAMES
+)
+
 #: Words a kept page must not say when the owning module is dropped.
 #:
 #: This is the class ISS-082 named and nothing in this harness could see. 87-02
@@ -251,6 +282,12 @@ VOCABULARY_CHECKED_PAGES = tuple(
     path for path in KEPT_PAGES if path not in VOCABULARY_EXEMPT_PAGES
 )
 
+#: The same, for the anonymous list. Declared here rather than beside
+#: ``_ANON_PAGES`` only because the exemption set has to exist first.
+ANON_VOCABULARY_PAGES = tuple(
+    path for path in ANON_PAGES if path not in VOCABULARY_EXEMPT_PAGES
+)
+
 _SCRIPT_OR_STYLE = re.compile(r"(?is)<(script|style)\b[^>]*>.*?</\1\s*>")
 _HTML_COMMENT = re.compile(r"(?s)<!--.*?-->")
 _ANY_TAG = re.compile(r"(?s)<[^>]+>")
@@ -336,6 +373,19 @@ def auth_client():
     c.force_login(_UserFactory())
     c.cookies["nav_mode"] = "admin"
     return c
+
+
+@pytest.fixture
+def anon_client():
+    """A visitor with no session — the other half of ``config.views.index``.
+
+    Not merely ``auth_client`` without the login. ``index`` branches on
+    authentication and serves a DIFFERENT TEMPLATE to each side, so this fixture
+    is the only way any assertion in this file reaches ``templates/index.html``.
+    No ``nav_mode`` cookie: an anonymous visitor has not set one, and inventing
+    it would test a state no real visitor is in.
+    """
+    return Client()
 
 
 # ---------------------------------------------------------------------------
@@ -824,6 +874,109 @@ def test_kept_pages_never_name_a_dropped_module(auth_client, name):
             f"That page is describing water this deployment does not have. Fix "
             f"the copy — rewrite it module-neutrally if the sentence survives "
             f"it, or guard the noun on core.modules.is_enabled if it enumerates."
+        )
+
+
+# ---------------------------------------------------------------------------
+# The anonymous half (Plan 88-01 Task 5)
+# ---------------------------------------------------------------------------
+# Everything above renders as a signed-in superuser. `config/views.py::index`
+# serves a different template to a visitor with no session, so until now the
+# public landing page had never been rendered under any drop configuration at
+# all — not "tested weakly", never rendered.
+
+
+def test_anonymous_coverage_is_declared():
+    """Say out loud which pages the anonymous cases cover.
+
+    ``ANON_PAGES`` is filtered by owner, so a configuration that drops enough
+    could shrink it. An empty list would collect nothing and report nothing,
+    which looks exactly like coverage that ran — the failure shape this file
+    guards against in three other places already.
+    """
+    assert ANON_PAGES, (
+        "No page in this configuration is reachable without signing in, so the "
+        "anonymous assertion set is dormant. That is almost certainly wrong: "
+        "'/' and '/about/' have no owner and should always be here."
+    )
+
+
+@pytest.mark.parametrize("path", ANON_PAGES)
+def test_anonymous_page_renders(anon_client, path):
+    """200, not a redirect. These pages are public and must stay public.
+
+    A 302 here would mean the page still exists but has quietly grown a login
+    wall, which is a different regression from the one this file is about and
+    equally worth catching.
+    """
+    response = anon_client.get(path)
+    assert response.status_code == 200, (
+        f"{path} returned {response.status_code} to an anonymous visitor with "
+        f"{list(DROPPED_NAMES)} dropped."
+    )
+
+
+@pytest.mark.parametrize("name", DROPPED_NAMES)
+def test_anonymous_pages_carry_no_link_into_a_dropped_module(anon_client, name):
+    """The gap this task exists to close.
+
+    ``templates/index.html`` reverses ``wells:list``, ``parcels:list`` and
+    ``datasync:station_list`` with no guard on any of them. Today all three
+    modules are ``required=True``, so none can be dropped and this assertion
+    generates no case for them — dormant by construction, exactly like the
+    schema-resident set above.
+
+    **88-02 is its first real user, and it will go red there until the guards
+    land.** That is the point rather than a problem: without this test the
+    demotion's failure list is short by one page, and the missing page is the
+    public one.
+
+    Not marked xfail. An xfail needs a case to attach to, and there is no case
+    to attach one to until ``wells``/``datasync`` are optional — the parametrize
+    list simply does not include them yet.
+    """
+    spec = mod.MODULE_REGISTRY[name]
+    if not spec.url_prefix:
+        pytest.skip(f"{name!r} contributes no URL prefix, so there is no href to find.")
+
+    needle = f'href="/{spec.url_prefix}'
+    for path in ANON_PAGES:
+        body = anon_client.get(path).content.decode()
+        assert needle not in body, (
+            f"{path}, rendered for an ANONYMOUS visitor, carries a link into "
+            f"dropped module {name!r} (found {needle!r}). Note this is a "
+            f"different template from the signed-in render of the same URL — "
+            f"guarding home.html does not guard index.html."
+        )
+
+
+@pytest.mark.parametrize("name", DROPPED_NAMES)
+def test_anonymous_pages_never_name_a_dropped_module(anon_client, name):
+    """The vocabulary gate, over the pages the public actually sees.
+
+    ``/about/`` is the reason this matters and not a formality: it is a public
+    page that enumerates the domains the platform manages, and the signed-in
+    vocabulary check reads it only because it happens to also be in ``_PAGES``.
+    The anonymous render is a different response object built from a different
+    session state, and this is what reads it.
+    """
+    words = FORBIDDEN_VOCABULARY.get(name, ())
+    if not words:
+        pytest.skip(
+            f"{name!r} declares no user-facing vocabulary of its own — see the "
+            f"notes on _FORBIDDEN_VOCABULARY."
+        )
+
+    for path in ANON_VOCABULARY_PAGES:
+        text = visible_text(anon_client.get(path).content.decode())
+        found = find_forbidden_word(text, words)
+        assert found is None, (
+            f"{path}, rendered for an ANONYMOUS visitor, says {found[0]!r} with "
+            f"module {name!r} dropped.\n"
+            f"  ...{found[1]}...\n"
+            f"This is the public face of the deployment describing water it "
+            f"does not have. Note it is a different template from the signed-in "
+            f"render of the same URL."
         )
 
 
