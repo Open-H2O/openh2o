@@ -56,6 +56,26 @@ ENABLED_NAMES = tuple(settings.OPENH2O_MODULES)
 #: Everything the registry knows about that this process does NOT have.
 DROPPED_NAMES = tuple(n for n in mod.ALL_MODULE_NAMES if n not in ENABLED_NAMES)
 
+#: A dropped module falls into exactly one of two classes, and they get DIFFERENT
+#: assertion sets — which is the whole reason this split exists.
+#:
+#: *Truly removed* modules are gone in every sense: no apps in the registry, no
+#: tables in the database. *Schema-resident* modules are switched off but still
+#: installed model-only — their tables exist and sit empty, deliberately, so the
+#: eight relationships that point into them cannot dangle. Everything the
+#: operator can SEE is gone either way, and the route/nav assertions below are
+#: shared because that half of the promise is identical.
+#:
+#: Which set a module gets is read off ``spec.schema_resident``, not decided
+#: here. Same discipline as ``_PAGES``: declared by the owner, never derived.
+DROPPED_ABSENT_NAMES = tuple(
+    n for n in DROPPED_NAMES if not mod.MODULE_REGISTRY[n].schema_resident
+)
+
+DROPPED_RESIDENT_NAMES = tuple(
+    n for n in DROPPED_NAMES if mod.MODULE_REGISTRY[n].schema_resident
+)
+
 #: Every page the harness knows about, paired with the module that OWNS it.
 #:
 #: ``None`` means no module owns the page — it is served by ``config`` or a
@@ -256,7 +276,7 @@ def test_this_run_has_something_to_prove():
     )
 
 
-@pytest.mark.parametrize("name", DROPPED_NAMES)
+@pytest.mark.parametrize("name", DROPPED_ABSENT_NAMES)
 def test_dropped_module_is_absent_from_the_app_registry(name):
     """The most basic claim: Django never loaded it."""
     spec = mod.MODULE_REGISTRY[name]
@@ -292,7 +312,7 @@ def test_dropped_module_registers_no_routes(name):
         )
 
 
-@pytest.mark.parametrize("name", DROPPED_NAMES)
+@pytest.mark.parametrize("name", DROPPED_ABSENT_NAMES)
 def test_dropped_module_owns_no_tables(name):
     """None of its tables exist in the database.
 
@@ -316,6 +336,119 @@ def test_dropped_module_owns_no_tables(name):
     leaked = sorted(set(expected) & live)
     assert not leaked, (
         f"Module {name!r} was dropped but its tables still exist: {leaked}."
+    )
+
+
+# ---------------------------------------------------------------------------
+# The schema-resident assertion set
+# ---------------------------------------------------------------------------
+# A schema-resident module that is switched off keeps its schema and loses
+# everything else. The route and nav assertions above and below already cover the
+# "loses everything else" half for both classes; these three cover the half that
+# is the OPPOSITE of the truly-removed set — where that one demands absence, this
+# one demands presence-and-emptiness.
+#
+# Nothing exercises this today. No module is both optional and schema-resident,
+# so `DROPPED_RESIDENT_NAMES` is empty in every case the harness currently
+# generates, and these tests collect zero parameters. Phase 88 is their first
+# real user, when `wells` and `datasync` are demoted model-only.
+
+
+def test_schema_resident_coverage_is_declared():
+    """Say out loud whether this run exercises the schema-resident set.
+
+    An empty ``parametrize`` list collects nothing and reports nothing, which is
+    indistinguishable from coverage that ran and passed. A skip is visible in the
+    output; silence is not. This is the same reasoning as
+    ``test_this_run_has_something_to_prove`` above, applied one level down —
+    and note it deliberately does NOT weaken that test, which still requires the
+    run to be dropping *something*.
+    """
+    if not DROPPED_RESIDENT_NAMES:
+        pytest.skip(
+            "No dropped module is schema-resident in this configuration, so the "
+            "schema-resident assertion set is dormant by construction. Phase 88 "
+            "is its first user (wells and datasync, demoted model-only)."
+        )
+
+
+@pytest.mark.parametrize("name", DROPPED_RESIDENT_NAMES)
+def test_schema_resident_module_keeps_its_app(name):
+    """Switched off, still installed. This is the tier's whole mechanism.
+
+    If the app were absent, its tables would never be migrated and the eight
+    references pointing into it would dangle — which is precisely the failure
+    schema-residency exists to avoid.
+    """
+    spec = mod.MODULE_REGISTRY[name]
+    installed = {config.name for config in django_apps.get_app_configs()}
+    installed |= {config.label for config in django_apps.get_app_configs()}
+    missing = [app for app in spec.apps if app not in installed]
+    assert not missing, (
+        f"Module {name!r} is schema-resident, so being left out of "
+        f"OPENH2O_MODULES must NOT remove it from INSTALLED_APPS — but "
+        f"{missing} are absent from the app registry. Its tables will not exist, "
+        f"and every reference into it dangles."
+    )
+
+
+@pytest.mark.parametrize("name", DROPPED_RESIDENT_NAMES)
+def test_schema_resident_module_tables_are_present_and_empty(name):
+    """Present, because the schema stays. Empty, because the module is off.
+
+    Read off the live app registry rather than parsed out of the migration
+    files: the app IS installed here, so the registry is available and is the
+    more direct answer. (The truly-removed set has to parse migrations precisely
+    because its app is gone.)
+    """
+    spec = mod.MODULE_REGISTRY[name]
+    tables = sorted(
+        model._meta.db_table
+        for app in spec.apps
+        for model in django_apps.get_app_config(app).get_models()
+    )
+    if not tables:
+        pytest.skip(f"{name!r} owns zero models, so there is no table to check.")
+
+    with connection.cursor() as cursor:
+        live = set(connection.introspection.table_names(cursor))
+
+        absent = sorted(set(tables) - live)
+        assert not absent, (
+            f"Module {name!r} is schema-resident but these tables were never "
+            f"created: {absent}. A disabled schema-resident module keeps its "
+            f"schema — that is the difference between demoting it and removing it."
+        )
+
+        populated = []
+        for table in tables:
+            cursor.execute(f'SELECT EXISTS (SELECT 1 FROM "{table}")')
+            if cursor.fetchone()[0]:
+                populated.append(table)
+
+    assert not populated, (
+        f"Module {name!r} is switched off but these tables have rows in them: "
+        f"{populated}. Something is still seeding or writing a disabled module."
+    )
+
+
+@pytest.mark.parametrize("name", DROPPED_RESIDENT_NAMES)
+def test_schema_resident_module_contributes_no_seed_commands(name):
+    """Its tables exist; nothing fills them.
+
+    ``spec.seed_commands`` is resolved off the ENABLED specs, so a disabled
+    module's commands are simply never reached. This asserts the outcome rather
+    than trusting the mechanism.
+    """
+    spec = mod.MODULE_REGISTRY[name]
+    enabled_seeds = [
+        cmd for enabled in mod.enabled_modules(list(ENABLED_NAMES))
+        for cmd in enabled.seed_commands
+    ]
+    still_running = [cmd for cmd in spec.seed_commands if cmd in enabled_seeds]
+    assert not still_running, (
+        f"Module {name!r} is switched off but its seed command(s) "
+        f"{still_running} are still in the resolved set."
     )
 
 

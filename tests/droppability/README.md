@@ -9,16 +9,60 @@ is what makes that a tested promise rather than a claim in a docstring. For ever
 module in `OPTIONAL_MODULE_NAMES` — and once more with all of them gone at the
 same time — it boots a Django process that never had the module and asserts:
 
-- the module's apps are absent from the app registry;
+**For every dropped module, whichever class it is in:**
+
 - its nav `url_name`s raise `NoReverseMatch` and its URL prefix returns **404**,
   not a 500 and not a redirect to login (a dropped module is *absent*, not
   *protected*);
-- none of its database tables exist;
+- the rendered sidebar carries no `href` into the dropped module's prefix;
 - every page a deployment *keeps* still renders 200 — in three database states:
   pristine, configured-but-empty, and populated;
 - a detail page renders too (`/surface/diversion/<pk>/`), because detail panes
-  reach into other modules in ways no list page does;
-- the rendered sidebar carries no `href` into the dropped module's prefix.
+  reach into other modules in ways no list page does.
+
+## Two assertion sets, chosen by the registry
+
+Everything above is the half of the promise that is identical for every dropped
+module: **what the operator can see is gone**. What happens to the *schema*
+depends on which class the module is in, so the harness carries two sets and
+picks per module from `spec.schema_resident` — declared by the owner, never
+derived, the same discipline as the page table below.
+
+| | Truly removed (`schema_resident=False`) | Schema-resident (`schema_resident=True`) |
+|---|---|---|
+| App in the registry | **absent** | **present** |
+| Its database tables | **absent** | **present and empty** |
+| Seed commands | not run | not run |
+| Routes / nav / pages | gone | gone |
+
+Schema-residency is how a module gets switched off without breaking the
+relationships that point *into* it — the eight recorded in
+`core/modules.py::SCHEMA_EXCEPTIONS`. Its tables have to keep existing or those
+references dangle and `migrate` dies building the migration graph.
+
+**The second set is dormant today.** No module is both optional and
+schema-resident, so it collects zero cases — and rather than reporting that as
+silent success, `test_schema_resident_coverage_is_declared` skips with a message
+saying so. Phase 88 is its first real user, when `wells` and `datasync` are
+demoted model-only.
+
+## Cases are dependency-closure-aware
+
+A case does not drop one module; it drops that module's **requires-closure** —
+the module plus every *optional* module that transitively requires it. Dropping
+X while something that needs X stays enabled is not a droppability test at all:
+the child would die in `validate_module_names` before rendering a page, and the
+harness would be testing the validator while looking like a gate.
+`test_case_is_the_exact_requires_closure_and_validates` pins exactly that, per
+case.
+
+Today every closure is a single module, so the generated cases are identical to
+the pre-closure ones. **Phase 87 is what changes it**: `recharge` declares
+`requires=(..., "surface")`, so the day `surface` becomes optional, dropping it
+validly takes `recharge` with it — and the harness generates that configuration
+with no edit to any test file. `drop_closure()` carries a visited set because
+`requires` may contain cycles (`measurements` and `standards` genuinely
+reference each other).
 
 ## The page list is owner-declared
 
@@ -70,13 +114,20 @@ nothing to assert; if the default suite collected it, it would be a permanently
 green no-op that looks like coverage. A guard test inside it fails loudly if the
 dropped set turns out to be empty.
 
-## Adding a module to the gate (Phases 82-85)
+## Adding a module to the gate (Phases 87-89)
 
 To bring a newly decoupled module under this harness, flip `required=False` in
-`core/modules.py` and update `tests/test_modules.py::TestDroppabilityPromise` —
-the harness reads `OPTIONAL_MODULE_NAMES` and picks it up with no edit to any
-assertion here. If the module owns a page the gate does not yet cover, append one
-row to `_PAGES` with the module as its owner. That is the whole extension point.
+`core/modules.py` — and, if it is being demoted rather than removed,
+`schema_resident=True` alongside it. The harness reads `OPTIONAL_MODULE_NAMES`
+and `spec.schema_resident` and picks the module up with no edit to any assertion
+here. If it owns a page the gate does not yet cover, append one row to `_PAGES`
+with the module as its owner. That is the whole extension point.
+
+**Two registry pins have to move with the flag, not one.**
+`tests/test_modules.py::TestDroppabilityPromise` and
+`tests/test_module_template_guards.py::test_optional_module_names_is_what_we_think`
+both hold the droppable set. Phase 82 updated only the first and the second went
+red on the flip.
 
 Two things to carry with you when you do:
 
