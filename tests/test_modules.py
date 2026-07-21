@@ -197,20 +197,28 @@ class TestValidation:
 class TestDroppabilityPromise:
     """Pin exactly which modules a deployment can omit today.
 
-    Nine modules are required. Four structurally (core owns AUTH_USER_MODEL,
+    Eight modules are required. Four structurally (core owns AUTH_USER_MODEL,
     geography owns the boundary spine, measurements and standards are FK'd
-    vocabularies). Five because they are imported at module scope by apps that
+    vocabularies). Four because they are imported at module scope by apps that
     stay enabled, so omitting one removes it from INSTALLED_APPS and the next
     model import raises. Marking them required turns that into a clear startup
-    error. Decoupling the remaining five is tracked as ISS-072.
+    error. Decoupling the remaining four is tracked as ISS-080.
 
-    That second group was six until Phase 82 moved `recharge` out of it.
+    That second group was six until Phase 82 moved `recharge` out of it, and
+    five until Phase 87 moved `surface`.
 
     If a later phase decouples one, this test is where the promise changes.
     """
 
     def test_optional_modules_are_exactly_the_droppable_leaves(self):
         assert mod.OPTIONAL_MODULE_NAMES == (
+            # Phase 87 (2026-07-21). Sixteen cross-app model imports moved to
+            # function scope, five kept templates guarded (plus one reasoned
+            # exemption), `seed_water_right_types` module-gated, six test
+            # factories guarded, and seven view-side couplings closed. Truly
+            # removable, not merely hidden: no SCHEMA_EXCEPTIONS record targets
+            # it. Dropping it drags `recharge` out too, via `recharge.requires`.
+            "surface",
             # Phase 82 (2026-07-20). The first module to earn its slot here by
             # decoupling rather than by never having been coupled: eight
             # cross-app model imports moved to function scope, five templates
@@ -235,7 +243,7 @@ class TestDroppabilityPromise:
             "measurements",
             "standards",
             "accounting",
-            "surface",
+            # `surface` sat here until Phase 87 decoupled it.
             "datasync",
         )
 

@@ -51,7 +51,18 @@ CASES = tuple(OPTIONAL_MODULE_NAMES) + (None,)
 
 
 def _case_id(case):
-    return "all-optional-dropped" if case is None else f"without-{case}"
+    """Name a case by everything it actually drops, not just the module it targets.
+
+    Phase 87: `without-surface` boots without `recharge` too, because the closure
+    below drags it out. An id that named only `surface` would understate what
+    `make test-droppable` just proved. Display only — no assertion depends on it.
+    """
+    if case is None:
+        return "all-optional-dropped"
+    gone = sorted(drop_closure(case))
+    if gone == [case]:
+        return f"without-{case}"
+    return "without-" + "+".join([case] + [n for n in gone if n != case])
 
 
 def drop_closure(dropped, registry=None, optional=None) -> frozenset:
@@ -210,23 +221,27 @@ class TestDropClosure:
         assert drop_closure("a", registry, ("a", "b", "c")) == {"a", "b"}
 
     def test_todays_registry_closes_over_single_modules(self):
-        """The zero-behavior-change proof, stated as a fact rather than a hope.
+        """The closure list, stated as a fact rather than a hope.
 
-        No optional module requires another one right now, so every case this
-        file generates is byte-identical to the pre-closure ones. Phase 87 is
-        entitled to change this; nothing before it is.
+        Phase 86 wrote this to go red on exactly one event, and Phase 87 is that
+        event: `recharge` declares `requires=(..., "surface")`, so the moment
+        `surface` became optional, dropping it validly took `recharge` with it —
+        and the harness generated the `without-surface+recharge` case with no
+        edit to any file under `tests/droppability/`. Confirmed 2026-07-21, not
+        merely re-baselined.
+
+        Every other optional module still closes over itself alone.
         """
         multi = {
             name: sorted(drop_closure(name))
             for name in OPTIONAL_MODULE_NAMES
             if drop_closure(name) != {name}
         }
-        assert not multi, (
-            f"These cases now drop more than the module they name: {multi}. That "
-            f"is correct behaviour if a phase just made one optional module "
-            f"depend on another (Phase 87 does exactly this for surface and "
-            f"recharge) — confirm the new case list is what you intended, then "
-            f"update this pin."
+        assert multi == {"surface": ["recharge", "surface"]}, (
+            f"The set of cases that drop more than the module they name has "
+            f"changed: {multi}. That is correct behaviour if a phase just made "
+            f"one optional module depend on another — confirm the new case list "
+            f"is what you intended, then update this pin."
         )
 
 

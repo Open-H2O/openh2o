@@ -97,5 +97,9 @@ def test_optional_module_names_is_what_we_think():
         # real work: five kept templates linked into `recharge` unguarded until
         # that phase, and this file could not see them while it was required.
         "recharge",
+        # Phase 87 (2026-07-21). Five kept templates linked into `surface`
+        # unguarded, plus one EXEMPT entry above for the recharge detail pane,
+        # which can only render where surface is present anyway.
+        "surface",
     }
     assert all(not MODULE_REGISTRY[n].required for n in OPTIONAL_MODULE_NAMES)
