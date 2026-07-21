@@ -120,6 +120,29 @@ class WellIrrigatedParcelFactory(factory.django.DjangoModelFactory):
     fraction = Decimal("1.0000")
 
 
+# `datasync` is schema-resident from Phase 88: demoted it stays in
+# INSTALLED_APPS, so these two resolve their `Meta.model` in every valid
+# configuration and need no `is_enabled` block (unlike the truly-removable
+# `surface` and `recharge` groups further down).
+class DataSourceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "datasync.DataSource"
+
+    name = factory.Sequence(lambda n: f"Data Source {n}")
+    code = factory.Sequence(lambda n: f"DS{n}")
+
+
+class MonitoredStationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "datasync.MonitoredStation"
+
+    data_source = factory.SubFactory(DataSourceFactory)
+    external_station_id = factory.Sequence(lambda n: f"EXT-{n:04d}")
+    station_name = factory.Sequence(lambda n: f"Station {n}")
+    location = factory.LazyFunction(lambda: Point(-119.5, 36.5))
+    is_active = True
+
+
 class WaterTypeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "accounting.WaterType"

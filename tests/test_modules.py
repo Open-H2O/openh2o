@@ -197,21 +197,31 @@ class TestValidation:
 class TestDroppabilityPromise:
     """Pin exactly which modules a deployment can omit today.
 
-    Eight modules are required. Four structurally (core owns AUTH_USER_MODEL,
+    Six modules are required. Four structurally (core owns AUTH_USER_MODEL,
     geography owns the boundary spine, measurements and standards are FK'd
-    vocabularies). Four because they are imported at module scope by apps that
-    stay enabled, so omitting one removes it from INSTALLED_APPS and the next
-    model import raises. Marking them required turns that into a clear startup
-    error. Decoupling the remaining four is tracked as ISS-080.
+    vocabularies). Two — `parcels` and `accounting` — because of database
+    arrows, not imports: `geography.ParcelZone.parcel` reaches into `parcels`
+    from a module everybody gets, and the two are migration-entangled in both
+    directions. Phase 89 owns them.
 
-    That second group was six until Phase 82 moved `recharge` out of it, and
-    five until Phase 87 moved `surface`.
+    **The counts in this docstring are prose, and prose is not enforced by the
+    assertions below** (Phase 87's warning). Read them as commentary; the two
+    tests are the contract.
+
+    The "not yet decoupled" group was six until Phase 82 moved `recharge` out,
+    five until Phase 87 removed `surface`, and Phase 88 demoted `wells` and
+    `datasync` model-only — leaving two.
 
     If a later phase decouples one, this test is where the promise changes.
     """
 
     def test_optional_modules_are_exactly_the_droppable_leaves(self):
         assert mod.OPTIONAL_MODULE_NAMES == (
+            # Phase 88 (2026-07-21). DEMOTED, not removed: optional AND
+            # schema-resident, so the app stays installed and the tables stay
+            # empty. Four SCHEMA_EXCEPTIONS records point into it, which is what
+            # makes removal unavailable and residency necessary.
+            "wells",
             # Phase 87 (2026-07-21). Sixteen cross-app model imports moved to
             # function scope, five kept templates guarded (plus one reasoned
             # exemption), `seed_water_right_types` module-gated, six test
@@ -224,6 +234,9 @@ class TestDroppabilityPromise:
             # cross-app model imports moved to function scope, five templates
             # and two view-side couplings guarded.
             "recharge",
+            # Phase 88 (2026-07-21). Demoted alongside `wells`, pinned by
+            # `standards.Datastream.monitored_station`.
+            "datasync",
             "reporting",
             "health",
             "setup",
@@ -239,12 +252,11 @@ class TestDroppabilityPromise:
             "core",
             "geography",
             "parcels",
-            "wells",
             "measurements",
             "standards",
             "accounting",
-            # `surface` sat here until Phase 87 decoupled it.
-            "datasync",
+            # `surface` sat here until Phase 87 removed it; `wells` and
+            # `datasync` until Phase 88 demoted them model-only.
         )
 
     def test_every_required_module_explains_itself(self):
@@ -317,26 +329,50 @@ class TestSchemaResidentTier:
     """
 
     def test_todays_schema_resident_set_is_pinned(self):
-        assert mod.SCHEMA_RESIDENT_MODULE_NAMES == ("measurements", "standards")
-        # Both axes at once: standard AND schema-resident. The flags are
-        # independent, and these two happen to carry both.
-        for name in mod.SCHEMA_RESIDENT_MODULE_NAMES:
-            assert mod.MODULE_REGISTRY[name].required is True
+        # Registry order, not alphabetical: `wells` is declared before
+        # `measurements` and `standards`, `datasync` after them.
+        assert mod.SCHEMA_RESIDENT_MODULE_NAMES == (
+            "wells",
+            "measurements",
+            "standards",
+            "datasync",
+        )
+        # The two axes are independent and this set now proves it rather than
+        # asserting it: `measurements` and `standards` are standard AND
+        # schema-resident (nobody may omit them, and their tables would stay
+        # either way); `wells` and `datasync` are optional AND schema-resident,
+        # which is the combination that makes the tier do work.
+        assert [
+            name
+            for name in mod.SCHEMA_RESIDENT_MODULE_NAMES
+            if mod.MODULE_REGISTRY[name].required
+        ] == ["measurements", "standards"]
 
-    def test_the_tier_is_dormant_today(self):
-        """No module is both optional and schema-resident yet.
+    def test_the_tier_is_live_and_names_who_exercises_it(self):
+        """The successor to `test_the_tier_is_dormant_today`, which fired as designed.
 
-        When Phase 88 makes one, this fails — deliberately. That is the moment
-        to confirm the droppability harness's schema-resident assertion set is
-        actually being exercised (``tests/droppability/checks.py``), because
-        until then it skips.
+        That test asserted no module was both optional and schema-resident, and
+        instructed whoever broke it to confirm the droppability harness had
+        started running its schema-resident assertion set instead of skipping
+        it. Phase 88 broke it, did that checking (88-02 Task 6: the four
+        assertions were watched collecting for `wells` and `datasync`, and
+        `test_schema_resident_module_tables_are_present_and_empty` was watched
+        going red on a deliberately reverted seed gate), and this is its
+        replacement.
+
+        It is deliberately NOT deleted. A tier with nothing exercising it is
+        indistinguishable from a tier that works, which is the failure shape
+        this codebase guards against in four other places — so the assertion
+        flips from "nobody" to "exactly these two, by name".
         """
         live = set(mod.OPTIONAL_MODULE_NAMES) & set(mod.SCHEMA_RESIDENT_MODULE_NAMES)
-        assert not live, (
-            f"{sorted(live)} are now optional AND schema-resident, so the "
-            f"dormant composition path is live. Update this pin, and check that "
-            f"tests/droppability/checks.py is running its schema-resident "
-            f"assertion set rather than skipping it."
+        assert live == {"wells", "datasync"}, (
+            f"The optional-and-schema-resident set is {sorted(live)}, not "
+            f"['datasync', 'wells']. If a module was added here, confirm "
+            f"tests/droppability/checks.py generates a `without-<module>` case "
+            f"for it and that the schema-resident assertion set COLLECTS rather "
+            f"than skips — an empty parametrize list looks exactly like coverage "
+            f"that ran and passed."
         )
 
     def test_default_installed_apps_are_unchanged_by_the_tier(self):
@@ -402,17 +438,56 @@ class TestSchemaResidentTier:
         assert "ghost" not in mod.installed_apps_for(without)
 
     def test_required_check_is_not_relaxed_for_schema_resident_modules(self):
-        """Schema-residency is not a licence to omit a required module.
+        """Schema-residency is not a licence to omit a REQUIRED module.
 
-        ``measurements`` and ``standards`` carry both flags. The tier says what
-        happens *if* they are ever omitted; it does not make omitting them legal
-        today, and Phase 88 is the first phase entitled to change that.
+        ``validate_module_names`` was deliberately not relaxed when the tier was
+        built (Phase 86): residency says what happens *if* a module is omitted,
+        it does not say who may omit one. That is still true — but Phase 88 was
+        "the first phase entitled to change that" for a different reason than
+        the original wording implied. It did not relax the check; it flipped
+        ``required`` on two modules that also carry residency, so the two halves
+        of this test now genuinely differ and each one proves something.
+
+        `measurements` and `standards` are required AND resident: omitting
+        either is refused. `wells` and `datasync` are optional AND resident:
+        omitting either is accepted, and the app stays in INSTALLED_APPS anyway,
+        which is the entire mechanism.
+
+        Dependents are dropped alongside, because omitting a module while
+        something that ``requires`` it stays would raise for a reason that has
+        nothing to do with residency — and that near-miss is what made the
+        earlier version of this test pass for `wells` while it should not have.
         """
         for name in mod.SCHEMA_RESIDENT_MODULE_NAMES:
-            names = [n for n in mod.ALL_MODULE_NAMES if n != name]
-            with pytest.raises(ImproperlyConfigured) as exc:
-                mod.validate_module_names(names)
-            assert name in str(exc.value)
+            spec = mod.MODULE_REGISTRY[name]
+            # Only OPTIONAL dependents come out. A required dependent cannot be
+            # dropped, so removing it would move the failure to a different
+            # module and this test would assert the wrong name -- which is what
+            # the first draft of this loop did for `standards` (it dragged
+            # `measurements` out and got that name back instead).
+            dropped = {name}
+            changed = True
+            while changed:
+                changed = False
+                for candidate, cspec in mod.MODULE_REGISTRY.items():
+                    if candidate in dropped or cspec.required:
+                        continue
+                    if dropped & set(cspec.requires):
+                        dropped.add(candidate)
+                        changed = True
+            names = [n for n in mod.ALL_MODULE_NAMES if n not in dropped]
+            if spec.required:
+                with pytest.raises(ImproperlyConfigured) as exc:
+                    mod.validate_module_names(names)
+                assert name in str(exc.value)
+                continue
+
+            assert name not in mod.validate_module_names(names), name
+            still_installed = mod.installed_apps_for(names)
+            assert all(app in still_installed for app in spec.apps), (
+                f"{name!r} is schema-resident, so omitting it must leave "
+                f"{list(spec.apps)} in INSTALLED_APPS -- got {still_installed}."
+            )
 
 
 class TestNavResolution:

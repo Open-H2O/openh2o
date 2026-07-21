@@ -89,6 +89,14 @@ def test_optional_module_names_is_what_we_think():
     """
     assert set(OPTIONAL_MODULE_NAMES) == {
         "reporting", "health", "setup", "infrastructure", "feedback",
+        # Phase 88 (2026-07-21). DEMOTED model-only rather than removed: the
+        # apps stay in INSTALLED_APPS and the tables stay, so no import moved
+        # and nothing crashed — which is exactly why the template guards are the
+        # whole visible failure surface, and why this file's coverage of them
+        # matters more here than it did for `surface`. Eleven kept-template
+        # sites needed a guard (the twelfth, drinking/overview.html, was already
+        # guarded by Phase 77-02).
+        "wells", "datasync",
         # Phase 78. Droppable from the day it lands, by construction rather
         # than by later decoupling — nothing outside `drinking/` imports it.
         "drinking",

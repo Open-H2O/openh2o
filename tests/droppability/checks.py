@@ -99,6 +99,9 @@ _PAGES = (
     ("/help/glossary/", None),
     ("/map/", "geography"),
     ("/wells/", "wells"),
+    # Phase 88: `datasync` became droppable, so its own landing page joins the
+    # table. Declared, like every other row here.
+    ("/datasync/stations/", "datasync"),
     ("/parcels/", "parcels"),
     ("/recharge/", "recharge"),
     ("/surface/", "surface"),
@@ -120,6 +123,7 @@ KEPT_PAGES = tuple(
 #: so an unfiltered row here would fail on the lookup, not on the render.
 _LIST_PAGES = (
     ("/wells/", "WellFactory", "wells"),
+    ("/datasync/stations/", "MonitoredStationFactory", "datasync"),
     ("/parcels/", "ParcelFactory", "parcels"),
     ("/recharge/", "RechargeSiteFactory", "recharge"),
     ("/surface/", "PointOfDiversionFactory", "surface"),

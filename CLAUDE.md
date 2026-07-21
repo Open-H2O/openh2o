@@ -209,12 +209,23 @@ either violation:
    tuple** in `core/modules.py`. An undeclared edge is a dependency nobody can
    see until a deployment breaks on it.
 
-Eight pre-existing violations are tolerated, and only as the reasoned records in
+Nine pre-existing violations are tolerated, and only as the reasoned records in
 `core/modules.py::SCHEMA_EXCEPTIONS` — each naming why it stands and what
-turning it around would cost. The tripwire fails on a ninth, and equally on a
+turning it around would cost. The tripwire fails on a tenth, and equally on a
 record that no longer matches real code. It derives the graph from Django's live
 app registry, never from grep, because grep has already missed a reverse
 accessor and a multi-line field declaration in this codebase.
+
+**Four of the six optional modules got there by DEMOTION, not removal, and the
+difference is worth knowing before you plan work against them.** `recharge` and
+`surface` are truly removable: their apps leave `INSTALLED_APPS` and their tables
+go. `wells` and `datasync` (Phase 88) are `schema_resident=True` — switched off,
+they keep their apps and their empty tables, because nine backwards arrows point
+into them and would otherwise dangle. The practical consequence: demoting a
+module breaks **nothing** at import time, so `manage.py check` staying clean
+proves nothing. What breaks is what the operator can see — routes, nav links,
+seed commands, counts and prose — and `make test-droppable` is the only thing
+that looks.
 
 ## Key Constraints
 

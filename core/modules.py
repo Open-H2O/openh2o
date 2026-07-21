@@ -50,8 +50,8 @@ has already missed a reverse accessor and a multi-line field declaration in this
 codebase (Phase 82). That test lives in ``tests/`` rather than here precisely
 because it needs the live registry, which this file must never touch.
 
-The eight pre-existing violations are tolerated only as the written, reasoned
-records in ``SCHEMA_EXCEPTIONS`` below. The tripwire fails on a ninth — and
+The nine pre-existing violations are tolerated only as the written, reasoned
+records in ``SCHEMA_EXCEPTIONS`` below. The tripwire fails on a tenth — and
 equally on an exception record that has outlived the code it excused, so the
 allowlist can never quietly become fiction.
 
@@ -69,24 +69,33 @@ app remains in ``INSTALLED_APPS``, its migrations run and its tables sit empty,
 but it contributes no URLs, no nav, no seed commands and no pages. Everything an
 operator can see is gone; only the schema stays. This is the class
 ``measurements`` and ``standards`` have always belonged to informally, now said
-out loud — and it is the mechanism that lets v2.4 hide ``wells``, ``datasync``,
-``parcels`` and ``accounting`` (Phases 88-89) without deleting the
-relationships that eight other models depend on. True removal (tables gone too)
-stays available per section as a priced option; see ISSUES.md.
+out loud — and since Phase 88 it is a live mechanism rather than a dormant one:
+``wells`` and ``datasync`` are the first modules that are optional AND
+schema-resident at the same time, which is the combination the tier was built
+for. ``parcels`` and ``accounting`` follow in Phase 89. True removal (tables gone
+too) stays available per section as a priced option; see ISSUES.md.
 
 The standard set today: ``core`` and ``geography``, plus the invisible
 vocabularies ``measurements`` and ``standards``. Everything else is a water
-domain and is meant to be optional. Six modules are still pinned ``required``
-because they are not yet decoupled — ``parcels``, ``wells``, ``accounting``,
-``surface`` and ``datasync`` are imported at module scope by call sites in apps
-that stay enabled, so omitting one removes it from ``INSTALLED_APPS`` and the
-very next model import raises. Marking them required turns that into a clear
-startup error rather than an opaque ``app_label`` RuntimeError. v2.4 Phases
-87-89 are the work that moves them.
+domain and is meant to be optional. Two water domains are still pinned
+``required`` — ``parcels`` and ``accounting`` — and the reason is a database
+arrow, not an import: ``geography.ParcelZone.parcel`` points into ``parcels``
+from a module everybody gets, and ``parcels`` and ``accounting`` are
+migration-entangled in both directions. Phase 89 is the work that moves them.
+
+**"Not yet decoupled" was the wrong diagnosis, and Phase 88 measured it.** Four
+of these six carried a ``required_reason`` blaming module-scope imports. Demoted
+model-only, the app stays in ``INSTALLED_APPS`` and every one of those imports
+keeps resolving — ``manage.py check`` is clean with ``wells`` and ``datasync``
+both switched off and zero imports moved. What breaks under demotion is what the
+operator can SEE: routes, nav, seeds, counts and words.
 
 Droppable today: ``reporting``, ``health``, ``setup``, ``infrastructure``,
-``feedback``, ``drinking`` — and ``recharge``, which Phase 82 (2026-07-20)
-decoupled as the pilot.
+``feedback``, ``drinking`` — ``recharge``, which Phase 82 (2026-07-20)
+decoupled as the pilot — ``surface``, removed outright by Phase 87 — and
+``wells`` and ``datasync``, demoted model-only by Phase 88. The last two are the
+distinction the two-tier semantic exists for: switched off but schema-resident,
+because eight-going-on-nine backwards arrows point into them.
 
 **Keep these paragraphs current.** A stale docstring here does not throw; it just
 gets believed. The predecessor of this text drifted exactly that way, still
@@ -235,11 +244,12 @@ class ModuleSpec:
     #: operator can see is gone; only the schema stays.
     #:
     #: **Independent of ``required``.** ``measurements`` and ``standards`` are
-    #: both today: standard (nobody may omit them) AND schema-resident. The flag
-    #: only starts doing work when a module is optional and schema-resident at
-    #: the same time, which is what Phase 88 makes ``wells`` and ``datasync``.
-    #: Until then the composition path below is dormant — implemented, unit
-    #: tested against hypothetical module lists, and exercised by nothing.
+    #: both: standard (nobody may omit them) AND schema-resident, so the flag
+    #: does no work on either. It starts doing work when a module is optional
+    #: and schema-resident at the same time — which since Phase 88 (2026-07-21)
+    #: ``wells`` and ``datasync`` are. The composition path below is live, and
+    #: ``make test-droppable`` exercises it in the ``without-wells`` and
+    #: ``without-datasync`` cases.
     schema_resident: bool = False
 
 
@@ -392,10 +402,18 @@ MODULE_REGISTRY: dict = {
         # `parcels` for WellIrrigatedParcel.parcel, `measurements` for
         # WellMeter.meter — both measured, both undeclared before v2.4.
         requires=("geography", "parcels", "measurements"),
-        required=True,
-        required_reason=(
-            "not yet decoupled: wells.models is imported at module scope by reporting, geography, infrastructure and config views"
-        ),
+        # DEMOTED model-only in Phase 88 (2026-07-21), not removed. The old
+        # `required_reason` claimed module-scope imports were the barrier; that
+        # was measured and found false — `manage.py check` is clean with `wells`
+        # demoted and ZERO imports moved, because a schema-resident module stays
+        # in INSTALLED_APPS. What actually pinned it is the other direction:
+        # three SCHEMA_EXCEPTIONS records point INTO `wells`
+        # (measurements.Sensor.well, measurements.WaterMeasurement.well,
+        # standards.Datastream.well), plus drinking.SystemFacility.well added by
+        # this phase. Its tables therefore stay in every configuration so those
+        # references cannot dangle; everything the operator can see goes.
+        required=False,
+        schema_resident=True,
     ),
     "measurements": ModuleSpec(
         name="measurements",
@@ -599,10 +617,15 @@ MODULE_REGISTRY: dict = {
         seed_commands=("seed_data_sources",),
         # `parcels` for OpenETCache.parcel.
         requires=("geography", "parcels"),
-        required=True,
-        required_reason=(
-            "not yet decoupled: datasync models, freshness and adapters are imported at module scope by accounting, health, setup, standards, geography and config views"
-        ),
+        # DEMOTED model-only in Phase 88 (2026-07-21), same shape as `wells`
+        # above. The retired `required_reason` blamed module-scope imports;
+        # demotion keeps the app installed, so those imports never break. The
+        # real pin is `standards.Datastream.monitored_station`, a
+        # SCHEMA_EXCEPTIONS record pointing into it from a module every
+        # deployment carries — so the tables stay and the routes, nav, seeds and
+        # pages go.
+        required=False,
+        schema_resident=True,
     ),
     "reporting": ModuleSpec(
         name="reporting",
@@ -785,7 +808,7 @@ SCHEMA_PRESENT_MODULE_NAMES: tuple = tuple(
 
 
 # -- The tolerated backwards arrows ------------------------------------------
-# Eight relationships run the wrong way: a module a deployment always gets holds
+# Nine relationships run the wrong way: a module a deployment always gets holds
 # a database reference into a module that is meant to be optional. Every one was
 # added by someone doing something reasonable, with no rule to stop them — which
 # is the whole reason rule 1 in the module docstring now exists.
