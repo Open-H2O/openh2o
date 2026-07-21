@@ -27,11 +27,15 @@ Phase 86 applied to ``schema_resident``.
 from io import StringIO
 from unittest.mock import patch
 
+import factory
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.core.management import call_command
+from django.test import Client
 
 from core import modules as mod
 from reporting import report_types as rt
+from reporting.forms import ReportGenerateForm
 from reporting.management.commands.seed_report_templates import REPORT_TEMPLATES
 from reporting.models import ReportTemplate
 
@@ -46,6 +50,43 @@ WITHOUT_SURFACE = [
 
 GEARS_TYPES = ("gears_by_well", "gears_by_et")
 CALWATRS_TYPES = ("calwatrs_a1", "calwatrs_a2")
+
+#: The markup that makes the Generate page submittable. Asserting on the select
+#: itself rather than on the word "form": the failure this guards against is an
+#: empty dropdown that still renders and still posts.
+SUBMITTABLE = 'name="report_template"'
+
+
+class _UserFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = "core.User"
+
+    username = factory.Sequence(lambda n: f"reporttypes{n}")
+    email = factory.Sequence(lambda n: f"reporttypes{n}@example.com")
+    password = factory.LazyFunction(lambda: make_password("testpass123"))
+    is_active = True
+
+
+@pytest.fixture
+def auth_client(db):
+    c = Client()
+    c.force_login(_UserFactory())
+    return c
+
+
+def seed_all_four_templates():
+    """Every template row present, however the module gates currently stand.
+
+    Written directly rather than through ``seed_report_templates`` on purpose:
+    these tests need the state of an instance that was seeded BEFORE a module
+    was switched off, which is exactly the case the seed gate alone cannot fix
+    and the queryset filter exists for.
+    """
+    for row in REPORT_TEMPLATES:
+        ReportTemplate.objects.get_or_create(
+            report_type=row["report_type"],
+            defaults={"name": row["name"], "description": row["description"]},
+        )
 
 
 class TestOwnerMapping:
@@ -159,6 +200,97 @@ class TestSurfaceDropped:
         )
         call_command("seed_report_templates", stdout=StringIO())
         assert ReportTemplate.objects.filter(report_type="calwatrs_a1").exists()
+
+
+class TestGenerateRouteOnAFullDeployment:
+    """Every gate this plan adds is True here, so nothing moves."""
+
+    def test_both_families_offer_a_submittable_form(self, auth_client):
+        seed_all_four_templates()
+        for family in ("gears", "calwatrs"):
+            response = auth_client.get(f"/reporting/reports/generate/?type={family}")
+            assert response.status_code == 200
+            assert SUBMITTABLE in response.content.decode()
+
+    @pytest.mark.django_db
+    def test_the_form_offers_every_seeded_template(self):
+        seed_all_four_templates()
+        form = ReportGenerateForm()
+        offered = set(
+            form.fields["report_template"].queryset.values_list(
+                "report_type", flat=True
+            )
+        )
+        assert offered == set(GEARS_TYPES) | set(CALWATRS_TYPES)
+
+    def test_the_reports_page_names_both_families(self, auth_client):
+        body = auth_client.get("/reporting/reports/").content.decode()
+        assert "Start a GEARS or CalWATRS report below" in body
+        assert "GEARS" in body and "CalWATRS" in body
+
+
+class TestGenerateRouteWithSurfaceDropped:
+    """87-02 measured this URL returning 200 with `surface` gone. Closed."""
+
+    @pytest.fixture(autouse=True)
+    def _surface_is_off(self, settings):
+        settings.OPENH2O_MODULES = WITHOUT_SURFACE
+
+    def test_calwatrs_generate_offers_nothing_submittable(self, auth_client):
+        seed_all_four_templates()
+        response = auth_client.get("/reporting/reports/generate/?type=calwatrs")
+        body = response.content.decode()
+
+        assert response.status_code == 200
+        assert SUBMITTABLE not in body, (
+            "The CalWATRS Generate page still rendered a submittable report-type "
+            "select in a deployment with no surface water."
+        )
+        assert "does not run the surface module" in body
+
+    def test_gears_generate_is_untouched(self, auth_client):
+        seed_all_four_templates()
+        response = auth_client.get("/reporting/reports/generate/?type=gears")
+        assert response.status_code == 200
+        assert SUBMITTABLE in response.content.decode()
+
+    @pytest.mark.django_db
+    def test_an_already_seeded_calwatrs_row_is_not_offered(self):
+        """The gap the seed gate alone cannot close.
+
+        A fresh instance never gets these rows. An instance seeded before the
+        module was switched off still carries them, and `seed_report_templates`
+        deliberately does not delete them — so the queryset is what has to
+        refuse them.
+        """
+        seed_all_four_templates()
+        offered = set(
+            ReportGenerateForm()
+            .fields["report_template"]
+            .queryset.values_list("report_type", flat=True)
+        )
+        assert offered == set(GEARS_TYPES)
+
+    def test_posting_a_withheld_template_is_rejected(self):
+        """Not merely hidden from the dropdown — refused on the way back in."""
+        seed_all_four_templates()
+        template = ReportTemplate.objects.get(report_type="calwatrs_a1")
+        form = ReportGenerateForm(
+            data={"report_template": template.pk, "reporting_period": ""}
+        )
+        assert not form.is_valid()
+        assert "report_template" in form.errors
+
+    def test_the_reports_page_names_only_what_it_can_file(self, auth_client):
+        body = auth_client.get("/reporting/reports/").content.decode()
+        assert "Start a GEARS report below" in body
+        assert "CalWATRS" not in body, (
+            "The reports page still named a filing family this deployment "
+            "cannot produce."
+        )
+
+    def test_the_reports_page_still_renders(self, auth_client):
+        assert auth_client.get("/reporting/reports/").status_code == 200
 
 
 class TestSeedDataUmbrella:

@@ -3,10 +3,30 @@
   (Bucket 3, docs/2.0-UX-PATTERN-SPEC.md). A responsive card grid — each card is
   a roomy target with its icon, what it files, how many you've generated, and its
   action. Counts come from the report_list view (gears_count / calwatrs_count).
+
+  Each filing card is gated on the module whose water it reports (ISS-082):
+  GEARS is groundwater and belongs to `wells`, CalWATRS is surface diversion and
+  belongs to `surface`. A deployment that does not run the domain is not shown a
+  Generate button for a filing it cannot make — and the route refuses it too
+  (reporting/views.py::report_generate), so the guard holds on both sides rather
+  than only the one the eye can check. Both flags are True on a full deployment,
+  which is what keeps this page byte-identical there.
+
+  Two placement details, both deliberate and both easy to undo by accident:
+
+  * The `{% templatetag openblock %} if %}` tags sit INLINE with the markup they
+    guard rather than on their own lines. A tag alone on a line still emits that
+    line's newline, so the guarded-but-enabled render would gain blank lines and
+    the byte-identical proof would be a whitespace diff instead of a clean one.
+  * The `<!-- GEARS -->` / `<!-- CalWATRS -->` markers sit INSIDE their guards.
+    An HTML comment ships to the browser, so a marker left outside would put the
+    name of a filing family this deployment cannot make into the page source —
+    invisible to a reader, perfectly visible in the markup, and exactly the kind
+    of leak ISS-082 is about. This was caught by a test, not by review.
 {% endcomment %}
 <div class="card-grid">
 
-  <!-- GEARS -->
+  {% if gears_available %}<!-- GEARS -->
   <div class="card-raised" style="display: flex; flex-direction: column; gap: var(--space-sm);">
     <div style="display: flex; align-items: center; gap: var(--space-sm);">
       <span aria-hidden="true" style="color: var(--color-accent); flex-shrink: 0; display: inline-flex;">
@@ -21,9 +41,9 @@
       <span class="text-tertiary text-xs">{{ gears_count }} generated</span>
       <a href="{% url 'reporting:report_generate' %}?type=gears" class="btn-primary btn-sm" style="text-decoration: none;">Generate</a>
     </div>
-  </div>
+  </div>{% endif %}
 
-  <!-- CalWATRS -->
+  {% if calwatrs_available %}<!-- CalWATRS -->
   <div class="card-raised" style="display: flex; flex-direction: column; gap: var(--space-sm);">
     <div style="display: flex; align-items: center; gap: var(--space-sm);">
       <span aria-hidden="true" style="color: var(--color-blue); flex-shrink: 0; display: inline-flex;">
@@ -38,7 +58,7 @@
       <span class="text-tertiary text-xs">{{ calwatrs_count }} generated</span>
       <a href="{% url 'reporting:report_generate' %}?type=calwatrs" class="btn-primary btn-sm" style="text-decoration: none;">Generate</a>
     </div>
-  </div>
+  </div>{% endif %}
 
   <!-- Shared-supply reasonableness check (ISS-056) -->
   <div class="card-raised" style="display: flex; flex-direction: column; gap: var(--space-sm);">

@@ -15,6 +15,7 @@ Usage (inside the web container):
     python scripts/render_baseline.py /tmp/render-before
 """
 import os
+import re
 import sys
 
 import django
@@ -29,6 +30,24 @@ django.setup()
 from django.test import Client  # noqa: E402
 from django.test.utils import setup_test_environment, teardown_test_environment  # noqa: E402
 from django.db import connection  # noqa: E402
+
+#: A fresh CSRF token is minted per request, so two runs of the same unchanged
+#: page differ by ~64 random characters in three places. Masking it is what makes
+#: "byte-identical" a claim that can be true at all -- without this every diff is
+#: dominated by noise and the real differences hide inside it. Nothing else in
+#: these pages is nondeterministic (the scratch database has no rows and no
+#: timestamps reach the markup), which is why this is the only mask.
+CSRF_PATTERNS = (
+    re.compile(r'("X-CSRFToken": ")[A-Za-z0-9]+(")'),
+    re.compile(r'(name="csrfmiddlewaretoken" value=")[A-Za-z0-9]+(")'),
+)
+
+
+def _mask_csrf(body: str) -> str:
+    for pattern in CSRF_PATTERNS:
+        body = pattern.sub(r"\1<CSRF-MASKED>\2", body)
+    return body
+
 
 PAGES = (
     ("index-anon", "/", False),
@@ -60,7 +79,7 @@ def main(outdir):
         for label, path, needs_auth in PAGES:
             client = auth if needs_auth else anon
             response = client.get(path)
-            body = response.content.decode("utf-8", errors="replace")
+            body = _mask_csrf(response.content.decode("utf-8", errors="replace"))
             with open(os.path.join(outdir, f"{label}.html"), "w") as handle:
                 handle.write(f"<!-- status: {response.status_code} -->\n")
                 handle.write(body)

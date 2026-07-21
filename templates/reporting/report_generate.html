@@ -29,9 +29,20 @@
   </div>
   {% endif %}
 
-  <p class="text-secondary text-sm" style="margin: 0;">
+  {% comment %}
+    `family_unavailable` means this deployment does not run the module that owns
+    the requested filing family (ISS-082). The lead-in and the form below are
+    both suppressed: telling someone to "select a report type" above a select
+    with nothing in it is worse than the plain error the view supplies.
+
+    Both guards sit inline with the markup they wrap. A tag alone on a line still
+    emits that line's newline, and the milestone constraint is that an
+    all-modules deployment renders byte-identically — not merely equivalently.
+    That is also why `{% templatetag openblock %} endcomment %}` closes on this
+    line rather than its own: the newline after a lone closing tag is emitted too.
+  {% endcomment %}{% if not family_unavailable %}<p class="text-secondary text-sm" style="margin: 0;">
     Select a report type and period. The system validates data quality before generating.
-  </p>
+  </p>{% endif %}
 
   {% if error %}
   <div class="alert-error"><strong>Error:</strong> {{ error }}</div>
@@ -62,7 +73,7 @@
   </div>
   {% endif %}
 
-  {% if not has_errors %}
+  {% if not has_errors and not family_unavailable %}
   <div class="card-raised">
     <form method="post" class="page-stack">
       {% csrf_token %}

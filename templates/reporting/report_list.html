@@ -20,7 +20,15 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Reports</span>
   </nav>
-  <p class="page-description">Prepare your state filings. Start a GEARS or CalWATRS report below, then pick any past report to review its status and download.</p>
+  {% comment %}
+    The filing families are named from `filing_families` rather than hardcoded
+    (ISS-082): a deployment without surface water should not be told to start a
+    CalWATRS report. Built as one sentence with a loop rather than three
+    hardcoded variants, so there is only ever one copy of the wording to keep
+    right. With every module enabled this renders "Start a GEARS or CalWATRS
+    report below" exactly as it always has — byte-identically, which is why the
+    closing tag shares this line with the paragraph instead of taking its own.
+  {% endcomment %}<p class="page-description">Prepare your state filings. {% if filing_families %}Start a {% for key, label in filing_families %}{% if not forloop.first %} or {% endif %}{{ label }}{% endfor %} report below, then pick any past report to review its status and download.{% else %}Pick any past report to review its status and download.{% endif %}</p>
 </div>
 {% endblock %}
 

@@ -32,8 +32,29 @@ from reporting.generators import (
     generate_gears_csv,
 )
 from reporting.models import ReportingProfile, ReportSubmission, ReportTemplate
+from reporting.report_types import REPORT_FAMILY_OWNER, report_family_is_available
 from reporting.services import PREFILL_METHOD_BY_REPORT_TYPE, build_openet_prefill
 from reporting.validators import validate_report
+
+#: Display name for each filing family, for the one sentence on the reports page
+#: that names them. Ordered, because the sentence reads them in order.
+FILING_FAMILY_LABELS = (
+    ("gears", "GEARS"),
+    ("calwatrs", "CalWATRS"),
+)
+
+
+def _available_filing_families():
+    """The filing families this deployment can honestly produce.
+
+    Returns ``[(key, label), ...]``. Both entries on a full deployment, which is
+    what keeps the reports page byte-identical there.
+    """
+    return [
+        (key, label)
+        for key, label in FILING_FAMILY_LABELS
+        if report_family_is_available(key)
+    ]
 
 
 @login_required
@@ -57,20 +78,31 @@ def report_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    gears_count = ReportSubmission.objects.filter(
-        report_template__report_type__startswith="gears",
-    ).count()
-    calwatrs_count = ReportSubmission.objects.filter(
-        report_template__report_type__startswith="calwatrs",
-    ).count()
+    # Counted only for a family this deployment can actually file (ISS-082). A
+    # count is a claim that the thing exists here; a wells-less or surface-less
+    # deployment should neither name nor tally a filing family it cannot
+    # produce. `families` drives both the action cards and the one sentence in
+    # the page description that names them.
+    families = _available_filing_families()
+    available_keys = {key for key, _ in families}
+
+    counts = {
+        key: ReportSubmission.objects.filter(
+            report_template__report_type__startswith=key,
+        ).count()
+        for key in available_keys
+    }
 
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
         "q": q,
         "status": status,
-        "gears_count": gears_count,
-        "calwatrs_count": calwatrs_count,
+        "filing_families": families,
+        "gears_available": "gears" in available_keys,
+        "calwatrs_available": "calwatrs" in available_keys,
+        "gears_count": counts.get("gears", 0),
+        "calwatrs_count": counts.get("calwatrs", 0),
         "status_choices": ReportSubmission.STATUS_CHOICES,
     }
 
@@ -86,6 +118,26 @@ def report_list(request):
 @login_required
 def report_generate(request):
     report_type_filter = request.GET.get("type", "").strip()
+
+    # ISS-082, the route-level half. 87-02 measured this URL returning 200 with
+    # `surface` dropped: a Generate page for a filing the deployment cannot
+    # make. With the seed gate in place the dropdown would now merely be empty,
+    # and an empty select that cannot be submitted is a worse answer than a
+    # clear one — so answer in the shape the unknown-report-type branch below
+    # already uses. Both GET and POST, because the form is what the POST reads
+    # and it has nothing valid to offer either way.
+    if report_type_filter and not report_family_is_available(report_type_filter):
+        owner = REPORT_FAMILY_OWNER.get(report_type_filter, "")
+        return render(request, "reporting/report_generate.html", {
+            "report_type_filter": report_type_filter,
+            # No quotes around the module name: `{{ error }}` is autoescaped, so
+            # an apostrophe would reach the page as `&#x27;` and read as noise.
+            "error": (
+                f"This deployment does not run the {owner} module, so "
+                f"{report_type_filter.upper()} reports cannot be generated here."
+            ),
+            "family_unavailable": True,
+        })
 
     if request.method == "POST":
         form = ReportGenerateForm(request.POST, report_type_filter=report_type_filter)
