@@ -19,6 +19,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounting.models import ReportingPeriod
+from core.modules import is_enabled
 from core.workspace import detail_response, list_response
 from surface.forms import DiversionRecordForm
 from surface.models import (
@@ -116,11 +117,22 @@ def _pod_detail_context(pod):
     # Recharge areas this diversion fills (Phase 62). For a dual-purpose Merced
     # River diversion this lists the Flood-MAR areas it floods, right next to the
     # cropland it irrigates above.
-    basin_links = (
-        pod.basin_links
-        .select_related("recharge_site")
-        .order_by("recharge_site__name")
-    )
+    #
+    # `basin_links` is a REVERSE ACCESSOR created by recharge.models.RechargeSitePOD,
+    # not an import -- which is why grepping for `from recharge` never found this
+    # coupling. Drop the module and the attribute simply does not exist, so this
+    # page raises AttributeError (ISS-072).
+    #
+    # Gated on is_enabled, deliberately NOT on getattr(pod, "basin_links", None):
+    # a silent getattr fallback would also swallow a genuine future rename of the
+    # relation, turning a loud bug into a quietly empty table.
+    basin_links = []
+    if is_enabled("recharge"):
+        basin_links = (
+            pod.basin_links
+            .select_related("recharge_site")
+            .order_by("recharge_site__name")
+        )
 
     # One-hop water journey (Phase 67-03). rediverted_from is the upstream source
     # this POD re-diverts; rediversions is the reverse — downstream PODs that draw

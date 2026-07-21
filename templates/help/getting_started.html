@@ -179,12 +179,24 @@
       </svg>
     </span>
     <div class="step-body">
+      {# This step serves TWO modules, so it is guarded piece by piece rather than #}
+      {# as a whole card: dropping `recharge` must not also delete the surface     #}
+      {# diversion onboarding, and removing a numbered step would leave a visible  #}
+      {# gap between Step 8 and Step 10.                                           #}
+      {% if 'recharge' in enabled_modules %}
       <span class="step-eyebrow">Step 9 &middot; the Setup Wizard imports recharge basins for you</span>
       <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection wells.</p>
+      {% else %}
+      <span class="step-eyebrow">Step 9</span>
+      <h2 class="section-header">Add Surface Diversions</h2>
+      <p class="text-secondary text-base">Record surface water rights with their points of diversion.</p>
+      {% endif %}
       <a href="{% url 'surface:pod_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Surface Diversions &rarr;</a>
+      {% if 'recharge' in enabled_modules %}
       <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
       <a href="{% url 'recharge:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Recharge Areas &rarr;</a>
+      {% endif %}
     </div>
   </div>
 

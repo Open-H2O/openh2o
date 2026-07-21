@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Map</span>
   </nav>
-  <p class="page-description">Interactive map showing use areas, wells, points of diversion, and recharge sites. Toggle layers with the controls panel. Click features for details.</p>
+  <p class="page-description">Interactive map showing use areas, wells, points of diversion{% if 'recharge' in enabled_modules %}, and recharge sites{% endif %}. Toggle layers with the controls panel. Click features for details.</p>
 </div>
 {% endblock %}
 
@@ -129,7 +129,7 @@ var MAP_CONFIG = {
         { id: 'parcels', url: '{% url "parcels:geojson" %}' },
         { id: 'wells', url: '{% url "wells:geojson" %}' },
         { id: 'pods', url: '{% url "surface:pods_geojson" %}' },
-        { id: 'recharge', url: '{% url "recharge:sites_geojson" %}' },
+        {% if 'recharge' in enabled_modules %}{ id: 'recharge', url: '{% url "recharge:sites_geojson" %}' },{% endif %}
         { id: 'stations', url: '{% url "datasync:stations_geojson" %}' },
         { id: 'tie-lines', url: '{% url "geography:tie_lines_geojson" %}' }
     ],
@@ -272,6 +272,10 @@ var MAP_CONFIG = {
             minzoom: 12, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '% GW'],
             layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
         }), { panelHidden: true, group: 'gw-tie-lines', section: 'Infrastructure', filter: ['==', ['get', 'source_type'], 'gw'] }),
+        {# All four recharge layers are guarded together with their source above. A #}
+        {# source removed with its layers left behind produces a MapLibre console  #}
+        {# error ("source 'recharge' not found"), not a clean absence.             #}
+        {% if 'recharge' in enabled_modules %}
         {
             id: 'recharge-fill', type: 'fill', source: 'recharge',
             label: 'Recharge Sites', group: 'recharge', section: 'Infrastructure',
@@ -294,6 +298,7 @@ var MAP_CONFIG = {
         },
         Object.assign(OH2O.makeLabelLayer('recharge-label', 'recharge', 'recharge', { anchor: 'center', offset: [0, 0] }),
             { panelHidden: true, group: 'recharge', section: 'Infrastructure' }),
+        {% endif %}
 
         // ── Monitoring ──
         {
@@ -337,6 +342,7 @@ var MAP_CONFIG = {
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/parcels/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
+        {% if 'recharge' in enabled_modules %}
         'recharge-fill': function(p) {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +
                    'Type: ' + (p.site_type || '—') + '<br>' +
@@ -349,6 +355,7 @@ var MAP_CONFIG = {
                    'Capacity: ' + (p.capacity_acre_feet ? parseFloat(p.capacity_acre_feet).toFixed(2) + ' AF' : '—') + '<br>' +
                    '<a href="/recharge/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
+        {% endif %}
         'wells-points': function(p) {
             return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
                    'Reg ID: ' + (p.well_registration_id || '—') + '<br>' +

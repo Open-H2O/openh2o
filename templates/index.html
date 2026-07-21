@@ -24,11 +24,13 @@
         <div class="dashboard-card-value">{{ diversion_count }}</div>
         <div class="dashboard-card-sublabel">View surface diversions</div>
     </a>
+    {% if 'recharge' in enabled_modules %}
     <a href="{% url 'recharge:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Recharge Sites</div>
         <div class="dashboard-card-value">{{ recharge_site_count }}</div>
         <div class="dashboard-card-sublabel">View recharge sites</div>
     </a>
+    {% endif %}
 </div>
 
 <h2 class="content-section-label" style="margin-top: var(--space-xl);">Accounting &amp; Monitoring</h2>

@@ -104,10 +104,12 @@
             <span class="home-stat-value">{{ diversion_count }}</span>
             <span class="home-stat-label">Surface Diversions</span>
         </a>
+        {% if 'recharge' in enabled_modules %}
         <a href="{% url 'recharge:list' %}" class="home-stat">
             <span class="home-stat-value">{{ recharge_site_count }}</span>
             <span class="home-stat-label">Recharge Sites</span>
         </a>
+        {% endif %}
         <a href="{% url 'accounting:accounts_list' %}" class="home-stat">
             <span class="home-stat-value">{{ water_account_count }}</span>
             <span class="home-stat-label">Water Accounts</span>

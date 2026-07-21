@@ -200,7 +200,12 @@
       </div>
 
       <!-- Recharge Areas Filled card (Phase 62) -->
-      {% if basin_links %}
+      {# The module check is not redundant with the emptiness check: it keeps this #}
+      {# partial self-defending. `basin_links` is a reverse accessor from          #}
+      {# recharge.models.RechargeSitePOD, so without the module the reverse below  #}
+      {# raises NoReverseMatch -- the template should not depend on the view       #}
+      {# having remembered to pass an empty list. #}
+      {% if basin_links and 'recharge' in enabled_modules %}
       <div class="card-raised">
         <h2 class="section-header mb-md">Recharge Areas Filled</h2>
         <table class="data-table text-sm">
