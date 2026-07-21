@@ -25,8 +25,9 @@ Phases 82-85 flip ``required=False`` in ``core/modules.py`` and inherit this
 coverage without editing a line here.
 """
 
-import importlib
-import pkgutil
+import ast
+import importlib.util
+from pathlib import Path
 
 import factory
 import pytest
@@ -114,44 +115,91 @@ def auth_client():
 # ---------------------------------------------------------------------------
 
 
+def _call_name(node) -> str:
+    """The bare function name of an ``ast.Call``, e.g. ``migrations.CreateModel``."""
+    func = node.func
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    if isinstance(func, ast.Name):
+        return func.id
+    return ""
+
+
+def _literal_kwarg(node, name):
+    """A literal keyword argument's value, or None if absent or not a literal."""
+    for keyword in node.keywords:
+        if keyword.arg == name:
+            try:
+                return ast.literal_eval(keyword.value)
+            except ValueError:
+                return None
+    return None
+
+
+def _migration_dir(app_label: str):
+    """The app's ``migrations/`` directory, located WITHOUT importing the app."""
+    spec = importlib.util.find_spec(app_label)
+    if spec is None or not spec.submodule_search_locations:
+        return None
+    directory = Path(list(spec.submodule_search_locations)[0]) / "migrations"
+    return directory if directory.is_dir() else None
+
+
 def _tables_from_migrations(app_label: str) -> tuple:
     """Table names a dropped app's migrations WOULD have created.
 
     The obvious approach — ask the app registry for the app's models — is not
     available here by construction: the app is not installed, which is the whole
-    point of the run. Migration modules, however, are plain data. They import
-    ``django.db.migrations`` and declare ``CreateModel`` operations without
-    touching the app registry, so they can be imported and read directly.
+    point of the run.
 
-    Returns an empty tuple for an app with no migrations package at all, which
+    Neither is importing the migration modules, which was the first thing tried
+    and does not survive contact with this codebase. Several migrations import
+    their own app's ``models`` at module scope (Django writes that import
+    whenever a field references a model-level callable), and importing
+    ``feedback.models`` while ``feedback`` is not in ``INSTALLED_APPS`` raises
+    ``RuntimeError: Model class ... doesn't declare an explicit app_label``. So
+    the migrations are read as source and parsed with ``ast`` instead — no
+    execution, no imports, no app registry.
+
+    Returns an empty tuple for an app with no migrations directory at all, which
     is how a model-less module (``setup``, ``infrastructure``) announces itself.
     """
-    try:
-        package = importlib.import_module(f"{app_label}.migrations")
-    except ModuleNotFoundError:
+    directory = _migration_dir(app_label)
+    if directory is None:
         return ()
 
-    model_names: list = []
-    module_names = sorted(
-        name for _, name, _ in pkgutil.iter_modules(package.__path__)
-    )
-    for name in module_names:
-        migration = importlib.import_module(f"{app_label}.migrations.{name}")
-        for operation in getattr(migration.Migration, "operations", []):
-            kind = type(operation).__name__
+    tables: dict = {}  # model name (lowercased) -> db_table
+    for path in sorted(directory.glob("*.py")):
+        if path.name == "__init__.py":
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            kind = _call_name(node)
             if kind == "CreateModel":
-                model_names.append(operation.name.lower())
+                name = _literal_kwarg(node, "name")
+                if not name:
+                    continue
+                options = _literal_kwarg(node, "options") or {}
+                # No model in this codebase sets a custom `db_table` today, but
+                # reading it costs one line and keeps this honest the day one
+                # does — rather than silently checking the wrong table name.
+                tables[name.lower()] = options.get(
+                    "db_table", f"{app_label}_{name.lower()}"
+                )
             elif kind == "DeleteModel":
-                model_names = [m for m in model_names if m != operation.name.lower()]
+                name = _literal_kwarg(node, "name")
+                if name:
+                    tables.pop(name.lower(), None)
             elif kind == "RenameModel":
-                model_names = [
-                    operation.new_name.lower() if m == operation.old_name.lower() else m
-                    for m in model_names
-                ]
+                old = _literal_kwarg(node, "old_name")
+                new = _literal_kwarg(node, "new_name")
+                if old and new and old.lower() in tables:
+                    tables.pop(old.lower())
+                    tables[new.lower()] = f"{app_label}_{new.lower()}"
 
-    # No model in this codebase sets a custom ``db_table`` (verified), so
-    # Django's default ``{app_label}_{modelname}`` naming holds throughout.
-    return tuple(f"{app_label}_{m}" for m in model_names)
+    return tuple(sorted(tables.values()))
 
 
 # ---------------------------------------------------------------------------
@@ -267,6 +315,44 @@ def test_kept_page_renders_on_a_configured_but_empty_instance(auth_client, path)
         f"{path} returned {response.status_code} with {list(DROPPED_NAMES)} "
         f"dropped and a configured-but-empty database."
     )
+
+
+def test_both_empty_state_branches_are_actually_reached(auth_client):
+    """Prove the two DB states above render DIFFERENT branches.
+
+    The two tests above only assert 200, and 200 is cheap — if ``needs_setup``
+    were somehow pinned False, both would render the same branch and the pair
+    would look like coverage while testing one path twice. (That is not a
+    hypothetical: ``needs_setup`` is gated on ``can_run_setup``, so a non-admin
+    user on a deployment with ``ACCESS_CONTROL_ENFORCED=True`` never sees the
+    wizard branch at all. This harness logs in a superuser specifically so the
+    branch is reachable.)
+
+    Fetched with the HTMX header so the response is the list partial alone,
+    without the page toolbar, which carries its own infrastructure links.
+    """
+    from tests.factories import BoundaryFactory
+
+    fresh = auth_client.get("/wells/", HTTP_HX_REQUEST="true").content.decode()
+    BoundaryFactory()
+    configured = auth_client.get("/wells/", HTTP_HX_REQUEST="true").content.decode()
+
+    if "setup" in ENABLED_NAMES:
+        assert "/setup/" in fresh, (
+            "A pristine database should render the Setup Wizard branch of "
+            "_empty_onboarding.html, and it did not — so the 'fresh instance' "
+            "state above is not exercising the branch it claims to."
+        )
+    else:
+        assert "/setup/" not in fresh
+
+    if "infrastructure" in ENABLED_NAMES:
+        assert "/infrastructure/" in configured, (
+            "A configured-but-empty database should render the Add/Import branch "
+            "of _empty_onboarding.html, and it did not."
+        )
+    else:
+        assert "/infrastructure/" not in configured
 
 
 @pytest.mark.parametrize("path,factory_name", LIST_PAGES)
