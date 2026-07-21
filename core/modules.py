@@ -769,7 +769,20 @@ MODULE_REGISTRY: dict = {
         # not started using it still sees the pre-78 dashboard.
         dashboard_cards=("drinking/partials/_dashboard_card.html",),
         seed_commands=("seed_drinking",),
-        requires=("wells", "standards"),
+        # `wells` came OUT in Phase 88 (2026-07-21), on Brent's locked decision
+        # 3: no agency type is assumed in either direction. A district can buy
+        # every drop wholesale and still have a drinking-water system to track,
+        # so the module must not force a groundwater section on. The one thing
+        # that stood in the way — `drinking.SystemFacility.well` and its
+        # matching migration dependency — is now the ninth SCHEMA_EXCEPTIONS
+        # record instead, which is legal because `wells` became schema-resident
+        # in the same phase and therefore keeps its tables in every valid
+        # configuration.
+        #
+        # This is also what stops `drop_closure('wells')` returning
+        # `{wells, drinking}`: while the edge was declared here, demoting Wells
+        # would have dragged Drinking Water out with it.
+        requires=("standards",),
         # The first Phase-78-era module, and droppable by construction: nothing
         # outside `drinking/` imports it at module scope. ISS-072 discipline.
         required=False,
@@ -944,6 +957,32 @@ SCHEMA_EXCEPTIONS: tuple = (
             "while accounting/0002 depends on parcels/0001), so neither arrow "
             "turns without moving models across both apps. The pair can only "
             "ever be demoted or enabled together."
+        ),
+    ),
+    SchemaException(
+        holder="drinking",
+        model="SystemFacility",
+        field="well",
+        target="wells",
+        where="drinking/models.py:280",
+        why=(
+            "A drinking-water facility very often IS a well — the same physical "
+            "hole in the ground that the extraction ledger meters — so "
+            "recording which one on the facility is the natural place for it. "
+            "But a district can buy all of its water wholesale and own no wells "
+            "at all, and it still has a system to sample and report on. The "
+            "arrow has to be tolerated rather than declared, because declaring "
+            "it in `requires` would force every drinking-water deployment to "
+            "carry a groundwater section it may never use — which is exactly "
+            "the assumption v2.4 exists to remove."
+        ),
+        reversing_it=(
+            "A wells.WellFacility link table plus a data migration over the "
+            "existing SystemFacility rows, and the drinking overview's supply "
+            "table would then have to join through it rather than follow one "
+            "field. Same shape as measurements.Sensor.well, on far fewer rows — "
+            "but it buys nothing while wells is schema-resident, because the "
+            "reference cannot dangle."
         ),
     ),
     SchemaException(
