@@ -14,12 +14,6 @@ from django.db.models import Count
 
 from parcels.models import ParcelLedger
 from reporting.models import ReportingProfile
-from surface.models import (
-    DiversionRecord,
-    PointOfDiversion,
-    PointOfDiversionParcel,
-    WaterRight,
-)
 from wells.models import Well, WellIrrigatedParcel
 
 
@@ -229,6 +223,17 @@ def validate_report(reporting_period, report_type):
                 })
 
     elif report_type in ("calwatrs_a1", "calwatrs_a2"):
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope. Every surface reference in this function lives
+        # inside this branch, and CalWATRS is a surface-water filing — the branch
+        # is unreachable on a deployment without the module.
+        from surface.models import (
+            DiversionRecord,
+            PointOfDiversion,
+            PointOfDiversionParcel,
+            WaterRight,
+        )
+
         diversion_type = "direct_use" if report_type == "calwatrs_a1" else "to_storage"
         div_count = DiversionRecord.objects.filter(
             reporting_period=reporting_period,

@@ -35,7 +35,6 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from parcels.models import CropType, Parcel, UsageLocation
-from surface.models import PointOfDiversionParcel
 from wells.models import WellIrrigatedParcel
 
 MER_PARCEL_PREFIX = "MER-APN-"
@@ -75,6 +74,10 @@ class Command(BaseCommand):
         ))
 
     def _seed(self):
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope.
+        from surface.models import PointOfDiversionParcel
+
         parcels = list(Parcel.objects.filter(
             parcel_number__startswith=MER_PARCEL_PREFIX).order_by("parcel_number"))
         if not parcels:

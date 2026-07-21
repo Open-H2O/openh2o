@@ -23,7 +23,6 @@ from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from infrastructure import importer
 from parcels.models import Parcel
-from surface.models import PointOfDiversion, PointOfDiversionParcel
 from wells.models import (
     MEASUREMENT_METHOD_CHOICES,
     PUMP_TYPE_CHOICES,
@@ -137,6 +136,11 @@ def infrastructure_add(request):
         return redirect("wells:detail", pk=well.pk)
 
     elif infra_type == "diversion":
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope. This branch is only reachable when the add
+        # form offered a diversion type, which it does not do without the module.
+        from surface.models import PointOfDiversion, PointOfDiversionParcel
+
         location = _parse_point(geometry_json)
         if not location:
             return _error("diversion", "A point location is required for diversions.")
@@ -358,6 +362,10 @@ def infrastructure_geojson(request):
             "geometry": json.loads(well.location.geojson),
             "properties": {"type": "well", "name": well.name, "id": well.pk},
         })
+
+    # Local import: `surface` is an optional module (Phase 87) — see
+    # `infrastructure_add`.
+    from surface.models import PointOfDiversion
 
     for pod in PointOfDiversion.objects.filter(water_right__isnull=True):
         features.append({

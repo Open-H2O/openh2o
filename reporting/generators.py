@@ -25,7 +25,6 @@ from accounting.services import billable_ledger, runs_in_period
 from core.csv_safe import safe_row
 from core.models import SiteConfig
 from parcels.models import Parcel, ParcelLedger
-from surface.models import DiversionRecord, PointOfDiversion, PointOfDiversionParcel
 from wells.models import Well, WellIrrigatedParcel
 
 
@@ -164,6 +163,11 @@ def build_normalized_pod_parcel_map(reporting_period=None):
     ``reporting_period``, else even), so the weights sum to exactly 1.0. Passing no
     ``reporting_period`` reproduces today's static split.
     """
+    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # run at module scope — importing surface.models with the app uninstalled
+    # raises RuntimeError before any useful error prints.
+    from surface.models import PointOfDiversionParcel
+
     demand_by_parcel = _period_demand_by_parcel(reporting_period)
 
     members_by_pod = {}  # pod_id → [(parcel_id, fraction, demand)]
@@ -281,6 +285,10 @@ def build_shared_supply_comparison(reporting_period=None):
             ("Well", well.name, well.pk, "well",
              [(wip.parcel_id, wip.fraction) for wip in wips])
         )
+
+    # Local import: `surface` is an optional module (Phase 87) — see
+    # `build_normalized_pod_parcel_map`.
+    from surface.models import PointOfDiversionParcel
 
     podps_by_pod = {}
     for podp in PointOfDiversionParcel.objects.select_related("point_of_diversion").all():
@@ -477,6 +485,11 @@ def _calwatrs_data_row(entry, fraction, combined_use):
 
 
 def generate_calwatrs_csv(reporting_period, template_type="a1"):
+    # Local import: `surface` is an optional module (Phase 87) — see
+    # `build_normalized_pod_parcel_map`. The CalWATRS filing is a surface-water
+    # report, so this generator is only ever reached with the module enabled.
+    from surface.models import DiversionRecord, PointOfDiversionParcel
+
     output = io.StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
 

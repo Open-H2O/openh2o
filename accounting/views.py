@@ -59,7 +59,6 @@ from accounting.services import (
 )
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
-from surface.models import CurtailmentOrder, WaterRight
 
 
 # Methodology tuning is an administrator's job, gated by the shared, switch-aware
@@ -594,6 +593,11 @@ def _account_detail_context(account, period_param=None):
     # just lower numbers. An account is "curtailed" when any of its parcels is
     # served by a water right under a curtailment order. Match the active order to
     # the right by priority-date cutoff (the same date the right carries).
+    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # run at module scope — importing surface.models with the app uninstalled
+    # raises RuntimeError before any useful error prints.
+    from surface.models import CurtailmentOrder, WaterRight
+
     curtailment_orders = []
     is_curtailed = WaterRight.objects.filter(
         status="curtailed", water_right_parcels__parcel_id__in=acct_parcel_ids

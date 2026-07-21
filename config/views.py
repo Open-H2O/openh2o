@@ -13,7 +13,6 @@ from datasync import freshness
 from datasync.models import DataSyncLog, MonitoredStation
 from geography.models import Zone
 from parcels.models import Parcel
-from surface.models import PointOfDiversion
 from wells.models import Well
 from accounting.models import WaterAccount
 from core.models import SiteConfig
@@ -38,6 +37,11 @@ def index(request):
     task cards, and the counts demoted to an at-a-glance stat bar. The public
     landing shows the same counts as the demo's headline numbers.
     """
+    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # run at module scope. This file was the first casualty of a surface-less
+    # boot — the process died here before printing a useful error.
+    from surface.models import PointOfDiversion
+
     context = {
         "parcel_count": Parcel.objects.count(),
         "well_count": Well.objects.count(),
@@ -120,6 +124,9 @@ def _search_groups(q):
     ``key`` selects the matching glyph in the template. Empty groups are dropped
     so the dropdown only shows entity types that actually matched.
     """
+    # Local import: `surface` is an optional module (Phase 87) — see `index`.
+    from surface.models import PointOfDiversion
+
     limit = SEARCH_GROUP_LIMIT
     groups = []
 

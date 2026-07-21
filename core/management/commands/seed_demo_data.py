@@ -26,7 +26,6 @@ from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, ParcelZone, Zone
 from measurements.models import Meter, MeterReading
 from parcels.models import Parcel, ParcelLedger
-from surface.models import PointOfDiversion, WaterRight, WaterRightParcel, WaterRightType
 from wells.models import Well, WellIrrigatedParcel, WellMeter, WellType
 
 # Center point: San Joaquin Valley, roughly near Madera, CA
@@ -140,9 +139,10 @@ class Command(BaseCommand):
 
     def _flush(self):
         """Remove all demo data by deleting the boundary (cascades)."""
-        # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072).
+        # Local imports: `recharge` and `surface` are optional modules, so these
+        # must not run at module scope (ISS-072, Phase 87).
         from recharge.models import RechargeSite
+        from surface.models import WaterRight
 
         self.stdout.write("Flushing existing demo data...")
         boundary = Boundary.objects.filter(name="Demo Valley GSA").first()
@@ -206,9 +206,15 @@ class Command(BaseCommand):
             self.stdout.write("  No demo data found.")
 
     def _seed(self):
-        # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072).
+        # Local imports: `recharge` and `surface` are optional modules, so these
+        # must not run at module scope (ISS-072, Phase 87).
         from recharge.models import RechargeEvent, RechargeSite
+        from surface.models import (
+            PointOfDiversion,
+            WaterRight,
+            WaterRightParcel,
+            WaterRightType,
+        )
 
         random.seed(42)  # Reproducible demo data
 

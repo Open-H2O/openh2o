@@ -30,7 +30,6 @@ Three rules keep this honest — they are the whole reason the feature exists:
 from decimal import Decimal
 
 from parcels.models import ParcelLedger
-from surface.models import PointOfDiversion
 
 from reporting.generators import (
     build_normalized_pod_parcel_map,
@@ -153,6 +152,11 @@ def _prefill_calwatrs(reporting_period):
     consumptive-use estimate, not a diverted volume — the label makes that
     explicit; this is a starting figure to reconcile.
     """
+    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # run at module scope. The CalWATRS pre-fill is surface-water only, so this
+    # helper is unreachable without the module.
+    from surface.models import PointOfDiversion
+
     pod_parcel_map = build_normalized_pod_parcel_map(reporting_period)
     pods_by_id = {
         pod.pk: pod

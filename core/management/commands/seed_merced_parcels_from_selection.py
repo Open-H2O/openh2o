@@ -37,9 +37,6 @@ from django.db import transaction
 from datasync.models import OpenETCache
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel
-from surface.models import (
-    PointOfDiversion, PointOfDiversionParcel, WaterRight, WaterRightParcel,
-)
 from wells.models import Well, WellIrrigatedParcel, WellType
 
 FIXTURE = os.path.join(
@@ -85,6 +82,12 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope.
+        from surface.models import (
+            PointOfDiversion, PointOfDiversionParcel, WaterRight, WaterRightParcel,
+        )
+
         if not os.path.exists(FIXTURE):
             raise CommandError(
                 f"Selection fixture not found: {FIXTURE}\n"
@@ -347,6 +350,9 @@ class Command(BaseCommand):
         dropped from the selection are pruned at the end of handle(). Clearing the
         links here (including ParcelZone) keeps a kept parcel from carrying a
         stale GSA/POD/well association across the re-seed."""
+        # Local import: `surface` is an optional module (Phase 87) — see `handle`.
+        from surface.models import PointOfDiversionParcel, WaterRightParcel
+
         parcel_ids = list(
             Parcel.objects.filter(parcel_number__startswith="MER-APN-")
             .values_list("id", flat=True)

@@ -30,7 +30,6 @@ from core.workspace import detail_response, list_response
 from geography.forms import ZoneForm
 from geography.models import Boundary, Flowline, ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
-from surface.models import CurtailmentOrder, PointOfDiversionParcel, WaterRight
 from wells.models import WellIrrigatedParcel
 
 
@@ -215,6 +214,11 @@ def _zone_detail_context(zone):
     # curtailed water right, and surface the matching active order (by priority-
     # date cutoff). Tells the El Nido story on the district page, not just via the
     # collapsed open-year budget number.
+    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # run at module scope — importing surface.models with the app uninstalled
+    # raises RuntimeError before any useful error prints.
+    from surface.models import CurtailmentOrder, WaterRight
+
     curtailment_orders = []
     is_curtailed = WaterRight.objects.filter(
         status="curtailed", water_right_parcels__parcel_id__in=zone_parcel_ids
@@ -513,6 +517,10 @@ def tie_lines_geojson(request):
         })
 
     # Surface water tie lines: POD -> parcel centroid
+    # Local import: `surface` is an optional module (Phase 87) — see
+    # `_zone_detail_context`.
+    from surface.models import PointOfDiversionParcel
+
     for podp in PointOfDiversionParcel.objects.select_related("point_of_diversion", "parcel").all():
         parcel = podp.parcel
         if not parcel.geometry:

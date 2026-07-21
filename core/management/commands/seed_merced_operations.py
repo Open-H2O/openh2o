@@ -63,13 +63,6 @@ from geography.placement import (
 )
 from parcels.models import Parcel
 from recharge.geometry import area_accurate_box
-from surface.models import (
-    PointOfDiversion,
-    PointOfDiversionParcel,
-    WaterRight,
-    WaterRightParcel,
-    WaterRightType,
-)
 from wells.models import Well, WellIrrigatedParcel, WellType
 
 # Boundary seeded by seed_merced_base — the spatial canvas this command populates.
@@ -431,6 +424,15 @@ class Command(BaseCommand):
     # reference (defensive ordering, defensive ordering).
     # ------------------------------------------------------------------
     def _flush(self):
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope.
+        from surface.models import (
+            PointOfDiversion,
+            PointOfDiversionParcel,
+            WaterRight,
+            WaterRightParcel,
+        )
+
         self.stdout.write("Flushing existing MER- operational data...")
 
         parcel_ids = list(
@@ -506,6 +508,15 @@ class Command(BaseCommand):
         return segs[idx]
 
     def _seed(self, lower):
+        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        from surface.models import (
+            PointOfDiversion,
+            PointOfDiversionParcel,
+            WaterRight,
+            WaterRightParcel,
+            WaterRightType,
+        )
+
         # --- Water-right types (global lookup rows) ---
         self.stdout.write("Ensuring water-right types...")
         pre14, _ = WaterRightType.objects.get_or_create(
@@ -737,6 +748,14 @@ class Command(BaseCommand):
         (update_or_create on stable natural keys); touches nothing else, so it is
         safe to run standalone (``--journey-only``) on a live demo.
         """
+        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        from surface.models import (
+            PointOfDiversion,
+            PointOfDiversionParcel,
+            WaterRight,
+            WaterRightType,
+        )
+
         post14, _ = WaterRightType.objects.get_or_create(
             code="POST14", defaults={
                 "name": "Post-1914 Appropriative",

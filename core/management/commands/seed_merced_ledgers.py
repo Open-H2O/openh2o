@@ -81,15 +81,6 @@ from accounting.models import (
 from core.models import SiteConfig
 from geography.models import Boundary, ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
-from surface.models import (
-    CurtailmentOrder,
-    DiversionRecord,
-    PointOfDiversion,
-    PointOfDiversionParcel,
-    WaterRight,
-    WaterRightParcel,
-)
-from surface.services import allocate_district_delivery
 from wells.models import Well, WellIrrigatedParcel
 
 # Phase 67-03 diversion-reach journey: the two parcel-less PODs seed_merced_operations
@@ -223,6 +214,10 @@ class Command(BaseCommand):
     # owned by seed_merced_gsas), never Demo Valley/base-layer rows.
     # ------------------------------------------------------------------
     def _flush(self):
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope.
+        from surface.models import CurtailmentOrder, DiversionRecord
+
         ParcelLedger.objects.filter(
             parcel__parcel_number__startswith=MER_PARCEL_PREFIX
         ).delete()
@@ -265,6 +260,9 @@ class Command(BaseCommand):
     # Seed
     # ------------------------------------------------------------------
     def _seed(self):
+        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        from surface.models import PointOfDiversionParcel
+
         parcels = list(Parcel.objects.filter(
             parcel_number__startswith=MER_PARCEL_PREFIX).order_by("parcel_number"))
         if not parcels:
@@ -366,6 +364,9 @@ class Command(BaseCommand):
         per right to hang its surface budget on. Keyed by name prefix + right_id so
         the flush removes only these — never the three GSA management-area zones.
         """
+        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        from surface.models import WaterRightParcel
+
         parcel_ids = [p.id for p in parcels]
         # right -> [parcels it serves] via the WaterRightParcel links the parcels seed built.
         right_to_parcels = {}
@@ -490,6 +491,9 @@ class Command(BaseCommand):
     # Curtailment order (audit provenance)
     # ------------------------------------------------------------------
     def _build_curtailment_order(self):
+        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        from surface.models import CurtailmentOrder, WaterRight
+
         curtailed = WaterRight.objects.filter(
             status="curtailed", right_id__startswith="MER-WR-").first()
         if curtailed is None:
@@ -649,6 +653,14 @@ class Command(BaseCommand):
         Returns the list of ``ParcelLedger`` surface rows the service wrote (for the
         summary count); the service has already persisted them.
         """
+        # Local imports: `surface` is an optional module (Phase 87) — see `_flush`.
+        from surface.models import (
+            DiversionRecord,
+            PointOfDiversion,
+            PointOfDiversionParcel,
+        )
+        from surface.services import allocate_district_delivery
+
         schedule = self._month_schedule()
         seq_of = {p.id: i for i, p in enumerate(parcels)}
 
@@ -855,6 +867,9 @@ class Command(BaseCommand):
         Return Flow AF) but contribute nothing to the whole-basin balance.
         ``update_or_create`` on the ``(POD, month, type)`` unique key → idempotent.
         """
+        # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
+        from surface.models import DiversionRecord, PointOfDiversion
+
         upstream = PointOfDiversion.objects.filter(name=JOURNEY_UPSTREAM_POD).first()
         downstream = PointOfDiversion.objects.filter(
             name=JOURNEY_DOWNSTREAM_POD).first()

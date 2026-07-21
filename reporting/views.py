@@ -34,7 +34,6 @@ from reporting.generators import (
 from reporting.models import ReportingProfile, ReportSubmission, ReportTemplate
 from reporting.services import PREFILL_METHOD_BY_REPORT_TYPE, build_openet_prefill
 from reporting.validators import validate_report
-from surface.models import DiversionRecord
 
 
 @login_required
@@ -329,6 +328,11 @@ def calwatrs_worksheet(request, pk):
     report_type = submission.report_template.report_type
     if report_type not in ("calwatrs_a1", "calwatrs_a2"):
         raise Http404("The transcription worksheet is only for CalWATRS reports.")
+
+    # Local import: `surface` is an optional module (Phase 87), so this must not
+    # run at module scope. The 404 above already restricts this view to CalWATRS,
+    # a surface-water filing, so it is unreachable without the module.
+    from surface.models import DiversionRecord
 
     period = submission.reporting_period
     diversion_type = "direct_use" if report_type == "calwatrs_a1" else "to_storage"

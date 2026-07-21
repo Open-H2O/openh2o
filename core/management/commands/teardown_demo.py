@@ -40,13 +40,6 @@ from datasync.models import MonitoredStation
 from geography.models import Boundary, Zone
 from measurements.models import Meter, MeterReading, Sensor, SensorMeasurement
 from parcels.models import Parcel, ParcelLedger, UsageLocation
-from surface.models import (
-    DiversionRecord,
-    PointOfDiversion,
-    PointOfDiversionParcel,
-    WaterRight,
-    WaterRightParcel,
-)
 from wells.models import (
     MonitoringWell,
     Well,
@@ -136,9 +129,16 @@ class Command(BaseCommand):
 
     # ------------------------------------------------------------------
     def _teardown_basin(self, cfg):
-        # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072).
+        # Local imports: `recharge` and `surface` are optional modules, so these
+        # must not run at module scope (ISS-072, Phase 87).
         from recharge.models import RechargeSite
+        from surface.models import (
+            DiversionRecord,
+            PointOfDiversion,
+            PointOfDiversionParcel,
+            WaterRight,
+            WaterRightParcel,
+        )
 
         counts = {}
         boundary = Boundary.objects.filter(name=cfg["boundary_name"]).first()

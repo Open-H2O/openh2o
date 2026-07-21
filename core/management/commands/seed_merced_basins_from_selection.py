@@ -51,7 +51,6 @@ from accounting.models import AllocationCarryover
 from accounting.services import BASIN_RECHARGE_POOL
 from geography.models import Boundary, Flowline, Zone
 from geography.placement import nearest_flowline, snap_to_flowline
-from surface.models import PointOfDiversion
 
 DATA_DIR = os.path.join(
     os.path.dirname(__file__), "..", "..", "..", "data", "merced"
@@ -122,10 +121,11 @@ class Command(BaseCommand):
     # El Nido Canal — pure recharge basins fed by ONE shared canal intake
     # ------------------------------------------------------------------
     def _seed_el_nido(self, features, boundary, gsa_zones):
-        # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072). Matches the existing function-scope
-        # `recharge.geometry` import in `_capacity` below.
+        # Local imports: `recharge` and `surface` are optional modules, so these
+        # must not run at module scope (ISS-072, Phase 87). Matches the existing
+        # function-scope `recharge.geometry` import in `_capacity` below.
         from recharge.models import RechargeSite, RechargeSitePOD
+        from surface.models import PointOfDiversion
 
         # One shared MID turnout off the El Nido Canal feeds the whole recharge
         # complex (not a separate intake per basin). Build the basins first, then
@@ -198,9 +198,10 @@ class Command(BaseCommand):
     # Merced River — dual-purpose Flood-MAR on cropland (MER-POD-009)
     # ------------------------------------------------------------------
     def _seed_river_floodmar(self, features, gsa_zones):
-        # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072).
+        # Local imports: `recharge` and `surface` are optional modules, so these
+        # must not run at module scope (ISS-072, Phase 87).
         from recharge.models import RechargeSite, RechargeSitePOD
+        from surface.models import PointOfDiversion
 
         river_pod = PointOfDiversion.objects.filter(
             name__startswith=RIVER_POD_CODE
@@ -324,9 +325,10 @@ class Command(BaseCommand):
         Demo Valley. The pool delete is scoped to ``basin_recharge_pool`` ONLY, so
         the engine's incidental pool and the rollover carryover survive.
         """
-        # Local import: `recharge` is an optional module, so this must not run at
-        # module scope (ISS-072).
+        # Local imports: `recharge` and `surface` are optional modules, so these
+        # must not run at module scope (ISS-072, Phase 87).
         from recharge.models import RechargeSite, RechargeSitePOD
+        from surface.models import PointOfDiversion
 
         site_ids = list(
             RechargeSite.objects.filter(operator=MID_OPERATOR)
