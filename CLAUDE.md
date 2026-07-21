@@ -179,8 +179,16 @@ as a secret, do **not** store it in Bitwarden, and do **not** mirror it on prod.
 The suite uses pytest + pytest-django + factory_boy and lives in `tests/`.
 
 ```bash
-make test          # runs pytest pinned to local settings
+make test            # runs pytest pinned to local settings
+make test-droppable  # prove every optional module can still be dropped
 ```
+
+`make test-droppable` boots a Django process per optional module with that
+module left out of `OPENH2O_MODULES` and asserts the kept pages still render,
+the dropped routes 404 and the sidebar carries no dead links. It is part of
+`make test` too; the standalone target exists because module-decoupling work
+runs it in isolation dozens of times. See
+[tests/droppability/README.md](tests/droppability/README.md).
 
 Tests are pinned to `config.settings.local` via `--ds` because the production
 settings refuse to boot without a strong DB password and a real ALLOWED_HOSTS.

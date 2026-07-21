@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo merced teardown-demo \
-        check test guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod deploy
+        check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod deploy
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -85,6 +85,9 @@ guard-fresh: ## Fail loudly if the web image's source has drifted from the worki
 
 test: guard-fresh ## Run test suite (pinned to local settings; --ds outranks the container's prod env)
 	$(COMPOSE) exec web python -m pytest tests/ -v --ds=config.settings.local
+
+test-droppable: guard-fresh ## Prove every optional module can be dropped (see tests/droppability/README.md)
+	$(COMPOSE) exec web python -m pytest tests/test_droppability_acceptance.py -v --ds=config.settings.local
 
 # ---------------------------------------------------------------------------
 # Seed Data
