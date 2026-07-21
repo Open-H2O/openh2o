@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load prose %}
 
 {% block title %}Home - Open Water Accounting Platform{% endblock %}
 
@@ -55,7 +56,17 @@
             </span>
             <span class="home-task-body">
                 <span class="home-task-label">Run a Report</span>
-                <span class="home-task-sublabel">Generate GEARS and CalWATRS exports</span>
+                {% comment %}
+                  A fourth ISS-082 site, found by measuring the surface-less
+                  render rather than by reading the plan's list — this card
+                  named both filing families unconditionally, so a deployment
+                  with no surface water was still offered "GEARS and CalWATRS".
+                  Same owner mapping as the reports page: GEARS is groundwater
+                  (`wells`), CalWATRS is surface diversion (`surface`). The card
+                  itself is already guarded on `reporting` above; this is the
+                  sentence inside it. Renders "GEARS and CalWATRS exports"
+                  unchanged when both modules are on.
+                {% endcomment %}<span class="home-task-sublabel">Generate {% module_nouns "wells:GEARS" "surface:CalWATRS" %} exports</span>
             </span>
         </a>
         {% endif %}
@@ -65,7 +76,17 @@
             </span>
             <span class="home-task-body">
                 <span class="home-task-label">Explore the Map</span>
-                <span class="home-task-sublabel">Every well, parcel, and diversion on one basin view</span>
+                {% comment %}
+                  Module-neutral on purpose (ISS-082). This used to enumerate
+                  "every well, parcel, and diversion", which is a promise a
+                  deployment without surface water cannot keep — 87-02 measured
+                  it still saying "diversion" with `surface` dropped. The map
+                  shows whatever the deployment actually has, so the honest
+                  sentence is the general one. Three guarded variants would be
+                  the wrong shape for a sublabel: more machinery than a
+                  seven-word phrase can carry, and one more thing to keep in
+                  step every time a module is added.
+                {% endcomment %}<span class="home-task-sublabel">Everything you manage on one basin view</span>
             </span>
         </a>
         {% if 'setup' in enabled_modules %}{% if not access_enforced or user_is_admin %}
