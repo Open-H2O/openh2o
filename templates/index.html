@@ -19,11 +19,13 @@
         <div class="dashboard-card-value">{{ well_count }}</div>
         <div class="dashboard-card-sublabel">View all wells</div>
     </a>
+    {% if 'surface' in enabled_modules %}
     <a href="{% url 'surface:pod_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Surface Diversions</div>
         <div class="dashboard-card-value">{{ diversion_count }}</div>
         <div class="dashboard-card-sublabel">View surface diversions</div>
     </a>
+    {% endif %}
     {% if 'recharge' in enabled_modules %}
     <a href="{% url 'recharge:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Recharge Sites</div>

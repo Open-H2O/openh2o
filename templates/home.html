@@ -100,10 +100,12 @@
             <span class="home-stat-value">{{ well_count }}</span>
             <span class="home-stat-label">Wells</span>
         </a>
+        {% if 'surface' in enabled_modules %}
         <a href="{% url 'surface:pod_list' %}" class="home-stat">
             <span class="home-stat-value">{{ diversion_count }}</span>
             <span class="home-stat-label">Surface Diversions</span>
         </a>
+        {% endif %}
         {% if 'recharge' in enabled_modules %}
         <a href="{% url 'recharge:list' %}" class="home-stat">
             <span class="home-stat-value">{{ recharge_site_count }}</span>

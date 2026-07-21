@@ -12,7 +12,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Map</span>
   </nav>
-  <p class="page-description">Interactive map showing use areas, wells, points of diversion{% if 'recharge' in enabled_modules %}, and recharge sites{% endif %}. Toggle layers with the controls panel. Click features for details.</p>
+  <p class="page-description">Interactive map showing use areas, wells{% if 'surface' in enabled_modules %}, points of diversion{% endif %}{% if 'recharge' in enabled_modules %}, and recharge sites{% endif %}. Toggle layers with the controls panel. Click features for details.</p>
 </div>
 {% endblock %}
 
@@ -128,7 +128,7 @@ var MAP_CONFIG = {
         { id: 'zone-labels', url: '{% url "geography:zone_labels_geojson" %}' },
         { id: 'parcels', url: '{% url "parcels:geojson" %}' },
         { id: 'wells', url: '{% url "wells:geojson" %}' },
-        { id: 'pods', url: '{% url "surface:pods_geojson" %}' },
+        {% if 'surface' in enabled_modules %}{ id: 'pods', url: '{% url "surface:pods_geojson" %}' },{% endif %}
         {% if 'recharge' in enabled_modules %}{ id: 'recharge', url: '{% url "recharge:sites_geojson" %}' },{% endif %}
         { id: 'stations', url: '{% url "datasync:stations_geojson" %}' },
         { id: 'tie-lines', url: '{% url "geography:tie_lines_geojson" %}' }
@@ -240,6 +240,12 @@ var MAP_CONFIG = {
         Object.assign(OH2O.makeLabelLayer('wells-label', 'wells', 'well', {}), { panelHidden: true, section: 'Land Use' }),
 
         // ── Surface Water ──
+        {# The whole Surface Water section is guarded with its source above. The  #}
+        {# POD layers would reference a removed source (a MapLibre console error, #}
+        {# not a clean absence), and the SW tie lines are drawn from              #}
+        {# PointOfDiversionParcel — without the module the section would be an    #}
+        {# empty panel heading with two permanently blank toggles.                #}
+        {% if 'surface' in enabled_modules %}
         {
             id: 'pods-points', type: 'circle', source: 'pods',
             label: 'Points of Diversion', section: 'Surface Water', label_id: 'pods-label',
@@ -259,6 +265,7 @@ var MAP_CONFIG = {
             minzoom: 12, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '% SW'],
             layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
         }), { panelHidden: true, group: 'sw-tie-lines', section: 'Surface Water', filter: ['==', ['get', 'source_type'], 'sw'] }),
+        {% endif %}
 
         // ── Infrastructure ──
         {
@@ -363,12 +370,14 @@ var MAP_CONFIG = {
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/wells/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
+        {% if 'surface' in enabled_modules %}
         'pods-points': function(p) {
             return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
                    'Stream: ' + (p.stream_name || '—') + '<br>' +
                    'Max rate: ' + (p.max_rate_cfs ? parseFloat(p.max_rate_cfs).toFixed(2) + ' cfs' : '—') + '<br>' +
                    '<a href="/surface/diversion/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
+        {% endif %}
         'stations-points': function(p) {
             return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +
                    'Source: ' + (p.data_source_code || '—') + '<br>' +

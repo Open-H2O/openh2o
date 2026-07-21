@@ -39,6 +39,11 @@ EXEMPT = {
     # base.html includes this only inside {% if 'feedback' in enabled_modules %},
     # and that include is its single call site.
     ("feedback", "partials/_feedback_widget.html"),
+    # Phase 87. `recharge` requires `surface` (core/modules.py), so this template
+    # only renders in configurations that have both; `drop_closure` drops them
+    # together. A `'surface' in enabled_modules` guard here would be a condition
+    # that cannot be false — dead code that reads as if the case were live.
+    ("surface", "recharge/partials/_detail_pane.html"),
 }
 
 

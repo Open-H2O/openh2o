@@ -65,7 +65,7 @@
         </h2>
         {% if group.source_kind == 'well' %}
         <a href="{% url 'wells:detail' group.source_id %}" class="text-link text-sm">Open well →</a>
-        {% else %}
+        {% elif 'surface' in enabled_modules %}
         <a href="{% url 'surface:pod_detail' group.source_id %}" class="text-link text-sm">Open point of diversion →</a>
         {% endif %}
       </div>
