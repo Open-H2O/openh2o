@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load prose %}
 
 {% block title %}About - Open Water Accounting Platform{% endblock %}
 
@@ -13,10 +14,22 @@
         {% endif %}
         <h1 class="about-title">OpenH2O</h1>
         <p class="about-tagline">Open-source water-data management for California</p>
-        <p class="about-purpose card-raised">
+        {% comment %}
+          A fifth ISS-082 site, and the one nobody had measured — 87-02 looked at
+          the home page, Getting Started and the reports page. This one was found
+          by the forbidden-vocabulary assertion added in the same plan, on its
+          FIRST run, which is the best argument for that gate existing: the
+          sentence enumerates the domains the platform manages, so on a
+          deployment without surface water it advertised "surface diversions,
+          managed aquifer recharge" to the public About page.
+
+          Enumerating is the point of the sentence, so each noun is gated rather
+          than the whole list going vague. "measurements" and "deliveries" are
+          ungated: measurements is schema-resident and present in every valid
+          configuration, and deliveries are accounting's, which Phase 89 owns.
+        {% endcomment %}<p class="about-purpose card-raised">
             OpenH2O is an open-source water-data management platform built for Groundwater Sustainability Agencies
-            and water districts. It brings an agency's water data — measurements, deliveries, wells, surface
-            diversions, managed aquifer recharge, and mixed-use accounting — into a single system the agency owns
+            and water districts. It brings an agency's water data — {% module_nouns "measurements:measurements" "accounting:deliveries" "wells:wells" "surface:surface diversions" "recharge:managed aquifer recharge" "accounting:mixed-use accounting" %} — into a single system the agency owns
             and understands. The
             entire platform runs on a $15-a-month virtual private server and can be
             deployed by an AI coding assistant pointed at <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">this repository</a>.
@@ -106,7 +119,20 @@
                 <span class="timeline-year">2026</span>
                 <div class="timeline-content">
                     <strong>OpenH2O</strong>
-                    <p>OpenH2O extends the open accounting model beyond groundwater — adding surface water, managed aquifer recharge, live OpenET integration, and California reporting formats — on a fully open stack an agency can host itself</p>
+                    {% comment %}
+                      Gated for the same reason as the hero above: this is the
+                      deployment's About page, not the project's website, so the
+                      capabilities it lists should be the ones this install
+                      actually has. The lineage paragraph further up deliberately
+                      is NOT gated — "Where GAP focused on groundwater and SGMA,
+                      OpenH2O extends the same approach across all of water" is a
+                      statement about the project's history, which does not change
+                      when a module is switched off.
+
+                      The whole clause is conditional, not just its nouns: with
+                      every listed module dropped the sentence would otherwise
+                      read "beyond groundwater — adding — on a fully open stack".
+                    {% endcomment %}{% module_nouns "surface:surface water" "recharge:managed aquifer recharge" "datasync:live OpenET integration" "reporting:California reporting formats" as extensions %}<p>OpenH2O extends the open accounting model beyond groundwater{% if extensions %} — adding {{ extensions }} —{% endif %} on a fully open stack an agency can host itself</p>
                 </div>
             </div>
         </div>

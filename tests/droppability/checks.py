@@ -32,7 +32,9 @@ assertion.
 """
 
 import ast
+import html as html_lib
 import importlib.util
+import re
 from pathlib import Path
 
 import factory
@@ -129,6 +131,178 @@ LIST_PAGES = tuple(
     for path, factory_name, owner in _LIST_PAGES
     if owner is None or owner in ENABLED_NAMES
 )
+
+#: Words a kept page must not say when the owning module is dropped.
+#:
+#: This is the class ISS-082 named and nothing in this harness could see. 87-02
+#: booted staging without ``surface`` and got zero ``NoReverseMatch``, zero 500s,
+#: zero dead links — every assertion in this file green — while the home page
+#: said "every well, parcel, and *diversion*" and Getting Started promised
+#: *recharge basins*. Status codes and link targets cannot detect a sentence. A
+#: dropped module leaks through PROSE, and until this table existed the leak had
+#: no gate at all.
+#:
+#: **Declared per module, exactly like ``_PAGES``. Never derived.** Deriving the
+#: vocabulary from ``spec.label`` or the module docstring would be a rule that
+#: holds by luck: ``datasync`` is labelled "Data Sync" and its prose noun is
+#: "monitoring station", and ``parcels`` is labelled "Use Areas" while its
+#: models and half its copy say "parcel". A derived list would miss both. One
+#: declared row per module costs a line and cannot mis-attribute.
+#:
+#: **Rows exist for modules that are not droppable yet**, and that is deliberate
+#: — ``test_every_dropped_module_declares_a_vocabulary`` below fails if a module
+#: ever becomes optional without one, so 88-02 and Phase 89 cannot flip a flag
+#: and silently skip this gate. Until then those rows are dormant: they generate
+#: no parameters, because the module is never in ``DROPPED_NAMES``.
+#:
+#: Keep entries specific. A word this table forbids must be one whose appearance
+#: on a page really does mean the copy is claiming a domain the deployment does
+#: not have — otherwise the gate cries wolf and someone weakens it, which is
+#: worse than not having it.
+_FORBIDDEN_VOCABULARY = (
+    # Live from 88-02 onward.
+    ("wells", ("well", "wells", "groundwater extraction", "GEARS")),
+    ("datasync", ("monitoring station", "monitoring stations")),
+    # Live today.
+    ("surface", ("diversion", "diversions", "CalWATRS", "water right", "water rights")),
+    ("recharge", ("recharge", "recharge basin", "recharge basins")),
+    ("drinking", ("drinking water", "sampling point", "sampling points")),
+    # Owns no user-facing vocabulary of its own: `reporting` is the container for
+    # GEARS and CalWATRS, and both of those belong to the domains whose water
+    # they report (wells and surface), not to reporting. Forbidding "report"
+    # here would fire on every page that mentions reporting periods, which
+    # `accounting` owns. An empty tuple is a real answer, not a gap.
+    ("reporting", ()),
+    ("health", ()),
+    ("setup", ()),
+    ("infrastructure", ()),
+    ("feedback", ()),
+    # Standard set — these can never be dropped, so these rows can never run.
+    # Present so the completeness test below has an answer for every module.
+    ("core", ()),
+    ("geography", ()),
+    ("measurements", ()),
+    ("standards", ()),
+    # Phase 89 flips these. The entries are deliberately narrow: `parcels` is
+    # labelled "Use Areas" but its copy says both, and `accounting`'s nouns
+    # ("allocation", "ledger", "water year") are everywhere in a deployment that
+    # HAS accounting. Phase 89 owns widening these, with the same measure-first
+    # discipline used here — do not widen them speculatively.
+    ("parcels", ("use area", "use areas")),
+    ("accounting", ("allocation ceiling", "allocation ceilings")),
+)
+
+FORBIDDEN_VOCABULARY = dict(_FORBIDDEN_VOCABULARY)
+
+#: English idioms that contain a forbidden word without meaning it.
+#:
+#: "as well as" is the one that matters: ``\bwell\b`` matches inside it, so on a
+#: wells-less deployment an ordinary sentence would fail a test about water. The
+#: current copy contains none of these — measured on 2026-07-21 across every
+#: kept page rather than assumed — so this list is prophylactic, and it is
+#: deliberately tiny.
+#:
+#: **This is for English, never for excusing a real leak.** If a page genuinely
+#: names a domain the deployment does not have, the fix is the copy, not a new
+#: entry here. Anything added to this tuple should be a phrase whose words mean
+#: something other than water.
+_IDIOMS = (
+    "as well as",
+    "well-known",
+    "well known",
+    "may as well",
+    "well under way",
+)
+
+#: Pages that DEFINE water vocabulary rather than describe this deployment.
+#:
+#: Exactly one page qualifies, and the bar for adding a second is high enough
+#: that it should be argued in a plan rather than added in passing. An exemption
+#: list is how a gate rots, so this one is deliberately awkward: each row carries
+#: its reason, ``test_vocabulary_exemptions_still_describe_real_pages`` fails if
+#: a row stops matching a real page, and the reason has to survive being read
+#: aloud.
+#:
+#: The distinction that earns the exemption is whether the page makes a CLAIM
+#: about the agency's water. The three defects ISS-082 was opened for all did:
+#: "every well, parcel, and diversion on one basin view" says the map shows your
+#: diversions; "it populates your recharge basins" says the wizard will import
+#: them; a live CalWATRS Generate control invites a filing. The glossary's
+#: "Managed Aquifer Recharge — intentionally adding water to an aquifer through
+#: spreading basins or injection wells" claims nothing about this agency. It
+#: defines an industry term, the way a dictionary does.
+#:
+#: Whether an operator's glossary SHOULD narrow to the terms their deployment
+#: uses is a real product question with a defensible answer either way, and it is
+#: not one a harness task gets to decide by accident. Logged as ISS-085.
+_VOCABULARY_EXEMPT_PAGES = (
+    (
+        "/help/glossary/",
+        "A dictionary of water-data terms. It defines vocabulary rather than "
+        "describing what this deployment manages, so naming a domain here is "
+        "not a claim that the agency has it. See ISS-085.",
+    ),
+)
+
+VOCABULARY_EXEMPT_PAGES = frozenset(path for path, _ in _VOCABULARY_EXEMPT_PAGES)
+
+#: The kept pages this assertion actually reads.
+VOCABULARY_CHECKED_PAGES = tuple(
+    path for path in KEPT_PAGES if path not in VOCABULARY_EXEMPT_PAGES
+)
+
+_SCRIPT_OR_STYLE = re.compile(r"(?is)<(script|style)\b[^>]*>.*?</\1\s*>")
+_HTML_COMMENT = re.compile(r"(?s)<!--.*?-->")
+_ANY_TAG = re.compile(r"(?s)<[^>]+>")
+_WHITESPACE = re.compile(r"\s+")
+
+
+def visible_text(markup: str) -> str:
+    """The words a human actually reads on the page.
+
+    Four things are removed, and each for a measured reason rather than a
+    general tidiness instinct:
+
+    * ``<script>`` and ``<style>`` bodies — they are code, and the inline JS on
+      these pages contains selector strings that would read as prose.
+    * HTML comments — they ship to the browser but nobody reads them, so a
+      ``<!-- CalWATRS -->`` marker is a markup problem and not a copy problem.
+      (One such comment survives in ``base.html``; see ISS-084. Stripping
+      comments is what keeps this assertion about words rather than about it.)
+    * All tags, which takes every attribute with them. This is the trap the plan
+      called out: ``class="well-card"`` must not fail a test about prose.
+    * HTML entities are unescaped LAST, after the tags are gone — do it first and
+      an escaped ``&lt;`` turns into a ``<`` that the tag regex then eats along
+      with the real text after it.
+
+    The tag regex is deliberately simple and would mis-handle a ``>`` inside a
+    quoted attribute value. No template in this codebase has one (checked), and a
+    real HTML parser here would trade a dependency for a case that does not
+    occur.
+    """
+    text = _SCRIPT_OR_STYLE.sub(" ", markup)
+    text = _HTML_COMMENT.sub(" ", text)
+    text = _ANY_TAG.sub(" ", text)
+    text = html_lib.unescape(text)
+    for idiom in _IDIOMS:
+        text = re.sub(re.escape(idiom), " ", text, flags=re.I)
+    return _WHITESPACE.sub(" ", text)
+
+
+def find_forbidden_word(text: str, words):
+    """The first forbidden word in ``text``, with ~60 characters around it.
+
+    Returns ``(word, excerpt)`` or ``None``. Word boundaries and
+    case-insensitive: "Well" opens a sentence, "wells" is a different string
+    from "well", and neither should depend on how the copy was capitalised.
+    """
+    for word in words:
+        match = re.search(rf"\b{re.escape(word)}\b", text, re.I)
+        if match:
+            start = max(0, match.start() - 30)
+            excerpt = text[start:match.end() + 30].strip()
+            return word, excerpt
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -557,6 +731,100 @@ def test_pod_detail_renders_with_a_row(auth_client):
         f"{path} returned {response.status_code} with {list(DROPPED_NAMES)} "
         f"dropped and one PointOfDiversion row present."
     )
+
+
+# ---------------------------------------------------------------------------
+# The vocabulary gate (ISS-082)
+# ---------------------------------------------------------------------------
+# Everything above this line checks structure: does the app load, does the route
+# 404, is the href gone. None of it can read. These two tests are the first in
+# this harness that look at what a page SAYS.
+
+
+def test_every_dropped_module_declares_a_vocabulary():
+    """A module cannot become optional and skip this gate by omission.
+
+    ``FORBIDDEN_VOCABULARY`` is a lookup, and a missing key would make the
+    assertion below silently check nothing for that module — a green run that
+    proved less than the run before it. This is the same failure shape
+    ``test_this_run_has_something_to_prove`` guards at the file level: an empty
+    check that looks exactly like a passing one.
+    """
+    undeclared = [name for name in DROPPED_NAMES if name not in FORBIDDEN_VOCABULARY]
+    assert not undeclared, (
+        f"These modules were dropped but declare no forbidden vocabulary: "
+        f"{undeclared}. Add a row to _FORBIDDEN_VOCABULARY in this file — an "
+        f"empty tuple is a valid answer for a module that owns no user-facing "
+        f"nouns, but it has to be written down rather than left out."
+    )
+
+
+def test_vocabulary_exemptions_still_describe_real_pages():
+    """An exemption cannot outlive the page it excuses.
+
+    A row naming a path this harness no longer serves would sit here looking
+    like a considered decision while excusing nothing — and would go on
+    excusing nothing after someone re-added a page at that path for a different
+    reason. Same discipline as ``SCHEMA_EXCEPTIONS`` in ``core/modules.py``,
+    where a record that stops matching real code fails the build rather than
+    becoming folklore.
+    """
+    known = {path for path, _ in _PAGES}
+    stale = sorted(VOCABULARY_EXEMPT_PAGES - known)
+    assert not stale, (
+        f"These pages are exempted from the vocabulary check but are not in "
+        f"_PAGES: {stale}. Remove the exemption or restore the page."
+    )
+
+
+def test_the_vocabulary_check_still_reads_most_pages():
+    """Guard against the exemption list quietly swallowing the assertion.
+
+    If exemptions ever outnumbered the pages actually checked, this test would
+    still be green while proving nothing — the same shape as
+    ``test_this_run_has_something_to_prove``, one level down.
+    """
+    if not KEPT_PAGES:
+        pytest.skip("Nothing is kept in this configuration.")
+    assert len(VOCABULARY_CHECKED_PAGES) > len(VOCABULARY_EXEMPT_PAGES), (
+        f"Only {len(VOCABULARY_CHECKED_PAGES)} of {len(KEPT_PAGES)} kept pages "
+        f"are read by the vocabulary check, against "
+        f"{len(VOCABULARY_EXEMPT_PAGES)} exemptions. The gate is being hollowed "
+        f"out by its own exception list."
+    )
+
+
+@pytest.mark.parametrize("name", DROPPED_NAMES)
+def test_kept_pages_never_name_a_dropped_module(auth_client, name):
+    """No kept page says a word that belongs to a domain this deployment lacks.
+
+    The assertion ISS-082 asks for. A page can return 200, carry no dead link,
+    reverse no dropped route — and still tell the operator about water they do
+    not have. 87-02 measured exactly that on three pages at once.
+
+    Failures name the page, the word and the surrounding text on purpose. A
+    Phase-89 failure should be diagnosable from the pytest output without
+    re-running anything, the same discipline ``tests/droppability/README.md``
+    documents for the spawner.
+    """
+    words = FORBIDDEN_VOCABULARY.get(name, ())
+    if not words:
+        pytest.skip(
+            f"{name!r} declares no user-facing vocabulary of its own, so this "
+            f"assertion is vacuous for it by construction — see the notes on "
+            f"_FORBIDDEN_VOCABULARY."
+        )
+
+    for path in VOCABULARY_CHECKED_PAGES:
+        text = visible_text(auth_client.get(path).content.decode())
+        found = find_forbidden_word(text, words)
+        assert found is None, (
+            f"{path} still says {found[0]!r} with module {name!r} dropped.\n"
+            f"  ...{found[1]}...\n"
+            f"That page is describing water this deployment does not have. Fix "
+            f"the copy — rewrite it module-neutrally if the sentence survives "
+            f"it, or guard the noun on core.modules.is_enabled if it enumerates."
+        )
 
 
 @pytest.mark.parametrize("name", DROPPED_NAMES)
