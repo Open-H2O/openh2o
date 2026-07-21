@@ -541,10 +541,14 @@ MODULE_REGISTRY: dict = {
         # `accounting` for the two reporting_period FKs, `geography` for
         # PointOfDiversion.source_flowline.
         requires=("geography", "parcels", "accounting"),
-        required=True,
-        required_reason=(
-            "not yet decoupled: surface.models is imported at module scope by accounting, reporting, geography, infrastructure and config views"
-        ),
+        # Decoupled in Phase 87 (2026-07-21). Every cross-app `surface.models`
+        # import now runs at function scope, the kept templates that reach into
+        # it are guarded, `seed_water_right_types` is module-gated, and
+        # `make test-droppable` covers it. `surface` is TRULY removable — no
+        # SCHEMA_EXCEPTIONS record targets it — so `schema_resident` stays at its
+        # default False and its tables actually go, rather than merely hiding.
+        # Dropping it validly drags `recharge` out too; see `recharge.requires`.
+        required=False,
     ),
     "recharge": ModuleSpec(
         name="recharge",
