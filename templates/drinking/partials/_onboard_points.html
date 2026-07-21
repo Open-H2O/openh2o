@@ -23,7 +23,7 @@
 {% if not facility %}
 <div class="alert-error">{{ error|default:"That request could not be read." }}</div>
 {% else %}
-<div id="facility-{{ facility.pk }}" class="card-inset">
+<div id="facility-{{ facility.pk }}" class="card-raised card-inset facility-panel">
 
   <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
     <h3 class="section-header" style="margin: 0;">
@@ -94,13 +94,20 @@
     hx-post="{% url 'drinking:onboard_points_add' system.pwsid %}"
     hx-target="#facility-{{ facility.pk }}"
     hx-swap="outerHTML"
-    style="margin-top: var(--space-lg);">
+    style="margin-top: var(--space-md);">
     {% csrf_token %}
     <input type="hidden" name="facility" value="{{ facility.pk }}">
 
-    <div class="form-row" style="display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: flex-end;">
+    {% comment %}
+      A defined grid, not a wrapping flex row. The fields keep a stable order and
+      collapse predictably (four across, then two, then one) instead of reflowing
+      on the differing heights of their help text. The button sits in its own cell
+      with a spacer label so it aligns to the input line no matter how tall a
+      neighbouring help note is.
+    {% endcomment %}
+    <div class="sp-add-form">
 
-      <div class="form-group" style="margin: 0; flex: 0 0 15rem;">
+      <div class="form-group">
         <label class="form-label" for="point-number-{{ facility.pk }}">Number or label <span class="required-mark">*</span></label>
         {% comment %}
           type="text", never type="number". Real labels include LCR and 900 — a
@@ -113,7 +120,7 @@
         <div class="form-help">Whatever the state uses for this spot. Letters are fine &mdash; <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are both real.</div>
       </div>
 
-      <div class="form-group" style="margin: 0; flex: 1 1 18rem;">
+      <div class="form-group">
         <label class="form-label" for="point-name-{{ facility.pk }}">Description</label>
         <input type="text" id="point-name-{{ facility.pk }}" name="name"
                class="form-input" autocomplete="off"
@@ -121,7 +128,7 @@
         <div class="form-help">For people to read. Anything that identifies the spot.</div>
       </div>
 
-      <div class="form-group" style="margin: 0; flex: 0 0 13rem;">
+      <div class="form-group">
         <label class="form-label" for="point-type-{{ facility.pk }}">Kind of place</label>
         <select id="point-type-{{ facility.pk }}" name="point_type" class="form-input">
           <option value="">&mdash;</option>
@@ -131,7 +138,8 @@
         </select>
       </div>
 
-      <div class="form-group" style="margin: 0;">
+      <div class="form-group sp-add-submit">
+        <span class="form-label" aria-hidden="true">&nbsp;</span>
         <button type="submit" class="btn-secondary">Add this place</button>
       </div>
 

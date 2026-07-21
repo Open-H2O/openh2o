@@ -3343,6 +3343,65 @@ div[id$="-map"] {
     gap: var(--space-md);
 }
 
+/* -- Drinking onboarding: sampling-point builder (ISS-078) --------------- */
+
+/* Each facility is a contained inset panel, aligned with the page's other
+   cards. The builder previously used `.card-inset` alone — which sets only a
+   background, no padding — so the panels rendered flush-left and broke the
+   card rhythm. `.card-raised .card-inset` is the house pattern used everywhere
+   else; `.facility-panel` only scopes the density tweaks below. */
+.facility-panel {
+    padding-top: var(--space-md);
+    padding-bottom: var(--space-md);
+}
+
+/* Tighter table rhythm inside a facility panel — the listed-points and any
+   inline tables read as a compact reference, not a full data page. */
+.facility-panel .data-table th,
+.facility-panel .data-table td {
+    padding-top: var(--space-xs);
+    padding-bottom: var(--space-xs);
+}
+
+/* The "add a place" row: a defined grid instead of a wrapping flex row, so the
+   number / description / kind / button keep a stable order and collapse
+   predictably (four → two → one) rather than reflowing on help-text heights. */
+.sp-add-form {
+    display: grid;
+    grid-template-columns: minmax(8rem, 11rem) minmax(12rem, 1fr) minmax(9rem, 12rem) auto;
+    gap: var(--space-sm) var(--space-md);
+    align-items: start;
+}
+
+.sp-add-form .form-group {
+    margin: 0;
+}
+
+/* The button's spacer label (aria-hidden) reserves the same height as a real
+   label, so with align-items:start the button lands on the input line and stays
+   there however tall a neighbour's help text grows. */
+.sp-add-form .sp-add-submit .btn-secondary {
+    width: 100%;
+}
+
+@media (max-width: 1023px) {
+    .sp-add-form {
+        grid-template-columns: 1fr 1fr;
+    }
+    .sp-add-form .sp-add-submit {
+        grid-column: 1 / -1;
+    }
+    .sp-add-form .sp-add-submit .btn-secondary {
+        width: auto;
+    }
+}
+
+@media (max-width: 639px) {
+    .sp-add-form {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* -- Phase 75: accounting / reporting page polish ------------------------ */
 
 /* Methodology step cards — the ordered calculation chain. Each step gets a
