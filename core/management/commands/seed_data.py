@@ -13,7 +13,6 @@ from core.modules import is_enabled
 SEED_COMMANDS = [
     "seed_roles",
     "seed_water_types",
-    "seed_water_right_types",
     "seed_well_types",
     "seed_data_sources",
     "seed_report_templates",
@@ -24,6 +23,11 @@ SEED_COMMANDS = [
 #: cleanly instead of failing on a management command that does not exist.
 OPTIONAL_SEED_COMMANDS = [
     ("drinking", "seed_drinking"),
+    # Phase 87. `seed_water_right_types` is owned by `surface`; with the module
+    # dropped the command does not exist and `make seed` died on it. Running it
+    # after the ungated block is safe — verified 2026-07-21 that no other seed
+    # command references WaterRightType.
+    ("surface", "seed_water_right_types"),
 ]
 
 

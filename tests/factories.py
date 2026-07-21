@@ -179,59 +179,70 @@ class ParcelLedgerFactory(factory.django.DjangoModelFactory):
     )
 
 
-class WaterRightTypeFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "surface.WaterRightType"
+# -- surface (Phase 87) -------------------------------------------------------
+#
+# `surface` became an OPTIONAL module in Phase 87, so these definitions are
+# guarded for the same reason as the `recharge` and `drinking` blocks below: a
+# DjangoModelFactory resolves its `Meta.model` string through the app registry at
+# CLASS-DEFINITION time, so an unguarded factory for a dropped module turns
+# `import tests.factories` itself into an error — and `tests/droppability/checks.py`
+# imports this module, so one unguarded factory takes down every droppability case
+# at once rather than one.
+#
+# The six are self-contained: they SubFactory only into each other, into
+# ParcelFactory, and nothing outside the block SubFactories into them (verified
+# 2026-07-21 — AllocationPlanFactory below uses zone / water_type /
+# reporting_period only).
+if is_enabled("surface"):
 
-    name = factory.Sequence(lambda n: f"Right Type {n}")
-    code = factory.Sequence(lambda n: f"RT{n}")
+    class WaterRightTypeFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "surface.WaterRightType"
 
+        name = factory.Sequence(lambda n: f"Right Type {n}")
+        code = factory.Sequence(lambda n: f"RT{n}")
 
-class WaterRightFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "surface.WaterRight"
+    class WaterRightFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "surface.WaterRight"
 
-    right_id = factory.Sequence(lambda n: f"WR-{n:06d}")
-    right_type = factory.SubFactory(WaterRightTypeFactory)
-    holder_name = "Test Holder"
-    status = "active"
+        right_id = factory.Sequence(lambda n: f"WR-{n:06d}")
+        right_type = factory.SubFactory(WaterRightTypeFactory)
+        holder_name = "Test Holder"
+        status = "active"
 
+    class WaterRightParcelFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "surface.WaterRightParcel"
 
-class WaterRightParcelFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "surface.WaterRightParcel"
+        water_right = factory.SubFactory(WaterRightFactory)
+        parcel = factory.SubFactory(ParcelFactory)
 
-    water_right = factory.SubFactory(WaterRightFactory)
-    parcel = factory.SubFactory(ParcelFactory)
+    class PointOfDiversionFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "surface.PointOfDiversion"
 
+        water_right = factory.SubFactory(WaterRightFactory)
+        name = factory.Sequence(lambda n: f"POD {n}")
+        location = factory.LazyFunction(lambda: Point(-119.5, 36.5))
+        status = "active"
 
-class PointOfDiversionFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "surface.PointOfDiversion"
+    class PointOfDiversionParcelFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "surface.PointOfDiversionParcel"
 
-    water_right = factory.SubFactory(WaterRightFactory)
-    name = factory.Sequence(lambda n: f"POD {n}")
-    location = factory.LazyFunction(lambda: Point(-119.5, 36.5))
-    status = "active"
+        point_of_diversion = factory.SubFactory(PointOfDiversionFactory)
+        parcel = factory.SubFactory(ParcelFactory)
+        fraction = Decimal("1.0000")
 
+    class DiversionRecordFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "surface.DiversionRecord"
 
-class PointOfDiversionParcelFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "surface.PointOfDiversionParcel"
-
-    point_of_diversion = factory.SubFactory(PointOfDiversionFactory)
-    parcel = factory.SubFactory(ParcelFactory)
-    fraction = Decimal("1.0000")
-
-
-class DiversionRecordFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "surface.DiversionRecord"
-
-    point_of_diversion = factory.SubFactory(PointOfDiversionFactory)
-    month = factory.LazyFunction(lambda: date(2024, 1, 1))
-    volume_acre_feet = Decimal("50.0000")
-    diversion_type = "direct_use"
+        point_of_diversion = factory.SubFactory(PointOfDiversionFactory)
+        month = factory.LazyFunction(lambda: date(2024, 1, 1))
+        volume_acre_feet = Decimal("50.0000")
+        diversion_type = "direct_use"
 
 
 class AllocationPlanFactory(factory.django.DjangoModelFactory):
