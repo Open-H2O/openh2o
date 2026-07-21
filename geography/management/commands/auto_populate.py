@@ -26,6 +26,7 @@ from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand, CommandError
 
+from core.modules import is_enabled
 from datasync.adapters import get_adapter
 from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, Flowline, Zone
@@ -112,8 +113,15 @@ class Command(BaseCommand):
             ("basins", self._step_basins),
             ("parcels", self._step_parcels),
             ("flowlines", self._step_flowlines),
-            ("stations", self._step_stations),
         ])
+        # The stations step writes MonitoredStation rows, so it is offered only
+        # where `datasync` is enabled. Without this a demoted deployment could
+        # fill a switched-off module's tables straight from the CLI — the same
+        # leak `seed_data` was gated for, through a different door. Named
+        # explicitly rather than filtered out silently, so `--steps stations`
+        # says why instead of "Unknown steps".
+        if is_enabled("datasync"):
+            step_registry["stations"] = self._step_stations
 
         # Filter to requested steps
         requested = options["steps"]

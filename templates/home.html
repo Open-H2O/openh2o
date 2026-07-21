@@ -18,14 +18,14 @@
         <div class="home-hero-inner">
             <div class="home-hero-greeting">{{ greeting }}</div>
             <h2 class="home-hero-title">{{ agency_name }}</h2>
-            <div class="home-hero-status">
+            {% if 'datasync' in enabled_modules %}<div class="home-hero-status">
                 <span class="home-hero-dot {% if fresh_stations %}home-hero-dot--ok{% else %}home-hero-dot--idle{% endif %}"></span>
                 <span>{{ fresh_stations }} of {{ active_station_count }} station{{ active_station_count|pluralize }} reporting</span>
                 {% if last_sync_time %}
                 <span class="home-status-sep">·</span>
                 <span>synced {{ last_sync_time|timesince }} ago</span>
                 {% endif %}
-            </div>
+            </div>{% endif %}
         </div>
     </section>
 

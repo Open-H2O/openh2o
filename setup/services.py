@@ -9,6 +9,7 @@ instead of management command stdout output.
 
 import logging
 
+from core.modules import is_enabled
 from geography.models import Boundary, Flowline, Zone
 from parcels.models import Parcel
 
@@ -21,6 +22,36 @@ WIZARD_STEPS = [
     ("flowlines", "Flowlines", "USGS 3DHP hydrography"),
     ("stations", "Monitoring Stations", "Federal and state gauges, wells, and weather stations near your watershed"),
 ]
+
+#: Which module each wizard step fills, declared rather than derived — the same
+#: discipline as ``_PAGES`` in the droppability harness. ``None`` means the step
+#: belongs to a module every deployment carries, so it always runs.
+#:
+#: The stations step is the one that matters: it discovers ``MonitoredStation``
+#: rows, so on a ``datasync``-demoted deployment it would offer the operator a
+#: step that fills a switched-off module's tables — the one thing
+#: ``test_schema_resident_module_tables_are_present_and_empty`` exists to catch,
+#: reached through the UI instead of through ``seed_data``.
+_STEP_MODULE = {
+    "basins": "geography",
+    "parcels": "parcels",
+    "flowlines": "geography",
+    "stations": "datasync",
+}
+
+
+def wizard_steps() -> list:
+    """The wizard steps this deployment can actually run, in order.
+
+    Resolved per request rather than at import time: ``OPENH2O_MODULES`` is read
+    when settings load, but a module-level constant computed here would freeze
+    the answer into anything that imports this file first — and the views index
+    into this list by position, so a stale copy would run the wrong step.
+    """
+    return [
+        step for step in WIZARD_STEPS
+        if _STEP_MODULE.get(step[0]) is None or is_enabled(_STEP_MODULE[step[0]])
+    ]
 
 
 def run_auto_populate_step(boundary: Boundary, step_name: str) -> tuple:
@@ -197,7 +228,7 @@ def get_boundary_preview_data(boundary: Boundary) -> dict:
     existing_basins = Zone.objects.filter(boundary=boundary).count()
     existing_parcels = Parcel.objects.count()
     existing_flowlines = Flowline.objects.filter(boundary=boundary).count()
-    existing_stations = MonitoredStation.objects.count()
+    existing_stations = MonitoredStation.objects.count() if is_enabled("datasync") else None
 
     geojson = None
     if boundary.geometry:

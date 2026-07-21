@@ -250,16 +250,25 @@ def dashboard(request):
     # Active monitoring stations whose data has gone dead, judged against each
     # source's OWN expected cadence (reuses the Monitoring screen's classifier so
     # the two never disagree). "dead" = down; "stale" (amber) is not counted here.
-    stations_down = sum(
-        1
-        for s in MonitoredStation.objects.filter(is_active=True).select_related(
-            "data_source"
+    # Guarded on the module rather than on the row count: `datasync` is
+    # schema-resident from Phase 88, so with it switched off the table is still
+    # there and still answers — with a zero that reads as "every station is
+    # healthy" instead of "this deployment has no stations". `stations_down`
+    # stays a local zero so `attention_total` still adds up, but the CONTEXT KEY
+    # is only set inside the guard, so the pill is absent rather than quietly
+    # never true.
+    stations_down = 0
+    if is_enabled("datasync"):
+        stations_down = sum(
+            1
+            for s in MonitoredStation.objects.filter(is_active=True).select_related(
+                "data_source"
+            )
+            if freshness.classify_freshness(
+                s.data_source.code, s.last_data_at, attention_now
+            )
+            == "dead"
         )
-        if freshness.classify_freshness(
-            s.data_source.code, s.last_data_at, attention_now
-        )
-        == "dead"
-    )
 
     # Active accounts whose consumptive use has passed their allocation this
     # period (only meaningful once the period has allocations; remaining is None
@@ -285,10 +294,11 @@ def dashboard(request):
         "grand_net": grand_net,
         "has_allocations": has_allocations,
         "periods_to_close": periods_to_close,
-        "stations_down": stations_down,
         "accounts_over_budget": accounts_over_budget,
         "attention_total": attention_total,
     }
+    if is_enabled("datasync"):
+        context["stations_down"] = stations_down
 
     if request.headers.get("HX-Request"):
         return render(request, "accounting/partials/_dashboard_content.html", context)

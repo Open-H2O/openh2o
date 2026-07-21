@@ -13,7 +13,7 @@ import json
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -60,22 +60,48 @@ ADD_TYPE_MODULE = {
 }
 
 
+#: Fallback order for an unrecognised or unavailable ``?type``. ``well`` first,
+#: because it was the hardcoded fallback before Phase 88 and is still the right
+#: default wherever it exists.
+ADD_TYPE_ORDER = ("well", "diversion", "storage", "recharge_site")
+
+
+def supported_add_types() -> tuple:
+    """The add/import types this deployment can actually serve, in fallback order."""
+    return tuple(t for t in ADD_TYPE_ORDER if is_enabled(ADD_TYPE_MODULE[t]))
+
+
 def _supported_type(raw):
     """Normalize a ?type / infra_type value to one this deployment can serve.
 
-    A type whose owning module is dropped falls back to ``well`` rather than
-    reaching `reverse()` on a route that never registered. The matching cards in
-    add.html are guarded on the same condition, so the type is not offered either.
+    A type whose owning module is dropped falls back to the first type that IS
+    available, rather than reaching `reverse()` on a route that never
+    registered. The matching cards in add.html are guarded on the same
+    condition, so the type is not offered either.
+
+    **The fallback used to be the literal ``"well"``, which Phase 88 turned into
+    a bug rather than a safety net**: with `wells` demoted, an unrecognised type
+    fell back to a type whose route no longer exists, so the guard handed the
+    NoReverseMatch straight back. Returns ``None`` when no type is available at
+    all — the caller turns that into a 404, because a page for adding
+    infrastructure to a deployment that tracks none of it has no subject.
     """
-    raw = (raw or "well").strip()
-    if raw not in ADD_TYPE_BACK or not is_enabled(ADD_TYPE_MODULE[raw]):
-        return "well"
-    return raw
+    available = supported_add_types()
+    raw = (raw or "").strip()
+    if raw in available:
+        return raw
+    return available[0] if available else None
 
 
 def _add_context(infra_type, **extra):
     """Build the type-aware context for add.html (GET and POST-error re-renders)."""
     infra_type = _supported_type(infra_type)
+    if infra_type is None:
+        raise Http404(
+            "This deployment runs none of the modules that own an infrastructure "
+            "type (wells, surface diversions, recharge sites), so there is "
+            "nothing this page could add."
+        )
     back_name, back_label = ADD_TYPE_BACK[infra_type]
     context = {
         "preselect_type": infra_type,
@@ -95,10 +121,15 @@ def infrastructure_add(request):
         return render(
             request,
             "infrastructure/add.html",
-            _add_context(request.GET.get("type", "well").strip()),
+            _add_context(request.GET.get("type", "").strip()),
         )
 
-    infra_type = request.POST.get("infra_type", "well")
+    # Normalised, not taken raw: a POST naming a demoted module's type would
+    # otherwise write rows into a switched-off module and then redirect to a
+    # route that does not exist.
+    infra_type = _supported_type(request.POST.get("infra_type", ""))
+    if infra_type is None:
+        raise Http404("No infrastructure type is available in this configuration.")
     name = request.POST.get("name", "").strip()
     status = request.POST.get("status", "active")
     notes = request.POST.get("notes", "").strip()
@@ -247,6 +278,8 @@ def _import_type(raw):
 def infrastructure_import(request):
     """Bulk import landing page (the file dropzone)."""
     infra_type = _import_type(request.GET.get("type"))
+    if infra_type is None:
+        raise Http404("No infrastructure type is available in this configuration.")
     back_name, back_label = ADD_TYPE_BACK[infra_type]
     return render(
         request,
@@ -265,6 +298,8 @@ def infrastructure_import(request):
 def infrastructure_import_preview(request):
     """Parse the uploaded file, auto-map its columns, return the mapping UI."""
     infra_type = _import_type(request.POST.get("infra_type"))
+    if infra_type is None:
+        raise Http404("No infrastructure type is available in this configuration.")
     uploaded = request.FILES.get("file")
     if not uploaded:
         return render(
@@ -316,6 +351,8 @@ def infrastructure_import_preview(request):
 def infrastructure_import_commit(request):
     """Validate the confirmed mapping against the parsed rows and bulk-create."""
     infra_type = _import_type(request.POST.get("infra_type"))
+    if infra_type is None:
+        raise Http404("No infrastructure type is available in this configuration.")
 
     try:
         rows = json.loads(request.POST.get("rows_json", "") or "[]")

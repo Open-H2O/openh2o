@@ -53,7 +53,11 @@ class Command(BaseCommand):
             self.stdout.write("-" * 70)
             for r in results:
                 status = r["status"]
-                if status == "green":
+                if r.get("details", {}).get("module_disabled"):
+                    # A check whose module is switched off is neither healthy nor
+                    # broken; printing GREEN here would claim it ran.
+                    status_display = f"{'N/A':<10}"
+                elif status == "green":
                     status_display = self.style.SUCCESS(f"{'GREEN':<10}")
                 elif status == "yellow":
                     status_display = self.style.WARNING(f"{'YELLOW':<10}")

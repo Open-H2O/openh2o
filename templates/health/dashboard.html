@@ -44,7 +44,9 @@
                 <h3 class="section-header-flush" style="text-transform: capitalize;">
                     {{ result.get_category_display }}
                 </h3>
-                {% if result.status == 'green' %}
+                {% if result.details.module_disabled %}
+                <span class="badge badge-grey">Not applicable</span>
+                {% elif result.status == 'green' %}
                 <span class="health-status-badge-green">Healthy</span>
                 {% elif result.status == 'yellow' %}
                 <span class="health-status-badge-yellow">Warning</span>

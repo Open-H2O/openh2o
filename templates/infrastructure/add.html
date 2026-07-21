@@ -39,7 +39,7 @@
       <div class="card-raised">
         <h2 class="card-header-ruled">Infrastructure Type</h2>
         <div class="infra-type-grid">
-          <label class="infra-type-card{% if preselect_type == 'well' %} active{% endif %}" data-type="well">
+          {% if 'wells' in enabled_modules %}<label class="infra-type-card{% if preselect_type == 'well' %} active{% endif %}" data-type="well">
             <input type="radio" name="infra_type" value="well"{% if preselect_type == 'well' %} checked{% endif %}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -49,7 +49,7 @@
             </svg>
             <span class="infra-type-label">Groundwater Well</span>
             <span class="infra-type-desc">Production, monitoring, or domestic well</span>
-          </label>
+          </label>{% endif %}
           {# Phase 87: each type card is guarded by the module that owns it. The #}
           {# POST branch below creates that module's model, and _add_context     #}
           {# reverses its list route — offering a card for a dropped module is a #}
@@ -113,7 +113,7 @@
       </div>
 
       <!-- Type-specific fields -->
-      <div class="card-raised" id="fields-well"{% if preselect_type != 'well' %} style="display: none;"{% endif %}>
+      {% if 'wells' in enabled_modules %}<div class="card-raised" id="fields-well"{% if preselect_type != 'well' %} style="display: none;"{% endif %}>
         <h2 class="card-header-ruled">Well Details</h2>
         <div class="form-stack">
           <div class="form-row-2col">
@@ -197,7 +197,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </div>{% endif %}
 
       {% if 'surface' in enabled_modules %}
       <div class="card-raised" id="fields-diversion"{% if preselect_type != 'diversion' %} style="display: none;"{% endif %}>
@@ -376,6 +376,10 @@
     radio.addEventListener('change', function() {
       currentType = this.value;
       Object.keys(typeFields).forEach(function(k) {
+        // A type whose module is dropped has no panel in the markup, so the
+        // lookup above is null. Phase 87 guarded the panels but not this loop,
+        // which made a surface-less Add page throw on the first type change.
+        if (!typeFields[k]) return;
         typeFields[k].style.display = k === currentType ? '' : 'none';
       });
       updateDrawModeForType();
@@ -388,6 +392,7 @@
   });
   // Sync visible fields / active tile / submit label to the preselected type on load
   Object.keys(typeFields).forEach(function(k) {
+    if (!typeFields[k]) return;
     typeFields[k].style.display = k === currentType ? '' : 'none';
   });
   document.querySelectorAll('.infra-type-card').forEach(function(card) {

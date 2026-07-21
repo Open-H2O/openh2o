@@ -22,6 +22,37 @@ from django.db.models import Count, Sum
 from django.core.management import call_command
 from django.utils import timezone
 
+from core.modules import is_enabled
+
+
+def not_applicable(category: str, module: str, subject: str) -> dict:
+    """A check whose whole subject belongs to a module this deployment does not run.
+
+    Three answers were available and two of them are wrong. Reporting **red**
+    would tell an operator their instance is broken for running the
+    configuration they chose. Dropping the row **silently** would shrink the
+    dashboard with no explanation, and a missing check looks exactly like a
+    check that has never run — the failure shape this codebase guards against
+    everywhere else.
+
+    So the check still produces a row, still names itself, and says why it has
+    nothing to measure. ``status`` stays ``green`` because the STATUS_CHOICES
+    field has three values and adding a fourth is an ``AlterField`` migration,
+    which this plan is not allowed to author; the dashboard reads
+    ``details.module_disabled`` instead and renders a neutral "Not applicable"
+    badge rather than "Healthy". The status field carries the alarm level, the
+    details carry the reason, and neither has to lie.
+    """
+    return {
+        "category": category,
+        "status": "green",
+        "message": (
+            f"Not applicable — {subject} needs the '{module}' module, which is "
+            f"not enabled on this deployment."
+        ),
+        "details": {"module_disabled": module},
+    }
+
 
 # Irrigation-efficiency bands for check_et_meter_agreement (math eval item 9).
 # These come from published irrigation efficiency ranges — roughly 0.70-0.95 for
@@ -39,19 +70,27 @@ def check_database():
     try:
         connection.ensure_connection()
         from parcels.models import Parcel, ParcelLedger
-        from wells.models import Well
         from accounting.models import WaterAccount
 
         counts = {
             "parcels": Parcel.objects.count(),
-            "wells": Well.objects.count(),
             "ledger_entries": ParcelLedger.objects.count(),
             "water_accounts": WaterAccount.objects.count(),
         }
+        # This check is about connectivity, so it survives `wells` being off —
+        # it just stops counting a table nobody is filling. The well count is
+        # omitted from both the details and the sentence rather than reported as
+        # a zero that reads like a missing import.
+        wells_phrase = ""
+        if is_enabled("wells"):
+            from wells.models import Well
+
+            counts["wells"] = Well.objects.count()
+            wells_phrase = f"{counts['wells']} wells, "
         return {
             "category": "database",
             "status": "green",
-            "message": f"Connected. {counts['parcels']} parcels, {counts['wells']} wells, {counts['ledger_entries']} ledger entries.",
+            "message": f"Connected. {counts['parcels']} parcels, {wells_phrase}{counts['ledger_entries']} ledger entries.",
             "details": counts,
         }
     except Exception as e:
@@ -105,6 +144,11 @@ def check_disk():
 
 
 def check_sync_freshness():
+    if not is_enabled("datasync"):
+        return not_applicable(
+            "sync_freshness", "datasync", "external-feed freshness"
+        )
+
     from datasync.models import DataSource, DataSyncLog
 
     # On the public demo the database is restored from a frozen golden snapshot
@@ -208,8 +252,6 @@ def check_ledger_integrity():
 def check_orphans():
     from parcels.models import Parcel
     from accounting.models import WaterAccountParcel
-    from datasync.models import MonitoredStation
-    from wells.models import Well
 
     assigned_parcel_ids = WaterAccountParcel.objects.filter(
         removed_date__isnull=True
@@ -218,14 +260,18 @@ def check_orphans():
         id__in=assigned_parcel_ids
     ).count()
 
-    orphan_wells = Well.objects.filter(status="active").count()
-    monitored_count = MonitoredStation.objects.count()
+    # The parcel half is the only half this check ever acts on — the well and
+    # station counts are context. Each is reported only when its module is on,
+    # so a demoted module contributes no key rather than a zero.
+    details = {"unassigned_parcels": unassigned_parcels}
+    if is_enabled("wells"):
+        from wells.models import Well
 
-    details = {
-        "unassigned_parcels": unassigned_parcels,
-        "active_wells": orphan_wells,
-        "monitored_stations": monitored_count,
-    }
+        details["active_wells"] = Well.objects.filter(status="active").count()
+    if is_enabled("datasync"):
+        from datasync.models import MonitoredStation
+
+        details["monitored_stations"] = MonitoredStation.objects.count()
 
     if unassigned_parcels > 0:
         status = "yellow"
@@ -373,6 +419,11 @@ def check_cache_duplication():
     case the constraint cannot see — DIFFERENT spans that overlap (a January-June
     window plus a March-only window both covering March).
     """
+    if not is_enabled("datasync"):
+        return not_applicable(
+            "cache_duplication", "datasync", "the OpenET cache"
+        )
+
     from datasync.models import OpenETCache
 
     exact_duplicates = (
@@ -439,6 +490,11 @@ def check_pod_fractions():
     1.0008, 0.9999 and 1.0003). We allow one unit in the last place per link,
     with a small floor, and flag anything beyond that as real misconfiguration.
     """
+    if not is_enabled("surface"):
+        return not_applicable(
+            "pod_fractions", "surface", "point-of-diversion fraction splits"
+        )
+
     from surface.models import PointOfDiversionParcel
 
     sums = (
@@ -493,6 +549,11 @@ def check_unallocated_delivery():
     such — so it is a yellow, not a red: the number is recorded and reconcilable,
     it just is not attributed yet.
     """
+    if not is_enabled("surface"):
+        return not_applicable(
+            "unallocated_delivery", "surface", "surface delivery attribution"
+        )
+
     from surface.models import UnallocatedDelivery
 
     rows = UnallocatedDelivery.objects.all()

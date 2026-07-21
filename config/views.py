@@ -39,10 +39,18 @@ def index(request):
     """
     context = {
         "parcel_count": Parcel.objects.count(),
-        "well_count": Well.objects.count(),
         "water_account_count": WaterAccount.objects.count(),
-        "station_count": MonitoredStation.objects.count(),
     }
+    # `wells` and `datasync` are demoted, not removed (Phase 88), so the imports
+    # at the top of this file keep working and the tables keep answering — with
+    # a truthful zero that reads as a LIE on the page: "0 Wells" says you have
+    # no wells, where the honest answer is that this deployment does not track
+    # them. Same reason the key is built inside the guard rather than set to
+    # zero outside it: absent, so the stat card is simply not rendered.
+    if is_enabled("wells"):
+        context["well_count"] = Well.objects.count()
+    if is_enabled("datasync"):
+        context["station_count"] = MonitoredStation.objects.count()
     if is_enabled("surface"):
         # Local import: `surface` is an optional module (Phase 87), so this must
         # not run at module scope — this file was the first casualty of a
@@ -67,27 +75,37 @@ def index(request):
     # Status-hero data — every value is real, never decorative.
     now = timezone.now()
     site_config = SiteConfig.objects.first()
-    active = list(
-        MonitoredStation.objects.filter(is_active=True).select_related("data_source")
-    )
-    fresh_stations = sum(
-        1
-        for s in active
-        if freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
-        == "fresh"
-    )
-    last_sync = (
-        DataSyncLog.objects.filter(status__in=["success", "partial"]).first()
-    )
     context.update(
         {
             "greeting": _greeting(now),
             "agency_name": site_config.agency_name if site_config else "Your Agency",
-            "active_station_count": len(active),
-            "fresh_stations": fresh_stations,
-            "last_sync_time": last_sync.started_at if last_sync else None,
         }
     )
+    # The hero's whole status line — "N of M stations reporting · synced X ago" —
+    # is datasync data. With the module off it would read "0 of 0 stations
+    # reporting", which is a monitoring claim about a deployment that does no
+    # monitoring. All three keys are built inside the guard, and home.html drops
+    # the line when they are absent.
+    if is_enabled("datasync"):
+        active = list(
+            MonitoredStation.objects.filter(is_active=True).select_related("data_source")
+        )
+        fresh_stations = sum(
+            1
+            for s in active
+            if freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+            == "fresh"
+        )
+        last_sync = (
+            DataSyncLog.objects.filter(status__in=["success", "partial"]).first()
+        )
+        context.update(
+            {
+                "active_station_count": len(active),
+                "fresh_stations": fresh_stations,
+                "last_sync_time": last_sync.started_at if last_sync else None,
+            }
+        )
     return render(request, "home.html", context)
 
 
@@ -141,18 +159,24 @@ def _search_groups(q):
             for p in parcels
         ]})
 
-    wells = Well.objects.filter(
-        Q(name__icontains=q)
-        | Q(well_registration_id__icontains=q)
-        | Q(wcr_number__icontains=q)
-        | Q(state_well_number__icontains=q)
-    ).order_by("name")[:limit]
-    if wells:
-        groups.append({"key": "wells", "label": "Wells", "results": [
-            {"label": w.name, "sublabel": w.well_registration_id,
-             "url": reverse("wells:detail", args=[w.pk])}
-            for w in wells
-        ]})
+    # Guarded, and this is a crash site rather than a cosmetic one: the tables
+    # are still there under demotion and would answer the query, but
+    # `reverse("wells:detail")` raises NoReverseMatch because the routes are
+    # gone. A populated table plus an unregistered namespace is exactly the pair
+    # that turns a search box into a 500.
+    if is_enabled("wells"):
+        wells = Well.objects.filter(
+            Q(name__icontains=q)
+            | Q(well_registration_id__icontains=q)
+            | Q(wcr_number__icontains=q)
+            | Q(state_well_number__icontains=q)
+        ).order_by("name")[:limit]
+        if wells:
+            groups.append({"key": "wells", "label": "Wells", "results": [
+                {"label": w.name, "sublabel": w.well_registration_id,
+                 "url": reverse("wells:detail", args=[w.pk])}
+                for w in wells
+            ]})
 
     if is_enabled("surface"):
         # Local import + guard: `surface` is an optional module (Phase 87). Global
@@ -170,17 +194,19 @@ def _search_groups(q):
                 for d in diversions
             ]})
 
-    stations = MonitoredStation.objects.select_related("data_source").filter(
-        Q(station_name__icontains=q)
-        | Q(external_station_id__icontains=q)
-        | Q(usgs_site_id__icontains=q)
-    ).order_by("station_name")[:limit]
-    if stations:
-        groups.append({"key": "stations", "label": "Monitoring Stations", "results": [
-            {"label": s.station_name, "sublabel": s.external_station_id,
-             "url": reverse("datasync:station_detail", args=[s.pk])}
-            for s in stations
-        ]})
+    if is_enabled("datasync"):
+        # Same NoReverseMatch exposure as the wells group above.
+        stations = MonitoredStation.objects.select_related("data_source").filter(
+            Q(station_name__icontains=q)
+            | Q(external_station_id__icontains=q)
+            | Q(usgs_site_id__icontains=q)
+        ).order_by("station_name")[:limit]
+        if stations:
+            groups.append({"key": "stations", "label": "Monitoring Stations", "results": [
+                {"label": s.station_name, "sublabel": s.external_station_id,
+                 "url": reverse("datasync:station_detail", args=[s.pk])}
+                for s in stations
+            ]})
 
     accounts = WaterAccount.objects.filter(
         Q(account_number__icontains=q) | Q(name__icontains=q)

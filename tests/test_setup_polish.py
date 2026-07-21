@@ -23,6 +23,7 @@ from django.template.loader import render_to_string
 from django.test import Client, override_settings
 from django.urls import reverse
 
+from core.modules import ALL_MODULE_NAMES
 from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary
 
@@ -396,6 +397,12 @@ def test_completion_panel_routes_to_next_steps(db):
         "all_done": True,
         "results": [{"label": "Basins", "step": "basins", "success": True, "count": 2, "errors": []}],
         "boundary": boundary,
+        # Supplied by hand because `render_to_string` runs no context processors:
+        # the panel's next-step rows are module-guarded from Phase 88, and an
+        # absent `enabled_modules` resolves to '' rather than raising -- so
+        # without this the guarded rows would silently vanish and the assertions
+        # below would be testing the wrong thing quietly.
+        "enabled_modules": list(ALL_MODULE_NAMES),
         "review_groups": [],
         "review_total": 0,
         "review_active": 0,
