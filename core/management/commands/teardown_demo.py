@@ -40,7 +40,6 @@ from datasync.models import MonitoredStation
 from geography.models import Boundary, Zone
 from measurements.models import Meter, MeterReading, Sensor, SensorMeasurement
 from parcels.models import Parcel, ParcelLedger, UsageLocation
-from recharge.models import RechargeSite
 from surface.models import (
     DiversionRecord,
     PointOfDiversion,
@@ -137,6 +136,10 @@ class Command(BaseCommand):
 
     # ------------------------------------------------------------------
     def _teardown_basin(self, cfg):
+        # Local import: `recharge` is an optional module, so this must not run at
+        # module scope (ISS-072).
+        from recharge.models import RechargeSite
+
         counts = {}
         boundary = Boundary.objects.filter(name=cfg["boundary_name"]).first()
         zone_ids = list(boundary.zones.values_list("id", flat=True)) if boundary else []

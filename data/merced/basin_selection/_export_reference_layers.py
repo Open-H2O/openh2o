@@ -17,8 +17,8 @@ data/merced/basin_selection/ and committed as picker reference context):
 """
 import json
 
+from core.modules import is_enabled
 from geography.models import Flowline
-from recharge.models import RechargeSite
 from surface.models import PointOfDiversion
 
 RIVER_TYPES = ["Channel Line", "Waterbody Connector"]
@@ -50,28 +50,41 @@ named = sum(1 for r in rivers if r["properties"]["name"])
 print(f"river flowlines: {len(rivers)} ({named} named)")
 
 # --- existing v1.9 basins (reference only; geometry = footprint polygon) ---
+#
+# This file is a hand-run script, not an importable module, so its module-scope
+# imports never execute at boot. It is still guarded because `recharge` is an
+# optional module (ISS-072): on a deployment without it, a top-level
+# `from recharge.models import ...` on line 21 would abort the whole export with
+# an `app_label` RuntimeError before the river and headgate layers — which have
+# nothing to do with recharge — ever got written. Guarding the section instead
+# means the other two layers still export and the skip is stated out loud.
 basins = []
-for s in RechargeSite.objects.all():
-    geom = s.geometry or s.location
-    if not geom:
-        continue
-    basins.append(
-        {
-            "type": "Feature",
-            "properties": {
-                "name": s.name,
-                "site_type": s.site_type,
-                "operator": s.operator or "",
-                "capacity_acre_feet": (
-                    float(s.capacity_acre_feet)
-                    if s.capacity_acre_feet is not None
-                    else None
-                ),
-                "status": s.status,
-            },
-            "geometry": json.loads(geom.geojson),
-        }
-    )
+if is_enabled("recharge"):
+    from recharge.models import RechargeSite
+
+    for s in RechargeSite.objects.all():
+        geom = s.geometry or s.location
+        if not geom:
+            continue
+        basins.append(
+            {
+                "type": "Feature",
+                "properties": {
+                    "name": s.name,
+                    "site_type": s.site_type,
+                    "operator": s.operator or "",
+                    "capacity_acre_feet": (
+                        float(s.capacity_acre_feet)
+                        if s.capacity_acre_feet is not None
+                        else None
+                    ),
+                    "status": s.status,
+                },
+                "geometry": json.loads(geom.geojson),
+            }
+        )
+else:
+    print("existing basins: skipped (the `recharge` module is not installed)")
 with open("/tmp/merced_existing_basins.geojson", "w") as fh:
     json.dump(_fc(basins), fh)
 print(f"existing basins: {len(basins)}")

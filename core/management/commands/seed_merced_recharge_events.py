@@ -36,7 +36,6 @@ from accounting.models import AllocationCarryover, ReportingPeriod, WaterType
 from accounting.services import BASIN_RECHARGE_POOL, create_recharge_ledger_entries
 from geography.models import Zone
 from parcels.models import ParcelLedger
-from recharge.models import RechargeEvent, RechargeSite
 
 # Wet-season recharge schedule for WY 2024-2025: storm-driven, weighted to
 # mid-winter. (event_date, fraction-of-capacity). Fractions sum to 1.0, so each
@@ -62,6 +61,10 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        # Local import: `recharge` is an optional module, so this must not run at
+        # module scope (ISS-072).
+        from recharge.models import RechargeEvent, RechargeSite
+
         gw, _ = WaterType.objects.get_or_create(
             code="GW", defaults={"name": "Groundwater"}
         )

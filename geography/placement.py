@@ -39,6 +39,14 @@ import math
 from django.contrib.gis.geos import Point
 
 # Share the latitude conversion with recharge.geometry so the two cannot drift.
+#
+# Module scope is correct here and is NOT an ISS-072 defect, so do not "finish the
+# job" by moving it. `recharge/geometry.py` imports `math` and
+# `django.contrib.gis.geos` and defines no models, so this import succeeds whether
+# or not `recharge` is in INSTALLED_APPS — the app_label RuntimeError that makes
+# the other recharge imports load-bearing only fires for `recharge.models`.
+# Relocating the constant into `geography` would be domain restructuring, which the
+# v2.3 milestone explicitly forbids.
 from recharge.geometry import M_PER_DEG_LAT
 
 # California Albers — equal distance/area, metre units. The CRS we measure in.

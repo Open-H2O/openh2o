@@ -13,11 +13,11 @@ from datasync import freshness
 from datasync.models import DataSyncLog, MonitoredStation
 from geography.models import Zone
 from parcels.models import Parcel
-from recharge.models import RechargeSite
 from surface.models import PointOfDiversion
 from wells.models import Well
 from accounting.models import WaterAccount
 from core.models import SiteConfig
+from core.modules import is_enabled
 
 
 def _greeting(now):
@@ -42,10 +42,17 @@ def index(request):
         "parcel_count": Parcel.objects.count(),
         "well_count": Well.objects.count(),
         "diversion_count": PointOfDiversion.objects.count(),
-        "recharge_site_count": RechargeSite.objects.count(),
         "water_account_count": WaterAccount.objects.count(),
         "station_count": MonitoredStation.objects.count(),
     }
+    if is_enabled("recharge"):
+        # Local import: `recharge` is an optional module, so this must not run at
+        # module scope (ISS-072). The count is built inside the guard too — the
+        # templates that read it are guarded on the same condition, so on a
+        # recharge-less deployment the key is simply absent rather than zero.
+        from recharge.models import RechargeSite
+
+        context["recharge_site_count"] = RechargeSite.objects.count()
     if not request.user.is_authenticated:
         return render(request, "index.html", context)
 

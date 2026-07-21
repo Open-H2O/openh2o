@@ -26,7 +26,6 @@ from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, ParcelZone, Zone
 from measurements.models import Meter, MeterReading
 from parcels.models import Parcel, ParcelLedger
-from recharge.models import RechargeEvent, RechargeSite
 from surface.models import PointOfDiversion, WaterRight, WaterRightParcel, WaterRightType
 from wells.models import Well, WellIrrigatedParcel, WellMeter, WellType
 
@@ -141,6 +140,10 @@ class Command(BaseCommand):
 
     def _flush(self):
         """Remove all demo data by deleting the boundary (cascades)."""
+        # Local import: `recharge` is an optional module, so this must not run at
+        # module scope (ISS-072).
+        from recharge.models import RechargeSite
+
         self.stdout.write("Flushing existing demo data...")
         boundary = Boundary.objects.filter(name="Demo Valley GSA").first()
         if boundary:
@@ -203,6 +206,10 @@ class Command(BaseCommand):
             self.stdout.write("  No demo data found.")
 
     def _seed(self):
+        # Local import: `recharge` is an optional module, so this must not run at
+        # module scope (ISS-072).
+        from recharge.models import RechargeEvent, RechargeSite
+
         random.seed(42)  # Reproducible demo data
 
         # ----------------------------------------------------------------

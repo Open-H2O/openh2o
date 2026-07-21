@@ -36,8 +36,11 @@ from decimal import Decimal
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 
+# Module scope is correct: `recharge/geometry.py` defines no models, so this
+# import works with `recharge` absent from INSTALLED_APPS. Only `recharge.models`
+# raises the app_label RuntimeError — see `geography/placement.py` for the long
+# version. `RechargeSite` is imported inside `handle()` for exactly that reason.
 from recharge.geometry import SQ_M_PER_ACRE, area_accurate_box
-from recharge.models import RechargeSite
 
 # name, lon, lat, acres, capacity (AF, ~5 ft ponded depth × acres), operator.
 # Coordinates sit on open cropland beside an MID canal (the diversion source),
@@ -84,6 +87,11 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        # Local import: `recharge` is an optional module, so this must not run at
+        # module scope (ISS-072). The `recharge.geometry` import at the top of
+        # this file stays there deliberately — see the note beside it.
+        from recharge.models import RechargeSite
+
         created = updated = 0
         for cfg in BASIN_CONFIGS:
             geom = area_accurate_box(cfg["lon"], cfg["lat"], cfg["acres"])

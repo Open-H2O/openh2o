@@ -19,10 +19,10 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
+from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from infrastructure import importer
 from parcels.models import Parcel
-from recharge.models import RechargeSite
 from surface.models import PointOfDiversion, PointOfDiversionParcel
 from wells.models import (
     MEASUREMENT_METHOD_CHOICES,
@@ -158,6 +158,11 @@ def infrastructure_add(request):
         return redirect("surface:pod_list")
 
     elif infra_type in ("recharge_site", "storage"):
+        # Local import: `recharge` is an optional module, so this must not run at
+        # module scope (ISS-072). This branch is only reachable when the add form
+        # offered a recharge type, which it does not do without the module.
+        from recharge.models import RechargeSite
+
         location = _parse_point(geometry_json)
         geometry = _parse_polygon(geometry_json)
 
@@ -361,13 +366,19 @@ def infrastructure_geojson(request):
             "properties": {"type": "diversion", "name": pod.name, "id": pod.pk},
         })
 
-    for site in RechargeSite.objects.all():
-        geom = site.geometry if site.geometry else site.location
-        features.append({
-            "type": "Feature",
-            "geometry": json.loads(geom.geojson),
-            "properties": {"type": "recharge", "name": site.name, "id": site.pk},
-        })
+    if is_enabled("recharge"):
+        # Local import: `recharge` is an optional module, so this must not run at
+        # module scope (ISS-072). Unlike the add-form branch above, this loop is
+        # unconditional, so it needs the module check as well as the local import.
+        from recharge.models import RechargeSite
+
+        for site in RechargeSite.objects.all():
+            geom = site.geometry if site.geometry else site.location
+            features.append({
+                "type": "Feature",
+                "geometry": json.loads(geom.geojson),
+                "properties": {"type": "recharge", "name": site.name, "id": site.pk},
+            })
 
     return JsonResponse({"type": "FeatureCollection", "features": features})
 
