@@ -37,18 +37,22 @@ def index(request):
     task cards, and the counts demoted to an at-a-glance stat bar. The public
     landing shows the same counts as the demo's headline numbers.
     """
-    # Local import: `surface` is an optional module (Phase 87), so this must not
-    # run at module scope. This file was the first casualty of a surface-less
-    # boot — the process died here before printing a useful error.
-    from surface.models import PointOfDiversion
-
     context = {
         "parcel_count": Parcel.objects.count(),
         "well_count": Well.objects.count(),
-        "diversion_count": PointOfDiversion.objects.count(),
         "water_account_count": WaterAccount.objects.count(),
         "station_count": MonitoredStation.objects.count(),
     }
+    if is_enabled("surface"):
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope — this file was the first casualty of a
+        # surface-less boot, dying here before printing a useful error. The count
+        # is built inside the guard too: the stat cards that read it are guarded
+        # on the same condition, so on a surface-less deployment the key is simply
+        # absent rather than a misleading zero.
+        from surface.models import PointOfDiversion
+
+        context["diversion_count"] = PointOfDiversion.objects.count()
     if is_enabled("recharge"):
         # Local import: `recharge` is an optional module, so this must not run at
         # module scope (ISS-072). The count is built inside the guard too — the
@@ -124,9 +128,6 @@ def _search_groups(q):
     ``key`` selects the matching glyph in the template. Empty groups are dropped
     so the dropdown only shows entity types that actually matched.
     """
-    # Local import: `surface` is an optional module (Phase 87) — see `index`.
-    from surface.models import PointOfDiversion
-
     limit = SEARCH_GROUP_LIMIT
     groups = []
 
@@ -153,15 +154,21 @@ def _search_groups(q):
             for w in wells
         ]})
 
-    diversions = PointOfDiversion.objects.filter(
-        Q(name__icontains=q) | Q(stream_name__icontains=q)
-    ).order_by("name")[:limit]
-    if diversions:
-        groups.append({"key": "surface", "label": "Surface Diversions", "results": [
-            {"label": d.name, "sublabel": d.stream_name,
-             "url": reverse("surface:pod_detail", args=[d.pk])}
-            for d in diversions
-        ]})
+    if is_enabled("surface"):
+        # Local import + guard: `surface` is an optional module (Phase 87). Global
+        # search is `config`, which stays enabled, so without the guard this would
+        # query a missing model AND reverse a route that never registered.
+        from surface.models import PointOfDiversion
+
+        diversions = PointOfDiversion.objects.filter(
+            Q(name__icontains=q) | Q(stream_name__icontains=q)
+        ).order_by("name")[:limit]
+        if diversions:
+            groups.append({"key": "surface", "label": "Surface Diversions", "results": [
+                {"label": d.name, "sublabel": d.stream_name,
+                 "url": reverse("surface:pod_detail", args=[d.pk])}
+                for d in diversions
+            ]})
 
     stations = MonitoredStation.objects.select_related("data_source").filter(
         Q(station_name__icontains=q)

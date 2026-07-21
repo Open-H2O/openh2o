@@ -26,6 +26,7 @@ from accounting.services import billable_ledger
 from core.access import admin_required
 from core.constants import RECOVERY_HORIZON_CHOICES
 from core.models import SiteConfig
+from core.modules import is_enabled
 from core.workspace import detail_response, list_response
 from geography.forms import ZoneForm
 from geography.models import Boundary, Flowline, ParcelZone, Zone
@@ -214,28 +215,32 @@ def _zone_detail_context(zone):
     # curtailed water right, and surface the matching active order (by priority-
     # date cutoff). Tells the El Nido story on the district page, not just via the
     # collapsed open-year budget number.
-    # Local import: `surface` is an optional module (Phase 87), so this must not
-    # run at module scope — importing surface.models with the app uninstalled
-    # raises RuntimeError before any useful error prints.
-    from surface.models import CurtailmentOrder, WaterRight
-
     curtailment_orders = []
-    is_curtailed = WaterRight.objects.filter(
-        status="curtailed", water_right_parcels__parcel_id__in=zone_parcel_ids
-    ).exists()
-    if is_curtailed:
-        cutoffs = list(
-            WaterRight.objects.filter(
-                status="curtailed",
-                water_right_parcels__parcel_id__in=zone_parcel_ids,
-                priority_date__isnull=False,
-            ).values_list("priority_date", flat=True)
-        )
-        curtailment_orders = list(
-            CurtailmentOrder.objects.filter(
-                status="active", priority_date_cutoff__in=cutoffs
+    is_curtailed = False
+    if is_enabled("surface"):
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope — importing surface.models with the app
+        # uninstalled raises RuntimeError before any useful error prints. The
+        # guard matters as well as the import: a zone page is `geography`, which
+        # stays enabled, so this block would otherwise run unconditionally.
+        from surface.models import CurtailmentOrder, WaterRight
+
+        is_curtailed = WaterRight.objects.filter(
+            status="curtailed", water_right_parcels__parcel_id__in=zone_parcel_ids
+        ).exists()
+        if is_curtailed:
+            cutoffs = list(
+                WaterRight.objects.filter(
+                    status="curtailed",
+                    water_right_parcels__parcel_id__in=zone_parcel_ids,
+                    priority_date__isnull=False,
+                ).values_list("priority_date", flat=True)
             )
-        )
+            curtailment_orders = list(
+                CurtailmentOrder.objects.filter(
+                    status="active", priority_date_cutoff__in=cutoffs
+                )
+            )
 
     # GeoJSON for the persistent detail map. A FeatureCollection (via serialize)
     # so OH2O.detailPaneMap reads it exactly as it does for every other screen;
@@ -516,35 +521,36 @@ def tie_lines_geojson(request):
             },
         })
 
-    # Surface water tie lines: POD -> parcel centroid
-    # Local import: `surface` is an optional module (Phase 87) — see
-    # `_zone_detail_context`.
-    from surface.models import PointOfDiversionParcel
+    # Surface water tie lines: POD -> parcel centroid. Guarded as well as
+    # locally imported (Phase 87): this loop is unconditional and the map layer
+    # that draws these features is guarded on the same condition.
+    if is_enabled("surface"):
+        from surface.models import PointOfDiversionParcel
 
-    for podp in PointOfDiversionParcel.objects.select_related("point_of_diversion", "parcel").all():
-        parcel = podp.parcel
-        if not parcel.geometry:
-            continue
-        pod = podp.point_of_diversion
-        centroid = parcel.geometry.centroid
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "LineString",
-                "coordinates": [
-                    [pod.location.x, pod.location.y],
-                    [centroid.x, centroid.y],
-                ],
-            },
-            "properties": {
-                "source_type": "sw",
-                "source_name": str(pod),
-                "parcel_number": parcel.parcel_number,
-                "fraction": float(podp.fraction),
-                "source_id": pod.pk,
-                "parcel_id": parcel.pk,
-            },
-        })
+        for podp in PointOfDiversionParcel.objects.select_related("point_of_diversion", "parcel").all():
+            parcel = podp.parcel
+            if not parcel.geometry:
+                continue
+            pod = podp.point_of_diversion
+            centroid = parcel.geometry.centroid
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [
+                        [pod.location.x, pod.location.y],
+                        [centroid.x, centroid.y],
+                    ],
+                },
+                "properties": {
+                    "source_type": "sw",
+                    "source_name": str(pod),
+                    "parcel_number": parcel.parcel_number,
+                    "fraction": float(podp.fraction),
+                    "source_id": pod.pk,
+                    "parcel_id": parcel.pk,
+                },
+            })
 
     data = json.dumps({"type": "FeatureCollection", "features": features})
     return HttpResponse(data, content_type="application/json")

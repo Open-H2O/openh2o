@@ -50,6 +50,12 @@
             <span class="infra-type-label">Groundwater Well</span>
             <span class="infra-type-desc">Production, monitoring, or domestic well</span>
           </label>
+          {# Phase 87: each type card is guarded by the module that owns it. The #}
+          {# POST branch below creates that module's model, and _add_context     #}
+          {# reverses its list route — offering a card for a dropped module is a #}
+          {# NoReverseMatch 500, not a dead link. `storage` belongs to recharge  #}
+          {# because it creates a RechargeSite.                                  #}
+          {% if 'surface' in enabled_modules %}
           <label class="infra-type-card{% if preselect_type == 'diversion' %} active{% endif %}" data-type="diversion">
             <input type="radio" name="infra_type" value="diversion"{% if preselect_type == 'diversion' %} checked{% endif %}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -60,6 +66,8 @@
             <span class="infra-type-label">Surface Water Diversion</span>
             <span class="infra-type-desc">Point of diversion from stream or canal</span>
           </label>
+          {% endif %}
+          {% if 'recharge' in enabled_modules %}
           <label class="infra-type-card{% if preselect_type == 'storage' %} active{% endif %}" data-type="storage">
             <input type="radio" name="infra_type" value="storage"{% if preselect_type == 'storage' %} checked{% endif %}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -77,6 +85,7 @@
             <span class="infra-type-label">Recharge Site</span>
             <span class="infra-type-desc">Spreading basin, injection, or ASR well</span>
           </label>
+          {% endif %}
         </div>
       </div>
 
@@ -190,6 +199,7 @@
         </div>
       </div>
 
+      {% if 'surface' in enabled_modules %}
       <div class="card-raised" id="fields-diversion"{% if preselect_type != 'diversion' %} style="display: none;"{% endif %}>
         <h2 class="card-header-ruled">Diversion Details</h2>
         <div class="form-stack">
@@ -204,6 +214,9 @@
         </div>
       </div>
 
+      {% endif %}
+
+      {% if 'recharge' in enabled_modules %}
       <div class="card-raised" id="fields-storage"{% if preselect_type != 'storage' %} style="display: none;"{% endif %}>
         <h2 class="card-header-ruled">Storage Details</h2>
         <div class="form-stack">
@@ -245,6 +258,7 @@
           </div>
         </div>
       </div>
+      {% endif %}
 
       <!-- Parcel linkage -->
       <div class="card-raised">

@@ -50,6 +50,7 @@ from accounting.models import (
 from accounting.carryover_math import available_with_carryover, water_year_of
 from core.access import admin_required
 from core.models import SiteConfig
+from core.modules import is_enabled
 from accounting.services import (
     account_consumptive_balance,
     parcel_consumptive_balance,
@@ -593,28 +594,32 @@ def _account_detail_context(account, period_param=None):
     # just lower numbers. An account is "curtailed" when any of its parcels is
     # served by a water right under a curtailment order. Match the active order to
     # the right by priority-date cutoff (the same date the right carries).
-    # Local import: `surface` is an optional module (Phase 87), so this must not
-    # run at module scope — importing surface.models with the app uninstalled
-    # raises RuntimeError before any useful error prints.
-    from surface.models import CurtailmentOrder, WaterRight
-
     curtailment_orders = []
-    is_curtailed = WaterRight.objects.filter(
-        status="curtailed", water_right_parcels__parcel_id__in=acct_parcel_ids
-    ).exists()
-    if is_curtailed:
-        cutoffs = list(
-            WaterRight.objects.filter(
-                status="curtailed",
-                water_right_parcels__parcel_id__in=acct_parcel_ids,
-                priority_date__isnull=False,
-            ).values_list("priority_date", flat=True)
-        )
-        curtailment_orders = list(
-            CurtailmentOrder.objects.filter(
-                status="active", priority_date_cutoff__in=cutoffs
+    is_curtailed = False
+    if is_enabled("surface"):
+        # Local import: `surface` is an optional module (Phase 87), so this must
+        # not run at module scope — importing surface.models with the app
+        # uninstalled raises RuntimeError before any useful error prints. The
+        # guard matters as well as the import: an account page is `accounting`,
+        # which stays enabled, so this block would otherwise run unconditionally.
+        from surface.models import CurtailmentOrder, WaterRight
+
+        is_curtailed = WaterRight.objects.filter(
+            status="curtailed", water_right_parcels__parcel_id__in=acct_parcel_ids
+        ).exists()
+        if is_curtailed:
+            cutoffs = list(
+                WaterRight.objects.filter(
+                    status="curtailed",
+                    water_right_parcels__parcel_id__in=acct_parcel_ids,
+                    priority_date__isnull=False,
+                ).values_list("priority_date", flat=True)
             )
-        )
+            curtailment_orders = list(
+                CurtailmentOrder.objects.filter(
+                    status="active", priority_date_cutoff__in=cutoffs
+                )
+            )
 
     return {
         "account": account,

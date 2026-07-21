@@ -45,11 +45,37 @@ ADD_TYPE_LABEL = {
     "recharge_site": "Recharge Site",
 }
 
+#: The module that owns each add/import type. Phase 87: every ADD_TYPE_BACK value
+#: is fed to `reverse()`, and `surface:pod_list` / `recharge:list` do not resolve
+#: when their module is omitted — so an unfiltered `?type=diversion` was a
+#: NoReverseMatch 500 on a page that is otherwise fine. This is not an import and
+#: not a `{% url %}` in a template, so neither the import sweep nor the template
+#: guard test can see it. `storage` maps to `recharge` because both storage and
+#: recharge_site create a RechargeSite (see infrastructure_add below).
+ADD_TYPE_MODULE = {
+    "well": "wells",
+    "diversion": "surface",
+    "storage": "recharge",
+    "recharge_site": "recharge",
+}
+
+
+def _supported_type(raw):
+    """Normalize a ?type / infra_type value to one this deployment can serve.
+
+    A type whose owning module is dropped falls back to ``well`` rather than
+    reaching `reverse()` on a route that never registered. The matching cards in
+    add.html are guarded on the same condition, so the type is not offered either.
+    """
+    raw = (raw or "well").strip()
+    if raw not in ADD_TYPE_BACK or not is_enabled(ADD_TYPE_MODULE[raw]):
+        return "well"
+    return raw
+
 
 def _add_context(infra_type, **extra):
     """Build the type-aware context for add.html (GET and POST-error re-renders)."""
-    if infra_type not in ADD_TYPE_BACK:
-        infra_type = "well"
+    infra_type = _supported_type(infra_type)
     back_name, back_label = ADD_TYPE_BACK[infra_type]
     context = {
         "preselect_type": infra_type,
@@ -208,9 +234,12 @@ def infrastructure_add(request):
 
 
 def _import_type(raw):
-    """Normalize a ?type / infra_type value to a supported import type."""
-    raw = (raw or "well").strip()
-    return raw if raw in ADD_TYPE_BACK else "well"
+    """Normalize a ?type / infra_type value to a supported import type.
+
+    Same module filtering as the add form — `infrastructure_import` below also
+    reverses the ADD_TYPE_BACK route (Phase 87).
+    """
+    return _supported_type(raw)
 
 
 @login_required
@@ -363,16 +392,18 @@ def infrastructure_geojson(request):
             "properties": {"type": "well", "name": well.name, "id": well.pk},
         })
 
-    # Local import: `surface` is an optional module (Phase 87) — see
-    # `infrastructure_add`.
-    from surface.models import PointOfDiversion
+    if is_enabled("surface"):
+        # Local import: `surface` is an optional module (Phase 87) — see
+        # `infrastructure_add`. Unlike the add-form branch, this loop is
+        # unconditional, so it needs the module check as well as the local import.
+        from surface.models import PointOfDiversion
 
-    for pod in PointOfDiversion.objects.filter(water_right__isnull=True):
-        features.append({
-            "type": "Feature",
-            "geometry": json.loads(pod.location.geojson),
-            "properties": {"type": "diversion", "name": pod.name, "id": pod.pk},
-        })
+        for pod in PointOfDiversion.objects.filter(water_right__isnull=True):
+            features.append({
+                "type": "Feature",
+                "geometry": json.loads(pod.location.geojson),
+                "properties": {"type": "diversion", "name": pod.name, "id": pod.pk},
+            })
 
     if is_enabled("recharge"):
         # Local import: `recharge` is an optional module, so this must not run at

@@ -24,6 +24,7 @@ from accounting.models import CalculationRun
 from accounting.services import billable_ledger, runs_in_period
 from core.csv_safe import safe_row
 from core.models import SiteConfig
+from core.modules import is_enabled
 from parcels.models import Parcel, ParcelLedger
 from wells.models import Well, WellIrrigatedParcel
 
@@ -286,27 +287,30 @@ def build_shared_supply_comparison(reporting_period=None):
              [(wip.parcel_id, wip.fraction) for wip in wips])
         )
 
-    # Local import: `surface` is an optional module (Phase 87) — see
-    # `build_normalized_pod_parcel_map`.
-    from surface.models import PointOfDiversionParcel
+    # Guarded as well as locally imported (Phase 87): the shared-supply check is a
+    # `reporting` page, which stays enabled, so this half would otherwise run
+    # unconditionally. With `surface` dropped the comparison is well-only, and the
+    # template's POD link branch is guarded on the same condition.
+    if is_enabled("surface"):
+        from surface.models import PointOfDiversionParcel
 
-    podps_by_pod = {}
-    for podp in PointOfDiversionParcel.objects.select_related("point_of_diversion").all():
-        podps_by_pod.setdefault(podp.point_of_diversion, []).append(podp)
-    for pod, podps in podps_by_pod.items():
-        if len(podps) < 2:
-            continue
-        if not any(podp.fraction != Decimal("1.0") for podp in podps):
-            continue
-        candidates.append(
-            (
-                "Point of diversion",
-                pod.name,
-                pod.pk,
-                "pod",
-                [(podp.parcel_id, podp.fraction) for podp in podps],
+        podps_by_pod = {}
+        for podp in PointOfDiversionParcel.objects.select_related("point_of_diversion").all():
+            podps_by_pod.setdefault(podp.point_of_diversion, []).append(podp)
+        for pod, podps in podps_by_pod.items():
+            if len(podps) < 2:
+                continue
+            if not any(podp.fraction != Decimal("1.0") for podp in podps):
+                continue
+            candidates.append(
+                (
+                    "Point of diversion",
+                    pod.name,
+                    pod.pk,
+                    "pod",
+                    [(podp.parcel_id, podp.fraction) for podp in podps],
+                )
             )
-        )
 
     # One query for every parcel number we will display (no N+1).
     parcel_ids = {pid for *_, links in candidates for pid, _ in links}
