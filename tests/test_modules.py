@@ -248,6 +248,165 @@ class TestDroppabilityPromise:
         assert mod.validate_module_names(names) == mod.REQUIRED_MODULE_NAMES
 
 
+@pytest.fixture
+def hypothetical_registry(monkeypatch):
+    """Hand the pure resolvers a registry containing a synthetic module.
+
+    The schema-resident tier is DORMANT today: no module is both optional and
+    schema-resident, because the two that carry the flag (`measurements`,
+    `standards`) are also required, and `validate_module_names` rightly refuses
+    to omit a required module. So the only honest way to exercise the
+    composition path before Phase 88 flips a real flag is to give the functions
+    a registry that has such a module in it.
+
+    Rebinding the module globals is enough: every resolver looks
+    `MODULE_REGISTRY` and `ALL_MODULE_NAMES` up by name at call time.
+    """
+
+    def _install(**spec_kwargs):
+        spec = mod.ModuleSpec(**spec_kwargs)
+        registry = dict(mod.MODULE_REGISTRY)
+        registry[spec.name] = spec
+        monkeypatch.setattr(mod, "MODULE_REGISTRY", registry)
+        monkeypatch.setattr(mod, "ALL_MODULE_NAMES", tuple(registry))
+        return spec
+
+    return _install
+
+
+GHOST = dict(
+    name="ghost",
+    label="Ghost",
+    apps=("ghost",),
+    url_prefix="ghost/",
+    url_module="ghost.urls",
+    url_order=999,
+    nav=(
+        mod.NavEntry(
+            url_name="ghost:list",
+            label="Ghost",
+            icon="ghost",
+            section=mod.SECTION_WATER_DATA,
+            order=999,
+            active_match="/ghost/",
+        ),
+    ),
+    seed_commands=("seed_ghost",),
+)
+
+
+class TestSchemaResidentTier:
+    """The two-tier semantic: switched off, but still holding its tables.
+
+    A schema-resident module that an operator leaves out of ``OPENH2O_MODULES``
+    stays in ``INSTALLED_APPS`` — migrations run, tables exist and sit empty —
+    while contributing no URLs, no nav, no seed commands and no pages.
+
+    Nothing in the shipping product takes this path yet. Phase 88 is its first
+    real user, when ``wells`` and ``datasync`` become optional AND
+    schema-resident. These tests are what make it a working mechanism rather
+    than a flag with a docstring.
+    """
+
+    def test_todays_schema_resident_set_is_pinned(self):
+        assert mod.SCHEMA_RESIDENT_MODULE_NAMES == ("measurements", "standards")
+        # Both axes at once: standard AND schema-resident. The flags are
+        # independent, and these two happen to carry both.
+        for name in mod.SCHEMA_RESIDENT_MODULE_NAMES:
+            assert mod.MODULE_REGISTRY[name].required is True
+
+    def test_the_tier_is_dormant_today(self):
+        """No module is both optional and schema-resident yet.
+
+        When Phase 88 makes one, this fails — deliberately. That is the moment
+        to confirm the droppability harness's schema-resident assertion set is
+        actually being exercised (``tests/droppability/checks.py``), because
+        until then it skips.
+        """
+        live = set(mod.OPTIONAL_MODULE_NAMES) & set(mod.SCHEMA_RESIDENT_MODULE_NAMES)
+        assert not live, (
+            f"{sorted(live)} are now optional AND schema-resident, so the "
+            f"dormant composition path is live. Update this pin, and check that "
+            f"tests/droppability/checks.py is running its schema-resident "
+            f"assertion set rather than skipping it."
+        )
+
+    def test_default_installed_apps_are_unchanged_by_the_tier(self):
+        """With everything enabled the two resolvers agree, exactly."""
+        assert mod.installed_apps_for() == DEFAULT_LOCAL_APPS
+        assert mod.installed_apps_for() == mod.local_apps_for(mod.enabled_modules())
+
+    def test_disabled_schema_resident_module_keeps_its_apps(
+        self, hypothetical_registry
+    ):
+        hypothetical_registry(schema_resident=True, **GHOST)
+        without = [n for n in mod.ALL_MODULE_NAMES if n != "ghost"]
+
+        apps = mod.installed_apps_for(without)
+        assert "ghost" in apps, (
+            "A disabled schema-resident module must stay in INSTALLED_APPS — "
+            "that is the whole point of the tier: its tables keep existing."
+        )
+        # Registry order preserved: ghost was registered last, so it lands last.
+        assert apps == DEFAULT_LOCAL_APPS + ["ghost"]
+
+    def test_disabled_schema_resident_module_contributes_nothing_visible(
+        self, hypothetical_registry
+    ):
+        hypothetical_registry(schema_resident=True, **GHOST)
+        without = [n for n in mod.ALL_MODULE_NAMES if n != "ghost"]
+        specs = mod.enabled_modules(without)
+
+        assert "ghost" not in mod.enabled_module_names(without)
+        assert mod.is_enabled("ghost", without) is False
+        assert ("ghost/", "ghost.urls") not in mod.url_specs_for(specs)
+        nav_names = {e.url_name for s in mod.nav_sections_for(specs) for e in s.entries}
+        assert "ghost:list" not in nav_names
+        # Seed resolution reads spec.seed_commands off the ENABLED specs, which
+        # is why a disabled module's commands never run. (`seed_data.py` keeps
+        # its own literal order deliberately; this is the registry-side answer.)
+        seeds = [cmd for spec in specs for cmd in spec.seed_commands]
+        assert "seed_ghost" not in seeds
+        assert "ghost/partials/_card.html" not in mod.dashboard_cards_for(specs)
+
+    def test_enabled_schema_resident_module_behaves_like_any_other(
+        self, hypothetical_registry
+    ):
+        """The flag changes nothing while the module is switched ON."""
+        hypothetical_registry(schema_resident=True, **GHOST)
+        names = list(mod.ALL_MODULE_NAMES)
+        specs = mod.enabled_modules(names)
+
+        assert "ghost" in mod.installed_apps_for(names)
+        assert ("ghost/", "ghost.urls") in mod.url_specs_for(specs)
+        nav_names = {e.url_name for s in mod.nav_sections_for(specs) for e in s.entries}
+        assert "ghost:list" in nav_names
+
+    def test_disabled_plain_module_still_loses_its_apps(self, hypothetical_registry):
+        """The contrast case, so the test above cannot pass for the wrong reason.
+
+        Without ``schema_resident=True`` the identical module disappears from
+        ``INSTALLED_APPS`` entirely — which is what every optional module does
+        today.
+        """
+        hypothetical_registry(schema_resident=False, **GHOST)
+        without = [n for n in mod.ALL_MODULE_NAMES if n != "ghost"]
+        assert "ghost" not in mod.installed_apps_for(without)
+
+    def test_required_check_is_not_relaxed_for_schema_resident_modules(self):
+        """Schema-residency is not a licence to omit a required module.
+
+        ``measurements`` and ``standards`` carry both flags. The tier says what
+        happens *if* they are ever omitted; it does not make omitting them legal
+        today, and Phase 88 is the first phase entitled to change that.
+        """
+        for name in mod.SCHEMA_RESIDENT_MODULE_NAMES:
+            names = [n for n in mod.ALL_MODULE_NAMES if n != name]
+            with pytest.raises(ImproperlyConfigured) as exc:
+                mod.validate_module_names(names)
+            assert name in str(exc.value)
+
+
 class TestNavResolution:
     """Every nav entry must reverse, so a typo fails here not on a live render."""
 

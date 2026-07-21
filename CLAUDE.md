@@ -194,6 +194,28 @@ Tests are pinned to `config.settings.local` via `--ds` because the production
 settings refuse to boot without a strong DB password and a real ALLOWED_HOSTS.
 Add tests alongside any new model, view, or data adapter.
 
+## Module composition rule (BLOCKING)
+
+An agency runs the water domains it has and leaves the rest out. Two rules keep
+that promise true, and `tests/test_composition_rule.py` fails the build on
+either violation:
+
+1. **A module everybody gets may not point at a module they might not have.** A
+   standard or schema-resident module may never hold a database reference (FK,
+   O2O, M2M, or a migration dependency) into a truly-optional one. Omitting the
+   optional module would leave a dangling reference and `migrate` dies building
+   the migration graph, before creating a single table.
+2. **Every real cross-module dependency must appear in that module's `requires`
+   tuple** in `core/modules.py`. An undeclared edge is a dependency nobody can
+   see until a deployment breaks on it.
+
+Eight pre-existing violations are tolerated, and only as the reasoned records in
+`core/modules.py::SCHEMA_EXCEPTIONS` — each naming why it stands and what
+turning it around would cost. The tripwire fails on a ninth, and equally on a
+record that no longer matches real code. It derives the graph from Django's live
+app registry, never from grep, because grep has already missed a reverse
+accessor and a multi-line field declaration in this codebase.
+
 ## Key Constraints
 
 - **No Node.js.** Tailwind uses the standalone binary. HTMX and MapLibre load from CDN.

@@ -26,31 +26,71 @@ Three orderings are encoded, and they are genuinely different from one another:
 Order values are spaced by 10 so a later module can be inserted without
 renumbering its neighbours.
 
-**Not every module is droppable yet, and the registry says so out loud.** Two
-different reasons put a module in the ``required`` set:
+The composition rule
+--------------------
 
-* *Structural* — ``core`` owns ``AUTH_USER_MODEL``; ``geography`` owns the
-  boundary/zone spine; ``measurements`` and ``standards`` are vocabulary tables
-  other modules FK into. These are required by design.
-* *Not yet decoupled* — ``parcels``, ``wells``, ``accounting``, ``surface`` and
-  ``datasync`` are imported at module scope by call sites in apps that stay
-  enabled (``config/views.py``, ``geography/views.py``,
-  ``reporting/generators.py``, the seed commands, and the accounting/surface
-  calculation services). Omitting one does remove it from ``INSTALLED_APPS``, and
-  then the very next model import raises. They are marked required so that
-  misconfiguration fails at startup with an explanation instead of an opaque
-  ``app_label`` RuntimeError. Making them genuinely optional is a decoupling job
-  tracked as ISS-072: ``wells`` and ``datasync`` in Phase 83, ``surface`` in
-  Phase 84, ``accounting`` and ``parcels`` in Phase 85.
+OpenH2O only keeps its promise — run the domains you have, leave the rest out —
+if the code respects two constraints. Until v2.4 neither was written down
+anywhere, which is exactly how eight of them came to be broken by people each
+doing something perfectly reasonable:
 
-Everything else is droppable today: ``reporting``, ``health``, ``setup``,
-``infrastructure``, ``feedback``, ``drinking`` — and ``recharge``, which Phase 82
-(2026-07-20) decoupled as the pilot for that work. Five ``required`` remain in the
-"not yet decoupled" bucket, down from six.
+1. **A module everybody gets may not point at a module they might not have.** A
+   module that is standard (``required=True``) or schema-resident may never hold
+   a database reference into a truly-optional one. When it does, omitting the
+   optional module leaves a dangling foreign key and ``migrate`` dies building
+   the migration graph, before a single table is created.
+2. **Every real cross-module dependency must be declared in ``requires``.** The
+   ``requires`` tuples are what tell an operator — and the droppability harness —
+   that dropping X validly takes Y with it. An undeclared edge is a dependency
+   nobody can see until it breaks a deployment.
 
-**Keep this paragraph current.** A stale docstring here does not throw; it just
-gets believed. ISS-072's own bullet list drifted exactly this way, which is why
-each phase above is named with the module it is responsible for.
+``tests/test_composition_rule.py`` enforces both. It derives the real edge set
+from Django's live app registry and the migration graph, never from grep — grep
+has already missed a reverse accessor and a multi-line field declaration in this
+codebase (Phase 82). That test lives in ``tests/`` rather than here precisely
+because it needs the live registry, which this file must never touch.
+
+The eight pre-existing violations are tolerated only as the written, reasoned
+records in ``SCHEMA_EXCEPTIONS`` below. The tripwire fails on a ninth — and
+equally on an exception record that has outlived the code it excused, so the
+allowlist can never quietly become fiction.
+
+Two independent axes
+--------------------
+
+A module's ``required`` flag and its ``schema_resident`` flag answer different
+questions, and a module can be either, both, or neither:
+
+* ``required`` — can an operator leave this out of ``OPENH2O_MODULES`` at all?
+* ``schema_resident`` — when it IS left out, do its tables still exist?
+
+``schema_resident=True`` means "when disabled, stay installed model-only": the
+app remains in ``INSTALLED_APPS``, its migrations run and its tables sit empty,
+but it contributes no URLs, no nav, no seed commands and no pages. Everything an
+operator can see is gone; only the schema stays. This is the class
+``measurements`` and ``standards`` have always belonged to informally, now said
+out loud — and it is the mechanism that lets v2.4 hide ``wells``, ``datasync``,
+``parcels`` and ``accounting`` (Phases 88-89) without deleting the
+relationships that eight other models depend on. True removal (tables gone too)
+stays available per section as a priced option; see ISSUES.md.
+
+The standard set today: ``core`` and ``geography``, plus the invisible
+vocabularies ``measurements`` and ``standards``. Everything else is a water
+domain and is meant to be optional. Six modules are still pinned ``required``
+because they are not yet decoupled — ``parcels``, ``wells``, ``accounting``,
+``surface`` and ``datasync`` are imported at module scope by call sites in apps
+that stay enabled, so omitting one removes it from ``INSTALLED_APPS`` and the
+very next model import raises. Marking them required turns that into a clear
+startup error rather than an opaque ``app_label`` RuntimeError. v2.4 Phases
+87-89 are the work that moves them.
+
+Droppable today: ``reporting``, ``health``, ``setup``, ``infrastructure``,
+``feedback``, ``drinking`` — and ``recharge``, which Phase 82 (2026-07-20)
+decoupled as the pilot.
+
+**Keep these paragraphs current.** A stale docstring here does not throw; it just
+gets believed. The predecessor of this text drifted exactly that way, still
+routing work to phases that had been retired.
 """
 
 from dataclasses import dataclass
@@ -188,6 +228,50 @@ class ModuleSpec:
     #: reverse-engineer it.
     required_reason: str = ""
     requires: tuple = ()
+    #: Stay installed model-only when disabled. A schema-resident module that is
+    #: NOT in ``OPENH2O_MODULES`` keeps its apps in ``INSTALLED_APPS`` — its
+    #: migrations run and its tables exist and sit empty — while contributing no
+    #: URLs, no nav entries, no seed commands and no pages. Everything the
+    #: operator can see is gone; only the schema stays.
+    #:
+    #: **Independent of ``required``.** ``measurements`` and ``standards`` are
+    #: both today: standard (nobody may omit them) AND schema-resident. The flag
+    #: only starts doing work when a module is optional and schema-resident at
+    #: the same time, which is what Phase 88 makes ``wells`` and ``datasync``.
+    #: Until then the composition path below is dormant — implemented, unit
+    #: tested against hypothetical module lists, and exercised by nothing.
+    schema_resident: bool = False
+
+
+@dataclass(frozen=True)
+class SchemaException:
+    """One tolerated violation of rule 1, with its reasoning and its price.
+
+    A record here says: *this* module holds *this* database reference into a
+    module that is supposed to be optional, we know, here is why we are living
+    with it, and here is what turning the arrow around would actually cost.
+
+    It is not a comment. ``tests/test_composition_rule.py`` matches every record
+    against the live relation graph, so a record that stops describing real code
+    fails the build rather than sitting there as folklore — and an arrow with no
+    record fails it too.
+    """
+
+    #: Registry module that holds the reference.
+    holder: str
+    #: Model class name inside that module.
+    model: str
+    #: Field name on that model.
+    field: str
+    #: Registry module the reference points at.
+    target: str
+    #: ``app/models.py:LINE`` of the field declaration. Verified against the live
+    #: tree by the tripwire, so it cannot rot into a wrong number quietly.
+    where: str
+    #: Why this is tolerated, in product terms.
+    why: str
+    #: What turning the arrow around would actually take.
+    reversing_it: str
 
 
 # -- The registry ------------------------------------------------------------
@@ -277,7 +361,11 @@ MODULE_REGISTRY: dict = {
                 active_match="/parcels/",
             ),
         ),
-        requires=("geography",),
+        # `core` for ParcelLedger.created_by. The two ParcelLedger arrows into
+        # `accounting` are deliberately NOT here — they are SCHEMA_EXCEPTIONS,
+        # because declaring them would force `accounting` permanently enabled,
+        # which is the opposite of what Phase 89 needs.
+        requires=("core", "geography"),
         required=True,
         required_reason=(
             "not yet decoupled: parcels.models is imported at module scope by accounting, reporting, geography, surface, setup, infrastructure and config views"
@@ -301,7 +389,9 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         seed_commands=("seed_well_types",),
-        requires=("geography",),
+        # `parcels` for WellIrrigatedParcel.parcel, `measurements` for
+        # WellMeter.meter — both measured, both undeclared before v2.4.
+        requires=("geography", "parcels", "measurements"),
         required=True,
         required_reason=(
             "not yet decoupled: wells.models is imported at module scope by reporting, geography, infrastructure and config views"
@@ -312,20 +402,32 @@ MODULE_REGISTRY: dict = {
         label="Measurements",
         apps=("measurements",),
         # Model-only: no views, no nav.
+        # `standards` for the three observed_property FKs, `core` for the two
+        # user stamps. The arrows into `wells` and `parcels` are
+        # SCHEMA_EXCEPTIONS, not requires — see the module docstring.
+        requires=("core", "standards"),
         required=True,
         required_reason=(
             "measurements is a vocabulary table other modules FK into"
         ),
+        schema_resident=True,
     ),
     "standards": ModuleSpec(
         name="standards",
         label="Standards",
         apps=("standards",),
         # Model-only: the observed-property vocabulary other modules FK into.
+        # `measurements` for Datastream.sensor. That makes standards and
+        # measurements mutually requiring, which is honest — they genuinely
+        # reference each other, both are standard AND schema-resident, so
+        # neither can ever be the one that is missing. Any code walking
+        # `requires` transitively must therefore carry a visited set.
+        requires=("measurements",),
         required=True,
         required_reason=(
             "standards is the observed-property vocabulary other modules FK into"
         ),
+        schema_resident=True,
     ),
     "accounting": ModuleSpec(
         name="accounting",
@@ -398,7 +500,9 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         seed_commands=("seed_water_types",),
-        requires=("parcels",),
+        # `geography` for the two AllocationPlan/AllocationCarryover zone FKs,
+        # `core` for ReportingPeriod.finalized_by.
+        requires=("core", "geography", "parcels"),
         required=True,
         required_reason=(
             "not yet decoupled: accounting models and services are imported at module scope by reporting, parcels, surface and geography views"
@@ -434,7 +538,9 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         seed_commands=("seed_water_right_types",),
-        requires=("parcels",),
+        # `accounting` for the two reporting_period FKs, `geography` for
+        # PointOfDiversion.source_flowline.
+        requires=("geography", "parcels", "accounting"),
         required=True,
         required_reason=(
             "not yet decoupled: surface.models is imported at module scope by accounting, reporting, geography, infrastructure and config views"
@@ -457,7 +563,13 @@ MODULE_REGISTRY: dict = {
                 active_match="/recharge/",
             ),
         ),
-        requires=("parcels",),
+        # `surface` for RechargeSitePOD.point_of_diversion, `accounting` for
+        # RechargeEvent.water_type, `geography` for RechargeSite.zone. The
+        # `surface` entry is the load-bearing one: it is what makes dropping
+        # `surface` validly drag `recharge` out with it once Phase 87 flips
+        # surface optional, and the droppability harness computes that closure
+        # from exactly this tuple.
+        requires=("geography", "parcels", "accounting", "surface"),
         # Decoupled in Phase 82 (2026-07-20). Every cross-app `recharge.models`
         # import now runs at function scope, the templates that reach into it are
         # guarded, and `make test-droppable` covers it.
@@ -481,7 +593,8 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         seed_commands=("seed_data_sources",),
-        requires=("geography",),
+        # `parcels` for OpenETCache.parcel.
+        requires=("geography", "parcels"),
         required=True,
         required_reason=(
             "not yet decoupled: datasync models, freshness and adapters are imported at module scope by accounting, health, setup, standards, geography and config views"
@@ -505,7 +618,9 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         seed_commands=("seed_report_templates",),
-        requires=("accounting",),
+        # `core` for ReportSubmission.certified_by, `geography` for
+        # ReportingProfile.boundary.
+        requires=("core", "geography", "accounting"),
     ),
     "health": ModuleSpec(
         name="health",
@@ -563,6 +678,8 @@ MODULE_REGISTRY: dict = {
         url_module="feedback.urls",
         url_order=130,
         # Widget-driven; reached from the docked bar, not the sidebar.
+        # `core` for Feedback.user.
+        requires=("core",),
     ),
     "drinking": ModuleSpec(
         name="drinking",
@@ -647,6 +764,178 @@ OPTIONAL_MODULE_NAMES: tuple = tuple(
     name for name, spec in MODULE_REGISTRY.items() if not spec.required
 )
 
+#: Modules whose tables exist whether or not the module is switched on.
+SCHEMA_RESIDENT_MODULE_NAMES: tuple = tuple(
+    name for name, spec in MODULE_REGISTRY.items() if spec.schema_resident
+)
+
+#: Modules whose schema is present in EVERY valid configuration — either because
+#: nobody may omit them, or because omitting them leaves the tables behind. A
+#: reference into one of these can never dangle, which is what makes it a legal
+#: target for a ``SchemaException``.
+SCHEMA_PRESENT_MODULE_NAMES: tuple = tuple(
+    name
+    for name, spec in MODULE_REGISTRY.items()
+    if spec.required or spec.schema_resident
+)
+
+
+# -- The tolerated backwards arrows ------------------------------------------
+# Eight relationships run the wrong way: a module a deployment always gets holds
+# a database reference into a module that is meant to be optional. Every one was
+# added by someone doing something reasonable, with no rule to stop them — which
+# is the whole reason rule 1 in the module docstring now exists.
+#
+# They are not being turned around. Each record says why, and prices the
+# reversal so a future decision is made on numbers rather than vibes. The
+# mechanism that makes them survivable is schema-residency: the target keeps its
+# tables in every configuration, so the reference cannot dangle. That is why the
+# tripwire refuses an exception whose target is truly removable — such a record
+# would be a contradiction wearing an excuse.
+#
+# `where` was re-verified against the live tree on 2026-07-21. The line numbers
+# in 83-DISCOVERY's table point one line further down (at the quoted target
+# rather than the field name); these point at the field declaration itself.
+
+SCHEMA_EXCEPTIONS: tuple = (
+    SchemaException(
+        holder="measurements",
+        model="Sensor",
+        field="well",
+        target="wells",
+        where="measurements/models.py:109",
+        why=(
+            "A sensor is physically installed in a well. Recording which one on "
+            "the sensor is the natural place for it, and measurements is a "
+            "vocabulary every deployment carries."
+        ),
+        reversing_it=(
+            "Move the join to the optional side — a wells.WellSensor link table "
+            "instead of measurements.Sensor.well — which costs a schema change "
+            "plus a data migration over live staging and production rows."
+        ),
+    ),
+    SchemaException(
+        holder="measurements",
+        model="WaterMeasurement",
+        field="well",
+        target="wells",
+        where="measurements/models.py:175",
+        why=(
+            "A water measurement records where it was taken; for groundwater "
+            "that is a well. Dropping the link would leave readings that cannot "
+            "be attributed to anything."
+        ),
+        reversing_it=(
+            "A wells.WellMeasurement link table plus a data migration over the "
+            "largest table in the schema — the same shape as Sensor.well but on "
+            "far more rows."
+        ),
+    ),
+    SchemaException(
+        holder="measurements",
+        model="WaterMeasurement",
+        field="parcel",
+        target="parcels",
+        where="measurements/models.py:172",
+        why=(
+            "The surface-water counterpart of the arrow above: a measurement "
+            "taken on a use area rather than at a well."
+        ),
+        reversing_it=(
+            "A parcels.ParcelMeasurement link table plus a data migration, on "
+            "the same table as WaterMeasurement.well — so the two are one job, "
+            "not two."
+        ),
+    ),
+    SchemaException(
+        holder="standards",
+        model="Datastream",
+        field="well",
+        target="wells",
+        where="standards/models.py:143",
+        why=(
+            "In the SensorThings mapping the platform adopted in v1.3, a "
+            "Datastream names the Thing it observes. For a groundwater series "
+            "that Thing is a well."
+        ),
+        reversing_it=(
+            "A wells.WellDatastream link table, which also means the "
+            "SensorThings serializer has to name the join in two places instead "
+            "of following one field."
+        ),
+    ),
+    SchemaException(
+        holder="standards",
+        model="Datastream",
+        field="monitored_station",
+        target="datasync",
+        where="standards/models.py:151",
+        why=(
+            "The same Thing slot as the arrow above, for an external or surface "
+            "telemetry series instead of a well. One of the two is populated "
+            "per Datastream."
+        ),
+        reversing_it=(
+            "A datasync.StationDatastream link table, with the same "
+            "double-naming cost in the serializer — and it only makes sense "
+            "done together with Datastream.well, not alone."
+        ),
+    ),
+    SchemaException(
+        holder="geography",
+        model="ParcelZone",
+        field="parcel",
+        target="parcels",
+        where="geography/models.py:106",
+        why=(
+            "ParcelZone is the use-area-to-zone join, and zoning is geography's "
+            "job. geography is standard, so this arrow is what pins parcels "
+            "into every deployment."
+        ),
+        reversing_it=(
+            "Move the ParcelZone model itself into parcels — a table rename and "
+            "an FK repoint on the spine every allocation calculation reads. "
+            "This is the single arrow that pins parcels permanently; "
+            "83-DISCOVERY names it as the reason 'any subset of the six' was "
+            "never achievable."
+        ),
+    ),
+    SchemaException(
+        holder="parcels",
+        model="ParcelLedger",
+        field="water_type",
+        target="accounting",
+        where="parcels/models.py:89",
+        why=(
+            "A ledger row has to say which kind of water it moved, and that "
+            "vocabulary belongs to accounting."
+        ),
+        reversing_it=(
+            "Nothing on its own: parcels and accounting are migration-entangled "
+            "in BOTH directions (parcels/0001 depends on accounting/0001_initial "
+            "while accounting/0002 depends on parcels/0001), so neither arrow "
+            "turns without moving models across both apps. The pair can only "
+            "ever be demoted or enabled together."
+        ),
+    ),
+    SchemaException(
+        holder="parcels",
+        model="ParcelLedger",
+        field="reporting_period",
+        target="accounting",
+        where="parcels/models.py:94",
+        why=(
+            "A ledger row falls in a water year, and the water-year calendar "
+            "belongs to accounting."
+        ),
+        reversing_it=(
+            "Same entanglement as ParcelLedger.water_type above — the two are "
+            "one job, and that job is a paired model move, not an FK edit."
+        ),
+    ),
+)
+
 
 # -- Validation --------------------------------------------------------------
 
@@ -725,10 +1014,41 @@ def is_enabled(name: str, names=None) -> bool:
 
 
 def local_apps_for(modules) -> list:
-    """The local tail of ``INSTALLED_APPS``, in app order."""
+    """The apps contributed by a given set of specs, in the order given.
+
+    Takes specs rather than names, so it says nothing about schema-residency —
+    ``installed_apps_for`` below is what settings actually calls.
+    """
     apps: list = []
     for spec in modules:
         apps.extend(spec.apps)
+    return apps
+
+
+def installed_apps_for(names=None) -> list:
+    """The local tail of ``INSTALLED_APPS`` for a module list, in app order.
+
+    This is where the two tiers diverge, and it is the ONLY resolver where they
+    do. A disabled schema-resident module still contributes its apps — that is
+    what "stay installed model-only" means: migrations run, tables exist and sit
+    empty. Every other resolver (``url_specs_for``, ``nav_sections_for``,
+    ``dashboard_cards_for``, and anything reading ``spec.seed_commands``) is fed
+    ``enabled_modules()``, which excludes it, so a disabled schema-resident
+    module contributes no routes, no nav, no cards and no seeds.
+
+    Registry order is preserved by iterating the registry rather than the caller's
+    list, because app order is load-bearing: the first app wins for duplicate
+    template and static-file paths.
+
+    With every module enabled — the default deployment — this returns exactly what
+    ``local_apps_for(enabled_modules())`` returns. ``tests/test_modules.py`` pins
+    both against the same literal.
+    """
+    enabled = set(enabled_module_names(names))
+    apps: list = []
+    for name, spec in MODULE_REGISTRY.items():
+        if name in enabled or spec.schema_resident:
+            apps.extend(spec.apps)
     return apps
 
 

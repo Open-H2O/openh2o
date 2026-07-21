@@ -13,8 +13,7 @@ import environ
 from core.modules import (
     ALL_MODULE_NAMES,
     enabled_module_names,
-    enabled_modules,
-    local_apps_for,
+    installed_apps_for,
 )
 
 # -- Paths -------------------------------------------------------------------
@@ -91,8 +90,11 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-    # Local — composed from OPENH2O_MODULES via the registry.
-] + local_apps_for(enabled_modules(OPENH2O_MODULES))
+    # Local — composed from OPENH2O_MODULES via the registry. Note this is
+    # `installed_apps_for`, not the enabled-module list: a SCHEMA-RESIDENT module
+    # that an operator switched off still appears here, so its tables keep
+    # existing while its URLs, nav and seeds disappear. See core/modules.py.
+] + installed_apps_for(OPENH2O_MODULES)
 
 SITE_ID = 1
 
