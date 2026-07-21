@@ -49,6 +49,10 @@ def _mask_csrf(body: str) -> str:
     return body
 
 
+#: Pages that render meaningfully against an EMPTY database. Plan 88-02 widened
+#: this list from 88-01's six: the demotion guards templates on the map, the
+#: accounting dashboard, the setup wizard, drinking water and the shared-supply
+#: check, and a proof that does not render a page cannot say anything about it.
 PAGES = (
     ("index-anon", "/", False),
     ("home-auth", "/", True),
@@ -56,7 +60,62 @@ PAGES = (
     ("reports", "/reporting/reports/", True),
     ("generate-gears", "/reporting/reports/generate/?type=gears", True),
     ("generate-calwatrs", "/reporting/reports/generate/?type=calwatrs", True),
+    ("map", "/map/", True),
+    ("accounting-dashboard", "/accounting/dashboard/", True),
+    ("setup-wizard", "/setup/", True),
+    ("drinking-overview", "/drinking/", True),
+    ("shared-supply-check", "/reporting/reports/shared-supply-check/", True),
 )
+
+#: Detail panes need a row to have a primary key at all, so they cannot be
+#: reached from the empty-database pass above -- which is exactly the blind spot
+#: Phase 82 named and 88-01 inherited. The rows are built with explicit literal
+#: values rather than factory sequences so two runs produce the same bytes.
+def _seed_detail_rows():
+    """Minimal deterministic rows: one parcel, one well, one link between them.
+
+    Returns the paths to render. Deliberately small -- the point is to reach
+    ``parcels/partials/_detail_pane.html``'s Related Wells card, which reverses
+    into ``wells`` and is one of the twelve sites this plan guards.
+    """
+    from decimal import Decimal
+
+    from django.contrib.gis.geos import MultiPolygon, Point, Polygon
+
+    from parcels.models import Parcel
+    from wells.models import Well, WellIrrigatedParcel, WellType
+
+    square = MultiPolygon(
+        Polygon(
+            ((-120.0, 37.0), (-120.0, 37.01), (-119.99, 37.01), (-119.99, 37.0), (-120.0, 37.0))
+        )
+    )
+    parcel = Parcel.objects.create(
+        parcel_number="APN-BASELINE",
+        owner_name="Baseline Owner",
+        area_acres=Decimal("80.00"),
+        geometry=square,
+        status="active",
+    )
+    well_type = WellType.objects.create(name="Baseline Well Type")
+    well = Well.objects.create(
+        name="Baseline Well",
+        well_type=well_type,
+        location=Point(-119.995, 37.005),
+        status="active",
+    )
+    WellIrrigatedParcel.objects.create(well=well, parcel=parcel, fraction=Decimal("1.0000"))
+    return (
+        ("parcel-detail", f"/parcels/{parcel.pk}/", True),
+        ("parcel-detail-pane", f"/parcels/{parcel.pk}/", True),
+    )
+
+
+def _write(outdir, label, response):
+    body = _mask_csrf(response.content.decode("utf-8", errors="replace"))
+    with open(os.path.join(outdir, f"{label}.html"), "w") as handle:
+        handle.write(f"<!-- status: {response.status_code} -->\n")
+        handle.write(body)
 
 
 def main(outdir):
@@ -79,11 +138,15 @@ def main(outdir):
         for label, path, needs_auth in PAGES:
             client = auth if needs_auth else anon
             response = client.get(path)
-            body = _mask_csrf(response.content.decode("utf-8", errors="replace"))
-            with open(os.path.join(outdir, f"{label}.html"), "w") as handle:
-                handle.write(f"<!-- status: {response.status_code} -->\n")
-                handle.write(body)
-            print(f"  {label:<20} {path:<45} {response.status_code}")
+            _write(outdir, label, response)
+            print(f"  {label:<22} {path:<48} {response.status_code}")
+
+        for label, path, needs_auth in _seed_detail_rows():
+            client = auth if needs_auth else anon
+            extra = {"HTTP_HX_REQUEST": "true"} if label.endswith("-pane") else {}
+            response = client.get(path, **extra)
+            _write(outdir, label, response)
+            print(f"  {label:<22} {path:<48} {response.status_code}")
     finally:
         connection.creation.destroy_test_db(old_name, verbosity=0)
         teardown_test_environment()
