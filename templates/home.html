@@ -117,10 +117,10 @@
             <span class="home-stat-value">{{ parcel_count }}</span>
             <span class="home-stat-label">Use Areas</span>
         </a>
-        <a href="{% url 'wells:list' %}" class="home-stat">
+        {% if 'wells' in enabled_modules %}<a href="{% url 'wells:list' %}" class="home-stat">
             <span class="home-stat-value">{{ well_count }}</span>
             <span class="home-stat-label">Wells</span>
-        </a>
+        </a>{% endif %}
         {% if 'surface' in enabled_modules %}
         <a href="{% url 'surface:pod_list' %}" class="home-stat">
             <span class="home-stat-value">{{ diversion_count }}</span>

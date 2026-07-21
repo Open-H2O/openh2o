@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load prose %}
 
 {% block title %}Map - Open Water Accounting Platform{% endblock %}
 
@@ -12,7 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Map</span>
   </nav>
-  <p class="page-description">Interactive map showing use areas, wells{% if 'surface' in enabled_modules %}, points of diversion{% endif %}{% if 'recharge' in enabled_modules %}, and recharge sites{% endif %}. Toggle layers with the controls panel. Click features for details.</p>
+  <p class="page-description">Interactive map showing {% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" %}. Toggle layers with the controls panel. Click features for details.</p>
 </div>
 {% endblock %}
 
@@ -127,10 +128,10 @@ var MAP_CONFIG = {
         { id: 'zones', url: '{% url "geography:zones_geojson" %}' },
         { id: 'zone-labels', url: '{% url "geography:zone_labels_geojson" %}' },
         { id: 'parcels', url: '{% url "parcels:geojson" %}' },
-        { id: 'wells', url: '{% url "wells:geojson" %}' },
+        {% if 'wells' in enabled_modules %}{ id: 'wells', url: '{% url "wells:geojson" %}' },{% endif %}
         {% if 'surface' in enabled_modules %}{ id: 'pods', url: '{% url "surface:pods_geojson" %}' },{% endif %}
         {% if 'recharge' in enabled_modules %}{ id: 'recharge', url: '{% url "recharge:sites_geojson" %}' },{% endif %}
-        { id: 'stations', url: '{% url "datasync:stations_geojson" %}' },
+        {% if 'datasync' in enabled_modules %}{ id: 'stations', url: '{% url "datasync:stations_geojson" %}' },{% endif %}
         { id: 'tie-lines', url: '{% url "geography:tie_lines_geojson" %}' }
     ],
     layers: [
@@ -230,14 +231,20 @@ var MAP_CONFIG = {
         Object.assign(OH2O.makeLabelLayer('parcels-label', 'parcels', 'parcel', { anchor: 'center', offset: [0, 0],
             layout: { 'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 17, 12.5] } }),
             { panelHidden: true, group: 'parcels', section: 'Land Use' }),
-        {
+        {% comment %}
+          Guarded with their source above, same reasoning as Surface Water and
+          Recharge below: a layer left behind after its source is gone is a
+          MapLibre console error, not a clean absence. The guard shares a line
+          with the markup because a tag alone on a line still emits that line's
+          newline, and this plan's deliverable is a byte-identical full render.
+        {% endcomment %}{% if 'wells' in enabled_modules %}{
             id: 'wells-points', type: 'circle', source: 'wells',
             label: 'Wells', section: 'Land Use', label_id: 'wells-label',
             paint: OH2O.pointPaint('well'),
             glow: { paint: OH2O.glowPaint('well') },
             swatch: 'dot', swatchColor: OH2O.colors.gold
         },
-        Object.assign(OH2O.makeLabelLayer('wells-label', 'wells', 'well', {}), { panelHidden: true, section: 'Land Use' }),
+        Object.assign(OH2O.makeLabelLayer('wells-label', 'wells', 'well', {}), { panelHidden: true, section: 'Land Use' }),{% endif %}
 
         // ── Surface Water ──
         {# The whole Surface Water section is guarded with its source above. The  #}
@@ -268,7 +275,11 @@ var MAP_CONFIG = {
         {% endif %}
 
         // ── Infrastructure ──
-        {
+        {% comment %}
+          The GW tie lines are drawn from wells.WellIrrigatedParcel, so without
+          the module they are a permanently empty toggle labelled "GW" -- the
+          exact shape Phase 87 guarded the SW pair for.
+        {% endcomment %}{% if 'wells' in enabled_modules %}{
             id: 'gw-tie-lines', type: 'line', source: 'tie-lines',
             label: 'GW Allocation Links', group: 'gw-tie-lines', section: 'Infrastructure',
             filter: ['==', ['get', 'source_type'], 'gw'],
@@ -278,7 +289,7 @@ var MAP_CONFIG = {
         Object.assign(OH2O.makeLabelLayer('gw-tie-labels', 'tie-lines', 'well', {
             minzoom: 12, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '% GW'],
             layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
-        }), { panelHidden: true, group: 'gw-tie-lines', section: 'Infrastructure', filter: ['==', ['get', 'source_type'], 'gw'] }),
+        }), { panelHidden: true, group: 'gw-tie-lines', section: 'Infrastructure', filter: ['==', ['get', 'source_type'], 'gw'] }),{% endif %}
         {# All four recharge layers are guarded together with their source above. A #}
         {# source removed with its layers left behind produces a MapLibre console  #}
         {# error ("source 'recharge' not found"), not a clean absence.             #}
@@ -308,14 +319,14 @@ var MAP_CONFIG = {
         {% endif %}
 
         // ── Monitoring ──
-        {
+        {% if 'datasync' in enabled_modules %}{
             id: 'stations-points', type: 'circle', source: 'stations',
             label: 'Monitoring Stations', section: 'Monitoring', label_id: 'stations-label',
             paint: OH2O.pointPaint('station'),
             glow: { paint: OH2O.glowPaint('station') },
             swatch: 'dot', swatchColor: OH2O.colors.red
         },
-        Object.assign(OH2O.makeLabelLayer('stations-label', 'stations', 'station', {}), { panelHidden: true, section: 'Monitoring' })
+        Object.assign(OH2O.makeLabelLayer('stations-label', 'stations', 'station', {}), { panelHidden: true, section: 'Monitoring' }){% endif %}
     ],
     popups: {
         'flowlines-rivers': function(p) {
@@ -328,11 +339,11 @@ var MAP_CONFIG = {
                    'Type: ' + (p.feature_type || '—') + '<br>' +
                    'Stream order: ' + (p.stream_order != null ? p.stream_order : '—');
         },
-        'gw-tie-lines': function(p) {
+        {% if 'wells' in enabled_modules %}'gw-tie-lines': function(p) {
             var pct = Math.round((p.fraction || 0) * 100);
             return '<strong>Well ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
                    'Fraction: ' + pct + '%';
-        },
+        },{% endif %}
         'sw-tie-lines': function(p) {
             var pct = Math.round((p.fraction || 0) * 100);
             return '<strong>POD ' + (p.source_name || '—') + ' → Parcel ' + (p.parcel_number || '—') + '</strong><br>' +
@@ -363,13 +374,13 @@ var MAP_CONFIG = {
                    '<a href="/recharge/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         {% endif %}
-        'wells-points': function(p) {
+        {% if 'wells' in enabled_modules %}'wells-points': function(p) {
             return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
                    'Reg ID: ' + (p.well_registration_id || '—') + '<br>' +
                    'Depth: ' + (p.depth_ft ? parseFloat(p.depth_ft).toFixed(0) + ' ft' : '—') + '<br>' +
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/wells/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
-        },
+        },{% endif %}
         {% if 'surface' in enabled_modules %}
         'pods-points': function(p) {
             return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
@@ -378,13 +389,13 @@ var MAP_CONFIG = {
                    '<a href="/surface/diversion/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },
         {% endif %}
-        'stations-points': function(p) {
+        {% if 'datasync' in enabled_modules %}'stations-points': function(p) {
             return '<strong>' + (p.station_name || 'Unknown Station') + '</strong><br>' +
                    'Source: ' + (p.data_source_code || '—') + '<br>' +
                    'ID: ' + (p.external_station_id || '—') + '<br>' +
                    'Last data: ' + (p.last_data_at ? p.last_data_at.slice(0,10) : '—') + '<br>' +
                    '<a href="/datasync/stations/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
-        }
+        }{% endif %}
     },
     legend: [
 {% if gsa_zones %}        { title: 'GSA Zones', items: [

@@ -53,7 +53,7 @@
     </div>
   </div>
 
-  <div class="card-raised step-card">
+  {% if 'wells' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
@@ -71,7 +71,7 @@
       <p class="text-secondary text-base">Upload well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
       <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Wells &rarr;</a>
     </div>
-  </div>
+  </div>{% endif %}
 
   <div class="card-raised step-card">
     <span class="step-number">
@@ -158,7 +158,7 @@
     </div>
   </div>
 
-  <div class="card-raised step-card">
+  {% if 'datasync' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
@@ -178,7 +178,7 @@
       <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS wells, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
       <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Monitoring Stations &rarr;</a>
     </div>
-  </div>
+  </div>{% endif %}
 
   {# Phase 87: the WHOLE card is guarded on `surface`, unlike the piece-by-piece #}
   {# recharge guard inside it. `recharge.requires` contains `surface`, so with   #}

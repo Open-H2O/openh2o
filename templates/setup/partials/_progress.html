@@ -21,16 +21,16 @@
         <span class="step-badge step-badge-active">1</span>
         <span class="text-sm"><a href="{% url 'parcels:list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Review imported parcels</a> — confirm the use areas brought in for your watershed</span>
       </div>
-      <div class="onboarding-step">
+      {% if 'wells' in enabled_modules %}<div class="onboarding-step">
         <span class="step-badge">2</span>
         <span class="text-secondary text-sm"><a href="{% url 'wells:list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Add wells</a> — your district's groundwater sources</span>
-      </div>
+      </div>{% endif %}
       <div class="onboarding-step">
-        <span class="step-badge">3</span>
+        <span class="step-badge">{% if 'wells' in enabled_modules %}3{% else %}2{% endif %}</span>
         <span class="text-secondary text-sm"><a href="{% url 'accounting:accounts_list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Set up water accounts</a> — group parcels into the accounts you'll track</span>
       </div>
       <div class="onboarding-step">
-        <span class="step-badge">4</span>
+        <span class="step-badge">{% if 'wells' in enabled_modules %}4{% else %}3{% endif %}</span>
         <span class="text-secondary text-sm"><a href="{% url 'geography:zone_list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Define management zones</a> — the areas an allocation applies to</span>
       </div>
     </div>

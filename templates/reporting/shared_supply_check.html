@@ -63,9 +63,9 @@
         <h2 class="section-header-flush">
           {{ group.kind }}: {{ group.source_name }}
         </h2>
-        {% if group.source_kind == 'well' %}
+        {% if group.source_kind == 'well' %}{% if 'wells' in enabled_modules %}
         <a href="{% url 'wells:detail' group.source_id %}" class="text-link text-sm">Open well →</a>
-        {% elif 'surface' in enabled_modules %}
+        {% endif %}{% elif 'surface' in enabled_modules %}
         <a href="{% url 'surface:pod_detail' group.source_id %}" class="text-link text-sm">Open point of diversion →</a>
         {% endif %}
       </div>

@@ -232,7 +232,7 @@
         {% endif %}
       </div>
 
-      <!-- Related Wells card -->
+      {% if 'wells' in enabled_modules %}<!-- Related Wells card -->
       <div class="card-raised">
         <h2 class="section-header mb-md">Related Wells</h2>
         {% if related_wells %}
@@ -247,7 +247,7 @@
         {% else %}
           <p class="text-tertiary text-base">No wells linked to this parcel.</p>
         {% endif %}
-      </div>
+      </div>{% endif %}
 
     </div>
 

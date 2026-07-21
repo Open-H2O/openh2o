@@ -18,7 +18,7 @@
   </a>
   {% endif %}
 
-  {% if stations_down %}
+  {% if stations_down and 'datasync' in enabled_modules %}
   <a href="{% url 'datasync:station_list' %}" class="attention-pill attention-pill-down">
     <span class="attention-pill-count">{{ stations_down }}</span>
     station{{ stations_down|pluralize }} down
