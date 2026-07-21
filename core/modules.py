@@ -32,19 +32,25 @@ different reasons put a module in the ``required`` set:
 * *Structural* — ``core`` owns ``AUTH_USER_MODEL``; ``geography`` owns the
   boundary/zone spine; ``measurements`` and ``standards`` are vocabulary tables
   other modules FK into. These are required by design.
-* *Not yet decoupled* — ``parcels``, ``wells``, ``accounting``, ``surface``,
-  ``recharge`` and ``datasync`` are imported at module scope by roughly a
-  hundred call sites in apps that stay enabled (``config/views.py``,
-  ``geography/views.py``, ``reporting/generators.py``, the seed commands, and
-  the accounting/surface calculation services). Omitting one does remove it from
-  ``INSTALLED_APPS``, and then the very next model import raises. They are
-  marked required so that misconfiguration fails at startup with an explanation
-  instead of an opaque ``app_label`` RuntimeError. Making them genuinely
-  optional is a decoupling job, tracked separately and deliberately out of scope
-  for v2.1.
+* *Not yet decoupled* — ``parcels``, ``wells``, ``accounting``, ``surface`` and
+  ``datasync`` are imported at module scope by call sites in apps that stay
+  enabled (``config/views.py``, ``geography/views.py``,
+  ``reporting/generators.py``, the seed commands, and the accounting/surface
+  calculation services). Omitting one does remove it from ``INSTALLED_APPS``, and
+  then the very next model import raises. They are marked required so that
+  misconfiguration fails at startup with an explanation instead of an opaque
+  ``app_label`` RuntimeError. Making them genuinely optional is a decoupling job
+  tracked as ISS-072: ``wells`` and ``datasync`` in Phase 83, ``surface`` in
+  Phase 84, ``accounting`` and ``parcels`` in Phase 85.
 
-Everything else — ``reporting``, ``health``, ``setup``, ``infrastructure``,
-``feedback``, and every module added from Phase 78 onward — is droppable today.
+Everything else is droppable today: ``reporting``, ``health``, ``setup``,
+``infrastructure``, ``feedback``, ``drinking`` — and ``recharge``, which Phase 82
+(2026-07-20) decoupled as the pilot for that work. Five ``required`` remain in the
+"not yet decoupled" bucket, down from six.
+
+**Keep this paragraph current.** A stale docstring here does not throw; it just
+gets believed. ISS-072's own bullet list drifted exactly this way, which is why
+each phase above is named with the module it is responsible for.
 """
 
 from dataclasses import dataclass
@@ -452,10 +458,10 @@ MODULE_REGISTRY: dict = {
             ),
         ),
         requires=("parcels",),
-        required=True,
-        required_reason=(
-            "not yet decoupled: recharge models and geometry are imported at module scope by config views, infrastructure views and geography.placement"
-        ),
+        # Decoupled in Phase 82 (2026-07-20). Every cross-app `recharge.models`
+        # import now runs at function scope, the templates that reach into it are
+        # guarded, and `make test-droppable` covers it.
+        required=False,
     ),
     "datasync": ModuleSpec(
         name="datasync",

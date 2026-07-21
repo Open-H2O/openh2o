@@ -197,18 +197,25 @@ class TestValidation:
 class TestDroppabilityPromise:
     """Pin exactly which modules a deployment can omit today.
 
-    Ten modules are required. Four structurally (core owns AUTH_USER_MODEL,
+    Nine modules are required. Four structurally (core owns AUTH_USER_MODEL,
     geography owns the boundary spine, measurements and standards are FK'd
-    vocabularies). Six because they are imported at module scope by apps that
+    vocabularies). Five because they are imported at module scope by apps that
     stay enabled, so omitting one removes it from INSTALLED_APPS and the next
     model import raises. Marking them required turns that into a clear startup
-    error. Decoupling them is tracked separately and is out of scope for v2.1.
+    error. Decoupling the remaining five is tracked as ISS-072.
+
+    That second group was six until Phase 82 moved `recharge` out of it.
 
     If a later phase decouples one, this test is where the promise changes.
     """
 
     def test_optional_modules_are_exactly_the_droppable_leaves(self):
         assert mod.OPTIONAL_MODULE_NAMES == (
+            # Phase 82 (2026-07-20). The first module to earn its slot here by
+            # decoupling rather than by never having been coupled: eight
+            # cross-app model imports moved to function scope, five templates
+            # and two view-side couplings guarded.
+            "recharge",
             "reporting",
             "health",
             "setup",
@@ -229,7 +236,6 @@ class TestDroppabilityPromise:
             "standards",
             "accounting",
             "surface",
-            "recharge",
             "datasync",
         )
 

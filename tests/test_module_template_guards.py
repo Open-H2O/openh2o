@@ -87,5 +87,10 @@ def test_optional_module_names_is_what_we_think():
         # Phase 78. Droppable from the day it lands, by construction rather
         # than by later decoupling — nothing outside `drinking/` imports it.
         "drinking",
+        # Phase 82 (2026-07-20). The first module decoupled rather than born
+        # droppable, so it is also the first to make the guard test above do
+        # real work: five kept templates linked into `recharge` unguarded until
+        # that phase, and this file could not see them while it was required.
+        "recharge",
     }
     assert all(not MODULE_REGISTRY[n].required for n in OPTIONAL_MODULE_NAMES)
