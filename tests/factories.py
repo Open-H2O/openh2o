@@ -245,23 +245,33 @@ class AllocationPlanFactory(factory.django.DjangoModelFactory):
     allocation_acre_feet = Decimal("100.0000")
 
 
-class RechargeSiteFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "recharge.RechargeSite"
+# -- recharge (Phase 82) -----------------------------------------------------
+#
+# `recharge` became an OPTIONAL module in Phase 82, so these definitions are
+# guarded for the same reason as the `drinking` block below: a DjangoModelFactory
+# resolves its `Meta.model` string through the app registry at CLASS-DEFINITION
+# time, so an unguarded factory for a dropped module turns `import tests.factories`
+# itself into an error. That matters more here than it looks —
+# `tests/droppability/checks.py` imports this module, so one unguarded factory
+# takes down every droppability check at once rather than one.
+if is_enabled("recharge"):
 
-    name = factory.Sequence(lambda n: f"Recharge Site {n}")
-    site_type = "spreading_basin"
-    location = factory.LazyFunction(lambda: Point(-119.5, 36.5))
-    status = "active"
+    class RechargeSiteFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "recharge.RechargeSite"
 
+        name = factory.Sequence(lambda n: f"Recharge Site {n}")
+        site_type = "spreading_basin"
+        location = factory.LazyFunction(lambda: Point(-119.5, 36.5))
+        status = "active"
 
-class RechargeEventFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = "recharge.RechargeEvent"
+    class RechargeEventFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "recharge.RechargeEvent"
 
-    recharge_site = factory.SubFactory(RechargeSiteFactory)
-    start_date = factory.LazyFunction(lambda: date(2024, 1, 1))
-    volume_acre_feet = Decimal("100.0000")
+        recharge_site = factory.SubFactory(RechargeSiteFactory)
+        start_date = factory.LazyFunction(lambda: date(2024, 1, 1))
+        volume_acre_feet = Decimal("100.0000")
 
 
 # -- drinking (Phase 78) -----------------------------------------------------
