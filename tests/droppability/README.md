@@ -14,9 +14,36 @@ same time — it boots a Django process that never had the module and asserts:
   not a 500 and not a redirect to login (a dropped module is *absent*, not
   *protected*);
 - none of its database tables exist;
-- the ten pages a deployment keeps still render 200 — in three database states:
+- every page a deployment *keeps* still renders 200 — in three database states:
   pristine, configured-but-empty, and populated;
+- a detail page renders too (`/surface/diversion/<pk>/`), because detail panes
+  reach into other modules in ways no list page does;
 - the rendered sidebar carries no `href` into the dropped module's prefix.
+
+## The page list is owner-declared
+
+`checks.py` does not carry a flat list of pages. It carries `_PAGES`, where every
+path is paired with the module that **owns** it, and `KEPT_PAGES` is that table
+filtered down to the modules the current process actually booted with:
+
+    _PAGES = (
+        ("/",          None),        # no module owns it — must render always
+        ("/map/",      "geography"),
+        ("/recharge/", "recharge"),
+        ...
+    )
+
+That filter is what lets a module join the gate by flag alone. Before it existed,
+`/recharge/` was demanded unconditionally — so the moment `recharge` became
+optional, the harness would have insisted a dropped module's own page return 200.
+
+The owner is **declared, not derived from `url_prefix`**. Prefix matching happens
+to work today (every prefix in `core/modules.py` is unique), but it holds by luck
+rather than by construction — it breaks silently the day two modules share a
+prefix or a module serves a page outside its own. One declared line per page
+cannot mis-attribute.
+
+**To add a page: append a row.** Never edit the test logic below the table.
 
 ## Why it spawns a subprocess
 
@@ -47,7 +74,9 @@ dropped set turns out to be empty.
 
 To bring a newly decoupled module under this harness, flip `required=False` in
 `core/modules.py` and update `tests/test_modules.py::TestDroppabilityPromise` —
-the harness reads `OPTIONAL_MODULE_NAMES` and picks it up with no edit here.
+the harness reads `OPTIONAL_MODULE_NAMES` and picks it up with no edit to any
+assertion here. If the module owns a page the gate does not yet cover, append one
+row to `_PAGES` with the module as its owner. That is the whole extension point.
 
 Two things to carry with you when you do:
 

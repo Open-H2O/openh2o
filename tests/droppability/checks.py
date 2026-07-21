@@ -19,10 +19,16 @@ dropped is to boot a process that never had it. Do not "simplify" this into an
 in-process test — you would be deleting the entire point.
 
 Everything below derives the dropped set at runtime by comparing
-``core.modules.ALL_MODULE_NAMES`` against ``settings.OPENH2O_MODULES``. No module
-name is hardcoded anywhere in this file. That genericity is the deliverable:
-Phases 82-85 flip ``required=False`` in ``core/modules.py`` and inherit this
-coverage without editing a line here.
+``core.modules.ALL_MODULE_NAMES`` against ``settings.OPENH2O_MODULES``. No
+assertion hardcodes a module name. That genericity is the deliverable: Phases
+82-85 flip ``required=False`` in ``core/modules.py`` and inherit this coverage
+without editing a line of test logic here.
+
+The one place module names do appear is ``_PAGES``/``_LIST_PAGES`` below, which
+pair each page with the module that OWNS it. That is data, not logic, and it is
+what lets the harness stop demanding a dropped module's own page render 200
+(Phase 82). Adding a module to the gate means appending a row, never editing an
+assertion.
 """
 
 import ast
@@ -50,30 +56,58 @@ ENABLED_NAMES = tuple(settings.OPENH2O_MODULES)
 #: Everything the registry knows about that this process does NOT have.
 DROPPED_NAMES = tuple(n for n in mod.ALL_MODULE_NAMES if n not in ENABLED_NAMES)
 
-#: Pages that must keep rendering no matter what was dropped. Measured, not
-#: assumed: every one of these returns 200 with all six optional modules absent.
-KEPT_PAGES = (
-    "/",
-    "/about/",
-    "/help/getting-started/",
-    "/help/glossary/",
-    "/wells/",
-    "/parcels/",
-    "/recharge/",
-    "/surface/",
-    "/surface/rights/",
-    "/accounting/dashboard/",
+#: Every page the harness knows about, paired with the module that OWNS it.
+#:
+#: ``None`` means no module owns the page — it is served by ``config`` or a
+#: template with no module behind it, so it must render in *every* configuration.
+#: A named owner means the page only exists when that module is installed, so the
+#: harness must stop demanding it the moment that module is the one being dropped.
+#:
+#: **The owner is declared, not derived.** Matching a path against
+#: ``spec.url_prefix`` would work today (every prefix in ``core/modules.py`` is
+#: currently unique — checked), but it is a rule that holds by luck rather than by
+#: construction: it silently mis-attributes the day two modules share a prefix, or
+#: the day a module serves a page outside its own prefix. An explicit table costs
+#: one line per page and cannot mis-attribute. Phases 83-85 add a page by
+#: appending a row here, never by editing test logic below.
+_PAGES = (
+    ("/", None),
+    ("/about/", None),
+    ("/help/getting-started/", None),
+    ("/help/glossary/", None),
+    ("/map/", "geography"),
+    ("/wells/", "wells"),
+    ("/parcels/", "parcels"),
+    ("/recharge/", "recharge"),
+    ("/surface/", "surface"),
+    ("/surface/rights/", "surface"),
+    ("/accounting/dashboard/", "accounting"),
 )
 
-#: The kept list screens, paired with the factory that puts a row on them. These
-#: are the pages that render ``templates/partials/_empty_onboarding.html`` when
-#: empty, which is where the interesting guards live.
-LIST_PAGES = (
-    ("/wells/", "WellFactory"),
-    ("/parcels/", "ParcelFactory"),
-    ("/recharge/", "RechargeSiteFactory"),
-    ("/surface/", "PointOfDiversionFactory"),
-    ("/surface/rights/", "WaterRightFactory"),
+#: Pages that must keep rendering given what THIS process booted with. Measured,
+#: not assumed: every one of these returns 200 with all optional modules absent.
+KEPT_PAGES = tuple(
+    path for path, owner in _PAGES if owner is None or owner in ENABLED_NAMES
+)
+
+#: The kept list screens, paired with the factory that puts a row on them and the
+#: module that owns the page. These are the pages that render
+#: ``templates/partials/_empty_onboarding.html`` when empty, which is where the
+#: interesting guards live. Filtered by owner for the same reason as ``_PAGES`` —
+#: and note the factory disappears with its module too (see ``tests/factories.py``),
+#: so an unfiltered row here would fail on the lookup, not on the render.
+_LIST_PAGES = (
+    ("/wells/", "WellFactory", "wells"),
+    ("/parcels/", "ParcelFactory", "parcels"),
+    ("/recharge/", "RechargeSiteFactory", "recharge"),
+    ("/surface/", "PointOfDiversionFactory", "surface"),
+    ("/surface/rights/", "WaterRightFactory", "surface"),
+)
+
+LIST_PAGES = tuple(
+    (path, factory_name)
+    for path, factory_name, owner in _LIST_PAGES
+    if owner is None or owner in ENABLED_NAMES
 )
 
 
@@ -365,6 +399,30 @@ def test_kept_list_page_renders_with_rows(auth_client, path, factory_name):
     assert response.status_code == 200, (
         f"{path} returned {response.status_code} with {list(DROPPED_NAMES)} "
         f"dropped and one {factory_name} row present."
+    )
+
+
+def test_pod_detail_renders_with_a_row(auth_client):
+    """A *detail* page, which no list-page case reaches.
+
+    ``/surface/diversion/<pk>/`` renders
+    ``templates/surface/partials/_detail_pane.html``, and that partial reaches
+    into other modules — it reverses ``recharge:detail`` for the recharge areas a
+    diversion fills. None of the list pages above render it, so a broken guard in
+    a detail pane was invisible to this harness until now. It needs a row to have
+    a pk at all, which is why it is its own case rather than a ``_PAGES`` row.
+    """
+    if "surface" not in ENABLED_NAMES:
+        pytest.skip("surface is the module that owns this page, and it is dropped.")
+
+    from tests import factories
+
+    pod = factories.PointOfDiversionFactory()
+    path = f"/surface/diversion/{pod.pk}/"
+    response = auth_client.get(path)
+    assert response.status_code == 200, (
+        f"{path} returned {response.status_code} with {list(DROPPED_NAMES)} "
+        f"dropped and one PointOfDiversion row present."
     )
 
 
