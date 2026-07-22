@@ -446,10 +446,20 @@ _DATA_DEPENDENT_TEXT_OUT_OF_SCOPE = (
 )
 
 #: The boundary in one sentence, for anyone reading a green run.
+#:
+#: Reworded by Plan 90-01, because the old sentence — "the harness runs against
+#: an empty database by construction" — stopped being true of this file the day
+#: ``seeded_client`` arrived. The vocabulary assertions specifically still run
+#: empty, and now they do so BY CHOICE rather than because nothing else was
+#: available. A limit nobody states is indistinguishable from coverage, and a
+#: limit stated inaccurately is worse.
 VOCABULARY_SCOPE = (
     "Page prose only. Table headers, per-row labels and count sentences are NOT "
-    "read — the harness runs against an empty database by construction. ISS-089, "
-    "decided 2026-07-22 in Plan 89-02."
+    "read — the vocabulary assertions run on the EMPTY fixture deliberately, "
+    "while the render and route assertions run on the seeded one "
+    "(tests/droppability/fixture.py). ISS-089, decided 2026-07-22 in Plan 89-02; "
+    "the tiers were split and pinned by test_the_fixture_axis_is_what_we_think "
+    "in Plan 90-01."
 )
 
 #: The kept pages this assertion actually reads.
@@ -554,8 +564,7 @@ class _UserFactory(factory.django.DjangoModelFactory):
     is_superuser = True
 
 
-@pytest.fixture
-def auth_client():
+def _admin_client():
     """A logged-in superuser with the sidebar in Admin mode.
 
     Admin mode matters and is easy to get wrong: the Administration section is
@@ -568,6 +577,41 @@ def auth_client():
     c.force_login(_UserFactory())
     c.cookies["nav_mode"] = "admin"
     return c
+
+
+@pytest.fixture
+def auth_client():
+    """The signed-in operator on an EMPTY database.
+
+    This is the fixture the vocabulary assertions use, and that is a decision
+    rather than an inheritance — see ``VOCABULARY_SCOPE`` and
+    ``_DATA_DEPENDENT_TEXT_OUT_OF_SCOPE`` below for the two recorded pages where
+    reading a populated page would fail on text that is CORRECT.
+    """
+    return _admin_client()
+
+
+@pytest.fixture
+def seeded_client():
+    """The same operator, on a database with one row per surviving domain.
+
+    The third database state, and the one nothing in this harness had ever
+    rendered. ``test_kept_page_renders_on_a_fresh_instance`` and
+    ``..._on_a_configured_but_empty_instance`` cover the two empty-state branches
+    by construction; every code path that only runs when a row EXISTS was
+    unexecuted until this fixture, which is what let a CalWATRS filing crash
+    ``reporting/views.py`` on staging while 30 green gates said otherwise
+    (ISS-091).
+
+    What it created is attached as ``client.seeded`` — a dict keyed by module —
+    so an assertion can say "this configuration seeded nothing for ``reporting``"
+    rather than assume it seeded something.
+    """
+    from tests.droppability.fixture import seed_droppable_fixture
+
+    client = _admin_client()
+    client.seeded = seed_droppable_fixture()
+    return client
 
 
 @pytest.fixture
@@ -900,6 +944,90 @@ def test_kept_page_renders_on_a_configured_but_empty_instance(auth_client, path)
     assert response.status_code == 200, (
         f"{path} returned {response.status_code} with {list(DROPPED_NAMES)} "
         f"dropped and a configured-but-empty database."
+    )
+
+
+@pytest.mark.parametrize("path", KEPT_PAGES)
+def test_kept_page_renders_on_a_populated_instance(seeded_client, path):
+    """The third database state: every surviving domain has a row in it.
+
+    The two cases above are both flavours of *empty* — pristine, and
+    configured-but-empty. Both are worth keeping and neither can see a defect
+    that needs data to exist, which is the entire class ISS-091 was opened for:
+    89-03 found eight live 500s by pointing a reduced module set at a database
+    with rows in it, and every one of them was invisible here.
+
+    This is deliberately the SAME page list as the two empty cases rather than a
+    shorter one. A page that renders on an empty database and 500s on a populated
+    one is exactly the defect being hunted, and there is no way to know in advance
+    which page it will be.
+    """
+    response = seeded_client.get(path)
+    assert response.status_code == 200, (
+        f"{path} returned {response.status_code} with {list(DROPPED_NAMES)} "
+        f"dropped and one row seeded in every surviving domain "
+        f"({sorted(seeded_client.seeded)}). This is the state a real agency is "
+        f"in when it switches a module off — it has been using the platform."
+    )
+
+
+def test_the_fixture_axis_is_what_we_think(request):
+    """The two fixture tiers are real, and they cannot silently merge.
+
+    This file now runs on two different database states on purpose: the render
+    and route assertions want rows, and the vocabulary assertions want none. A
+    later refactor that attached seeding globally — an autouse fixture, a
+    ``conftest`` hook — would leave every assertion green for one run and then
+    start the vocabulary gate firing on CORRECT text: ``/drinking/``'s
+    deliberately-kept "Well" column, ``/health/``'s "Not applicable — needs the
+    'parcels' module". The first symptom would be someone weakening
+    ``_FORBIDDEN_VOCABULARY``, which is the failure that table's own note warns
+    about. So the split gets a test rather than a comment.
+
+    The tiers are built here the same way the real assertions build them —
+    through the fixtures themselves, in order — so this cannot pass while the
+    fixtures do something else.
+    """
+    from tests.droppability.fixture import FIXTURE_MODELS, seeded_models
+
+    models = seeded_models()
+
+    # Tier one: exactly what a vocabulary assertion asks for, and nothing else.
+    request.getfixturevalue("auth_client")
+    leaked = [m._meta.label for m in models if m.objects.exists()]
+    assert not leaked, (
+        f"These models already have rows for a test that asked only for "
+        f"auth_client: {leaked}. Seeding has leaked into the empty tier, and the "
+        f"vocabulary assertions are now reading a populated page — where they "
+        f"will fail on text that is correct. See "
+        f"_DATA_DEPENDENT_TEXT_OUT_OF_SCOPE."
+    )
+
+    # Tier two: what the populated render assertion above runs against.
+    client = request.getfixturevalue("seeded_client")
+    unseeded = [m._meta.label for m in models if not m.objects.exists()]
+    assert not unseeded, (
+        f"seeded_client left these models empty: {unseeded}. The populated "
+        f"render case is then proving the same thing as the empty one."
+    )
+
+    # And the fixture's declared model table describes what it really created,
+    # so the count above cannot drift away from the seeding below it.
+    declared = {
+        (required[0], label)
+        for required, label in FIXTURE_MODELS
+        if all(name in ENABLED_NAMES for name in required)
+    }
+    actual = {
+        (module, type(row)._meta.label)
+        for module, rows in client.seeded.items()
+        for row in rows
+    }
+    assert actual == declared, (
+        f"tests/droppability/fixture.py's FIXTURE_MODELS table and what "
+        f"seed_droppable_fixture() actually created disagree.\n"
+        f"  declared but not created: {sorted(declared - actual)}\n"
+        f"  created but not declared: {sorted(actual - declared)}"
     )
 
 

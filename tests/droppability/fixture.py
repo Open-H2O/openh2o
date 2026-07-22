@@ -57,6 +57,56 @@ from datetime import date
 FIXTURE_PERIOD_START = date(2023, 10, 1)
 FIXTURE_PERIOD_END = date(2024, 9, 30)
 
+#: Every model this fixture writes to, paired with the module(s) that have to be
+#: enabled for it to get a row — and with the key it is recorded under.
+#:
+#: **Declared, and pinned.** ``checks.py::test_the_fixture_axis_is_what_we_think``
+#: needs to count rows in exactly these models BEFORE anything is seeded, which it
+#: cannot do by reading the return value of a function it has not called yet. The
+#: obvious alternative — a census over every model in the registry — would trip
+#: over the rows logging a user in creates and over anything a data migration
+#: ships, so it would need an exception list of its own.
+#:
+#: A second list is a second thing to drift, so the same test asserts this table
+#: and the rows ``seed_droppable_fixture`` actually created describe each other
+#: exactly. Adding a block below without adding its row here fails that test.
+#:
+#: The requirement is a TUPLE for the same reason ``checks.py::_PAGES`` owners
+#: are: ``reporting.ReportSubmission`` needs ``accounting`` as well, because its
+#: ``reporting_period`` FK points there. The first name in the tuple is the key
+#: the row is recorded under.
+FIXTURE_MODELS = (
+    (("geography",), "geography.Boundary"),
+    (("parcels",), "parcels.Parcel"),
+    (("wells",), "wells.Well"),
+    (("datasync",), "datasync.MonitoredStation"),
+    (("recharge",), "recharge.RechargeSite"),
+    (("surface",), "surface.WaterRight"),
+    (("surface",), "surface.PointOfDiversion"),
+    (("accounting",), "accounting.ReportingPeriod"),
+    (("reporting", "accounting"), "reporting.ReportSubmission"),
+)
+
+
+def seeded_models() -> tuple:
+    """The model classes THIS configuration's fixture puts rows into.
+
+    Resolved through Django's live app registry rather than imported, because
+    half of these modules are absent in the configurations this harness exists to
+    run — importing ``surface.models`` in a process that never installed
+    ``surface`` raises ``RuntimeError: Model class ... doesn't declare an
+    explicit app_label``, which is the very error 89-03 found in production code.
+    """
+    from django.apps import apps as django_apps
+
+    from core.modules import is_enabled
+
+    return tuple(
+        django_apps.get_model(label)
+        for required, label in FIXTURE_MODELS
+        if all(is_enabled(name) for name in required)
+    )
+
 
 def seed_droppable_fixture() -> dict:
     """Put one row per surviving domain into the database.
