@@ -136,6 +136,21 @@ _PAGES = (
     ("/surface/", "surface"),
     ("/surface/rights/", "surface"),
     ("/accounting/dashboard/", "accounting"),
+    # 90-02: the seven nav-reachable pages that STILL had no row after 89-02
+    # closed eleven. Measured 2026-07-22 at `2588433` by walking
+    # `nav_sections_for(enabled_modules())` and reversing every entry against the
+    # table above — six `accounting`, one `reporting`. Same defect class as the
+    # eleven: a page with no row is never opened by any assertion and nothing
+    # warns you, so the vocabulary gate reported green over prose it had never
+    # read. The owner is DECLARED here, not derived from the path's prefix, for
+    # the reason written at the top of this table.
+    ("/accounting/ledger/", "accounting"),
+    ("/accounting/accounts/", "accounting"),
+    ("/accounting/reporting-periods/", "accounting"),
+    ("/accounting/allocations/", "accounting"),
+    ("/accounting/methodology/", "accounting"),
+    ("/accounting/delivery-settings/", "accounting"),
+    ("/reporting/reports/", "reporting"),
     # 88-03: `drinking` had no row, so no assertion here ever read its pages —
     # and Phase 88 is precisely what makes that matter, because softening
     # `drinking.requires` created the drinking-with-no-wells deployment. Found on

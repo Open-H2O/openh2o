@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load nav %}
 
 {% block title %}Delivery Settings - Open Water Accounting Platform{% endblock %}
 
@@ -9,7 +10,10 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Delivery Settings</span>
   </nav>
-  <p class="page-description">How the platform shares surface deliveries across farms, and what happens to a district's unused water at year-end. Set once for the whole agency.</p>
+  {% comment %}90-02: the description promised "surface deliveries" on deployments
+  with no Surface module — the page had no `_PAGES` row until this plan, so no
+  assertion had ever read it. The sharing half of the sentence goes with the
+  setting it describes.{% endcomment %}<p class="page-description">{% if 'surface' in enabled_modules %}How the platform shares surface deliveries across farms, and what{% else %}What{% endif %} happens to a district's unused water at year-end. Set once for the whole agency.</p>
 </div>
 {% endblock %}
 
@@ -20,7 +24,11 @@
 
   <!-- Intro + learn-more -->
   <div class="card-raised">
-    <p class="text-secondary text-base" style="margin: 0;">These two settings apply to every district. An analyst sets them once; a single district can differ from the default where it needs to (set that on the district's own page). <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-accent);">Learn more &rarr;</a></p>
+    {% comment %}90-02: "These two settings" counted a setting that is not always
+    shown, and the Learn-more link pointed at an explainer that 404s when the
+    deployment does not run every domain it explains — a live dead link, found
+    the moment this page got a `_PAGES` row. The predicate is the same one the
+    view and the sidebar read.{% endcomment %}{% explainer_available "surface_deliveries" as show_delivery_help %}<p class="text-secondary text-base" style="margin: 0;">These settings apply to every district. An analyst sets them once; a single district can differ from the default where it needs to (set that on the district's own page).{% if show_delivery_help %} <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-accent);">Learn more &rarr;</a>{% endif %}</p>
   </div>
 
   <form method="post" class="page-stack">
@@ -32,9 +40,12 @@
     </div>
     {% endif %}
 
-    <!-- Setting 1: efficiency -->
+    <!-- Setting 1: efficiency. `surface` owns it (see DeliverySettingsForm) and
+         the numbering follows the fields that are actually shown — the 88-03
+         defect was a step eyebrow that kept counting a step nobody could see. -->
+    {% if form.shows_efficiency %}
     <div class="card-raised">
-      <span class="step-eyebrow">Setting 1 of 2</span>
+      <span class="step-eyebrow">Setting 1 of {{ settings_total }}</span>
       <h2 class="section-header">{{ form.efficiency_percent.label }}</h2>
       <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">{{ form.efficiency_percent.help_text }}</p>
       <div class="field-group mb-0">
@@ -45,10 +56,11 @@
       </div>
       {% if form.efficiency_percent.errors %}<p class="text-sm text-furnace" style="margin-top: var(--space-sm);">{{ form.efficiency_percent.errors|striptags }}</p>{% endif %}
     </div>
+    {% endif %}
 
     <!-- Setting 2: year-end unused water -->
     <div class="card-raised">
-      <span class="step-eyebrow">Setting 2 of 2</span>
+      <span class="step-eyebrow">Setting {{ settings_total }} of {{ settings_total }}</span>
       <h2 class="section-header">{{ form.recovery_horizon.label }}</h2>
       <div class="field-group" style="margin-top: var(--space-sm);">
         {% for radio in form.recovery_horizon %}

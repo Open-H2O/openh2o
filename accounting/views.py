@@ -792,6 +792,39 @@ LEDGER_SORTABLE = {
 # (replaces the historic hardcoded 50); anything outside the set falls back to 100.
 LEDGER_PAGE_SIZES = (25, 100, 500)
 
+#: Which module owns each ledger source type, for the Source FILTER only.
+#:
+#: ``ParcelLedger.SOURCE_TYPE_CHOICES`` is the full historical vocabulary and has
+#: to stay that way. A ``surface_diversion`` row written before the module was
+#: switched off is still a real row, ``_source_badge.html`` still labels it, and
+#: hiding it would be lying about the ledger — the same call 88-03 made for
+#: ``/drinking/``'s Well column. What this table gates is the OFFER: on a
+#: deployment with no Surface module, a "Surface Diversion" option in the filter
+#: invites an operator to filter for a row type this deployment can never
+#: produce. Same class as 89-02's guarded enumerations; 90-02 is simply where a
+#: gate could first SEE it, because ``/accounting/ledger/`` had no ``_PAGES`` row
+#: until then and so had never been read by any assertion.
+#:
+#: **Declared, never derived.** A source type absent from this table is offered
+#: in every configuration, which is the safe direction to fail;
+#: ``tests/test_module_template_guards.py::
+#: test_ledger_source_owners_still_describe_real_source_types`` fails if a row
+#: outlives the choice it names.
+LEDGER_SOURCE_TYPE_OWNERS = {
+    "surface_diversion": "surface",
+    "recharge": "recharge",
+}
+
+
+def ledger_source_type_choices():
+    """``SOURCE_TYPE_CHOICES`` minus the ones whose module this deployment lacks."""
+    return [
+        (value, label)
+        for value, label in ParcelLedger.SOURCE_TYPE_CHOICES
+        if value not in LEDGER_SOURCE_TYPE_OWNERS
+        or is_enabled(LEDGER_SOURCE_TYPE_OWNERS[value])
+    ]
+
 
 @login_required
 def ledger_list(request):
@@ -941,7 +974,7 @@ def ledger_list(request):
         "direction": direction,
         "page_size": page_size,
         "page_sizes": LEDGER_PAGE_SIZES,
-        "source_type_choices": ParcelLedger.SOURCE_TYPE_CHOICES,
+        "source_type_choices": ledger_source_type_choices(),
         "period_auto_defaulted": period_auto_defaulted,
         "auto_default_period_name": auto_default_period_name,
         "auto_default_calculated": auto_default_calculated,
@@ -1246,7 +1279,14 @@ def delivery_settings(request):
     else:
         form = DeliverySettingsForm(instance=config)
 
-    return render(request, "accounting/delivery_settings.html", {"form": form})
+    # The eyebrows count what is rendered, not what the form class declares:
+    # `efficiency_percent` belongs to `surface` and is gone when that module is
+    # (see DeliverySettingsForm). A hardcoded "of 2" is the 88-03 defect.
+    return render(
+        request,
+        "accounting/delivery_settings.html",
+        {"form": form, "settings_total": 2 if form.shows_efficiency else 1},
+    )
 
 
 # ---------------------------------------------------------------------------

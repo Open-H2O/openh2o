@@ -137,37 +137,60 @@ class DeliverySettingsForm(forms.Form):
 
     SiteConfig is a singleton; the view loads the one row and passes it in as
     ``instance``. The form never creates a second row.
+
+    **The efficiency field belongs to ``surface`` and disappears with it (90-02).**
+    ``default_irrigation_efficiency`` has exactly one consumer —
+    ``surface/services.py``, which apportions a delivery between what the crop
+    consumed and what returned to the aquifer. On a deployment with no Surface
+    module nothing reads the number, so offering the control invites an analyst
+    to tune a knob connected to nothing. ``default_recovery_horizon`` is the
+    opposite case and stays: ``accounting.services.resolve_recovery_horizon`` and
+    ``rollover_allocations`` read it for any zone's unused allocation, surface or
+    not.
     """
 
     efficiency_percent = forms.IntegerField(
         min_value=1,
         max_value=100,
         label="Share of delivered water the crop actually consumes",
-        help_text="The rest soaks back into the aquifer as recharge. Typical: 75%.",
+        # 90-02: said "soaks back into the aquifer as recharge", which named the
+        # `recharge` module's noun on deployments that do not run it. The
+        # sentence does not need the word — where the water goes is already
+        # said — so the copy changed rather than `_FORBIDDEN_VOCABULARY`.
+        help_text="The rest soaks back into the aquifer. Typical: 75%.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),
     )
     recovery_horizon = forms.ChoiceField(
         choices=RECOVERY_HORIZON_CHOICES,
+        # 90-02: was "its full surface-water allotment", which described surface
+        # water on a deployment that may have none — and the setting was never
+        # surface-only in the first place. Rewritten module-neutrally rather than
+        # guarded, because the sentence survives it (89-02's rule).
         label=(
-            "When a district doesn't use its full surface-water allotment by the "
-            "end of the water year:"
+            "When a district doesn't use its full allotment by the end of the "
+            "water year:"
         ),
         widget=forms.RadioSelect,
     )
 
     def __init__(self, *args, instance=None, **kwargs):
+        from core.modules import is_enabled
+
         self.instance = instance
+        self.shows_efficiency = is_enabled("surface")
         if instance is not None and "initial" not in kwargs:
-            kwargs["initial"] = {
+            initial = {"recovery_horizon": instance.default_recovery_horizon}
+            if self.shows_efficiency:
                 # 0.750 (fraction) -> 75 (percent), rounded to a whole number.
-                "efficiency_percent": int(
+                initial["efficiency_percent"] = int(
                     (instance.default_irrigation_efficiency * 100).to_integral_value()
-                ),
-                "recovery_horizon": instance.default_recovery_horizon,
-            }
+                )
+            kwargs["initial"] = initial
         super().__init__(*args, **kwargs)
+        if not self.shows_efficiency:
+            del self.fields["efficiency_percent"]
         # Plain-language radio labels — these are what the manager reads, NOT the
         # model's choice labels. Option order matches RECOVERY_HORIZON_CHOICES.
         self.fields["recovery_horizon"].choices = [
@@ -184,14 +207,19 @@ class DeliverySettingsForm(forms.Form):
             raise forms.ValidationError("Enter a whole number between 1 and 100.")
 
     def save(self):
-        """Write the two fields back onto the singleton SiteConfig instance."""
+        """Write the shown fields back onto the singleton SiteConfig instance.
+
+        ``update_fields`` is built from what the form actually rendered, so a
+        deployment with no Surface module leaves ``default_irrigation_efficiency``
+        exactly as it was rather than writing a value nobody was offered.
+        """
         config = self.instance
-        config.default_irrigation_efficiency = self.cleaned_data["efficiency_percent"]
+        updated = ["default_recovery_horizon"]
         config.default_recovery_horizon = self.cleaned_data["recovery_horizon"]
-        config.save(
-            update_fields=[
-                "default_irrigation_efficiency",
-                "default_recovery_horizon",
+        if self.shows_efficiency:
+            config.default_irrigation_efficiency = self.cleaned_data[
+                "efficiency_percent"
             ]
-        )
+            updated.append("default_irrigation_efficiency")
+        config.save(update_fields=updated)
         return config

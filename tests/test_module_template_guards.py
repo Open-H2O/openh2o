@@ -139,3 +139,35 @@ def test_optional_module_names_is_what_we_think():
         "parcels", "accounting",
     }
     assert all(not MODULE_REGISTRY[n].required for n in OPTIONAL_MODULE_NAMES)
+
+
+def test_ledger_source_owners_still_describe_real_source_types():
+    """A row in ``LEDGER_SOURCE_TYPE_OWNERS`` cannot outlive its choice.
+
+    The table filters the ledger's Source dropdown down to the row types this
+    deployment can actually produce (90-02). A row naming a source type that no
+    longer exists would sit there looking like a considered decision while gating
+    nothing — the same failure shape ``_VOCABULARY_EXEMPT_PAGES`` and
+    ``SCHEMA_EXCEPTIONS`` are pinned against.
+
+    The reverse direction is deliberately NOT asserted: a source type with no row
+    is offered in every configuration, which is the safe way for this table to be
+    incomplete.
+    """
+    from accounting.views import LEDGER_SOURCE_TYPE_OWNERS
+    from parcels.models import ParcelLedger
+
+    known = {value for value, _ in ParcelLedger.SOURCE_TYPE_CHOICES}
+    stale = sorted(set(LEDGER_SOURCE_TYPE_OWNERS) - known)
+    assert not stale, (
+        f"These ledger source types are owner-gated but no longer exist in "
+        f"ParcelLedger.SOURCE_TYPE_CHOICES: {stale}. Drop the rows or restore "
+        f"the choices."
+    )
+    unknown_modules = sorted(
+        set(LEDGER_SOURCE_TYPE_OWNERS.values()) - set(MODULE_REGISTRY)
+    )
+    assert not unknown_modules, (
+        f"LEDGER_SOURCE_TYPE_OWNERS names modules the registry does not know: "
+        f"{unknown_modules}."
+    )
