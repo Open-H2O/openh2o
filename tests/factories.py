@@ -154,6 +154,13 @@ class WaterTypeFactory(factory.django.DjangoModelFactory):
 class ReportingPeriodFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = "accounting.ReportingPeriod"
+        # The dates below are FIXED, and `reporting_period_no_overlap` is an
+        # exclusion constraint — so calling this factory twice with its defaults
+        # is not "two periods", it is an IntegrityError. Reusing the row the
+        # second time is what the constraint already says the database means
+        # (90-01). A caller that passes its own dates still gets its own row,
+        # because get_or_create is keyed on the dates it was handed.
+        django_get_or_create = ("start_date", "end_date")
 
     name = factory.Sequence(lambda n: f"WY {2020 + n}")
     start_date = factory.LazyAttribute(lambda o: date(2023, 10, 1))
@@ -400,3 +407,74 @@ if is_enabled("drinking"):
         result_value = Decimal("0.001000")
         unit = "mg/L"
         less_than_rl = False
+
+
+# -- reporting (Plan 90-01) ---------------------------------------------------
+#
+# The state-filing layer had no factories at all until now, which is precisely
+# why 89-03 found eight live 500s that three phases of green gates had missed: a
+# CalWATRS `ReportSubmission` row OUTLIVES the `surface` module, and nothing in
+# this repo could build one to point a reduced deployment at.
+#
+# **Guarded on `reporting` AND `accounting`, and both halves earn their place.**
+# `reporting` is truly removable, so `reporting.ReportSubmission` does not
+# resolve without it — the class-definition-time trap the blocks above describe.
+# `accounting` is the second half because `ReportSubmission.reporting_period` is
+# an FK into `accounting.ReportingPeriod` and `ReportingPeriodFactory` is what
+# fills it: a submission is only constructible where the period model is a live
+# part of the deployment. Today the requires-closure makes the second check
+# redundant (dropping the `parcels`+`accounting` pair drops `reporting` with it),
+# and it is written down anyway — checking only `reporting` LOOKS right and would
+# break the seven-module case the day that closure changes.
+if is_enabled("reporting") and is_enabled("accounting"):
+    from django.apps import apps as _django_apps
+
+    _REPORT_TYPE_LABELS = dict(
+        _django_apps.get_model("reporting", "ReportTemplate").REPORT_TYPE_CHOICES
+    )
+
+    class ReportingProfileFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "reporting.ReportingProfile"
+
+        legal_entity_name = factory.Sequence(lambda n: f"Test Agency {n}")
+        # The state-issued identity fields stay BLANK by default. They are values
+        # SWRCB mails to a real agency; a plausible-looking default would be a
+        # fabricated Correspondence ID sitting in a test fixture, and the model's
+        # own docstring is explicit that OpenH2O only stores what a human
+        # supplies. A test that needs one passes it.
+        boundary = None
+
+    class ReportTemplateFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "reporting.ReportTemplate"
+            # `report_type` is unique=True, so a second submission in the same
+            # test would raise IntegrityError rather than reuse the template that
+            # already exists. get_or_create makes the default template a
+            # singleton per type, which is what the model's uniqueness already
+            # says it is.
+            django_get_or_create = ("report_type",)
+
+        report_type = "calwatrs_a1"
+        # The human label the model already declares, rather than a second copy
+        # of it here — read off the LIVE app registry (the repo's standing rule)
+        # instead of importing `reporting.models`, which would be exactly the
+        # module-scope import the guard above exists to avoid.
+        name = factory.LazyAttribute(lambda o: _REPORT_TYPE_LABELS[o.report_type])
+        is_active = True
+
+    class ReportSubmissionFactory(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "reporting.ReportSubmission"
+
+        # **CalWATRS by default, and that is the whole point of this factory.**
+        # `reporting/views.py::calwatrs_worksheet` and `::report_prefill` branch
+        # on the report TYPE rather than on module availability, so a CalWATRS row
+        # is the exact shape that reached `surface.models.WaterRightType` on a
+        # deployment with `surface` dropped and raised `RuntimeError: Model class
+        # ... doesn't declare an explicit app_label`. A GEARS submission does not
+        # reach that code, so defaulting to one would make Plan 90-02's
+        # watched-failing proof impossible while looking identical here.
+        report_template = factory.SubFactory(ReportTemplateFactory)
+        reporting_period = factory.SubFactory(ReportingPeriodFactory)
+        status = "draft"
