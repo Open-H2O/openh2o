@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load prose %}
+{% load prose nav %}
 
 {% block title %}Home - Open Water Accounting Platform{% endblock %}
 
@@ -106,7 +106,14 @@
             </span>
             <span class="home-task-body">
                 <span class="home-task-label">Get Help</span>
-                <span class="home-task-sublabel">Guides, methods, and the glossary</span>
+                {% comment %}Phase 89-03: "methods" names the Methods explainer,
+                which 89-02 HIDES (404) wherever the deployment does not run
+                every domain it explains. Naming it unconditionally promises a
+                page a drinking-water deployment cannot open — invisible to the
+                vocabulary gate, because "methods" is ordinary English no word
+                list may forbid. Read the same predicate the nav link reads, so
+                the card and the page can never disagree. The full deployment
+                renders byte-identically.{% endcomment %}{% explainer_available "methods" as show_methods %}<span class="home-task-sublabel">{% if show_methods %}Guides, methods, and the glossary{% else %}Guides and the glossary{% endif %}</span>
             </span>
         </a>
     </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load nav %}
 
 {% block title %}Configs &amp; Settings, explained - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Configs &amp; Settings, explained{% endblock %}
@@ -62,7 +63,11 @@
       </div>
       <div class="concept-panel">
         <span class="concept-panel-label">When to change it</span>
-        <p class="text-secondary text-base" style="margin: 0;">Rarely, and deliberately &mdash; every calculation flows through this chain, so a change re-shapes past and future numbers alike. See the walkthrough on <a class="prose-link" href="{{ methods_url }}">Methods Behind the Numbers</a>.</p>
+        {% comment %}89-03: the pointer sentence goes with the page it points
+        at. `{% templatetag openblock %} url ... as var {% templatetag closeblock %}`
+        yields "" rather than raising, so ungated this renders href="" — a dead
+        click, not a crash, which is exactly why it survived three phases of
+        green gates.{% endcomment %}{% explainer_available "methods" as show_methods %}<p class="text-secondary text-base" style="margin: 0;">Rarely, and deliberately &mdash; every calculation flows through this chain, so a change re-shapes past and future numbers alike.{% if show_methods %} See the walkthrough on <a class="prose-link" href="{{ methods_url }}">Methods Behind the Numbers</a>.{% endif %}</p>
       </div>
     </div>
 
@@ -87,7 +92,7 @@
       </div>
     </div>
 
-    <p class="text-secondary text-base" style="margin-bottom: 0;">These two have their own dedicated walkthrough, so this page won&rsquo;t repeat it. <a class="prose-link" href="{{ surface_help_url }}">Read the full Surface Delivery Settings page &rarr;</a></p>
+    {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<p class="text-secondary text-base" style="margin-bottom: 0;">These two have their own dedicated walkthrough, so this page won&rsquo;t repeat it. <a class="prose-link" href="{{ surface_help_url }}">Read the full Surface Delivery Settings page &rarr;</a></p>{% endif %}
   </div>
 
   <div class="card-raised">

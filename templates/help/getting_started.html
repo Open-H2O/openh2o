@@ -305,13 +305,17 @@
   card decision, not a prose one — not a word inside them changes. The surface
   one is guarded to match: it is in the same drop closure and has the identical
   shape, and the vocabulary gate is blind to it only because "canal deliveries"
-  is not in `surface`'s forbidden list.{% endcomment %}{% if 'accounting' in enabled_modules %}<div class="card-raised">
+  is not in `surface`'s forbidden list.{% endcomment %}{% comment %}89-03: gate the CARD, not the link. Its entire body is a promise
+  about "this short guide" — with the guide hidden, dropping only the link
+  leaves a card advertising something that is not there. That is 89-02's own
+  argument for the three-card grid below, applied to the two single-card
+  pointers it did not reach.{% endcomment %}{% explainer_available "budgets_allocations" as show_budgets %}{% if 'accounting' in enabled_modules and show_budgets %}<div class="card-raised">
     <h2 class="section-header">New to allocations and ceilings?</h2>
     <p class="text-secondary text-base">If the difference between a zone&rsquo;s allocation ceiling and an account&rsquo;s allocation is unclear, this short guide walks through how the platform turns one into the other, with a worked example.</p>
     <a href="{% url 'budgets_allocations' %}" class="text-sm" style="color: var(--color-accent);">Read: Allocations &amp; Ceilings &rarr;</a>
   </div>{% endif %}
 
-  {% if 'surface' in enabled_modules %}<div class="card-raised">
+  {% explainer_available "surface_deliveries" as show_surface_help %}{% if 'surface' in enabled_modules and show_surface_help %}<div class="card-raised">
     <h2 class="section-header">Setting up surface deliveries?</h2>
     <p class="text-secondary text-base">Two agency-wide settings shape how the platform counts canal deliveries: how much of a delivery the crop actually uses, and what happens to a district&rsquo;s unused water at year-end. This guide explains both in plain language and shows how one district can differ from the agency default.</p>
     <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-accent);">Read: Surface Delivery Settings &rarr;</a>

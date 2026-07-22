@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load nav %}
 
 {% block title %}How Water Balances Work - Open Water Accounting Platform{% endblock %}
 {% block page_title %}How Water Balances Work{% endblock %}
@@ -118,14 +119,19 @@
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Plain-language definitions for every term on this page.</p>
       </a>
-      <a href="{% url 'methods' %}" class="card-raised card-link">
+      {% comment %}89-03: an explainer's related-reading card is a LIVE LINK to
+      another explainer, and 89-02 made explainers 404 wherever the deployment
+      does not run every domain they explain. Ungated, this page hands the
+      reader a dead click — a 200 page linking a 404. Gate each card on the same
+      predicate its target's view and nav link read. The full deployment serves
+      every explainer, so nothing here changes there.{% endcomment %}{% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The step-by-step calculation, from satellite ET to a closing balance.</p>
-      </a>
-      <a href="{% url 'settings_explained' %}" class="card-raised card-link">
+      </a>{% endif %}
+      {% explainer_available "settings_explained" as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Every agency-wide knob that shapes these numbers &mdash; what it does and when to touch it.</p>
-      </a>
+      </a>{% endif %}
     </div>
   </div>
 

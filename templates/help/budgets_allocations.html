@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load nav %}
 
 {% block title %}Allocations & Ceilings - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Allocations & Ceilings{% endblock %}
@@ -90,14 +91,14 @@
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Allocations</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The live page where a zone&rsquo;s ceiling is set and allocations are derived.</p>
       </a>{% endif %}
-      <a href="{% url 'water_balances' %}" class="card-raised card-link">
+      {% explainer_available 'water_balances' as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: estimated use vs. supplies.</p>
-      </a>
-      <a href="{% url 'methods' %}" class="card-raised card-link">
+      </a>{% endif %}
+      {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The calculation chain that produces each account&rsquo;s usage.</p>
-      </a>
+      </a>{% endif %}
     </div>
   </div>
 

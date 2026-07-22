@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load nav %}
 
 {% block title %}Methods Behind the Numbers - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Methods Behind the Numbers{% endblock %}
@@ -71,7 +72,7 @@
         </div>
       </div>
     </div>
-    <p class="text-tertiary text-sm" style="margin: 0;">No single clever formula &mdash; just honest bookkeeping, one supply at a time. If &ldquo;estimated use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page picks up where that one leaves off and walks the actual arithmetic.</p>
+    {% explainer_available "water_balances" as show_water_balances %}<p class="text-tertiary text-sm" style="margin: 0;">No single clever formula &mdash; just honest bookkeeping, one supply at a time.{% if show_water_balances %} If &ldquo;estimated use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page picks up where that one leaves off and walks the actual arithmetic.{% endif %}</p>
   </div>
 
   <div class="card-raised">
@@ -136,9 +137,15 @@
       </div>
     </div>
 
-    <a class="prose-link" href="{{ surface_url }}">Read the Surface Delivery Settings &rarr;</a>
+    {% explainer_available "surface_deliveries" as show_surface_help %}{% if show_surface_help %}<a class="prose-link" href="{{ surface_url }}">Read the Surface Delivery Settings &rarr;</a>{% endif %}
 
-    {% include "partials/_deep_dive.html" with label="The measurement-first ladder and where the cap comes from" body="<p>When the platform has to choose a number, it follows a strict priority ladder &mdash; <strong>measurement first, estimate last:</strong></p><ol class='concept-list'><li>A per-field <strong>direct measurement</strong> wins over everything &mdash; if someone metered this field, that&rsquo;s the truth.</li><li>A district&rsquo;s <strong>hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li>An <strong>even split</strong> is the last resort, used only when there&rsquo;s no better signal at all.</li></ol><p>A district&rsquo;s recorded total is always honored as-is; ET only decides how to split the <em>unmeasured per-field breakdown</em> of that total. The cap on each field&rsquo;s share is its demand divided by an efficiency factor &mdash; because not all delivered water is consumed (some sinks past the roots and recharges the aquifer). That efficiency, typically around 75%, is an agency setting; the Surface Delivery Settings page explains it in plain language.</p>" %}
+    {% comment %}89-03: this deep-dive's body ends with a pointer at the Surface
+    Delivery Settings page, which 89-02 hides wherever the deployment lacks
+    `recharge`. The sentence lives inside a `body` STRING, where no
+    {% templatetag openblock %} if {% templatetag closeblock %} can reach — so the
+    body is hoisted here with its last paragraph left OPEN, and `body_tail`
+    closes it either way. Every word above the pointer is written once, and a full
+    deployment keeps the pointer verbatim.{% endcomment %}{% with ladder_body="<p>When the platform has to choose a number, it follows a strict priority ladder &mdash; <strong>measurement first, estimate last:</strong></p><ol class='concept-list'><li>A per-field <strong>direct measurement</strong> wins over everything &mdash; if someone metered this field, that&rsquo;s the truth.</li><li>A district&rsquo;s <strong>hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li>An <strong>even split</strong> is the last resort, used only when there&rsquo;s no better signal at all.</li></ol><p>A district&rsquo;s recorded total is always honored as-is; ET only decides how to split the <em>unmeasured per-field breakdown</em> of that total. The cap on each field&rsquo;s share is its demand divided by an efficiency factor &mdash; because not all delivered water is consumed (some sinks past the roots and recharges the aquifer). That efficiency, typically around 75%, is an agency setting" %}{% if show_surface_help %}{% include "partials/_deep_dive.html" with label="The measurement-first ladder and where the cap comes from" body=ladder_body body_tail="; the Surface Delivery Settings page explains it in plain language.</p>" %}{% else %}{% include "partials/_deep_dive.html" with label="The measurement-first ladder and where the cap comes from" body=ladder_body body_tail=".</p>" %}{% endif %}{% endwith %}
   </div>
 
   <div class="card-raised">
@@ -155,10 +162,10 @@
     <h2 class="section-header">Where to go next</h2>
     <p class="text-secondary text-base">The concept, the configuration, and the vocabulary &mdash; one click each.</p>
     <div class="card-grid">
-      <a href="{{ water_balances_url }}" class="card-raised card-link">
+      {% if show_water_balances %}<a href="{{ water_balances_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: estimated use vs. supplies.</p>
-      </a>
+      </a>{% endif %}
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methodology Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Where the calculation chain above is reordered and tuned.</p>

@@ -12,11 +12,18 @@ Context variables:
   label  (optional) — summary text after "Advanced ▸ ". Defaults to
                        "How this is calculated".
   body   (required) — safe HTML string rendered inside the disclosure.
+  body_tail (optional) — 89-03: a safe HTML fragment appended INSIDE the body's
+                       last paragraph. Exists so a body can end with a pointer at
+                       a page some deployments hide, without duplicating the
+                       whole body string across an {% templatetag openblock %} if
+                       {% templatetag closeblock %}. The caller leaves its body's
+                       last paragraph OPEN and the tail closes it, so both
+                       branches share every word above the pointer.
 {% endcomment %}
 <details class="deep-dive">
   <summary class="deep-dive-summary">
     <span class="deep-dive-caret" aria-hidden="true">&#9656;</span>
     <span class="deep-dive-label">Advanced &middot; {{ label|default:"How this is calculated" }}</span>
   </summary>
-  <div class="deep-dive-body text-secondary text-base">{{ body|safe }}</div>
+  <div class="deep-dive-body text-secondary text-base">{{ body|safe }}{{ body_tail|default:""|safe }}</div>
 </details>
