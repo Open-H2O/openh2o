@@ -216,16 +216,37 @@ record that no longer matches real code. It derives the graph from Django's live
 app registry, never from grep, because grep has already missed a reverse
 accessor and a multi-line field declaration in this codebase.
 
-**Four of the six optional modules got there by DEMOTION, not removal, and the
-difference is worth knowing before you plan work against them.** `recharge` and
-`surface` are truly removable: their apps leave `INSTALLED_APPS` and their tables
-go. `wells` and `datasync` (Phase 88) are `schema_resident=True` — switched off,
-they keep their apps and their empty tables, because nine backwards arrows point
-into them and would otherwise dangle. The practical consequence: demoting a
-module breaks **nothing** at import time, so `manage.py check` staying clean
-proves nothing. What breaks is what the operator can see — routes, nav links,
-seed commands, counts and prose — and `make test-droppable` is the only thing
-that looks.
+**Every water domain is now optional (Phase 89, 2026-07-21), and four of the six
+got there by DEMOTION rather than removal. The difference is worth knowing
+before you plan work against them.** `recharge` and `surface` are truly
+removable: their apps leave `INSTALLED_APPS` and their tables go. `wells` and
+`datasync` (Phase 88) and `parcels` and `accounting` (Phase 89) are
+`schema_resident=True` — switched off, they keep their apps and their empty
+tables, because nine backwards arrows point into them and would otherwise
+dangle.
+
+`parcels` and `accounting` are an **inseparable pair**, enforced by a
+requires-cycle: turning either off turns both off, and the one-sided
+configuration is refused at boot with `ImproperlyConfigured`. Switching the pair
+off takes five more sections with it (`wells`, `datasync`, `surface`,
+`recharge`, `reporting`), leaving a login, a map and Drinking Water — the
+drinking-water utility flavor, running this same code with no fork. Measured on
+staging: 16 modules → 89 tables, 12 → 77, 9 → 73, and **not one table belonging
+to a schema-resident module is ever removed.**
+
+The practical consequence: demoting a module breaks **nothing** at import time,
+so `manage.py check` staying clean proves nothing. What breaks is what the
+operator can see — routes, nav links, seed commands, counts and prose — and
+`make test-droppable` is the only thing that looks.
+
+**Know what even that cannot see: it renders against an EMPTY database.** Plan
+89-03 pointed a reduced module set at a copy of the real demo data and found
+eight live 500s that three phases of green gates had missed — a surviving
+CalWATRS filing reaching `reporting.views` code whose `surface` import no longer
+resolves. Green at 30 proves a reduced deployment works for a brand-new agency
+with no data; it says nothing about an agency that has been *using* the platform
+and then switches a module off. If you touch a view that reads rows from an
+optional module, test it with rows present (ISS-091).
 
 ## Key Constraints
 

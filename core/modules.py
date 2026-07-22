@@ -109,6 +109,15 @@ by Phase 89. What breaks under demotion is what the operator can SEE: routes,
 nav, seeds, counts and words. A clean ``manage.py check`` proves nothing here;
 ``make test-droppable`` is the only thing that looks.
 
+**And know what even that cannot see: it renders against an EMPTY database.**
+Phase 89-03 pointed a reduced module set at a copy of the real demo data and
+found eight live 500s — a surviving CalWATRS filing reaching
+``reporting.views`` code whose ``surface`` import no longer resolves. Green at
+30 means a reduced deployment works for a brand-new agency with no data. The
+realistic case is an agency that has been USING the platform and then switches a
+module off, where old rows reach code paths whose module is gone, and nothing in
+the harness exercises it (ISS-091).
+
 Droppable today — all ten of them: ``reporting``, ``health``, ``setup``,
 ``infrastructure``, ``feedback``, ``drinking`` — ``recharge``, which Phase 82
 (2026-07-20) decoupled as the pilot — ``surface``, removed outright by Phase 87
