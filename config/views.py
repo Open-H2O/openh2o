@@ -320,15 +320,15 @@ def _getting_started_numbering():
     renders in every configuration, and it sits between the accounting cards, so
     the run cannot break in the middle.
     """
-    from core.modules import is_enabled as _enabled
-
     numbers = {}
     n = 0
     for key, module in GETTING_STARTED_STEPS:
         if key == "reports":
-            shown = _enabled("reporting") and (_enabled("wells") or _enabled("surface"))
+            shown = is_enabled("reporting") and (
+                is_enabled("wells") or is_enabled("surface")
+            )
         else:
-            shown = module is None or _enabled(module)
+            shown = module is None or is_enabled(module)
         if shown:
             n += 1
             numbers[key] = n
