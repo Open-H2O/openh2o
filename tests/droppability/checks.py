@@ -107,6 +107,13 @@ _PAGES = (
     ("/surface/", "surface"),
     ("/surface/rights/", "surface"),
     ("/accounting/dashboard/", "accounting"),
+    # 88-03: `drinking` had no row, so no assertion here ever read its pages —
+    # and Phase 88 is precisely what makes that matter, because softening
+    # `drinking.requires` created the drinking-with-no-wells deployment. Found on
+    # staging: the page description and the empty state both said "and the wells
+    # behind them" on a deployment with no Wells module, and the vocabulary gate
+    # was green because it never opened the page.
+    ("/drinking/", "drinking"),
 )
 
 #: Pages that must keep rendering given what THIS process booted with. Measured,
