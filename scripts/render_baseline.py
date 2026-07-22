@@ -34,18 +34,29 @@ from django.db import connection  # noqa: E402
 #: A fresh CSRF token is minted per request, so two runs of the same unchanged
 #: page differ by ~64 random characters in three places. Masking it is what makes
 #: "byte-identical" a claim that can be true at all -- without this every diff is
-#: dominated by noise and the real differences hide inside it. Nothing else in
-#: these pages is nondeterministic (the scratch database has no rows and no
-#: timestamps reach the markup), which is why this is the only mask.
-CSRF_PATTERNS = (
-    re.compile(r'("X-CSRFToken": ")[A-Za-z0-9]+(")'),
-    re.compile(r'(name="csrfmiddlewaretoken" value=")[A-Za-z0-9]+(")'),
+#: dominated by noise and the real differences hide inside it.
+#:
+#: **The home page's greeting is the second source, found by Plan 88-02 the hard
+#: way.** 88-01's version of this file asserted the CSRF token was the ONLY
+#: nondeterminism; `config.views.index` also stamps "Good morning / afternoon /
+#: evening" from the wall clock, so a before-capture and an after-capture taken
+#: either side of noon or 5pm differ on a line no code change touched. The
+#: convergence control does not catch it -- two runs a second apart agree
+#: perfectly -- and a plan whose deliverable is a byte diff would spend its
+#: credibility explaining a false positive.
+MASKS = (
+    (re.compile(r'("X-CSRFToken": ")[A-Za-z0-9]+(")'), r"\1<CSRF-MASKED>\2"),
+    (re.compile(r'(name="csrfmiddlewaretoken" value=")[A-Za-z0-9]+(")'),
+     r"\1<CSRF-MASKED>\2"),
+    (re.compile(r'("home-hero-greeting">)Good (?:morning|afternoon|evening)(<)'),
+     r"\1<GREETING-MASKED>\2"),
 )
 
 
 def _mask_csrf(body: str) -> str:
-    for pattern in CSRF_PATTERNS:
-        body = pattern.sub(r"\1<CSRF-MASKED>\2", body)
+    """Blank out everything that changes between two runs of unchanged code."""
+    for pattern, replacement in MASKS:
+        body = pattern.sub(replacement, body)
     return body
 
 
