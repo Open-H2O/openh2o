@@ -87,6 +87,19 @@ PAGES = (
     ("help-budgets-allocations", "/help/budgets-allocations/", True),
     ("help-surface-deliveries", "/help/surface-deliveries/", True),
     ("infrastructure-add", "/infrastructure/add/", True),
+    # Plan 89-02 widened it again, and for a reason worth writing down: this plan
+    # edits PROSE on shared pages, which is the highest-risk shape for the
+    # milestone's zero-behaviour-change rule. Every page below carries a sentence
+    # this plan touched or a link it gated, and a page that is absent from this
+    # list looks exactly like a page that was checked and found identical.
+    ("glossary", "/help/glossary/", True),
+    ("users", "/users/", True),
+    ("zone-list", "/map/zones/", True),
+    ("health", "/health/", True),
+    ("profile", "/profile/", True),
+    ("drinking-sampling-points", "/drinking/sampling-points/", True),
+    ("drinking-results", "/drinking/results/", True),
+    ("drinking-onboard", "/drinking/onboard/", True),
 )
 
 #: Detail panes need a row to have a primary key at all, so they cannot be
