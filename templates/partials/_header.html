@@ -25,7 +25,7 @@
                    id="global-search-input"
                    name="q"
                    class="global-search-input"
-                   placeholder="Search parcels, wells, accounts…"
+                   placeholder="Search parcels, {% if 'wells' in enabled_modules %}wells, {% endif %}accounts…"
                    autocomplete="off"
                    role="combobox"
                    aria-expanded="false"

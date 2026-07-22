@@ -95,7 +95,7 @@
         <div class="form-stack">
           <div class="form-group">
             <label class="field-label" for="name">Name</label>
-            <input type="text" id="name" name="name" required class="form-input" placeholder="e.g. Johnson Ranch Well #3" value="{{ submitted.name|default:'' }}">
+            <input type="text" id="name" name="name" required class="form-input" placeholder="e.g. Johnson Ranch {% if 'wells' in enabled_modules %}Well{% else %}Site{% endif %} #3" value="{{ submitted.name|default:'' }}">
           </div>
           <div class="form-group">
             <label class="field-label" for="status">Status</label>

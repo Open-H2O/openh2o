@@ -335,12 +335,27 @@ _HTML_COMMENT = re.compile(r"(?s)<!--.*?-->")
 _ANY_TAG = re.compile(r"(?s)<[^>]+>")
 _WHITESPACE = re.compile(r"\s+")
 
+#: Attributes whose VALUE is prose a human reads, so they are harvested before
+#: the tags are stripped. Stripping tags is right for ``class`` and ``id``; it
+#: was wrong for these four, and 88-03 found the gap on staging rather than in
+#: this suite: ``_header.html`` carried
+#: ``placeholder="Search parcels, wells, accounts…"`` unguarded, so every page of
+#: a wells-less deployment invited a search for a record type it does not have,
+#: and the gate could not see it. Keep the set to attributes a user actually
+#: reads — adding ``class`` or ``data-*`` here is the "cries wolf" failure the
+#: vocabulary table's own note warns about.
+_PROSE_ATTRIBUTES = re.compile(
+    r"""(?is)\b(?:placeholder|title|aria-label|alt)\s*=\s*(?:"([^"]*)"|'([^']*)')"""
+)
+
 
 def visible_text(markup: str) -> str:
     """The words a human actually reads on the page.
 
-    Four things are removed, and each for a measured reason rather than a
-    general tidiness instinct:
+    Prose-bearing attribute values are harvested FIRST (see
+    ``_PROSE_ATTRIBUTES``), because the tag strip below would otherwise take them
+    with the markup. Then four things are removed, each for a measured reason
+    rather than a general tidiness instinct:
 
     * ``<script>`` and ``<style>`` bodies — they are code, and the inline JS on
       these pages contains selector strings that would read as prose.
@@ -348,8 +363,10 @@ def visible_text(markup: str) -> str:
       ``<!-- CalWATRS -->`` marker is a markup problem and not a copy problem.
       (One such comment survives in ``base.html``; see ISS-084. Stripping
       comments is what keeps this assertion about words rather than about it.)
-    * All tags, which takes every attribute with them. This is the trap the plan
-      called out: ``class="well-card"`` must not fail a test about prose.
+    * All tags, which takes every remaining attribute with them. This is the trap
+      the plan called out: ``class="well-card"`` must not fail a test about
+      prose. That reasoning holds for markup attributes and only for those — a
+      ``placeholder`` is read by a person, so it is prose and is kept.
     * HTML entities are unescaped LAST, after the tags are gone — do it first and
       an escaped ``&lt;`` turns into a ``<`` that the tag regex then eats along
       with the real text after it.
@@ -359,9 +376,12 @@ def visible_text(markup: str) -> str:
     real HTML parser here would trade a dependency for a case that does not
     occur.
     """
-    text = _SCRIPT_OR_STYLE.sub(" ", markup)
-    text = _HTML_COMMENT.sub(" ", text)
-    text = _ANY_TAG.sub(" ", text)
+    body = _SCRIPT_OR_STYLE.sub(" ", markup)
+    body = _HTML_COMMENT.sub(" ", body)
+    attrs = " ".join(
+        double or single for double, single in _PROSE_ATTRIBUTES.findall(body)
+    )
+    text = _ANY_TAG.sub(" ", body) + " " + attrs
     text = html_lib.unescape(text)
     for idiom in _IDIOMS:
         text = re.sub(re.escape(idiom), " ", text, flags=re.I)
