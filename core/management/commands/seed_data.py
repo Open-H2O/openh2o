@@ -12,7 +12,6 @@ from core.modules import is_enabled
 
 SEED_COMMANDS = [
     "seed_roles",
-    "seed_water_types",
 ]
 
 #: Seed commands owned by a module a deployment can switch off. Gated rather
@@ -30,6 +29,20 @@ OPTIONAL_SEED_COMMANDS = [
     #
     # Listed FIRST so the resolved order on a full deployment is unchanged:
     # roles, water types, well types, data sources, then the three below.
+    #
+    # Phase 89 added `seed_water_types` at the head of that list, and it is the
+    # SAME silent-fill class as `wells` and `datasync` rather than the loud one.
+    # It is owned by `accounting` (core/modules.py) and sat in the ungated block
+    # above, so under demotion `make seed` would still find it — management
+    # commands are discovered from INSTALLED_APPS, and a schema-resident app
+    # never leaves — and quietly fill a switched-off module's tables. Nothing
+    # crashes; the only thing that can see it is
+    # `test_schema_resident_module_tables_are_present_and_empty`.
+    #
+    # `parcels` declares NO seed command, so there is no parcels-side twin —
+    # confirmed against `MODULE_REGISTRY["parcels"].seed_commands`, which is
+    # empty, rather than taken from the plan.
+    ("accounting", "seed_water_types"),
     ("wells", "seed_well_types"),
     ("datasync", "seed_data_sources"),
     ("drinking", "seed_drinking"),
