@@ -130,6 +130,53 @@ gate. `seed_merced` reaches external APIs, so a gate built on it would depend on
 the network. Reading a green run here: it proves a reduced deployment survives
 *a* row in every domain, not that it survives *Merced's* rows.
 
+## It follows the links now, not just the declared pages
+
+`_PAGES` is a list of front doors. Until Plan 90-02 the harness opened those
+doors and inspected the sidebar's `href`s for dead links — but it never *walked
+through* one. That is the reach half of ISS-091, and it is not academic: the two
+views that crashed on staging sit **two hops** past a declared page
+(`/reporting/reports/` → `report_detail` → `calwatrs_worksheet` /
+`report_prefill`). No one-hop check could ever have reached them.
+
+`tests/droppability/crawl.py` walks the app the way a person clicking through it
+does. From every `KEPT_PAGES` seed it follows each in-app `<a href>`, then every
+link on those pages, to **frontier exhaustion** — a `seen` set and a queue, not a
+depth limit, because "depth 2" would stop being right the day a view moves one
+link further out.
+
+Measured on a full 16-module deployment with the 90-01 fixture (2026-07-22): 33
+seeds reach **59 paths**, all 200, in about 0.6 s. Two consecutive runs visit the
+same set — the queue drains in sorted order precisely so that stays true.
+
+**What it deliberately does not open**, each row carrying its reason in
+`crawl.py`'s `SKIPPED_*` tables:
+
+| Skipped | Why |
+|---|---|
+| `/admin/` | Django's own admin renders from `ModelAdmin`, not these templates — and its delete confirmations sit one form-post from the fixture the rest of the crawl is reading. |
+| `/accounts/logout/` | Ends the crawl's own session. Every later page becomes a redirect to the login wall, and the run still finishes green having proved nothing. |
+| `/nav-mode/` | Sets the `nav_mode` cookie and bounces back. Since the crawl drops query strings, a bare GET defaults it to `operations` — silently flipping the client out of the mode the test chose, about a third of the way through. Nothing fails; the two-mode parametrization just stops meaning anything. |
+| `*/export/`, `*/download/`, `*/template/` | Stream bytes rather than render a template, so they answer nothing about whether a page renders. |
+
+**Two stated limits.** The crawl is GET-only — it never issues a POST, so a form
+is proven to render and not to submit. And it dedupes by path, so query strings
+collapse: `/accounting/ledger/?period=3` and `/accounting/ledger/` are one visit.
+One view in this codebase genuinely branches on its query
+(`reporting.views.report_generate` reads `?type=`), so that branch is crawled in
+one of its two shapes. Widening to capped query variants is a real option; it was
+not taken because the bar this feeds is zero 5xx and the collapsed shape reaches
+every view.
+
+**The bound is printed, never silent.** `crawl()` takes `max_pages` (default 400)
+and returns the unvisited remainder alongside the visited set — and prints it. A
+crawl that stopped early must never read like a crawl that finished; that is the
+same failure shape as the empty database this phase exists to fix.
+
+`crawl()` **returns rather than asserts**, so the assertion can live in
+`checks.py` and the function stays reusable — Plan 90-03 points it at a copy of
+the real demo database, where the bar is the same and the fixture is not.
+
 ## Why it spawns a subprocess
 
 `OPENH2O_MODULES` is read from the environment at settings *import* time and
