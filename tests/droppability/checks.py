@@ -1234,3 +1234,90 @@ def test_nav_carries_no_link_into_a_dropped_module(auth_client, name):
             f"{path} rendered a link into dropped module {name!r} "
             f"(found {needle!r} in the markup)."
         )
+
+
+#: The plain-English NAME of each Help explainer, as a kept page would say it in
+#: a sentence. Declared here rather than derived from the URL name for the same
+#: reason ``_PAGES`` is declared: "settings_explained" is not a phrase anybody
+#: writes, and the leak this catches is always the readable form.
+#:
+#: **Why this gate exists.** 89-03 found the home page's Get Help card promising
+#: "Guides, methods, and the glossary" on a deployment where the Methods page
+#: 404s. No earlier gate could see it: the vocabulary gate matches module nouns,
+#: and "methods" is ordinary English that must never be forbidden outright — it
+#: is only wrong when it names a page this deployment does not serve. That makes
+#: it the third instance of one class (88-03's Setup Wizard step numbers, 89-02's
+#: promises about absent cards, this), so it gets an assertion rather than a fix.
+_EXPLAINER_PROSE_NAMES = {
+    "water_balances": ("water balances",),
+    "methods": ("methods",),
+    "settings_explained": ("configs & settings", "settings explained"),
+    # DELIBERATELY EMPTY, and written down rather than left out — same rule as
+    # _FORBIDDEN_VOCABULARY's empty tuples. This explainer has NO unambiguous
+    # prose name. It needs `recharge` on top of `accounting`+`surface`, so it can
+    # be hidden on a deployment that still HAS surface deliveries — where "surface
+    # deliveries" is ordinary English for canal water and "Surface delivery
+    # settings" is the correct heading for two settings the deployment really
+    # runs (settings_explained.html). Every phrase that would catch a pointer to
+    # the page also catches a true sentence about the thing. Its links are guarded
+    # individually instead; this row exists to say that out loud rather than let
+    # the omission look like coverage.
+    "surface_deliveries": (),
+    "budgets_allocations": ("allocations & ceilings", "budgets & allocations"),
+}
+
+
+def test_explainer_prose_names_still_describe_real_explainers():
+    """A row here cannot outlive the explainer it names.
+
+    Same discipline as ``_VOCABULARY_EXEMPT_PAGES``: a stale row would sit
+    looking like a considered decision while asserting nothing.
+    """
+    from config.views import EXPLAINER_MODULES
+
+    unknown = sorted(set(_EXPLAINER_PROSE_NAMES) - set(EXPLAINER_MODULES))
+    missing = sorted(set(EXPLAINER_MODULES) - set(_EXPLAINER_PROSE_NAMES))
+    assert not unknown, (
+        f"_EXPLAINER_PROSE_NAMES names explainers that no longer exist: "
+        f"{unknown}. Drop the rows or fix the keys."
+    )
+    assert not missing, (
+        f"These explainers have no prose name declared: {missing}. Add a row — "
+        f"the gate below checks nothing for an explainer it cannot name."
+    )
+
+
+def test_kept_pages_never_promise_an_explainer_this_deployment_hides(auth_client):
+    """No kept page may name a Help page that 404s in this configuration.
+
+    Naming an absent page is a promise the deployment cannot keep — the reader
+    goes looking for "methods" and finds a Help section that has no such entry.
+    Reads the SAME predicate the view and the nav link read, so a page, its nav
+    link and any sentence about it can never drift apart.
+    """
+    from config.views import EXPLAINER_MODULES, explainer_is_available
+
+    hidden = {
+        name: _EXPLAINER_PROSE_NAMES[name]
+        for name in EXPLAINER_MODULES
+        if not explainer_is_available(name)
+    }
+    if not hidden:
+        pytest.skip(
+            "Every explainer is served in this configuration, so there is no "
+            "absent page a sentence could promise."
+        )
+
+    failures = []
+    for path in KEPT_PAGES:
+        text = visible_text(auth_client.get(path).content.decode())
+        for name, phrases in hidden.items():
+            for phrase in phrases:
+                if re.search(rf"(?<![A-Za-z]){re.escape(phrase)}(?![A-Za-z])",
+                             text, re.I):
+                    failures.append(f"{path} names hidden explainer {name!r} "
+                                    f"as {phrase!r}")
+    assert not failures, (
+        "Kept pages promise Help pages this deployment does not serve:\n  "
+        + "\n  ".join(failures)
+    )
