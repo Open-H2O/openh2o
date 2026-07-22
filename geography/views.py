@@ -111,11 +111,13 @@ def zone_list(request):
     q = request.GET.get("q", "").strip()
     zone_type = request.GET.get("zone_type", "").strip()
 
-    queryset = (
-        Zone.objects
-        .annotate(parcel_count=Count("parcel_zones"))
-        .order_by("name")
-    )
+    # Phase 89: the "N use areas" column is a claim about `parcels`. Annotating
+    # unconditionally would report a truthful 0 on every row of a deployment
+    # that does not track use areas at all — the same "0 Wells" lie Phase 88
+    # named on the dashboard. Absent, so the column is not rendered.
+    queryset = Zone.objects.order_by("name")
+    if is_enabled("parcels"):
+        queryset = queryset.annotate(parcel_count=Count("parcel_zones"))
 
     if q:
         queryset = queryset.filter(Q(name__icontains=q))
@@ -152,20 +154,30 @@ def _zone_detail_context(zone):
     workspace's pre-loaded ``?selected=`` pane so all three are identical.
     """
     # Assigned parcels via ParcelZone
-    parcel_zones = (
-        ParcelZone.objects
-        .filter(zone=zone)
-        .select_related("parcel")
-        .order_by("parcel__parcel_number")
-    )
+    # Phase 89: both of these are queries into switched-off modules under
+    # demotion. The tables are schema-resident, so they answer rather than
+    # raise — an empty answer that the page then presents as fact ("No parcels
+    # assigned to this zone", "No allocations for this zone"), which is a
+    # statement about data rather than about configuration. Empty here, and the
+    # cards that read them are guarded on the same conditions.
+    parcel_zones = ParcelZone.objects.none()
+    if is_enabled("parcels"):
+        parcel_zones = (
+            ParcelZone.objects
+            .filter(zone=zone)
+            .select_related("parcel")
+            .order_by("parcel__parcel_number")
+        )
 
     # Allocations for this zone (any period)
-    allocations = (
-        AllocationPlan.objects
-        .filter(zone=zone)
-        .select_related("reporting_period", "water_type")
-        .order_by("-reporting_period__start_date")
-    )
+    allocations = AllocationPlan.objects.none()
+    if is_enabled("accounting"):
+        allocations = (
+            AllocationPlan.objects
+            .filter(zone=zone)
+            .select_related("reporting_period", "water_type")
+            .order_by("-reporting_period__start_date")
+        )
 
     # Allocation vs. use (Phase 52-02): an allocation number alone doesn't tell the story —
     # an evaluator needs "of X allocated, Y was used". For each allocation, compute the
@@ -684,11 +696,12 @@ def zone_overview_geojson(request):
     zone's full detail page on click. Counts are cheap (a district has a handful
     of zones), so this is not on a hot path.
     """
-    zones = (
-        Zone.objects
-        .filter(geometry__isnull=False)
-        .annotate(parcel_count=Count("parcel_zones"))
-    )
+    # Phase 89: `parcel_count` is omitted rather than zeroed when `parcels` is
+    # off — the popup's JS already tests `p.parcel_count != null` and drops the
+    # phrase, so absence is the shape it was built to handle.
+    zones = Zone.objects.filter(geometry__isnull=False)
+    if is_enabled("parcels"):
+        zones = zones.annotate(parcel_count=Count("parcel_zones"))
     features = [
         {
             "type": "Feature",
@@ -698,7 +711,7 @@ def zone_overview_geojson(request):
                 "name": zone.name,
                 "zone_type": zone.zone_type,
                 "zone_type_label": zone.get_zone_type_display(),
-                "parcel_count": zone.parcel_count,
+                "parcel_count": getattr(zone, "parcel_count", None),
             },
         }
         for zone in zones

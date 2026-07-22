@@ -69,28 +69,39 @@ ET_METER_MIN_SAMPLE = 3
 def check_database():
     try:
         connection.ensure_connection()
-        from parcels.models import Parcel, ParcelLedger
-        from accounting.models import WaterAccount
 
-        counts = {
-            "parcels": Parcel.objects.count(),
-            "ledger_entries": ParcelLedger.objects.count(),
-            "water_accounts": WaterAccount.objects.count(),
-        }
-        # This check is about connectivity, so it survives `wells` being off —
-        # it just stops counting a table nobody is filling. The well count is
-        # omitted from both the details and the sentence rather than reported as
-        # a zero that reads like a missing import.
-        wells_phrase = ""
+        # This check is about CONNECTIVITY, so it survives every demotion — it
+        # just stops counting tables nobody is filling. Phase 88 did this for
+        # `wells`; Phase 89 does it for the last two, which were unconditional
+        # only because they were pinned `required`. Each count is omitted from
+        # both the details and the sentence rather than reported as a zero that
+        # reads like a missing import.
+        counts = {}
+        phrases = []
+        if is_enabled("parcels"):
+            from parcels.models import Parcel, ParcelLedger
+
+            counts["parcels"] = Parcel.objects.count()
+            counts["ledger_entries"] = ParcelLedger.objects.count()
+            phrases.append(f"{counts['parcels']} parcels")
         if is_enabled("wells"):
             from wells.models import Well
 
             counts["wells"] = Well.objects.count()
-            wells_phrase = f"{counts['wells']} wells, "
+            phrases.append(f"{counts['wells']} wells")
+        if is_enabled("parcels"):
+            phrases.append(f"{counts['ledger_entries']} ledger entries")
+        if is_enabled("accounting"):
+            from accounting.models import WaterAccount
+
+            counts["water_accounts"] = WaterAccount.objects.count()
+        # With every counted module off, the honest sentence is the bare fact
+        # this check exists to establish.
+        detail = (". " + ", ".join(phrases) + ".") if phrases else "."
         return {
             "category": "database",
             "status": "green",
-            "message": f"Connected. {counts['parcels']} parcels, {wells_phrase}{counts['ledger_entries']} ledger entries.",
+            "message": f"Connected{detail}",
             "details": counts,
         }
     except Exception as e:
@@ -214,6 +225,11 @@ def check_sync_freshness():
 
 
 def check_ledger_integrity():
+    if not is_enabled("parcels"):
+        return not_applicable(
+            "ledger_integrity", "parcels", "the use-area ledger"
+        )
+
     from parcels.models import Parcel, ParcelLedger
 
     orphan_count = ParcelLedger.objects.exclude(
@@ -250,6 +266,15 @@ def check_ledger_integrity():
 
 
 def check_orphans():
+    # The acting half is "active parcels not assigned to an account", which needs
+    # BOTH modules. They are mutually required as of Phase 89, so one predicate
+    # would do — the pair is spelled out anyway, because an exemption that
+    # depends on a requires-edge should say which edge it is leaning on.
+    if not is_enabled("parcels") or not is_enabled("accounting"):
+        return not_applicable(
+            "orphans", "parcels", "parcel-to-account assignment"
+        )
+
     from parcels.models import Parcel
     from accounting.models import WaterAccountParcel
 
@@ -607,6 +632,11 @@ def check_period_month_alignment():
     Yellow, not red: the numbers are correct for the months included, and most
     districts run month-aligned periods where this never arises.
     """
+    if not is_enabled("accounting"):
+        return not_applicable(
+            "period_alignment", "accounting", "reporting-period boundaries"
+        )
+
     import calendar
 
     from accounting.models import ReportingPeriod
@@ -690,6 +720,11 @@ def check_et_meter_agreement():
     This is a plausibility rail, never a correction factor: nothing here feeds
     back into CalculationRun or any filed number.
     """
+    if not is_enabled("accounting"):
+        return not_applicable(
+            "et_meter_agreement", "accounting", "the ET-versus-meter cross-check"
+        )
+
     from accounting.models import CalculationRun, ReportingPeriod
     from accounting.services import runs_in_period
     from parcels.models import ParcelLedger

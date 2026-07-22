@@ -37,10 +37,15 @@ def index(request):
     task cards, and the counts demoted to an at-a-glance stat bar. The public
     landing shows the same counts as the demo's headline numbers.
     """
-    context = {
-        "parcel_count": Parcel.objects.count(),
-        "water_account_count": WaterAccount.objects.count(),
-    }
+    context = {}
+    # Phase 89 puts `parcels` and `accounting` on the same footing as the four
+    # below. They were the last two counts built unconditionally, and they were
+    # unconditional only because the modules were pinned `required` — not
+    # because a dashboard ought to assert them.
+    if is_enabled("parcels"):
+        context["parcel_count"] = Parcel.objects.count()
+    if is_enabled("accounting"):
+        context["water_account_count"] = WaterAccount.objects.count()
     # `wells` and `datasync` are demoted, not removed (Phase 88), so the imports
     # at the top of this file keep working and the tables keep answering — with
     # a truthful zero that reads as a LIE on the page: "0 Wells" says you have
@@ -149,15 +154,25 @@ def _search_groups(q):
     limit = SEARCH_GROUP_LIMIT
     groups = []
 
-    parcels = Parcel.objects.filter(
-        Q(parcel_number__icontains=q) | Q(owner_name__icontains=q)
-    ).order_by("parcel_number")[:limit]
-    if parcels:
-        groups.append({"key": "parcels", "label": "Use Areas", "results": [
-            {"label": p.parcel_number, "sublabel": p.owner_name,
-             "url": reverse("parcels:detail", args=[p.pk])}
-            for p in parcels
-        ]})
+    # Phase 89: the same crash site as the wells group below, and the last two
+    # groups that were still unguarded. Schema-resident means the parcels tables
+    # SURVIVE the demotion and keep answering the query, while
+    # `reverse("parcels:detail")` raises NoReverseMatch because the routes are
+    # gone. On a fresh demoted deployment the tables are empty, `if parcels:` is
+    # falsy and nothing reverses — which is why this cannot be left to luck: an
+    # agency that switches Use Areas off AFTER using it keeps its rows, and the
+    # search box becomes a 500 on the first two characters typed. (88-02 shipped
+    # exactly this defect on `wells` and 88-03 caught it on staging.)
+    if is_enabled("parcels"):
+        parcels = Parcel.objects.filter(
+            Q(parcel_number__icontains=q) | Q(owner_name__icontains=q)
+        ).order_by("parcel_number")[:limit]
+        if parcels:
+            groups.append({"key": "parcels", "label": "Use Areas", "results": [
+                {"label": p.parcel_number, "sublabel": p.owner_name,
+                 "url": reverse("parcels:detail", args=[p.pk])}
+                for p in parcels
+            ]})
 
     # Guarded, and this is a crash site rather than a cosmetic one: the tables
     # are still there under demotion and would answer the query, but
@@ -208,15 +223,16 @@ def _search_groups(q):
                 for s in stations
             ]})
 
-    accounts = WaterAccount.objects.filter(
-        Q(account_number__icontains=q) | Q(name__icontains=q)
-    ).order_by("name")[:limit]
-    if accounts:
-        groups.append({"key": "accounts", "label": "Accounts", "results": [
-            {"label": a.name, "sublabel": a.account_number,
-             "url": reverse("accounting:account_detail", args=[a.pk])}
-            for a in accounts
-        ]})
+    if is_enabled("accounting"):
+        accounts = WaterAccount.objects.filter(
+            Q(account_number__icontains=q) | Q(name__icontains=q)
+        ).order_by("name")[:limit]
+        if accounts:
+            groups.append({"key": "accounts", "label": "Accounts", "results": [
+                {"label": a.name, "sublabel": a.account_number,
+                 "url": reverse("accounting:account_detail", args=[a.pk])}
+                for a in accounts
+            ]})
 
     zones = Zone.objects.filter(
         Q(name__icontains=q) | Q(basin_code__icontains=q)

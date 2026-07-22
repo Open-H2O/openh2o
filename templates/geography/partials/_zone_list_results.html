@@ -13,7 +13,7 @@
       <tr>
         <th>Zone</th>
         <th>Type</th>
-        <th>Use Areas</th>
+        {% if 'parcels' in enabled_modules %}<th>Use Areas</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -26,7 +26,7 @@
           </a>
         </td>
         <td class="text-secondary text-sm">{{ zone.get_zone_type_display|default:"—" }}</td>
-        <td class="text-secondary text-sm">{{ zone.parcel_count }} use area{{ zone.parcel_count|pluralize }}</td>
+        {% if 'parcels' in enabled_modules %}<td class="text-secondary text-sm">{{ zone.parcel_count }} use area{{ zone.parcel_count|pluralize }}</td>{% endif %}
       </tr>
       {% endfor %}
     </tbody>

@@ -226,7 +226,14 @@ def get_boundary_preview_data(boundary: Boundary) -> dict:
     from datasync.models import MonitoredStation
 
     existing_basins = Zone.objects.filter(boundary=boundary).count()
-    existing_parcels = Parcel.objects.count()
+    # Phase 89: same shape Phase 88 gave `existing_stations` — None rather than
+    # a truthful zero when the module is off. Measured while wiring this up:
+    # NEITHER `existing_parcels` NOR `existing_stations` is read by any template
+    # (confirm.html renders only `existing_basins|add:existing_flowlines`), so
+    # both are dead context today. Guarded rather than deleted, because deleting
+    # a value the wizard's confirmation step is plainly meant to show is a
+    # product decision, not a demotion one — recorded for 89-02.
+    existing_parcels = Parcel.objects.count() if is_enabled("parcels") else None
     existing_flowlines = Flowline.objects.filter(boundary=boundary).count()
     existing_stations = MonitoredStation.objects.count() if is_enabled("datasync") else None
 

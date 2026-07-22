@@ -104,7 +104,10 @@
     <!-- Right column: Allocation vs. Use -->
     <div class="page-stack">
 
-      <div class="card-raised">
+      {% comment %}Phase 89: allocations are Accounting's. Without the module
+      the card renders its empty state, "No allocations for this zone." — which
+      reads as a fact about the agency's data rather than about what this
+      deployment tracks.{% endcomment %}{% if 'accounting' in enabled_modules %}<div class="card-raised">
         <h2 class="section-header mb-md">Allocation vs. Use</h2>
         {% if budgets %}
         <table class="data-table text-sm">
@@ -132,7 +135,7 @@
         {% else %}
         <p class="text-tertiary text-sm">No allocations for this zone.</p>
         {% endif %}
-      </div>
+      </div>{% endif %}
 
     </div>
   </div>
