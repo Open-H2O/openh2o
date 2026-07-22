@@ -70,7 +70,7 @@
   {% if q or site_type %}
   <p class="empty-state-text">No recharge sites found{% if q %} matching "{{ q }}"{% endif %}{% if site_type %} with type "{{ site_type }}"{% endif %}.</p>
   {% else %}
-  {% include "partials/_empty_onboarding.html" with what="Recharge Sites are where water is returned to the aquifer: spreading basins, injection wells, and the like." add_label="+ Add Recharge Site" type_param="recharge_site" %}
+  {% include "partials/_empty_onboarding.html" with what="Recharge Sites are where water is returned to the aquifer: spreading basins, injection sites, and the like." add_label="+ Add Recharge Site" type_param="recharge_site" %}
   {% endif %}
 </div>
 {% endif %}

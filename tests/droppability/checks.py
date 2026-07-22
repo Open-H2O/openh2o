@@ -136,6 +136,29 @@ LIST_PAGES = tuple(
     if owner is None or owner in ENABLED_NAMES
 )
 
+#: Pages that render ``templates/partials/_empty_onboarding.html``, paired with
+#: their owner. Declared, not derived, for the same reason as ``_PAGES``.
+#:
+#: ``test_both_empty_state_branches_are_actually_reached`` probes one of these.
+#: It used to probe a hardcoded ``/wells/``, which was safe only while ``wells``
+#: was ``required=True``: Phase 88 made it droppable and the literal 404'd in
+#: exactly the case the assertion exists to cover. The first candidate that
+#: survives this configuration is used, so a full deployment still probes
+#: ``/wells/`` and the run is unchanged. Note this is NOT ``LIST_PAGES`` — the
+#: datasync station list has its own empty state and never includes the shared
+#: onboarding partial, so it cannot answer this question.
+_ONBOARDING_PAGES = (
+    ("/wells/", "wells"),
+    ("/parcels/", "parcels"),
+    ("/surface/", "surface"),
+    ("/recharge/", "recharge"),
+)
+
+ONBOARDING_PAGES = tuple(
+    path for path, owner in _ONBOARDING_PAGES
+    if owner is None or owner in ENABLED_NAMES
+)
+
 #: Pages a visitor who is NOT signed in actually reaches, paired with their owner.
 #:
 #: Every render assertion in this file used ``auth_client`` until Plan 88-01.
@@ -247,6 +270,21 @@ _IDIOMS = (
     "well known",
     "may as well",
     "well under way",
+    # Phase 88, and these are the first entries added by a measurement rather
+    # than by prophylaxis. "Injection Well" and "ASR Well" are two of
+    # `recharge.RechargeSite`'s four site TYPES — recharge vocabulary that
+    # happens to contain the word "well", not a claim that this deployment runs
+    # a groundwater extraction section. A district that recharges through an
+    # injection well and buys the rest of its water genuinely has one and
+    # genuinely has no Wells module, so the sentence is true and it is the
+    # matcher that is wrong.
+    #
+    # This is NOT the widening the notes above warn against: both phrases are
+    # model `choices` labels owned by `recharge`, so they disappear with
+    # `recharge` and can never excuse a real `wells` leak. Narrowing them in the
+    # model instead would be an AlterField migration on a display label.
+    "injection well",
+    "asr well",
 )
 
 #: Pages that DEFINE water vocabulary rather than describe this deployment.
@@ -725,12 +763,26 @@ def test_both_empty_state_branches_are_actually_reached(auth_client):
 
     Fetched with the HTMX header so the response is the list partial alone,
     without the page toolbar, which carries its own infrastructure links.
+
+    The probe page is the first surviving entry of ``ONBOARDING_PAGES`` rather
+    than a hardcoded ``/wells/``. That literal was written while ``wells`` was
+    ``required=True`` and could not be the module under test; Phase 88 made it
+    droppable, and the hardcoded path then 404'd in exactly the case this
+    assertion is supposed to cover. On a full deployment it still resolves to
+    ``/wells/``, so this run is unchanged.
     """
     from tests.factories import BoundaryFactory
 
-    fresh = auth_client.get("/wells/", HTTP_HX_REQUEST="true").content.decode()
+    if not ONBOARDING_PAGES:
+        pytest.skip(
+            "No page in this configuration renders _empty_onboarding.html, so "
+            "there is no screen to probe for its two branches."
+        )
+    probe = ONBOARDING_PAGES[0]
+
+    fresh = auth_client.get(probe, HTTP_HX_REQUEST="true").content.decode()
     BoundaryFactory()
-    configured = auth_client.get("/wells/", HTTP_HX_REQUEST="true").content.decode()
+    configured = auth_client.get(probe, HTTP_HX_REQUEST="true").content.decode()
 
     if "setup" in ENABLED_NAMES:
         assert "/setup/" in fresh, (

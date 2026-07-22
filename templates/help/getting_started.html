@@ -175,7 +175,7 @@
     <div class="step-body">
       <span class="step-eyebrow">Step 8 &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Connect Monitoring Stations</h2>
-      <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS wells, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
+      <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS groundwater sites, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
       <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Monitoring Stations &rarr;</a>
     </div>
   </div>{% endif %}
@@ -201,7 +201,7 @@
       {% if 'recharge' in enabled_modules %}
       <span class="step-eyebrow">Step 9 &middot; the Setup Wizard imports recharge basins for you</span>
       <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
-      <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection wells.</p>
+      <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection sites.</p>
       {% else %}
       <span class="step-eyebrow">Step 9</span>
       <h2 class="section-header">Add Surface Diversions</h2>
@@ -270,7 +270,7 @@
       </a>
       <a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The calculation chain and how shared deliveries and wells are split.</p>
+        {% any_module_enabled "surface" "wells" as has_shared_sources %}<p class="text-secondary text-sm" style="margin: 0;">The calculation chain{% if has_shared_sources %} and how shared {% module_nouns "surface:deliveries" "wells:wells" %} are split{% endif %}.</p>
       </a>
       <a href="{% url 'settings_explained' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings, explained</span><span style="color: var(--color-accent);">&rarr;</span></div>

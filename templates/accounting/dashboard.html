@@ -29,8 +29,8 @@
   <div class="card-raised empty-state">
     <h2 class="section-header-flush mb-sm">Start here — set up your watershed</h2>
     <p class="empty-state-text" style="max-width: 540px; margin-left: auto; margin-right: auto;">
-      This deployment has no watershed yet. Set one up to import parcels, wells,
-      groundwater basins, and the monitoring stations near your district —
+      This deployment has no watershed yet. Set one up to import parcels{% if 'wells' in enabled_modules %}, wells{% endif %},
+      groundwater basins{% if 'datasync' in enabled_modules %}, and the monitoring stations near your district{% endif %} —
       everything the dashboard needs to start tracking water.
     </p>
     <div class="form-footer" style="justify-content: center; margin-top: var(--space-lg);">

@@ -20,8 +20,8 @@
     {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>{% endif %}
   </div>
   <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
-    Setup imports your parcels, wells, basins, and the monitoring stations near
-    your district automatically.
+    Setup imports your parcels{% if 'wells' in enabled_modules %}, wells{% endif %}, basins{% if 'datasync' in enabled_modules %}, and the monitoring stations near
+    your district{% endif %} automatically.
   </p>
 {% else %}
   <div class="form-footer" style="justify-content: center; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-md);">
