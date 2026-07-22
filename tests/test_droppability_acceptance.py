@@ -45,11 +45,6 @@ from core.modules import (
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CHILD = "tests/droppability/checks.py"
 
-#: One case per optional module, plus the harshest configuration there is: all of
-#: them gone at once. ``None`` means "drop everything optional".
-CASES = tuple(OPTIONAL_MODULE_NAMES) + (None,)
-
-
 def _case_id(case):
     """Name a case by everything it actually drops, not just the module it targets.
 
@@ -103,6 +98,45 @@ def drop_closure(dropped, registry=None, optional=None) -> frozenset:
         if not added:
             return frozenset(closure)
         closure |= added
+
+
+def _distinct_cases() -> tuple:
+    """One case per optional module, minus the ones that boot an identical config.
+
+    Two modules that require each other resolve to the SAME closure, so naming
+    each of them generates two differently-titled cases that boot the very same
+    ``OPENH2O_MODULES`` list. The gate would then spend two full subprocess runs
+    — database creation, migrations, the whole check file — proving one thing
+    twice.
+
+    **Phase 89 is the first time that happens.** `accounting.requires` has always
+    named `parcels`; Phase 89 added `accounting` to `parcels.requires` so the two
+    demote as an inseparable pair, which makes the edge a cycle. Both
+    ``drop_closure('parcels')`` and ``drop_closure('accounting')`` are the same
+    seven modules.
+
+    So: de-dupe by the resolved frozenset, keeping the first module in registry
+    order as the case's name. Nothing is lost — the surviving case id lists every
+    module it drops, so the dropped twin's name is still visible inside it.
+
+    If you are here because a case you expected is missing from
+    ``make test-droppable``: it was not deleted, it was merged into a case whose
+    id names it. Check the ids before concluding coverage regressed.
+    """
+    cases = []
+    seen = set()
+    for name in OPTIONAL_MODULE_NAMES:
+        closure = drop_closure(name)
+        if closure in seen:
+            continue
+        seen.add(closure)
+        cases.append(name)
+    #: ...plus the harshest configuration there is: all of them gone at once.
+    #: ``None`` means "drop everything optional".
+    return tuple(cases) + (None,)
+
+
+CASES = _distinct_cases()
 
 
 def _kept_names(dropped) -> list:

@@ -371,11 +371,29 @@ MODULE_REGISTRY: dict = {
                 active_match="/parcels/",
             ),
         ),
-        # `core` for ParcelLedger.created_by. The two ParcelLedger arrows into
-        # `accounting` are deliberately NOT here — they are SCHEMA_EXCEPTIONS,
-        # because declaring them would force `accounting` permanently enabled,
-        # which is the opposite of what Phase 89 needs.
-        requires=("core", "geography"),
+        # `core` for ParcelLedger.created_by.
+        #
+        # `accounting` was deliberately absent here until Phase 89 (2026-07-21),
+        # and the note that used to sit in this spot said declaring it "would
+        # force `accounting` permanently enabled, which is the opposite of what
+        # Phase 89 needs." That was true while `parcels` was `required=True`: a
+        # requires-edge from a module nobody may omit pins its target on
+        # forever. Once `parcels` itself became optional the statement inverted
+        # — the edge no longer pins anything, it makes the pair inseparable,
+        # which is exactly what Phase 89 needs. `accounting.requires` already
+        # named `parcels`; this completes the cycle, so turning either off turns
+        # both off and the one-sided configuration is refused at boot.
+        #
+        # Brent's decision, 2026-07-21, on measured evidence: `parcels/views.py`
+        # builds the Use Areas detail page out of Accounting (water balance,
+        # recent ledger, resolved reporting period). Shipping `parcels` without
+        # `accounting` would ship a page with its content removed.
+        #
+        # The two ParcelLedger arrows into `accounting` keep their
+        # SCHEMA_EXCEPTIONS records. Those document the schema shape; `requires`
+        # documents the operator contract. They are different claims about the
+        # same code and neither substitutes for the other.
+        requires=("core", "geography", "accounting"),
         required=True,
         required_reason=(
             "not yet decoupled: parcels.models is imported at module scope by accounting, reporting, geography, surface, setup, infrastructure and config views"
