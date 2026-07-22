@@ -1,11 +1,19 @@
 {% extends "base.html" %}
+{% load prose %}
 
 {% block title %}Dashboard - Open Water Accounting Platform{% endblock %}
 
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<p class="page-description">Overview of your water data. Cards show entity counts and link to their management pages.</p>
+{% comment %}Phase 89-02: the second sentence is a promise about the page it
+introduces. Both entity sections above are gated on their modules (89-01), so a
+deployment that runs none of the six leaves System Status as the only card —
+which carries no count and links nowhere. Promising counts and management pages
+over a page that has neither is the ISS-082 class in its quietest form: no
+forbidden noun appears, so no word list can see it. This is the PUBLIC landing
+page, which is the half of `/` the harness could not read at all before
+88-01.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">Overview of your water data.{% if has_entity_cards %} Cards show entity counts and link to their management pages.{% endif %}</p>
 
 {% comment %}Phase 89: the section heading is gated on its whole membership, not
 just on one card. Guarding only the Use Areas link would leave "Water Data"

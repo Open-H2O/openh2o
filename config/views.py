@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -17,6 +18,7 @@ from wells.models import Well
 from accounting.models import WaterAccount
 from core.models import SiteConfig
 from core.modules import is_enabled
+from core.templatetags.prose import oxford_join
 
 
 def _greeting(now):
@@ -272,40 +274,199 @@ def about(request):
     return render(request, "about.html", {"logo_exists": os.path.isfile(logo_path)})
 
 
+#: The Getting Started cards, in page order, paired with the module each one
+#: needs to render at all. ``None`` means the card renders in every valid
+#: configuration.
+#:
+#: **Why the numbering lives here and not in the template.** Plan 89-02 (ISS-088)
+#: replaced ten hardcoded ``Step N`` literals with numbers computed from what
+#: actually renders — a nine-module drinking-water deployment used to show a
+#: single card labelled "Step 5", which is not a gap in a sequence but a number
+#: pointing at a sequence the reader cannot see. A template counter cannot do it:
+#: the page's *cross-references* ("that's Steps 1, 2, 8, and 9" and "Steps 3
+#: through 7") render ABOVE the cards they cite, so the numbers have to exist
+#: before the first card is drawn. Declared here, in page order, exactly like
+#: ``_PAGES`` in the droppability harness — adding a step means adding a row.
+GETTING_STARTED_STEPS = (
+    ("use_areas", "parcels"),
+    ("wells", "wells"),
+    ("accounts", "accounting"),
+    ("water_year", "accounting"),
+    ("zones", None),
+    ("ceilings", "accounting"),
+    ("ledger", "accounting"),
+    ("stations", "datasync"),
+    ("surface", "surface"),
+    ("reports", "reporting"),
+)
+
+#: The steps the Setup Wizard sentence cites, and the steps the accounting
+#: sentence cites as a range. Both live beside the step table so a change to one
+#: is made looking at the other.
+_WIZARD_CITED_STEPS = ("use_areas", "wells", "stations", "surface")
+_ACCOUNTING_CITED_STEPS = ("accounts", "water_year", "ceilings", "ledger")
+
+
+def _getting_started_numbering():
+    """``{step key: rendered number}`` plus the two cross-reference strings.
+
+    The Step 10 card carries a second condition beyond its module — ``reporting``
+    can be installed while neither family it files (GEARS/CalWATRS) has a module
+    — so it is special-cased here rather than given a second column that only one
+    row would ever use.
+
+    The accounting range is emitted as "N through M" rather than a list because
+    the cards it names are always contiguous: Step 5 (zones) is ``geography`` and
+    renders in every configuration, and it sits between the accounting cards, so
+    the run cannot break in the middle.
+    """
+    from core.modules import is_enabled as _enabled
+
+    numbers = {}
+    n = 0
+    for key, module in GETTING_STARTED_STEPS:
+        if key == "reports":
+            shown = _enabled("reporting") and (_enabled("wells") or _enabled("surface"))
+        else:
+            shown = module is None or _enabled(module)
+        if shown:
+            n += 1
+            numbers[key] = n
+
+    cited = [str(numbers[k]) for k in _WIZARD_CITED_STEPS if k in numbers]
+    accounting = [numbers[k] for k in _ACCOUNTING_CITED_STEPS if k in numbers]
+    return {
+        "steps": numbers,
+        "wizard_cited_steps": oxford_join(cited),
+        "accounting_step_range": (
+            f"{min(accounting)} through {max(accounting)}" if accounting else ""
+        ),
+    }
+
+
 @login_required
 def getting_started(request):
     """Getting Started walkthrough for new GSA administrators."""
-    return render(request, "help/getting_started.html")
+    return render(request, "help/getting_started.html", _getting_started_numbering())
+
+
+#: The five explainer pages, paired with every module whose domain they explain.
+#:
+#: **This is the Plan 89-02 Help-page decision, and it is a hide, not a rewrite.**
+#: These pages do not merely mention accounting — accounting IS their subject.
+#: "How Water Balances Work" answers one question: how do you reconcile estimated
+#: crop use against surface deliveries, groundwater and rain? Take those domains
+#: away and there is no question left to answer, and a module-neutral rewrite
+#: would be a page about nothing. A drinking-water utility has no crops, no
+#: canals, no wells, no allocation ceilings and no ledger; the honest Help
+#: section for them has three entries that are all true rather than five where
+#: three describe somebody else's agency.
+#:
+#: **The sets are per page and measured**, not a blanket "accounting is off"
+#: rule, so a district running Accounting and Surface but no Wells keeps
+#: everything that is still true for it. Each set was derived by scanning the
+#: template for the forbidden vocabulary in
+#: ``tests/droppability/checks.py::_FORBIDDEN_VOCABULARY`` — a page disappears
+#: exactly when one of the domains it actually names is gone.
+#:
+#: 404, not a redirect and not a page that loads and lies — the same answer a
+#: dropped module's own routes give, and the same mechanism
+#: ``infrastructure/views.py`` already uses when no module owns an
+#: infrastructure type.
+EXPLAINER_MODULES = {
+    "water_balances": ("accounting", "parcels", "surface", "wells"),
+    "methods": ("accounting", "parcels", "surface", "wells"),
+    "settings_explained": ("accounting", "surface"),
+    "surface_deliveries": ("accounting", "surface", "recharge"),
+    "budgets_allocations": ("accounting", "parcels", "surface", "recharge"),
+}
+
+
+def explainer_is_available(name):
+    """Whether this deployment runs every domain the named explainer explains.
+
+    Read by the views below and by ``templates/partials/_sidebar.html`` (through
+    the ``nav`` tag library) so the link and the page can never disagree.
+    """
+    return all(is_enabled(module) for module in EXPLAINER_MODULES[name])
+
+
+def _explainer(request, name, template):
+    """Render an explainer page, or 404 if its subject is not in this deployment."""
+    if not explainer_is_available(name):
+        missing = [m for m in EXPLAINER_MODULES[name] if not is_enabled(m)]
+        raise Http404(
+            f"This deployment does not run {', '.join(missing)}, and this page "
+            f"exists to explain that. It is hidden rather than rewritten: the "
+            f"domain is the page's subject, not a mention inside it."
+        )
+    return render(request, template)
 
 
 @login_required
 def budgets_allocations(request):
     """Explainer: how a zone allocation ceiling becomes each account's allocation."""
-    return render(request, "help/budgets_allocations.html")
+    return _explainer(request, "budgets_allocations", "help/budgets_allocations.html")
 
 
 @login_required
 def surface_deliveries(request):
     """Explainer: the two agency delivery settings, in plain language."""
-    return render(request, "help/surface_deliveries.html")
+    return _explainer(request, "surface_deliveries", "help/surface_deliveries.html")
 
 
 @login_required
 def water_balances(request):
     """Conceptual explainer: ET as estimated use, supplies reconciled against it."""
-    return render(request, "help/water_balances.html")
+    return _explainer(request, "water_balances", "help/water_balances.html")
 
 
 @login_required
 def methods(request):
     """Explainer: the calculation chain and the two ET-demand allocation services."""
-    return render(request, "help/methods.html")
+    return _explainer(request, "methods", "help/methods.html")
 
 
 @login_required
 def settings_explained(request):
     """Explainer: every agency-wide configuration knob, what it does and when to change it."""
-    return render(request, "help/settings_explained.html")
+    return _explainer(request, "settings_explained", "help/settings_explained.html")
+
+
+#: Glossary definitions that end with a "See Help > <page>." pointer, mapped to
+#: the explainer that pointer opens.
+#:
+#: **ISS-085 is NOT decided by this table.** Whether an operator's glossary should
+#: narrow to the terms their deployment uses is a live product question and Plan
+#: 89-02 deliberately left it open (see the summary). What 89-02 could not leave
+#: alone is the consequence of its OWN change: those five Help pages are now
+#: hidden when the deployment does not run the domains they explain, so a
+#: definition telling the reader to "See Help > Allocations & Ceilings" was
+#: sending them at a 404. A cross-reference to a page that is not there is a
+#: wrong instruction, not a gap — 88-03 drew that line for the Setup Wizard's
+#: step numbers, and it applies identically here.
+#:
+#: The pointer is dropped, never rewritten. The definition before it stands on
+#: its own; a dictionary entry does not need a "read more" to be a definition.
+_GLOSSARY_HELP_POINTERS = {
+    "Allocations & Ceilings": "budgets_allocations",
+    "Methods Behind the Numbers": "methods",
+    "How Water Balances Work": "water_balances",
+    "Surface Delivery Settings": "surface_deliveries",
+    "Configs & Settings, explained": "settings_explained",
+}
+
+
+def _without_unavailable_help_pointers(definition):
+    """Drop " See Help > X." where X is not served in this configuration.
+
+    A no-op on a full deployment, which is what keeps the byte-identity promise —
+    every explainer is available there, so no replacement runs.
+    """
+    for page, key in _GLOSSARY_HELP_POINTERS.items():
+        if not explainer_is_available(key):
+            definition = definition.replace(f" See Help > {page}.", "")
+    return definition
 
 
 @login_required
@@ -348,7 +509,10 @@ def glossary(request):
         "Zone / Management Zone": "A sub-area of the district that carries its own Allocation Ceiling. Each use area belongs to a zone, and a zone must exist before an Allocation Ceiling can be set for it. See Help > Allocations & Ceilings.",
         "Well": "A borehole used to draw groundwater, identified by state well number or local ID.",
     }
-    sorted_terms = sorted(terms.items())
+    sorted_terms = sorted(
+        (term, _without_unavailable_help_pointers(definition))
+        for term, definition in terms.items()
+    )
     # Build list of unique first letters for the jump nav
     seen = set()
     letters = []

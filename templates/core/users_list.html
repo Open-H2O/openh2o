@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load prose %}
 
 {% block title %}Users - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Users{% endblock %}
@@ -10,7 +11,12 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Users</span>
   </nav>
-  <p class="page-description">Manage who can sign in and who has administrator access. Administrators can manage users, the setup wizard, and methodology; operators can enter and view data.</p>
+  {% comment %}89-02: `accounting:methodology_settings` is unrouted when the pair
+  is off, so one third of what this sentence tells an administrator their role
+  can do is unreachable. "Methodology" is an ordinary English word and must not
+  go in the forbidden-vocabulary table, so no word list can ever catch this —
+  `module_nouns` reproduces the hardcoded list byte-for-byte with everything
+  on.{% endcomment %}<p class="page-description">Manage who can sign in and who has administrator access. Administrators can manage {% module_nouns "core:users" "setup:the setup wizard" "accounting:methodology" %}; operators can enter and view data.</p>
 </div>
 {% endblock %}
 

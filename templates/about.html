@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% load prose %}
+{% load nav %}
 
 {% block title %}About - Open Water Accounting Platform{% endblock %}
 
@@ -27,9 +28,17 @@
           than the whole list going vague. "measurements" and "deliveries" are
           ungated: measurements is schema-resident and present in every valid
           configuration, and deliveries are accounting's, which Phase 89 owns.
+
+          89-02: em-dashes set off a LIST, and with five of the six nouns gated
+          away the survivor sat alone between them — "an agency's water data —
+          measurements — into a single system", which reads as a typesetting
+          accident rather than a sentence. The apposition is kept only when the
+          list is actually a list; with one or two nouns the sentence names them
+          directly and loses nothing. `oxford_join` emits a comma only from three
+          items up, which is what the test on `data_nouns` reads.
         {% endcomment %}<p class="about-purpose card-raised">
             OpenH2O is an open-source water-data management platform built for Groundwater Sustainability Agencies
-            and water districts. It brings an agency's water data — {% module_nouns "measurements:measurements" "accounting:deliveries" "wells:wells" "surface:surface diversions" "recharge:managed aquifer recharge" "accounting:mixed-use accounting" %} — into a single system the agency owns
+            and water districts. {% module_nouns "measurements:measurements" "accounting:deliveries" "wells:wells" "surface:surface diversions" "recharge:managed aquifer recharge" "accounting:mixed-use accounting" as data_nouns %}{% if "," in data_nouns %}It brings an agency's water data — {{ data_nouns }} — into a single system the agency owns{% else %}It brings an agency's {{ data_nouns }} into a single system the agency owns{% endif %}
             and understands. The
             entire platform runs on a $15-a-month virtual private server and can be
             deployed by an AI coding assistant pointed at <a href="https://github.com/Open-H2O/openh2o" class="text-link" target="_blank" rel="noopener noreferrer">this repository</a>.
@@ -60,7 +69,18 @@
                 into a system an agency actually trusts. OpenH2O treats that human and institutional work as the
                 real work, not an afterthought.
             </p>
-            <p>
+            {% comment %}89-02 considered this paragraph and deliberately left it
+            alone. "surface water, groundwater, and the reporting the state
+            requires" is a claim about the OPEN-SOURCE PROJECT's ambit, in a
+            paragraph about its relationship to the Groundwater Accounting
+            Platform — not about what this install manages. The test ISS-082 set
+            is whether a page makes a claim about the agency's water; this one
+            makes a claim about the software's scope, the way the licence notice
+            does. Consequence, recorded so it is not re-derived: `surface`'s
+            forbidden vocabulary is widened to its OPERATIONAL nouns ("canal",
+            "surface delivery") and deliberately NOT to "surface water", which
+            names a substance rather than this deployment's
+            diversions.{% endcomment %}<p>
                 Where GAP focused, by design, on groundwater and SGMA, OpenH2O extends the same open,
                 partnership-minded approach across all of water &mdash; surface water, groundwater, and the
                 reporting the state requires. OpenH2O is an independent reimplementation on an open stack,
@@ -153,11 +173,16 @@
                 <div class="dashboard-card-value" style="font-size: 1.125rem;">Glossary</div>
                 <div class="dashboard-card-sublabel">Water-data terms and abbreviations</div>
             </a>
-            <a href="{% url 'water_balances' %}" class="dashboard-card">
+            {% comment %}89-02: the whole card goes with the page it opens. The
+            water-balance explainer is hidden when the deployment does not run
+            the domains it explains (config/views.py::EXPLAINER_MODULES), and a
+            Quick Access tile onto a 404 is worse than no tile. The predicate is
+            read from the same place the view reads it, so the link and the page
+            cannot disagree.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="dashboard-card">
                 <div class="dashboard-card-label">Concept</div>
                 <div class="dashboard-card-value" style="font-size: 1.125rem;">How Water Balances Work</div>
                 <div class="dashboard-card-sublabel">What the platform is actually computing, in plain language</div>
-            </a>
+            </a>{% endif %}
         </div>
     </section>
     {% endif %}

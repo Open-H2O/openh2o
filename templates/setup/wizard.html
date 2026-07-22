@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load prose %}
 
 {% block title %}Setup Wizard - OpenH2O{% endblock %}
 {% block page_title %}Setup Wizard{% endblock %}
@@ -10,7 +11,14 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Setup Wizard</span>
   </nav>
-  <p class="page-description">Upload your district boundary or select an existing one to auto-populate wells, use areas, basins, and monitoring stations.</p>
+  {% comment %}89-02: the worst single line in a demoted deployment, and the
+  page every empty state sends a new operator to. All four nouns belong to
+  droppable modules, so a drinking-water deployment's Setup Wizard promised to
+  auto-populate four things it cannot create. `module_nouns` reproduces the
+  hardcoded list byte-for-byte on a full deployment; `any_module_enabled` drops
+  the whole clause rather than leaving "to auto-populate ." — the wizard still
+  does something useful without it, because the boundary itself is
+  `geography`.{% endcomment %}{% any_module_enabled "wells" "parcels" "recharge" "datasync" as wizard_populates %}<p class="page-description">Upload your district boundary or select an existing one{% if wizard_populates %} to auto-populate {% module_nouns "wells:wells" "parcels:use areas" "recharge:basins" "datasync:monitoring stations" %}{% endif %}.</p>
 </div>
 {% endblock %}
 

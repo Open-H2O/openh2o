@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load prose %}
+{% load nav %}
 
 {% block title %}Getting Started - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Getting Started{% endblock %}
@@ -18,11 +19,16 @@
 {% block content %}
 <div class="page-stack page-medium">
 
-  <div class="card-raised">
+  {% comment %}89-02: the whole card is an on-ramp to help/water_balances.html,
+  which is hidden when the deployment does not run the domains it explains. Its
+  own sentence names surface deliveries and groundwater, so it is dishonest in
+  the same configuration in which its only action leads to a 404 — one guard
+  settles both. The predicate is the page's, read from the same place the view
+  reads it.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<div class="card-raised">
     <h2 class="section-header">Start with the concept</h2>
     <p class="text-secondary text-base">Before the steps below, it helps to know what the platform is actually computing. It measures the water your crops consumed &mdash; from satellites &mdash; and reconciles that against the water that supplied them: surface deliveries, groundwater, and rain. A few minutes on the concept makes every step that follows click into place.</p>
     <a href="{% url 'water_balances' %}" class="text-sm" style="color: var(--color-accent);">Read: How Water Balances Work &rarr;</a>
-  </div>
+  </div>{% endif %}
 
   <div class="card-raised">
     <h2 class="section-header">The fast way: the Setup Wizard</h2>
@@ -58,7 +64,7 @@
       `module_nouns` calls resolve to nothing, and the sentence would read "it
       populates your  for you — that's Steps ." A sentence left naming nothing
       is precisely what that tag was added for.
-    {% endcomment %}<p class="text-secondary text-base">{% any_module_enabled "parcels" "wells" "recharge" "datasync" as wizard_imports_something %}{% if wizard_imports_something %}You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your {% module_nouns "parcels:use areas" "wells:wells" "recharge:recharge basins" "datasync:nearby monitoring stations" %} for you &mdash; that&rsquo;s Steps {% module_nouns "parcels:1" "wells:2" "datasync:8" "surface:9" %}. {% endif %}{% if 'accounting' in enabled_modules %}What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps 3 through 7). So run the wizard first, then come back and work the accounting steps. {% endif %}Read this page as the manual route, or as a map of what the wizard already did and what&rsquo;s left.</p>
+    {% endcomment %}<p class="text-secondary text-base">{% any_module_enabled "parcels" "wells" "recharge" "datasync" as wizard_imports_something %}{% if wizard_imports_something %}You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your {% module_nouns "parcels:use areas" "wells:wells" "recharge:recharge basins" "datasync:nearby monitoring stations" %} for you &mdash; that&rsquo;s Steps {{ wizard_cited_steps }}. {% endif %}{% if 'accounting' in enabled_modules %}What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps {{ accounting_step_range }}). So run the wizard first, then come back and work the accounting steps. {% endif %}Read this page as the manual route, or as a map of what the wizard already did and what&rsquo;s left.</p>
     {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="text-sm" style="color: var(--color-accent);">Run the Setup Wizard &rarr;</a>{% endif %}
   </div>
 
@@ -77,7 +83,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 1 &middot; the Setup Wizard can do this for you</span>
+      <span class="step-eyebrow">Step {{ steps.use_areas }} &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Import Your Use Areas</h2>
       <p class="text-secondary text-base">Upload use area boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Use Areas and use the import command. Each use area needs an Assessor Parcel Number (APN).</p>
       <a href="{% url 'parcels:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Use Areas &rarr;</a>
@@ -97,7 +103,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 2 &middot; the Setup Wizard can do this for you</span>
+      <span class="step-eyebrow">Step {{ steps.wells }} &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Import Your Wells</h2>
       <p class="text-secondary text-base">Upload well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
       <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Wells &rarr;</a>
@@ -113,7 +119,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 3</span>
+      <span class="step-eyebrow">Step {{ steps.accounts }}</span>
       <h2 class="section-header">Set Up Water Accounts</h2>
       <p class="text-secondary text-base">Create water accounts to group use areas for tracking. Go to Administration &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
       <a href="{% url 'accounting:accounts_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Water Accounts &rarr;</a>
@@ -130,7 +136,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 4</span>
+      <span class="step-eyebrow">Step {{ steps.water_year }}</span>
       <h2 class="section-header">Create a Water Year</h2>
       <p class="text-secondary text-base">Define the time window for accounting. Go to Compliance &gt; Water Years. Most agencies use the water year (October 1 through September 30).</p>
       <a href="{% url 'accounting:periods_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Water Years &rarr;</a>
@@ -145,7 +151,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 5</span>
+      <span class="step-eyebrow">Step {{ steps.zones }}</span>
       <h2 class="section-header">Define Management Zones</h2>
       {% comment %}Phase 89: Step 5 belongs to `geography` and stays in every
       configuration, but two of its clauses name use areas. The clauses are
@@ -155,7 +161,14 @@
       "carries its own allocation" and "before you can allocate water" are
       Accounting claims that survive this guard, and the vocabulary table cannot
       see them because its `accounting` row is deliberately narrow
-      ("allocation ceiling" only).{% endcomment %}<p class="text-secondary text-base">A management zone is a sub-area of your district that carries its own allocation{% if 'parcels' in enabled_modules %} &mdash; each use area belongs to a zone{% endif %}. Zones are a prerequisite for the next step: an allocation is set per zone, so at least one zone must exist before you can allocate water. Go to Administration &gt; Zones and create your zones{% if 'parcels' in enabled_modules %}, then assign use areas to each{% endif %}.</p>
+      ("allocation ceiling" only).
+
+      89-02 takes that note up. Both allocation clauses are now gated, and the
+      second one carried a defect the first did not: "Zones are a prerequisite
+      for THE NEXT STEP" is a cross-reference, and with Steps 6 and 7 gone there
+      is no next step for it to point at. 88-03 drew that distinction when it
+      fixed the wizard card — a numbering gap is a missing item, a reference to a
+      missing item is a wrong instruction.{% endcomment %}<p class="text-secondary text-base">A management zone is a sub-area of your district{% if 'accounting' in enabled_modules %} that carries its own allocation{% endif %}{% if 'parcels' in enabled_modules %} &mdash; each use area belongs to a zone{% endif %}.{% if 'accounting' in enabled_modules %} Zones are a prerequisite for the next step: an allocation is set per zone, so at least one zone must exist before you can allocate water.{% endif %} Go to Administration &gt; Zones and create your zones{% if 'parcels' in enabled_modules %}, then assign use areas to each{% endif %}.</p>
       <a href="{% url 'geography:zone_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Zones &rarr;</a>
     </div>
   </div>
@@ -170,7 +183,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 6</span>
+      <span class="step-eyebrow">Step {{ steps.ceilings }}</span>
       <h2 class="section-header">Set Allocation Ceilings</h2>
       <p class="text-secondary text-base">An allocation ceiling is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Set a ceiling for each zone, water type, and period. New to the difference between a ceiling and an account&rsquo;s allocation? See the short guide linked at the bottom of this page.</p>
       <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Allocations &rarr;</a>
@@ -188,7 +201,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 7</span>
+      <span class="step-eyebrow">Step {{ steps.ledger }}</span>
       <h2 class="section-header">Enter Use Ledger Data</h2>
       <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. Usage can also be derived from satellite evapotranspiration (ET) &mdash; how that calculation works is configured on your Methodology page. The use ledger is the core record of your water data.</p>
       <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Use Ledger &rarr;</a>
@@ -212,7 +225,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 8 &middot; the Setup Wizard can do this for you</span>
+      <span class="step-eyebrow">Step {{ steps.stations }} &middot; the Setup Wizard can do this for you</span>
       <h2 class="section-header">Connect Monitoring Stations</h2>
       <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS groundwater sites, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
       <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Monitoring Stations &rarr;</a>
@@ -238,11 +251,11 @@
       {# as a whole card: dropping `recharge` must not also delete the surface     #}
       {# diversion onboarding.                                                     #}
       {% if 'recharge' in enabled_modules %}
-      <span class="step-eyebrow">Step 9 &middot; the Setup Wizard imports recharge basins for you</span>
+      <span class="step-eyebrow">Step {{ steps.surface }} &middot; the Setup Wizard imports recharge basins for you</span>
       <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection sites.</p>
       {% else %}
-      <span class="step-eyebrow">Step 9</span>
+      <span class="step-eyebrow">Step {{ steps.surface }}</span>
       <h2 class="section-header">Add Surface Diversions</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion.</p>
       {% endif %}
@@ -280,7 +293,7 @@
       </svg>
     </span>
     <div class="step-body">
-      <span class="step-eyebrow">Step 10</span>
+      <span class="step-eyebrow">Step {{ steps.reports }}</span>
       <h2 class="section-header">Generate State Reports</h2>
       <p class="text-secondary text-base">When your reporting period is complete, generate {% module_nouns "wells:GEARS CSV (per-well or by-ET extraction)" "surface:CalWATRS CSV (surface diversions)" %} for submission to the Water Board. Go to Reports &gt; Generate.</p>
       <a href="{% url 'reporting:report_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Reports &rarr;</a>
@@ -304,7 +317,14 @@
     <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-accent);">Read: Surface Delivery Settings &rarr;</a>
   </div>{% endif %}
 
-  <div class="card-raised">
+  {% comment %}89-02: all three cards in this grid open explainer pages that are
+  hidden when their domains are gone, and the sentence above them counts them
+  ("These three guides"). Guarding the cards one by one would leave a heading
+  over an empty grid and a sentence claiming three of something — the exact
+  shape 89-01 guarded whole sections to avoid. The card goes as a unit, and on
+  ALL three rather than any: a card that says "these three guides" over two of
+  them is a smaller lie, not a fixed one. Every page it opens is still reachable
+  from the Help section of the sidebar when it is served at all.{% endcomment %}{% explainer_available "methods" as show_methods %}{% explainer_available "settings_explained" as show_settings %}{% if show_water_balances and show_methods and show_settings %}<div class="card-raised">
     <h2 class="section-header">Learn how it works</h2>
     <p class="text-secondary text-base">The platform measures the water your crops consumed and reconciles it against the water that supplied them. These three guides explain the idea, the arithmetic, and every setting that shapes the numbers &mdash; one click each.</p>
     <div class="card-grid">
@@ -321,7 +341,7 @@
         <p class="text-secondary text-sm" style="margin: 0;">Every agency-wide knob: what it does, who sets it, when to change it.</p>
       </a>
     </div>
-  </div>
+  </div>{% endif %}
 
 </div>
 {% endblock %}

@@ -14,9 +14,29 @@
         </button>
 
         {% if user.is_authenticated %}
-        <!-- Global search (E2): spans parcels, wells, diversions, stations,
-             accounts and zones; results dropdown links straight to each record. -->
-        <div class="global-search" id="global-search">
+        {% comment %}
+          Global search (E2): spans the record types this deployment actually
+          has. `config/views.py::_search_groups` gates parcels, wells, surface
+          diversions, monitoring stations and accounts on `is_enabled`, and
+          always searches zones; the results dropdown links straight to each
+          record.
+
+          ISS-084, closed by Plan 89-02. This was an HTML comment, and an HTML
+          comment ships to the browser — so its module enumeration sat in the
+          page source of EVERY page of every deployment, including one with no
+          diversions and no stations. A server-side comment never reaches the
+          browser at all. The vocabulary gate strips HTML comments before
+          matching, which is right and is exactly why this one could never be
+          caught by it: a marker in the markup is a markup problem, and the fix
+          is to stop shipping the markup.
+
+          The placeholder below is the user-visible half of the same defect and
+          the higher-value one, because it is read rather than merely shipped.
+          It now names only what the search box will actually look in. Zones is
+          the fallback: it is the one group `_search_groups` never gates, so a
+          deployment stripped to its structural modules still has something
+          honest to offer.
+        {% endcomment %}<div class="global-search" id="global-search">
             <svg class="global-search-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"/>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -25,7 +45,7 @@
                    id="global-search-input"
                    name="q"
                    class="global-search-input"
-                   placeholder="Search parcels, {% if 'wells' in enabled_modules %}wells, {% endif %}accounts…"
+                   placeholder="Search {% if 'parcels' in enabled_modules %}parcels, {% endif %}{% if 'wells' in enabled_modules %}wells, {% endif %}{% if 'accounting' in enabled_modules %}accounts{% else %}zones{% endif %}…"
                    autocomplete="off"
                    role="combobox"
                    aria-expanded="false"

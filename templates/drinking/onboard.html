@@ -85,11 +85,16 @@
       federal copy, not the primacy agency's authoritative file, and nothing here
       compares a system against a requirement.
     </p>
-    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    {% comment %}89-02: the third drinking-water page to name wells on a
+    deployment that has none, after the two 88-03 fixed — and the third with no
+    row in the droppability harness's page table, which is why the gate stayed
+    green through all three. A "does not do X" disclaimer about a join that
+    cannot exist here is not reassurance, it is a claim that the platform meters
+    wells.{% endcomment %}{% if 'wells' in enabled_modules %}<p class="text-base text-secondary" style="margin-top: var(--space-sm);">
       It does <strong>not</strong> link facilities to the wells this platform
       meters. That join is a deliberate operator act, made in the Django admin,
       and an onboarding refresh never touches a link you have already made.
-    </p>
+    </p>{% endif %}
     <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
       It does <strong>not</strong> fill in the population and service-connection
       breakdowns. EPA sends one total for each; splitting a total into

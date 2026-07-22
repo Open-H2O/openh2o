@@ -13,7 +13,14 @@
   {# Phase 88 softened `drinking.requires` to ("standards",), so this page runs #}
   {# on a deployment with no Wells module. The clause naming wells goes with it #}
   {# — with `wells` on, the sentence is byte-identical to what it replaced.     #}
-  <p class="page-description">The public water system this agency operates, its facilities{% if 'wells' in enabled_modules %}, and the wells behind them{% endif %}. Where the rest of the platform accounts for how much water there is, this domain records what is in it.</p>
+  {% comment %}89-02: two defects in one sentence, and the vocabulary gate could
+  see neither. 88-03 guarded ", and the wells behind them" and left the comma
+  before "its facilities" doing the work of a three-item list, so a wells-less
+  deployment read "…this agency operates, its facilities." — a list with a
+  missing item rather than a pair. And the second sentence positions Drinking
+  Water AGAINST "the rest of the platform", which on a drinking-water-only
+  deployment is nothing: the contrast is an Accounting claim with no forbidden
+  noun in it.{% endcomment %}<p class="page-description">The public water system this agency operates{% if 'wells' in enabled_modules %}, its facilities, and the wells behind them{% else %} and its facilities{% endif %}.{% if 'accounting' in enabled_modules %} Where the rest of the platform accounts for how much water there is, this domain records what is in it.{% endif %}</p>
 </div>
 {% endblock %}
 

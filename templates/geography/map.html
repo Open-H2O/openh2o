@@ -13,7 +13,13 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Map</span>
   </nav>
-  <p class="page-description">Interactive map showing {% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" %}. Toggle layers with the controls panel. Click features for details.</p>
+  {% comment %}Phase 89-02: every noun in this list belongs to a droppable
+  module, so with the whole water closure off the sentence rendered as
+  "Interactive map showing ." — a hole where the subject should be. The clause is
+  gated on its own membership with `any_module_enabled`, the tag Phase 88 added
+  for exactly a sentence that would otherwise be left naming nothing. The two
+  sentences that survive still describe the map correctly: the agency boundary
+  and its zones are `geography` and are always there.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" as map_has_features %}<p class="page-description">{% if map_has_features %}Interactive map showing {% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" %}. {% endif %}Toggle layers with the controls panel. Click features for details.</p>
 </div>
 {% endblock %}
 

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load prose %}
 
 {% block title %}Zones - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Zones{% endblock %}
@@ -21,7 +22,13 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Zones</span>
   </nav>
-  <p class="page-description">Management zones divide your district into areas with separate allocations. The map shows every zone boundary at once; pick a zone from the map or the list to open its boundary, assigned use areas, and allocation-vs-use.</p>
+  {% comment %}89-02: zones are `geography` and survive every configuration, but
+  both things this sentence says you open a zone to SEE belong to the dropped
+  pair — 89-01 guarded the zone detail pane's Use Area and Allocation-vs-Use
+  cards and left the list page's description promising them. `module_nouns`
+  reproduces "boundary, assigned use areas, and allocation-vs-use" byte-for-byte
+  on a full deployment; the boundary is always there, so the list never empties
+  out.{% endcomment %}<p class="page-description">Management zones divide your district into areas{% if 'accounting' in enabled_modules %} with separate allocations{% endif %}. The map shows every zone boundary at once; pick a zone from the map or the list to open its {% module_nouns "geography:boundary" "parcels:assigned use areas" "accounting:allocation-vs-use" %}.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
     <a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add Zone</a>
   </div>
