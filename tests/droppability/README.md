@@ -18,7 +18,19 @@ same time — it boots a Django process that never had the module and asserts:
 - every page a deployment *keeps* still renders 200 — in three database states:
   pristine, configured-but-empty, and populated;
 - a detail page renders too (`/surface/diversion/<pk>/`), because detail panes
-  reach into other modules in ways no list page does.
+  reach into other modules in ways no list page does;
+- **nothing a person can click their way to returns 5xx** — the crawl below
+  follows every in-app link out of every kept page, and asserts `status < 500`
+  on all of it (Plan 90-02);
+- **both sidebars render.** Every assertion here used to run in Admin mode only,
+  so Operations — the default every real user gets — had never been rendered
+  under any drop configuration. The crawl runs in both.
+
+The 5xx bar is deliberately narrow. A **404 stays legal**: a dropped module's
+route is supposed to 404 and a permission wall is supposed to 403, and both are
+proven elsewhere in this file's assertions. Zero 5xx is the one bar no
+deliberately-kept feature can conflict with, which is why widening it would be a
+regression rather than an improvement.
 
 ## Two assertion sets, chosen by the registry
 

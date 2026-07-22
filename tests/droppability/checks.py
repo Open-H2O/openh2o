@@ -47,6 +47,8 @@ from django.test import Client
 from django.urls import NoReverseMatch, reverse
 
 from core import modules as mod
+from tests.droppability.crawl import crawl
+from tests.droppability.crawl import links_on as crawl_links
 
 # ---------------------------------------------------------------------------
 # What this process is actually missing
@@ -579,19 +581,40 @@ class _UserFactory(factory.django.DjangoModelFactory):
     is_superuser = True
 
 
-def _admin_client():
-    """A logged-in superuser with the sidebar in Admin mode.
+#: The two sidebars this platform renders.
+#:
+#: ``operations`` is the DEFAULT — ``core/context_processors.py::nav_mode`` reads
+#: a plain cookie and falls back to it for anything unrecognised, so it is what
+#: every real user sees until they toggle. ``admin`` is what this harness pinned
+#: from the start, deliberately (see ``_logged_in_client``), with the consequence
+#: that until Plan 90-02 the default sidebar had **never been rendered under any
+#: drop configuration**.
+NAV_MODES = ("admin", "operations")
+
+
+def _logged_in_client(nav_mode="admin"):
+    """A logged-in superuser with the sidebar in the named mode.
 
     Admin mode matters and is easy to get wrong: the Administration section is
     wrapped in ``{% if nav_mode == 'admin' %}``, and ``health`` and ``setup``
     contribute their only nav entries there. Under the default Operations mode
     the whole block is hidden, so the "no link into a dropped module" assertion
     below would pass without ever having rendered the links it is looking for.
+
+    The cookie is set explicitly for BOTH modes rather than left off for the
+    default. An absent cookie and a cookie reading ``operations`` resolve to the
+    same mode today, but only one of them is a state a user is actually in after
+    using the toggle, and a test should sit in the state it means.
     """
     c = Client()
     c.force_login(_UserFactory())
-    c.cookies["nav_mode"] = "admin"
+    c.cookies["nav_mode"] = nav_mode
     return c
+
+
+def _admin_client():
+    """The historic name, kept because four fixtures below read it."""
+    return _logged_in_client("admin")
 
 
 @pytest.fixture
@@ -625,6 +648,23 @@ def seeded_client():
     from tests.droppability.fixture import seed_droppable_fixture
 
     client = _admin_client()
+    client.seeded = seed_droppable_fixture()
+    return client
+
+
+@pytest.fixture
+def seeded_operations_client():
+    """``seeded_client``'s twin, with the sidebar in its DEFAULT mode.
+
+    A SEPARATE fixture rather than a mode switch on ``auth_client``/
+    ``seeded_client``, deliberately: every existing assertion in this file was
+    written against the Admin-mode render and has to keep getting it. Operations
+    is what every real user sees, and no drop configuration had ever rendered it
+    (Plan 90-02).
+    """
+    from tests.droppability.fixture import seed_droppable_fixture
+
+    client = _logged_in_client("operations")
     client.seeded = seed_droppable_fixture()
     return client
 
@@ -1132,6 +1172,125 @@ def test_pod_detail_renders_with_a_row(auth_client):
     assert response.status_code == 200, (
         f"{path} returned {response.status_code} with {list(DROPPED_NAMES)} "
         f"dropped and one PointOfDiversion row present."
+    )
+
+
+# ---------------------------------------------------------------------------
+# The whole-page crawl (ISS-091, the reach half)
+# ---------------------------------------------------------------------------
+# Everything above opens the pages `_PAGES` declares. Nothing above ever
+# FOLLOWED a link, and the two views that crashed on staging sit two hops past a
+# declared page. See tests/droppability/crawl.py.
+
+
+def _admin_only_nav_paths():
+    """Sidebar paths this configuration shows only in Admin mode.
+
+    Derived from the live registry — ``nav_sections_for`` over
+    ``enabled_modules()``, keeping the sections that carry
+    ``requires_admin_mode`` — rather than from a literal list, because which
+    sections survive is exactly what a drop configuration changes.
+    """
+    from core.modules import enabled_modules, nav_sections_for
+
+    paths = []
+    for section in nav_sections_for(enabled_modules()):
+        if not section.requires_admin_mode:
+            continue
+        for entry in section.entries:
+            try:
+                paths.append(reverse(entry.url_name))
+            except NoReverseMatch:
+                continue
+    return tuple(paths)
+
+
+@pytest.mark.parametrize("nav_mode", NAV_MODES)
+def test_no_kept_page_reachable_by_a_link_returns_5xx(request, nav_mode):
+    """Nothing a person can click their way to may crash. Both sidebars.
+
+    **The bar is 5xx and deliberately nothing wider.** A 404 stays legal — a
+    dropped module's route is *supposed* to 404, and
+    ``test_dropped_module_registers_no_routes`` already proves it; a permission
+    wall is supposed to 403. Zero 5xx is the one bar no deliberately-kept feature
+    can ever conflict with, which is why the milestone chose it. A gate that
+    fires on intended behaviour gets weakened rather than obeyed, and this
+    codebase has that lesson written down in three places already.
+
+    **Both modes, because they render different sidebars — not because they
+    reach different pages.** Measured 2026-07-22 on a full deployment: the two
+    modes visit an IDENTICAL set of 59 paths, because ``KEPT_PAGES`` seeds every
+    nav target directly and a seed is a seed in either mode. What differs is the
+    RENDER: the home page carries 34 links in Admin mode against 26 in
+    Operations. So an unguarded ``{% url %}`` inside the Operations branch of a
+    nav conditional would crash in one mode and not the other while both crawls
+    visited the same list. ``test_the_two_nav_modes_render_different_sidebars``
+    below is what keeps that difference real.
+    """
+    client = request.getfixturevalue(
+        "seeded_client" if nav_mode == "admin" else "seeded_operations_client"
+    )
+    result = crawl(client, KEPT_PAGES)
+
+    # A crawl that silently stopped following links is a permanently green
+    # no-op that looks exactly like coverage — the same failure shape as the
+    # empty database this phase is fixing.
+    assert len(result.visited) > len(KEPT_PAGES), (
+        f"The crawl visited {len(result.visited)} paths from "
+        f"{len(KEPT_PAGES)} seeds in {nav_mode!r} mode, so it followed no links "
+        f"at all. Either every kept page is a leaf, or link extraction is "
+        f"broken — and the second one is a gate that proves nothing while "
+        f"passing."
+    )
+
+    # The referrer is carried into the message on purpose. 89-03's whole value
+    # was output that said WHICH page and WHICH link; a bare "some URL 500'd"
+    # costs a debugging session.
+    failures = [
+        f"{path} returned {status}, linked from "
+        f"{result.referrers.get(path) or 'a KEPT_PAGES seed'}"
+        for path, status in sorted(result.visited.items())
+        if status >= 500
+    ]
+    assert not failures, (
+        f"{len(failures)} URL(s) reachable by a link returned 5xx in "
+        f"{nav_mode!r} nav mode with {list(DROPPED_NAMES)} dropped:\n  "
+        + "\n  ".join(failures)
+        + f"\nCrawled {len(result.visited)} paths from {len(KEPT_PAGES)} seeds."
+    )
+
+
+def test_the_two_nav_modes_render_different_sidebars():
+    """The mode cookie takes effect, so the parametrization above proves something.
+
+    If both modes rendered the same sidebar, running the crawl twice would be
+    twice the runtime for one mode's coverage — a gate paying full price for half
+    a result and reporting success either way.
+
+    Asserts on the LINKS a page carries rather than on the paths the crawl
+    reaches, because those are the same in both modes by construction (see the
+    docstring above). Skips honestly when this configuration has no admin-gated
+    section left to hide.
+    """
+    admin_only = _admin_only_nav_paths()
+    if not admin_only:
+        pytest.skip(
+            "This configuration keeps no nav section gated on Admin mode, so "
+            "the two sidebars are legitimately identical and there is nothing "
+            "for this assertion to see."
+        )
+
+    admin_links = set(crawl_links(_logged_in_client("admin").get("/").content.decode()))
+    ops_links = set(
+        crawl_links(_logged_in_client("operations").get("/").content.decode())
+    )
+    hidden = admin_links - ops_links
+    assert hidden, (
+        f"The signed-in home page carried the same {len(admin_links)} links in "
+        f"both nav modes, but the registry says this configuration gates "
+        f"{len(admin_only)} nav path(s) on Admin mode: {sorted(admin_only)}. "
+        f"The nav_mode cookie is not taking effect, and every two-mode "
+        f"assertion here is running the same case twice."
     )
 
 
