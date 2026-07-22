@@ -89,6 +89,47 @@ cannot mis-attribute.
 
 **To add a page: append a row.** Never edit the test logic below the table.
 
+## Three database states, and the vocabulary gate wants the empty one
+
+Until Plan 90-01 this harness rendered every page against an **empty** database.
+That is not a detail. 89-03 pointed a reduced module set at a copy of the real
+demo database and found **eight live HTTP 500s** three phases of green gates had
+missed: a CalWATRS `ReportSubmission` row outlives the `surface` module, and
+`reporting/views.py` branches on the report *type* rather than on whether the
+module is there. No row, no crash, no finding (ISS-091).
+
+So the harness now runs on **two fixtures, deliberately**, and which one an
+assertion gets is a decision rather than an accident:
+
+| Assertion family | Fixture | Why that one |
+|---|---|---|
+| Route / 404 / nav-link / render (`test_kept_page_renders_on_a_populated_instance`, the list- and detail-page cases) | **seeded** — `seed_droppable_fixture()` | A code path that only runs when a row exists is the path nothing had ever executed. |
+| The pristine and configured-but-empty render cases | **empty** | Their subject *is* the empty state — the two branches of `_empty_onboarding.html`. Seeding them deletes the case rather than strengthening it. |
+| Vocabulary (`test_kept_pages_never_name_a_dropped_module`, its anonymous twin, and the hidden-explainer gate) | **empty** | Reads page prose. On a populated database it would fire on text that is CORRECT — see below. |
+
+**The vocabulary gate runs empty on purpose, and the reasons are recorded in
+code.** `checks.py::_DATA_DEPENDENT_TEXT_OUT_OF_SCOPE` carries two pages where a
+populated pass would fail on true sentences: `/drinking/`'s "Well" column header,
+which the design deliberately keeps with `wells` demoted, and `/health/`'s "Not
+applicable — needs the 'parcels' module", whose entire job is to name the absent
+module. A gate that cried wolf there would get weakened, and a weakened
+`_FORBIDDEN_VOCABULARY` is the failure that file's own comment warns about.
+`test_the_fixture_axis_is_what_we_think` fails if seeding ever leaks into the
+vocabulary tier, so the split cannot quietly collapse into one.
+
+`tests/droppability/fixture.py` seeds **one row per surviving domain** — a
+`Boundary` so `needs_setup` is False, one row behind each kept list page, and one
+CalWATRS submission when `reporting` and `accounting` both survive. It asks
+`core.modules.is_enabled` per block rather than carrying a module list, makes
+**zero network calls**, and uses fixed dates and explicit identifiers so two runs
+produce the same rows. It runs 12 times per `make test-droppable`; that is why it
+is a small purpose-built fixture and not the demo data.
+
+**The real demo database is a second, separate tier** — Plan 90-03's staging
+gate. `seed_merced` reaches external APIs, so a gate built on it would depend on
+the network. Reading a green run here: it proves a reduced deployment survives
+*a* row in every domain, not that it survives *Merced's* rows.
+
 ## Why it spawns a subprocess
 
 `OPENH2O_MODULES` is read from the environment at settings *import* time and
