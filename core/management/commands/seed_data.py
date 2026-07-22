@@ -67,9 +67,20 @@ class Command(BaseCommand):
     help = "Run all seed data commands"
 
     def handle(self, *args, **options):
-        commands = list(SEED_COMMANDS) + [
-            cmd for module, cmd in OPTIONAL_SEED_COMMANDS if is_enabled(module)
-        ]
+        commands = list(SEED_COMMANDS)
+        # Phase 89: say what was skipped and why. This gate has been silent
+        # since Phase 87 — a demoted deployment's output simply had fewer lines
+        # in it, which reads identically to a seed command that was never
+        # written. An operator comparing two deployments could not tell "not
+        # applicable here" from "we forgot". Costs one line each and makes the
+        # composition visible where an operator is already looking.
+        for module, cmd in OPTIONAL_SEED_COMMANDS:
+            if is_enabled(module):
+                commands.append(cmd)
+            else:
+                self.stdout.write(
+                    f"\n--- {cmd}: skipped (module '{module}' not enabled) ---"
+                )
         for cmd in commands:
             self.stdout.write(f"\n--- {cmd} ---")
             call_command(cmd, stdout=self.stdout)

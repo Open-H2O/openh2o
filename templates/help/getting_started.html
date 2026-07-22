@@ -43,11 +43,22 @@
       Step 1 parcels, Step 2 wells, Step 8 datasync, Step 9 surface (the whole
       Step 9 card is gated on surface; recharge only varies its eyebrow).
 
-      ⚠ Phase 89: "Steps 3 through 7" below is still hardcoded, and it is
-      correct only while `parcels` and `accounting` are undroppable. Dropping
-      either breaks that range AND the Step 1 entry above — a range cannot be
-      expressed with `module_nouns`, so it needs a different answer.
-    {% endcomment %}<p class="text-secondary text-base">You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your {% module_nouns "parcels:use areas" "wells:wells" "recharge:recharge basins" "datasync:nearby monitoring stations" %} for you &mdash; that&rsquo;s Steps {% module_nouns "parcels:1" "wells:2" "datasync:8" "surface:9" %}. What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps 3 through 7). So run the wizard first, then come back and work the accounting steps. Read this page as the manual route, or as a map of what the wizard already did and what&rsquo;s left.</p>
+      89-01 answers 88-03's warning, left here for this phase: "Steps 3 through
+      7" was hardcoded and correct only while `parcels` and `accounting` were
+      undroppable, and a RANGE cannot be expressed with `module_nouns`.
+
+      The answer is that the range never needed to be computed — it needed to be
+      gated on the thing it describes. Steps 3, 4, 6 and 7 are all Accounting;
+      Step 5 (zones) is `geography` and always present. So whenever this clause
+      renders at all, every step in "3 through 7" is on the page, and when
+      Accounting is off the clause is not there to be wrong.
+
+      The import sentence gets the same treatment one level up, via
+      `any_module_enabled`: with `parcels` off the whole closure goes, both
+      `module_nouns` calls resolve to nothing, and the sentence would read "it
+      populates your  for you — that's Steps ." A sentence left naming nothing
+      is precisely what that tag was added for.
+    {% endcomment %}<p class="text-secondary text-base">{% any_module_enabled "parcels" "wells" "recharge" "datasync" as wizard_imports_something %}{% if wizard_imports_something %}You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your {% module_nouns "parcels:use areas" "wells:wells" "recharge:recharge basins" "datasync:nearby monitoring stations" %} for you &mdash; that&rsquo;s Steps {% module_nouns "parcels:1" "wells:2" "datasync:8" "surface:9" %}. {% endif %}{% if 'accounting' in enabled_modules %}What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps 3 through 7). So run the wizard first, then come back and work the accounting steps. {% endif %}Read this page as the manual route, or as a map of what the wizard already did and what&rsquo;s left.</p>
     {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="text-sm" style="color: var(--color-accent);">Run the Setup Wizard &rarr;</a>{% endif %}
   </div>
 
@@ -136,7 +147,15 @@
     <div class="step-body">
       <span class="step-eyebrow">Step 5</span>
       <h2 class="section-header">Define Management Zones</h2>
-      <p class="text-secondary text-base">A management zone is a sub-area of your district that carries its own allocation &mdash; each use area belongs to a zone. Zones are a prerequisite for the next step: an allocation is set per zone, so at least one zone must exist before you can allocate water. Go to Administration &gt; Zones and create your zones, then assign use areas to each.</p>
+      {% comment %}Phase 89: Step 5 belongs to `geography` and stays in every
+      configuration, but two of its clauses name use areas. The clauses are
+      GUARDED rather than the sentence rewritten — byte-identical wherever
+      `parcels` is present, and it leaves 89-02 free to decide what this step
+      should say without colliding with a rewrite made here. Note for 89-02:
+      "carries its own allocation" and "before you can allocate water" are
+      Accounting claims that survive this guard, and the vocabulary table cannot
+      see them because its `accounting` row is deliberately narrow
+      ("allocation ceiling" only).{% endcomment %}<p class="text-secondary text-base">A management zone is a sub-area of your district that carries its own allocation{% if 'parcels' in enabled_modules %} &mdash; each use area belongs to a zone{% endif %}. Zones are a prerequisite for the next step: an allocation is set per zone, so at least one zone must exist before you can allocate water. Go to Administration &gt; Zones and create your zones{% if 'parcels' in enabled_modules %}, then assign use areas to each{% endif %}.</p>
       <a href="{% url 'geography:zone_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Zones &rarr;</a>
     </div>
   </div>
@@ -268,17 +287,22 @@
     </div>
   </div>{% endif %}
 
-  <div class="card-raised">
+  {% comment %}Phase 89: two whole cards whose entire subject is a switchable
+  domain, each pointing at a Help page about that domain. Guarding the card is a
+  card decision, not a prose one — not a word inside them changes. The surface
+  one is guarded to match: it is in the same drop closure and has the identical
+  shape, and the vocabulary gate is blind to it only because "canal deliveries"
+  is not in `surface`'s forbidden list.{% endcomment %}{% if 'accounting' in enabled_modules %}<div class="card-raised">
     <h2 class="section-header">New to allocations and ceilings?</h2>
     <p class="text-secondary text-base">If the difference between a zone&rsquo;s allocation ceiling and an account&rsquo;s allocation is unclear, this short guide walks through how the platform turns one into the other, with a worked example.</p>
     <a href="{% url 'budgets_allocations' %}" class="text-sm" style="color: var(--color-accent);">Read: Allocations &amp; Ceilings &rarr;</a>
-  </div>
+  </div>{% endif %}
 
-  <div class="card-raised">
+  {% if 'surface' in enabled_modules %}<div class="card-raised">
     <h2 class="section-header">Setting up surface deliveries?</h2>
     <p class="text-secondary text-base">Two agency-wide settings shape how the platform counts canal deliveries: how much of a delivery the crop actually uses, and what happens to a district&rsquo;s unused water at year-end. This guide explains both in plain language and shows how one district can differ from the agency default.</p>
     <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-accent);">Read: Surface Delivery Settings &rarr;</a>
-  </div>
+  </div>{% endif %}
 
   <div class="card-raised">
     <h2 class="section-header">Learn how it works</h2>

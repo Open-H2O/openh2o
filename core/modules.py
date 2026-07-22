@@ -70,32 +70,52 @@ but it contributes no URLs, no nav, no seed commands and no pages. Everything an
 operator can see is gone; only the schema stays. This is the class
 ``measurements`` and ``standards`` have always belonged to informally, now said
 out loud — and since Phase 88 it is a live mechanism rather than a dormant one:
-``wells`` and ``datasync`` are the first modules that are optional AND
+``wells`` and ``datasync`` were the first modules that are optional AND
 schema-resident at the same time, which is the combination the tier was built
-for. ``parcels`` and ``accounting`` follow in Phase 89. True removal (tables gone
-too) stays available per section as a priced option; see ISSUES.md.
+for. Phase 89 added ``parcels`` and ``accounting``, which makes four. True
+removal (tables gone too) stays available per section as a priced option; see
+ISSUES.md.
 
 The standard set today: ``core`` and ``geography``, plus the invisible
-vocabularies ``measurements`` and ``standards``. Everything else is a water
-domain and is meant to be optional. Two water domains are still pinned
-``required`` — ``parcels`` and ``accounting`` — and the reason is a database
-arrow, not an import: ``geography.ParcelZone.parcel`` points into ``parcels``
-from a module everybody gets, and ``parcels`` and ``accounting`` are
-migration-entangled in both directions. Phase 89 is the work that moves them.
+vocabularies ``measurements`` and ``standards``. **Every water domain is now a
+choice** — Phase 89 (2026-07-21) demoted the last two, ``parcels`` and
+``accounting``, which is the milestone's whole point. They are demoted as an
+inseparable PAIR: ``accounting.requires`` has always named ``parcels``, and
+Phase 89 added ``accounting`` to ``parcels.requires``, so turning either off
+turns both off and the one-sided configuration is refused at boot. Brent's call,
+on measured evidence — ``parcels/views.py`` builds the Use Areas detail page out
+of Accounting, so the unpaired shape would ship a page with its content removed.
 
-**"Not yet decoupled" was the wrong diagnosis, and Phase 88 measured it.** Four
-of these six carried a ``required_reason`` blaming module-scope imports. Demoted
+They stay schema-resident rather than being removed because the arrows point the
+wrong way: ``geography.ParcelZone.parcel`` reaches into ``parcels`` from a module
+everybody gets, and two ``ParcelLedger`` columns reach into ``accounting``. All
+three are ``SCHEMA_EXCEPTIONS`` records that price what turning them around would
+cost.
+
+**Switching this pair off takes five more sections with it** —  ``wells``,
+``datasync``, ``surface``, ``recharge`` and ``reporting`` each declare that they
+need one of the two. What is left is a login, a map and Drinking Water, and that
+is not a broken install: it is the drinking-water utility flavor this milestone
+existed to make possible.
+
+**"Not yet decoupled" was the wrong diagnosis, and Phase 88 measured it.** Six
+modules carried a ``required_reason`` blaming module-scope imports. Demoted
 model-only, the app stays in ``INSTALLED_APPS`` and every one of those imports
 keeps resolving — ``manage.py check`` is clean with ``wells`` and ``datasync``
-both switched off and zero imports moved. What breaks under demotion is what the
-operator can SEE: routes, nav, seeds, counts and words.
+switched off (Phase 88), and equally clean with the whole seven-module
+``parcels``/``accounting`` closure switched off (Phase 89), in both cases with
+ZERO imports moved. The last of those six ``required_reason`` strings was deleted
+by Phase 89. What breaks under demotion is what the operator can SEE: routes,
+nav, seeds, counts and words. A clean ``manage.py check`` proves nothing here;
+``make test-droppable`` is the only thing that looks.
 
-Droppable today: ``reporting``, ``health``, ``setup``, ``infrastructure``,
-``feedback``, ``drinking`` — ``recharge``, which Phase 82 (2026-07-20)
-decoupled as the pilot — ``surface``, removed outright by Phase 87 — and
-``wells`` and ``datasync``, demoted model-only by Phase 88. The last two are the
+Droppable today — all ten of them: ``reporting``, ``health``, ``setup``,
+``infrastructure``, ``feedback``, ``drinking`` — ``recharge``, which Phase 82
+(2026-07-20) decoupled as the pilot — ``surface``, removed outright by Phase 87
+— ``wells`` and ``datasync``, demoted model-only by Phase 88 — and ``parcels``
+and ``accounting``, demoted as a pair by Phase 89. The four demoted ones are the
 distinction the two-tier semantic exists for: switched off but schema-resident,
-because eight-going-on-nine backwards arrows point into them.
+because nine backwards arrows point into them.
 
 **Keep these paragraphs current.** A stale docstring here does not throw; it just
 gets believed. The predecessor of this text drifted exactly that way, still
@@ -394,10 +414,23 @@ MODULE_REGISTRY: dict = {
         # documents the operator contract. They are different claims about the
         # same code and neither substitutes for the other.
         requires=("core", "geography", "accounting"),
-        required=True,
-        required_reason=(
-            "not yet decoupled: parcels.models is imported at module scope by accounting, reporting, geography, surface, setup, infrastructure and config views"
-        ),
+        # DEMOTED model-only in Phase 89 (2026-07-21), not removed — the same
+        # call Phase 88 made for `wells` and `datasync`, for the same measured
+        # reason. The old `required_reason` blamed module-scope imports; Phase 88
+        # measured that diagnosis false and this phase re-confirmed it, because a
+        # schema-resident module stays in INSTALLED_APPS and every one of those
+        # imports keeps resolving. `manage.py check` is clean with the whole
+        # seven-module closure omitted and ZERO imports moved.
+        #
+        # What actually pinned `parcels` is the other direction, and it is the
+        # one arrow that cannot be turned around cheaply:
+        # `geography.ParcelZone.parcel` reaches in from a module EVERYBODY gets
+        # (SCHEMA_EXCEPTIONS records it, and prices the fix at moving the
+        # ParcelZone model itself into `parcels`). Its tables therefore stay in
+        # every configuration so that reference cannot dangle; everything the
+        # operator can see goes.
+        required=False,
+        schema_resident=True,
     ),
     "wells": ModuleSpec(
         name="wells",
@@ -539,10 +572,18 @@ MODULE_REGISTRY: dict = {
         # `geography` for the two AllocationPlan/AllocationCarryover zone FKs,
         # `core` for ReportingPeriod.finalized_by.
         requires=("core", "geography", "parcels"),
-        required=True,
-        required_reason=(
-            "not yet decoupled: accounting models and services are imported at module scope by reporting, parcels, surface and geography views"
-        ),
+        # DEMOTED model-only in Phase 89 (2026-07-21), inseparably with
+        # `parcels` — see that module's `requires` for the cycle and the reason
+        # Brent asked for it. The old `required_reason` blamed module-scope
+        # imports and was wrong in the same way `parcels`' was.
+        #
+        # What keeps it schema-resident: two SCHEMA_EXCEPTIONS records point
+        # INTO it from `parcels` (ParcelLedger.water_type and
+        # ParcelLedger.reporting_period), and `parcels` is itself schema-resident
+        # — so its tables exist in every configuration and those columns would
+        # dangle if `accounting`'s did not.
+        required=False,
+        schema_resident=True,
     ),
     "surface": ModuleSpec(
         name="surface",

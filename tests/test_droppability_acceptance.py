@@ -257,12 +257,20 @@ class TestDropClosure:
     def test_todays_registry_closes_over_single_modules(self):
         """The closure list, stated as a fact rather than a hope.
 
-        Phase 86 wrote this to go red on exactly one event, and Phase 87 is that
-        event: `recharge` declares `requires=(..., "surface")`, so the moment
-        `surface` became optional, dropping it validly took `recharge` with it —
-        and the harness generated the `without-surface+recharge` case with no
-        edit to any file under `tests/droppability/`. Confirmed 2026-07-21, not
-        merely re-baselined.
+        Phase 86 wrote this to go red on exactly one event, and Phase 87 was
+        that event: `recharge` declares `requires=(..., "surface")`, so the
+        moment `surface` became optional, dropping it validly took `recharge`
+        with it — and the harness generated the `without-surface+recharge` case
+        with no edit to any file under `tests/droppability/`.
+
+        **Phase 89 is the second and much larger event, and this pin was not on
+        its plan's list of seven — it was found by running the suite.** Dropping
+        `parcels` or `accounting` takes SEVEN modules, because five more declare
+        that they need one of the pair. The two entries below are identical by
+        construction: the pair requires each other, so their closures are the
+        same set, which is exactly why `_distinct_cases()` above collapses them
+        into one generated case. Two closure entries, one case, and that is the
+        intended shape rather than a case going missing.
 
         Every other optional module still closes over itself alone.
         """
@@ -271,7 +279,15 @@ class TestDropClosure:
             for name in OPTIONAL_MODULE_NAMES
             if drop_closure(name) != {name}
         }
-        assert multi == {"surface": ["recharge", "surface"]}, (
+        pair = [
+            "accounting", "datasync", "parcels",
+            "recharge", "reporting", "surface", "wells",
+        ]
+        assert multi == {
+            "parcels": pair,
+            "accounting": pair,
+            "surface": ["recharge", "surface"],
+        }, (
             f"The set of cases that drop more than the module they name has "
             f"changed: {multi}. That is correct behaviour if a phase just made "
             f"one optional module depend on another — confirm the new case list "

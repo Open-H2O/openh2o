@@ -197,31 +197,43 @@ class TestValidation:
 class TestDroppabilityPromise:
     """Pin exactly which modules a deployment can omit today.
 
-    Six modules are required. Four structurally (core owns AUTH_USER_MODEL,
-    geography owns the boundary spine, measurements and standards are FK'd
-    vocabularies). Two — `parcels` and `accounting` — because of database
-    arrows, not imports: `geography.ParcelZone.parcel` reaches into `parcels`
-    from a module everybody gets, and the two are migration-entangled in both
-    directions. Phase 89 owns them.
+    FOUR modules are required, and all four are structural: core owns
+    AUTH_USER_MODEL, geography owns the boundary spine, measurements and
+    standards are FK'd vocabularies. **Every water domain is now a choice** —
+    Phase 89 (2026-07-21) demoted the last two, `parcels` and `accounting`, and
+    deleted the last two `required_reason` strings with them.
 
     **The counts in this docstring are prose, and prose is not enforced by the
     assertions below** (Phase 87's warning). Read them as commentary; the two
     tests are the contract.
 
     The "not yet decoupled" group was six until Phase 82 moved `recharge` out,
-    five until Phase 87 removed `surface`, and Phase 88 demoted `wells` and
-    `datasync` model-only — leaving two.
+    five until Phase 87 removed `surface`, two after Phase 88 demoted `wells`
+    and `datasync` model-only, and zero after Phase 89.
 
-    If a later phase decouples one, this test is where the promise changes.
+    If a later phase changes the promise, this test is where it changes.
     """
 
     def test_optional_modules_are_exactly_the_droppable_leaves(self):
         assert mod.OPTIONAL_MODULE_NAMES == (
+            # Phase 89 (2026-07-21). DEMOTED as an inseparable PAIR with
+            # `accounting` below — `accounting.requires` already named
+            # `parcels`, and this phase added `accounting` to
+            # `parcels.requires`, so turning either off turns both off. The one
+            # arrow that makes removal unavailable and residency necessary is
+            # `geography.ParcelZone.parcel`, reaching in from a module everybody
+            # gets. Dropping it drags SIX others out: accounting, wells,
+            # datasync, surface, recharge and reporting.
+            "parcels",
             # Phase 88 (2026-07-21). DEMOTED, not removed: optional AND
             # schema-resident, so the app stays installed and the tables stay
             # empty. Four SCHEMA_EXCEPTIONS records point into it, which is what
             # makes removal unavailable and residency necessary.
             "wells",
+            # Phase 89 (2026-07-21). The other half of the pair. Pinned
+            # schema-resident by the two ParcelLedger columns that reach into
+            # it, which cannot dangle while `parcels` keeps its tables.
+            "accounting",
             # Phase 87 (2026-07-21). Sixteen cross-app model imports moved to
             # function scope, five kept templates guarded (plus one reasoned
             # exemption), `seed_water_right_types` module-gated, six test
@@ -251,12 +263,15 @@ class TestDroppabilityPromise:
         assert mod.REQUIRED_MODULE_NAMES == (
             "core",
             "geography",
-            "parcels",
             "measurements",
             "standards",
-            "accounting",
             # `surface` sat here until Phase 87 removed it; `wells` and
-            # `datasync` until Phase 88 demoted them model-only.
+            # `datasync` until Phase 88 demoted them model-only; `parcels` and
+            # `accounting` until Phase 89 demoted them as a pair. What is left
+            # is structural in every case — an auth model, the boundary spine
+            # and two FK'd vocabularies — so this tuple should now only ever
+            # SHRINK if something is genuinely re-architected, never grow
+            # because a domain was hard to decouple.
         )
 
     def test_every_required_module_explains_itself(self):
@@ -322,26 +337,29 @@ class TestSchemaResidentTier:
     stays in ``INSTALLED_APPS`` — migrations run, tables exist and sit empty —
     while contributing no URLs, no nav, no seed commands and no pages.
 
-    Nothing in the shipping product takes this path yet. Phase 88 is its first
-    real user, when ``wells`` and ``datasync`` become optional AND
-    schema-resident. These tests are what make it a working mechanism rather
-    than a flag with a docstring.
+    Phase 88 was its first real user, when ``wells`` and ``datasync`` became
+    optional AND schema-resident; Phase 89 added ``parcels`` and ``accounting``,
+    which is the pair the whole milestone was aiming at. These tests are what
+    make it a working mechanism rather than a flag with a docstring.
     """
 
     def test_todays_schema_resident_set_is_pinned(self):
-        # Registry order, not alphabetical: `wells` is declared before
-        # `measurements` and `standards`, `datasync` after them.
+        # Registry order, not alphabetical: `parcels` and `wells` are declared
+        # before `measurements` and `standards`, `accounting` and `datasync`
+        # after them.
         assert mod.SCHEMA_RESIDENT_MODULE_NAMES == (
+            "parcels",
             "wells",
             "measurements",
             "standards",
+            "accounting",
             "datasync",
         )
         # The two axes are independent and this set now proves it rather than
         # asserting it: `measurements` and `standards` are standard AND
         # schema-resident (nobody may omit them, and their tables would stay
-        # either way); `wells` and `datasync` are optional AND schema-resident,
-        # which is the combination that makes the tier do work.
+        # either way); the other four are optional AND schema-resident, which is
+        # the combination that makes the tier do work.
         assert [
             name
             for name in mod.SCHEMA_RESIDENT_MODULE_NAMES
@@ -363,12 +381,15 @@ class TestSchemaResidentTier:
         It is deliberately NOT deleted. A tier with nothing exercising it is
         indistinguishable from a tier that works, which is the failure shape
         this codebase guards against in four other places — so the assertion
-        flips from "nobody" to "exactly these two, by name".
+        flips from "nobody" to "exactly these, by name". Phase 89 added
+        `parcels` and `accounting`, taking it from two to four; the same
+        collects-rather-than-skips check was repeated for the pair.
         """
         live = set(mod.OPTIONAL_MODULE_NAMES) & set(mod.SCHEMA_RESIDENT_MODULE_NAMES)
-        assert live == {"wells", "datasync"}, (
+        assert live == {"wells", "datasync", "parcels", "accounting"}, (
             f"The optional-and-schema-resident set is {sorted(live)}, not "
-            f"['datasync', 'wells']. If a module was added here, confirm "
+            f"['accounting', 'datasync', 'parcels', 'wells']. If a module was "
+            f"added here, confirm "
             f"tests/droppability/checks.py generates a `without-<module>` case "
             f"for it and that the schema-resident assertion set COLLECTS rather "
             f"than skips — an empty parametrize list looks exactly like coverage "

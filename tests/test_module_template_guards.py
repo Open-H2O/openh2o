@@ -125,5 +125,17 @@ def test_optional_module_names_is_what_we_think():
         # unguarded, plus one EXEMPT entry above for the recharge detail pane,
         # which can only render where surface is present anyway.
         "surface",
+        # Phase 89 (2026-07-21). The last two water domains, demoted as an
+        # inseparable pair. Twelve kept-module templates needed a real guard
+        # across the two namespaces (23 link sites), plus seven EXEMPT entries
+        # above — six into `parcels` from templates the same closure drops, and
+        # one back the other way that only became possible when the pair went
+        # mutual. A thirteenth template, `geography/partials/
+        # _zone_detail_pane.html`, was guarded too: it holds no `{% url %}` into
+        # either module, so this test could never have named it, and guarding
+        # the link one level down inside `_zone_parcels.html` left an "Assigned
+        # Use Areas" heading standing over nothing. That is the standing limit
+        # of this file — it finds crashes, not orphans.
+        "parcels", "accounting",
     }
     assert all(not MODULE_REGISTRY[n].required for n in OPTIONAL_MODULE_NAMES)
