@@ -16,21 +16,42 @@
       Geographic data is populated for {{ boundary.name }}. Here's the rest of
       first-time setup, in order:
     </p>
+    {% comment %}
+      Phase 89. The badge numerals stay hand-written, and they stay CORRECT —
+      not merely gap-free-looking — because the requires graph leaves only three
+      reachable configurations for these four rows, not eight:
+
+        `wells` requires `parcels`, and `parcels` and `accounting` require each
+        other, so the three either arrive together or leave together. Wells is
+        the one that can be absent on its own.
+
+          A. parcels + wells + accounting  -> 1, 2, 3, 4
+          B. parcels + accounting, no wells -> 1, 2, 3
+          C. none of the three              -> zones alone, numbered 1
+
+      So only the zones badge needed a new branch. ISS-088 tracks the general
+      class — a hand-numbered checklist whose numerals drift out of step with
+      what renders — and it is deliberately NOT being re-litigated here; this
+      list simply does not have that defect, because the closure removed the
+      partial states that would cause it. If a later phase breaks the
+      `wells`->`parcels` edge, this comment is the thing that stops being true
+      first.
+    {% endcomment %}
     <div class="onboarding-steps">
-      <div class="onboarding-step">
+      {% if 'parcels' in enabled_modules %}<div class="onboarding-step">
         <span class="step-badge step-badge-active">1</span>
         <span class="text-sm"><a href="{% url 'parcels:list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Review imported parcels</a> — confirm the use areas brought in for your watershed</span>
-      </div>
+      </div>{% endif %}
       {% if 'wells' in enabled_modules %}<div class="onboarding-step">
         <span class="step-badge">2</span>
         <span class="text-secondary text-sm"><a href="{% url 'wells:list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Add wells</a> — your district's groundwater sources</span>
       </div>{% endif %}
-      <div class="onboarding-step">
+      {% if 'accounting' in enabled_modules %}<div class="onboarding-step">
         <span class="step-badge">{% if 'wells' in enabled_modules %}3{% else %}2{% endif %}</span>
         <span class="text-secondary text-sm"><a href="{% url 'accounting:accounts_list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Set up water accounts</a> — group parcels into the accounts you'll track</span>
-      </div>
+      </div>{% endif %}
       <div class="onboarding-step">
-        <span class="step-badge">{% if 'wells' in enabled_modules %}4{% else %}3{% endif %}</span>
+        <span class="step-badge">{% if 'parcels' not in enabled_modules %}1{% elif 'wells' in enabled_modules %}4{% else %}3{% endif %}</span>
         <span class="text-secondary text-sm"><a href="{% url 'geography:zone_list' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Define management zones</a> — the areas an allocation applies to</span>
       </div>
     </div>

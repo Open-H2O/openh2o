@@ -15,11 +15,21 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-medium">
+{% comment %}
+  Phase 89. Link guards ONLY — every word on this page is left exactly as it
+  was, deliberately. This page is *about* the switched-off domain, so a guard
+  makes it render without making it honest; whether it should be reachable at
+  all in a deployment with no Accounting is 89-02's call, and it is recorded
+  there rather than answered here.
+
+  Unlike settings_explained.html and methods.html, this page uses the BARE
+  `{% templatetag openblock %} url {% templatetag closeblock %}` form, which
+  really does raise NoReverseMatch. These guards close a 500, not a dead link.
+{% endcomment %}<div class="page-stack page-medium">
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">When a district delivers canal water to its farms, two questions decide how the platform books that water. First: of the water that reaches a field, how much does the crop actually drink, and how much soaks back down into the aquifer? Second: if a district doesn&rsquo;t use all the surface water it was entitled to in a year, does the leftover carry into next year or disappear? You answer both once, on the <a href="{% url 'accounting:delivery_settings' %}" class="prose-link">Delivery Settings page</a>, and they apply to every district.</p>
+    <p class="text-secondary text-base">When a district delivers canal water to its farms, two questions decide how the platform books that water. First: of the water that reaches a field, how much does the crop actually drink, and how much soaks back down into the aquifer? Second: if a district doesn&rsquo;t use all the surface water it was entitled to in a year, does the leftover carry into next year or disappear? You answer both once, on the {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="prose-link">Delivery Settings page</a>{% else %}Delivery Settings page{% endif %}, and they apply to every district.</p>
   </div>
 
   <div class="card-raised">
@@ -57,17 +67,17 @@
   <div class="card-raised">
     <h2 class="section-header">When one district needs to differ</h2>
     <p class="text-secondary text-base">The year-end rule is set agency-wide, but a single district can be flipped to a different choice without changing everyone else. Open that district&rsquo;s page and use the <strong>Year-end unused water</strong> control: leave it on &ldquo;Use agency default&rdquo; for the common case, or set it to carry-forward or expire just for that district. Switching it back to the agency default means that district will follow along automatically if you later change the agency-wide rule.</p>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">Set it per district under <a class="prose-link" href="{% url 'geography:zone_list' %}">Zones</a>, or change the agency-wide defaults on the <a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a> page.</p>
+    <p class="text-secondary text-base" style="margin-bottom: 0;">Set it per district under <a class="prose-link" href="{% url 'geography:zone_list' %}">Zones</a>, or change the agency-wide defaults on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:delivery_settings' %}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} page.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
     <p class="text-secondary text-base">The live setting, the arithmetic it drives, and the full settings reference &mdash; one click each.</p>
     <div class="card-grid">
-      <a href="{% url 'accounting:delivery_settings' %}" class="card-raised card-link">
+      {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Delivery Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The live page where the crop-use share and year-end rule are set.</p>
-      </a>
+      </a>{% endif %}
       <a href="{% url 'methods' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">How a district&rsquo;s delivery is shared fairly across many fields.</p>

@@ -31,7 +31,7 @@
 
     <h2 class="home-section-label">Start a task</h2>
     <div class="home-task-grid">
-        <a href="{% url 'accounting:ledger_create' %}" class="home-task-card home-task-card--primary">
+        {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:ledger_create' %}" class="home-task-card home-task-card--primary">
             <span class="home-task-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
             </span>
@@ -48,7 +48,7 @@
                 <span class="home-task-label">Water Balance</span>
                 <span class="home-task-sublabel">See supplies against uses by account and zone</span>
             </span>
-        </a>
+        </a>{% endif %}
         {% if 'reporting' in enabled_modules %}
         <a href="{% url 'reporting:report_list' %}" class="home-task-card">
             <span class="home-task-icon">
@@ -111,12 +111,15 @@
         </a>
     </div>
 
-    <h2 class="home-section-label">Your data</h2>
+    {% comment %}Phase 89: every stat in this bar belongs to a module a
+    deployment can switch off, so the heading is gated on the whole set.
+    Guarding the two new links alone would leave "Your data" standing over an
+    empty bar in a deployment that runs none of them.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules or 'accounting' in enabled_modules %}<h2 class="home-section-label">Your data</h2>
     <div class="home-stat-bar">
-        <a href="{% url 'parcels:list' %}" class="home-stat">
+        {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:list' %}" class="home-stat">
             <span class="home-stat-value">{{ parcel_count }}</span>
             <span class="home-stat-label">Use Areas</span>
-        </a>
+        </a>{% endif %}
         {% if 'wells' in enabled_modules %}<a href="{% url 'wells:list' %}" class="home-stat">
             <span class="home-stat-value">{{ well_count }}</span>
             <span class="home-stat-label">Wells</span>
@@ -133,13 +136,13 @@
             <span class="home-stat-label">Recharge Sites</span>
         </a>
         {% endif %}
-        <a href="{% url 'accounting:accounts_list' %}" class="home-stat">
+        {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:accounts_list' %}" class="home-stat">
             <span class="home-stat-value">{{ water_account_count }}</span>
             <span class="home-stat-label">Water Accounts</span>
-        </a>
+        </a>{% endif %}
         {# Monitoring Stations intentionally omitted here — the hero already #}
         {# reports live station health ("37 of 42 reporting"); a raw total below it just confused the two. #}
-    </div>
+    </div>{% endif %}
 
 </div>
 {% endblock %}

@@ -127,7 +127,7 @@ var MAP_CONFIG = {
         { id: 'flowlines', url: '{% url "geography:flowlines_geojson" %}' },
         { id: 'zones', url: '{% url "geography:zones_geojson" %}' },
         { id: 'zone-labels', url: '{% url "geography:zone_labels_geojson" %}' },
-        { id: 'parcels', url: '{% url "parcels:geojson" %}' },
+        {% if 'parcels' in enabled_modules %}{ id: 'parcels', url: '{% url "parcels:geojson" %}' },{% endif %}
         {% if 'wells' in enabled_modules %}{ id: 'wells', url: '{% url "wells:geojson" %}' },{% endif %}
         {% if 'surface' in enabled_modules %}{ id: 'pods', url: '{% url "surface:pods_geojson" %}' },{% endif %}
         {% if 'recharge' in enabled_modules %}{ id: 'recharge', url: '{% url "recharge:sites_geojson" %}' },{% endif %}
@@ -217,7 +217,12 @@ var MAP_CONFIG = {
         }), { panelHidden: true, section: 'Surface Water' }),
 
         // ── Land Use ──
-        {
+        {% comment %}Phase 89: guarded with their source above, same reasoning
+          as the Wells, Surface Water and Recharge blocks — a layer left behind
+          after its source is gone is a MapLibre console error, not a clean
+          absence. With `wells` in the same drop closure, guarding these three
+          empties the Land Use section entirely, which is what removes the
+          heading.{% endcomment %}{% if 'parcels' in enabled_modules %}{
             id: 'parcels-fill', type: 'fill', source: 'parcels',
             label: 'Parcels', group: 'parcels', section: 'Land Use',
             paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.10, 15, 0.22] },
@@ -230,7 +235,7 @@ var MAP_CONFIG = {
         },
         Object.assign(OH2O.makeLabelLayer('parcels-label', 'parcels', 'parcel', { anchor: 'center', offset: [0, 0],
             layout: { 'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 17, 12.5] } }),
-            { panelHidden: true, group: 'parcels', section: 'Land Use' }),
+            { panelHidden: true, group: 'parcels', section: 'Land Use' }),{% endif %}
         {% comment %}
           Guarded with their source above, same reasoning as Surface Water and
           Recharge below: a layer left behind after its source is gone is a
@@ -353,13 +358,13 @@ var MAP_CONFIG = {
             return '<strong>' + (p.name || 'Boundary') + '</strong><br>' +
                    (p.area_sq_miles ? parseFloat(p.area_sq_miles).toFixed(1) + ' sq mi' : '');
         },
-        'parcels-fill': function(p) {
+        {% if 'parcels' in enabled_modules %}'parcels-fill': function(p) {
             return '<strong>' + (p.parcel_number || 'Unknown') + '</strong><br>' +
                    'Owner: ' + (p.owner_name || '—') + '<br>' +
                    'Area: ' + (p.area_acres ? parseFloat(p.area_acres).toFixed(2) + ' ac' : '—') + '<br>' +
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/parcels/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
-        },
+        },{% endif %}
         {% if 'recharge' in enabled_modules %}
         'recharge-fill': function(p) {
             return '<strong>' + (p.name || 'Unknown Site') + '</strong><br>' +

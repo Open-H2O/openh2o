@@ -15,7 +15,20 @@
 {% endblock %}
 
 {% block content %}
-{% url 'accounting:methodology_settings' as methodology_url %}
+{% comment %}
+  Phase 89. Link guards ONLY — every word on this page is left exactly as it
+  was, deliberately. These Help pages are *about* the switched-off domain, so a
+  guard makes them render without making them honest; whether they should be
+  reachable at all in a deployment with no Accounting is 89-02's call, and it is
+  recorded there rather than answered here.
+
+  Worth knowing before reading the guards: the `{% templatetag openblock %} url
+  ... as var {% templatetag closeblock %}` form at the top of this file does NOT
+  raise NoReverseMatch — Django documents it as failing silently to the empty
+  string, and that was re-measured for this phase. So the defect these guards
+  close is a DEAD LINK (href=""), not a 500. Quieter, and therefore easier to
+  ship without noticing.
+{% endcomment %}{% url 'accounting:methodology_settings' as methodology_url %}
 {% url 'surface_deliveries' as surface_url %}
 {% url 'water_balances' as water_balances_url %}
 {% url 'glossary' as glossary_url %}
@@ -103,7 +116,7 @@
       </div>
     </div>
 
-    <p class="text-secondary text-base">This chain isn&rsquo;t hard-coded &mdash; an agency tunes it on the <a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a> page, where these exact steps appear as a reorderable, switch-on/switch-off list. The help text here and that settings screen describe the <em>same</em> chain, so what you read matches what you configure. Because every future calculation flows through it, change it deliberately.</p>
+    <p class="text-secondary text-base">This chain isn&rsquo;t hard-coded &mdash; an agency tunes it on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} page, where these exact steps appear as a reorderable, switch-on/switch-off list. The help text here and that settings screen describe the <em>same</em> chain, so what you read matches what you configure. Because every future calculation flows through it, change it deliberately.</p>
 
     {% include "partials/_deep_dive.html" with label="What &ldquo;effective&rdquo; precipitation means, and why the chain works for any field" body="<p><strong>Not all rain counts.</strong> &ldquo;Effective&rdquo; precipitation is the portion of rainfall the crop could actually use &mdash; what soaked into the root zone and stayed there. Rain that ran off, or fell faster than the soil could absorb, or landed on already-saturated ground doesn&rsquo;t reduce the crop&rsquo;s draw on other supplies, so it isn&rsquo;t subtracted. Agencies pick how to estimate the effective share: a flat fraction of total rain, or a soil-storage model (the USDA-SCS / TR-21 method), tuned on the Methodology Settings page.</p><p><strong>The chain is a step-walker, not a single equation.</strong> Under the hood it&rsquo;s a small configurable engine (<code>evaluate_chain</code>) that runs whatever ordered steps the agency has enabled. Crucially, it&rsquo;s <em>source-agnostic</em>: it reads estimated consumptive use for any parcel and works through the supplies, with no well required to run. A well only matters at the very end &mdash; it decides whether the unexplained leftover is booked as groundwater or recorded as unmet demand.</p>" %}
   </div>
@@ -146,10 +159,10 @@
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: estimated use vs. supplies.</p>
       </a>
-      <a href="{{ methodology_url }}" class="card-raised card-link">
+      {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methodology Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Where the calculation chain above is reordered and tuned.</p>
-      </a>
+      </a>{% endif %}
       <a href="{{ glossary_url }}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">Plain-language definitions for every term used here.</p>

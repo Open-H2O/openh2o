@@ -260,7 +260,15 @@
       </div>
       {% endif %}
 
-      <!-- Parcel linkage -->
+      {% comment %}
+        Phase 89. The whole Link to Parcel card goes with the module, not just
+        the one reversed URL inside it. Guarding the link alone would leave a
+        card whose search can only return nothing, two buttons that load an
+        empty layer, and a "Draw new parcel" form that POSTs rows into a
+        switched-off module's tables. Its JS block is guarded to match, further
+        down — the block calls getElementById on these buttons and would throw
+        on null, taking the page's whole map script with it.
+      {% endcomment %}{% if 'parcels' in enabled_modules %}<!-- Parcel linkage -->
       <div class="card-raised">
         <details class="parcel-link-section">
           <summary class="card-header-ruled" style="cursor: pointer; list-style: none;">
@@ -302,7 +310,7 @@
             <div id="parcel-selected"></div>
           </div>
         </details>
-      </div>
+      </div>{% endif %}
 
       <!-- Submit -->
       <div class="form-footer-ruled">
@@ -612,7 +620,15 @@
   });
 
   // ── Parcel map interaction ──
-  var parcelGeojsonUrl = '{% url "parcels:geojson" %}';
+  {% comment %}
+    Phase 89: guarded as one block with the card above. Everything outside it
+    that touches parcel state — the `parcelMode === 'draw'` branches in the
+    polygon-finish handler, the hidden `parcels`/`parcel-highlight` sources — is
+    already unreachable once these buttons are gone, because `parcelMode` is
+    only ever set in here and stays null. Those stay put deliberately: they hold
+    no URL and no visible surface, and unpicking them from the drawing code
+    would risk the page's own geometry editor for no operator-visible gain.
+  {% endcomment %}{% if 'parcels' in enabled_modules %}var parcelGeojsonUrl = '{% url "parcels:geojson" %}';
   var parcelCreateUrl = '{% url "infrastructure:parcel_create" %}';
   var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
   var parcelsLoaded = false;
@@ -784,7 +800,7 @@
     var saveBtn = document.getElementById('save-new-parcel');
     saveBtn.textContent = 'Save Parcel';
     saveBtn.disabled = false;
-  }
+  }{% endif %}
 })();
 </script>
 {% endblock %}

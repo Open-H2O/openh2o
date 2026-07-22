@@ -61,7 +61,16 @@
         </div>
       </div>
 
-      <!-- Assigned Use Areas card -->
+      {% comment %}
+        Phase 89. Both cards are entirely about use areas, so they go with the
+        module rather than being emptied out. Found by guarding the link inside
+        `_zone_parcels.html` and then looking at what the card became: a
+        "Assigned Use Areas" heading over nothing, and a search box that can
+        only ever return nothing. The search input's own placeholder names the
+        dropped domain too ("Search by parcel number or owner..."), which is the
+        88-03 class of leak — prose the vocabulary gate could not see until the
+        gate was extended to attributes.
+      {% endcomment %}{% if 'parcels' in enabled_modules %}<!-- Assigned Use Areas card -->
       <div class="card-raised">
         <h2 class="section-header mb-md">Assigned Use Areas</h2>
         <div id="zone-parcels">
@@ -88,7 +97,7 @@
         <div id="zone-parcel-search-results">
           <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
         </div>
-      </div>
+      </div>{% endif %}
 
     </div>
 

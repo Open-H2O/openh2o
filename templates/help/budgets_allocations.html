@@ -15,7 +15,17 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-stack page-medium">
+{% comment %}
+  Phase 89. Link guards ONLY — every word on this page is left exactly as it
+  was, deliberately. This page is *about* the switched-off domain, so a guard
+  makes it render without making it honest; whether it should be reachable at
+  all in a deployment with no Accounting is 89-02's call, and it is recorded
+  there rather than answered here.
+
+  Unlike settings_explained.html and methods.html, this page uses the BARE
+  `{% templatetag openblock %} url {% templatetag closeblock %}` form, which
+  really does raise NoReverseMatch. These guards close a 500, not a dead link.
+{% endcomment %}<div class="page-stack page-medium">
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
@@ -69,17 +79,17 @@
 
   <div class="card-raised">
     <h2 class="section-header">One thing worth knowing</h2>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">If no allocation ceiling has been set for a zone in a given period, every account&rsquo;s allocation shows as <strong>blank</strong> &mdash; not zero. &ldquo;No ceiling defined&rdquo; and &ldquo;a ceiling of zero&rdquo; are deliberately different: the platform will not imply a limit nobody actually set. To start enforcing allocations, set a ceiling for the zone and period first on the <a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a> page.</p>
+    <p class="text-secondary text-base" style="margin-bottom: 0;">If no allocation ceiling has been set for a zone in a given period, every account&rsquo;s allocation shows as <strong>blank</strong> &mdash; not zero. &ldquo;No ceiling defined&rdquo; and &ldquo;a ceiling of zero&rdquo; are deliberately different: the platform will not imply a limit nobody actually set. To start enforcing allocations, set a ceiling for the zone and period first on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{% url 'accounting:allocations_list' %}">Allocations</a>{% else %}Allocations{% endif %} page.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Where to go next</h2>
     <p class="text-secondary text-base">Set the numbers, or read the idea and arithmetic behind them &mdash; one click each.</p>
     <div class="card-grid">
-      <a href="{% url 'accounting:allocations_list' %}" class="card-raised card-link">
+      {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:allocations_list' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Allocations</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The live page where a zone&rsquo;s ceiling is set and allocations are derived.</p>
-      </a>
+      </a>{% endif %}
       <a href="{% url 'water_balances' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-accent);">&rarr;</span></div>
         <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: estimated use vs. supplies.</p>

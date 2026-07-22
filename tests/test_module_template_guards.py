@@ -44,6 +44,22 @@ EXEMPT = {
     # together. A `'surface' in enabled_modules` guard here would be a condition
     # that cannot be false — dead code that reads as if the case were live.
     ("surface", "recharge/partials/_detail_pane.html"),
+    # Phase 89. Seven more of the same call, all inside the parcels/accounting
+    # drop closure. Each line names the requires-edge that makes the guard's
+    # condition unfalsifiable — that edge is the exemption's whole warrant, so
+    # if one is ever broken, delete the entry rather than widen it.
+    #
+    # Into `parcels`, from templates owned by a module that leaves with it:
+    ("parcels", "accounting/partials/_account_balances.html"),  # accounting.requires names parcels
+    ("parcels", "accounting/partials/_ledger_list_results.html"),  # accounting.requires names parcels
+    ("parcels", "accounting/partials/_parcel_assignment.html"),  # accounting.requires names parcels
+    ("parcels", "reporting/shared_supply_check.html"),  # reporting.requires names parcels
+    ("parcels", "surface/partials/_detail_pane.html"),  # surface.requires names parcels
+    ("parcels", "wells/partials/_detail_pane.html"),  # wells.requires names parcels
+    # ...and the one arrow back the other way, which only exists because Phase 89
+    # made the pair mutual: parcels.requires now names accounting, so a template
+    # under parcels/ can never render in a deployment without Accounting.
+    ("accounting", "parcels/partials/_detail_pane.html"),
 }
 
 

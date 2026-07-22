@@ -7,13 +7,18 @@
 {% block content %}
 <p class="page-description">Overview of your water data. Cards show entity counts and link to their management pages.</p>
 
-<h2 class="content-section-label">Water Data</h2>
+{% comment %}Phase 89: the section heading is gated on its whole membership, not
+just on one card. Guarding only the Use Areas link would leave "Water Data"
+standing over an empty grid in a deployment that runs none of these four. The
+guard shares a line with the markup because a tag alone on a line still emits
+that line's newline, and the milestone's deliverable is a byte-identical full
+render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules %}<h2 class="content-section-label">Water Data</h2>
 <div class="dashboard-grid">
-    <a href="{% url 'parcels:list' %}" class="dashboard-card">
+    {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Use Areas</div>
         <div class="dashboard-card-value">{{ parcel_count }}</div>
         <div class="dashboard-card-sublabel">View all use areas</div>
-    </a>
+    </a>{% endif %}
     {% if 'wells' in enabled_modules %}<a href="{% url 'wells:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Wells</div>
         <div class="dashboard-card-value">{{ well_count }}</div>
@@ -33,28 +38,29 @@
         <div class="dashboard-card-sublabel">View recharge sites</div>
     </a>
     {% endif %}
-</div>
+</div>{% endif %}
 
-<h2 class="content-section-label" style="margin-top: var(--space-xl);">Accounting &amp; Monitoring</h2>
+{% comment %}Phase 89: same treatment. Both cards in this section belong to
+modules a deployment can switch off, so the heading goes with them.{% endcomment %}{% if 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label" style="margin-top: var(--space-xl);">Accounting &amp; Monitoring</h2>
 <div class="dashboard-grid">
-    <a href="{% url 'accounting:accounts_list' %}" class="dashboard-card">
+    {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:accounts_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Water Accounts</div>
         <div class="dashboard-card-value">{{ water_account_count }}</div>
         <div class="dashboard-card-sublabel">View accounts</div>
-    </a>
+    </a>{% endif %}
     {% if 'datasync' in enabled_modules %}<a href="{% url 'datasync:station_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Monitoring Stations</div>
         <div class="dashboard-card-value">{{ station_count }}</div>
         <div class="dashboard-card-sublabel">View stations</div>
     </a>{% endif %}
-    {% if request.user.is_staff %}
+    {% if 'accounting' in enabled_modules and request.user.is_staff %}
     <a href="{% url 'accounting:methodology_settings' %}" class="dashboard-card">
         <div class="dashboard-card-label">Methodology Settings</div>
         <div class="dashboard-card-value">&#9881;</div>
         <div class="dashboard-card-sublabel">Configure how usage is derived from your data sources</div>
     </a>
     {% endif %}
-</div>
+</div>{% endif %}
 
 <h2 class="content-section-label" style="margin-top: var(--space-xl);">System</h2>
 <div class="dashboard-grid">

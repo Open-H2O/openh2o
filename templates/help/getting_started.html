@@ -51,7 +51,13 @@
     {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="text-sm" style="color: var(--color-accent);">Run the Setup Wizard &rarr;</a>{% endif %}
   </div>
 
-  <div class="card-raised step-card">
+  {% comment %}
+    Phase 89: the whole step card is guarded, not just its link. A step card
+    whose only action is "Go to Use Areas" is an instruction to visit a page
+    this deployment does not have. The step NUMERALS are left alone on purpose
+    — the gaps they leave are ISS-088's, which Brent looked at on staging in
+    88-03 and asked to revisit at the end of the enhancements, not here.
+  {% endcomment %}{% if 'parcels' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -65,7 +71,7 @@
       <p class="text-secondary text-base">Upload use area boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Use Areas and use the import command. Each use area needs an Assessor Parcel Number (APN).</p>
       <a href="{% url 'parcels:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Use Areas &rarr;</a>
     </div>
-  </div>
+  </div>{% endif %}
 
   {% if 'wells' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">
@@ -87,7 +93,7 @@
     </div>
   </div>{% endif %}
 
-  <div class="card-raised step-card">
+  {% if 'accounting' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -101,9 +107,9 @@
       <p class="text-secondary text-base">Create water accounts to group use areas for tracking. Go to Administration &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
       <a href="{% url 'accounting:accounts_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Water Accounts &rarr;</a>
     </div>
-  </div>
+  </div>{% endif %}
 
-  <div class="card-raised step-card">
+  {% if 'accounting' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -118,7 +124,7 @@
       <p class="text-secondary text-base">Define the time window for accounting. Go to Compliance &gt; Water Years. Most agencies use the water year (October 1 through September 30).</p>
       <a href="{% url 'accounting:periods_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Water Years &rarr;</a>
     </div>
-  </div>
+  </div>{% endif %}
 
   <div class="card-raised step-card">
     <span class="step-number">
@@ -135,7 +141,7 @@
     </div>
   </div>
 
-  <div class="card-raised step-card">
+  {% if 'accounting' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/>
@@ -150,9 +156,9 @@
       <p class="text-secondary text-base">An allocation ceiling is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Set a ceiling for each zone, water type, and period. New to the difference between a ceiling and an account&rsquo;s allocation? See the short guide linked at the bottom of this page.</p>
       <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Allocations &rarr;</a>
     </div>
-  </div>
+  </div>{% endif %}
 
-  <div class="card-raised step-card">
+  {% if 'accounting' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">
       <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -170,7 +176,7 @@
       <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
       <a href="{% url 'accounting:methodology_settings' %}" class="text-sm" style="color: var(--color-accent);">View the Methodology &rarr;</a>
     </div>
-  </div>
+  </div>{% endif %}
 
   {% if 'datasync' in enabled_modules %}<div class="card-raised step-card">
     <span class="step-number">

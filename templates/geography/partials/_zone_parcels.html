@@ -1,4 +1,13 @@
-{% if parcel_zones %}
+{% comment %}
+  Phase 89. The guard is belt AND braces on purpose. Without `parcels` the
+  ParcelZone rows cannot exist — the parcels tables are schema-resident and
+  empty — so `parcel_zones` is already falsy and the loop would never reverse
+  `parcels:detail`. But "the query happens to return nothing" is a runtime
+  accident, not a contract: one seeded row, one fixture, one future data
+  migration and the unguarded `{% templatetag openblock %} url 'parcels:detail'
+  {% templatetag closeblock %}` inside the loop becomes a NoReverseMatch on the
+  zone page. The module predicate says what we actually mean.
+{% endcomment %}{% if 'parcels' in enabled_modules %}{% if parcel_zones %}
 <table class="data-table">
   <thead>
     <tr>
@@ -36,4 +45,4 @@
 </table>
 {% else %}
 <p class="text-tertiary" style="font-size: 0.875rem;">No parcels assigned to this zone.</p>
-{% endif %}
+{% endif %}{% endif %}

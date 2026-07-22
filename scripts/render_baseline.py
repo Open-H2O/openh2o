@@ -76,6 +76,17 @@ PAGES = (
     ("setup-wizard", "/setup/", True),
     ("drinking-overview", "/drinking/", True),
     ("shared-supply-check", "/reporting/reports/shared-supply-check/", True),
+    # Plan 89-01 widened this again, for the same reason 88-03 added
+    # `/drinking/`: a page that is absent from this list looks exactly like a
+    # page that was checked and found identical. Every one of these renders a
+    # template Plan 89-01 edits, and five of them are the Help pages the plan
+    # guards but deliberately does not rewrite.
+    ("help-methods", "/help/methods/", True),
+    ("help-settings", "/help/settings/", True),
+    ("help-water-balances", "/help/water-balances/", True),
+    ("help-budgets-allocations", "/help/budgets-allocations/", True),
+    ("help-surface-deliveries", "/help/surface-deliveries/", True),
+    ("infrastructure-add", "/infrastructure/add/", True),
 )
 
 #: Detail panes need a row to have a primary key at all, so they cannot be
@@ -116,9 +127,28 @@ def _seed_detail_rows():
         status="active",
     )
     WellIrrigatedParcel.objects.create(well=well, parcel=parcel, fraction=Decimal("1.0000"))
+
+    # Plan 89-01: a zone with a parcel assigned to it, so the zone detail pane's
+    # "Assigned Use Areas" table actually has a row and its `parcels:detail`
+    # reverse is exercised. Without the ParcelZone row the table renders its
+    # empty state and the guarded link is never reached, which would make a
+    # green diff mean nothing.
+    from geography.models import Boundary, ParcelZone, Zone
+
+    boundary = Boundary.objects.create(name="Baseline Boundary", geometry=square)
+    zone = Zone.objects.create(
+        name="Baseline Zone",
+        boundary=boundary,
+        geometry=square,
+        zone_type="management_area",
+    )
+    ParcelZone.objects.create(parcel=parcel, zone=zone)
+
     return (
         ("parcel-detail", f"/parcels/{parcel.pk}/", True),
         ("parcel-detail-pane", f"/parcels/{parcel.pk}/", True),
+        # geography is mounted at `map/`, not `geography/` (core/modules.py).
+        ("zone-detail", f"/map/zones/{zone.pk}/", True),
     )
 
 
