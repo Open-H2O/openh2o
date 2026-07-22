@@ -92,11 +92,40 @@ DROPPED_RESIDENT_NAMES = tuple(
 #: the day a module serves a page outside its own prefix. An explicit table costs
 #: one line per page and cannot mis-attribute. Phases 83-85 add a page by
 #: appending a row here, never by editing test logic below.
+#:
+#: **An owner may be a TUPLE, and then every module in it has to be enabled.**
+#: 89-02 needed it and no earlier phase did: the five explainer Help pages are
+#: served only when the deployment runs every domain they explain, because their
+#: subject is that domain rather than a mention inside it (see
+#: ``config/views.py::EXPLAINER_MODULES``, which is where the sets are declared —
+#: the rows here name the same modules so the harness stops demanding a page the
+#: view has stopped serving, and the two lists are checked against each other by
+#: ``tests/test_help_explainers.py``).
 _PAGES = (
     ("/", None),
     ("/about/", None),
     ("/help/getting-started/", None),
     ("/help/glossary/", None),
+    # 89-02: eleven reachable pages had no row, which is why the vocabulary gate
+    # reported ZERO findings on a nine-module deployment whose Setup Wizard
+    # offered to "auto-populate wells, use areas, basins, and monitoring
+    # stations". Same defect 88-03 found on `/drinking/`, at eleven times the
+    # size. A page absent from this table is never opened by anything, and
+    # nothing warns you — so the rule is now: if the sidebar can reach it, it has
+    # a row.
+    ("/help/water-balances/", ("accounting", "parcels", "surface", "wells")),
+    ("/help/methods/", ("accounting", "parcels", "surface", "wells")),
+    ("/help/settings/", ("accounting", "surface")),
+    ("/help/surface-deliveries/", ("accounting", "surface", "recharge")),
+    ("/help/budgets-allocations/", ("accounting", "parcels", "surface", "recharge")),
+    ("/setup/", "setup"),
+    # `health` owns this page, and it had a row in `_ANON_PAGES` but none here —
+    # so it was read as a visitor with no session and never as a signed-in
+    # operator, which is the render that carries the whole sidebar.
+    ("/health/", "health"),
+    ("/users/", "core"),
+    ("/profile/", None),
+    ("/map/zones/", "geography"),
     ("/map/", "geography"),
     ("/wells/", "wells"),
     # Phase 88: `datasync` became droppable, so its own landing page joins the
@@ -114,13 +143,32 @@ _PAGES = (
     # behind them" on a deployment with no Wells module, and the vocabulary gate
     # was green because it never opened the page.
     ("/drinking/", "drinking"),
+    # 89-02: the other three drinking-water pages. `/drinking/onboard/` is the
+    # third page in this module to have named wells on a wells-less deployment
+    # after the two 88-03 fixed, and it is the third to have had no row here.
+    ("/drinking/sampling-points/", "drinking"),
+    ("/drinking/results/", "drinking"),
+    ("/drinking/onboard/", "drinking"),
 )
+
+
+def _page_is_served(owner):
+    """Whether a ``_PAGES`` row's page exists in THIS configuration.
+
+    ``None`` -> always. A name -> that module. A tuple -> every module in it,
+    because a page whose subject is the interaction of two domains stops existing
+    when either one does.
+    """
+    if owner is None:
+        return True
+    if isinstance(owner, tuple):
+        return all(name in ENABLED_NAMES for name in owner)
+    return owner in ENABLED_NAMES
+
 
 #: Pages that must keep rendering given what THIS process booted with. Measured,
 #: not assumed: every one of these returns 200 with all optional modules absent.
-KEPT_PAGES = tuple(
-    path for path, owner in _PAGES if owner is None or owner in ENABLED_NAMES
-)
+KEPT_PAGES = tuple(path for path, owner in _PAGES if _page_is_served(owner))
 
 #: The kept list screens, paired with the factory that puts a row on them and the
 #: module that owns the page. These are the pages that render
@@ -228,8 +276,23 @@ _FORBIDDEN_VOCABULARY = (
     # Live from 88-02 onward.
     ("wells", ("well", "wells", "groundwater extraction", "GEARS")),
     ("datasync", ("monitoring station", "monitoring stations")),
-    # Live today.
-    ("surface", ("diversion", "diversions", "CalWATRS", "water right", "water rights")),
+    # Live today. 89-02 added the four OPERATIONAL nouns: a deployment with no
+    # Surface module has no canals to deliver through and no headgate to share,
+    # and the Setup Wizard, the Getting Started cards and three Help pages all
+    # used those words rather than the five above.
+    #
+    # **"surface water" is deliberately NOT here, and that is a decision rather
+    # than an omission.** `about.html` says OpenH2O "extends the same open,
+    # partnership-minded approach across all of water — surface water,
+    # groundwater, and the reporting the state requires", which is a claim about
+    # the open-source project's ambit in a paragraph about its relationship to
+    # the Groundwater Accounting Platform. "Surface water" names a substance;
+    # "canal" and "surface delivery" name this deployment's operations. Forbidding
+    # the substance would fire on true prose, which is the cries-wolf failure this
+    # table's own note warns about.
+    ("surface", ("diversion", "diversions", "CalWATRS", "water right", "water rights",
+                 "canal", "canals", "headgate", "surface delivery",
+                 "surface deliveries")),
     ("recharge", ("recharge", "recharge basin", "recharge basins")),
     ("drinking", ("drinking water", "sampling point", "sampling points")),
     # Owns no user-facing vocabulary of its own: `reporting` is the container for
@@ -248,13 +311,29 @@ _FORBIDDEN_VOCABULARY = (
     ("geography", ()),
     ("measurements", ()),
     ("standards", ()),
-    # Phase 89 flips these. The entries are deliberately narrow: `parcels` is
-    # labelled "Use Areas" but its copy says both, and `accounting`'s nouns
-    # ("allocation", "ledger", "water year") are everywhere in a deployment that
-    # HAS accounting. Phase 89 owns widening these, with the same measure-first
-    # discipline used here — do not widen them speculatively.
-    ("parcels", ("use area", "use areas")),
-    ("accounting", ("allocation ceiling", "allocation ceilings")),
+    # Phase 89 flipped these, and 89-02 widened them — measured, not
+    # speculatively. 89-01 left them narrow on purpose: widening before the prose
+    # pass would only have turned the gate red on sentences 89-02 was about to
+    # rewrite. The words below were chosen by scanning the rendered text of every
+    # page a nine-module deployment can reach and keeping the ones whose
+    # appearance really does mean the copy is claiming a domain that is not
+    # there.
+    #
+    # Two candidates were measured and REJECTED, for the same reason "surface
+    # water" was:
+    #   * `wells` -> "groundwater". `about.html` is built for "Groundwater
+    #     Sustainability Agencies" and stands on the "Groundwater Accounting
+    #     Platform" — a proper noun and an agency type, both true with no Wells
+    #     module. `wells` keeps its 88-02 list.
+    #   * `accounting` -> bare "account". It matches "we can account for", and it
+    #     matches "your account" in the profile menu. "water account" is the noun
+    #     that means the thing.
+    ("parcels", ("use area", "use areas", "parcel", "parcels")),
+    ("accounting", ("allocation ceiling", "allocation ceilings", "allocation",
+                    "allocations", "water account", "water accounts", "water year",
+                    "reporting period", "reporting periods", "use ledger", "ledger",
+                    "water balance", "water balances", "closing balance",
+                    "billable")),
 )
 
 FORBIDDEN_VOCABULARY = dict(_FORBIDDEN_VOCABULARY)
@@ -320,11 +399,58 @@ _VOCABULARY_EXEMPT_PAGES = (
         "/help/glossary/",
         "A dictionary of water-data terms. It defines vocabulary rather than "
         "describing what this deployment manages, so naming a domain here is "
-        "not a claim that the agency has it. See ISS-085.",
+        "not a claim that the agency has it. See ISS-085. Plan 89-02 looked at "
+        "it again and left the exemption standing: an operator meeting "
+        "'allocation ceiling' in a state document still needs to be able to look "
+        "it up, and a dictionary that only defines the words you already know is "
+        "not a dictionary. What 89-02 DID fix is the consequence of its own "
+        "change — the definitions' 'See Help > X.' pointers now drop when X is "
+        "hidden, so no entry sends a reader at a 404.",
     ),
 )
 
 VOCABULARY_EXEMPT_PAGES = frozenset(path for path, _ in _VOCABULARY_EXEMPT_PAGES)
+
+#: ISS-089, DECIDED by Plan 89-02: this gate reads page PROSE, and data-dependent
+#: text is out of scope. Written down rather than left implicit, because a limit
+#: nobody states is indistinguishable from coverage.
+#:
+#: The harness boots a process with an empty database, so every list page renders
+#: its empty state and no table header, per-row label or count sentence is ever
+#: scanned. ISS-089 offered two shapes: (a) seed a minimal fixture and pair it
+#: with an exemption table for headers the design intends to keep, or (b) scope
+#: the gate to prose and document the boundary. **(b), and the argument is that
+#: (a) would fail on features this platform deliberately ships.**
+#:
+#: Each row below is a place where a populated-database vocabulary pass would fire
+#: on text that is CORRECT. They are recorded here the way ``SCHEMA_EXCEPTIONS``
+#: records its nine: with the reason attached, and pinned by a test so a row
+#: cannot outlive the page it describes.
+_DATA_DEPENDENT_TEXT_OUT_OF_SCOPE = (
+    (
+        "/drinking/",
+        "The facility table carries a 'Well' column header that renders only "
+        "when the system has facilities. The design deliberately KEEPS that "
+        "column with `wells` demoted and degrades the cell to the well's name as "
+        "plain text — proven by controlled experiment in 88-03. A gate that "
+        "fired here would be firing on the fallback the plan specified.",
+    ),
+    (
+        "/health/",
+        "A skipped check renders 'Not applicable — the use-area ledger needs the "
+        "'parcels' module', and NAMING the missing module is the entire point of "
+        "that message (ISS-087). This is the stronger instance and it is why (a) "
+        "was rejected: seeding health results would make the gate fail on the one "
+        "feature whose job is to say which module is absent.",
+    ),
+)
+
+#: The boundary in one sentence, for anyone reading a green run.
+VOCABULARY_SCOPE = (
+    "Page prose only. Table headers, per-row labels and count sentences are NOT "
+    "read — the harness runs against an empty database by construction. ISS-089, "
+    "decided 2026-07-22 in Plan 89-02."
+)
 
 #: The kept pages this assertion actually reads.
 VOCABULARY_CHECKED_PAGES = tuple(
@@ -907,6 +1033,32 @@ def test_vocabulary_exemptions_still_describe_real_pages():
     assert not stale, (
         f"These pages are exempted from the vocabulary check but are not in "
         f"_PAGES: {stale}. Remove the exemption or restore the page."
+    )
+
+
+def test_the_vocabulary_gate_declares_what_it_cannot_read():
+    """ISS-089's decision cannot rot into folklore.
+
+    Same discipline as ``test_vocabulary_exemptions_still_describe_real_pages``
+    one row up, applied to the *scope* record rather than the exemption list: a
+    row naming a page this harness no longer serves would sit here looking like a
+    considered decision while describing nothing. And an empty record would mean
+    the limit had been quietly forgotten, which is exactly the state ISS-089 was
+    opened to end.
+    """
+    assert VOCABULARY_SCOPE, "The gate's scope has to be stated somewhere."
+    assert _DATA_DEPENDENT_TEXT_OUT_OF_SCOPE, (
+        "The decision to scope this gate to prose rests on specific pages where "
+        "reading data WOULD cry wolf. With no rows, the decision is an assertion "
+        "rather than an argument."
+    )
+    known = {path for path, _ in _PAGES}
+    stale = sorted(
+        {path for path, _ in _DATA_DEPENDENT_TEXT_OUT_OF_SCOPE} - known
+    )
+    assert not stale, (
+        f"These pages carry an ISS-089 out-of-scope record but are not in "
+        f"_PAGES: {stale}. Remove the record or restore the page."
     )
 
 
