@@ -327,8 +327,49 @@ class TestDroppability:
         test_optional_module_links_are_guarded("drinking")
 
     def test_drinking_requires_the_modules_it_fks_into(self):
+        """`wells` came out in Phase 88; the FK did not.
+
+        `SystemFacility.well` still points at `wells.Well`. What changed is that
+        the edge is now carried by a SCHEMA_EXCEPTIONS record instead of by
+        `requires` — legal because `wells` became schema-resident in the same
+        phase, so its tables exist in every valid configuration and the
+        reference cannot dangle.
+
+        That is not a loosening dressed up as a decision. Declaring the edge in
+        `requires` forced every drinking-water deployment to carry a groundwater
+        section, and made `drop_closure('wells')` return `{wells, drinking}` —
+        so demoting Wells would have dragged Drinking Water out with it. Brent's
+        locked decision 3 (2026-07-21) forbids exactly that: no agency type is
+        assumed in either direction, and a district that buys all its water
+        wholesale still has a system to sample.
+        """
         spec = mod.MODULE_REGISTRY["drinking"]
-        assert set(spec.requires) == {"wells", "standards"}
+        assert set(spec.requires) == {"standards"}
+
+    def test_the_well_edge_is_carried_by_an_exception_record_instead(self):
+        """The other half: dropping it from `requires` did not drop it on the floor.
+
+        Without this, the test above would pass just as happily if someone had
+        deleted the FK, or deleted the record, or never written one — three very
+        different states that all look like "requires is {'standards'}".
+        """
+        record = next(
+            (
+                r for r in mod.SCHEMA_EXCEPTIONS
+                if (r.holder, r.model, r.field, r.target)
+                == ("drinking", "SystemFacility", "well", "wells")
+            ),
+            None,
+        )
+        assert record is not None, (
+            "drinking.SystemFacility.well points into `wells` and `drinking` no "
+            "longer declares it in `requires`, so a SCHEMA_EXCEPTIONS record is "
+            "the only thing holding the arrow. There isn't one."
+        )
+        assert "wells" in mod.SCHEMA_PRESENT_MODULE_NAMES, (
+            "The record above is only legal while `wells` keeps its tables in "
+            "every valid configuration."
+        )
 
 
 @pytest.mark.django_db
