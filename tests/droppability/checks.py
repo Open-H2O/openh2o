@@ -1243,15 +1243,19 @@ def test_no_kept_page_reachable_by_a_link_returns_5xx(request, nav_mode):
         f"passing."
     )
 
-    # The referrer is carried into the message on purpose. 89-03's whole value
-    # was output that said WHICH page and WHICH link; a bare "some URL 500'd"
-    # costs a debugging session.
-    failures = [
-        f"{path} returned {status}, linked from "
-        f"{result.referrers.get(path) or 'a KEPT_PAGES seed'}"
-        for path, status in sorted(result.visited.items())
-        if status >= 500
-    ]
+    # The referrer AND the exception are carried into the message on purpose.
+    # 89-03's whole value was output that said WHICH page, WHICH link, and WHY;
+    # a bare "some URL 500'd" costs a debugging session.
+    failures = []
+    for path, status in sorted(result.visited.items()):
+        if status < 500:
+            continue
+        referrer = result.referrers.get(path) or "a KEPT_PAGES seed"
+        line = f"{path} returned {status}, linked from {referrer}"
+        cause = result.errors.get(path)
+        if cause:
+            line += f"\n      raised {cause}"
+        failures.append(line)
     assert not failures, (
         f"{len(failures)} URL(s) reachable by a link returned 5xx in "
         f"{nav_mode!r} nav mode with {list(DROPPED_NAMES)} dropped:\n  "

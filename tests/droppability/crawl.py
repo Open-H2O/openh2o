@@ -116,17 +116,21 @@ SKIPPED_SUFFIXES = (
 
 CrawlResult = namedtuple(
     "CrawlResult",
-    "visited referrers unvisited skipped",
+    "visited referrers unvisited skipped errors",
 )
 """What a crawl found.
 
 ``visited``   -- ``{path: status_code}``, the final status after any redirects.
+                 A view that RAISED is recorded as ``500`` here — see ``crawl``
+                 for why that is the honest status rather than a special case.
 ``referrers`` -- ``{path: referring_path}``, where each path was first found.
                  Seeds map to ``None``. This is what makes a failure message
                  say WHICH page carried the link, which was 89-03's whole value.
 ``unvisited`` -- sorted paths still queued when ``max_pages`` bit. Empty on a
                  crawl that finished.
 ``skipped``   -- ``{path: reason}``, every link a ``SKIPPED_*`` row turned away.
+``errors``    -- ``{path: repr}`` for paths whose view raised, so the assertion
+                 can name the exception, not just the 500.
 """
 
 
@@ -204,10 +208,20 @@ def crawl(client, seeds, *, max_pages=CRAWL_MAX_PAGES, verbose=True):
     The queue is drained in sorted order so two runs over the same tree visit the
     same paths in the same sequence. That matters at the cap: which paths land in
     ``unvisited`` has to be a fact about the app rather than about dict ordering.
+
+    **A view that raises is recorded as a 500, not allowed to abort the crawl.**
+    Django's test client re-raises a server exception by default — a testing
+    convenience that hides exactly what this gate is looking for. In production
+    Gunicorn turns that same exception into an HTTP 500, which is what a real
+    user's browser gets, so 500 is the honest status to record. Catching it here
+    also means one crash no longer masks the others behind it, and it makes this
+    function correct for Plan 90-03's real HTTP client, which returns 500 as an
+    ordinary status and never raises at all.
     """
     visited = {}
     referrers = {}
     skipped = {}
+    errors = {}
     queue = []
 
     def offer(path, referrer):
@@ -226,7 +240,15 @@ def crawl(client, seeds, *, max_pages=CRAWL_MAX_PAGES, verbose=True):
     while queue and len(visited) < max_pages:
         queue.sort()
         path = queue.pop(0)
-        response = client.get(path, follow=True)
+        try:
+            response = client.get(path, follow=True)
+        except Exception as exc:  # noqa: BLE001 — a crash IS the finding here.
+            # The view raised. In production this is a 500; record it as one and
+            # keep going, so the crawl reports every crash rather than dying on
+            # the first. The repr is kept so the assertion can name the cause.
+            visited[path] = 500
+            errors[path] = repr(exc)
+            continue
         visited[path] = response.status_code
         # Only a rendered HTML body has links worth following. A streamed
         # response has no `.content` to read without consuming it, and a
@@ -255,4 +277,5 @@ def crawl(client, seeds, *, max_pages=CRAWL_MAX_PAGES, verbose=True):
         referrers=referrers,
         unvisited=unvisited,
         skipped=skipped,
+        errors=errors,
     )
