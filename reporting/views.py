@@ -32,7 +32,11 @@ from reporting.generators import (
     generate_gears_csv,
 )
 from reporting.models import ReportingProfile, ReportSubmission, ReportTemplate
-from reporting.report_types import REPORT_FAMILY_OWNER, report_family_is_available
+from reporting.report_types import (
+    REPORT_FAMILY_OWNER,
+    report_family_is_available,
+    report_type_is_available,
+)
 from reporting.services import PREFILL_METHOD_BY_REPORT_TYPE, build_openet_prefill
 from reporting.validators import validate_report
 
@@ -381,9 +385,24 @@ def calwatrs_worksheet(request, pk):
     if report_type not in ("calwatrs_a1", "calwatrs_a2"):
         raise Http404("The transcription worksheet is only for CalWATRS reports.")
 
+    # 89-03: the check above gates on report TYPE, not on module availability,
+    # and those are different questions. A CalWATRS submission ROW outlives the
+    # module — an agency that filed CalWATRS and later switched `surface` off
+    # still has its filing history, and every row in it reaches this view. The
+    # old comment here reasoned that the type check made the view "unreachable
+    # without the module"; measured on staging against a copy of the real demo
+    # database it was reachable, and the local import below raised
+    # `RuntimeError: ... doesn't declare an explicit app_label` — a 500, on the
+    # deployment's own report history. Gate on the module, like the generate
+    # view already does.
+    if not report_type_is_available(report_type):
+        raise Http404(
+            "This deployment does not run the surface module, so a CalWATRS "
+            "transcription worksheet cannot be built here."
+        )
+
     # Local import: `surface` is an optional module (Phase 87), so this must not
-    # run at module scope. The 404 above already restricts this view to CalWATRS,
-    # a surface-water filing, so it is unreachable without the module.
+    # run at module scope. Safe to reach only because of the guard above.
     from surface.models import DiversionRecord
 
     period = submission.reporting_period
@@ -488,6 +507,15 @@ def report_prefill(request, pk):
     method = PREFILL_METHOD_BY_REPORT_TYPE.get(report_type)
     if method is None:
         raise Http404("OpenET pre-fill is not available for this report type.")
+
+    # 89-03: same defect, same cause as `calwatrs_worksheet` above — a surviving
+    # submission row reaches the CalWATRS pre-fill builder, whose local
+    # `surface.models` import 500s with the module dropped.
+    if not report_type_is_available(report_type):
+        raise Http404(
+            "This deployment does not run the module that owns this filing, so "
+            "its OpenET pre-fill cannot be built here."
+        )
 
     prefill = build_openet_prefill(submission.reporting_period, method)
 
