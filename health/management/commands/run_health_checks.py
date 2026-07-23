@@ -53,9 +53,11 @@ class Command(BaseCommand):
             self.stdout.write("-" * 70)
             for r in results:
                 status = r["status"]
-                if r.get("details", {}).get("module_disabled"):
+                if status == "skipped":
                     # A check whose module is switched off is neither healthy nor
-                    # broken; printing GREEN here would claim it ran.
+                    # broken; printing GREEN here would claim it ran. The status
+                    # field is authoritative — details.module_disabled is only
+                    # provenance now.
                     status_display = f"{'N/A':<10}"
                 elif status == "green":
                     status_display = self.style.SUCCESS(f"{'GREEN':<10}")
@@ -67,4 +69,16 @@ class Command(BaseCommand):
             self.stdout.write("")
 
             green_count = sum(1 for r in results if r["status"] == "green")
-            self.stdout.write(f"Summary: {green_count}/{len(results)} healthy")
+            # The denominator is APPLICABLE checks, not every check. Dividing by
+            # every check while skipped rows scored as green is what printed
+            # "12/13 healthy" on a deployment running half the platform — the
+            # score went UP as modules went away (ISS-087). Both numbers are
+            # shown so a dropped check stays distinguishable from one that never
+            # existed.
+            applicable = sum(1 for r in results if r["status"] != "skipped")
+            skipped = len(results) - applicable
+            skipped_note = f", {skipped} skipped" if skipped else ""
+            self.stdout.write(
+                f"Summary: {green_count}/{applicable} healthy "
+                f"({applicable} applicable of {len(results)}{skipped_note})"
+            )
