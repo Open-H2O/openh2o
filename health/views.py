@@ -59,13 +59,26 @@ def health_dashboard(request):
     results = HealthCheckResult.objects.filter(id__in=latest_ids).order_by("category")
 
     green_count = results.filter(status="green").count()
+    # The registry total: how many checks actually ran and persisted a row. This
+    # is derived, never a literal — the template used to say "8 categories" long
+    # after there were thirteen (ISS-090), so a fourteenth check moves the number
+    # by itself.
     total = results.count()
+    # Skipped checks belong to modules this deployment does not run. They are
+    # shown, but they leave the healthy denominator and every rollup — counting
+    # them as green is what let switching modules off raise the score (ISS-087).
+    applicable_results = results.exclude(status="skipped")
+    applicable = applicable_results.count()
+    skipped = total - applicable
 
-    if total == 0:
+    if applicable == 0:
+        # Nothing left to report on. Unreachable in practice — database, disk,
+        # docker and migrations are not module-gated — but the empty case has to
+        # be defined rather than falling through to "healthy".
         overall_status = "unknown"
-    elif results.filter(status="red").exists():
+    elif applicable_results.filter(status="red").exists():
         overall_status = "unhealthy"
-    elif results.filter(status="yellow").exists():
+    elif applicable_results.filter(status="yellow").exists():
         overall_status = "degraded"
     else:
         overall_status = "healthy"
@@ -74,6 +87,8 @@ def health_dashboard(request):
         "results": results,
         "green_count": green_count,
         "total": total,
+        "applicable": applicable,
+        "skipped": skipped,
         "overall_status": overall_status,
         # Per-subsystem messages name internals + failure reasons — operator-only
         # reconnaissance. Anonymous visitors see the aggregate status only.
@@ -90,13 +105,18 @@ def health_api(request):
     )
     results = HealthCheckResult.objects.filter(id__in=latest_ids).order_by("category")
 
-    if not results.exists():
+    # Same exclusion as the dashboard: a check skipped because its module is off
+    # must not vote in the rollup. It still appears in the `checks` array below —
+    # an operator wants to see that it was skipped and why.
+    applicable_results = results.exclude(status="skipped")
+
+    if not applicable_results.exists():
         return JsonResponse({"status": "unknown"}, status=200)
 
-    if results.filter(status="red").exists():
+    if applicable_results.filter(status="red").exists():
         overall = "unhealthy"
         http_status = 503
-    elif results.filter(status="yellow").exists():
+    elif applicable_results.filter(status="yellow").exists():
         overall = "degraded"
         http_status = 200
     else:
