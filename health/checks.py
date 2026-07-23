@@ -36,16 +36,19 @@ def not_applicable(category: str, module: str, subject: str) -> dict:
     everywhere else.
 
     So the check still produces a row, still names itself, and says why it has
-    nothing to measure. ``status`` stays ``green`` because the STATUS_CHOICES
-    field has three values and adding a fourth is an ``AlterField`` migration,
-    which this plan is not allowed to author; the dashboard reads
-    ``details.module_disabled`` instead and renders a neutral "Not applicable"
-    badge rather than "Healthy". The status field carries the alarm level, the
-    details carry the reason, and neither has to lie.
+    nothing to measure. ``status`` is ``skipped`` — its own alarm level, added
+    as the fourth STATUS_CHOICES entry in Phase 91. Everything that rolls health
+    up branches on the status field: the dashboard, the JSON API and the CLI
+    summary all exclude skipped rows from the healthy denominator and from the
+    overall verdict, so a switched-off module can no longer raise the score.
+
+    ``details.module_disabled`` is retained as PROVENANCE — it names which
+    module is absent — and is no longer the thing the UI branches on. That was
+    the workaround while the field had only three values.
     """
     return {
         "category": category,
-        "status": "green",
+        "status": "skipped",
         "message": (
             f"Not applicable — {subject} needs the '{module}' module, which is "
             f"not enabled on this deployment."
