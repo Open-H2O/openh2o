@@ -311,7 +311,18 @@ _FORBIDDEN_VOCABULARY = (
                  "canal", "canals", "headgate", "surface delivery",
                  "surface deliveries")),
     ("recharge", ("recharge", "recharge basin", "recharge basins")),
-    ("drinking", ("drinking water", "sampling point", "sampling points")),
+    # 92-01 (ISS-092) added the PWSID step card to /help/getting-started/, which
+    # is a SHARED page (`_PAGES` owner ``None``). If that card's guard were ever
+    # dropped, its vocabulary would leak onto a deployment with no Drinking Water
+    # module and nothing else would notice — the exact leak class this table
+    # exists to catch. Measured 2026-07-22 before adding these words: no rendered
+    # page outside ``drinking/`` used "PWSID" or "public water system". Every hit
+    # was Python source, a model docstring or a migration ``help_text``, none of
+    # which this gate reads — it reads rendered HTML with scripts, styles and
+    # comments stripped. That measurement is what keeps these from becoming the
+    # cries-wolf entry the note above warns about.
+    ("drinking", ("drinking water", "sampling point", "sampling points",
+                  "PWSID", "public water system", "public water systems")),
     # Owns no user-facing vocabulary of its own: `reporting` is the container for
     # GEARS and CalWATRS, and both of those belong to the domains whose water
     # they report (wells and surface), not to reporting. Forbidding "report"
