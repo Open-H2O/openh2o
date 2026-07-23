@@ -10,7 +10,9 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Site Health</span>
   </nav>
-  <p class="page-description">Site health checks across 8 categories. Green means healthy, yellow means attention needed, red means action required.</p>
+  {% comment %} The category count is the registry total from the view, never a literal —
+     this sentence stayed frozen at eight long after there were thirteen (ISS-090). {% endcomment %}
+  <p class="page-description">Site health checks across {{ total }} categories. Green means healthy, yellow means attention needed, red means action required. Checks belonging to a module this deployment does not run are marked not applicable and left out of the score.</p>
 </div>
 {% endblock %}
 
@@ -20,8 +22,15 @@
         <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--color-text-primary); margin: 0;">Site Health</h1>
         {% if total > 0 %}
         <div class="row-start" style="padding: var(--space-xs) var(--space-md); border-radius: var(--radius-md); background: var(--color-card); border: 1px solid var(--color-border);">
-            <span style="width: 10px; height: 10px; border-radius: 50%; background: {% if overall_status == 'healthy' %}var(--forest-400){% elif overall_status == 'degraded' %}var(--furnace-400){% else %}oklch(0.55 0.20 25){% endif %};"></span>
-            <span class="text-secondary text-base">{{ green_count }}/{{ total }} healthy</span>
+            {% comment %} `unknown` is now reachable with rows present (every check skipped),
+               so it needs its own neutral dot — a red one would report a broken instance
+               where the honest answer is "nothing applicable to measure". {% endcomment %}
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: {% if overall_status == 'healthy' %}var(--forest-400){% elif overall_status == 'degraded' %}var(--furnace-400){% elif overall_status == 'unknown' %}var(--color-text-tertiary){% else %}oklch(0.55 0.20 25){% endif %};"></span>
+            {% comment %} Denominator is `applicable`, not `total`: a skipped check leaves the
+               fraction instead of scoring as green, so dropping modules can no longer raise
+               the score (ISS-087). Both numbers show so a dropped check stays distinguishable
+               from one that never existed (ISS-090, Brent's decision 2026-07-22). {% endcomment %}
+            <span class="text-secondary text-base">{{ green_count }}/{{ applicable }} healthy · {{ applicable }} applicable of {{ total }}</span>
         </div>
         {% endif %}
     </div>
@@ -44,7 +53,7 @@
                 <h3 class="section-header-flush" style="text-transform: capitalize;">
                     {{ result.get_category_display }}
                 </h3>
-                {% if result.details.module_disabled %}
+                {% if result.status == 'skipped' %}
                 <span class="badge badge-grey">Not applicable</span>
                 {% elif result.status == 'green' %}
                 <span class="health-status-badge-green">Healthy</span>
