@@ -20,8 +20,11 @@ as a forbidden-vocabulary assertion over every kept page. These are the unit
 tests underneath it: they pin the joining rule itself, which a page-level
 assertion can only observe indirectly.
 """
+import re
+
 import pytest
 from django.template import Context, Template
+from django.urls import get_resolver, reverse
 
 from core import modules as mod
 from core.templatetags.prose import oxford_join
@@ -29,6 +32,25 @@ from core.templatetags.prose import oxford_join
 WITHOUT_SURFACE = [
     name for name in mod.ALL_MODULE_NAMES if name not in ("surface", "recharge")
 ]
+
+# The drinking-water flavor measured in Phase 89: the `parcels`/`accounting`
+# pair off takes five more sections with it, leaving a login, a map and Drinking
+# Water. Written as the set it KEEPS rather than as a difference, because that
+# is how an operator writes OPENH2O_MODULES in their own .env.
+NINE_MODULE_DRINKING = [
+    "core", "geography", "measurements", "standards",
+    "health", "setup", "infrastructure", "feedback", "drinking",
+]
+
+WITHOUT_DRINKING = [name for name in mod.ALL_MODULE_NAMES if name != "drinking"]
+
+# Each step card renders its eyebrow immediately above its heading, so one
+# pattern reads the whole numbered sequence off the page in page order — number,
+# title and position in a single assertion.
+STEP_CARD = re.compile(
+    r'step-eyebrow">Step (\d+)[^<]*</span>\s*'
+    r'<h2 class="section-header">([^<]+)</h2>'
+)
 
 WIZARD_NOUNS = (
     '{% load prose %}{% module_nouns "parcels:use areas" "wells:wells" '
@@ -44,6 +66,23 @@ FILING_NOUNS = (
 
 def render(source, **context):
     return Template(source).render(Context(context))
+
+
+def compose_urlconf_under_the_full_module_set():
+    """Touch the root URLconf so it is built before a test narrows the modules.
+
+    ``config/urls.py`` composes its module routes from ``enabled_modules()`` at
+    IMPORT time, and Django imports ``ROOT_URLCONF`` lazily on the first request
+    of the process. So a test that assigns a reduced ``OPENH2O_MODULES`` and
+    then makes the process's first request permanently composes a reduced
+    URLconf — every later test's ``reverse("accounting:…")`` dies with
+    ``NoReverseMatch``, and which tests die depends on collection order.
+
+    These tests are about what the page RENDERS under a module set, not about
+    which routes exist; the droppability harness is what boots a genuinely
+    reduced process. Forcing composition first keeps the two axes separate.
+    """
+    get_resolver().url_patterns
 
 
 class TestOxfordJoin:
@@ -173,3 +212,43 @@ class TestRenderedPages:
             "populates your use areas, wells, and nearby monitoring stations"
             in body
         ), "The wizard sentence lost a noun but did not repair its grammar."
+
+    def test_the_drinking_deployment_opens_with_the_pwsid_card(
+        self, admin_client, settings
+    ):
+        """ISS-092, asserted on the page rather than on the numbering dict.
+
+        Order is asserted, not just presence: presence alone would pass with the
+        card sitting at the BOTTOM of the page, which is the defect inverted.
+        """
+        compose_urlconf_under_the_full_module_set()
+        settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
+        body = admin_client.get("/help/getting-started/").content.decode()
+
+        assert "Onboard Your Water System" in body
+        assert reverse("drinking:onboard") in body
+        assert STEP_CARD.findall(body) == [
+            ("1", "Onboard Your Water System"),
+            ("2", "Define Management Zones"),
+        ]
+
+    def test_the_pwsid_card_is_gone_when_drinking_is_off(
+        self, admin_client, settings
+    ):
+        """The guard's own test, and the belt to Task 2's braces.
+
+        `_FORBIDDEN_VOCABULARY` would also catch this leak, but only on the
+        configurations the droppability harness happens to boot. This asserts it
+        directly, and asserts the thing the harness cannot: that the remaining
+        steps still number from 1 rather than opening on Step 2.
+        """
+        compose_urlconf_under_the_full_module_set()
+        settings.OPENH2O_MODULES = WITHOUT_DRINKING
+        body = admin_client.get("/help/getting-started/").content.decode()
+
+        assert "PWSID" not in body
+        assert "Onboard Your Water System" not in body
+
+        numbered = STEP_CARD.findall(body)
+        assert [int(n) for n, _ in numbered] == list(range(1, len(numbered) + 1))
+        assert numbered[0] == ("1", "Import Your Use Areas")

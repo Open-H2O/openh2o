@@ -115,13 +115,19 @@ class TestGettingStartedNumbering:
     same table, because 88-03's lesson was that gating the nouns and leaving the
     numbers produces a wrong instruction rather than a gap."""
 
-    def test_a_full_deployment_numbers_one_through_ten(self):
+    def test_a_full_deployment_numbers_one_through_eleven(self):
+        # These numbers MOVED, and the move is not drift: 92-01 (ISS-092) added
+        # the ``pwsid`` row to the front of GETTING_STARTED_STEPS, so every step
+        # below it shifted up by one — 1-10 became 1-11, the wizard citation
+        # "1, 2, 8, and 9" became "2, 3, 9, and 10", and the accounting range
+        # "3 through 7" became "4 through 8". One table row moved all three,
+        # which is the whole point of 89-02's machinery.
         from config.views import _getting_started_numbering
 
         result = _getting_started_numbering()
-        assert sorted(result["steps"].values()) == list(range(1, 11))
-        assert result["wizard_cited_steps"] == "1, 2, 8, and 9"
-        assert result["accounting_step_range"] == "3 through 7"
+        assert sorted(result["steps"].values()) == list(range(1, 12))
+        assert result["wizard_cited_steps"] == "2, 3, 9, and 10"
+        assert result["accounting_step_range"] == "4 through 8"
 
     def test_the_citations_only_ever_name_steps_that_render(self, monkeypatch):
         """Every number cited has to be a number on the page.
@@ -138,6 +144,16 @@ class TestGettingStartedNumbering:
             ("parcels", "accounting"),
             ("parcels", "accounting", "surface", "recharge", "wells",
              "datasync", "reporting"),
+            # 92-01: the wizard sentence has to stay correct when the NEWEST
+            # module is the one missing, which is the case a spread written
+            # before `pwsid` existed could not cover.
+            ("drinking",),
+            # The nine-module drinking-water configuration inverted: every
+            # optional domain dropped INCLUDING the new one. This is where the
+            # table is shortest — `zones` alone renders — so it is where an
+            # off-by-one in either citation would show up first.
+            ("drinking", "parcels", "accounting", "surface", "recharge",
+             "wells", "datasync", "reporting"),
         ):
             monkeypatch.setattr(
                 config_views, "is_enabled", lambda name, d=dropped: name not in d
@@ -158,3 +174,22 @@ class TestGettingStartedNumbering:
             if result["accounting_step_range"]:
                 low, high = result["accounting_step_range"].split(" through ")
                 assert int(low) in rendered and int(high) in rendered
+
+    def test_the_drinking_deployment_opens_with_the_pwsid_step(self, monkeypatch):
+        """ISS-092 in its smallest form.
+
+        The nine-module drinking-water flavor — a login, a map and Drinking
+        Water — used to open on "Step 1 · Define Management Zones", offering a
+        utility a map as its first instruction while the action it actually
+        starts with (enter your PWSID) was not on the page at all. The first
+        step now IS that action.
+        """
+        from config import views as config_views
+
+        nine = {
+            "core", "geography", "measurements", "standards",
+            "health", "setup", "infrastructure", "feedback", "drinking",
+        }
+        monkeypatch.setattr(config_views, "is_enabled", lambda name: name in nine)
+        result = config_views._getting_started_numbering()
+        assert result["steps"] == {"pwsid": 1, "zones": 2}
