@@ -287,7 +287,24 @@ def about(request):
 #: through 7") render ABOVE the cards they cite, so the numbers have to exist
 #: before the first card is drawn. Declared here, in page order, exactly like
 #: ``_PAGES`` in the droppability harness — adding a step means adding a row.
+#:
+#: **Why ``pwsid`` is FIRST, and why nobody should "fix" the numbering back.**
+#: Plan 92-01 (ISS-092) added the drinking-water door this page had never
+#: mentioned, and Brent's decision on 2026-07-22 was identity before geography.
+#: The Setup Wizard's GeoJSON upload answers *where*: it draws a ``Boundary``
+#: polygon, and every step after it is a spatial query filtered to that shape. A
+#: PWSID answers *who*: it builds a ``WaterSystem`` out of three EPA Envirofacts
+#: tables, and nothing about it is spatial. A groundwater agency needs the first
+#: question answered; a drinking-water utility needs the second, and on a
+#: nine-module drinking deployment the wizard's own steps are all gated off, so
+#: the page used to open on "Step 1 · Define Management Zones" — a map, offered
+#: to a utility as its first instruction. The cost of putting this row first is
+#: that every step on a full 16-module deployment shifts up by one (1-10 became
+#: 1-11, and both cross-reference strings moved with them). That cost was
+#: accepted knowingly: it is the price of one page that is honest in both
+#: configurations rather than one that is honest in the larger of them.
 GETTING_STARTED_STEPS = (
+    ("pwsid", "drinking"),
     ("use_areas", "parcels"),
     ("wells", "wells"),
     ("accounts", "accounting"),

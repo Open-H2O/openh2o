@@ -68,6 +68,25 @@
     {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="text-sm" style="color: var(--color-accent);">Run the Setup Wizard &rarr;</a>{% endif %}
   </div>
 
+  {% comment %}92-01 (ISS-092): the drinking-water door, and the FIRST card on
+  the page — identity before geography (Brent, 2026-07-22). The whole card is
+  guarded, not just the link, for the Phase 89 reason: a card whose only action
+  is a 404 is an instruction to visit a page this deployment does not have. The
+  eyebrow carries no "the Setup Wizard can do this for you" suffix because the
+  wizard genuinely cannot do this one, and no "start here" because on a full
+  deployment a groundwater agency reads this card first and "start here" would
+  be wrong for them.{% endcomment %}{% if 'drinking' in enabled_modules %}<div class="card-raised step-card">
+    <span class="step-number">
+      {% include "partials/icons/_onboard.html" %}
+    </span>
+    <div class="step-body">
+      <span class="step-eyebrow">Step {{ steps.pwsid }}</span>
+      <h2 class="section-header">Onboard Your Water System</h2>
+      <p class="text-secondary text-base">Enter your PWSID &mdash; the identifier the regulator carries for a public water system &mdash; and OpenH2O looks it up in EPA&rsquo;s Envirofacts record: the regulatory details, the facilities, and the sampling points. Nothing is written until you review what came back and confirm.</p>
+      <a href="{% url 'drinking:onboard' %}" class="text-sm" style="color: var(--color-accent);">Go to Onboard System &rarr;</a>
+    </div>
+  </div>{% endif %}
+
   {% comment %}
     Phase 89: the whole step card is guarded, not just its link. A step card
     whose only action is "Go to Use Areas" is an instruction to visit a page
