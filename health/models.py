@@ -5,9 +5,14 @@ System self-check records.
 Defines HealthCheckResult: one timestamped row per subsystem check (database,
 disk, sync freshness, ledger integrity, orphans, cache duplication, POD
 fractions, unallocated delivery, period alignment, ET/meter agreement, SSL,
-Docker, migrations) with a green/yellow/red status, a message, and JSON details.
-The health dashboard reads the latest row per category to report overall system
-status.
+Docker, migrations) with a green/yellow/red/skipped status, a message, and JSON
+details. The health dashboard reads the latest row per category to report
+overall system status.
+
+``skipped`` means the check's subject belongs to a module this deployment does
+not run. It is excluded from the healthy denominator and from every rollup, so
+a reduced deployment reports "N applicable of M" rather than scoring its absent
+subsystems as healthy.
 """
 from django.contrib.gis.db import models
 
@@ -36,6 +41,12 @@ class HealthCheckResult(models.Model):
         ("green", "Green"),
         ("yellow", "Yellow"),
         ("red", "Red"),
+        # A check whose whole subject belongs to a module this deployment does
+        # not run. Its own alarm level, not a shade of green: counting a skipped
+        # check as healthy let switching modules off RAISE the reported score
+        # (ISS-087). Choices are not enforced by Postgres, so this costs one
+        # choices-only AlterField and no column change.
+        ("skipped", "Skipped"),
     ]
 
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
