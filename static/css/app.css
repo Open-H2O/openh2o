@@ -3402,6 +3402,54 @@ div[id$="-map"] {
     }
 }
 
+/* -- Drinking onboarding: review/result readability (ISS-078) ------------ */
+
+/* The lookup review and the commit result are each several `.card-raised`
+   panels swapped in at once. `.card-raised` carries padding but no margin, and
+   the swap target is a single `.page-stack` child, so its stacked panels butted
+   together with no gap (measured 0px on staging). Give the two swap areas the
+   same card rhythm `.page-stack` uses, so the swapped-in panels breathe like
+   every other stacked card on the site. */
+#onboard-area,
+#import-area {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* A preview (read from EPA, nothing written) and a saved record (written to
+   this instance) shared the same badge row and skip table, so an operator could
+   not tell one from the other — the whole reason someone asks "did it actually
+   look it up, or was it already there?". This banner leads each screen's first
+   card and names the state outright. Preview uses the house not-committed idiom
+   (dashed edge, informational blue); saved is solid and forest-green, matching
+   the "Created" badge beside it. */
+.onboard-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-md);
+    border-radius: var(--radius-md);
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+.onboard-status svg {
+    flex-shrink: 0;
+}
+.onboard-status--preview {
+    border: 1.5px dashed rgba(32, 137, 187, 0.55);
+    background-color: oklch(0.45 0.12 240 / 0.10);
+    color: var(--color-blue-bright);
+}
+.onboard-status--saved {
+    border: 1.5px solid oklch(0.45 0.12 155 / 0.5);
+    background-color: oklch(0.45 0.12 155 / 0.15);
+    color: var(--forest-400);
+}
+
 /* -- Phase 75: accounting / reporting page polish ------------------------ */
 
 /* Methodology step cards — the ordered calculation chain. Each step gets a
