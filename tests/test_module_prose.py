@@ -252,3 +252,35 @@ class TestRenderedPages:
         numbered = STEP_CARD.findall(body)
         assert [int(n) for n, _ in numbered] == list(range(1, len(numbered) + 1))
         assert numbered[0] == ("1", "Import Your Use Areas")
+
+    def test_the_drinking_wizard_card_names_the_boundary(
+        self, admin_client, settings
+    ):
+        """ISS-093, pinned on BOTH branches.
+
+        On a drinking-only deployment the Setup Wizard imports nothing, so the
+        enumerating sentence gates off. Option (b): the surviving card names the
+        one thing the wizard still does there — it draws the `Boundary` polygon
+        the map and every geography query hang off — rather than collapsing to
+        the "Read this page…" tail alone.
+
+        The negative assertion on the full set is the load-bearing half: it is
+        what keeps 92-01's byte-identical full render enforceable in CI. A future
+        edit that leaked the clause out of the `else` branch onto the full page
+        would move that baseline and fail HERE, rather than slip through green on
+        a test that only checked the drinking branch.
+        """
+        compose_urlconf_under_the_full_module_set()
+
+        settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
+        drinking = admin_client.get("/help/getting-started/").content.decode()
+        assert "draws your district boundary" in drinking, (
+            "The drinking-only Setup Wizard card no longer names the boundary."
+        )
+
+        settings.OPENH2O_MODULES = list(mod.ALL_MODULE_NAMES)
+        full = admin_client.get("/help/getting-started/").content.decode()
+        assert "draws your district boundary" not in full, (
+            "The ISS-093 clause leaked out of the else branch onto the full "
+            "deployment — the byte-identical full render is broken."
+        )
