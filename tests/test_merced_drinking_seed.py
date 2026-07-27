@@ -46,12 +46,26 @@ def _data(name):
     return os.path.join(DATA_DIR, name)
 
 
+@pytest.fixture(scope="module")
+def _seeded_once(django_db_setup, django_db_blocker):
+    """Run the real seed ONCE for the whole module.
+
+    22k results through the importer is roughly a minute; doing it per test put
+    this module over ten. The rows are written outside any test's transaction,
+    via ``django_db_blocker``, and each test then gets the ordinary
+    function-scoped ``db`` fixture — so a test that flushes the system or runs
+    ``seed_merced_details`` mutates inside its own transaction and is rolled
+    back at the end of it. Module-scoped data, function-scoped isolation; the
+    mutating tests below are genuinely independent of each other and of order.
+    """
+    with django_db_blocker.unblock():
+        call_command("seed_well_types")
+        call_command("seed_drinking")
+        call_command("seed_merced_drinking")
+
+
 @pytest.fixture
-def seeded(db):
-    """The vocabulary prerequisites, then the seed itself."""
-    call_command("seed_well_types")
-    call_command("seed_drinking")
-    call_command("seed_merced_drinking")
+def seeded(_seeded_once, db):
     return WaterSystem.objects.get(pwsid=PWSID)
 
 
@@ -112,6 +126,18 @@ def test_seeds_the_real_city_of_merced(seeded):
     assert seeded.population_residential is None or seeded.population_residential > 0
     # 100% groundwater is the reason this system belongs in this subbasin.
     assert seeded.primary_source_code.startswith("GW")
+
+
+@pytest.mark.django_db
+def test_state_only_fields_come_from_the_state_file(seeded):
+    """EPA is the authority on federal facts, DDW on state ones.
+
+    Neither of these appears in any Envirofacts table, which is why the
+    onboarding wizard leaves both blank; both appear on every row of the
+    state's own lab export.
+    """
+    assert seeded.regulating_agency == "DISTRICT 11 - MERCED"
+    assert seeded.state_classification == "C"
 
 
 @pytest.mark.django_db

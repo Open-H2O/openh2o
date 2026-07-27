@@ -135,9 +135,11 @@ class Command(BaseCommand):
 
         self._seed_cache()
         system = self._seed_system()
+        rows, columns = self._load_lab_file()
+        self._apply_state_fields(system, rows)
         self._seed_wells(system)
-        points = self._seed_points(system)
-        self._seed_results(points)
+        self._seed_points(system)
+        self._seed_results(rows, columns)
 
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced drinking-water demo seeded: {PWSID} with "
@@ -195,6 +197,53 @@ class Command(BaseCommand):
         for warning in result.warnings:
             self.stdout.write(self.style.WARNING(f"    {warning}"))
         return result.system
+
+    # -- 2b. the fields only the state publishes -----------------------------
+
+    def _apply_state_fields(self, system, rows):
+        """Fill the two identity fields EPA does not carry, from the state file.
+
+        A neat division the data itself draws: the federal extract is the
+        authority on federal facts (PWS type, owner type, primary source), and
+        the state's own export is the authority on state ones. DDW's district
+        office and the state water-system classification appear in every row of
+        the lab file and in no Envirofacts table, which is why the wizard leaves
+        both blank and why filling them here is not overriding anything.
+
+        Safe against a re-run: neither field is in
+        ``envirofacts_mapping._SYSTEM_REFRESHABLE_FIELDS``, so ``commit_system``
+        never writes them back to blank.
+
+        Refuses a file that disagrees with itself rather than taking the first
+        row's word for it — one system's rows should carry one answer, and if
+        they do not, the assumption behind this whole method is wrong.
+        """
+        updates = {}
+        for field, column in (
+            ("regulating_agency", "Regulating Agency"),
+            ("state_classification", "State Water System Classification"),
+        ):
+            values = {(row.get(column) or "").strip() for row in rows}
+            values.discard("")
+            if not values:
+                continue
+            if len(values) > 1:
+                raise CommandError(
+                    f"The lab file reports {len(values)} different values for "
+                    f"'{column}' on one system: {sorted(values)}. Refusing to "
+                    "pick one."
+                )
+            updates[field] = values.pop()
+
+        if not updates:
+            return
+        for field, value in updates.items():
+            setattr(system, field, value)
+        system.save(update_fields=list(updates))
+        self.stdout.write(
+            "  State record: "
+            + ", ".join(f"{k} = {v}" for k, v in sorted(updates.items()))
+        )
 
     # -- 3. municipal wells --------------------------------------------------
 
@@ -340,12 +389,11 @@ class Command(BaseCommand):
         self.stdout.write(
             f"  Sampling points: {created} created, {existing} already present."
         )
-        return SamplingPoint.objects.filter(facility__system=system)
 
     # -- 5. lab results ------------------------------------------------------
 
-    def _seed_results(self, points):
-        """Import the committed SDWIS4 slice through the importer itself."""
+    def _load_lab_file(self):
+        """Read the committed SDWIS4 slice once; both later steps use it."""
         path = _data_path("merced_lab_results_3yr.tab.gz")
         if not os.path.exists(path):
             raise CommandError(
@@ -358,6 +406,12 @@ class Command(BaseCommand):
             columns = reader.fieldnames or []
             rows = list(reader)
 
+        if not rows:
+            raise CommandError(f"{path} carries no rows.")
+        return rows, columns
+
+    def _seed_results(self, rows, columns):
+        """Import the committed SDWIS4 slice through the importer itself."""
         mapping = importer.auto_map_columns(columns)
         missing = importer.missing_required(mapping)
         if missing:
