@@ -274,6 +274,23 @@ def about(request):
     return render(request, "about.html", {"logo_exists": os.path.isfile(logo_path)})
 
 
+def demonstration_data(request):
+    """Source-by-source account of what is real in this demo and what is not.
+
+    Deliberately reachable with the demonstration flag OFF and on a real agency
+    deployment. A page that vanished when the flag flipped would break every
+    link anyone had ever shared to it, including one pasted in answer to a
+    "this data is fake" accusation — which is the moment it most needs to
+    resolve.
+
+    Static prose rather than a registry walked at render time. The honest
+    provenance of a seeded row is a judgement about where it came from, not a
+    property the row carries, so deriving this page from the database would
+    invent a precision the data does not have.
+    """
+    return render(request, "about_demonstration_data.html")
+
+
 #: The Getting Started cards, in page order, paired with the module each one
 #: needs to render at all. ``None`` means the card renders in every valid
 #: configuration.

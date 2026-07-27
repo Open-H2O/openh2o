@@ -1612,6 +1612,46 @@ html { color-scheme: dark; }
     font-weight: 700;
 }
 
+/* Site-wide demonstration notice (partials/_demonstration_banner.html). Sits at
+   the top of the content area on every page while SiteConfig.demonstration_mode
+   is on, so a screenshot of any screen carries it.
+
+   No colored stripe and no tint: DESIGN.md reserves gold for primary actions and
+   calls a tinted accent box around a lone paragraph the generic look to avoid.
+   This is the plain house panel, distinguished only by the badge and a quieter
+   type size — a notice ABOUT the data, not another status on it. */
+.demo-notice {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+}
+
+.demo-notice .badge-demo {
+    flex: 0 0 auto;
+}
+
+.demo-notice-text {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+}
+
+.demo-notice-text strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .demo-notice {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-xs);
+    }
+}
+
 /* -- Empty state --------------------------------------------------------- */
 
 .empty-state {

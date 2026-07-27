@@ -66,7 +66,7 @@
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <!-- App layout and component styles -->
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=66">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=67">
 
     <!-- MapLibre GL JS (available in map pages via block) -->
     {% block map_styles %}{% endblock %}
@@ -107,6 +107,12 @@
                   silently did not.
                 {% endcomment %}
                 <h1 class="sr-only">{% block page_title %}Open Water Accounting Platform{% endblock %}</h1>
+                {% comment %}
+                  Inside <main>, above the page content, so a full-page capture
+                  of any screen carries it. Emits nothing when
+                  SiteConfig.demonstration_mode is off.
+                {% endcomment %}
+                {% include "partials/_demonstration_banner.html" %}
                 {% block content %}{% endblock %}
             </main>
 

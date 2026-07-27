@@ -1,0 +1,41 @@
+{% comment %}
+The site-wide demonstration notice.
+
+WHY IT IS SITE-WIDE AND NOT PER-PAGE. The existing `_demo_marker.html` pill is
+good at what it does — it disambiguates one value that reads like a real legal
+action — but it is small, it sits beside a specific field, and it appears on six
+surfaces. The risk it does not cover is the one that matters most here: someone
+screenshots a data table from this public demo and presents it as a real
+regulatory record. A label that can be cropped out, or that never rendered on
+that page at all, is no defence. This renders at the top of the content area on
+every page, so any capture of the page carries it.
+
+WHY IT NAMES BOTH ANSWERS. "This is a demo" is not, on its own, the honest
+sentence for this deployment. The Merced demonstration mixes two kinds of data:
+published public record (a real water system, real EPA facilities, real state
+laboratory results) and invented rows built to show how the accounting works
+(the agricultural wells, the ledgers, the allocations, the account contacts).
+Saying only "sample data" would misdescribe the first; saying only "real data"
+would misdescribe the second. So the banner says both and links to the page that
+goes source by source.
+
+Flag-gated on SiteConfig.demonstration_mode, which reaches here through
+core.context_processors.site_config. A real agency deployment has the flag off
+and emits nothing at all — not a hidden element, nothing.
+
+Design: `.card-raised` with no coloured left stripe, which is the house way to
+lift a passage (DESIGN.md). Deliberately NOT gold: gold is for primary actions
+in this design system, and a notice is not an action. Deliberately not a bespoke
+tinted callout box either — that is the generic look DESIGN.md tells us to
+avoid.
+{% endcomment %}{% if site_config.demonstration_mode %}
+<div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
+  <span class="badge badge-pill badge-demo">Demo</span>
+  <p class="demo-notice-text">
+    This is a demonstration instance, not a live agency system. It mixes
+    <strong>real published records</strong> with <strong>invented sample
+    data</strong>, and every screen says which is which.
+    <a href="{% url 'demonstration_data' %}" class="prose-link">See what is real and what is not</a>.
+  </p>
+</div>
+{% endif %}

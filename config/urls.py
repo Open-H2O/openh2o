@@ -5,7 +5,7 @@ from django.urls import include, path
 
 from core.modules import enabled_modules, url_specs_for
 
-from config.views import about, index, getting_started, glossary, budgets_allocations, surface_deliveries, water_balances, methods, settings_explained, profile, set_nav_mode, global_search
+from config.views import about, demonstration_data, index, getting_started, glossary, budgets_allocations, surface_deliveries, water_balances, methods, settings_explained, profile, set_nav_mode, global_search
 
 # Module-owned routes, composed from OPENH2O_MODULES via the registry, in the
 # same prefix order the hand-written list used. A DISABLED module's paths are
@@ -25,6 +25,13 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
 ] + _module_urls + [
     path("about/", about, name="about"),
+    # Reachable regardless of demonstration_mode: a link shared in answer to
+    # "this data is fake" must not 404 once the flag is off.
+    path(
+        "about/demonstration-data/",
+        demonstration_data,
+        name="demonstration_data",
+    ),
     path("help/getting-started/", getting_started, name="getting_started"),
     path("help/glossary/", glossary, name="glossary"),
     path("help/budgets-allocations/", budgets_allocations, name="budgets_allocations"),
