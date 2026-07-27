@@ -43,7 +43,19 @@ Order matters:
                               basins, distributed as GROUNDWATER credits across the
                               overlying GSA's parcels. Sits ON TOP of the accounting
                               layer (needs the WY 2024-2025 ReportingPeriod + parcels
-                              from step 8), so it runs LAST.
+                              from step 8).
+ 10. seed_merced_details   — descriptive detail fields (well construction, parcel
+                              addresses, CalWATRS PINs, account contacts) so every
+                              detail page reads complete. Invented mock data, which
+                              is why step 11's real wells are excluded from it.
+ 11. seed_merced_drinking  — the drinking-water domain for the same subbasin: the
+                              City of Merced (CA2410009), its facilities, its
+                              municipal supply wells and three years of its real
+                              published lab results. Runs LAST: it needs the well
+                              types and analyte vocabulary from ``seed_data``, and
+                              it must follow seed_merced_details, whose invented
+                              registry numbers must never land on a real utility's
+                              wells.
 
 Note: demand-aware surface sizing in step 8 reads the OpenETCache, so in a deployment
 run ``sync_openet_parcels``/``sync_precip_parcels`` (and ``run_calculations`` for
@@ -85,6 +97,15 @@ SEQUENCE = [
     # Runs after the ledger rebuild because it fills account contacts; fill-only-
     # when-blank + deterministic, so it's idempotent and never clobbers real data.
     ("seed_merced_details", {}),
+    # The drinking-water half of the same subbasin: the City of Merced
+    # (CA2410009), its facilities, its municipal supply wells and three years
+    # of its real published lab results. Runs LAST for two reasons. It needs
+    # the wells module's `Production` well type and the `drinking` analyte
+    # vocabulary (both from `seed_data`, which precedes this whole sequence),
+    # and it must land AFTER `seed_merced_details` — that command fills blank
+    # well fields with invented registry numbers, and it now skips `MER-PWS-*`
+    # for exactly that reason. Idempotent; `--flush` rebuilds it cleanly.
+    ("seed_merced_drinking", {}),
 ]
 
 

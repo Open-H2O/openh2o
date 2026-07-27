@@ -1,0 +1,17 @@
+[
+ {
+  "ansi_entity_code": null,
+  "area_type_code": "CN,CT",
+  "city_served": "MERCED",
+  "county_served": "Merced",
+  "epa_region": "09",
+  "geo_id": null,
+  "primacy_agency_code": "CA",
+  "pws_activity_code": "A",
+  "pws_type_code": "CWS",
+  "pwsid": "CA2410009",
+  "state_served": "CA",
+  "tribal_code": null,
+  "zip_code_served": null
+ }
+]

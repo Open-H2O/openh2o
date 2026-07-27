@@ -78,7 +78,17 @@ class Command(BaseCommand):
         from wells.models import Well, WellIrrigatedParcel
 
         count = 0
-        for w in Well.objects.all():
+        # The City of Merced's supply wells are EXCLUDED, and this is the one
+        # exclusion in this command that is not a matter of taste. Everything
+        # here is invented — a random DWR Well Completion Report number, a
+        # random State Well Number, a random depth and casing. On the demo's
+        # agricultural wells that is honest mock data on an invented feature.
+        # On `MER-PWS-*` it would attach fabricated registry identifiers to a
+        # real, named public water system's real wells, published on a public
+        # demo. Those wells carry only what the state and EPA actually publish
+        # (`drinking/management/commands/seed_merced_drinking.py`), and a blank
+        # field there is a deliberate "not published", not a gap to fill.
+        for w in Well.objects.exclude(well_registration_id__startswith="MER-PWS-"):
             rng = random.Random(f"well:{w.well_registration_id}")
             changed = []
 

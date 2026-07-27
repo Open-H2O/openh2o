@@ -1,0 +1,212 @@
+[
+ {
+  "ps_code": "CA2410009_001_001",
+  "name": "WELL 01A - RAW",
+  "facility_id": "001",
+  "facility_type": "WL",
+  "latitude": 37.314454,
+  "longitude": -120.475983
+ },
+ {
+  "ps_code": "CA2410009_003_003",
+  "name": "WELL 01C - RAW",
+  "facility_id": "003",
+  "facility_type": "WL",
+  "latitude": 37.314111,
+  "longitude": -120.476216
+ },
+ {
+  "ps_code": "CA2410009_004_004",
+  "name": "WELL 02A - RAW",
+  "facility_id": "004",
+  "facility_type": "WL",
+  "latitude": 37.290352,
+  "longitude": -120.452441
+ },
+ {
+  "ps_code": "CA2410009_005_005",
+  "name": "WELL 02B - RAW",
+  "facility_id": "005",
+  "facility_type": "WL",
+  "latitude": 37.290475,
+  "longitude": -120.452441
+ },
+ {
+  "ps_code": "CA2410009_008_008",
+  "name": "WELL 03C - RAW",
+  "facility_id": "008",
+  "facility_type": "WL",
+  "latitude": 37.296378,
+  "longitude": -120.486426
+ },
+ {
+  "ps_code": "CA2410009_011_011",
+  "name": "WELL 05B - RAW",
+  "facility_id": "011",
+  "facility_type": "WL",
+  "latitude": 37.304166,
+  "longitude": -120.492196
+ },
+ {
+  "ps_code": "CA2410009_015_015",
+  "name": "WELL 08 - RAW",
+  "facility_id": "015",
+  "facility_type": "WL",
+  "latitude": 37.308008,
+  "longitude": -120.5036
+ },
+ {
+  "ps_code": "CA2410009_016_016",
+  "name": "WELL 09 - RAW",
+  "facility_id": "016",
+  "facility_type": "WL",
+  "latitude": 37.326102,
+  "longitude": -120.487923
+ },
+ {
+  "ps_code": "CA2410009_019_019",
+  "name": "WELL 11 - RAW",
+  "facility_id": "019",
+  "facility_type": "WL",
+  "latitude": 37.331095,
+  "longitude": -120.46667
+ },
+ {
+  "ps_code": "CA2410009_020_020",
+  "name": "WELL 13 - RAW",
+  "facility_id": "020",
+  "facility_type": "WL",
+  "latitude": 37.280021,
+  "longitude": -120.435927
+ },
+ {
+  "ps_code": "CA2410009_021_021",
+  "name": "WELL 14 - RAW",
+  "facility_id": "021",
+  "facility_type": "WL",
+  "latitude": 37.29529,
+  "longitude": -120.517478
+ },
+ {
+  "ps_code": "CA2410009_022_022",
+  "name": "WELL 07C - RAW",
+  "facility_id": "022",
+  "facility_type": "WL",
+  "latitude": 37.324758,
+  "longitude": -120.443267
+ },
+ {
+  "ps_code": "CA2410009_023_023",
+  "name": "WELL 02C - RAW",
+  "facility_id": "023",
+  "facility_type": "WL",
+  "latitude": 37.28997,
+  "longitude": -120.45246
+ },
+ {
+  "ps_code": "CA2410009_029_029",
+  "name": "WELL 03C - PCE GAC TRT",
+  "facility_id": "029",
+  "facility_type": "TP"
+ },
+ {
+  "ps_code": "CA2410009_041_041",
+  "name": "WELL 10-R2 - RAW",
+  "facility_id": "041",
+  "facility_type": "WL",
+  "latitude": 37.28081,
+  "longitude": -120.415051,
+  "screen_top_ft": 440.0,
+  "screen_bottom_ft": 536.0
+ },
+ {
+  "ps_code": "CA2410009_042_042",
+  "name": "WELL 16 - RAW",
+  "facility_id": "042",
+  "facility_type": "WL",
+  "latitude": 37.347033,
+  "longitude": -120.46995,
+  "screen_top_ft": 264.0,
+  "screen_bottom_ft": 328.0
+ },
+ {
+  "ps_code": "CA2410009_043_043",
+  "name": "WELL 17 - UC MERCED - RAW",
+  "facility_id": "043",
+  "facility_type": "WL",
+  "latitude": 37.361438,
+  "longitude": -120.430058
+ },
+ {
+  "ps_code": "CA2410009_048_048",
+  "name": "WELL 15 - RAW",
+  "facility_id": "048",
+  "facility_type": "WL",
+  "latitude": 37.326645,
+  "longitude": -120.504201,
+  "screen_top_ft": 256.0,
+  "screen_bottom_ft": 404.0
+ },
+ {
+  "ps_code": "CA2410009_049_049",
+  "name": "WELL 18 - RAW",
+  "facility_id": "049",
+  "facility_type": "WL",
+  "latitude": 37.316111,
+  "longitude": -120.463333
+ },
+ {
+  "ps_code": "CA2410009_054_054",
+  "name": "WELL 19 - RAW",
+  "facility_id": "054",
+  "facility_type": "WL",
+  "latitude": 37.306388,
+  "longitude": -120.450833
+ },
+ {
+  "ps_code": "CA2410009_057_057",
+  "name": "WELL 20 - RAW",
+  "facility_id": "057",
+  "facility_type": "WL",
+  "latitude": 37.273888,
+  "longitude": -120.470277
+ },
+ {
+  "ps_code": "CA2410009_058_058",
+  "name": "WELL 21 - RAW",
+  "facility_id": "058",
+  "facility_type": "WL",
+  "latitude": 37.360349,
+  "longitude": -120.469531
+ },
+ {
+  "ps_code": "CA2410009_DST_900",
+  "name": "DBPR Sample",
+  "facility_id": "DST",
+  "facility_type": "DS"
+ },
+ {
+  "ps_code": "CA2410009_DST_901",
+  "name": "DBPR Sample",
+  "facility_id": "DST",
+  "facility_type": "DS"
+ },
+ {
+  "ps_code": "CA2410009_DST_902",
+  "name": "DBPR Sample",
+  "facility_id": "DST",
+  "facility_type": "DS"
+ },
+ {
+  "ps_code": "CA2410009_DST_903",
+  "name": "DBPR Sample",
+  "facility_id": "DST",
+  "facility_type": "DS"
+ },
+ {
+  "ps_code": "CA2410009_DST_LCR",
+  "name": "LCR Tap Sample",
+  "facility_id": "DST",
+  "facility_type": "DS"
+ }
+]
