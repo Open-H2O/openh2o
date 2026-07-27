@@ -267,18 +267,43 @@ def test_rerunning_is_a_no_op(seeded):
 
 
 @pytest.mark.django_db
-def test_flush_removes_the_system_but_keeps_the_vocabulary(seeded):
-    """Analytes are shared reference data owned by seed_drinking, not demo rows."""
+def test_flush_rebuilds_cleanly_and_keeps_the_vocabulary(seeded):
+    """``--flush`` is delete-then-reseed, matching ``seed_demo_data --flush``.
+
+    Two things have to hold, and a count comparison alone proves neither: the
+    importer's duplicate guard would leave the counts identical even if the
+    flush deleted nothing at all. So this checks that the system row was really
+    destroyed and rebuilt (its primary key changes), and that a partial
+    deletion beforehand is fully restored afterwards.
+
+    Analytes and their limits must survive. They are shared reference data
+    owned by ``seed_drinking``, and ``SampleResult.analyte`` is PROTECT
+    precisely so lab evidence cannot be lost to a vocabulary cleanup.
+    """
     from drinking.models import Analyte
 
     analytes_before = Analyte.objects.count()
+    results_before = SampleResult.objects.count()
+    system_pk_before = seeded.pk
     assert analytes_before > 0
+
+    # Damage the demo, so a flush that quietly did nothing cannot pass.
+    # Sliced through pk__in because Django refuses .delete() on a sliced
+    # queryset.
+    doomed = list(
+        SampleResult.objects.filter(
+            event__sampling_point__facility__system=seeded
+        ).order_by("pk").values_list("pk", flat=True)[:500]
+    )
+    SampleResult.objects.filter(pk__in=doomed).delete()
+    assert SampleResult.objects.count() < results_before
 
     call_command("seed_merced_drinking", flush=True)
 
-    assert not WaterSystem.objects.filter(pwsid=PWSID).exists()
-    assert not SampleResult.objects.exists()
-    assert not Well.objects.filter(
+    rebuilt = WaterSystem.objects.get(pwsid=PWSID)
+    assert rebuilt.pk != system_pk_before, "the system row was never deleted"
+    assert SampleResult.objects.count() == results_before
+    assert Well.objects.filter(
         well_registration_id__startswith="MER-PWS-"
-    ).exists()
+    ).count() == 21
     assert Analyte.objects.count() == analytes_before

@@ -268,6 +268,7 @@ class Command(BaseCommand):
             )
             return
 
+        from django.contrib.gis.geos import Point
         from wells.models import Well, WellType
 
         well_type = WellType.objects.filter(name="Production").first()
@@ -290,8 +291,6 @@ class Command(BaseCommand):
                     "no well created"
                 ))
                 continue
-
-            from django.contrib.gis.geos import Point
 
             defaults = {
                 # The state's own name for the facility, which is the name the
