@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Seed the two real Merced Irrigation District recharge basins.
+"""Seed the demo district's two recharge basins.
+
+The basins, their footprints and their recharge volumes are invented, so their
+operator is the demonstration's fictional Halvern Irrigation District (Phase
+97). The canals they sit beside are real published geography and keep their
+real names.
 
 This command kills the synthetic-square anti-pattern named by the v1.9
 demonstration: a naive seed builds spreading basins with
@@ -52,7 +57,7 @@ BASIN_CONFIGS = [
         "lat": 37.336,
         "acres": 110.0,
         "capacity_acre_feet": Decimal("550.0"),
-        "operator": "Merced Irrigation District",
+        "operator": "Halvern Irrigation District",
         "notes": (
             "Spreading basin on open cropland in the Cressey-Winton area of "
             "eastern Merced County, beside a Merced Irrigation District canal. "
@@ -67,7 +72,7 @@ BASIN_CONFIGS = [
         "lat": 37.125,
         "acres": 85.0,
         "capacity_acre_feet": Decimal("425.0"),
-        "operator": "Merced Irrigation District",
+        "operator": "Halvern Irrigation District",
         "notes": (
             "Spreading basin on open cropland in the El Nido area of the "
             "southern Merced Subbasin, beside a Merced Irrigation District "
@@ -81,7 +86,7 @@ BASIN_CONFIGS = [
 
 class Command(BaseCommand):
     help = (
-        "Seed the two real Merced Irrigation District recharge basins "
+        "Seed the demo district's two recharge basins "
         "(Cressey-Winton ~20 ac, El Nido ~18 ac) at real coordinates with "
         "true-area footprints. Idempotent; additive (does not touch Demo Valley)."
     )

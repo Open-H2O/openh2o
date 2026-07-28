@@ -157,7 +157,7 @@ CURTAILMENT_ORDER = {
 }
 
 # --- Managed-recharge domain (Phase F-recharge) -----------------------------
-# The two REAL Merced Irrigation District spreading basins (from seed_merced_recharge:
+# The demo district's two spreading basins (from seed_merced_recharge:
 # Cressey-Winton ~110 ac / 550 AF, El Nido ~85 ac / 425 AF), each placed on open
 # cropland beside an MID canal that fills it. The basin↔POD link ties each basin to
 # the surface diversion that feeds it — a data link surfaced on the detail page, not a
@@ -171,7 +171,7 @@ RECHARGE_SITES = {
     "MER-RB-002": ("El Nido Recharge Basin", "spreading_basin",
                    -120.498, 37.125, 85.0, "425.0", "MER-POD-007"),
 }
-RECHARGE_OPERATOR = "Merced Irrigation District"
+RECHARGE_OPERATOR = "Halvern Irrigation District"
 
 # Wet-season recharge schedule for WY 2024-2025 (mirrors seed_merced_recharge_events):
 # storm-driven, weighted to mid-winter; (event_date, fraction-of-capacity). Fractions
@@ -216,7 +216,7 @@ RECHARGE_MEASUREMENTS = {
 # from the generated wells is simply skipped. The NGVD29 row exercises the legacy-datum path.
 # Tuple: (monitoringAgency, measurementFrequency, referenceElevationFt, verticalDatum, notes).
 MONITORING_WELLS = {
-    "MER-W-001": ("Merced Irrigation District", "Monthly", "182.40", "NAVD88",
+    "MER-W-001": ("Halvern Irrigation District", "Monthly", "182.40", "NAVD88",
                   "CASGEM voluntary monitoring point; manual sounder reading."),
     "MER-W-002": ("Halvern Valley GSA", "Quarterly", "176.10", "NAVD88",
                   "Representative monitoring well for the GSA's spring/fall sweep."),

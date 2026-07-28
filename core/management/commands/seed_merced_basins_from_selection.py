@@ -32,8 +32,9 @@ REPLACES seed_merced_recharge in the seed sequence; runs AFTER
 seed_merced_parcels_from_selection (it needs MER-POD-009) and BEFORE
 seed_merced_recharge_events (which deposits the managed/storm recharge).
 
-Idempotent + Merced-scoped. A re-run wipes Merced Irrigation District recharge
-areas (old hardcoded AND prior selection runs, keyed on operator), their POD
+Idempotent + Merced-scoped. A re-run wipes the demo district's recharge areas
+(old hardcoded AND prior selection runs, keyed on operator — including the
+operator names this demo used before Phase 97 renamed them), their POD
 links, the recharge-intake PODs this command owns (MER-BPOD-*), and ONLY the
 managed ``basin_recharge_pool`` slice for the Merced GSA zones — never the
 engine's ``incidental_recharge_pool`` or the rollover's ``allocation_carryover``
@@ -60,8 +61,18 @@ RIVER_FIXTURE = os.path.join(DATA_DIR, "selected_river_ag_parcels.geojson")
 
 # Every Merced recharge area carries this operator — the single, readable key the
 # wipe and the recharge-events seed use to find "the Merced basins" without
-# touching Demo Valley ("Demo Valley GSA").
-MID_OPERATOR = "Merced Irrigation District"
+# touching Demo Valley ("Demo Valley GSA"). Fictional: the basins and their
+# recharge volumes are invented, so a real district must not be named as their
+# operator (Phase 97).
+DEMO_OPERATOR = "Halvern Irrigation District"
+# One-time migration key, added 2026-07-28 (Phase 97-02). The operator string IS
+# the teardown selection key, so renaming it alone would strand every row already
+# written under the old name: `_flush` could no longer see them, and the next seed
+# would ADD a second set of basins beside the orphans. Staging and production were
+# both already seeded under the old string. So the wipe deletes by the current
+# operator AND by every legacy operator. Removable once no deployment predates
+# this rename — until then it is what keeps a re-seed idempotent.
+LEGACY_OPERATORS = ("Merced Irrigation District",)
 # PODs this command owns (the El Nido recharge intakes). The wipe deletes these by
 # prefix so a removed basin never leaves an orphan intake behind. Distinct from
 # the operational MER-POD-### diversions, which this command never deletes.
@@ -144,7 +155,7 @@ class Command(BaseCommand):
                     "geometry": geom,
                     "capacity_acre_feet": self._capacity(props, geom),
                     "status": "active",
-                    "operator": MID_OPERATOR,
+                    "operator": DEMO_OPERATOR,
                     "zone": self._gsa_for(geom, gsa_zones),
                     "notes": (
                         f"Pure-recharge spreading basin on open non-agricultural "
@@ -225,7 +236,7 @@ class Command(BaseCommand):
                     "geometry": geom,
                     "capacity_acre_feet": capacity,
                     "status": "active",
-                    "operator": MID_OPERATOR,
+                    "operator": DEMO_OPERATOR,
                     "zone": self._gsa_for(geom, gsa_zones),
                     "notes": (
                         f"Dual-purpose Flood-MAR recharge area on working "
@@ -319,8 +330,9 @@ class Command(BaseCommand):
     def _flush(self, gsa_zones):
         """Remove Merced recharge areas + the intakes/links/pool slice we own.
 
-        Scoped by operator (Merced Irrigation District) so it clears BOTH the old
-        hardcoded basins and any prior selection run, and by the MER-BPOD- prefix
+        Scoped by operator (the current one plus LEGACY_OPERATORS) so it clears
+        BOTH the old hardcoded basins and any prior selection run — including
+        rows written before the Phase 97 rename — and by the MER-BPOD- prefix
         for the intakes — never the operational MER-POD-### diversions, never
         Demo Valley. The pool delete is scoped to ``basin_recharge_pool`` ONLY, so
         the engine's incidental pool and the rollover carryover survive.
@@ -331,8 +343,9 @@ class Command(BaseCommand):
         from surface.models import PointOfDiversion
 
         site_ids = list(
-            RechargeSite.objects.filter(operator=MID_OPERATOR)
-            .values_list("id", flat=True)
+            RechargeSite.objects.filter(
+                operator__in=(DEMO_OPERATOR,) + LEGACY_OPERATORS
+            ).values_list("id", flat=True)
         )
         intake_ids = list(
             PointOfDiversion.objects.filter(name__startswith=BASIN_POD_PREFIX)

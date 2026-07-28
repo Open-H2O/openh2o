@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Seed managed/storm recharge EVENTS on the Merced recharge areas (Phase 52.5-03).
 
-``seed_merced_basins_from_selection`` creates the Merced Irrigation District
-recharge areas (El Nido Canal spreading basins + Merced River Flood-MAR cropland,
+``seed_merced_basins_from_selection`` creates the demo district's recharge
+areas (El Nido Canal spreading basins + Merced River Flood-MAR cropland,
 Phase 62) as ``RechargeSite`` rows but gives them no events, so no managed
 recharge ever reaches the ledger. This command adds wet-season ``RechargeEvent``
 rows for WY 2024-2025 and deposits each to the overlying GSA's basin pool — the
@@ -10,7 +10,7 @@ rows for WY 2024-2025 and deposits each to the overlying GSA's basin pool — th
 half — surface delivered beyond crop demand — is written separately by the calc
 engine; see run_calculations / ISS-052.)
 
-Basins are selected by ``operator`` (Merced Irrigation District) so this picks up
+Basins are selected by ``operator`` (Halvern Irrigation District) so this picks up
 whatever the current hand-pick produced without hardcoding basin names, and never
 touches Demo Valley recharge sites.
 
@@ -48,8 +48,14 @@ WET_SEASON = [
     (date(2025, 3, 15), Decimal("0.20")),
 ]
 # Merced recharge areas all carry this operator (set by the basin seed); the
-# single readable key that finds them without hardcoding names or hitting other demos.
-MID_OPERATOR = "Merced Irrigation District"
+# single readable key that finds them without hardcoding names or hitting other
+# demos. Fictional since Phase 97 — the recharge volumes below are invented, so
+# a real district must not be named as the operator they are attributed to. No
+# legacy-operator fallback here on purpose: the basin seed runs first and
+# migrates the old rows, so a database still carrying the pre-97 operator fails
+# loudly on the "no recharge areas found" branch instead of quietly writing
+# invented volumes onto rows the basin seed is about to delete.
+DEMO_OPERATOR = "Halvern Irrigation District"
 REPORTING_PERIOD_NAME = "WY 2024-2025"
 
 
@@ -82,7 +88,7 @@ class Command(BaseCommand):
 
         basins = list(
             RechargeSite.objects.filter(
-                operator=MID_OPERATOR, site_type="spreading_basin"
+                operator=DEMO_OPERATOR, site_type="spreading_basin"
             )
         )
         if not basins:

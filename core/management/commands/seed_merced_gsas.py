@@ -41,6 +41,24 @@ FIXTURE = os.path.join(
     "data", "merced", "merced_gsas.geojson",
 )
 SUBBASIN = "Merced Subbasin"
+BASIN_CODE = "5-022.04"
+# Identity threshold for the one-time forward rename below: two footprints are
+# the same zone when their intersection-over-union clears this. The fixture
+# geometry is byte-identical to what seeded the row, so a genuine match scores
+# ~1.0 and a wrong pairing scores near 0 — there is no middle ground to tune.
+SAME_ZONE_IOU = 0.99
+
+
+def _fixture_geometry(ft):
+    """The feature's geometry as a valid MultiPolygon."""
+    geom = GEOSGeometry(json.dumps(ft["geometry"]))
+    if geom.geom_type == "Polygon":
+        geom = MultiPolygon(geom)
+    if not geom.valid:
+        geom = geom.buffer(0)
+        if geom.geom_type == "Polygon":
+            geom = MultiPolygon(geom)
+    return geom
 
 
 class Command(BaseCommand):
@@ -59,16 +77,12 @@ class Command(BaseCommand):
         with open(FIXTURE) as f:
             features = json.load(f)["features"]
 
+        self._rename_forward(features)
+
         created = updated = 0
         for ft in features:
             name = ft["properties"]["GSA_Name"]
-            geom = GEOSGeometry(json.dumps(ft["geometry"]))
-            if geom.geom_type == "Polygon":
-                geom = MultiPolygon(geom)
-            if not geom.valid:
-                geom = geom.buffer(0)
-                if geom.geom_type == "Polygon":
-                    geom = MultiPolygon(geom)
+            geom = _fixture_geometry(ft)
             _, was_created = Zone.objects.update_or_create(
                 name=name,
                 defaults={
@@ -89,5 +103,58 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"\nMerced GSAs seeded: {created} created, {updated} updated "
-            f"({Zone.objects.filter(basin_code='5-022.04').count()} total)."
+            f"({Zone.objects.filter(basin_code=BASIN_CODE).count()} total)."
         ))
+
+    def _rename_forward(self, features):
+        """Rename a pre-Phase-97 zone onto its current fixture name.
+
+        One-time migration, added 2026-07-28. Zones are keyed by NAME in
+        ``update_or_create``, so on a deployment seeded before Phase 97 renamed
+        the GSAs, this command would simply CREATE three new zones and leave the
+        three originals behind — still carrying the real agency names the phase
+        exists to remove, and still linked to every parcel, well, recharge site
+        and carryover row that references them. Six zones, half of them the
+        defect. Renaming the row forward keeps every one of those foreign keys.
+
+        Matching is by GEOMETRY, never by a table of the old names: writing the
+        old names into this file to migrate off them would put a real public
+        agency straight back into the repo. The fixture footprint is the same
+        one the stale row was seeded from, so intersection-over-union settles
+        identity outright.
+
+        Safe to leave in place; it is a no-op once every zone matches a fixture
+        name, which is the state of any deployment seeded after Phase 97.
+        """
+        fixture_names = {ft["properties"]["GSA_Name"] for ft in features}
+        stale = list(
+            Zone.objects.filter(
+                zone_type="management_area", basin_code=BASIN_CODE
+            ).exclude(name__in=fixture_names)
+        )
+        if not stale:
+            return
+
+        for ft in features:
+            name = ft["properties"]["GSA_Name"]
+            if not stale or Zone.objects.filter(name=name).exists():
+                continue
+            geom = _fixture_geometry(ft)
+            best, best_iou = None, 0.0
+            for zone in stale:
+                union = zone.geometry.union(geom).area
+                if not union:
+                    continue
+                iou = zone.geometry.intersection(geom).area / union
+                if iou > best_iou:
+                    best, best_iou = zone, iou
+            if best is None or best_iou < SAME_ZONE_IOU:
+                continue
+            old = best.name
+            best.name = name
+            best.save(update_fields=["name"])
+            stale.remove(best)
+            self.stdout.write(self.style.WARNING(
+                f"  Renamed retired zone identity -> {name} "
+                f"(footprint match {best_iou:.4f})"
+            ))

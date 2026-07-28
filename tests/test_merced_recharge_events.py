@@ -67,7 +67,7 @@ def _fixture(capacity="100.0000", areas=("40", "30", "30")):
     # Merced recharge areas (by operator, not hardcoded names — Phase 62).
     basin = RechargeSiteFactory(
         name=BASIN, zone=zone, capacity_acre_feet=Decimal(capacity),
-        operator="Merced Irrigation District", site_type="spreading_basin",
+        operator="Halvern Irrigation District", site_type="spreading_basin",
     )
     return period, zone, parcels, basin
 
