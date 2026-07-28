@@ -160,6 +160,13 @@ def test_provenance_page_is_explicit_about_the_invented_half(client_logged_in):
     # accounting to a named agency, so a real district reappearing here is the
     # defect coming back. Kept as a literal so it fails loudly, not cleverly.
     assert "Merced Irrigation District" not in html
+    # The "real published records" table may claim the GSA BOUNDARIES come from
+    # the SGMA service, because they do. It may not claim the agencies do: Phase
+    # 97 replaced their names, so a reader checking that row against the source
+    # would find three different agencies. Real geometry, invented identity, and
+    # the page has to say which is which.
+    assert "Groundwater Sustainability Agency boundaries" in html
+    assert "names of the agencies and districts" in html
 
 
 @pytest.mark.django_db
