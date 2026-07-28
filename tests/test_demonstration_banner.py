@@ -144,10 +144,22 @@ def test_provenance_page_names_sources_not_just_categories(client_logged_in):
 
 @pytest.mark.django_db
 def test_provenance_page_is_explicit_about_the_invented_half(client_logged_in):
-    """The demo names two real agencies; it must disclaim their figures."""
+    """The demo names ONE real agency now, and the page must say so truthfully.
+
+    It used to name two and disclaim both. Phase 97 took every real district off
+    the invented groundwater accounting, so the page makes the stronger claim
+    instead: the groundwater side names no real water district at all, while the
+    drinking-water side keeps its real utility's name because the chemistry under
+    it is genuine published record.
+    """
     html = client_logged_in.get(reverse("demonstration_data")).content.decode()
     assert "Invented sample data" in html
-    assert "Merced Irrigation District" in html
+    assert "City of Merced" in html
+    assert "names no real water district" in html
+    # The tripwire. This is the one page that connects the demo's invented
+    # accounting to a named agency, so a real district reappearing here is the
+    # defect coming back. Kept as a literal so it fails loudly, not cleverly.
+    assert "Merced Irrigation District" not in html
 
 
 @pytest.mark.django_db
