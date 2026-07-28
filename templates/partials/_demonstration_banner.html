@@ -36,13 +36,24 @@ claim about a different scope: the whole deployment is a demonstration. Sharing
 the class would conflate the two and did in fact turn that test red. The name
 also avoids `badge-demo` as a SUBSTRING, since those assertions match on raw
 HTML.
+ON THE WORDING. Three short sentences, in this order on purpose (rewrite
+2026-07-27, Brent's copy). The first says what the data IS, because a reader who
+stops after one sentence should still leave knowing the mixture exists. The
+second is the way out to the detail. The third is the hard stop, last because
+that is where the eye rests and because it is the sentence that has to survive
+being quoted on its own.
+
+The earlier draft opened "This is a demonstration instance, not a live agency
+system" — accurate, and two clauses of throat-clearing before it said anything a
+reader could use. Shorter is not a style preference here: the notice appears on
+every page, and a notice people learn to skip is a notice that does not work.
 {% endcomment %}{% if site_config.demonstration_mode %}
 <div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
   <span class="badge badge-pill notice-badge">Demo</span>
   <p class="demo-notice-text">
-    This is a demonstration instance, not a live agency system.
-    It mixes <strong>real published records</strong> with <strong>invented sample data</strong>, and every screen says which is which.
-    <a href="{% url 'demonstration_data' %}" class="prose-link">See what is real and what is not</a>.
+    This demo mixes <strong>invented sample data</strong> with <strong>real published records</strong> to show what the platform can do.
+    <a href="{% url 'demonstration_data' %}" class="prose-link">See the difference</a>.
+    <strong>For testing purposes only.</strong>
   </p>
 </div>
 {% endif %}

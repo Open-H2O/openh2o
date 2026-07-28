@@ -22,7 +22,7 @@ from django.urls import reverse
 
 from core.models import SiteConfig
 
-BANNER_PHRASE = "demonstration instance, not a live agency system"
+BANNER_PHRASE = "For testing purposes only"
 
 
 @pytest.fixture
@@ -84,8 +84,21 @@ def test_banner_names_both_kinds_of_data(client_logged_in):
     """
     _set_flag(True)
     html = client_logged_in.get(reverse("about")).content.decode()
-    assert "real published records" in html
     assert "invented sample data" in html
+    assert "real published records" in html
+
+
+@pytest.mark.django_db
+def test_banner_carries_the_hard_stop(client_logged_in):
+    """The sentence that has to survive being quoted on its own.
+
+    Everything else in the notice explains; this one disclaims. If a screenshot
+    crops to a single line, this is the line worth keeping, so it is pinned
+    separately from the wording around it.
+    """
+    _set_flag(True)
+    html = client_logged_in.get(reverse("about")).content.decode()
+    assert "For testing purposes only" in html
 
 
 @pytest.mark.django_db
