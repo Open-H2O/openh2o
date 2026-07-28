@@ -40,6 +40,68 @@ def test_keeps_custom_agency_name():
     assert SiteConfig.objects.get().agency_name == "Mariposa County Water Agency"
 
 
+# ---------------------------------------------------------------------------
+# The ownership gate (Phase 97-02)
+#
+# The demo's agency identity used to be a real agency's name, and both live
+# deployments were already carrying it. A rename alone would have left it there
+# forever: the row matched no branch and fell through to "kept (custom agency
+# name)". The fix keys the forward rename on demonstration_mode — the flag only
+# this seed ever writes — so a seed-owned row renames and a real agency's row
+# does not.
+#
+# The next two tests are one controlled experiment: the SAME agency name, the
+# flag flipped, opposite outcomes. That pairing is the whole guarantee, and
+# without the second one the guard's entire point is unproven.
+# ---------------------------------------------------------------------------
+
+REAL_AGENCY = "Mariposa County Water Agency"
+
+
+@pytest.mark.django_db
+def test_renames_a_seed_owned_identity_forward_whatever_it_is_called():
+    """demonstration_mode=True means the seed owns this row, so it renames.
+
+    This is the deployed-instance case: staging and production both carried the
+    demo's previous agency name with the flag on, and this is what moves them
+    onto the current identity instead of stranding them on the old one.
+    """
+    SiteConfig.objects.create(
+        agency_name=REAL_AGENCY,
+        contact_email="info@mercedsubbasingsa.example.com",
+        demonstration_mode=True,
+    )
+    call_command("seed_merced_base")
+    sc = SiteConfig.objects.get()
+    assert sc.agency_name == "Halvern Valley GSA"
+    assert sc.demonstration_mode is True
+    # The outgoing demo contact address heals alongside the name — leaving it
+    # behind is exactly how ISS-067 happened the first time.
+    assert sc.contact_email == "info@halvernvalleygsa.example.com"
+
+
+@pytest.mark.django_db
+def test_never_renames_a_real_agency_that_chose_that_name():
+    """demonstration_mode=False means a real deployment. Hands off.
+
+    Same name as the test above, flag off: untouched. This is why the guard
+    keys on ownership instead of on a list of retired names — a name list is
+    matched against whatever an operator typed, so a real agency that
+    legitimately chose the demo's former name would be silently renamed out
+    from under them.
+    """
+    SiteConfig.objects.create(
+        agency_name=REAL_AGENCY,
+        contact_email="ops@realagency.gov",
+        demonstration_mode=False,
+    )
+    call_command("seed_merced_base")
+    sc = SiteConfig.objects.get()
+    assert sc.agency_name == REAL_AGENCY
+    assert sc.demonstration_mode is False
+    assert sc.contact_email == "ops@realagency.gov"
+
+
 @pytest.mark.django_db
 def test_enables_demonstration_mode_on_existing_merced_identity():
     """An existing Merced demo whose SiteConfig predates the demonstration_mode

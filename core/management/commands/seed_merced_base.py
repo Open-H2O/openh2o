@@ -129,23 +129,52 @@ class Command(BaseCommand):
         post-teardown server still carries the retired-basin name. Create it if
         absent, or rename it off a retired demo identity — but never clobber an
         operator's own custom agency name.
+
+        **Why the forward rename is gated on ownership, not on a name list
+        (Phase 97-02).** The identity this seed writes used to be a REAL agency's
+        name. ``retired_names`` cannot carry it: that set is matched against
+        whatever an operator typed, so a real agency that legitimately chose that
+        name would be silently renamed out from under them. But name equality
+        alone fails in the opposite direction — the two live deployments already
+        carried the old real name, matched no branch, and fell through to "kept
+        (custom agency name)", which would have left a real agency's name on a
+        public demo permanently.
+
+        So the rename keys on ``demonstration_mode`` instead. This seed is the
+        only writer of that flag anywhere in the codebase, and it sets it True on
+        every identity it owns, so a True flag means "this row belongs to the
+        demonstration" regardless of what the row happens to be called. A real
+        agency running production has it False and is never touched. That also
+        keeps every removed real name OUT of this file, which a name table would
+        have put straight back in.
+
+        The one residual path is a staff user turning ``demonstration_mode`` on
+        in Django admin over a real agency name and then running this command.
+        That is acceptable: running a demonstration seed on a production instance
+        is already an explicit "make this a demo" action, and the flag it keys on
+        means exactly that.
         """
         from core.models import SiteConfig
 
         merced_name = "Halvern Valley GSA"
         merced_email = "info@halvernvalleygsa.example.com"
         # Only FICTIONAL retired demo identities — never a real basin/agency
-        # name, or a real agency that chose it would be silently renamed.
+        # name, or a real agency that chose it would be silently renamed. These
+        # rename forward whatever demonstration_mode says, because no real agency
+        # can be sitting under one of them.
         retired_names = {"Demo Valley GSA"}
-        # Contact emails minted by a retired demo seed (Kaweah v1.0-1.8 and the
-        # Demo Valley sample). An in-place rename moved the agency NAME off the
-        # retired identity but left these stale, so a long-lived demo kept a
-        # retired-basin contact email in core_siteconfig (ISS-067). Heal only
-        # these known demo emails on a demo-owned identity — never an operator's
-        # real contact address.
+        # Contact emails minted by a retired demo seed (Kaweah v1.0-1.8, the Demo
+        # Valley sample, and the pre-97 Merced demo). An in-place rename moved the
+        # agency NAME off the retired identity but left these stale, so a
+        # long-lived demo kept a retired-basin contact email in core_siteconfig
+        # (ISS-067) — the same trap this phase's rename would otherwise re-set.
+        # Heal only these known demo emails on a demo-owned identity, never an
+        # operator's real contact address. All three are RFC-2606 .example.com
+        # addresses: reserved, unroutable, nobody's real inbox.
         retired_demo_emails = {
             "info@kaweahgsa.example.com",
             "info@demovalleygsa.example.com",
+            "info@mercedsubbasingsa.example.com",
         }
 
         sc = SiteConfig.objects.first()
@@ -161,7 +190,14 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS(
                 f"  Created SiteConfig: {merced_name}"))
-        elif sc.agency_name in retired_names:
+        elif sc.agency_name != merced_name and (
+            sc.agency_name in retired_names or sc.demonstration_mode
+        ):
+            # A retired FICTIONAL demo identity (safe on any row), or any row the
+            # seed already owns — demonstration_mode proves ownership, which is
+            # what lets a deployment seeded under the pre-97 real agency name
+            # rename forward instead of being mistaken for an operator's own
+            # choice. See the ownership note in this method's docstring.
             old = sc.agency_name
             sc.agency_name = merced_name
             # Renaming off a retired demo identity → still the seed's demo;
