@@ -122,7 +122,7 @@ def _build_physical_merced():
         status="curtailed", source_name="El Nido Canal",
     )
     pod_normal = PointOfDiversion.objects.create(
-        water_right=normal, name="MER-POD-004 MID Atwater Canal Headgate",
+        water_right=normal, name="MER-POD-004 Atwater Canal Headgate",
         location=Point(-120.66, 37.34), status="active")
     pod_curtailed = PointOfDiversion.objects.create(
         water_right=curtailed, name="MER-POD-007 Plainsburg El Nido Canal Headgate",
@@ -171,7 +171,7 @@ def _build_physical_merced():
 
     # Normal district: 3 surface-only + 2 conjunctive.
     for _ in range(3):
-        serve(pod_normal, make_parcel("surface", gsa_list[0], "Atwater Ranch Partners"))
+        serve(pod_normal, make_parcel("surface", gsa_list[0], "Tulepine Ranch Partners"))
     for _ in range(2):
         p = make_parcel("conjunctive", gsa_list[1], "Ashvale Orchards Inc.")
         serve(pod_normal, p)
@@ -179,19 +179,19 @@ def _build_physical_merced():
 
     # Curtailed district: 2 surface-only + 2 conjunctive (the substitution growers).
     for _ in range(2):
-        serve(pod_curtailed, make_parcel("surface", gsa_list[2], "Plainsburg Ag Holdings"))
+        serve(pod_curtailed, make_parcel("surface", gsa_list[2], "Saddlebow Ag Holdings"))
     for _ in range(2):
-        p = make_parcel("conjunctive", gsa_list[2], "Plainsburg Ag Holdings")
+        p = make_parcel("conjunctive", gsa_list[2], "Saddlebow Ag Holdings")
         serve(pod_curtailed, p)
         solo_well(p)
 
     # Groundwater-only: 1 solo + two shared groups (N=2 and N=3).
     solo_well(make_parcel("groundwater", gsa_list[0], "Halvern Valley Farms LLC"))
     shared_well([
-        make_parcel("groundwater", gsa_list[1], "Sandy Mush Growers") for _ in range(2)
+        make_parcel("groundwater", gsa_list[1], "Muddy Bar Growers") for _ in range(2)
     ])
     shared_well([
-        make_parcel("groundwater", gsa_list[2], "Turner Island Farms LLC") for _ in range(3)
+        make_parcel("groundwater", gsa_list[2], "Verdano Island Farms LLC") for _ in range(3)
     ])
 
     # Normalize each POD's parcel fractions to sum to ~1.0 (1/N), exactly as the

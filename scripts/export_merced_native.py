@@ -71,21 +71,21 @@ SURFACE_SOURCES = {"surface", "conjunctive"}
 # Deterministic owner naming so accounts/summary group sensibly (web derives these
 # from private constants; we synthesize stable, plausible names from the fixture keys).
 OWNER_BY_WELLGROUP = {
-    "TI-W-1": "Turner Island Farms LLC",
-    "TI-W-2": "Sandy Mush Growers",
+    "TI-W-1": "Verdano Island Farms LLC",
+    "TI-W-2": "Muddy Bar Growers",
 }
 OWNER_BY_POD = {
-    "MER-POD-004": "Atwater Ranch Partners",
-    "MER-POD-005": "Le Grand Orchards",
-    "MER-POD-006": "Diversion Canal Growers",
-    "MER-POD-007": "El Nido Farming Co.",
-    "MER-POD-008": "Crocker-Huffman Ranch",
-    "MER-POD-009": "Bottomlands Cattle Co.",
+    "MER-POD-004": "Tulepine Ranch Partners",
+    "MER-POD-005": "Ashvale Orchards Inc.",
+    "MER-POD-006": "Wrenfield Land & Cattle",
+    "MER-POD-007": "Saddlebow Ag Holdings",
+    "MER-POD-008": "Dunmoor Bottoms Farming",
+    "MER-POD-009": "Tulepine Bottomlands Ranch",
 }
 GW_SOLO_OWNERS = [
     "Vela Farms", "Rio Verde LLC", "Ortega Ranch", "Hidden Spring Co.",
-    "Cressey Land Partners", "Planada Ag Holdings", "Le Grand Family Farms",
-    "Snelling Orchard Co.",
+    "Brayfield Land Partners", "Larkbend Ag Holdings", "Wrenfield Family Farms",
+    "Dunmoor Orchard Co.",
 ]
 
 # --- Surface-water domain (Phase F) ----------------------------------------
@@ -127,7 +127,7 @@ WATER_RIGHTS = [
 
 # POD code (matches a parcel's servedBy) -> rightID, name, streamName, maxRateCFS
 POD_SURFACE = {
-    "MER-POD-004": ("MER-WR-004", "MID Atwater Canal Headgate", "Atwater Canal", "900.0"),
+    "MER-POD-004": ("MER-WR-004", "Atwater Canal Headgate", "Atwater Canal", "900.0"),
     "MER-POD-005": ("MER-WR-005", "Le Grand Canal Headgate", "Le Grand Canal", "220.0"),
     "MER-POD-006": ("MER-WR-006", "Stevinson Diversion Canal Headgate", "Diversion Canal", "260.0"),
     "MER-POD-007": ("MER-WR-009", "Plainsburg El Nido Canal Headgate", "El Nido Canal", "130.0"),

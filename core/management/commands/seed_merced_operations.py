@@ -165,7 +165,7 @@ RIGHT_CONFIGS = [
 # ---------------------------------------------------------------------------
 POD_CONFIGS = [
     # MID canal headgates (complex) + two Merced River main-stem diversions.
-    ("MER-POD-004-DEMO MID Atwater Canal Headgate", "MER-WR-004-DEMO", "lower",
+    ("MER-POD-004-DEMO Atwater Canal Headgate", "MER-WR-004-DEMO", "lower",
      "Atwater Canal", CANAL, 0.50, Decimal("900.0")),
     ("MER-POD-005-DEMO Le Grand Canal Headgate", "MER-WR-005-DEMO", "lower",
      "Le Grand Canal", CANAL, 0.50, Decimal("220.0")),
@@ -208,7 +208,7 @@ JOURNEY_POD_SPECS = [
 # Each entry: pod_name, anchor_lon, anchor_lat, n_parcels, acres.
 PARCEL_CLUSTER_CONFIGS = [
     # Atwater Canal (MID): orchards/fields by the approved Cressey-Winton basin.
-    ("MER-POD-004-DEMO MID Atwater Canal Headgate", -120.665, 37.345, 4, 150.0),
+    ("MER-POD-004-DEMO Atwater Canal Headgate", -120.665, 37.345, 4, 150.0),
     # Le Grand Canal: open field blocks east of Planada.
     ("MER-POD-005-DEMO Le Grand Canal Headgate", -120.270, 37.270, 3, 130.0),
     # Diversion Canal (Stevinson): Central-Valley crop mosaic near El Nido.

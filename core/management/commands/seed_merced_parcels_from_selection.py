@@ -57,19 +57,19 @@ GROUNDWATER_SOURCES = {"groundwater", "conjunctive"}
 # groups to roll up. A shared well belongs to one grower (they own all its
 # fields); each canal district and the scattered groundwater fields get one too.
 OWNER_BY_WELLGROUP = {
-    "TI-W-1": "Turner Island Farms LLC",
-    "TI-W-2": "Sandy Mush Growers",
+    "TI-W-1": "Verdano Island Farms LLC",
+    "TI-W-2": "Muddy Bar Growers",
 }
 OWNER_BY_POD = {
-    "MER-POD-004": "Atwater Ranch Partners",
+    "MER-POD-004": "Tulepine Ranch Partners",
     "MER-POD-005": "Ashvale Orchards Inc.",
     "MER-POD-006": "Wrenfield Land & Cattle",
-    "MER-POD-007": "Plainsburg Ag Holdings",
-    "MER-POD-008": "Crocker Bottoms Farming",
+    "MER-POD-007": "Saddlebow Ag Holdings",
+    "MER-POD-008": "Dunmoor Bottoms Farming",
     "MER-POD-009": "Tulepine Bottomlands Ranch",
 }
 GW_SOLO_OWNERS = [
-    "Halvern Valley Farms LLC", "Cressey Family Farms", "Dunmoor Ranch Co.",
+    "Halvern Valley Farms LLC", "Brayfield Family Ranch", "Dunmoor Ranch Co.",
 ]
 
 
