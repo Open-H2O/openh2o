@@ -62,14 +62,14 @@ OWNER_BY_WELLGROUP = {
 }
 OWNER_BY_POD = {
     "MER-POD-004": "Atwater Ranch Partners",
-    "MER-POD-005": "Le Grand Orchards Inc.",
-    "MER-POD-006": "Stevinson Land & Cattle",
+    "MER-POD-005": "Ashvale Orchards Inc.",
+    "MER-POD-006": "Wrenfield Land & Cattle",
     "MER-POD-007": "Plainsburg Ag Holdings",
     "MER-POD-008": "Crocker Bottoms Farming",
-    "MER-POD-009": "San Joaquin Bottomlands Ranch",
+    "MER-POD-009": "Tulepine Bottomlands Ranch",
 }
 GW_SOLO_OWNERS = [
-    "Merced Valley Farms LLC", "Cressey Family Farms", "Snelling Ranch Co.",
+    "Halvern Valley Farms LLC", "Cressey Family Farms", "Dunmoor Ranch Co.",
 ]
 
 

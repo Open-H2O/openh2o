@@ -111,20 +111,26 @@ BASE_LAYER_HINT = (
 # yet write ZERO surface_diversion ledger rows — the whole-basin consumptive
 # balance is untouched (the load-bearing spine-safety gate of Plan 67-03). The
 # monthly DiversionRecords are seeded by seed_merced_ledgers (the accounting
-# layer's home), keyed to the two POD names below. "Merced Falls" is a real
-# lower-Merced hydroelectric facility, so the demo reads truthfully.
+# layer's home), keyed to the two POD names below.
+#
+# The two POD names keep the REAL geography — "Merced Falls" is a genuine
+# lower-Merced hydroelectric facility and Snelling is a genuine place — because
+# published geography carried unaltered is not misrepresentation, and anchoring
+# a diversion to a real named facility is what makes the reach read truthfully.
+# The HOLDER is fictional (Phase 97): the right, its 60,000 AF and its records
+# are entirely invented, so they may not be attributed to a real company.
 JOURNEY_RIGHT_ID = "MER-WR-010-DEMO"
 JOURNEY_UPSTREAM_POD = "MER-POD-010-DEMO Merced Falls Hydroelectric Diversion"
 JOURNEY_DOWNSTREAM_POD = "MER-POD-011-DEMO Snelling Re-Diversion"
 
 RIGHT_CONFIGS = [
-    ("MER-WR-004-DEMO", 1, "Merced Irrigation District", "1930-04-10",
+    ("MER-WR-004-DEMO", 1, "Halvern Irrigation District", "1930-04-10",
      Decimal("120000"), "Merced River", "active"),
-    ("MER-WR-005-DEMO", 1, "Le Grand-Athlone Water District", "1948-09-01",
+    ("MER-WR-005-DEMO", 1, "Ashvale-Dunmoor Water District", "1948-09-01",
      Decimal("18000"), "Le Grand Canal", "active"),
-    ("MER-WR-006-DEMO", 1, "Stevinson Water District", "1955-03-20",
+    ("MER-WR-006-DEMO", 1, "Wrenfield Water District", "1955-03-20",
      Decimal("22000"), "Diversion Canal", "active"),
-    ("MER-WR-008-DEMO", 2, "San Joaquin Bottomlands Ranch", None,
+    ("MER-WR-008-DEMO", 2, "Tulepine Bottomlands Ranch", None,
      Decimal("4000"), "Merced River", "active"),
     # Junior right (newest priority date) → first to be curtailed in a drought,
     # which is how California priority works. Its El Nido service area (POD-007)
@@ -132,13 +138,13 @@ RIGHT_CONFIGS = [
     # fall back on groundwater, and surface-only growers simply go short. (A
     # former empty pre-1914 MER-WR-007 was removed — a curtailed right with no
     # parcels demonstrated nothing.)
-    ("MER-WR-009-DEMO", 1, "Plainsburg Irrigation District", "1962-05-05",
+    ("MER-WR-009-DEMO", 1, "Saddlebow Irrigation District", "1962-05-05",
      Decimal("9000"), "El Nido Canal", "curtailed"),
 ]
 
 # ---------------------------------------------------------------------------
 # Points of diversion. THE HEART of the phase. A diversion that sits ON a line
-# but the WRONG line — a Merced Irrigation District take stranded on Fahrens
+# but the WRONG line — a Halvern Irrigation District take stranded on Fahrens
 # Creek through downtown Merced — is the same credibility failure as one
 # floating in a field. So each POD is ANCHORED to a real NAMED watercourse: we
 # look up the actual flowline named (e.g.) "Merced River" or "Le Grand Canal" in
@@ -245,30 +251,30 @@ _WELL_OFFSETS = [
 # Realistic demo OPERATOR / owner names (NOT a crop — the 47-02 lesson: the
 # "Owner" column must read like a farm operator, not "Almonds"). Cycled by index.
 MER_PARCEL_OWNERS = [
-    "Merced Valley Farms LLC",
-    "Snelling Ranch Co.",
-    "Le Grand Orchards Inc.",
-    "Stevinson Land & Cattle",
-    "El Nido Growers",
-    "Athlone Farming Partners",
-    "Cressey Ag Holdings",
-    "Sandy Mush Family Farm",
-    "Plainsburg Field Co.",
-    "Bear Creek Bottomlands LLC",
-    "Foothill River Ranch",
-    "Yosemite Gateway Farms",
+    "Halvern Valley Farms LLC",
+    "Dunmoor Ranch Co.",
+    "Ashvale Orchards Inc.",
+    "Wrenfield Land & Cattle",
+    "Verdano Growers",
+    "Larkbend Farming Partners",
+    "Brayfield Ag Holdings",
+    "Muddy Bar Family Farm",
+    "Saddlebow Field Co.",
+    "Sablecreek Bottomlands LLC",
+    "Granite Bench River Ranch",
+    "Alder Gate Farms",
 ]
 
 MER_WELL_OWNERS = [
-    "Le Grand Orchards Inc.",
-    "Plainsburg Field Co.",
-    "Stevinson Land & Cattle",
-    "El Nido Growers",
-    "Athlone Farming Partners",
-    "Cressey Ag Holdings",
-    "Snelling Ranch Co.",
-    "Sandy Mush Family Farm",
-    "Bear Creek Bottomlands LLC",
+    "Ashvale Orchards Inc.",
+    "Saddlebow Field Co.",
+    "Wrenfield Land & Cattle",
+    "Verdano Growers",
+    "Larkbend Farming Partners",
+    "Brayfield Ag Holdings",
+    "Dunmoor Ranch Co.",
+    "Muddy Bar Family Farm",
+    "Sablecreek Bottomlands LLC",
 ]
 
 
@@ -766,7 +772,7 @@ class Command(BaseCommand):
             right_id=JOURNEY_RIGHT_ID,
             defaults={
                 "right_type": post14,
-                "holder_name": "Merced Falls Hydroelectric Co.",
+                "holder_name": "Halvern Hydroelectric Co.",
                 "priority_date": "1958-07-01",
                 "face_value_acre_feet": Decimal("60000"),
                 "status": "active",

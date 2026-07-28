@@ -112,12 +112,12 @@ def _build_physical_merced():
 
     # Two surface districts: a normal one and the curtailed El Nido junior right.
     normal = WaterRight.objects.create(
-        right_id=NORMAL_RIGHT, right_type=post14, holder_name="Merced Irrigation District",
+        right_id=NORMAL_RIGHT, right_type=post14, holder_name="Halvern Irrigation District",
         priority_date=date(1930, 4, 10), face_value_acre_feet=Decimal("120000"),
         status="active", source_name="Merced River",
     )
     curtailed = WaterRight.objects.create(
-        right_id=CURTAILED_RIGHT, right_type=post14, holder_name="Plainsburg Irrigation District",
+        right_id=CURTAILED_RIGHT, right_type=post14, holder_name="Saddlebow Irrigation District",
         priority_date=date(1962, 5, 5), face_value_acre_feet=Decimal("9000"),
         status="curtailed", source_name="El Nido Canal",
     )
@@ -173,7 +173,7 @@ def _build_physical_merced():
     for _ in range(3):
         serve(pod_normal, make_parcel("surface", gsa_list[0], "Atwater Ranch Partners"))
     for _ in range(2):
-        p = make_parcel("conjunctive", gsa_list[1], "Le Grand Orchards Inc.")
+        p = make_parcel("conjunctive", gsa_list[1], "Ashvale Orchards Inc.")
         serve(pod_normal, p)
         solo_well(p)
 
@@ -186,7 +186,7 @@ def _build_physical_merced():
         solo_well(p)
 
     # Groundwater-only: 1 solo + two shared groups (N=2 and N=3).
-    solo_well(make_parcel("groundwater", gsa_list[0], "Merced Valley Farms LLC"))
+    solo_well(make_parcel("groundwater", gsa_list[0], "Halvern Valley Farms LLC"))
     shared_well([
         make_parcel("groundwater", gsa_list[1], "Sandy Mush Growers") for _ in range(2)
     ])

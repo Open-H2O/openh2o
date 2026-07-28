@@ -27,7 +27,7 @@ from tests.factories import (
 
 @pytest.fixture
 def metered_well(db):
-    parcel = ParcelFactory(owner_name="Merced Valley Farms LLC", address="")
+    parcel = ParcelFactory(owner_name="Halvern Valley Farms LLC", address="")
     well = WellFactory(
         well_registration_id="MER-W-TEST1",
         measurement_method="certified_meter",
@@ -53,7 +53,7 @@ def test_fills_well_construction_section(metered_well):
     # Screen interval sits inside the bore.
     assert well.screen_bottom_ft <= well.depth_ft
     # Owner is pulled from the irrigated parcel, not invented.
-    assert well.owner_name == "Merced Valley Farms LLC"
+    assert well.owner_name == "Halvern Valley Farms LLC"
 
 
 @pytest.mark.django_db

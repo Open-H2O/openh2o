@@ -107,21 +107,21 @@ WATER_RIGHT_TYPES = [
 
 # rightID -> typeCode, holder, priorityDate(str|None), faceValueAF, source, status, calwatrsPIN
 WATER_RIGHTS = [
-    ("MER-WR-004", "POST14", "Merced Irrigation District", "1930-04-10",
+    ("MER-WR-004", "POST14", "Halvern Irrigation District", "1930-04-10",
      "120000", "Merced River", "active", "A004720"),
-    ("MER-WR-005", "POST14", "Le Grand-Athlone Water District", "1948-09-01",
+    ("MER-WR-005", "POST14", "Ashvale-Dunmoor Water District", "1948-09-01",
      "18000", "Le Grand Canal", "active", "A015533"),
-    ("MER-WR-006", "POST14", "Stevinson Water District", "1955-03-20",
+    ("MER-WR-006", "POST14", "Wrenfield Water District", "1955-03-20",
      "22000", "Diversion Canal", "active", "A018002"),
-    ("MER-WR-008", "RIP", "San Joaquin Bottomlands Ranch", None,
+    ("MER-WR-008", "RIP", "Tulepine Bottomlands Ranch", None,
      "4000", "Merced River", "active", ""),
     # Junior right (newest priority) → first curtailed in the summer-2025 drought.
-    ("MER-WR-009", "POST14", "Plainsburg Irrigation District", "1962-05-05",
+    ("MER-WR-009", "POST14", "Saddlebow Irrigation District", "1962-05-05",
      "9000", "El Nido Canal", "curtailed", "A021145"),
     # Merced Falls hydroelectric passthrough — serves no parcels, returns its full
     # diverted volume to the river (non-consumptive). Lights up the "Non-consumptive
     # (returned to stream)" classification with real-looking data on the read screen.
-    ("MER-WR-010", "POST14", "Merced Falls Hydroelectric Co.", "1958-07-01",
+    ("MER-WR-010", "POST14", "Halvern Hydroelectric Co.", "1958-07-01",
      "60000", "Merced River", "active", "A019887"),
 ]
 
