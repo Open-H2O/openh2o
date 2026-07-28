@@ -53,7 +53,7 @@ BOUNDARY_CONFIGS = [
             "Merced River to the Chowchilla, San Joaquin River on the west, "
             "Sierra foothills on the east. Critically overdrafted under SGMA; "
             "served by Merced Irrigation District's canal network and three "
-            "GSAs (MIUGSA, MSGSA, TIWD-1). The complex 'lower' half of the "
+            "GSAs (HIUGSA, HVGSA, VIWD-1). The complex 'lower' half of the "
             "Merced demonstration."
         ),
     },
@@ -132,8 +132,8 @@ class Command(BaseCommand):
         """
         from core.models import SiteConfig
 
-        merced_name = "Merced Subbasin GSA"
-        merced_email = "info@mercedsubbasingsa.example.com"
+        merced_name = "Halvern Valley GSA"
+        merced_email = "info@halvernvalleygsa.example.com"
         # Only FICTIONAL retired demo identities — never a real basin/agency
         # name, or a real agency that chose it would be silently renamed.
         retired_names = {"Demo Valley GSA"}
@@ -154,7 +154,7 @@ class Command(BaseCommand):
                 agency_name=merced_name,
                 timezone="America/Los_Angeles",
                 native_srid=4326,
-                contact_email="info@mercedsubbasingsa.example.com",
+                contact_email=merced_email,
                 # The seed owns this identity, so it's a demonstration: stamp
                 # every report surface + file "not submittable" (Phase 53-02).
                 demonstration_mode=True,

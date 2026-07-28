@@ -21,7 +21,7 @@ def test_creates_site_config_when_absent():
     assert not SiteConfig.objects.exists()
     call_command("seed_merced_base")
     assert SiteConfig.objects.count() == 1
-    assert SiteConfig.objects.get().agency_name == "Merced Subbasin GSA"
+    assert SiteConfig.objects.get().agency_name == "Halvern Valley GSA"
 
 
 @pytest.mark.django_db
@@ -29,7 +29,7 @@ def test_renames_retired_basin_identity():
     SiteConfig.objects.create(agency_name="Demo Valley GSA")
     call_command("seed_merced_base")
     assert SiteConfig.objects.count() == 1
-    assert SiteConfig.objects.get().agency_name == "Merced Subbasin GSA"
+    assert SiteConfig.objects.get().agency_name == "Halvern Valley GSA"
 
 
 @pytest.mark.django_db
@@ -46,10 +46,10 @@ def test_enables_demonstration_mode_on_existing_merced_identity():
     field (migrated in as False) gets it flipped on by a re-seed — the name
     already matches, so neither the create nor the rename branch fires (53-02)."""
     SiteConfig.objects.create(
-        agency_name="Merced Subbasin GSA", demonstration_mode=False)
+        agency_name="Halvern Valley GSA", demonstration_mode=False)
     call_command("seed_merced_base")
     sc = SiteConfig.objects.get()
-    assert sc.agency_name == "Merced Subbasin GSA"
+    assert sc.agency_name == "Halvern Valley GSA"
     assert sc.demonstration_mode is True
 
 
@@ -72,8 +72,8 @@ def test_heals_retired_basin_email_on_renamed_identity():
         contact_email="info@kaweahgsa.example.com")
     call_command("seed_merced_base")
     sc = SiteConfig.objects.get()
-    assert sc.agency_name == "Merced Subbasin GSA"
-    assert sc.contact_email == "info@mercedsubbasingsa.example.com"
+    assert sc.agency_name == "Halvern Valley GSA"
+    assert sc.contact_email == "info@halvernvalleygsa.example.com"
 
 
 @pytest.mark.django_db
@@ -82,11 +82,11 @@ def test_heals_retired_basin_email_on_existing_merced_identity():
     contact email is still the retired Kaweah demo address. A re-seed must
     correct the stale email even though the name already matches."""
     SiteConfig.objects.create(
-        agency_name="Merced Subbasin GSA",
+        agency_name="Halvern Valley GSA",
         contact_email="info@kaweahgsa.example.com")
     call_command("seed_merced_base")
     assert SiteConfig.objects.get().contact_email == (
-        "info@mercedsubbasingsa.example.com")
+        "info@halvernvalleygsa.example.com")
 
 
 @pytest.mark.django_db
@@ -95,7 +95,7 @@ def test_keeps_custom_contact_email_on_merced_identity():
     known retired demo emails are healed, so a deployment that set a real
     address keeps it across a re-seed."""
     SiteConfig.objects.create(
-        agency_name="Merced Subbasin GSA",
+        agency_name="Halvern Valley GSA",
         contact_email="ops@realagency.gov")
     call_command("seed_merced_base")
     assert SiteConfig.objects.get().contact_email == "ops@realagency.gov"

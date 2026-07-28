@@ -577,7 +577,7 @@ class Command(BaseCommand):
         config = SiteConfig.objects.first()
         if config is None:
             SiteConfig.objects.create(
-                agency_name="Merced Subbasin GSA",
+                agency_name="Halvern Valley GSA",
                 default_irrigation_efficiency=SEED_IRRIGATION_EFFICIENCY,
             )
         elif not config.default_irrigation_efficiency:

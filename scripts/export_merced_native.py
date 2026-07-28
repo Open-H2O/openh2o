@@ -218,7 +218,7 @@ RECHARGE_MEASUREMENTS = {
 MONITORING_WELLS = {
     "MER-W-001": ("Merced Irrigation District", "Monthly", "182.40", "NAVD88",
                   "CASGEM voluntary monitoring point; manual sounder reading."),
-    "MER-W-002": ("Merced Subbasin GSA", "Quarterly", "176.10", "NAVD88",
+    "MER-W-002": ("Halvern Valley GSA", "Quarterly", "176.10", "NAVD88",
                   "Representative monitoring well for the GSA's spring/fall sweep."),
     "MER-W-004": ("DWR", "Continuous", "169.85", "NGVD29",
                   "Legacy DWR record; transducer logs daily, datum not yet converted to NAVD88."),
@@ -700,7 +700,7 @@ def build_bundle():
         "metadata": {
             "source": "openh2o fixtures (export_merced_native.py)",
             "basinCode": BASIN_CODE,
-            "district": "Merced Subbasin GSA",
+            "district": "Halvern Valley GSA",
             "parcelCount": len(parcels),
             "wellCount": len(wells),
             "meterCount": len(meters),

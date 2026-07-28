@@ -99,7 +99,7 @@ def _build_physical_merced():
     # real seed_merced_gsas output (zone_type management_area, basin 5-022.04).
     gsas = {}
     for i, gname in enumerate([
-        "Merced Subbasin GSA", "Merced Irrigation-Urban GSA", "Turner Island Water District GSA",
+        "Halvern Valley GSA", "Halvern Irrigation-Urban GSA", "Verdano Island Water District GSA",
     ]):
         gsas[gname] = Zone.objects.create(
             name=gname, boundary=boundary, geometry=_box(-120.6 + i * 0.1, 37.2, 0.3),

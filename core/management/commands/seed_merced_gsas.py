@@ -9,14 +9,24 @@ to fields (modeled as water rights + points of diversion). The GSA manages
 groundwater pumping (modeled as a management-area zone a well/parcel falls
 within). (the same management-area-zone pattern any subbasin's GSAs use).
 
-The three Merced GSAs (DWR Bulletin 118 subbasin 5-022.04) come from the
+The three GSA zones (DWR Bulletin 118 subbasin 5-022.04) come from the
 state's SGMA boundary service, committed as data/merced/merced_gsas.geojson
-(EPSG:4326) so the demo is reproducible from authoritative public sources:
+(EPSG:4326):
 
     Boundaries/i03_Groundwater_Sustainability_Agencies, filtered to
     Basin_Subbasin_Number = '5-022.04'.
 
-Idempotent (update_or_create by name); additive (only Merced GSAs).
+**The geometry is that authoritative public boundary, unaltered. The names
+are not.** Phase 97 replaced each feature's ``GSA_Name`` with a fictional
+agency, and blanked the real DWR ``GSA_ID`` and agency ``GSA_URL``, because
+these zones are the container the demo's entirely invented parcels and
+pumping ledgers sit in — and naming a real public agency as the authority
+over invented accounting is the defect that phase exists to delete. So do
+not "restore" the names by re-fetching the layer: re-fetch would return the
+real agencies and re-introduce the defect. Refresh the *geometry* from the
+service if it changes; keep the fictional identity.
+
+Idempotent (update_or_create by name); additive (only these three zones).
 """
 import json
 import os
@@ -35,8 +45,9 @@ SUBBASIN = "Merced Subbasin"
 
 class Command(BaseCommand):
     help = (
-        "Seed the three Merced Subbasin GSAs (5-022.04) as management_area "
-        "zones from committed SGMA-portal GeoJSON. Idempotent; additive."
+        "Seed the three GSAs of the Merced Subbasin (5-022.04) as "
+        "management_area zones from committed SGMA-portal GeoJSON. "
+        "Idempotent; additive."
     )
 
     def handle(self, *args, **options):

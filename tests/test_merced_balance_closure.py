@@ -190,7 +190,7 @@ def _setup_period():
     """
     rp = ReportingPeriodFactory(is_finalized=False)
     SiteConfig.objects.create(
-        agency_name="Merced Subbasin GSA", default_irrigation_efficiency=EFF)
+        agency_name="Halvern Valley GSA", default_irrigation_efficiency=EFF)
     call_command("seed_calculation_plan")
     return rp
 
