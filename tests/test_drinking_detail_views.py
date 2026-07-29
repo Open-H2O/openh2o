@@ -42,6 +42,7 @@ from django.db import connection
 from django.test import Client
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
+from django.utils import timezone
 
 from core import modules as mod
 from tests.factories import (
@@ -467,6 +468,47 @@ class TestConsumerConfidenceReportLink:
         assert "ear.waterboards.ca.gov" not in html, (
             "a California-only viewer was offered for a New Mexico system"
         )
+
+    def test_the_link_is_absent_for_a_year_whose_report_cannot_exist_yet(
+        self, client_in, sampled_system
+    ):
+        """The demonstration data runs to 2026-05-21.
+
+        Without this gate the newest samples on the busiest surface in the module
+        all linked to a 404 — caught on staging, where a 2026 sample composed
+        ``&Year=2026`` and the viewer answered 404 text/html.
+        """
+        event = sampled_system["event"]
+        event.sample_date = date(timezone.localdate().year, 3, 1)
+        event.save()
+        html = client_in.get(
+            reverse("drinking:result_detail", args=[sampled_system["numeric"].pk])
+        ).content.decode()
+        assert "ear.waterboards.ca.gov" not in html, (
+            "offered an annual report for a year that has not finished"
+        )
+
+    @pytest.mark.parametrize(
+        "sample_year,today,published",
+        [
+            # Measured against the live viewer for CA2410009 on 2026-07-28:
+            # 2020-2025 answered 200, 2026 answered 404.
+            (2024, date(2026, 7, 28), True),
+            (2025, date(2026, 7, 28), True),
+            (2026, date(2026, 7, 28), False),
+            # 40 CFR 141.155(a): delivered by July 1, covering the PREVIOUS
+            # calendar year. So last year's report does not exist until this July.
+            (2025, date(2026, 6, 30), False),
+            (2025, date(2026, 7, 1), True),
+            (2026, date(2027, 7, 1), True),
+        ],
+    )
+    def test_publication_follows_the_july_1_deadline(
+        self, sample_year, today, published
+    ):
+        from drinking.views import _ccr_is_published
+
+        assert _ccr_is_published(sample_year, today) is published
 
 
 # -- 9. Query counts ---------------------------------------------------------

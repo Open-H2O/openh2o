@@ -21,6 +21,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Min, Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 
@@ -286,7 +287,22 @@ def sampling_point_detail(request, pk):
 CCR_VIEWER_URL = "https://ear.waterboards.ca.gov/Home/ViewCCR?PwsID={pwsid}&Year={year}"
 
 
-def _ccr_url(system, sample_date):
+def _ccr_is_published(year, today):
+    """Has the CCR covering ``year`` been delivered yet?
+
+    40 CFR 141.155(a): a community water system delivers its Consumer Confidence
+    Report **by July 1 annually**, and that report covers the **previous**
+    calendar year. So the report for year Y does not exist until July 1 of Y+1 —
+    a sample taken this year has no annual report at all, and one taken last year
+    has none until this July.
+
+    Measured against the live viewer for CA2410009 on 2026-07-28, which this rule
+    reproduces exactly: 2020-2024 and 2025 all answer 200, and 2026 answers 404.
+    """
+    return (today.year, today.month) >= (year + 1, 7)
+
+
+def _ccr_url(system, sample_date, today=None):
     """The system's annual CCR for the year this sample was taken, or None.
 
     **This is not the sample's own lab sheet**, and the page must not imply it
@@ -294,9 +310,21 @@ def _ccr_url(system, sample_date):
     tabular REST with no document endpoint, and California labs submit through
     CLIP as data. The system's annual report for that year is the nearest
     published document that exists, so it is offered as exactly that.
+
+    Two gates, and both exist to avoid the same failure — an authoritative-looking
+    link that 404s:
+
+    * **The state.** The viewer is a California State Water Board service, so a
+      New Mexico or federal PWSID would compose a link to a report that service
+      never held.
+    * **The year.** See ``_ccr_is_published``. The demonstration data runs to
+      2026-05-21, so without this gate the newest samples on the busiest surface
+      in the module all link to a 404.
     """
     pwsid = (system.pwsid or "").strip().upper()
     if not pwsid.startswith("CA") or sample_date is None:
+        return None
+    if not _ccr_is_published(sample_date.year, today or timezone.localdate()):
         return None
     return CCR_VIEWER_URL.format(pwsid=pwsid, year=sample_date.year)
 
