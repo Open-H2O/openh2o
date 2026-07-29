@@ -129,7 +129,7 @@
         <tbody>
           {% for facility in system.facilities.all %}
           <tr>
-            <td class="text-mono">{{ facility.facility_id }}</td>
+            <td class="text-mono"><a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a></td>
             <td>{{ facility.name|default:"—" }}</td>
             <td class="text-secondary text-sm">{{ facility.get_facility_type_display|default:"—" }}</td>
             <td class="text-secondary text-sm">{{ facility.get_activity_status_display|default:"—" }}</td>

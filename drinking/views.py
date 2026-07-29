@@ -20,7 +20,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Prefetch, Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 
@@ -174,6 +174,58 @@ def results(request):
             "analytes": Analyte.objects.filter(results__isnull=False).distinct(),
             "sampling_points": SamplingPoint.objects.order_by("ps_code"),
             "has_any": SampleResult.objects.exists(),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Detail pages: facility -> sampling point -> sample result
+# ---------------------------------------------------------------------------
+#
+# The three lists above are inventories; these are the records themselves. Each
+# is **Bucket 3** (``docs/2.0-UX-PATTERN-SPEC.md``): a full-width page of its
+# own, reached from a table row rather than from a side pane. So they use plain
+# ``render`` + ``get_object_or_404`` and deliberately NOT
+# ``core.workspace.detail_response`` — that helper's whole job is the HTMX
+# pane-swap branch, and none of these three lists carries a pane to swap into.
+#
+# **Prepare, never determine** applies here hardest. A one-record page is where
+# a limit beside a value would look most natural and be most wrong: nothing on
+# these pages compares a result against a ``RegulatoryLimit``.
+
+
+def _points_with_activity(queryset):
+    """Sampling points carrying their latest sample date and result count.
+
+    The same annotation pair ``sampling_points`` uses, for the same reason: one
+    query for the whole table rather than two per row. Both annotations walk the
+    single point -> events -> results chain, so they cannot inflate each other.
+    """
+    return queryset.annotate(
+        latest_sample_date=Max("events__sample_date"),
+        result_count=Count("events__results"),
+    ).order_by("ps_code")
+
+
+@login_required
+def facility_detail(request, pk):
+    """One facility: what it physically is, its system, its well, its points.
+
+    ``_describe`` is reused rather than re-derived — it attaches the
+    plain-English sentence for the facility type and the guard against the
+    heading "Distribution System — DISTRIBUTION SYSTEM". It is defined with the
+    sampling-point builder further down because that is where it was written;
+    both callers want exactly the same two attributes.
+    """
+    facility = get_object_or_404(
+        SystemFacility.objects.select_related("system", "well"), pk=pk
+    )
+    return render(
+        request,
+        "drinking/facility_detail.html",
+        {
+            "facility": _describe(facility),
+            "points": _points_with_activity(facility.sampling_points),
         },
     )
 

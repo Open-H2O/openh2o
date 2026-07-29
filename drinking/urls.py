@@ -10,6 +10,15 @@ urlpatterns = [
     path("", views.overview, name="overview"),
     path("sampling-points/", views.sampling_points, name="sampling_points"),
     path("results/", views.results, name="results"),
+    # The three detail pages, each named for the row it opens from. Kept beside
+    # their list rather than at the bottom of the file: a reader looking for
+    # "where does a sampling-point row go" should find it next to the list that
+    # renders that row.
+    path(
+        "facilities/<int:pk>/",
+        views.facility_detail,
+        name="facility_detail",
+    ),
     path("import/", views.import_page, name="import"),
     path("import/preview/", views.import_preview, name="import_preview"),
     path("import/commit/", views.import_commit, name="import_commit"),

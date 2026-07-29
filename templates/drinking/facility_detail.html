@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% comment %}
+  One facility of one public water system — the Bucket-3 detail page (see
+  docs/2.0-UX-PATTERN-SPEC.md) reached from the Facility ID cell on
+  drinking:overview. No map: the drinking module carries no facility geometry
+  yet, and an empty map card would promise one.
+
+  Field vocabulary is the overview's own — section-header, form-grid-2col,
+  field-group, field-label, field-value / field-value-mono. Nothing here defines
+  new CSS.
+
+  {% comment %}, never {# #}: the hash form comments only to the end of its
+  LINE, so a multi-line note written that way leaks its second line onward into
+  the page as visible text.
+{% endcomment %}
+
+{% block title %}{{ facility.facility_id }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Facility {{ facility.facility_id }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ facility.facility_id }}</span>
+  </nav>
+  <p class="page-description">One facility of {{ facility.system.name }}, and the sampling points on it.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  <div>
+    <a href="{% url 'drinking:overview' %}" class="back-link">&larr; Back to Drinking Water</a>
+  </div>
+
+  <div class="card-raised">
+
+    <h2 class="section-header" style="margin-top: 0;">
+      {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %}
+    </h2>
+
+    {% comment %}
+      What this facility physically is, in a sentence. The codes below are the
+      regulator's published vocabulary and are shown as published; this line is
+      the only place the page translates, and it explains rather than renames.
+    {% endcomment %}
+    {% if facility.plain_type %}
+    <p class="text-base text-secondary" style="margin-top: var(--space-xs); max-width: 70ch;">{{ facility.plain_type }}</p>
+    {% endif %}
+
+    <div class="form-grid-2col" style="margin-top: var(--space-md);">
+      <div class="field-group">
+        <div class="field-label">Facility ID</div>
+        <div class="field-value-mono">{{ facility.facility_id }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Name on record</div>
+        <div class="field-value">{{ facility.name|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Type</div>
+        <div class="field-value">{{ facility.get_facility_type_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Status</div>
+        <div class="field-value">{{ facility.get_activity_status_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Water type</div>
+        <div class="field-value">{{ facility.get_water_type_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Availability</div>
+        <div class="field-value">{{ facility.get_availability_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Source facility</div>
+        <div class="field-value">{% if facility.is_source %}Yes — water enters the system here{% else %}No{% endif %}</div>
+      </div>
+      {% if facility.epa_facility_id %}
+      <div class="field-group">
+        <div class="field-label">EPA facility ID</div>
+        <div class="field-value-mono">{{ facility.epa_facility_id }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Water system</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">System</div>
+        <div class="field-value"><a href="{% url 'drinking:overview' %}" class="data-table-link">{{ facility.system.name }}</a></div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">PWSID</div>
+        <div class="field-value-mono">{{ facility.system.pwsid }}</div>
+      </div>
+    </div>
+
+    {% comment %}
+      The quality-to-quantity join: ONE physical well, sampled on this side and
+      metered on the wells side. Guarded on enabled_modules because
+      `drinking.requires` is ("standards",) — this page must render on a
+      drinking-water-only deployment, and an unguarded {% url 'wells:detail' %}
+      there is a NoReverseMatch 500, not a missing link. Same shape as the
+      Facilities table on drinking/overview.html.
+    {% endcomment %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Well</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Physical well</div>
+        <div class="field-value">
+          {% if facility.well and 'wells' in enabled_modules %}
+            <a href="{% url 'wells:detail' facility.well.pk %}" class="data-table-link">{{ facility.well.name }}</a>
+          {% elif facility.well %}
+            {{ facility.well.name }}
+          {% else %}
+            <span class="text-tertiary">—</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Sampling points</h2>
+    {% if points %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>PS Code</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Latest Sample</th>
+            <th>Results</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for point in points %}
+          <tr>
+            <td class="text-mono">{{ point.ps_code }}</td>
+            <td>{{ point.name|default:"—" }}</td>
+            <td class="text-secondary text-sm">{{ point.get_point_type_display|default:"—" }}</td>
+            <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|default:"—" }}</td>
+            <td class="text-secondary text-sm tabular-nums">
+              {% if point.result_count %}
+                <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">{{ point.result_count }}</a>
+              {% else %}
+                0
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-secondary text-sm">No sampling points on this facility yet. Sampling points are added in the onboarding builder, never by an import.</p>
+    {% endif %}
+
+  </div>
+
+</div>
+{% endblock %}
