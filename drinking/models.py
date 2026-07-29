@@ -26,6 +26,7 @@ well is ONE physical feature: the extraction ledger lives on the wells side, the
 samples live here.
 """
 
+from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -284,6 +285,22 @@ class SystemFacility(models.Model):
         blank=True,
         related_name="drinking_facilities",
         help_text="The physical well this facility is, when it is a well.",
+    )
+    # The facility owns the coordinate, not the sampling point, because that is
+    # what the published record actually describes: GAMA publishes the location
+    # of the SOURCE WELL, which is the facility. A sampling point is a tap ON a
+    # facility and inherits its position — which is also why one map can carry
+    # both without drawing two sets of dots on the same spot.
+    #
+    # NOT copied from `well.location` on read: `wells` is schema-resident, so in
+    # the drinking-water-utility flavor (parcels+accounting off takes wells with
+    # it, core/modules.py) that table is empty by design and a facility reading
+    # its position through the FK would be permanently unmapped.
+    location = gis_models.PointField(
+        srid=4326, null=True, blank=True,
+        help_text="Published location of the facility. From GAMA, which "
+                  "publishes coordinates for source wells only — most "
+                  "facilities have none, and NULL is the honest value.",
     )
 
     class Meta:
