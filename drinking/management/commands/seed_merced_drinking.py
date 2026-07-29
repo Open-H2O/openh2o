@@ -137,6 +137,7 @@ class Command(BaseCommand):
         system = self._seed_system()
         rows, columns = self._load_lab_file()
         self._apply_state_fields(system, rows)
+        self._seed_facility_locations(system)
         self._seed_wells(system)
         self._seed_points(system)
         self._seed_results(rows, columns)
@@ -244,6 +245,63 @@ class Command(BaseCommand):
             "  State record: "
             + ", ".join(f"{k} = {v}" for k, v in sorted(updates.items()))
         )
+
+    # -- 2c. the coordinates, on the drinking side ---------------------------
+
+    def _seed_facility_locations(self, system):
+        """Write the published GAMA coordinate onto the facility itself.
+
+        **Unconditional, and that is the entire point.** ``_seed_wells`` below is
+        correctly gated on the ``wells`` module — writing rows into a
+        schema-resident module's table is exactly the silent fill
+        ``test_schema_resident_module_tables_are_present_and_empty`` catches. But
+        that gate used to take the coordinates with it, so in the drinking-water
+        utility flavor (``parcels``+``accounting`` off takes ``wells`` with it,
+        ``core/modules.py``) nothing in this module knew where anything was.
+
+        Runs BEFORE ``_seed_wells`` so the facility carries its own position
+        whether or not the wells step ever executes.
+
+        Only rows the state actually publishes a latitude for are touched. GAMA
+        publishes source-well locations only, so the distribution-system and
+        treatment-plant points have none — and NULL is the honest value for them,
+        not ``(0, 0)``.
+        """
+        from django.contrib.gis.geos import Point
+
+        points = _load_json("sampling_points.json")
+        facilities = {
+            facility.facility_id: facility
+            for facility in system.facilities.all()
+        }
+
+        # Keyed by facility, not by point: several points can share one facility
+        # and they all name the same published coordinate.
+        located = {}
+        for point in points:
+            if "latitude" not in point:
+                continue
+            located[point["facility_id"]] = Point(
+                point["longitude"], point["latitude"], srid=4326
+            )
+
+        written = 0
+        for facility_id, location in located.items():
+            facility = facilities.get(facility_id)
+            if facility is None:
+                self.stdout.write(self.style.WARNING(
+                    f"    no facility {facility_id} for a located sampling "
+                    "point; no coordinate set"
+                ))
+                continue
+            # Re-writing an identical point is a no-op in the database and keeps
+            # the count honest about how many facilities ARE located, which is
+            # the number the map's coverage sentence is measured against.
+            facility.location = location
+            facility.save(update_fields=["location"])
+            written += 1
+
+        self.stdout.write(f"  Facility locations: {written} set.")
 
     # -- 3. municipal wells --------------------------------------------------
 

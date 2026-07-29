@@ -184,6 +184,76 @@ def test_quality_to_quantity_join_is_populated(seeded):
 
 
 @pytest.mark.django_db
+def test_the_facilities_carry_their_own_coordinates(seeded):
+    """The drinking module knows where its facilities are, without asking wells.
+
+    21 of the 23 facilities named in the state's sampling-point file publish a
+    latitude, and all 21 are source wells. The other two — a distribution system
+    and a treatment plant — have no published location, and NULL is the honest
+    value for them.
+    """
+    located = SystemFacility.objects.filter(system=seeded, location__isnull=False)
+    assert located.count() == 21
+
+    facility = located.first()
+    assert facility.location.srid == 4326
+    # Merced sits near -120.5, 37.3. A facility flung into the Gulf of Guinea is
+    # the (0, 0) default this seed refuses to write.
+    assert -122 < facility.location.x < -119
+    assert 36 < facility.location.y < 38
+
+    # Every located facility is a well, because that is all GAMA publishes.
+    assert set(located.values_list("facility_type", flat=True)) == {"WL"}
+
+
+@pytest.mark.django_db
+def test_facility_coordinates_land_with_wells_switched_off(seeded, settings):
+    """The drinking-water utility flavor is the reason this step exists.
+
+    ``parcels``+``accounting`` off takes ``wells`` with it (Phase 89), so on the
+    single deployment shape this milestone was built for, ``_seed_wells`` returns
+    early and writes nothing. Before this test, running the full 16-module config
+    would have passed while that flavor stayed entirely unmapped.
+    """
+    from core import modules as mod
+
+    settings.OPENH2O_MODULES = [
+        name for name in mod.ALL_MODULE_NAMES if name != "wells"
+    ]
+
+    # Wipe the coordinates and the well links, so a step that quietly did nothing
+    # cannot pass on residue from the module-scoped seed.
+    SystemFacility.objects.filter(system=seeded).update(location=None, well=None)
+    assert not SystemFacility.objects.filter(
+        system=seeded, location__isnull=False
+    ).exists()
+
+    call_command("seed_merced_drinking")
+
+    assert SystemFacility.objects.filter(
+        system=seeded, location__isnull=False
+    ).count() == 21, "the drinking-water flavor came back unmapped"
+    # And the wells gate still held: nothing was written into the schema-resident
+    # module's table on this run.
+    assert not SystemFacility.objects.filter(
+        system=seeded, well__isnull=False
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_reseeding_locations_changes_no_count(seeded):
+    """Idempotent, like every other step in this command."""
+    before = SystemFacility.objects.filter(
+        system=seeded, location__isnull=False
+    ).count()
+    call_command("seed_merced_drinking")
+    after = SystemFacility.objects.filter(
+        system=seeded, location__isnull=False
+    ).count()
+    assert before == after == 21
+
+
+@pytest.mark.django_db
 def test_municipal_wells_carry_only_what_is_published(seeded):
     """No invented construction data on a real utility's wells.
 
