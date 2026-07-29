@@ -1,10 +1,16 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% comment %}
   One facility of one public water system — the Bucket-3 detail page (see
   docs/2.0-UX-PATTERN-SPEC.md) reached from the Facility ID cell on
-  drinking:overview. No map: the drinking module carries no facility geometry
-  yet, and an empty map card would promise one.
+  drinking:overview.
+
+  Phase 99 gave the module its own geometry, so this page now carries the same
+  mini-map every other entity detail page in the platform has. The map card is
+  hidden by OH2O.detailPaneMap itself when the facility has no coordinate — 40
+  of the 61 facilities in the demonstration — and a sentence stands in its place
+  rather than an empty grey rectangle.
 
   Field vocabulary is the overview's own — section-header, form-grid-2col,
   field-group, field-label, field-value / field-value-mono. Nothing here defines
@@ -29,6 +35,11 @@
   </nav>
   <p class="page-description">One facility of {{ facility.system.name }}, and the sampling points on it.</p>
 </div>
+{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -89,6 +100,31 @@
       </div>
       {% endif %}
     </div>
+
+    {% comment %}
+      Location sits with the identity block rather than at the foot of the page:
+      where a facility IS is part of what it is, not an appendix to it.
+
+      The card starts hidden and OH2O.detailPaneMap reveals it once it has read
+      the geometry — the same handshake recharge, wells, PODs and stations use.
+      When the facility has no coordinate the view sends `geojson` as None, the
+      json_script element below is never written, and the sentence stands here
+      instead. An empty FeatureCollection would render an empty grey box, which
+      is the one outcome worse than saying nothing.
+    {% endcomment %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Location</h2>
+    {% if geojson %}
+    <div id="detail-map-card" class="card-inset" style="padding: 0; overflow: hidden; display: none;">
+      <div id="detail-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+    </div>
+    {% else %}
+    <p class="text-secondary text-base" style="max-width: 70ch;">
+      No published coordinates for this facility, so there is nothing to draw. The
+      state's GAMA programme publishes positions for groundwater sources only —
+      distribution-system and treatment-plant facilities carry none — and a system
+      onboarded from the federal record arrives with no coordinates at all.
+    </p>
+    {% endif %}
 
     <h2 class="section-header" style="margin-top: var(--space-lg);">Water system</h2>
     <div class="form-grid-2col">
@@ -165,4 +201,37 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% comment %}
+  MapLibre and the shared toolkit load UNCONDITIONALLY, exactly as
+  recharge/site_detail.html does: the guarded init below has to resolve even for
+  a facility with no geometry, where its only job is to leave the card hidden.
+{% endcomment %}
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if geojson %}{{ geojson|json_script:"facility-geojson-data" }}{% endif %}
+<script>
+(function () {
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'facility-geojson-data',
+      source: 'drinking', key: 'drinking',
+      // Same colour the reader just saw on the overview map and the district
+      // map. One entity, one colour, everywhere.
+      popup: function (p) {
+        return '<strong>' + (p.name || p.facility_id || 'Facility') + '</strong><br>' +
+               'Type: ' + (p.facility_type || '—') + '<br>' +
+               'System: ' + (p.system_name || '—');
+      }
+    });
+  }
+  go();
+})();
+</script>
 {% endblock %}

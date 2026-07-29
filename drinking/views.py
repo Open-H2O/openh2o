@@ -246,8 +246,51 @@ def facility_detail(request, pk):
         {
             "facility": _describe(facility),
             "points": _points_with_activity(facility.sampling_points),
+            "geojson": _facility_geojson(facility),
         },
     )
+
+
+def _facility_geojson(facility, extra_properties=None):
+    """One facility as a one-feature ``FeatureCollection``, or ``None``.
+
+    ``None``, deliberately, and never an empty ``FeatureCollection``.
+    ``OH2O.detailPaneMap`` hides its whole card when the ``json_script`` element
+    is absent, and shows an empty grey rectangle when the element is present but
+    carries no features — which is 40 of the 61 facilities in the demonstration,
+    and EVERY facility of a system onboarded through Envirofacts, since EPA
+    publishes no coordinates at all.
+
+    A Python object, not a ``json.dumps`` string: the template escapes it through
+    ``json_script`` so a facility name can never break out of the ``<script>``.
+
+    **Identity and position only.** Same rule as ``facilities_geojson`` and for
+    the same reason — a popup is a view, so no result, limit or compliance status
+    is carried here.
+    """
+    if facility.location is None:
+        return None
+    properties = {
+        "facility_id": facility.facility_id,
+        "name": facility.name,
+        # The published LABEL, not the two-letter code (ISS-008).
+        "facility_type": facility.get_facility_type_display(),
+        "system_name": facility.system.name,
+    }
+    properties.update(extra_properties or {})
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [facility.location.x, facility.location.y],
+                },
+                "properties": properties,
+            }
+        ],
+    }
 
 
 @login_required
