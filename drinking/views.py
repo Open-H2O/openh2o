@@ -20,6 +20,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Min, Prefetch, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -228,6 +229,68 @@ def facility_detail(request, pk):
             "facility": _describe(facility),
             "points": _points_with_activity(facility.sampling_points),
         },
+    )
+
+
+@login_required
+def facilities_geojson(request):
+    """Every located facility as a plain GeoJSON FeatureCollection.
+
+    Modeled on ``recharge/views.py::recharge_sites_geojson`` — the same shape the
+    platform's other three Bucket-3 overview maps read, with no new caching
+    machinery.
+
+    **Only facilities with a location appear.** An unlocated facility is omitted
+    entirely rather than emitted at ``(0, 0)``; saying out loud how much of the
+    inventory that leaves off the map is the PAGE's job, not this endpoint's.
+
+    **The properties carry identity and position, nothing else.** No result, no
+    limit, no count of detections, no compliance status. A popup is a view, and
+    "prepare, never determine" (see the module docstring) binds it exactly as
+    hard as it binds the detail pages: this says what a thing IS and where it is,
+    never a judgment about its water.
+
+    ``ps_codes`` is what makes this ONE map instead of two. The sampling points
+    drawn here are not a second set of dots at the same coordinates — they are
+    what each facility's popup names.
+    """
+    facilities = (
+        SystemFacility.objects
+        .filter(location__isnull=False)
+        .select_related("system")
+        .annotate(point_count=Count("sampling_points"))
+        .prefetch_related(
+            Prefetch(
+                "sampling_points",
+                queryset=SamplingPoint.objects.order_by("ps_code"),
+                to_attr="ordered_points",
+            )
+        )
+        .order_by("facility_id")
+    )
+
+    features = []
+    for facility in facilities:
+        features.append({
+            "type": "Feature",
+            "geometry": json.loads(facility.location.geojson),
+            "properties": {
+                "pk": facility.pk,
+                "facility_id": facility.facility_id,
+                "name": facility.name,
+                # The published LABEL, not the two-letter code. ISS-008 was filed
+                # for exactly this on the monitoring charts.
+                "facility_type": facility.get_facility_type_display(),
+                "system_name": facility.system.name,
+                "pwsid": facility.system.pwsid,
+                "point_count": facility.point_count,
+                "ps_codes": [p.ps_code for p in facility.ordered_points],
+            },
+        })
+
+    return HttpResponse(
+        json.dumps({"type": "FeatureCollection", "features": features}),
+        content_type="application/json",
     )
 
 

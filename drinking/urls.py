@@ -19,6 +19,13 @@ urlpatterns = [
         views.facility_detail,
         name="facility_detail",
     ),
+    # The overview map's data source. Beside the facility route it draws, and
+    # ahead of no <int:pk> it could shadow — "geojson" is not an int.
+    path(
+        "facilities/geojson/",
+        views.facilities_geojson,
+        name="facilities_geojson",
+    ),
     path(
         "sampling-points/<int:pk>/",
         views.sampling_point_detail,
