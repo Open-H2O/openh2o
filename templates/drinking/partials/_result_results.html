@@ -21,7 +21,7 @@
     <tbody>
       {% for result in page_obj %}
       <tr>
-        <td class="text-secondary text-sm tabular-nums">{{ result.event.sample_date|date:"Y-m-d" }}</td>
+        <td class="text-secondary text-sm tabular-nums"><a href="{% url 'drinking:result_detail' result.pk %}" class="data-table-link">{{ result.event.sample_date|date:"Y-m-d" }}</a></td>
         <td class="text-mono">{{ result.event.sampling_point.ps_code }}</td>
         <td>{{ result.analyte.name }}</td>
         {% comment %}

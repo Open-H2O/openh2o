@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load drinking_display %}
+
+{% comment %}
+  One sample result, whole — the Bucket-3 detail page
+  (docs/2.0-UX-PATTERN-SPEC.md) reached from the Sample Date cell on
+  drinking:results and from the analyte cell on a sampling point's page.
+
+  Three blocks, in the order a reader actually asks the questions: what was
+  found, how it was analysed, and which sample it came from.
+
+  **No RegulatoryLimit appears on this page.** The platform prepares
+  submissions; it does not determine compliance. On a one-record page a limit
+  printed beside a value is a verdict in everything but the wording, and
+  tests/test_drinking_detail_views.py asserts its absence with a limit present in
+  the database so the assertion is real rather than vacuous.
+
+  {% comment %}, never {# #}: the hash form comments only to the end of its
+  LINE, so a multi-line note written that way leaks into the page.
+{% endcomment %}
+
+{% block title %}{{ result.analyte.name }} {{ event.sample_date|date:"Y-m-d" }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{{ result.analyte.name }} sampled {{ event.sample_date|date:"Y-m-d" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:results' %}">Sample Results</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ result.analyte.name }} {{ event.sample_date|date:"Y-m-d" }}</span>
+  </nav>
+  <p class="page-description">One analyte's finding in one sample: what was measured, who measured it, and where the water came from.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  <div>
+    <a href="{% url 'drinking:results' %}" class="back-link">&larr; Back to Sample Results</a>
+  </div>
+
+  <div class="card-raised">
+
+    <h2 class="section-header" style="margin-top: 0;">The finding</h2>
+
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Analyte</div>
+        <div class="field-value">{{ result.analyte.name }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">DDW code</div>
+        <div class="field-value-mono">{{ result.analyte.ddw_code|default:"—" }}</div>
+      </div>
+      {% comment %}
+        Rendered through _result_value.html, the single place the platform
+        decides how a lab finding reads. A presence/absence result reads
+        "Absent" here, never 0 and never "< RL".
+      {% endcomment %}
+      <div class="field-group">
+        <div class="field-label">Result</div>
+        <div class="field-value-mono">{% include "drinking/partials/_result_value.html" with result=result %}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Unit</div>
+        <div class="field-value">{{ result.unit|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Result type</div>
+        <div class="field-value">{{ result.get_result_kind_display }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Reporting level</div>
+        <div class="field-value-mono">{{ result.reporting_level|plain_decimal }}</div>
+      </div>
+      {% if result.counting_error is not None %}
+      <div class="field-group">
+        <div class="field-label">Counting error</div>
+        <div class="field-value-mono">{{ result.counting_error|plain_decimal }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% comment %}
+      A non-detect is a BOUND, not a measurement, and it is not a zero. Said in
+      a sentence rather than left to the "<" symbol, because the difference
+      between "we found none" and "we could not have seen this little" is the
+      whole reason the flag exists.
+    {% endcomment %}
+    {% if result.less_than_rl %}
+    <div class="card-raised" style="margin-top: var(--space-md); max-width: 75ch;">
+      <p class="text-base text-secondary" style="margin: 0;">
+        This is a <strong>non-detect</strong>. The laboratory did not measure a
+        quantity{% if result.reporting_level is not None %}; it reported only that the true value is below its reporting level of {{ result.reporting_level|plain_decimal }}&nbsp;{{ result.unit }}{% else %}; it reported only that the true value is below its reporting level{% endif %}.
+        That is a different claim from zero.
+      </p>
+    </div>
+    {% endif %}
+
+    {% if result.result_kind == "presence_absence" %}
+    <div class="card-raised" style="margin-top: var(--space-md); max-width: 75ch;">
+      <p class="text-base text-secondary" style="margin: 0;">
+        This analyte is reported <strong>present or absent</strong>, never as a
+        concentration. There is no number to show and none was measured.
+      </p>
+    </div>
+    {% endif %}
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">The analysis</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Analysis date</div>
+        <div class="field-value-mono">{{ result.analysis_date|date:"Y-m-d"|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Method</div>
+        <div class="field-value">{{ result.method|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Laboratory</div>
+        <div class="field-value">{{ result.lab_name|default:"—" }}</div>
+      </div>
+      {% comment %}
+        Labelled as ELAP rather than shown as a bare number: a certification
+        number with no scheme name beside it is a string nobody can act on.
+      {% endcomment %}
+      <div class="field-group">
+        <div class="field-label">ELAP certification</div>
+        <div class="field-value-mono">{{ result.lab_cert_no|default:"—" }}</div>
+      </div>
+    </div>
+    <p class="text-sm text-tertiary" style="margin-top: var(--space-xs); max-width: 75ch;">
+      ELAP is California's Environmental Laboratory Accreditation Program — the certification a laboratory holds to run this analysis for regulatory purposes.
+    </p>
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">The sample it came from</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Sample date</div>
+        <div class="field-value-mono">{{ event.sample_date|date:"Y-m-d" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Sample time</div>
+        <div class="field-value-mono">{{ event.sample_time|time:"H:i"|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Sample type</div>
+        <div class="field-value">{{ event.get_sample_type_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Collector</div>
+        <div class="field-value">{{ event.collector|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Sampling point</div>
+        <div class="field-value">
+          <a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link text-mono">{{ point.ps_code }}</a>{% if point.name %} — {{ point.name }}{% endif %}
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Facility</div>
+        <div class="field-value">
+          <a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a>{% if facility.name %} — {{ facility.name }}{% endif %}
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Water system</div>
+        <div class="field-value">{{ system.name }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">PWSID</div>
+        <div class="field-value-mono">{{ system.pwsid }}</div>
+      </div>
+    </div>
+
+    {% if event.chain_of_custody_note %}
+    <div class="field-group" style="margin-top: var(--space-md);">
+      <div class="field-label">Chain of custody</div>
+      <div class="field-value">{{ event.chain_of_custody_note|linebreaksbr }}</div>
+    </div>
+    {% endif %}
+
+    {% comment %}
+      The nearest published document that actually exists for this sample — the
+      system's annual Consumer Confidence Report for the year it was taken.
+      Worded as exactly that: there is no per-sample analytical PDF anywhere to
+      link to. Rendered only for a California PWSID, because the viewer is a
+      State Water Board service and a non-CA id would compose an
+      authoritative-looking link that 404s.
+    {% endcomment %}
+    {% if ccr_url %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Published report</h2>
+    <p class="text-base text-secondary" style="max-width: 75ch;">
+      <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>
+      — the annual water-quality report this system published for the year this
+      sample was taken. It is the system's report for the whole year, not this
+      sample's own laboratory sheet.
+    </p>
+    {% endif %}
+
+  </div>
+
+</div>
+{% endblock %}

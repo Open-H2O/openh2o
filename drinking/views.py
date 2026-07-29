@@ -277,6 +277,70 @@ def sampling_point_detail(request, pk):
     )
 
 
+#: The State Water Board's Consumer Confidence Report viewer.
+#:
+#: Verified live 2026-07-27: returns HTTP 200 ``application/pdf``. It is a
+#: CALIFORNIA service, which is why ``_ccr_url`` gates on the PWSID's prefix —
+#: a New Mexico or federal PWSID would compose a link that 404s while looking
+#: authoritative, and an authoritative-looking dead link is worse than none.
+CCR_VIEWER_URL = "https://ear.waterboards.ca.gov/Home/ViewCCR?PwsID={pwsid}&Year={year}"
+
+
+def _ccr_url(system, sample_date):
+    """The system's annual CCR for the year this sample was taken, or None.
+
+    **This is not the sample's own lab sheet**, and the page must not imply it
+    is. Per-sample analytical PDFs are published by nobody: Envirofacts is
+    tabular REST with no document endpoint, and California labs submit through
+    CLIP as data. The system's annual report for that year is the nearest
+    published document that exists, so it is offered as exactly that.
+    """
+    pwsid = (system.pwsid or "").strip().upper()
+    if not pwsid.startswith("CA") or sample_date is None:
+        return None
+    return CCR_VIEWER_URL.format(pwsid=pwsid, year=sample_date.year)
+
+
+@login_required
+def result_detail(request, pk):
+    """One lab result, whole.
+
+    The results log shows six columns of a record that carries far more — method,
+    laboratory, ELAP certification, reporting level, analysis date, collector,
+    chain of custody. This is the page those columns were hidden behind.
+
+    **No RegulatoryLimit is loaded or rendered here.** A one-record page is
+    exactly where a limit beside a value would look most natural, and showing one
+    is a verdict in everything but the wording. See the module docstring.
+    """
+    result = get_object_or_404(
+        SampleResult.objects.select_related(
+            "analyte",
+            "analyte__observed_property",
+            "event",
+            "event__sampling_point",
+            "event__sampling_point__facility",
+            "event__sampling_point__facility__system",
+        ),
+        pk=pk,
+    )
+    system = result.event.sampling_point.facility.system
+
+    return render(
+        request,
+        "drinking/result_detail.html",
+        {
+            "result": result,
+            "event": result.event,
+            "point": result.event.sampling_point,
+            "facility": result.event.sampling_point.facility,
+            "system": system,
+            "ccr_url": _ccr_url(system, result.event.sample_date),
+            "ccr_year": result.event.sample_date.year if result.event.sample_date else "",
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # Lab-file import: page -> preview -> commit
 # ---------------------------------------------------------------------------
