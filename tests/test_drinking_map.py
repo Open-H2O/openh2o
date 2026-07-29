@@ -42,6 +42,7 @@ from tests.factories import (
 from tests.test_module_prose import compose_urlconf_under_the_full_module_set
 
 WITHOUT_WELLS = [name for name in mod.ALL_MODULE_NAMES if name != "wells"]
+WITHOUT_DRINKING = [name for name in mod.ALL_MODULE_NAMES if name != "drinking"]
 
 #: Somewhere in Merced, so a coordinate that survives into the page is
 #: recognisable as a real place rather than the (0, 0) default.
@@ -356,3 +357,278 @@ class TestTheMapSurvivesWellsBeingOff:
         assert not SystemFacility.objects.filter(well__isnull=False).exists()
         _, data = _geojson(client_in)
         assert len(data["features"]) == 2
+
+
+# -- 5. The district map's drinking layer ------------------------------------
+#
+# The district map at `geography:map` is a declarative MAP_CONFIG rendered
+# straight into the page, so what these tests read is the rendered configuration
+# rather than a running map. That is the right level: MapLibre executing the
+# config is MapLibre's problem, but whether the config NAMES a module this
+# deployment does not run is this suite's.
+
+
+class TestTheDistrictMapCarriesTheDrinkingLayer:
+    def test_the_source_the_layer_and_the_legend_are_all_present(
+        self, client_in, mapped_system
+    ):
+        response = client_in.get(reverse("geography:map"))
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert reverse("drinking:facilities_geojson") in html, (
+            "the district map has no drinking GeoJSON source"
+        )
+        assert "id: 'drinking-points'" in html, "the drinking layer is missing"
+        assert "'drinking-points': function" in html, "the layer has no popup builder"
+        assert "Drinking Water Facilities" in html, "no legend or panel entry"
+
+    def test_it_is_declared_before_wells_so_it_draws_underneath(
+        self, client_in, mapped_system
+    ):
+        """The co-location property, pinned.
+
+        Every located drinking-water facility in the demonstration also has a
+        `Well` seeded from the SAME GAMA coordinate, so the two layers put dots
+        on identical positions. MapLibre draws in array order. Declared second,
+        drinking would sit ON TOP of wells and hide it — the failure this
+        ordering exists to prevent, and one that looks like a working map.
+        """
+        html = client_in.get(reverse("geography:map")).content.decode()
+        assert html.index("id: 'drinking-points'") < html.index("id: 'wells-points'"), (
+            "the drinking layer is declared after wells, so it draws on top of "
+            "it and hides the gold dot at every co-located facility"
+        )
+
+    def test_the_popup_carries_no_verdict(self, client_in, mapped_system):
+        """The popup builder is JS in the page, so read it as text.
+
+        Its `//` comments are stripped first, and deliberately: the comment
+        beside the builder STATES the no-verdict rule, so scanning it would fail
+        this assertion on the sentence that documents why the assertion exists.
+        What is being read here is the HTML the builder emits.
+        """
+        html = client_in.get(reverse("geography:map")).content.decode()
+        start = html.index("'drinking-points': function")
+        builder = html[start:start + 1400]
+        builder = "\n".join(
+            line.split("//", 1)[0] for line in builder.splitlines()
+        ).lower()
+        for banned in ("limit", "mcl", "exceed", "violation", "compliance"):
+            assert banned not in builder, (
+                f"the district-map popup mentions {banned!r} — a popup is a view"
+            )
+
+
+class TestTheDistrictMapDropsTheDrinkingLayer:
+    """The droppability property for a layer the harness cannot reach.
+
+    `make test-droppable` renders `/map/` under every drop configuration, but it
+    renders against an EMPTY database and asserts on visible text; the layer
+    config lives inside a `<script>` and is stripped before that assertion ever
+    sees it. So the module gate on this layer has no coverage there at all, and
+    this is the only thing that reads it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _drinking_is_off(self, settings):
+        compose_urlconf_under_the_full_module_set()
+        settings.OPENH2O_MODULES = WITHOUT_DRINKING
+
+    def test_the_map_still_renders(self, client_in, mapped_system):
+        response = client_in.get(reverse("geography:map"))
+        assert response.status_code == 200, (
+            "the district map 500s with the drinking module dropped"
+        )
+
+    def test_nothing_points_at_the_drinking_endpoint(self, client_in, mapped_system):
+        html = client_in.get(reverse("geography:map")).content.decode()
+        assert reverse("drinking:facilities_geojson") not in html, (
+            "a source survived its module — MapLibre would fetch a 404 route"
+        )
+        assert "id: 'drinking-points'" not in html, (
+            "a layer survived without its source, which is a MapLibre console "
+            "error rather than a clean absence"
+        )
+        assert "Drinking Water Facilities" not in html, (
+            "the legend still offers a layer this deployment does not have"
+        )
+
+    def test_the_page_description_stops_naming_drinking_water(
+        self, client_in, mapped_system
+    ):
+        html = _squash(client_in.get(reverse("geography:map")).content.decode())
+        assert "drinking-water facilities" not in html, (
+            "the map's description enumerates a domain this deployment lacks"
+        )
+
+
+# -- 6. The detail mini-maps -------------------------------------------------
+
+
+def _embedded_geojson(html, element_id):
+    """The `json_script` payload for one element id, or None when absent.
+
+    The distinction this helper exists to make: ABSENT is the correct state for
+    an unlocated feature, and an empty FeatureCollection is not. Absent hides the
+    whole card; present-and-empty renders an empty grey box.
+    """
+    marker = f'<script id="{element_id}" type="application/json">'
+    if marker not in html:
+        return None
+    body = html.split(marker, 1)[1].split("</script>", 1)[0]
+    return json.loads(body)
+
+
+class TestTheFacilityDetailMap:
+    def test_a_located_facility_carries_its_one_feature(
+        self, client_in, mapped_system
+    ):
+        html = client_in.get(
+            reverse("drinking:facility_detail", args=[mapped_system["well_a"].pk])
+        ).content.decode()
+        data = _embedded_geojson(html, "facility-geojson-data")
+        assert data is not None, "a located facility has no geometry to draw"
+        assert len(data["features"]) == 1
+        assert data["features"][0]["geometry"]["coordinates"] == list(MERCED)
+        assert 'id="detail-map"' in html, "the map host is missing"
+
+    def test_an_unlocated_facility_emits_NO_element_at_all(
+        self, client_in, mapped_system
+    ):
+        """Absent, not present-and-empty.
+
+        `OH2O.detailPaneMap` hides its card when the element is missing and
+        renders an empty grey rectangle when the element is there with no
+        features. 40 of the 61 facilities in the demonstration are in this
+        state, and every facility of an Envirofacts-onboarded system is.
+        """
+        response = client_in.get(
+            reverse("drinking:facility_detail", args=[mapped_system["unlocated"].pk])
+        )
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert _embedded_geojson(html, "facility-geojson-data") is None, (
+            "an unlocated facility emitted a FeatureCollection — an empty one "
+            "renders an empty grey map box, which is worse than no map"
+        )
+        assert 'id="detail-map"' not in html, "an empty map host was rendered"
+
+    def test_it_says_why_there_is_no_map(self, client_in, mapped_system):
+        html = _squash(
+            client_in.get(
+                reverse(
+                    "drinking:facility_detail", args=[mapped_system["unlocated"].pk]
+                )
+            ).content.decode()
+        )
+        assert "No published coordinates for this facility" in html
+        assert "groundwater sources" in html, (
+            "the sentence does not say where locations come from"
+        )
+
+    def test_the_geojson_properties_carry_no_verdict(self, client_in, mapped_system):
+        html = client_in.get(
+            reverse("drinking:facility_detail", args=[mapped_system["well_a"].pk])
+        ).content.decode()
+        data = _embedded_geojson(html, "facility-geojson-data")
+        for key in data["features"][0]["properties"]:
+            lowered = key.lower()
+            for banned in ("limit", "mcl", "exceed", "violation", "status"):
+                assert banned not in lowered, (
+                    f"the detail map carries a property named {key!r}"
+                )
+
+
+class TestTheSamplingPointDetailMap:
+    def test_it_is_drawn_at_its_facility_and_says_so(self, client_in, mapped_system):
+        point = mapped_system["points"][0]          # on well_a, which is located
+        html = client_in.get(
+            reverse("drinking:sampling_point_detail", args=[point.pk])
+        ).content.decode()
+        data = _embedded_geojson(html, "point-geojson-data")
+        assert data is not None
+        properties = data["features"][0]["properties"]
+        assert properties["ps_code"] == point.ps_code, (
+            "the popup cannot attribute a coordinate it was never given"
+        )
+        assert properties["facility_id"] == mapped_system["well_a"].facility_id
+        squashed = _squash(html)
+        assert (
+            f"Shown at the location of facility {mapped_system['well_a'].facility_id}"
+            in squashed
+        ), (
+            "the page does not say whose coordinate this is, so a reader may "
+            "believe the tap itself was surveyed"
+        )
+
+    def test_a_point_on_an_unlocated_facility_emits_NO_element_at_all(
+        self, client_in, mapped_system
+    ):
+        point = mapped_system["points"][3]          # on the DST facility
+        response = client_in.get(
+            reverse("drinking:sampling_point_detail", args=[point.pk])
+        )
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert _embedded_geojson(html, "point-geojson-data") is None
+        assert 'id="detail-map"' not in html
+        assert "has no published coordinate" in _squash(html)
+
+    def test_the_geojson_properties_carry_no_verdict(self, client_in, mapped_system):
+        html = client_in.get(
+            reverse(
+                "drinking:sampling_point_detail",
+                args=[mapped_system["points"][0].pk],
+            )
+        ).content.decode()
+        data = _embedded_geojson(html, "point-geojson-data")
+        for key in data["features"][0]["properties"]:
+            lowered = key.lower()
+            for banned in ("limit", "mcl", "exceed", "violation", "status"):
+                assert banned not in lowered, (
+                    f"the detail map carries a property named {key!r}"
+                )
+
+
+# -- 7. The wells guard survives the new blocks ------------------------------
+
+
+class TestTheWellsGuardStillHoldsOnBothDetailPages:
+    """98-01 pinned this in `TestWellLinkIsModuleGuarded`; re-pin it here.
+
+    Both pages just gained a new context value, two new template blocks and a
+    new section. `drinking.requires` is ("standards",), so an unguarded
+    `{% url 'wells:detail' %}` on either is a NoReverseMatch 500 on the
+    drinking-water-utility deployment this milestone exists to serve — not a
+    missing link.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _wells_is_off(self, settings):
+        compose_urlconf_under_the_full_module_set()
+        settings.OPENH2O_MODULES = WITHOUT_WELLS
+
+    def test_the_facility_page_renders_with_its_map(self, client_in, mapped_system):
+        response = client_in.get(
+            reverse("drinking:facility_detail", args=[mapped_system["well_a"].pk])
+        )
+        assert response.status_code == 200, (
+            "the facility page 500s on a drinking-water-only deployment"
+        )
+        html = response.content.decode()
+        assert "/wells/" not in html, "an unguarded wells link survived"
+        assert 'id="detail-map"' in html, "the map vanished with the wells module"
+
+    def test_the_sampling_point_page_renders_with_its_map(
+        self, client_in, mapped_system
+    ):
+        response = client_in.get(
+            reverse(
+                "drinking:sampling_point_detail",
+                args=[mapped_system["points"][0].pk],
+            )
+        )
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert "/wells/" not in html
+        assert 'id="detail-map"' in html
