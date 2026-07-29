@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% comment %}
+  One sampling point — the Bucket-3 detail page (docs/2.0-UX-PATTERN-SPEC.md)
+  reached from the PS Code cell on drinking:sampling_points and from the
+  sampling-points table on drinking:facility_detail.
+
+  The results table here is deliberately CAPPED and says so. A point in the
+  demonstration carries ~800 results; the full log lives at drinking:results
+  filtered by ?sampling_point=, and this page links to it rather than growing a
+  second copy of it.
+
+  Every value goes through drinking/partials/_result_value.html — the single
+  place the platform decides how a lab finding reads. A presence/absence result
+  must read "Absent", never 0 and never "< RL".
+
+  {% comment %}, never {# #}: the hash form comments only to the end of its
+  LINE, so a multi-line note written that way leaks into the page.
+{% endcomment %}
+
+{% block title %}{{ point.ps_code }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Sampling point {{ point.ps_code }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:sampling_points' %}">Sampling Points</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{{ point.ps_code }}</span>
+  </nav>
+  <p class="page-description">Where this sample is physically drawn, and what has been measured there.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  <div>
+    <a href="{% url 'drinking:sampling_points' %}" class="back-link">&larr; Back to Sampling Points</a>
+  </div>
+
+  <div class="card-raised">
+
+    <h2 class="section-header" style="margin-top: 0;">{{ point.name|default:point.ps_code }}</h2>
+
+    <div class="form-grid-2col" style="margin-top: var(--space-md);">
+      <div class="field-group">
+        <div class="field-label">PS code</div>
+        <div class="field-value-mono">{{ point.ps_code }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Name</div>
+        <div class="field-value">{{ point.name|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Point type</div>
+        <div class="field-value">{{ point.get_point_type_display|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Water system</div>
+        <div class="field-value">{{ point.facility.system.name }} <span class="text-mono text-secondary">({{ point.facility.system.pwsid }})</span></div>
+      </div>
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Facility</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Facility</div>
+        <div class="field-value">
+          <a href="{% url 'drinking:facility_detail' point.facility.pk %}" class="data-table-link">{{ point.facility.facility_id }}</a>{% if point.facility.name %} — {{ point.facility.name }}{% endif %}
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Facility type</div>
+        <div class="field-value">{{ point.facility.get_facility_type_display|default:"—" }}</div>
+      </div>
+      {% comment %}
+        Module-guarded exactly as the overview and the facility page are:
+        `drinking.requires` is ("standards",), so this page must render on a
+        deployment carrying no wells module, where an unguarded
+        {% url 'wells:detail' %} is a NoReverseMatch 500.
+      {% endcomment %}
+      <div class="field-group">
+        <div class="field-label">Well</div>
+        <div class="field-value">
+          {% if point.facility.well and 'wells' in enabled_modules %}
+            <a href="{% url 'wells:detail' point.facility.well.pk %}" class="data-table-link">{{ point.facility.well.name }}</a>
+          {% elif point.facility.well %}
+            {{ point.facility.well.name }}
+          {% else %}
+            <span class="text-tertiary">—</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Sampling history</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Results recorded</div>
+        <div class="field-value-mono">{{ result_count }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Analytes measured</div>
+        <div class="field-value-mono">{{ analyte_count }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Earliest sample</div>
+        <div class="field-value-mono">{{ first_sample|date:"Y-m-d"|default:"—" }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Latest sample</div>
+        <div class="field-value-mono">{{ latest_sample|date:"Y-m-d"|default:"—" }}</div>
+      </div>
+    </div>
+
+    {% comment %}
+      The heading states the TRUE total, not the number of rows below it. If a
+      reader has to count the rows to discover the list is partial, the page has
+      misled them.
+    {% endcomment %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">
+      {% if is_truncated %}The {{ shown_limit }} most recent of {{ result_count }} results{% else %}Results{% if result_count %} ({{ result_count }}){% endif %}{% endif %}
+    </h2>
+
+    {% if recent_results %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Sample Date</th>
+            <th>Analyte</th>
+            <th>Result</th>
+            <th>Method</th>
+            <th>Laboratory</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for result in recent_results %}
+          <tr>
+            <td class="text-secondary text-sm tabular-nums">{{ result.event.sample_date|date:"Y-m-d" }}</td>
+            <td>{{ result.analyte.name }}</td>
+            <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
+            <td class="text-secondary text-sm">{{ result.method|default:"—" }}</td>
+            <td class="text-secondary text-sm">{{ result.lab_name|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-sm" style="margin-top: var(--space-sm);">
+      <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">See all {{ result_count }} result{{ result_count|pluralize }} for this point</a>
+    </p>
+    {% else %}
+    <p class="text-secondary text-sm">No results recorded at this sampling point yet.</p>
+    {% endif %}
+
+  </div>
+
+</div>
+{% endblock %}

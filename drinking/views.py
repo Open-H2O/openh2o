@@ -19,7 +19,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Prefetch, Q
+from django.db.models import Count, Max, Min, Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
@@ -226,6 +226,53 @@ def facility_detail(request, pk):
         {
             "facility": _describe(facility),
             "points": _points_with_activity(facility.sampling_points),
+        },
+    )
+
+
+#: How many of a sampling point's results its detail page shows.
+#:
+#: A point in the Merced demonstration carries roughly 800 results (22,311
+#: across 27 points), so rendering "its results" unbounded is an 800-row page.
+#: Paginating them here would be a second, worse copy of the results log, which
+#: already filters by ``?sampling_point=``. The page shows the most recent 25
+#: and states the true total beside them — a truncated list that does not admit
+#: it is truncated is the failure mode this constant exists to avoid.
+RECENT_RESULT_LIMIT = 25
+
+
+@login_required
+def sampling_point_detail(request, pk):
+    """One sampling point: where it is, what hangs off it, its recent results."""
+    point = get_object_or_404(
+        SamplingPoint.objects.select_related(
+            "facility", "facility__system", "facility__well"
+        ),
+        pk=pk,
+    )
+
+    at_this_point = SampleResult.objects.filter(event__sampling_point=point)
+    summary = at_this_point.aggregate(
+        result_count=Count("pk"),
+        analyte_count=Count("analyte", distinct=True),
+        first_sample=Min("event__sample_date"),
+        latest_sample=Max("event__sample_date"),
+    )
+    recent = (
+        at_this_point
+        .select_related("analyte", "event")
+        .order_by("-event__sample_date", "analyte__name")[:RECENT_RESULT_LIMIT]
+    )
+
+    return render(
+        request,
+        "drinking/sampling_point_detail.html",
+        {
+            "point": point,
+            "recent_results": recent,
+            "shown_limit": RECENT_RESULT_LIMIT,
+            "is_truncated": summary["result_count"] > RECENT_RESULT_LIMIT,
+            **summary,
         },
     )
 

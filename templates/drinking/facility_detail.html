@@ -142,7 +142,7 @@
         <tbody>
           {% for point in points %}
           <tr>
-            <td class="text-mono">{{ point.ps_code }}</td>
+            <td class="text-mono"><a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link">{{ point.ps_code }}</a></td>
             <td>{{ point.name|default:"—" }}</td>
             <td class="text-secondary text-sm">{{ point.get_point_type_display|default:"—" }}</td>
             <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|default:"—" }}</td>

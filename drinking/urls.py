@@ -19,6 +19,11 @@ urlpatterns = [
         views.facility_detail,
         name="facility_detail",
     ),
+    path(
+        "sampling-points/<int:pk>/",
+        views.sampling_point_detail,
+        name="sampling_point_detail",
+    ),
     path("import/", views.import_page, name="import"),
     path("import/preview/", views.import_preview, name="import_preview"),
     path("import/commit/", views.import_commit, name="import_commit"),
