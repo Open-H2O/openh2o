@@ -106,6 +106,11 @@ def mapped_system(db):
     }
 
 
+def _squash(html):
+    """Collapse whitespace so a template's line wrapping cannot break a match."""
+    return " ".join(html.split())
+
+
 def _geojson(client):
     response = client.get(reverse("drinking:facilities_geojson"))
     assert response.status_code == 200
@@ -219,3 +224,128 @@ class TestTheMapRendersNoVerdict:
         body = response.content.decode().lower()
         for banned in ("result", "analyte", "detection", "regulatory"):
             assert banned not in body
+# -- 3. The page and its computed coverage -----------------------------------
+
+
+class TestTheCoverageSentenceIsComputed:
+    def test_it_counts_what_is_actually_located(self, client_in, mapped_system):
+        """Add a location; the page must say a different number.
+
+        A test asserting the demonstration's own "21 of 61" would pass forever
+        and prove nothing.
+        """
+        html = _squash(
+            client_in.get(reverse("drinking:sampling_points")).content.decode()
+        )
+        assert "2 of the 3" in html, (
+            "the page does not state the facility coverage it actually has"
+        )
+
+        mapped_system["unlocated"].location = _point(0.02)
+        mapped_system["unlocated"].save(update_fields=["location"])
+
+        html = _squash(
+            client_in.get(reverse("drinking:sampling_points")).content.decode()
+        )
+        assert "3 of the 3" in html, "the coverage sentence is a hardcoded literal"
+
+    def test_it_counts_the_points_the_map_can_show(self, client_in, mapped_system):
+        """Three of the four sampling points hang off a located facility."""
+        html = _squash(
+            client_in.get(reverse("drinking:sampling_points")).content.decode()
+        )
+        assert "3 of the 4" in html
+
+    def test_it_says_why_the_rest_are_missing(self, client_in, mapped_system):
+        """The gap is a fact about the public record, not a defect here."""
+        html = _squash(
+            client_in.get(reverse("drinking:sampling_points")).content.decode()
+        )
+        assert "source wells" in html.lower()
+
+    def test_no_hardcoded_demonstration_numbers(self, client_in, mapped_system):
+        """The Merced counts must not be written into the template."""
+        html = _squash(
+            client_in.get(reverse("drinking:sampling_points")).content.decode()
+        )
+        for literal in ("21 of 61", "21 of 27", "21 of the 61"):
+            assert literal not in html
+
+
+class TestTheEmptyStateIsASentence:
+    """An onboarded system has NO coordinates — Envirofacts publishes none.
+
+    So zero-mapped is the common case for a new operator, not an edge case, and a
+    380px empty grey rectangle is worse than an honest sentence.
+    """
+
+    @pytest.fixture
+    def unmapped_system(self, db):
+        system = WaterSystemFactory(pwsid="CA0000001", name="Newly Onboarded Water")
+        facility = SystemFacilityFactory(
+            system=system, facility_id="010", facility_type="WL", location=None
+        )
+        SamplingPointFactory(ps_code="CA0000001_010_001", facility=facility)
+        return system
+
+    def test_no_map_host_is_rendered(self, client_in, unmapped_system):
+        html = _squash(
+            client_in.get(reverse("drinking:sampling_points")).content.decode()
+        )
+        assert 'id="drinking-overview-map"' not in html, (
+            "an empty grey rectangle was rendered instead of an explanation"
+        )
+
+    def test_it_says_so_and_says_where_locations_come_from(
+        self, client_in, unmapped_system
+    ):
+        html = _squash(
+            client_in.get(reverse("drinking:sampling_points")).content.decode()
+        ).lower()
+        assert "no facility in this system has a published location" in html
+        assert "source wells" in html
+        # And it names the reason a new operator sees this at all.
+        assert "envirofacts" in html
+
+    def test_the_endpoint_is_still_valid_and_empty(self, client_in, unmapped_system):
+        _, data = _geojson(client_in)
+        assert data == {"type": "FeatureCollection", "features": []}
+
+
+# -- 4. The drinking-water utility flavor ------------------------------------
+
+
+class TestTheMapSurvivesWellsBeingOff:
+    """`parcels`+`accounting` off takes `wells` with it (Phase 89).
+
+    This is the deployment shape the milestone exists for, and the whole reason
+    Task 1 put the geometry on `SystemFacility` instead of reading it through
+    `SystemFacility.well`.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _wells_is_off(self, settings):
+        compose_urlconf_under_the_full_module_set()
+        settings.OPENH2O_MODULES = WITHOUT_WELLS
+
+    def test_the_page_renders_with_its_map(self, client_in, mapped_system):
+        response = client_in.get(reverse("drinking:sampling_points"))
+        assert response.status_code == 200, (
+            "the sampling-point page 500s on a drinking-water-only deployment"
+        )
+        html = response.content.decode()
+        assert 'id="drinking-overview-map"' in html, "the map host vanished"
+
+    def test_the_located_facilities_are_still_in_the_geojson(
+        self, client_in, mapped_system
+    ):
+        _, data = _geojson(client_in)
+        pks = {f["properties"]["pk"] for f in data["features"]}
+        assert mapped_system["well_a"].pk in pks
+        assert len(data["features"]) == 2
+
+    def test_the_geometry_never_came_from_the_well(self, client_in, mapped_system):
+        """No facility in this fixture has a well at all, and the map is full."""
+        assert not SystemFacility.objects.filter(well__isnull=False).exists()
+        _, data = _geojson(client_in)
+        assert len(data["features"]) == 2

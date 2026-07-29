@@ -1,0 +1,157 @@
+{% comment %}
+Drinking-water overview map: every LOCATED facility at once, on the
+drinking:sampling_points inventory page.
+
+The Bucket-3 overview map (docs/2.0-UX-PATTERN-SPEC.md) for the drinking-water
+screen — the fourth of its kind, after Zones, Surface Diversions and Recharge.
+Copied in structure from _recharge_overview_map.html; the differences are only
+where the data genuinely differs.
+
+Points only, so there is no polygon fill/outline pair and the bbox walk stays
+flat rather than recursive.
+
+ONE map, not two. The dots are facilities, and each popup names the PS codes
+sampled AT that facility — a sampling point is a tap on a facility and shares its
+coordinate, so drawing them as a second layer would put two dots on one spot.
+
+The popup says what a facility IS and where it is. It renders no result, no
+limit, and no judgment about the water: `drinking/views.py` explains why, and
+tests/test_drinking_map.py fails if one appears.
+
+The parent page must provide a <div> with the matching map_id, and must load
+MapLibre GL JS + map-core.js (the map_scripts block) before this include.
+
+Variables:
+  map_id  - ID of the existing <div> container on the page (required)
+{% endcomment %}
+<script>
+(function() {
+  // MapLibre loads in the map_scripts block, which renders AFTER page content,
+  // so on first render this runs before the library exists. Defer until
+  // DOMContentLoaded; on an HTMX content swap the document is already loaded.
+  function init() {
+    if (!window.maplibregl) return;
+    var el = document.getElementById('{{ map_id }}');
+    if (!el || el._mapInit) return;
+    el._mapInit = true;
+
+    var COLOR = OH2O.entities.drinking.color;
+
+    var map = new maplibregl.Map({
+      container: '{{ map_id }}',
+      style: OH2O.basemapStyle('aerial'),
+      zoom: 7,
+      center: [-119.5, 37.3],
+      attributionControl: false
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    OH2O.mountBasemapToggle(map, 'aerial');
+
+    // Resolve the detail URLs through Django (a sentinel pk we swap out) so the
+    // links track the app's URL prefix instead of hardcoding it.
+    var facilityUrl = '{% url "drinking:facility_detail" 0 %}';
+    var pointsUrl = '{% url "drinking:sampling_points" %}';
+
+    function escapeHtml(text) {
+      return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function popupFor(p, lngLat) {
+      // MapLibre serialises array properties to a JSON string in the feature it
+      // hands back, so ps_codes arrives as text on click and as an array here
+      // only if it was never round-tripped. Handle both.
+      var codes = p.ps_codes;
+      if (typeof codes === 'string') {
+        try { codes = JSON.parse(codes); } catch (e) { codes = []; }
+      }
+      codes = codes || [];
+
+      var title = p.name || p.facility_id || 'Facility';
+      var sub = [p.facility_type, p.system_name].filter(Boolean).join(' &middot; ');
+      var sampled = codes.length
+        ? '<div style="color:#8899aa;font-size:11px;margin-top:6px;">Sampled at ' +
+          escapeHtml(codes.join(', ')) + '</div>'
+        : '<div style="color:#8899aa;font-size:11px;margin-top:6px;">No sampling point recorded here</div>';
+
+      // One point at this facility gets a direct link to the inventory filtered
+      // to it; more than one has no single page to go to, so the facility page
+      // (which lists them all) is the honest destination.
+      var pointLink = codes.length === 1
+        ? '<a href="' + pointsUrl + '?q=' + encodeURIComponent(codes[0]) + '" ' +
+          'style="display:block;margin-top:4px;color:#38bdf8;text-decoration:none;font-size:11px;">' +
+          'Find this sampling point &rarr;</a>'
+        : '';
+
+      new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
+        .setLngLat(lngLat)
+        .setHTML(
+          '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+          '<div style="font-weight:600;font-size:13px;">' + escapeHtml(title) + '</div>' +
+          (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + escapeHtml(sub) + '</div>' : '') +
+          sampled +
+          '<a href="' + facilityUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
+            'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View facility &rarr;</a>' +
+          pointLink +
+          '</div>'
+        )
+        .addTo(map);
+    }
+
+    map.on('load', function() {
+      fetch('{% url "drinking:facilities_geojson" %}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.features || !data.features.length) return;
+
+          // Points only — no polygons in this layer, so the bbox walk is a flat
+          // pass over [lng, lat] pairs rather than recharge's recursion.
+          var bbox = [Infinity, Infinity, -Infinity, -Infinity];
+          data.features.forEach(function(f) {
+            if (!f.geometry || !f.geometry.coordinates) return;
+            var c = f.geometry.coordinates;
+            if (c[0] < bbox[0]) bbox[0] = c[0];
+            if (c[1] < bbox[1]) bbox[1] = c[1];
+            if (c[0] > bbox[2]) bbox[2] = c[0];
+            if (c[1] > bbox[3]) bbox[3] = c[1];
+          });
+          if (isFinite(bbox[0])) {
+            map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, maxZoom: 13 });
+          }
+
+          map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+
+          map.addLayer({
+            id: '{{ map_id }}-glow',
+            type: 'circle',
+            source: '{{ map_id }}-source',
+            paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
+          });
+          map.addLayer({
+            id: '{{ map_id }}-dots',
+            type: 'circle',
+            source: '{{ map_id }}-source',
+            paint: {
+              'circle-radius': 6, 'circle-color': COLOR,
+              'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
+            }
+          });
+
+          map.on('click', '{{ map_id }}-dots', function(e) {
+            popupFor(e.features[0].properties, e.features[0].geometry.coordinates);
+          });
+          map.on('mouseenter', '{{ map_id }}-dots', function() { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', '{{ map_id }}-dots', function() { map.getCanvas().style.cursor = ''; });
+        })
+        .catch(function(err) { console.error('Drinking facilities GeoJSON failed:', err); });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

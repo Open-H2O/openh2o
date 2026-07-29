@@ -104,6 +104,16 @@ def sampling_points(request):
     paginator = Paginator(queryset, 50)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
+    # The coverage counts for the sentence under the map. Computed here, every
+    # render, and NEVER written into the template as literals: the Merced
+    # demonstration happens to be 21 of 27 points and 21 of 61 facilities, and an
+    # onboarded system has neither of those numbers. EPA's Envirofacts publishes
+    # no coordinates at all, so a freshly-onboarded operator's honest answer is
+    # zero — which is the common case for a new deployment, not an edge case.
+    #
+    # Deliberately unfiltered by `q` / `point_type`. This sentence is about what
+    # the platform HOLDS, not about what the current search matched; recomputing
+    # it per keystroke would make "how much of my inventory is mapped" flicker.
     return list_response(
         request,
         page_template="drinking/sampling_points.html",
@@ -115,6 +125,14 @@ def sampling_points(request):
             "point_type": point_type,
             "point_type_choices": POINT_TYPE_CHOICES,
             "has_any": SamplingPoint.objects.exists(),
+            "point_total_count": SamplingPoint.objects.count(),
+            "mapped_point_count": SamplingPoint.objects.filter(
+                facility__location__isnull=False
+            ).count(),
+            "total_facility_count": SystemFacility.objects.count(),
+            "mapped_facility_count": SystemFacility.objects.filter(
+                location__isnull=False
+            ).count(),
         },
     )
 

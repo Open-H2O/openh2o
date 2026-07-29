@@ -56,6 +56,12 @@ OH2O.entities = {
                labelField: ['coalesce', ['get','station_name'], ['get','external_station_id'], 'Station'] },
     recharge:{ color: OH2O.colors.purple, rampLo: 4.5, rampHi: 10,  labelMin: 10.5,
                labelField: ['coalesce', ['get','name'], ['get','site_type'], 'Recharge'] },
+    // Drinking-water facilities. blueBright, NOT gold: on the district map these
+    // dots land on the SAME coordinates as the gold `wells` layer (a supply well
+    // is one physical feature seen from two sides), and two gold dots on one
+    // point is unreadable.
+    drinking:{ color: OH2O.colors.blueBright, rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
+               labelField: ['coalesce', ['get','name'], ['get','facility_id'], 'Facility'] },
     parcel:  { color: OH2O.colors.blue,   labelMin: 10.5,
                labelField: ['get','parcel_number'] },
     zone:    { color: OH2O.colors.green,  labelMin: 9,

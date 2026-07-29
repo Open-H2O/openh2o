@@ -1,7 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Sampling Points - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Sampling points{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -16,6 +27,37 @@
 
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
+
+  {# The Bucket-3 overview map, and an honest sentence about how much of the
+     inventory it can show. Both counts are computed in the view on every render
+     — never written down here — because the Merced demonstration's numbers are
+     not any other system's, and an operator who onboards through the Envirofacts
+     flow starts with none at all.
+
+     OUTSIDE #results, and that is load-bearing: the search box below targets
+     #results, so a map inside it would be destroyed and rebuilt on every
+     keystroke. #}
+  {% if mapped_facility_count %}
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="drinking-overview-map" style="height: 380px; width: 100%;"></div>
+  </div>
+  <p class="page-description">
+    The map shows {{ mapped_point_count }} of the {{ point_total_count }} sampling
+    point{{ point_total_count|pluralize }} in this inventory, drawn at the
+    {{ mapped_facility_count }} of the {{ total_facility_count }} facilities that
+    have a published location. Coordinates are published by GAMA for source wells
+    only, so distribution-system and treatment-plant facilities carry none, and
+    the points sampled there cannot be placed on a map.
+  </p>
+  {% else %}
+  <p class="page-description">
+    No facility in this system has a published location, so there is no map of
+    this inventory yet. Coordinates are published by GAMA for source wells only —
+    EPA's Envirofacts record, which onboarding builds a system from, carries none
+    at all — so a newly onboarded system starts unmapped and gains coordinates as
+    its source wells are located.
+  </p>
+  {% endif %}
 
   <div class="card-raised toolbar-row">
     <div style="flex: 1; min-width: 200px;">
@@ -56,4 +98,10 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if mapped_facility_count %}
+{% include "drinking/partials/_drinking_overview_map.html" with map_id="drinking-overview-map" %}
+{% endif %}
 {% endblock %}
