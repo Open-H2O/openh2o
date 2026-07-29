@@ -19,7 +19,7 @@
   gated on its own membership with `any_module_enabled`, the tag Phase 88 added
   for exactly a sentence that would otherwise be left naming nothing. The two
   sentences that survive still describe the map correctly: the agency boundary
-  and its zones are `geography` and are always there.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" as map_has_features %}<p class="page-description">{% if map_has_features %}Interactive map showing {% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" %}. {% endif %}Toggle layers with the controls panel. Click features for details.</p>
+  and its zones are `geography` and are always there.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "drinking" as map_has_features %}<p class="page-description">{% if map_has_features %}Interactive map showing {% module_nouns "parcels:use areas" "wells:wells" "surface:points of diversion" "recharge:recharge sites" "drinking:drinking-water facilities" %}. {% endif %}Toggle layers with the controls panel. Click features for details.</p>
 </div>
 {% endblock %}
 
@@ -119,7 +119,10 @@
 <script src="{% static 'js/map-core.js' %}"></script>
 <script>
 var ENT = OH2O.entities;
-var MAP_CONFIG = {
+{% if 'drinking' in enabled_modules %}// Resolved through Django with a sentinel pk we swap out, so the popup's link
+// tracks the app's URL prefix instead of hardcoding it.
+var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
+{% endif %}var MAP_CONFIG = {
     title: 'Open Water Accounting Platform',
     basemap: 'aerial',
     center: [{{ center_lng }}, {{ center_lat }}],
@@ -135,6 +138,7 @@ var MAP_CONFIG = {
         { id: 'zone-labels', url: '{% url "geography:zone_labels_geojson" %}' },
         {% if 'parcels' in enabled_modules %}{ id: 'parcels', url: '{% url "parcels:geojson" %}' },{% endif %}
         {% if 'wells' in enabled_modules %}{ id: 'wells', url: '{% url "wells:geojson" %}' },{% endif %}
+        {% if 'drinking' in enabled_modules %}{ id: 'drinking', url: '{% url "drinking:facilities_geojson" %}' },{% endif %}
         {% if 'surface' in enabled_modules %}{ id: 'pods', url: '{% url "surface:pods_geojson" %}' },{% endif %}
         {% if 'recharge' in enabled_modules %}{ id: 'recharge', url: '{% url "recharge:sites_geojson" %}' },{% endif %}
         {% if 'datasync' in enabled_modules %}{ id: 'stations', url: '{% url "datasync:stations_geojson" %}' },{% endif %}
@@ -242,6 +246,32 @@ var MAP_CONFIG = {
         Object.assign(OH2O.makeLabelLayer('parcels-label', 'parcels', 'parcel', { anchor: 'center', offset: [0, 0],
             layout: { 'text-size': ['interpolate', ['linear'], ['zoom'], 14, 10, 17, 12.5] } }),
             { panelHidden: true, group: 'parcels', section: 'Land Use' }),{% endif %}
+
+        // ── Drinking Water ──
+        {% comment %}
+          Guarded with its source above, exactly like the five other optional
+          layers. Placed BEFORE the wells pair on purpose, and drawn at a LARGER
+          radius than wells uses.
+
+          Every located drinking-water facility in the demonstration also has a
+          Well, and `_seed_wells` built those Well rows from the SAME GAMA
+          coordinate — so on a full deployment these two layers put dots on 21
+          identical positions. MapLibre draws in array order, so whichever came
+          second would simply hide the other. Drawing drinking first and wider
+          makes a co-located pair read as a blue ring around a gold dot ("this
+          well is also a drinking-water source") instead of as a dot that
+          vanished. Nothing is offset, jittered or nudged: two features at one
+          coordinate is the truth, and the layers panel is what separates them.
+        {% endcomment %}{% if 'drinking' in enabled_modules %}{
+            id: 'drinking-points', type: 'circle', source: 'drinking',
+            label: 'Drinking Water Facilities', section: 'Drinking Water', label_id: 'drinking-label',
+            paint: OH2O.pointPaint('drinking', {
+                'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 6, 13, 9.5, 16, 13]
+            }),
+            glow: { paint: OH2O.glowPaint('drinking') },
+            swatch: 'dot', swatchColor: OH2O.colors.blueBright
+        },
+        Object.assign(OH2O.makeLabelLayer('drinking-label', 'drinking', 'drinking', {}), { panelHidden: true, section: 'Drinking Water' }),{% endif %}
         {% comment %}
           Guarded with their source above, same reasoning as Surface Water and
           Recharge below: a layer left behind after its source is gone is a
@@ -392,6 +422,23 @@ var MAP_CONFIG = {
                    'Status: ' + (p.status || '—') + '<br>' +
                    '<a href="/wells/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         },{% endif %}
+        {% if 'drinking' in enabled_modules %}'drinking-points': function(p) {
+            // MapLibre serialises an array property to a JSON STRING in the
+            // feature it hands back on click, so ps_codes arrives here as text.
+            var codes = p.ps_codes;
+            if (typeof codes === 'string') {
+                try { codes = JSON.parse(codes); } catch (e) { codes = []; }
+            }
+            codes = codes || [];
+            // Identity and position only — no result, no limit, no compliance
+            // status. A popup is a view; "prepare, never determine" binds it.
+            return '<strong>' + (p.name || p.facility_id || 'Facility') + '</strong><br>' +
+                   'Facility ID: ' + (p.facility_id || '—') + '<br>' +
+                   'Type: ' + (p.facility_type || '—') + '<br>' +
+                   'System: ' + (p.system_name || '—') + '<br>' +
+                   'Sampled at: ' + (codes.length ? codes.join(', ') : 'no sampling point recorded') + '<br>' +
+                   '<a href="' + DRINKING_FACILITY_URL.replace('/0/', '/' + p.pk + '/') + '" style="color:'+OH2O.colors.gold+'">View details →</a>';
+        },{% endif %}
         {% if 'surface' in enabled_modules %}
         'pods-points': function(p) {
             return '<strong>' + (p.name || 'Unknown POD') + '</strong><br>' +
@@ -411,7 +458,10 @@ var MAP_CONFIG = {
     legend: [
 {% if gsa_zones %}        { title: 'GSA Zones', items: [
 {% for z in gsa_zones %}            { label: '{{ z.name|escapejs }}', swatch: 'fill', color: '{{ z.color }}' }{% if not forloop.last %},{% endif %}
-{% endfor %}        ]}
+{% endfor %}        ]}{% if 'drinking' in enabled_modules %},{% endif %}
+{% endif %}{% if 'drinking' in enabled_modules %}        { title: 'Drinking Water', items: [
+            { label: 'Drinking Water Facilities', swatch: 'dot', color: OH2O.colors.blueBright }
+        ]}
 {% endif %}    ]
 };
 </script>
