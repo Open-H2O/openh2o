@@ -397,6 +397,17 @@ def sampling_point_detail(request, pk):
             "recent_results": recent,
             "shown_limit": RECENT_RESULT_LIMIT,
             "is_truncated": summary["result_count"] > RECENT_RESULT_LIMIT,
+            # Read through the FACILITY, because a sampling point has no
+            # coordinate of its own — it is a tap ON a facility and is drawn
+            # where the facility is. `select_related("facility")` above already
+            # carries the location, so this costs no extra query.
+            #
+            # `ps_code` rides along so the popup can say WHOSE coordinate this
+            # is. A dot that silently claims to be the tap would be the same
+            # class of quiet lie as a facility drawn at (0, 0).
+            "geojson": _facility_geojson(
+                point.facility, extra_properties={"ps_code": point.ps_code}
+            ),
             **summary,
         },
     )

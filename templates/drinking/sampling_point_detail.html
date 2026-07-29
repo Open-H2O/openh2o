@@ -1,9 +1,17 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% comment %}
   One sampling point — the Bucket-3 detail page (docs/2.0-UX-PATTERN-SPEC.md)
   reached from the PS Code cell on drinking:sampling_points and from the
   sampling-points table on drinking:facility_detail.
+
+  The mini-map draws this point at its FACILITY's coordinate, because that is
+  the only coordinate that exists — GAMA publishes the position of the source,
+  not of the tap. Every piece of copy around the map says so out loud. Drawing
+  it silently would be the row-scale version of the lie 99-01 refused when it
+  left unlocated facilities out of the overview map instead of putting them at
+  (0, 0).
 
   The results table here is deliberately CAPPED and says so. A point in the
   demonstration carries ~800 results; the full log lives at drinking:results
@@ -34,6 +42,11 @@
   </nav>
   <p class="page-description">Where this sample is physically drawn, and what has been measured there.</p>
 </div>
+{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -97,6 +110,31 @@
         </div>
       </div>
     </div>
+
+    {% comment %}
+      The map and the sentence beneath it are one unit — never ship the map
+      without the sentence. A sampling point carries no coordinate; it is drawn
+      at the facility's. A reader who assumes the tap itself was surveyed has
+      been misled by this page, so the attribution is stated on the page AND
+      repeated in the popup rather than left to be inferred from the heading.
+    {% endcomment %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Location</h2>
+    {% if geojson %}
+    <div id="detail-map-card" class="card-inset" style="padding: 0; overflow: hidden; display: none;">
+      <div id="detail-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+    </div>
+    <p class="text-secondary text-base" style="margin-top: var(--space-sm); max-width: 70ch;">
+      Shown at the location of facility {{ point.facility.facility_id }}. This sampling
+      point has no published coordinate of its own — the state's GAMA programme
+      publishes a position for the source, not for the tap.
+    </p>
+    {% else %}
+    <p class="text-secondary text-base" style="max-width: 70ch;">
+      Facility {{ point.facility.facility_id }} has no published coordinate, so there is
+      nothing to draw. A sampling point is placed at its facility's position, and the
+      state's GAMA programme publishes positions for groundwater sources only.
+    </p>
+    {% endif %}
 
     <h2 class="section-header" style="margin-top: var(--space-lg);">Sampling history</h2>
     <div class="form-grid-2col">
@@ -163,4 +201,38 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% comment %}
+  Loaded unconditionally, same as the facility page and recharge/site_detail:
+  the guarded init below has to resolve for a point whose facility has no
+  geometry, where its only job is to leave the card hidden.
+{% endcomment %}
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if geojson %}{{ geojson|json_script:"point-geojson-data" }}{% endif %}
+<script>
+(function () {
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'point-geojson-data',
+      // The same source/key the overview map and the district map use, so the
+      // dot is the colour the reader has already learned. One entity, one
+      // colour, everywhere.
+      source: 'drinking', key: 'drinking',
+      popup: function (p) {
+        return '<strong>' + (p.ps_code || 'Sampling point') + '</strong><br>' +
+               'Shown at the location of facility ' + (p.facility_id || '—') + '<br>' +
+               (p.name || p.facility_type || '—');
+      }
+    });
+  }
+  go();
+})();
+</script>
 {% endblock %}
