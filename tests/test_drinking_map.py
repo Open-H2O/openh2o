@@ -257,11 +257,18 @@ class TestTheCoverageSentenceIsComputed:
         assert "3 of the 4" in html
 
     def test_it_says_why_the_rest_are_missing(self, client_in, mapped_system):
-        """The gap is a fact about the public record, not a defect here."""
+        """The gap is a fact about the public record, not a defect here.
+
+        "Groundwater sources", not "source wells": the droppability vocabulary
+        gate fails a kept page that says "wells" on a deployment without the
+        Wells module, and it is right to — it cannot tell this module's WL
+        facility type from that module's section.
+        """
         html = _squash(
             client_in.get(reverse("drinking:sampling_points")).content.decode()
-        )
-        assert "source wells" in html.lower()
+        ).lower()
+        assert "groundwater sources" in html
+        assert "gama" in html
 
     def test_no_hardcoded_demonstration_numbers(self, client_in, mapped_system):
         """The Merced counts must not be written into the template."""
@@ -303,7 +310,7 @@ class TestTheEmptyStateIsASentence:
             client_in.get(reverse("drinking:sampling_points")).content.decode()
         ).lower()
         assert "no facility in this system has a published location" in html
-        assert "source wells" in html
+        assert "groundwater sources" in html
         # And it names the reason a new operator sees this at all.
         assert "envirofacts" in html
 

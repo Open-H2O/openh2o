@@ -28,34 +28,48 @@
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
 
-  {# The Bucket-3 overview map, and an honest sentence about how much of the
-     inventory it can show. Both counts are computed in the view on every render
-     — never written down here — because the Merced demonstration's numbers are
-     not any other system's, and an operator who onboards through the Envirofacts
-     flow starts with none at all.
+  {% comment %}
+  The Bucket-3 overview map, and an honest sentence about how much of the
+  inventory it can show. Both counts are computed in the view on every render —
+  never written down here — because the Merced demonstration's numbers are not
+  any other system's, and an operator who onboards through the Envirofacts flow
+  starts with none at all.
 
-     OUTSIDE #results, and that is load-bearing: the search box below targets
-     #results, so a map inside it would be destroyed and rebuilt on every
-     keystroke. #}
+  OUTSIDE #results, and that is load-bearing: the search box below targets
+  #results, so a map inside it would be destroyed and rebuilt on every keystroke.
+
+  A `{# #}` comment would NOT work here: Django's inline comment closes at the
+  end of its line, so a multi-line one renders its second line onward as page
+  text. That is exactly what `test_no_template_syntax_leaks_into_the_page`
+  caught on this page.
+  {% endcomment %}
   {% if mapped_facility_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     <div id="drinking-overview-map" style="height: 380px; width: 100%;"></div>
   </div>
+  {% comment %}
+  "Groundwater sources", not "source wells". The word "wells" belongs to a module
+  a drinking-water utility may not run, and the droppability vocabulary gate
+  fails a kept page that names a domain the deployment does not have — correctly,
+  since that gate cannot tell this module's WL facility type from that module's
+  section. The rewrite is also more precise: GAMA is a groundwater programme, so
+  "groundwater source" is what it actually publishes a location for.
+  {% endcomment %}
   <p class="page-description">
     The map shows {{ mapped_point_count }} of the {{ point_total_count }} sampling
     point{{ point_total_count|pluralize }} in this inventory, drawn at the
     {{ mapped_facility_count }} of the {{ total_facility_count }} facilities that
-    have a published location. Coordinates are published by GAMA for source wells
-    only, so distribution-system and treatment-plant facilities carry none, and
-    the points sampled there cannot be placed on a map.
+    have a published location. Coordinates are published by GAMA for groundwater
+    sources only, so distribution-system and treatment-plant facilities carry
+    none, and the points sampled there cannot be placed on a map.
   </p>
   {% else %}
   <p class="page-description">
     No facility in this system has a published location, so there is no map of
-    this inventory yet. Coordinates are published by GAMA for source wells only —
-    EPA's Envirofacts record, which onboarding builds a system from, carries none
-    at all — so a newly onboarded system starts unmapped and gains coordinates as
-    its source wells are located.
+    this inventory yet. Coordinates are published by GAMA for groundwater sources
+    only — EPA's Envirofacts record, which onboarding builds a system from,
+    carries none at all — so a newly onboarded system starts unmapped and gains
+    coordinates as its sources are located.
   </p>
   {% endif %}
 
