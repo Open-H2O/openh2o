@@ -118,11 +118,19 @@
       <div id="detail-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
     </div>
     {% else %}
+    {% comment %}
+      Measured on staging 2026-07-29 before this sentence was written: of the 40
+      unlocated facilities, 29 are treatment plants, 1 is the distribution system
+      — and 10 ARE groundwater sources. So the sentence may NOT say "this is a
+      treatment plant, which is why". It states the fact and then says where
+      coordinates come from; it never asserts a cause it cannot see.
+    {% endcomment %}
     <p class="text-secondary text-base" style="max-width: 70ch;">
-      No published coordinates for this facility, so there is nothing to draw. The
-      state's GAMA programme publishes positions for groundwater sources only —
-      distribution-system and treatment-plant facilities carry none — and a system
-      onboarded from the federal record arrives with no coordinates at all.
+      No published coordinate for this facility, so there is nothing to draw.
+      Positions come from the state's GAMA programme, which publishes them for
+      groundwater sources and not for distribution-system or treatment-plant
+      facilities — and not for every source either. A system onboarded from the
+      federal record arrives with no coordinates at all.
     </p>
     {% endif %}
 

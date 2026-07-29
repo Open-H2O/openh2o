@@ -131,8 +131,10 @@
     {% else %}
     <p class="text-secondary text-base" style="max-width: 70ch;">
       Facility {{ point.facility.facility_id }} has no published coordinate, so there is
-      nothing to draw. A sampling point is placed at its facility's position, and the
-      state's GAMA programme publishes positions for groundwater sources only.
+      nothing to draw. A sampling point is placed at its facility's position, and
+      positions come from the state's GAMA programme, which publishes them for
+      groundwater sources and not for distribution-system or treatment-plant
+      facilities — and not for every source either.
     </p>
     {% endif %}
 

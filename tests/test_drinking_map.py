@@ -521,9 +521,15 @@ class TestTheFacilityDetailMap:
                 )
             ).content.decode()
         )
-        assert "No published coordinates for this facility" in html
+        assert "No published coordinate for this facility" in html
         assert "groundwater sources" in html, (
             "the sentence does not say where locations come from"
+        )
+        # It may say where coordinates COME FROM; it may not say why THIS row
+        # lacks one. 10 of the 40 unlocated facilities on staging are wells, so
+        # "this is a treatment plant" would be a cause the page cannot see.
+        assert "carry none" not in html, (
+            "the sentence asserts a cause for this particular facility"
         )
 
     def test_the_geojson_properties_carry_no_verdict(self, client_in, mapped_system):
