@@ -85,7 +85,7 @@ SHORTHAND = {
         "with material in the pipes."
     ),
     "DST": (
-        "The state's id for the distribution system — the pipes out to customers."
+        "The state's ID for the distribution system — the pipes out to customers."
     ),
 }
 

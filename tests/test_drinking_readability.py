@@ -284,6 +284,20 @@ def template_prose(path):
     return text
 
 
+def _glossary_strings():
+    """Every sentence `drinking/glossary.py` can put in front of a reader.
+
+    Both dicts, because both render: `FACILITY_TYPE_PLAIN` into the onboarding
+    builder's facility panels and `SHORTHAND` into its abbreviation legend. The
+    legend only lists terms that actually appear in the names on screen, so
+    which of these a given page shows depends on the DATA — which is exactly how
+    a defect in one of them survives a fixture that never triggers it.
+    """
+    return list(glossary.FACILITY_TYPE_PLAIN.values()) + list(
+        glossary.SHORTHAND.values()
+    )
+
+
 @pytest.fixture
 def unlocated(db):
     """One system deep enough to reach every read surface, with NO coordinate.
@@ -348,6 +362,8 @@ class TestCopyRules:
         for template in DRINKING_TEMPLATES:
             if "PS code" in template_prose(template):
                 offenders.append(template.name)
+        if any("PS code" in s for s in _glossary_strings()):
+            offenders.append("drinking/glossary.py")
         assert offenders == [], (
             f"writing the state's field name as 'PS code': {offenders}. "
             "The state writes 'PS Code' — see DESIGN.md rule 2."
@@ -359,6 +375,15 @@ class TestCopyRules:
         Three of those four were in HTMX partials no GET renders, which is why
         this reads the templates as well as the pages — see `template_prose`.
         An HTML `id=` attribute is markup, not copy, and is excluded.
+
+        **The glossary strings are swept too, and that is not belt-and-braces.**
+        The first version of this test read only templates and rendered pages
+        and was green while `SHORTHAND["DST"]` said "The state's id for the
+        distribution system" — a string that reaches a reader ONLY when a
+        facility name on the page contains `DST`, which the real Merced data has
+        and no fixture here did. It was caught by grepping the deployed page at
+        this plan's checkpoint, not by this suite. A string is copy wherever it
+        is stored.
         """
         bare_id = re.compile(r"(?<![\w/-])id(?![\w-])")
         offenders = []
@@ -369,6 +394,8 @@ class TestCopyRules:
             source = re.sub(r'\bid\s*=\s*"[^"]*"', " ", template_prose(template))
             if bare_id.search(source):
                 offenders.append(template.name)
+        if any(bare_id.search(s) for s in _glossary_strings()):
+            offenders.append("drinking/glossary.py")
         assert offenders == [], (
             f"writing a bare lowercase 'id' in prose: {offenders}"
         )
@@ -395,9 +422,7 @@ class TestCopyRules:
             source = re.sub(r"\{[%{][^%}]*[%}]\}", " ", template_prose(template))
             if spelling in source.lower():
                 offenders.append(template.name)
-        strings = list(glossary.FACILITY_TYPE_PLAIN.values())
-        strings += list(glossary.SHORTHAND.values())
-        if any(spelling in s.lower() for s in strings):
+        if any(spelling in s.lower() for s in _glossary_strings()):
             offenders.append("drinking/glossary.py")
         assert offenders == [], f"'{spelling}' reaches a reader on: {offenders}"
 
