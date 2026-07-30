@@ -173,7 +173,17 @@ def _paths(surfaces):
         (reverse("drinking:results"), (provenance.DDW_LAB,)),
         (
             reverse("drinking:result_detail", args=[surfaces["result"].pk]),
-            (provenance.DDW_LAB, provenance.CCR_SYSTEM),
+            # EPA_SDWIS and PS_CODE_COMPOSED are here because the breadcrumb —
+            # sampling point, facility, water system, PWSID — is NOT the lab
+            # file. It sat inside the DDW section until this was pinned, which
+            # attributed EPA's identity fields and a locally composed PS code to
+            # the State Water Board's laboratory export.
+            (
+                provenance.DDW_LAB,
+                provenance.EPA_SDWIS,
+                provenance.PS_CODE_COMPOSED,
+                provenance.CCR_SYSTEM,
+            ),
         ),
     )
 

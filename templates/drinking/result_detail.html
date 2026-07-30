@@ -156,8 +156,27 @@
         <div class="field-label">Collector</div>
         <div class="field-value">{{ event.collector|default:"—" }}</div>
       </div>
+    </div>
+
+    {% if event.chain_of_custody_note %}
+    <div class="field-group" style="margin-top: var(--space-md);">
+      <div class="field-label">Chain of custody</div>
+      <div class="field-value">{{ event.chain_of_custody_note|linebreaksbr }}</div>
+    </div>
+    {% endif %}
+
+    {% comment %}
+      Split out of "The sample it came from" deliberately. Everything above is
+      the lab file; these four fields are the record the sample hangs off, and
+      the State Water Board did not publish them. The facility, the system name
+      and the PWSID are EPA's; the PS code is composed here from the state's
+      convention, so it carries its own row label rather than inheriting EPA's.
+      Left inside the DDW section, one label claimed one publisher for three.
+    {% endcomment %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">The record it belongs to {% source_label "EPA_SDWIS" %}</h2>
+    <div class="form-grid-2col">
       <div class="field-group">
-        <div class="field-label">Sampling point</div>
+        <div class="field-label">Sampling point {% source_label "PS_CODE_COMPOSED" %}</div>
         <div class="field-value">
           <a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link text-mono">{{ point.ps_code }}</a>{% if point.name %} — {{ point.name }}{% endif %}
         </div>
@@ -177,13 +196,6 @@
         <div class="field-value-mono">{{ system.pwsid }}</div>
       </div>
     </div>
-
-    {% if event.chain_of_custody_note %}
-    <div class="field-group" style="margin-top: var(--space-md);">
-      <div class="field-label">Chain of custody</div>
-      <div class="field-value">{{ event.chain_of_custody_note|linebreaksbr }}</div>
-    </div>
-    {% endif %}
 
     {% comment %}
       The nearest published document that actually exists for this sample — the
