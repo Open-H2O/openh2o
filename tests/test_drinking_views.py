@@ -326,8 +326,15 @@ class TestNoComplianceVerdict:
 
 
 class TestFacilityWellLink:
+    """Reads `drinking:facilities`, not the overview.
+
+    The facility table moved off the overview in Phase 100-01; the join it makes
+    visible did not change, so these two assertions followed the table rather
+    than being deleted.
+    """
+
     def test_facility_links_to_its_well(self, client_in, sampled_system):
-        html = client_in.get(reverse("drinking:overview")).content.decode()
+        html = client_in.get(reverse("drinking:facilities")).content.decode()
         expected = reverse("wells:detail", args=[sampled_system["well"].pk])
         assert f'href="{expected}"' in html
         assert "Orchard Supply Well" in html
@@ -339,9 +346,117 @@ class TestFacilityWellLink:
             system=sampled_system["system"], facility_id="DS-001",
             name="Distribution System", facility_type="DS", well=None,
         )
-        html = client_in.get(reverse("drinking:overview")).content.decode()
+        html = client_in.get(reverse("drinking:facilities")).content.decode()
         assert "Distribution System" in html
         assert "/wells/None/" not in html
+
+
+# -- The overview as a front door (Phase 100-01) -----------------------------
+
+
+class TestTheOverviewIsAFrontDoor:
+    """Identity, EPA's aggregates, three routed counts — and no inventory.
+
+    The page carried a 61-row facility table and two sections of em-dashes
+    before this phase. Both the removal and the replacement are asserted: a
+    table creeping back would make this the inventory page again, and an
+    aggregate that stopped rendering would put the dashes back.
+    """
+
+    def test_it_carries_no_facility_table(self, client_in, sampled_system):
+        html = client_in.get(reverse("drinking:overview")).content.decode()
+        assert "<table" not in html, (
+            "the facility inventory is back on the front door"
+        )
+
+    def test_it_renders_both_epa_aggregates_thousands_separated(
+        self, client_in, sampled_system
+    ):
+        system = sampled_system["system"]
+        system.population_served_total = 93692
+        system.service_connections_total = 24363
+        system.save()
+
+        html = client_in.get(reverse("drinking:overview")).content.decode()
+        assert "93,692" in html
+        assert "24,363" in html
+
+    def test_all_splits_null_says_where_they_come_from(
+        self, client_in, sampled_system
+    ):
+        """A sentence naming the missing source is information. A column of
+        em-dashes is not."""
+        html = client_in.get(reverse("drinking:overview")).content.decode()
+        assert "annual electronic report" in html
+        assert "Population by category" not in html
+        assert "Connections by use type" not in html
+
+    def test_a_split_that_exists_renders_as_a_breakdown(
+        self, client_in, sampled_system
+    ):
+        system = sampled_system["system"]
+        system.population_residential = 88000
+        system.save()
+
+        html = client_in.get(reverse("drinking:overview")).content.decode()
+        assert "Population by category" in html
+        assert "88,000" in html
+        # Connections are still unsplit, so the sentence narrows to them alone
+        # rather than claiming both are missing.
+        assert "The breakdown of connections by use type comes" in html
+
+    def test_the_three_tiles_link_to_the_three_lists(
+        self, client_in, sampled_system
+    ):
+        html = client_in.get(reverse("drinking:overview")).content.decode()
+        for url_name in (
+            "drinking:facilities",
+            "drinking:sampling_points",
+            "drinking:results",
+        ):
+            assert f'href="{reverse(url_name)}"' in html, (
+                f"the front door does not route to {url_name}"
+            )
+
+    def test_the_facility_tile_counts_the_facility_rows(
+        self, client_in, sampled_system
+    ):
+        SystemFacilityFactory.create_batch(4, system=sampled_system["system"])
+        response = client_in.get(reverse("drinking:overview"))
+        system = response.context["systems"][0]
+        assert system.facility_count == 5
+        assert system.sampling_point_count == 1
+        assert system.result_count == 3
+
+    def test_the_counts_do_not_multiply_each_other(self, client_in, sampled_system):
+        """Three joins on one queryset would inflate every annotation.
+
+        The facility count is annotated; the point and result counts are two
+        keyed aggregate queries zipped on in Python. One extra facility must
+        move the facility count by one and leave the other two alone.
+        """
+        SystemFacilityFactory(system=sampled_system["system"], facility_id="X-9")
+        system = client_in.get(reverse("drinking:overview")).context["systems"][0]
+        assert (system.facility_count, system.sampling_point_count,
+                system.result_count) == (2, 1, 3)
+
+    def test_the_page_costs_the_same_at_one_system_and_three(
+        self, client_in, sampled_system, django_assert_num_queries
+    ):
+        """`django_assert_num_queries` asserts EQUALITY, not a ceiling.
+
+        So the shape is proven by holding the SAME count at two fixture sizes
+        rather than by picking a magic number (the 99-01 method).
+        """
+        with django_assert_num_queries(5):
+            client_in.get(reverse("drinking:overview"))
+
+        for pwsid in ("CA1910068", "CA1910069"):
+            other = WaterSystemFactory(pwsid=pwsid)
+            SystemFacilityFactory.create_batch(3, system=other)
+
+        with django_assert_num_queries(5):
+            client_in.get(reverse("drinking:overview"))
 
 
 # -- Query counts ------------------------------------------------------------

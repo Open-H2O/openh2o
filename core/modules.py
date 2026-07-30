@@ -1049,7 +1049,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="SystemFacility",
         field="well",
         target="wells",
-        where="drinking/models.py:281",
+        where="drinking/models.py:303",
         why=(
             "A drinking-water facility very often IS a well — the same physical "
             "hole in the ground that the extraction ledger meters — so "

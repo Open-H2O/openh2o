@@ -206,6 +206,84 @@ def test_connection_aggregate_is_never_split(system_payload):
         assert mapped.get(field) is None
 
 
+# ── The aggregates DO land, in their own fields (Phase 100-01) ──────────────
+
+
+def test_both_aggregates_map_from_epas_own_keys(system_payload):
+    """The other half of the two tests above.
+
+    The splits stay NULL because EPA does not publish them; the aggregate is
+    published, so it lands — in a field of its own, beside the splits and never
+    in place of them.
+    """
+    mapped = mapping.map_water_system(system_payload)
+
+    assert mapped["population_served_total"] == 17393
+    assert mapped["service_connections_total"] == 2675
+
+
+@pytest.mark.parametrize("value", [None, "", "   "])
+def test_a_blank_count_maps_to_none_and_specifically_not_zero(
+    system_payload, value
+):
+    """``0`` would be a fabricated fact rendered as a confident number.
+
+    A system serving 0 people is a real if odd record, so the two states have
+    to stay distinguishable.
+    """
+    payload = dict(system_payload, population_served_count=value)
+
+    mapped = mapping.map_water_system(payload)
+
+    assert mapped["population_served_total"] is None
+    assert mapped["population_served_total"] != 0
+
+
+def test_a_missing_key_maps_to_none(system_payload):
+    payload = dict(system_payload)
+    del payload["service_connections_count"]
+
+    mapped = mapping.map_water_system(payload)
+
+    assert mapped["service_connections_total"] is None
+
+
+def test_a_non_numeric_count_maps_to_none_without_raising(system_payload):
+    """The payload is EPA's, not ours. One malformed count must not abort an
+    onboarding, and must not be written as a number either."""
+    payload = dict(system_payload, population_served_count="approximately 900")
+
+    mapped = mapping.map_water_system(payload)
+
+    assert mapped["population_served_total"] is None
+
+
+def test_both_aggregates_are_refreshable():
+    """Without this, the fields are written on CREATION only and an
+    already-onboarded system stays NULL however often the operator pulls a
+    fresh federal record."""
+    assert "population_served_total" in mapping._SYSTEM_REFRESHABLE_FIELDS
+    assert "service_connections_total" in mapping._SYSTEM_REFRESHABLE_FIELDS
+
+
+@pytest.mark.django_db
+def test_a_second_commit_updates_the_aggregates_in_place(
+    system_payload, facility_payloads
+):
+    """The staging path: a row onboarded before Phase 100 gains its aggregates
+    from a re-run of ``seed_merced_drinking``, with no data migration."""
+    mapping.commit_system(system_payload, facility_payloads)
+    WaterSystem.objects.filter(pwsid=PWSID).update(
+        population_served_total=None, service_connections_total=None
+    )
+
+    mapping.commit_system(system_payload, facility_payloads)
+
+    system = WaterSystem.objects.get(pwsid=PWSID)
+    assert system.population_served_total == 17393
+    assert system.service_connections_total == 2675
+
+
 # ── Mailing address only ────────────────────────────────────────────────────
 
 

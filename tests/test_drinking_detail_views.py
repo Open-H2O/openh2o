@@ -362,10 +362,16 @@ class TestWellLinkIsModuleGuarded:
 
 
 class TestListsLinkToTheDetailPages:
-    def test_the_overview_facility_rows_link_to_the_facility_page(
+    def test_the_facility_rows_link_to_the_facility_page(
         self, client_in, sampled_system
     ):
-        html = client_in.get(reverse("drinking:overview")).content.decode()
+        """Read on `drinking:facilities`, not the overview.
+
+        The facility table moved off the overview in Phase 100-01. What this
+        test guards — that a row leads somewhere — is unchanged, so it followed
+        the table.
+        """
+        html = client_in.get(reverse("drinking:facilities")).content.decode()
         expected = reverse(
             "drinking:facility_detail", args=[sampled_system["facility"].pk]
         )

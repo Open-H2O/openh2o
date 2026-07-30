@@ -18,7 +18,7 @@ Two axes are covered, because they fail in different ways:
 * **Visibility** — every combination of ``nav_mode`` x ``user_is_admin`` x
   ``access_enforced`` (8), rendered at ``/``. These pin the four predicates the
   registry loop has to reproduce.
-* **Active state** — one representative path per nav entry (23), rendered at a
+* **Active state** — one representative path per nav entry (24), rendered at a
   fixed permutation that shows every link. These pin the ``active`` class. The
   pair ``/surface/`` and ``/surface/rights/`` is the whole reason this axis
   exists: Surface Diversions matches on ``/surface/`` but must NOT light up on
@@ -81,10 +81,12 @@ ACTIVE_PATHS = [
     "/surface/",
     "/surface/rights/",
     "/recharge/",
-    # Phase 78's three. The overview's prefix is a prefix of both sub-pages, so
-    # all three are listed for the same reason /surface/ and /surface/rights/
-    # both are: the exclusion is the easy thing to regress invisibly.
+    # Phase 78's three, plus 100-01's Facilities. The overview's prefix is a
+    # prefix of every sub-page, so all of them are listed for the same reason
+    # /surface/ and /surface/rights/ both are: the exclusion is the easy thing
+    # to regress invisibly.
     "/drinking/",
+    "/drinking/facilities/",
     "/drinking/sampling-points/",
     "/drinking/results/",
     # 80-02's wizard. Same reason as the two above: `/drinking/` is a prefix of
@@ -206,13 +208,21 @@ def test_drinking_water_not_active_on_its_own_sub_pages():
     """The two-exclude case, asserted directly rather than only via fixture.
 
     Same failure mode as Surface Diversions, one step worse: `/drinking/` is a
-    prefix of BOTH sub-pages, so a single exclusion silently fixes one of them
-    and leaves the other lit. Stated here so a regression names itself.
+    prefix of EVERY sub-page, so a single exclusion silently fixes one of them
+    and leaves the rest lit. Stated here so a regression names itself.
+
+    The facility DETAIL path is included on purpose. It is not a nav entry of
+    its own, so no golden fixture covers it, and before 100-01 gave the module a
+    Facilities entry it correctly lit Drinking Water. Now it must light
+    Facilities instead — a property the exclusion tuple delivers for free and
+    could take away just as quietly.
     """
     pages = {
         p: render_sidebar(path=p, nav_mode="admin", user_is_admin=True)
         for p in (
             "/drinking/",
+            "/drinking/facilities/",
+            "/drinking/facilities/12/",
             "/drinking/sampling-points/",
             "/drinking/results/",
             "/drinking/onboard/",
@@ -228,11 +238,19 @@ def test_drinking_water_not_active_on_its_own_sub_pages():
 
     # The overview lights up on its own page only.
     assert "active" in link_classes(pages["/drinking/"], "/drinking/")
+    assert "active" not in link_classes(pages["/drinking/facilities/"], "/drinking/")
+    assert "active" not in link_classes(pages["/drinking/facilities/12/"], "/drinking/")
     assert "active" not in link_classes(pages["/drinking/sampling-points/"], "/drinking/")
     assert "active" not in link_classes(pages["/drinking/results/"], "/drinking/")
     assert "active" not in link_classes(pages["/drinking/onboard/"], "/drinking/")
 
     # And each sub-page lights up its own entry.
+    assert "active" in link_classes(
+        pages["/drinking/facilities/"], "/drinking/facilities/"
+    )
+    assert "active" in link_classes(
+        pages["/drinking/facilities/12/"], "/drinking/facilities/"
+    ), "the facility detail page lights no entry at all"
     assert "active" in link_classes(
         pages["/drinking/sampling-points/"], "/drinking/sampling-points/"
     )
@@ -330,18 +348,19 @@ def test_every_registry_icon_key_has_a_partial():
 
 
 def test_every_nav_entry_is_rendered():
-    """All 23 module-owned entries appear when every gate is open.
+    """All 24 module-owned entries appear when every gate is open.
 
     Guards the failure mode a byte-diff cannot: if the registry loop silently
     drops an entry AND the fixture were regenerated, this still fails.
 
     19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
-    Results to the Water Data section, and 80-02 adds Onboard System.
+    Results to the Water Data section, 80-02 adds Onboard System, and 100-01
+    adds Facilities.
     """
     html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
                           access_enforced=False)
     expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 23
+    assert len(expected) == 24
     for entry in expected:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"

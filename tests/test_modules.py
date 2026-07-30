@@ -526,11 +526,11 @@ class TestNavResolution:
 
     def test_nav_entry_count_matches_todays_sidebar(self):
         entries = [e for s in mod.enabled_modules() for e in s.nav]
-        # 23 module-owned links: 19 through Phase 77, the three 78-02 adds to
-        # Water Data, and 80-02's onboarding wizard. The sidebar also renders
-        # `index`, the nav-mode toggle and six static help/about pages, none of
-        # which are module-owned.
-        assert len(entries) == 23
+        # 24 module-owned links: 19 through Phase 77, the three 78-02 adds to
+        # Water Data, 80-02's onboarding wizard, and 100-01's facility list.
+        # The sidebar also renders `index`, the nav-mode toggle and six static
+        # help/about pages, none of which are module-owned.
+        assert len(entries) == 24
 
     def test_icon_keys_are_unique(self):
         icons = [e.icon for s in mod.enabled_modules() for e in s.nav]
@@ -574,7 +574,8 @@ class TestNavResolution:
         """The case that forced the tuple: one exclusion would not have done.
 
         `/drinking/` is a prefix of EVERY sub-page, so a partial set of excludes
-        fixes some and leaves the rest permanently lit. 80-02 adds the third.
+        fixes some and leaves the rest permanently lit. 80-02 adds the third,
+        100-01 the fourth.
         """
         entry = next(
             e
@@ -582,8 +583,12 @@ class TestNavResolution:
             if e.url_name == "drinking:overview"
         )
         assert entry.active_match == "/drinking/"
-        assert len(entry.active_excludes) == 3
+        assert len(entry.active_excludes) == 4
         assert entry.is_active("/drinking/") is True
+        assert entry.is_active("/drinking/facilities/") is False
+        # The facility DETAIL page owns no nav entry, so it inherits this
+        # exclusion — which is what moves its highlight to Facilities.
+        assert entry.is_active("/drinking/facilities/12/") is False
         assert entry.is_active("/drinking/sampling-points/") is False
         assert entry.is_active("/drinking/results/") is False
         assert entry.is_active("/drinking/onboard/") is False
