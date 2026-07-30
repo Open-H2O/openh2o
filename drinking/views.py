@@ -45,27 +45,72 @@ from drinking.models import (
 )
 
 
+_POPULATION_SPLIT_FIELDS = (
+    "population_residential",
+    "population_non_transient",
+    "population_transient",
+)
+
+_CONNECTION_SPLIT_FIELDS = (
+    "connections_agricultural",
+    "connections_combined",
+    "connections_commercial",
+    "connections_industrial",
+    "connections_residential",
+)
+
+
 @login_required
 def overview(request):
-    """The water system(s) this deployment carries, each with its facilities.
+    """The water system's front door: who it is, what EPA publishes, where to go.
 
-    Usually one row, like SiteConfig — but a table, so a wholesaler or a
-    consecutive system can be carried alongside. The facility rows link through
-    to ``wells:detail`` wherever ``SystemFacility.well`` is set: that link is the
-    quality-to-quantity join made visible, the same physical well seen from the
-    sampling side and the extraction side.
+    Not an inventory. The 61-row facility table that used to live at the bottom
+    of this page moved to :func:`facilities`, where it can be searched; what is
+    left is the identity card, EPA's two published aggregates, and three counts
+    that route to the three lists.
+
+    Usually one system row, like SiteConfig — but a table, so a wholesaler or a
+    consecutive system can be carried alongside.
     """
-    facilities = (
-        SystemFacility.objects
-        .select_related("well")
-        .annotate(sampling_point_count=Count("sampling_points"))
-        .order_by("facility_id")
-    )
-    systems = (
+    systems = list(
         WaterSystem.objects
-        .prefetch_related(Prefetch("facilities", queryset=facilities))
+        .annotate(facility_count=Count("facilities", distinct=True))
         .order_by("pwsid")
     )
+
+    # Two aggregate queries keyed by system id, zipped on in Python. NOT a
+    # per-system .count() inside the loop (which grows with the row count), and
+    # NOT a second Count() annotation on the queryset above: multiple joins on
+    # one queryset multiply each other's counts, which is the exact bug the
+    # sampling-points view's own comment warns about. Three queries total, at
+    # one system or at thirty.
+    point_counts = {
+        row["facility__system"]: row["n"]
+        for row in SamplingPoint.objects
+        .values("facility__system")
+        .annotate(n=Count("id"))
+    }
+    result_counts = {
+        row["event__sampling_point__facility__system"]: row["n"]
+        for row in SampleResult.objects
+        .values("event__sampling_point__facility__system")
+        .annotate(n=Count("id"))
+    }
+
+    for system in systems:
+        system.sampling_point_count = point_counts.get(system.pk, 0)
+        system.result_count = result_counts.get(system.pk, 0)
+        # One boolean each, computed here rather than as eight chained {% if %}s
+        # in the template. The splits render only when the deployment actually
+        # holds one; otherwise the page says where they come from, because a
+        # sentence naming the missing source is information and a column of
+        # em-dashes is not.
+        system.has_population_splits = any(
+            getattr(system, name) is not None for name in _POPULATION_SPLIT_FIELDS
+        )
+        system.has_connection_splits = any(
+            getattr(system, name) is not None for name in _CONNECTION_SPLIT_FIELDS
+        )
 
     return render(request, "drinking/overview.html", {"systems": systems})
 

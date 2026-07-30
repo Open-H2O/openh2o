@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}Drinking Water - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Drinking water{% endblock %}
@@ -71,97 +72,106 @@
       {% endif %}
     </div>
 
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Population served</h2>
+    {% comment %}
+    EPA's two published aggregates, which used to render as eight em-dashes
+    across two sections. The federal record sends ONE population_served_count
+    and ONE service_connections_count; the splits below come from the state's
+    annual electronic report (eAR), which is a different source and is not
+    imported by this deployment. See drinking/models.py on why both shapes live
+    on one model.
+    {% endcomment %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Population and service connections</h2>
+    <div class="form-grid-2col">
+      <div class="field-group">
+        <div class="field-label">Population served</div>
+        <div class="field-value-mono tabular-nums">{{ system.population_served_total|default_if_none:"—"|intcomma }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Service connections</div>
+        <div class="field-value-mono tabular-nums">{{ system.service_connections_total|default_if_none:"—"|intcomma }}</div>
+      </div>
+    </div>
+
+    {% if system.has_population_splits %}
+    <div class="field-label" style="margin-top: var(--space-md);">Population by category</div>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Residential</div>
-        <div class="field-value-mono">{{ system.population_residential|default_if_none:"—" }}</div>
+        <div class="field-value-mono tabular-nums">{{ system.population_residential|default_if_none:"—"|intcomma }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Non-transient</div>
-        <div class="field-value-mono">{{ system.population_non_transient|default_if_none:"—" }}</div>
+        <div class="field-value-mono tabular-nums">{{ system.population_non_transient|default_if_none:"—"|intcomma }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Transient</div>
-        <div class="field-value-mono">{{ system.population_transient|default_if_none:"—" }}</div>
+        <div class="field-value-mono tabular-nums">{{ system.population_transient|default_if_none:"—"|intcomma }}</div>
       </div>
     </div>
+    {% endif %}
 
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Service connections</h2>
+    {% if system.has_connection_splits %}
+    <div class="field-label" style="margin-top: var(--space-md);">Connections by use type</div>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Residential</div>
-        <div class="field-value-mono">{{ system.connections_residential|default_if_none:"—" }}</div>
+        <div class="field-value-mono tabular-nums">{{ system.connections_residential|default_if_none:"—"|intcomma }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Commercial</div>
-        <div class="field-value-mono">{{ system.connections_commercial|default_if_none:"—" }}</div>
+        <div class="field-value-mono tabular-nums">{{ system.connections_commercial|default_if_none:"—"|intcomma }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Industrial</div>
-        <div class="field-value-mono">{{ system.connections_industrial|default_if_none:"—" }}</div>
+        <div class="field-value-mono tabular-nums">{{ system.connections_industrial|default_if_none:"—"|intcomma }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Agricultural</div>
-        <div class="field-value-mono">{{ system.connections_agricultural|default_if_none:"—" }}</div>
+        <div class="field-value-mono tabular-nums">{{ system.connections_agricultural|default_if_none:"—"|intcomma }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Combined</div>
-        <div class="field-value-mono">{{ system.connections_combined|default_if_none:"—" }}</div>
+        <div class="field-value-mono tabular-nums">{{ system.connections_combined|default_if_none:"—"|intcomma }}</div>
       </div>
     </div>
-
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Facilities</h2>
-    {% if system.facilities.all %}
-    <div class="table-scroll">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Facility ID</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Water Type</th>
-            <th>Sampling Points</th>
-            <th>Well</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for facility in system.facilities.all %}
-          <tr>
-            <td class="text-mono"><a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a></td>
-            <td>{{ facility.name|default:"—" }}</td>
-            <td class="text-secondary text-sm">{{ facility.get_facility_type_display|default:"—" }}</td>
-            <td class="text-secondary text-sm">{{ facility.get_activity_status_display|default:"—" }}</td>
-            <td class="text-secondary text-sm">{{ facility.get_water_type_display|default:"—" }}</td>
-            <td class="text-secondary text-sm tabular-nums">{{ facility.sampling_point_count }}</td>
-            {% comment %}
-              The quality-to-quantity join made visible: ONE physical well,
-              sampled on this side and metered on the wells side. Guarded on
-              enabled_modules so dropping `wells` degrades to plain text rather
-              than NoReverseMatch (the 77-02 template-guard rule).
-
-              {% comment %}, not {# #}: the hash form comments only to the end of
-              its LINE, so a multi-line note written that way leaks its 2nd line
-              onward into the page as visible text.
-            {% endcomment %}
-            <td>
-              {% if facility.well and 'wells' in enabled_modules %}
-                <a href="{% url 'wells:detail' facility.well.pk %}" class="data-table-link">{{ facility.well.name }}</a>
-              {% elif facility.well %}
-                {{ facility.well.name }}
-              {% else %}
-                <span class="text-tertiary">—</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="text-secondary text-sm">No facilities recorded for this system yet.</p>
     {% endif %}
+
+    {% if not system.has_population_splits or not system.has_connection_splits %}
+    {% comment %}
+      Plain prose, deliberately — no colored callout and no accent box. A lone
+      paragraph in a stripe is the generic-AI look CLAUDE.md's design rule names.
+      Naming the source that WOULD fill these is information; a column of
+      em-dashes was not.
+    {% endcomment %}
+    <p class="text-secondary text-sm" style="margin-top: var(--space-md); max-width: 70ch;">
+      EPA publishes one total for each of these.
+      {% if not system.has_population_splits and not system.has_connection_splits %}The residential, non-transient and transient split of that population, and the breakdown of connections by use type, come{% elif not system.has_population_splits %}The residential, non-transient and transient split of that population comes{% else %}The breakdown of connections by use type comes{% endif %}
+      from the state's annual electronic report, which this deployment has not
+      imported.
+    </p>
+    {% endif %}
+
+    {% comment %}
+    The front door. Three counts, each linking to the list that holds them —
+    the facility inventory that used to be a 61-row table on this page now has
+    its own searchable page. `.stat-grid-3col` and the `.stat-card` vocabulary
+    are lifted from partials/_dashboard_card.html; both already exist in
+    app.css, so nothing here adds CSS.
+    {% endcomment %}
+    <div class="stat-grid-3col" style="margin-top: var(--space-lg);">
+      <div class="card-raised card-inset stat-card">
+        <div class="stat-card-label">Facilities</div>
+        <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ system.facility_count }}</a></div>
+      </div>
+      <div class="card-raised card-inset stat-card">
+        <div class="stat-card-label">Sampling points</div>
+        <div class="stat-card-value-sm"><a href="{% url 'drinking:sampling_points' %}" class="data-table-link">{{ system.sampling_point_count }}</a></div>
+      </div>
+      <div class="card-raised card-inset stat-card">
+        <div class="stat-card-label">Sample results</div>
+        <div class="stat-card-value-sm"><a href="{% url 'drinking:results' %}" class="data-table-link">{{ system.result_count }}</a></div>
+      </div>
+    </div>
   </div>
   {% empty %}
   {# Same softening as the page description above. Branched rather than guarded #}
