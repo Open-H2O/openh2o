@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load drinking_display %}
 
 {% block title %}Sampling Points - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Sampling points{% endblock %}
@@ -21,7 +22,14 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Sampling Points</span>
   </nav>
-  <p class="page-description">Every location where a sample is physically drawn, identified by the PS code the state publishes. Each point belongs to one facility and carries its own sampling history.</p>
+  {% comment %}
+  Two claims in one label, which is why PS_CODE_COMPOSED carries both: the PS
+  code FORMAT is the state's published convention and the join key every lab row
+  is matched on, while the point RECORD is composed here, by an operator, in the
+  builder. The description above already gets the first half right in prose; the
+  label is what says the second half out loud.
+  {% endcomment %}
+  <p class="page-description">Every location where a sample is physically drawn, identified by the PS code the state publishes. Each point belongs to one facility and carries its own sampling history. {% source_label "PS_CODE_COMPOSED" %}</p>
 </div>
 {% endblock %}
 

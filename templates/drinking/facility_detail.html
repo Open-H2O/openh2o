@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load drinking_display %}
 
 {% comment %}
   One facility of one public water system — the Bucket-3 detail page (see
@@ -85,8 +86,19 @@
 
   <div class="card-raised">
 
+    {% comment %}
+      The identity card, and everything in it comes from one place: the federal
+      record, written by envirofacts_mapping.commit_system when the system was
+      onboarded. The "Water system" section below is the same two EPA fields the
+      grid here already carries, so it is deliberately NOT labelled a second time
+      — an identical pill three inches down is noise, not information. Same
+      reason the "Sampling points" table below carries none: its columns are
+      MIXED (the PS code is composed here, the latest sample date and result
+      count are the lab file's), and a single label on it would claim one
+      publisher for three.
+    {% endcomment %}
     <h2 class="section-header" style="margin-top: 0;">
-      {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %}
+      {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %} {% source_label "EPA_SDWIS" %}
     </h2>
 
     <div class="form-grid-2col" style="margin-top: var(--space-md);">

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load drinking_display %}
 
 {% comment %}
   One sampling point — the Bucket-3 detail page (docs/2.0-UX-PATTERN-SPEC.md)
@@ -87,7 +88,7 @@
 
   <div class="card-raised">
 
-    <h2 class="section-header" style="margin-top: 0;">{{ point.name|default:point.ps_code }}</h2>
+    <h2 class="section-header" style="margin-top: 0;">{{ point.name|default:point.ps_code }} {% source_label "PS_CODE_COMPOSED" %}</h2>
 
     <div class="form-grid-2col" style="margin-top: var(--space-md);">
       <div class="field-group">
@@ -108,7 +109,7 @@
       </div>
     </div>
 
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Facility</h2>
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Facility {% source_label "EPA_SDWIS" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Facility</div>
@@ -140,7 +141,14 @@
       </div>
     </div>
 
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Sampling history</h2>
+    {% comment %}
+      Four counts, all of them derived from the imported lab file and none of
+      them from the point record above — which is why this section carries a
+      different publisher from the one at the top of the same card. The results
+      table below is the same file, immediately under this label, so it does not
+      repeat it.
+    {% endcomment %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Sampling history {% source_label "DDW_LAB" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Results recorded</div>

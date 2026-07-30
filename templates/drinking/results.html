@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load drinking_display %}
 
 {% block title %}Sample Results - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Sample results{% endblock %}
@@ -10,7 +11,14 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Sample Results</span>
   </nav>
-  <p class="page-description">Every laboratory finding recorded for this system, newest first. Results are shown as the lab reported them; this platform prepares submissions and does not determine compliance.</p>
+  {% comment %}
+  The surface the site-wide demonstration notice most undermines: every row here
+  is the state's own file, filtered to one system and a three-year window and
+  otherwise unedited. The banner says this deployment mixes invented data with
+  published record and gives no way to tell which is which; on this page the
+  answer is the same for all 22,311 rows, so it is stated once, here.
+  {% endcomment %}
+  <p class="page-description">Every laboratory finding recorded for this system, newest first. Results are shown as the lab reported them; this platform prepares submissions and does not determine compliance. {% source_label "DDW_LAB" %}</p>
 </div>
 {% endblock %}
 

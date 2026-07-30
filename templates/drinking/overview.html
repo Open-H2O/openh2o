@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load humanize %}
+{% load drinking_display %}
 
 {% block title %}Drinking Water - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Drinking water{% endblock %}
@@ -34,7 +35,7 @@
     <!-- Identity. Every value is the regulator's own published vocabulary,
          shown as published — see drinking/models.py on why none of it is
          translated into friendlier local wording. -->
-    <h2 class="section-header">{{ system.name }}</h2>
+    <h2 class="section-header">{{ system.name }} {% source_label "EPA_SDWIS" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">PWSID</div>
@@ -80,7 +81,7 @@
     imported by this deployment. See drinking/models.py on why both shapes live
     on one model.
     {% endcomment %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Population and service connections</h2>
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Population and service connections {% source_label "EPA_SDWIS" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Population served</div>

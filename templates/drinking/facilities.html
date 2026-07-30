@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load drinking_display %}
 
 {% block title %}Facilities - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Facilities{% endblock %}
@@ -10,7 +11,12 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Facilities</span>
   </nav>
-  <p class="page-description">Every physical part of the water system as the federal record enumerates it — sources, treatment plants and distribution points. Each facility carries its own sampling points.</p>
+  {% comment %}
+  A LIST page, so the publisher goes in the page description and not in a column
+  header: the whole table shares one publisher, and a pill repeated down 61 rows
+  is noise rather than information.
+  {% endcomment %}
+  <p class="page-description">Every physical part of the water system as the federal record enumerates it — sources, treatment plants and distribution points. Each facility carries its own sampling points. {% source_label "EPA_SDWIS" %}</p>
 </div>
 {% endblock %}
 
