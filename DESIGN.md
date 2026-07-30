@@ -127,3 +127,104 @@ case**, not uppercase — "Account balance", not "ACCOUNT BALANCE". The two
 deliberate exceptions are data-table column headers (`.data-table th` is
 uppercased in CSS) and cartographic map/legend labels, which follow map
 convention.
+
+Two further exceptions, both measured across the whole template tree rather than
+chosen: a **breadcrumb crumb** and a **`← Back to …` link** name a destination
+page in Title Case ("Back to Sample Results"), and a **filter `<select>`'s
+default option** is Title Case ("All Statuses"). Those are what 19 of 19
+Water Data breadcrumbs, 20-plus back-links and 18 of 20 default options already
+do.
+
+## Copy rules
+
+House rules for the words on screen. Written 2026-07-30 during the drinking
+module's copy pass; each one exists because a defect was **counted**, and the
+counts are in [`docs/drinking-copy-audit-2026-07-30.md`](docs/drinking-copy-audit-2026-07-30.md).
+A rule with no measured instance behind it does not belong here.
+
+They are stated for the platform, not for one module. The drinking module is
+where they were first enforced, and `tests/test_drinking_readability.py` pins
+the mechanical ones there.
+
+### 1. Casing
+
+The section above. It governs labels *we* author. It does not govern a name
+somebody else owns — see rule 2.
+
+### 2. A published identifier keeps the publisher's own casing
+
+Write a state or federal identifier exactly as the body that publishes it writes
+it, even where that disagrees with sentence case. It is a proper name, not a
+label of ours.
+
+The authority is the source file, not preference. California's own SDWIS4 export
+(`data/merced/drinking/merced_lab_results_3yr.tab.gz`) heads its column
+**`PS Code`**, so that is the spelling — in prose, in a field label and in a
+placeholder alike. Same for `PWSID`, `ELAP`, `MCL`.
+
+`ID` is capitalised in prose as well as in labels. The platform writes
+"Facility ID" seven times; four prose sentences wrote "id" and were the
+outliers, not the rule.
+
+### 3. American spelling in anything a reader sees
+
+A California program's proper name spelled the British way is the one thing on
+these screens that must look authoritative and does not. `GAMA programme`
+shipped to staging in Phase 101 and was caught by eye rather than by a gate.
+
+This binds **rendered text only** — page copy, labels, `help_text`, and the
+strings in `drinking/provenance.py` and `drinking/glossary.py`. Template and
+code comments are not copy and are left alone.
+
+### 4. One name per thing, module-wide
+
+If two screens in the same flow name one object two ways, one of them is wrong.
+Plain-English *teaching* prose may still use a friendlier word where a phase
+deliberately chose one — but a **control that navigates to a named page carries
+that page's name**, so a button reading "View all sampling places" may not land
+on a page titled "Sampling points".
+
+### 5. Expand an acronym at its first appearance in prose on each page
+
+Once per page, in prose, at first use: "the state's Groundwater Ambient
+Monitoring and Assessment Program (GAMA)". Later uses on the same page are the
+acronym alone.
+
+**Not** in a `{% source_label %}` citation, **not** in a field label, and
+**not** in a `<th>`. Those three are short by design — `drinking/provenance.py`
+says in its own docstring that a publisher label "renders inline beside a
+section header, not as body copy" — and a six-word expansion in a two-column
+field grid breaks the grid the reader is scanning.
+
+Chosen over a glossary-link layer because the module already does this and it
+already survived review: `result_detail.html` expands ELAP in prose at its only
+prose use, and that page passed the 101-01 checkpoint. Copying an accepted
+precedent beats building a second explanation mechanism.
+
+A name that is a *file layout* rather than a system is not expandable —
+`SDWIS.CSV` is the literal name of the state's export format and stays as it is.
+
+### 6. Prose measure
+
+Body prose caps at **75ch**, inside the 65–75ch band CLAUDE.md states. Every
+`max-width: <n>ch` in the repository is currently in the drinking templates;
+75ch is that set's own dominant value.
+
+### 7. No emphatic filler
+
+"…arrives with no coordinates **at all**" says nothing "…arrives with no
+coordinates" does not. Cut the intensifier and keep the fact. Same family as the
+sentence 101-01 deleted from the map caption for restating the label beneath it.
+
+### 8. An empty state states the fact and stops
+
+It may say what the thing is and what to do next. It may **not** assert a cause
+it has not counted: a draft once explained an unlocated facility by its type,
+and measured, 10 of the 40 unlocated were neither of the types named. Count how
+many rows a cause holds for before writing it.
+
+### 9. Multi-line template comments use `{% comment %}`
+
+Not `<!-- -->`, which ships to the browser, and not `{# #}`, which closes at end
+of line and renders its second line onward as page text — the defect
+`test_no_template_syntax_leaks_into_the_page` was written to catch.
