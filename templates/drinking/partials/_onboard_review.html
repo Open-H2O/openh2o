@@ -26,7 +26,7 @@
   <p class="text-base text-secondary" style="margin-top: var(--space-md);">
     {% if error_kind == "not_found" %}
       EPA's Envirofacts record has no water system with the identifier
-      <span class="text-mono">{{ pwsid }}</span>. Check the id against the
+      <span class="text-mono">{{ pwsid }}</span>. Check the ID against the
       regulator's own listing and try again &mdash; this is an answer from a
       working service, not a sign that EPA is down.
     {% elif error_kind == "unavailable" %}
@@ -114,7 +114,7 @@
   <p class="text-base" style="margin-top: var(--space-md); font-size: 1.05rem;">
     EPA sent {{ epa_facility_count }} facilities. <strong>{{ facility_count }} will be
     saved and {{ skipped|length }} will not.</strong> This is not an error &mdash; the
-    facilities below are missing the state-assigned id that sample codes are
+    facilities below are missing the state-assigned ID that sample codes are
     built from, so no lab result could ever be filed against them.
   </p>
   <table class="data-table" style="margin-top: var(--space-md);">

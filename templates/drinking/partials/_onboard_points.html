@@ -48,7 +48,7 @@
     knows a code can check it — but it is reference detail, not the headline.
   {% endcomment %}
   <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">
-    Facility id <span class="text-mono">{{ facility.facility_id }}</span>{% if facility.name and not facility.name_adds_nothing %} &middot; EPA records this as &ldquo;{{ facility.name }}&rdquo;{% endif %}.
+    Facility ID <span class="text-mono">{{ facility.facility_id }}</span>{% if facility.name and not facility.name_adds_nothing %} &middot; EPA records this as &ldquo;{{ facility.name }}&rdquo;{% endif %}.
     Codes here begin <span class="text-mono">{{ system.pwsid }}_{{ facility.facility_id }}_</span>
   </p>
 

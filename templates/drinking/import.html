@@ -6,6 +6,8 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:overview' %}">Drinking Water</a>
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:results' %}">Sample Results</a>
@@ -32,10 +34,10 @@
     <h2 class="card-header-ruled">Import lab results</h2>
     <p class="text-base text-secondary" style="margin-top: var(--space-md);">
       Upload a <strong>CSV</strong> of laboratory findings in the state's own
-      SDWIS.CSV lab-results layout &mdash; the same columns a DDW extract or a
-      CLIP lab submission carries. Column headers are detected automatically, so
-      an unmodified export needs no mapping. Nothing is written until you review
-      the preview and confirm.
+      SDWIS.CSV lab-results layout &mdash; the same columns a Division of
+      Drinking Water extract or a CLIP lab submission carries. Column headers are
+      detected automatically, so an unmodified export needs no mapping. Nothing is
+      written until you review the preview and confirm.
     </p>
 
     {% comment %}

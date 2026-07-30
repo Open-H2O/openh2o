@@ -6,11 +6,13 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:overview' %}">Drinking Water</a>
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:onboard' %}">Onboard</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Sampling points</span>
+    <span class="breadcrumb-current">Sampling Points</span>
   </nav>
   <p class="page-description">List the places {{ system.name|default:system.pwsid }} draws water samples from, so lab results have somewhere to file themselves.</p>
 </div>
@@ -37,7 +39,7 @@
     <p class="text-base text-secondary" style="margin-top: var(--space-md);">
       A laboratory tests water and sends back a file. Every line of that file
       says <em>where</em> the water was taken from &mdash; a particular well, or
-      a particular tap out in the neighbourhood. This page is where you tell the
+      a particular tap out in the neighborhood. This page is where you tell the
       system what those places are, so the lab's results have somewhere to land.
     </p>
     <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
@@ -45,7 +47,7 @@
       import will report it and skip it rather than guess.
     </p>
     <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
-      Each place gets a code, built from three parts: the water system's id, the
+      Each place gets a code, built from three parts: the water system's ID, the
       facility it belongs to, and a number or short label you choose. You supply
       only the last part &mdash; the rest is already known.
     </p>
@@ -144,7 +146,13 @@
     </p>
     <div class="row-start" style="margin-top: var(--space-lg); gap: var(--space-sm);">
       <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
-      <a href="{% url 'drinking:sampling_points' %}" class="btn-secondary">View all sampling places</a>
+      {% comment %}
+        The label names the DESTINATION, which is the Sampling Points page — so
+        it says "points" even though this builder's teaching prose deliberately
+        says "places" (80-03's plain-English rewrite, kept). A control that
+        navigates to a named page carries that page's name; DESIGN.md rule 4.
+      {% endcomment %}
+      <a href="{% url 'drinking:sampling_points' %}" class="btn-secondary">View all sampling points</a>
     </div>
   </div>
 
