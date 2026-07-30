@@ -194,7 +194,14 @@
       authoritative-looking link that 404s.
     {% endcomment %}
     {% if ccr_url %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Published report</h2>
+    {% comment %}
+      The one section on this page that is not the lab file. The three sections
+      above are the State Water Board's own export; this points at a document the
+      water system itself published, for the whole year rather than for this
+      sample. Inheriting the page's publisher here would attribute the system's
+      annual report to the regulator.
+    {% endcomment %}
+    <h2 class="section-header" style="margin-top: var(--space-lg);">Published report {% source_label "CCR_SYSTEM" %}</h2>
     <p class="text-base text-secondary" style="max-width: 75ch;">
       <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>
       — the annual water-quality report this system published for the year this

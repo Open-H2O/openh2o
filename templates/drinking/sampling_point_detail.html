@@ -68,10 +68,18 @@
   {% if geojson %}
   <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+    {% comment %}
+      ROW-LEVEL. The point record above is composed by this deployment; the dot
+      on this map is not — it is the FACILITY's published coordinate, borrowed.
+      99-02 established the attribution in words and in the popup; the label is
+      what makes the publisher of that borrowed position explicit rather than
+      leaving a reader to read it out of the position of the sentence.
+    {% endcomment %}
     <p class="text-secondary text-sm" style="margin: 0; padding: var(--space-sm) var(--space-md); max-width: 90ch;">
       Shown at the location of facility {{ point.facility.facility_id }}. This sampling
       point has no published coordinate of its own — the state's GAMA programme
       publishes a position for the source, not for the tap.
+      {% source_label "GAMA" detail="published for the facility, not for this point" %}
     </p>
   </div>
   {% else %}

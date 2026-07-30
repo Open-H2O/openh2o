@@ -64,6 +64,21 @@
   {% if geojson %}
   <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+    {% comment %}
+      ROW-LEVEL, and this is the one place on the page where the section label
+      would be wrong. Everything in the identity card below is EPA's, and EPA
+      publishes NO coordinate for a facility at all — this dot came from GAMA,
+      through the 99-01 backfill (drinking/migrations/0006, and the comment on
+      SystemFacility.location says so in the model too). A reader who inherits
+      the card's publisher for the position has been misled by this page.
+
+      The caption lives INSIDE the map card because the map LEADS this page
+      (99-02's ruling) — this is NOT a resurrected in-card "Location" section.
+    {% endcomment %}
+    <p class="text-secondary text-sm" style="margin: 0; padding: var(--space-sm) var(--space-md); max-width: 90ch;">
+      The position drawn here is published separately from the identity below.
+      {% source_label "GAMA" detail="EPA publishes no coordinate for a facility at all" %}
+    </p>
   </div>
   {% else %}
   {% comment %}
