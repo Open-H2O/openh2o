@@ -56,6 +56,35 @@
     <a href="{% url 'drinking:sampling_points' %}" class="back-link">&larr; Back to Sampling Points</a>
   </div>
 
+  {% comment %}
+    The map leads the page, as it does on every other entity detail screen. The
+    caption lives INSIDE the card with it, because the two are one unit — never
+    ship this map without the sentence. A sampling point carries no coordinate;
+    it is drawn at its facility's. A reader who assumes the tap itself was
+    surveyed has been misled by this page, so the attribution is stated here AND
+    repeated in the popup rather than left to be inferred.
+  {% endcomment %}
+  {% if geojson %}
+  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+    <p class="text-secondary text-sm" style="margin: 0; padding: var(--space-sm) var(--space-md); max-width: 90ch;">
+      Shown at the location of facility {{ point.facility.facility_id }}. This sampling
+      point has no published coordinate of its own — the state's GAMA programme
+      publishes a position for the source, not for the tap.
+    </p>
+  </div>
+  {% else %}
+  <div class="card-raised">
+    <p class="text-secondary text-base" style="max-width: 70ch; margin: 0;">
+      Facility {{ point.facility.facility_id }} has no published coordinate, so there is
+      no map to show. A sampling point is placed at its facility's position, and
+      positions come from the state's GAMA programme, which publishes them for
+      groundwater sources and not for distribution-system or treatment-plant
+      facilities — and not for every source either.
+    </p>
+  </div>
+  {% endif %}
+
   <div class="card-raised">
 
     <h2 class="section-header" style="margin-top: 0;">{{ point.name|default:point.ps_code }}</h2>
@@ -110,33 +139,6 @@
         </div>
       </div>
     </div>
-
-    {% comment %}
-      The map and the sentence beneath it are one unit — never ship the map
-      without the sentence. A sampling point carries no coordinate; it is drawn
-      at the facility's. A reader who assumes the tap itself was surveyed has
-      been misled by this page, so the attribution is stated on the page AND
-      repeated in the popup rather than left to be inferred from the heading.
-    {% endcomment %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Location</h2>
-    {% if geojson %}
-    <div id="detail-map-card" class="card-inset" style="padding: 0; overflow: hidden; display: none;">
-      <div id="detail-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
-    </div>
-    <p class="text-secondary text-base" style="margin-top: var(--space-sm); max-width: 70ch;">
-      Shown at the location of facility {{ point.facility.facility_id }}. This sampling
-      point has no published coordinate of its own — the state's GAMA programme
-      publishes a position for the source, not for the tap.
-    </p>
-    {% else %}
-    <p class="text-secondary text-base" style="max-width: 70ch;">
-      Facility {{ point.facility.facility_id }} has no published coordinate, so there is
-      nothing to draw. A sampling point is placed at its facility's position, and
-      positions come from the state's GAMA programme, which publishes them for
-      groundwater sources and not for distribution-system or treatment-plant
-      facilities — and not for every source either.
-    </p>
-    {% endif %}
 
     <h2 class="section-header" style="margin-top: var(--space-lg);">Sampling history</h2>
     <div class="form-grid-2col">

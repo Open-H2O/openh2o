@@ -49,20 +49,45 @@
     <a href="{% url 'drinking:overview' %}" class="back-link">&larr; Back to Drinking Water</a>
   </div>
 
+  {% comment %}
+    The map leads the page, the way it does on every other entity detail screen
+    (recharge/site_detail.html, datasync/station_detail.html, the wells and POD
+    panes). The card starts hidden and OH2O.detailPaneMap reveals it once it has
+    read the geometry — the same handshake those pages use.
+
+    When the facility has no coordinate the view sends `geojson` as None, the
+    json_script element is never written, and the sentence takes the map's slot.
+    An empty FeatureCollection would render an empty grey box instead, which is
+    the one outcome worse than saying nothing.
+  {% endcomment %}
+  {% if geojson %}
+  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+  </div>
+  {% else %}
+  {% comment %}
+    Measured on staging 2026-07-29 before this sentence was written: of the 40
+    unlocated facilities, 29 are treatment plants, 1 is the distribution system
+    — and 10 ARE groundwater sources. So the sentence may NOT say "this is a
+    treatment plant, which is why". It states the fact and then says where
+    coordinates come from; it never asserts a cause it cannot see.
+  {% endcomment %}
+  <div class="card-raised">
+    <p class="text-secondary text-base" style="max-width: 70ch; margin: 0;">
+      No published coordinate for this facility, so there is no map to show.
+      Positions come from the state's GAMA programme, which publishes them for
+      groundwater sources and not for distribution-system or treatment-plant
+      facilities — and not for every source either. A system onboarded from the
+      federal record arrives with no coordinates at all.
+    </p>
+  </div>
+  {% endif %}
+
   <div class="card-raised">
 
     <h2 class="section-header" style="margin-top: 0;">
       {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %}
     </h2>
-
-    {% comment %}
-      What this facility physically is, in a sentence. The codes below are the
-      regulator's published vocabulary and are shown as published; this line is
-      the only place the page translates, and it explains rather than renames.
-    {% endcomment %}
-    {% if facility.plain_type %}
-    <p class="text-base text-secondary" style="margin-top: var(--space-xs); max-width: 70ch;">{{ facility.plain_type }}</p>
-    {% endif %}
 
     <div class="form-grid-2col" style="margin-top: var(--space-md);">
       <div class="field-group">
@@ -100,39 +125,6 @@
       </div>
       {% endif %}
     </div>
-
-    {% comment %}
-      Location sits with the identity block rather than at the foot of the page:
-      where a facility IS is part of what it is, not an appendix to it.
-
-      The card starts hidden and OH2O.detailPaneMap reveals it once it has read
-      the geometry — the same handshake recharge, wells, PODs and stations use.
-      When the facility has no coordinate the view sends `geojson` as None, the
-      json_script element below is never written, and the sentence stands here
-      instead. An empty FeatureCollection would render an empty grey box, which
-      is the one outcome worse than saying nothing.
-    {% endcomment %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Location</h2>
-    {% if geojson %}
-    <div id="detail-map-card" class="card-inset" style="padding: 0; overflow: hidden; display: none;">
-      <div id="detail-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
-    </div>
-    {% else %}
-    {% comment %}
-      Measured on staging 2026-07-29 before this sentence was written: of the 40
-      unlocated facilities, 29 are treatment plants, 1 is the distribution system
-      — and 10 ARE groundwater sources. So the sentence may NOT say "this is a
-      treatment plant, which is why". It states the fact and then says where
-      coordinates come from; it never asserts a cause it cannot see.
-    {% endcomment %}
-    <p class="text-secondary text-base" style="max-width: 70ch;">
-      No published coordinate for this facility, so there is nothing to draw.
-      Positions come from the state's GAMA programme, which publishes them for
-      groundwater sources and not for distribution-system or treatment-plant
-      facilities — and not for every source either. A system onboarded from the
-      federal record arrives with no coordinates at all.
-    </p>
-    {% endif %}
 
     <h2 class="section-header" style="margin-top: var(--space-lg);">Water system</h2>
     <div class="form-grid-2col">
