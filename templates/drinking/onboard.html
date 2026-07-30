@@ -6,6 +6,8 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:overview' %}">Drinking Water</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Onboard</span>
@@ -35,10 +37,12 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">Look up a public water system</h2>
     <p class="text-base text-secondary" style="margin-top: var(--space-md);">
-      A <strong>PWSID</strong> is the identifier the regulator carries for a
-      public water system &mdash; <span class="text-mono">CA1010001</span>, for
-      example. Enter it and this looks the system up in EPA's Envirofacts SDWIS
-      record. Nothing is written until you review what came back and confirm.
+      A <strong>PWSID</strong>, or Public Water System Identification number, is
+      the identifier the regulator carries for a public water system &mdash;
+      <span class="text-mono">CA1010001</span>, for example. Enter it and this
+      looks the system up in EPA's Envirofacts copy of the Safe Drinking Water
+      Information System (SDWIS). Nothing is written until you review what came
+      back and confirm.
     </p>
 
     <form

@@ -75,10 +75,11 @@
       what makes the publisher of that borrowed position explicit rather than
       leaving a reader to read it out of the position of the sentence.
     {% endcomment %}
-    <p class="text-secondary text-sm" style="margin: 0; padding: var(--space-sm) var(--space-md); max-width: 90ch;">
+    <p class="text-secondary text-sm" style="margin: 0; padding: var(--space-sm) var(--space-md); max-width: 75ch;">
       Shown at the location of facility {{ point.facility.facility_id }}. This sampling
-      point has no published coordinate of its own — the state's GAMA Program
-      publishes a position for the source, not for the tap.
+      point has no published coordinate of its own — the state's Groundwater Ambient
+      Monitoring and Assessment Program (GAMA) publishes a position for the source,
+      not for the tap.
       {% source_label "GAMA" detail="published for the facility, not for this point" %}
     </p>
   </div>
@@ -87,9 +88,10 @@
     <p class="text-secondary text-base" style="max-width: 70ch; margin: 0;">
       Facility {{ point.facility.facility_id }} has no published coordinate, so there is
       no map to show. A sampling point is placed at its facility's position, and
-      positions come from the state's GAMA Program, which publishes them for
-      groundwater sources and not for distribution-system or treatment-plant
-      facilities — and not for every source either.
+      positions come from the state's Groundwater Ambient Monitoring and Assessment
+      Program (GAMA), which publishes them for groundwater sources and not for
+      distribution-system or treatment-plant facilities — and not for every source
+      either.
     </p>
   </div>
   {% endif %}
@@ -100,7 +102,7 @@
 
     <div class="form-grid-2col" style="margin-top: var(--space-md);">
       <div class="field-group">
-        <div class="field-label">PS code</div>
+        <div class="field-label">PS Code</div>
         <div class="field-value-mono">{{ point.ps_code }}</div>
       </div>
       <div class="field-group">

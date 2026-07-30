@@ -18,6 +18,8 @@
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:overview' %}">Drinking Water</a>
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Sampling Points</span>
@@ -29,7 +31,7 @@
   builder. The description above already gets the first half right in prose; the
   label is what says the second half out loud.
   {% endcomment %}
-  <p class="page-description">Every location where a sample is physically drawn, identified by the PS code the state publishes. Each point belongs to one facility and carries its own sampling history. {% source_label "PS_CODE_COMPOSED" %}</p>
+  <p class="page-description">Every location where a sample is physically drawn, identified by the PS Code the state publishes. Each point belongs to one facility and carries its own sampling history. {% source_label "PS_CODE_COMPOSED" %}</p>
 </div>
 {% endblock %}
 
@@ -67,17 +69,19 @@
     The map shows {{ mapped_point_count }} of the {{ point_total_count }} sampling
     point{{ point_total_count|pluralize }} in this inventory, drawn at the
     {{ mapped_facility_count }} of the {{ total_facility_count }} facilities that
-    have a published location. Coordinates are published by GAMA for groundwater
-    sources only, so distribution-system and treatment-plant facilities carry
-    none, and the points sampled there cannot be placed on a map.
+    have a published location. Coordinates are published by the state's Groundwater
+    Ambient Monitoring and Assessment Program (GAMA) for groundwater sources only,
+    so distribution-system and treatment-plant facilities carry none, and the points
+    sampled there cannot be placed on a map.
   </p>
   {% else %}
   <p class="page-description">
     No facility in this system has a published location, so there is no map of
-    this inventory yet. Coordinates are published by GAMA for groundwater sources
-    only — EPA's Envirofacts record, which onboarding builds a system from,
-    carries none at all — so a newly onboarded system starts unmapped and gains
-    coordinates as its sources are located.
+    this inventory yet. Coordinates are published by the state's Groundwater Ambient
+    Monitoring and Assessment Program (GAMA) for groundwater sources only — EPA's
+    Envirofacts record, which onboarding builds a system from, carries none — so a
+    newly onboarded system starts unmapped and gains coordinates as its sources are
+    located.
   </p>
   {% endif %}
 
@@ -88,7 +92,7 @@
         type="text"
         id="filter-search" name="q"
         value="{{ q }}"
-        placeholder="PS code or name..."
+        placeholder="PS Code or name..."
         hx-get="{% url 'drinking:sampling_points' %}"
         hx-target="#results"
         hx-trigger="keyup changed delay:300ms"
