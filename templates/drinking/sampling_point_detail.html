@@ -74,13 +74,20 @@
       99-02 established the attribution in words and in the popup; the label is
       what makes the publisher of that borrowed position explicit rather than
       leaving a reader to read it out of the position of the sentence.
+
+      The caption and the label do ONE JOB EACH, which is the 101-02 checkpoint's
+      ruling on this card. The caption says where the dot is; the label says who
+      published it and what it is a coordinate OF. The earlier draft made both
+      say both — 36 words carrying two facts — and read as padding.
+
+      No GAMA expansion here on purpose. Rule 5 expands an acronym in PROSE, and
+      the only GAMA on this branch is now inside the citation, which the rule
+      excludes. The no-map branch below still carries the expansion for a reader
+      who lands there.
     {% endcomment %}
     <p class="text-secondary text-sm" style="margin: 0; padding: var(--space-sm) var(--space-md); max-width: 75ch;">
-      Shown at the location of facility {{ point.facility.facility_id }}. This sampling
-      point has no published coordinate of its own — the state's Groundwater Ambient
-      Monitoring and Assessment Program (GAMA) publishes a position for the source,
-      not for the tap.
-      {% source_label "GAMA" detail="published for the facility, not for this point" %}
+      Drawn at the location published for facility {{ point.facility.facility_id }}.
+      {% source_label "GAMA" detail="the facility's coordinate, not this point's" %}
     </p>
   </div>
   {% else %}

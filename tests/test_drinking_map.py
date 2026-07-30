@@ -558,13 +558,27 @@ class TestTheSamplingPointDetailMap:
             "the popup cannot attribute a coordinate it was never given"
         )
         assert properties["facility_id"] == mapped_system["well_a"].facility_id
-        squashed = _squash(html)
-        assert (
-            f"Shown at the location of facility {mapped_system['well_a'].facility_id}"
-            in squashed
-        ), (
-            "the page does not say whose coordinate this is, so a reader may "
-            "believe the tap itself was surveyed"
+        # 99-02's requirement, re-pointed at the FACT rather than the sentence
+        # (101-02). The original pinned "Shown at the location of facility {id}"
+        # verbatim, which made the correct copy a test failure the moment the
+        # caption was tightened at 101-02's checkpoint. What 99-02 actually
+        # required — and what this now asserts — is that the caption NAMES the
+        # facility whose coordinate this is, and ATTRIBUTES it, so a reader
+        # cannot come away believing the tap itself was surveyed.
+        # The caption is the <p> inside the map card, after the map element
+        # itself — hence splitting on the map div rather than on the card's
+        # opening tag, whose first </div> closes the map and not the caption.
+        card = html.split('id="detail-map-card"', 1)[1] if 'id="detail-map-card"' in html else ""
+        caption = _squash(card.split('id="detail-map"', 1)[-1].split("</p>", 1)[0])
+        assert mapped_system["well_a"].facility_id in caption, (
+            "the map caption does not name whose coordinate this is, so a "
+            "reader may believe the tap itself was surveyed"
+        )
+        assert "Source:" in caption, (
+            "the borrowed coordinate carries no publisher attribution"
+        )
+        assert "not this point" in caption or "not for this point" in caption, (
+            "the caption never says the coordinate is not the point's own"
         )
 
     def test_a_point_on_an_unlocated_facility_emits_NO_element_at_all(

@@ -33,11 +33,19 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">Import lab results</h2>
     <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+      {% comment %}
+        "or a CLIP lab submission" cut at the 101-02 checkpoint. CLIP is defined
+        nowhere in this repository — the only other mention is a comment in
+        drinking/views.py — so it was the one acronym the copy pass could not
+        expand without inventing an expansion. The clause named a second source
+        of the same column layout the sentence had already named, so cutting it
+        cost the reader nothing.
+      {% endcomment %}
       Upload a <strong>CSV</strong> of laboratory findings in the state's own
       SDWIS.CSV lab-results layout &mdash; the same columns a Division of
-      Drinking Water extract or a CLIP lab submission carries. Column headers are
-      detected automatically, so an unmodified export needs no mapping. Nothing is
-      written until you review the preview and confirm.
+      Drinking Water extract carries. Column headers are detected automatically,
+      so an unmodified export needs no mapping. Nothing is written until you
+      review the preview and confirm.
     </p>
 
     {% comment %}
