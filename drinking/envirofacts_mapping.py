@@ -81,6 +81,24 @@ def _flag(value):
     return _text(value).upper() == "Y"
 
 
+def _count(value):
+    """EPA's integer counts → ``int`` or ``None``.
+
+    ``None``, never ``0``. A system serving 0 people is a real if odd record,
+    so a blank that became 0 would be a fabricated fact rendered as a confident
+    number. Non-numeric input is treated as absent rather than raising: the
+    payload is EPA's, not ours, and one malformed count must not abort an
+    onboarding.
+    """
+    text = _text(value)
+    if not text:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
 def _coded(value, choices, field_name, warnings):
     """Return ``value`` only if it is in a published vocabulary.
 
@@ -123,6 +141,13 @@ def map_water_system(payload, warnings=None):
         "name": _text(payload.get("pws_name")),
         "is_wholesaler": _flag(payload.get("is_wholesaler_ind")),
         "is_school_or_daycare": _flag(payload.get("is_school_or_daycare_ind")),
+        # EPA's two published aggregates. These land in their own fields; they
+        # are never poured into the splits below. See the comment after this
+        # dict.
+        "population_served_total": _count(payload.get("population_served_count")),
+        "service_connections_total": _count(
+            payload.get("service_connections_count")
+        ),
         # Address only — see the module docstring's scope call. Nothing maps
         # phone_number, fax_number, alt_phone_number, email_addr, admin_name or
         # org_name, and nothing should be added that does.
@@ -154,12 +179,18 @@ def map_water_system(payload, warnings=None):
             f"researching a deactivated system — but it should be confirmed."
         )
 
-    # NOT mapped, deliberately: population_residential / _non_transient /
+    # STILL NOT mapped, deliberately: population_residential / _non_transient /
     # _transient, and the five connections_* fields. EPA sends ONE
     # population_served_count and ONE service_connections_count. Feeding an
     # aggregate into the residential field would misattribute transient
     # population as residents. All eight stay NULL until a source that actually
-    # breaks them down is imported.
+    # breaks them down — the state's annual electronic report (eAR) — is
+    # imported.
+    #
+    # What changed (Phase 100): the aggregate now has somewhere honest to land.
+    # population_served_total and service_connections_total are mapped above and
+    # sit BESIDE the splits, never in place of them. The eight fields listed
+    # here are unchanged and the reason above is unchanged.
     #
     # Also not mapped: state_classification (EPA does not send it),
     # regulating_agency (primacy_agency_code is a state code, not a DDW district
@@ -254,6 +285,11 @@ _SYSTEM_REFRESHABLE_FIELDS = (
     "primary_source_code",
     "is_wholesaler",
     "is_school_or_daycare",
+    # Without these two here the aggregates would be written on CREATION only,
+    # and an already-onboarded system would stay NULL forever no matter how
+    # often the operator pulls a fresh federal record.
+    "population_served_total",
+    "service_connections_total",
     "mailing_address_line1",
     "mailing_address_line2",
     "mailing_city",

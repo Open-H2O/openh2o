@@ -191,6 +191,28 @@ class WaterSystem(models.Model):
     is_wholesaler = models.BooleanField(default=False)
     is_school_or_daycare = models.BooleanField(default=False)
 
+    # EPA's published aggregates, carried ALONGSIDE the splits below and never
+    # instead of them. The federal record sends one `population_served_count`
+    # and one `service_connections_count`; the residential / non-transient /
+    # transient and per-use-type splits beside them come from a different
+    # source, the state's annual electronic report (eAR). A system may
+    # legitimately have one shape without the other, which is the whole reason
+    # both live on this model — do not "consolidate" them.
+    population_served_total = models.IntegerField(
+        null=True, blank=True,
+        help_text="EPA WATER_SYSTEM.population_served_count — the published "
+        "aggregate. The residential / non-transient / transient split beside "
+        "it comes from the state eAR, not from EPA; a system may have this "
+        "total with no split, or a split with no total.",
+    )
+    service_connections_total = models.IntegerField(
+        null=True, blank=True,
+        help_text="EPA WATER_SYSTEM.service_connections_count — the published "
+        "aggregate. The per-use-type connection breakdown beside it comes from "
+        "the state eAR, not from EPA; a system may have this total with no "
+        "breakdown, or a breakdown with no total.",
+    )
+
     population_residential = models.IntegerField(null=True, blank=True)
     population_non_transient = models.IntegerField(null=True, blank=True)
     population_transient = models.IntegerField(null=True, blank=True)
