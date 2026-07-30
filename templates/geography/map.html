@@ -44,12 +44,27 @@
        would re-inflate the now-definite map area ~6% past the viewport. #map
        carries a global counter-zoom calc(1/1.0625) (app.css ~1599) that only
        exists to cancel that pane zoom, so reset #map to native too. */
-    .app-content { padding: 0 !important; overflow: hidden; display: flex; zoom: 1; }
+    /* ISS-098: `flex-direction: column`, and that word is the whole fix. The
+       chain above needs .app-content to be a flex CONTAINER, but a ROW makes
+       every other child of .app-content a column BESIDE the map — and base.html
+       renders the demo banner as exactly such a child. Measured on staging at
+       1920x1080 before the fix: banner 981px, map 679px, in a 1680px content
+       area. A column stacks the banner above the map the way every other page
+       does, and leaves the map the growing row beneath it. */
+    .app-content { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; zoom: 1; }
     #map { zoom: 1; }
     #map-wrapper {
         position: relative;
         flex: 1;
-        height: 100%;
+        /* No `height: 100%`, and `min-height: 0` instead — both because of the
+           column above. In a column those two fight: `flex: 1` sizes this from
+           the space LEFT OVER on the main axis while `height: 100%` resolves
+           against the whole parent, which re-creates the very overflow this
+           block was written to kill. And a flex item defaults to
+           `min-height: auto`, which refuses to shrink below its content —
+           MapLibre's canvas is ~971px tall, so that is the original
+           outer-scrollbar bug arriving through a new door. */
+        min-height: 0;
         margin: 8px 12px 8px 8px;
         border: 1px solid var(--color-border);
         border-radius: var(--radius-md, 10px);
