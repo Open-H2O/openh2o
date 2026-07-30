@@ -68,14 +68,19 @@ EPA_SDWIS = "EPA Envirofacts (SDWIS)"
 #: laboratories and ELAP certification numbers.
 DDW_LAB = "State Water Board Division of Drinking Water"
 
-#: GAMA — the state's Groundwater Ambient Monitoring and Assessment programme.
+#: GAMA — the state's Groundwater Ambient Monitoring and Assessment Program.
+#:
+#: "Program", not "programme": the official title of a California State Water
+#: Board program spells it the American way, and it is a proper noun, so it keeps
+#: its capital. The British spelling reached staging once and was caught by eye
+#: rather than by a gate — ``tests/test_drinking_provenance.py`` now pins it.
 #:
 #: The source of ``SystemFacility.location`` (backfilled by
 #: ``drinking/migrations/0006``) and of the screen intervals on the demonstration's
 #: municipal supply sources. GAMA publishes a position for the SOURCE, never for
 #: the tap, which is why a sampling point is drawn at its facility's coordinate
 #: and says so.
-GAMA = "State Water Board GAMA programme"
+GAMA = "State Water Board GAMA Program"
 
 #: A ``SamplingPoint`` record, which no publisher ships as a row.
 #:

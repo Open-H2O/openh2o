@@ -226,6 +226,24 @@ class TestThePublisherVocabulary:
             hit = find_forbidden_word(visible_text(wording), _LABELS_MAY_NOT_SAY)
             assert hit is None, f"provenance.{name} says {hit!r}"
 
+    def test_no_constant_uses_a_british_spelling(self):
+        """These name California agencies and their programs, in US English.
+
+        ``GAMA = "State Water Board GAMA programme"`` shipped to staging and was
+        caught by eye on the facility page, not by any gate. A publisher label
+        misspelling the publisher's own name is the one thing on these screens
+        that must look authoritative, so the spelling gets a tripwire rather
+        than a proofread.
+        """
+        british = ("programme", "favourable", "colour", "labelled", "centre",
+                   "behaviour", "organisation", "recognise", "licence")
+        for name, wording in provenance.PUBLISHERS.items():
+            lowered = wording.lower()
+            for word in british:
+                assert word not in lowered, (
+                    f"provenance.{name} spells {word!r} the British way"
+                )
+
 
 # ---------------------------------------------------------------------------
 # The seven read surfaces
