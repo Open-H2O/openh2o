@@ -30,8 +30,34 @@
       works &mdash; no agency's real ledgers are ours to publish. The two sit
       side by side, so the tables below say which is which.
     </p>
+    {% comment %}
+      One sentence, in the existing prose voice, no new panel and no coloured
+      callout. It exists because this page and the per-screen labels are now two
+      statements of the same fact, and a reader who arrives here should learn
+      that the answer is also available where the data is — otherwise the labels
+      are a feature only someone who already knows about them will find.
+    {% endcomment %}
+    <p class="about-purpose">
+      The drinking-water screens say this for themselves as well: each section
+      carries a small label naming who published its values, so the question can
+      be answered in front of the data instead of by coming back here.
+    </p>
   </div>
 
+  {% comment %}
+    Every publisher named in this table uses the EXACT wording of its constant in
+    `drinking/provenance.py`, and `tests/test_drinking_provenance.py` asserts
+    that. Before Phase 101 this page carried three different shapes for the same
+    two publishers — "EPA Envirofacts (SDWIS), PWSID CA2410009", "State Water
+    Board Division of Drinking Water, and GAMA" and "Division of Drinking Water,
+    SDWIS4 export from the EDT Library" — which is exactly the drift a summary
+    page and eight screens produce when nobody owns the words.
+
+    This template deliberately does NOT `{% load drinking_display %}`: `drinking`
+    is truly optional, this page is not, and loading a dropped app's tag library
+    is a TemplateSyntaxError. The strings are literal and the test is what keeps
+    them honest.
+  {% endcomment %}
   <div class="card-raised">
     <h2 class="section-header">Real published records</h2>
     <p class="about-purpose">
@@ -73,11 +99,11 @@
           </tr>
           <tr>
             <td>Its 27 sampling points and their locations</td>
-            <td>State Water Board Division of Drinking Water, and GAMA</td>
+            <td>State Water Board Division of Drinking Water, and the State Water Board GAMA programme</td>
           </tr>
           <tr>
             <td>Every drinking-water laboratory result, 2023&ndash;2026</td>
-            <td>Division of Drinking Water, SDWIS4 export from the EDT Library</td>
+            <td>State Water Board Division of Drinking Water, SDWIS4 export from the EDT Library</td>
           </tr>
           <tr>
             <td>Drinking-water regulatory limits</td>
