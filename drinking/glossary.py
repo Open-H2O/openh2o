@@ -36,7 +36,7 @@ FACILITY_TYPE_PLAIN = {
     "TP": "A treatment plant — where water is filtered or treated before going out.",
     "DS": (
         "The distribution system: the pipes that carry treated water out to "
-        "customers. Samples here are taken out in the neighbourhood, not at a well."
+        "customers. Samples here are taken out in the neighborhood, not at a well."
     ),
     "CH": "A junction where several sources join into one pipe.",
     "CW": "A tank holding treated water immediately after treatment.",

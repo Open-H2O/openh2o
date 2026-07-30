@@ -32,9 +32,11 @@
   {% for system in systems %}
   <div class="card-raised">
 
-    <!-- Identity. Every value is the regulator's own published vocabulary,
-         shown as published — see drinking/models.py on why none of it is
-         translated into friendlier local wording. -->
+    {% comment %}
+      Identity. Every value is the regulator's own published vocabulary, shown
+      as published — see drinking/models.py on why none of it is translated into
+      friendlier local wording.
+    {% endcomment %}
     <h2 class="section-header">{{ system.name }} {% source_label "EPA_SDWIS" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
