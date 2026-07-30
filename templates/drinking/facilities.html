@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Facilities - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Facilities{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Facilities</span>
+  </nav>
+  <p class="page-description">Every physical part of the water system as the federal record enumerates it — sources, treatment plants and distribution points. Each facility carries its own sampling points.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack" style="max-width: 1400px;">
+
+  {% comment %}
+  Both selects are built in the view from the types PRESENT in the database, not
+  from the models' full choices tables. Read drinking/views.py::_present_choices
+  before changing that — a full FACILITY_TYPE_CHOICES list renders the option
+  text "Well", "Clear Well" and "Wellhead" on every load, including an empty
+  database, and the droppability vocabulary gate reads option text as page prose.
+  {% endcomment %}
+  <div class="card-raised toolbar-row">
+    <div style="flex: 1; min-width: 200px;">
+      <label class="form-label" for="filter-search">Search</label>
+      <input
+        type="text"
+        id="filter-search" name="q"
+        value="{{ q }}"
+        placeholder="Facility ID or name..."
+        hx-get="{% url 'drinking:facilities' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='facility_type'], [name='activity_status']"
+        autocomplete="off"
+        class="form-input search-input-icon"
+      >
+    </div>
+    <div>
+      <label class="form-label" for="filter-facility-type">Type</label>
+      <select
+        id="filter-facility-type" name="facility_type"
+        hx-get="{% url 'drinking:facilities' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q'], [name='activity_status']"
+        class="form-select"
+      >
+        <option value="" {% if not facility_type %}selected{% endif %}>All Types</option>
+        {% for val, label in facility_type_choices %}
+          <option value="{{ val }}" {% if facility_type == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="form-label" for="filter-activity-status">Status</label>
+      <select
+        id="filter-activity-status" name="activity_status"
+        hx-get="{% url 'drinking:facilities' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q'], [name='facility_type']"
+        class="form-select"
+      >
+        <option value="" {% if not activity_status %}selected{% endif %}>All Statuses</option>
+        {% for val, label in activity_status_choices %}
+          <option value="{{ val }}" {% if activity_status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div id="results">
+    {% include "drinking/partials/_facility_results.html" %}
+  </div>
+
+</div>
+{% endblock %}

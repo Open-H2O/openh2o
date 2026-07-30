@@ -70,6 +70,92 @@ def overview(request):
     return render(request, "drinking/overview.html", {"systems": systems})
 
 
+def _present_choices(field_name, choices):
+    """The filter options actually present in the database, never the full table.
+
+    **This is a build requirement, not a style preference.** ``FACILITY_TYPE_CHOICES``
+    carries ("WL", "Well"), ("CW", "Clear Well") and ("WH", "Wellhead"). A
+    ``<select>`` renders its option TEXT on every load — empty database included
+    — and ``tests/droppability/checks.py::visible_text()`` strips tags and keeps
+    text, so those three options are read as page prose. ``_FORBIDDEN_VOCABULARY``
+    fails any page a ``wells``-less deployment keeps if it names ``well`` or
+    ``wells``, so rendering the full choices table here fails
+    ``test_kept_pages_never_name_a_dropped_module[wells]``. The existing
+    sampling-point filter survives only because POINT_TYPE_CHOICES happens to be
+    Source / Entry Point / Distribution / Tap.
+
+    Building from the database also happens to be better UX than a 22-option
+    list where three are used. If you are here to "simplify" this back to
+    ``FACILITY_TYPE_CHOICES``, that is the failure you are about to reintroduce.
+    """
+    labels = dict(choices)
+    present = (
+        SystemFacility.objects
+        .order_by()
+        .values_list(field_name, flat=True)
+        .distinct()
+    )
+    return sorted(
+        ((code, labels[code]) for code in present if code in labels),
+        key=lambda pair: pair[1],
+    )
+
+
+@login_required
+def facilities(request):
+    """The facility inventory: every physical part of the water system.
+
+    Was a 61-row table stapled to the bottom of the overview, where it could not
+    be searched, filtered or paged. Same shape as ``sampling_points`` above —
+    one annotated queryset, a Q-joined search, two exact filters, 50 to a page.
+    """
+    q = request.GET.get("q", "").strip()
+    facility_type = request.GET.get("facility_type", "").strip()
+    activity_status = request.GET.get("activity_status", "").strip()
+
+    queryset = (
+        SystemFacility.objects
+        .select_related("well", "system")
+        .annotate(sampling_point_count=Count("sampling_points"))
+        .order_by("facility_id")
+    )
+
+    # One filter() with a Q, never `qs.filter(a) | qs.filter(b)`: OR-ing an
+    # already-annotated queryset re-joins sampling_points and inflates the count.
+    if q:
+        queryset = queryset.filter(
+            Q(facility_id__icontains=q) | Q(name__icontains=q)
+        )
+    if facility_type:
+        queryset = queryset.filter(facility_type=facility_type)
+    if activity_status:
+        queryset = queryset.filter(activity_status=activity_status)
+
+    paginator = Paginator(queryset, 50)
+    page_obj = paginator.get_page(request.GET.get("page", 1))
+
+    return list_response(
+        request,
+        page_template="drinking/facilities.html",
+        results_template="drinking/partials/_facility_results.html",
+        context={
+            "page_obj": page_obj,
+            "total_count": paginator.count,
+            "q": q,
+            "facility_type": facility_type,
+            "activity_status": activity_status,
+            # Read _present_choices' docstring before touching either of these.
+            "facility_type_choices": _present_choices(
+                "facility_type", FACILITY_TYPE_CHOICES
+            ),
+            "activity_status_choices": _present_choices(
+                "activity_status", ACTIVITY_STATUS_CHOICES
+            ),
+            "has_any": SystemFacility.objects.exists(),
+        },
+    )
+
+
 @login_required
 def sampling_points(request):
     """The sampling-point inventory: where samples are physically drawn.

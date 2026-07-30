@@ -1,0 +1,99 @@
+<div class="result-count-bar">
+  <span class="text-secondary text-sm">
+    <span class="count-pill">{{ total_count }}</span>
+    facilit{{ total_count|pluralize:"y,ies" }} found{% if q %} matching "{{ q }}"{% endif %}
+  </span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Facility ID</th>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Water Type</th>
+        <th>Sampling Points</th>
+        <th>Well</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for facility in page_obj %}
+      <tr>
+        <td class="text-mono"><a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a></td>
+        <td>{{ facility.name|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ facility.get_facility_type_display|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ facility.get_activity_status_display|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ facility.get_water_type_display|default:"—" }}</td>
+        {% comment %}
+          A plain count, not a link. The sampling-point list filters on `q` and
+          `point_type` only — it carries no `facility` filter — so a link here
+          would either 404 in spirit or quietly ignore the parameter and show
+          the whole inventory. Adding that filter is not this plan's scope.
+        {% endcomment %}
+        <td class="text-secondary text-sm tabular-nums">{{ facility.sampling_point_count }}</td>
+        {% comment %}
+          The quality-to-quantity join made visible: ONE physical well, sampled
+          on this side and metered on the wells side. Guarded on enabled_modules
+          so dropping `wells` degrades to plain text rather than NoReverseMatch
+          (the 77-02 template-guard rule). Lifted verbatim from the overview
+          table this page replaced.
+        {% endcomment %}
+        <td>
+          {% if facility.well and 'wells' in enabled_modules %}
+            <a href="{% url 'wells:detail' facility.well.pk %}" class="data-table-link">{{ facility.well.name }}</a>
+          {% elif facility.well %}
+            {{ facility.well.name }}
+          {% else %}
+            <span class="text-tertiary">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-row">
+  {% if page_obj.has_previous %}
+    <button
+      hx-get="{% url 'drinking:facilities' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&facility_type={{ facility_type }}&activity_status={{ activity_status }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Previous
+    </button>
+  {% endif %}
+  <span class="pagination-label">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </span>
+  {% if page_obj.has_next %}
+    <button
+      hx-get="{% url 'drinking:facilities' %}?page={{ page_obj.next_page_number }}&q={{ q }}&facility_type={{ facility_type }}&activity_status={{ activity_status }}"
+      hx-target="#results"
+      class="btn-secondary btn-sm">
+      Next
+    </button>
+  {% endif %}
+</div>
+{% endif %}
+
+{% elif has_any %}
+{% comment %}
+  Filters are on and matched nothing. Not an onboarding moment — the operator
+  has facilities, just not this slice — so say so and leave the toolbar alone.
+{% endcomment %}
+<div class="card-raised empty-state">
+  <p class="empty-state-text">No facilities found{% if q %} matching "{{ q }}"{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %}.</p>
+</div>
+
+{% else %}
+{% comment %}
+  Neither `import_link` nor `onboard_link`: importing a lab file cannot create a
+  facility, and onboarding is offered on the overview, which is where an
+  operator with no system at all lands.
+{% endcomment %}
+{% include "drinking/partials/_empty_drinking.html" with what="A facility is a physical part of the water system — a source, a treatment plant or a distribution point — as the federal record enumerates it." %}
+{% endif %}

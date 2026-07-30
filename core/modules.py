@@ -794,15 +794,32 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=70,
                 active_match="/drinking/",
-                # Three excludes, not two: `/drinking/` is a prefix of every
+                # Four excludes, not three: `/drinking/` is a prefix of every
                 # sub-page, each of which owns its own entry below. Adding a
                 # sub-route without adding its exclusion leaves Overview lit
-                # while the operator is somewhere else.
+                # while the operator is somewhere else. The facilities exclusion
+                # also correctly moves the facility DETAIL page's highlight from
+                # Overview to Facilities.
                 active_excludes=(
+                    "/drinking/facilities",
                     "/drinking/sampling-points",
                     "/drinking/results",
                     "/drinking/onboard",
                 ),
+            ),
+            NavEntry(
+                url_name="drinking:facilities",
+                label="Facilities",
+                # Its own glyph, not a reuse. The plan called for `grid`, but
+                # `accounting:dashboard` already owns that key and
+                # `test_icon_keys_are_unique` holds one glyph to one
+                # destination. `well` is another module's identity, so a
+                # facility icon was drawn: two tanks on a ground line.
+                icon="facility",
+                section=SECTION_WATER_DATA,
+                # 75: between overview's 70 and sampling points' 80.
+                order=75,
+                active_match="/drinking/facilities",
             ),
             NavEntry(
                 url_name="drinking:sampling_points",

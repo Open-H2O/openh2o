@@ -14,6 +14,9 @@ urlpatterns = [
     # their list rather than at the bottom of the file: a reader looking for
     # "where does a sampling-point row go" should find it next to the list that
     # renders that row.
+    # The list sits beside the detail it opens. No ordering hazard: an
+    # exact-match prefix cannot shadow <int:pk> or geojson/.
+    path("facilities/", views.facilities, name="facilities"),
     path(
         "facilities/<int:pk>/",
         views.facility_detail,
