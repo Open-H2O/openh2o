@@ -157,19 +157,24 @@
     its own searchable page. `.stat-grid-3col` and the `.stat-card` vocabulary
     are lifted from partials/_dashboard_card.html; both already exist in
     app.css, so nothing here adds CSS.
+
+    The values carry `|intcomma`, which the dashboard card does not. Measured on
+    staging: the result count reads 22311, and an unseparated five-digit number
+    sitting under two separated ones on the same page reads as an oversight.
+    The dashboard card is a different surface and was left alone.
     {% endcomment %}
     <div class="stat-grid-3col" style="margin-top: var(--space-lg);">
       <div class="card-raised card-inset stat-card">
         <div class="stat-card-label">Facilities</div>
-        <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ system.facility_count }}</a></div>
+        <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ system.facility_count|intcomma }}</a></div>
       </div>
       <div class="card-raised card-inset stat-card">
         <div class="stat-card-label">Sampling points</div>
-        <div class="stat-card-value-sm"><a href="{% url 'drinking:sampling_points' %}" class="data-table-link">{{ system.sampling_point_count }}</a></div>
+        <div class="stat-card-value-sm"><a href="{% url 'drinking:sampling_points' %}" class="data-table-link">{{ system.sampling_point_count|intcomma }}</a></div>
       </div>
       <div class="card-raised card-inset stat-card">
         <div class="stat-card-label">Sample results</div>
-        <div class="stat-card-value-sm"><a href="{% url 'drinking:results' %}" class="data-table-link">{{ system.result_count }}</a></div>
+        <div class="stat-card-value-sm"><a href="{% url 'drinking:results' %}" class="data-table-link">{{ system.result_count|intcomma }}</a></div>
       </div>
     </div>
   </div>
