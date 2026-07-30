@@ -1,0 +1,32 @@
+{% comment %}
+Provenance label — "who published this" (Phase 101).
+
+Takes `source` (a publisher phrase, always a constant from
+`drinking/provenance.py`, never a literal) and an optional `detail` for the one
+extra clause a row sometimes needs. Renders inline, so it sits beside a section
+header, inside a page description, or under a map caption without a wrapper.
+
+NOT FLAG-GATED, and that is the difference between this and
+`partials/_demo_marker.html`. That pill is gated on
+`SiteConfig.demonstration_mode` because it claims "this value is fake", which is
+only true on a demonstration. This label claims "this value came from EPA's
+federal record", which is true on any deployment that onboarded through the
+wizard — and on a real agency instance it answers a live operator question (can
+I change this, and where do I go to fix it), so suppressing it there would strip
+information from the deployment that needs it most.
+
+DELIBERATELY `.source-label`, and the name is load-bearing: it does not contain
+the Phase 64 marker class from `partials/_demo_marker.html` as a SUBSTRING.
+`tests/test_demo_marker.py` asserts that class is ABSENT from raw HTML, so
+renaming this into a variant of it — the obvious tidy-up, since both are small
+neutral pills — turns those tests red without changing a word of what the page
+says. `.notice-badge` in `_demonstration_banner.html` was named around the same
+constraint and says so too.
+
+That class name is not spelled out anywhere in this file ON PURPOSE: the
+assertion matches a raw-HTML substring, and a Django `{% comment %}` is stripped
+before render, but `grep`-based checks on this file are not.
+
+`source` and `detail` are escaped by Django's autoescape; nothing here is marked
+safe.
+{% endcomment %}<span class="source-label">Source: {{ source }}{% if detail %} &middot; {{ detail }}{% endif %}</span>

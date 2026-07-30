@@ -1612,6 +1612,41 @@ html { color-scheme: dark; }
     font-weight: 700;
 }
 
+/* Phase 101: provenance label (partials/_source_label.html) — "who published
+   this". Same reasoning as `.badge-demo` above and applied for the same reason:
+   transparent background, no status colour, tertiary text, a hairline border, so
+   it reads as a label ABOUT the data rather than as another status ON it. The
+   data is the page's subject; this is a footnote that happens to sit inline.
+
+   NO GOLD. DESIGN.md reserves gold for primary actions ("gold acts") and a
+   statement of provenance is not an action. No tint and no coloured left stripe
+   either — that is the generic-callout look DESIGN.md names.
+
+   Not a `.badge-*` class, and the name deliberately avoids `badge-demo` as a
+   SUBSTRING: `tests/test_demo_marker.py` asserts on raw HTML. Same constraint
+   `.notice-badge` below was named around.
+
+   Lighter than the two badges: no uppercase tracking and normal weight, because
+   this carries a phrase ("State Water Board Division of Drinking Water") rather
+   than a one-word status, and letter-spaced bold at that length pulls the eye off
+   the value it describes. `white-space: normal` lets it wrap on a narrow screen
+   instead of forcing the header to scroll. */
+.source-label {
+    display: inline-block;
+    margin-left: var(--space-sm);
+    padding: 0.0625rem 0.4375rem;
+    background-color: transparent;
+    color: var(--color-text-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.6875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    white-space: normal;
+    vertical-align: middle;
+}
+
 /* Site-wide demonstration notice (partials/_demonstration_banner.html). Sits at
    the top of the content area on every page while SiteConfig.demonstration_mode
    is on, so a screenshot of any screen carries it.

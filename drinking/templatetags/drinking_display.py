@@ -20,7 +20,29 @@ from decimal import Decimal, InvalidOperation
 from django import template
 from django.db.models import Max
 
+from drinking import provenance
+
 register = template.Library()
+
+
+@register.inclusion_tag("partials/_source_label.html")
+def source_label(key, detail=""):
+    """Render the provenance label for one publisher.
+
+    ``{% source_label "DDW_LAB" %}`` — the argument is the NAME of a constant in
+    ``drinking/provenance.py``, never the wording itself, so eight templates
+    cannot drift apart and a renamed constant raises ``KeyError`` at render
+    instead of quietly un-labelling a page.
+
+    An inclusion tag rather than a plain ``simple_tag`` returning a string,
+    because the markup is shared with `templates/wells/partials/_detail_pane.html`
+    — a `wells` template, which must NOT `{% load drinking_display %}`: `drinking`
+    is truly optional, and loading a dropped app's tag library is a
+    ``TemplateSyntaxError``, not a missing label. That page includes
+    ``partials/_source_label.html`` directly with a publisher its view resolved
+    behind a module guard. Both paths therefore render the same component.
+    """
+    return {"source": provenance.publisher(key), "detail": detail}
 
 
 @register.simple_tag
