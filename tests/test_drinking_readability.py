@@ -14,15 +14,36 @@ these assert the explanations are actually present.
 
 They are deliberately assertions about *plain language being present*, not about
 exact wording — the copy should be free to improve without breaking the suite.
+
+**Phase 101-02 extended this file rather than starting another one.** The copy
+and formatting pass wrote nine house rules into DESIGN.md's *Copy rules*
+section; `TestCopyRules` at the foot of this file pins the half of them a
+machine can check. It holds the same line the paragraph above draws: a rule, a
+casing, a spelling or a proper name may be pinned — a sentence may not. The
+measured evidence behind every one is in
+``docs/drinking-copy-audit-2026-07-30.md``.
 """
 
+import re
+from pathlib import Path
+
 import pytest
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.test import Client
 from django.urls import reverse
 
 from drinking import glossary
 from drinking.models import SamplingPoint, SystemFacility, WaterSystem
+from tests.droppability.checks import visible_text
+from tests.factories import (
+    AnalyteFactory,
+    SampleEventFactory,
+    SampleResultFactory,
+    SamplingPointFactory,
+    SystemFacilityFactory,
+    WaterSystemFactory,
+)
 
 PWSID = "CA1010001"
 
@@ -178,3 +199,297 @@ class TestReviewScreenSaysNothingIsSaved:
     def test_skip_section_is_not_duplicated(self):
         body = self._render(['EPA facility CA1010001001 has no state id.'])
         assert body.count("EPA facility CA1010001001 has no state id.") == 1
+
+
+# ---------------------------------------------------------------------------
+# Phase 101-02: the copy rules, pinned.
+#
+# DESIGN.md's "Copy rules" section is the prose; this is the half a machine can
+# check. Every assertion below is about a RULE — a casing, a spelling, a proper
+# name, the presence of a description — and never about a sentence. That is the
+# same line this file's docstring already draws, and the reason it is drawn is
+# that a copy pass which ends by freezing the copy has defeated the file it
+# extended. If a rule cannot be expressed without pinning a sentence, it stays
+# in DESIGN.md as prose; docs/drinking-copy-audit-2026-07-30.md records which.
+# ---------------------------------------------------------------------------
+
+#: Domain shorthand this module is allowed to write, paired with the expansion a
+#: page must carry when it uses the term in PROSE. Keyed by the URL name of the
+#: page the audit measured the term on.
+#:
+#: Proper names, not copy: "Groundwater Ambient Monitoring and Assessment
+#: Program" is what the State Water Board calls its own program, so pinning it
+#: constrains the facts a page must state and leaves every sentence around it
+#: free to be rewritten. `GAMA` reaches three pages, `SDWIS` and `PWSID` reach
+#: the onboarding front door — see the audit's D6, D7 and D8.
+REQUIRED_EXPANSIONS = {
+    "facility_detail": ["Groundwater Ambient Monitoring and Assessment Program"],
+    "sampling_point_detail": ["Groundwater Ambient Monitoring and Assessment Program"],
+    "sampling_points": ["Groundwater Ambient Monitoring and Assessment Program"],
+    "onboard": [
+        "Safe Drinking Water Information System",
+        "Public Water System Identification",
+    ],
+}
+
+#: Spellings that must never reach a reader.
+#:
+#: `GAMA programme` shipped to staging in 101-01 across four surfaces and was
+#: caught by Brent's eye rather than by any gate. `test_drinking_provenance.py`
+#: closed the half of that hole covering the provenance constants; this closes
+#: the other half — the rendered page and the glossary strings.
+BRITISH_SPELLINGS = (
+    "programme", "neighbourhood", "colour", "labelled", "labelling",
+    "analysed", "analyse", "recognised", "recognise", "organised",
+    "behaviour", "licence", "centre", "metre", "litre", "defence",
+    "catalogue", "modelling", "travelling", "whilst", "amongst",
+)
+
+#: Every drinking template — 10 pages and 12 partials.
+DRINKING_TEMPLATES = sorted(
+    (Path(settings.BASE_DIR) / "templates" / "drinking").rglob("*.html")
+)
+
+_STRIPPED = (
+    re.compile(r"\{%\s*comment\s*%\}.*?\{%\s*endcomment\s*%\}", re.S),
+    re.compile(r"\{#.*?#\}", re.S),
+    re.compile(r"<!--.*?-->", re.S),
+    re.compile(r"<script.*?</script>", re.S),
+    re.compile(r"<style.*?</style>", re.S),
+    #: Data-table column headers are exempt from the casing rule by DESIGN.md
+    #: and are uppercased in CSS regardless.
+    re.compile(r"<th[^>]*>.*?</th>", re.S),
+)
+
+
+def template_prose(path):
+    """A template's source with everything that is not copy removed.
+
+    **Why the source and not only the rendered page.** Twelve of the twenty-two
+    templates here are HTMX partials that a GET never reaches: the import
+    preview, the import result, the onboarding review and the point builder are
+    all swapped in by a POST. Measured on the very first run of this file, three
+    of the four lowercase prose `id`s the audit found lived in exactly those
+    partials, and a rendered-pages-only assertion passed while the defect was
+    reintroduced. Source-level checking also reaches the arm of an `{% if %}`
+    no fixture happens to take.
+
+    It cannot tell a variable name from prose — `{% if recognised %}` reads as
+    the word — so it is a companion to the rendered assertions, never a
+    replacement. Where the two disagree the rendered page is the authority.
+    """
+    text = path.read_text()
+    for pattern in _STRIPPED:
+        text = pattern.sub(" ", text)
+    return text
+
+
+@pytest.fixture
+def unlocated(db):
+    """One system deep enough to reach every read surface, with NO coordinate.
+
+    Deliberately unlocated. Each of the three map-bearing pages branches on
+    whether it has geometry, and the GAMA prose this file pins lives in the
+    no-map branch on `facility_detail` — a located fixture renders the source
+    label there instead and the expansion is never exercised. The other two
+    pages carry it on both branches, so one unlocated fixture reaches all three.
+    """
+    system = WaterSystemFactory(pwsid=PWSID, name="BAKMAN WATER COMPANY")
+    facility = SystemFacilityFactory(
+        system=system, facility_id="010", name="WELL 10 - RAW",
+        facility_type="WL", is_source=True, location=None,
+    )
+    point = SamplingPointFactory(
+        facility=facility, ps_code=f"{PWSID}_010_010", name="Raw tap"
+    )
+    event = SampleEventFactory(sampling_point=point)
+    result = SampleResultFactory(
+        event=event, analyte=AnalyteFactory(name="Nitrate"), lab_name="State lab"
+    )
+    return {"system": system, "facility": facility, "point": point, "result": result}
+
+
+def _read_surfaces(rows):
+    """(url_name, path) for the seven read surfaces plus the three flow pages."""
+    return [
+        ("overview", reverse("drinking:overview")),
+        ("facilities", reverse("drinking:facilities")),
+        ("facility_detail",
+         reverse("drinking:facility_detail", args=[rows["facility"].pk])),
+        ("sampling_points", reverse("drinking:sampling_points")),
+        ("sampling_point_detail",
+         reverse("drinking:sampling_point_detail", args=[rows["point"].pk])),
+        ("results", reverse("drinking:results")),
+        ("result_detail",
+         reverse("drinking:result_detail", args=[rows["result"].pk])),
+        ("onboard", reverse("drinking:onboard")),
+        ("onboard_points", reverse("drinking:onboard_points", args=[PWSID])),
+        ("import", reverse("drinking:import")),
+    ]
+
+
+class TestCopyRules:
+    """DESIGN.md → Copy rules. Evidence in docs/drinking-copy-audit-2026-07-30.md."""
+
+    def test_the_states_field_name_keeps_the_states_casing(
+        self, client_logged_in, unlocated
+    ):
+        """Rule 2. California's own SDWIS4 export heads the column `PS Code`.
+
+        Measured before the sweep: three prose uses spelled it `PS Code` and
+        four spelled it `PS code`, on six files. The state's file is the
+        authority, not preference.
+        """
+        offenders = []
+        for name, path in _read_surfaces(unlocated):
+            text = visible_text(client_logged_in.get(path).content.decode())
+            if "PS code" in text:
+                offenders.append(name)
+        for template in DRINKING_TEMPLATES:
+            if "PS code" in template_prose(template):
+                offenders.append(template.name)
+        assert offenders == [], (
+            f"writing the state's field name as 'PS code': {offenders}. "
+            "The state writes 'PS Code' — see DESIGN.md rule 2."
+        )
+
+    def test_identifier_is_capitalised_in_prose(self, client_logged_in, unlocated):
+        """Rule 2. `Facility ID` seven times against four prose `id`s.
+
+        Three of those four were in HTMX partials no GET renders, which is why
+        this reads the templates as well as the pages — see `template_prose`.
+        An HTML `id=` attribute is markup, not copy, and is excluded.
+        """
+        bare_id = re.compile(r"(?<![\w/-])id(?![\w-])")
+        offenders = []
+        for name, path in _read_surfaces(unlocated):
+            if bare_id.search(visible_text(client_logged_in.get(path).content.decode())):
+                offenders.append(name)
+        for template in DRINKING_TEMPLATES:
+            source = re.sub(r'\bid\s*=\s*"[^"]*"', " ", template_prose(template))
+            if bare_id.search(source):
+                offenders.append(template.name)
+        assert offenders == [], (
+            f"writing a bare lowercase 'id' in prose: {offenders}"
+        )
+
+    @pytest.mark.parametrize("spelling", BRITISH_SPELLINGS)
+    def test_no_british_spelling_reaches_a_reader(
+        self, client_logged_in, unlocated, spelling
+    ):
+        """Rule 3, and the one defect class that has actually shipped here.
+
+        Rendered pages AND the glossary strings, because `glossary.py` renders
+        into the onboarding builder and carried `neighbourhood` for ten days.
+        Comments and docstrings are not copy and are not read.
+        """
+        offenders = []
+        for name, path in _read_surfaces(unlocated):
+            text = visible_text(client_logged_in.get(path).content.decode())
+            if spelling in text.lower():
+                offenders.append(name)
+        for template in DRINKING_TEMPLATES:
+            #: `recognised` is also a CONTEXT KEY set in drinking/views.py. The
+            #: rule binds rendered text, so a variable name is not a violation;
+            #: the rendered-page half of this test is what covers that word.
+            source = re.sub(r"\{[%{][^%}]*[%}]\}", " ", template_prose(template))
+            if spelling in source.lower():
+                offenders.append(template.name)
+        strings = list(glossary.FACILITY_TYPE_PLAIN.values())
+        strings += list(glossary.SHORTHAND.values())
+        if any(spelling in s.lower() for s in strings):
+            offenders.append("drinking/glossary.py")
+        assert offenders == [], f"'{spelling}' reaches a reader on: {offenders}"
+
+    def test_every_page_carries_a_non_empty_description(
+        self, client_logged_in, unlocated
+    ):
+        """Rule 1's neighbour: a page that does not say what it is.
+
+        Asserts a description EXISTS and has words in it, never which words.
+        """
+        bare = []
+        for name, path in _read_surfaces(unlocated):
+            html = client_logged_in.get(path).content.decode()
+            blocks = re.findall(
+                r'<p class="page-description">(.*?)</p>', html, re.S
+            )
+            if not blocks or not visible_text(blocks[0]).strip():
+                bare.append(name)
+        assert bare == [], f"pages with no page description: {bare}"
+
+    def test_a_domain_acronym_is_expanded_where_its_page_uses_it(
+        self, client_logged_in, unlocated
+    ):
+        """Rule 5. Expand once per page, in prose, at first use.
+
+        Pins the PROPER NAME the expansion states, not the sentence carrying it.
+        A page is free to rewrite around the name; it is not free to drop it and
+        leave a reader with four capital letters.
+        """
+        missing = []
+        for name, path in _read_surfaces(unlocated):
+            if name not in REQUIRED_EXPANSIONS:
+                continue
+            text = visible_text(client_logged_in.get(path).content.decode())
+            for expansion in REQUIRED_EXPANSIONS[name]:
+                if expansion not in text:
+                    missing.append(f"{name}: {expansion}")
+        assert missing == [], f"acronym used with no expansion on its page: {missing}"
+
+    def test_no_expansion_fires_twice_on_one_page(self, client_logged_in, unlocated):
+        """Rule 5's other half, and the reason it says *once*.
+
+        A mechanical rule applied to two branches of the same template is how a
+        term ends up spelled out three times on one screen. The branches are
+        mutually exclusive by construction; this is what proves it stays true.
+        """
+        repeated = []
+        for name, path in _read_surfaces(unlocated):
+            if name not in REQUIRED_EXPANSIONS:
+                continue
+            text = visible_text(client_logged_in.get(path).content.decode())
+            for expansion in REQUIRED_EXPANSIONS[name]:
+                if text.count(expansion) > 1:
+                    repeated.append(f"{name}: {expansion} ×{text.count(expansion)}")
+        assert repeated == [], f"an expansion rendered more than once: {repeated}"
+
+    def test_every_page_breadcrumb_starts_at_its_nav_section(
+        self, client_logged_in, unlocated
+    ):
+        """Rule 1. Every Water Data page on the platform roots its breadcrumb at
+        the section name the sidebar shows — 19 of 19 non-drinking pages did,
+        and 6 of 10 drinking pages did not.
+        """
+        offenders = []
+        for name, path in _read_surfaces(unlocated):
+            html = client_logged_in.get(path).content.decode()
+            nav = re.search(r'<nav class="breadcrumb".*?</nav>', html, re.S)
+            crumbs = [
+                c.strip()
+                for c in re.findall(r">([^<>]+)</(?:a|span)>", nav.group(0))
+                if c.strip() and c.strip() != "/"
+            ]
+            if crumbs[:2] != ["Water Data", "Drinking Water"]:
+                offenders.append(f"{name}: {crumbs[:2]}")
+        assert offenders == [], (
+            f"breadcrumbs not rooted at Water Data / Drinking Water: {offenders}"
+        )
+
+    def test_a_control_names_the_page_it_opens(self, client_logged_in, unlocated):
+        """Rule 4. The builder's teaching prose says "sampling place" on purpose
+        (80-03's plain-English rewrite, kept) — but the button that lands on the
+        Sampling Points page may not, because a reader who clicks "places" and
+        arrives at "points" has been told there are two things.
+        """
+        html = client_logged_in.get(
+            reverse("drinking:onboard_points", args=[PWSID])
+        ).content.decode()
+        target = reverse("drinking:sampling_points")
+        for label in re.findall(
+            rf'<a href="{re.escape(target)}"[^>]*>(.*?)</a>', html, re.S
+        ):
+            assert "place" not in visible_text(label).lower(), (
+                "a link to the Sampling Points page is labelled with a word that "
+                f"page does not use: {visible_text(label).strip()!r}"
+            )
