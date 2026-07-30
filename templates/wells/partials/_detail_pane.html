@@ -27,8 +27,29 @@
 
       <div class="card-raised">
 
+        {% comment %}
+          Phase 101. This header carried an UNCONDITIONAL demo pill, so on the
+          public demonstration every one of the 21 municipal supply sources — the
+          ones a drinking-water system lists as its facilities — was labelled
+          sample data. It is the inverse of the truth for those rows: their names
+          come from the State Water Board's own lab file, their owner is the water
+          system's real name from EPA Envirofacts, and their coordinates are real
+          GAMA publications.
+
+          `published_source` is resolved in the view
+          (`wells/views.py::published_source_publisher`), behind a module guard,
+          off the SystemFacility.well foreign key — never off the `MER-PWS-`
+          prefix, which is a demo seed constant. With `drinking` dropped it is
+          always None and this pane renders exactly as it did before.
+
+          The section is genuinely MIXED, which is why the pill is replaced rather
+          than deleted: the identity is published, but the Registration ID under
+          it is an identifier this deployment minted for its own registry and
+          names no state or federal one. Labelling the whole card as published
+          would be the same error in the other direction.
+        {% endcomment %}
         <!-- ── Identification ── -->
-        <h2 class="section-header">Identification {% include "partials/_demo_marker.html" %}</h2>
+        <h2 class="section-header">Identification {% if published_source %}{% include "partials/_source_label.html" with source=published_source %}{% else %}{% include "partials/_demo_marker.html" %}{% endif %}</h2>
 
         {% include "wells/partials/_editable_field.html" with ef=ef.name %}
 
@@ -37,6 +58,13 @@
           <div class="field-label field-row">
             Registration ID
             {% include "partials/_help_tooltip.html" with label="Registration ID" text="This agency's local registry identifier for the well. The statewide DWR identifier is the State Well Number field below." %}
+            {% comment %}
+              Row-level, and only on a well whose section claims a publisher —
+              this is precisely the field a reader would otherwise inherit that
+              publisher for and be wrong about. On an ordinary well the section
+              makes no such claim, so this label would be noise and is absent.
+            {% endcomment %}
+            {% if published_source %}{% include "partials/_source_label.html" with source=local_registry_source %}{% endif %}
           </div>
           <div class="field-value-mono">{{ well.well_registration_id|default:"—" }}</div>
         </div>

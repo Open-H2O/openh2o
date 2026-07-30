@@ -106,6 +106,46 @@ def wells_list(request):
     )
 
 
+def published_source_publisher(well):
+    """The publisher of this well's identity, or ``None`` if nobody published it.
+
+    A well that a drinking-water system lists as one of its facilities is a
+    MUNICIPAL SUPPLY SOURCE with a published record behind it: in the Merced
+    demonstration those 21 rows carry the state's own name for the source (from
+    the DDW lab file), the system's name from EPA Envirofacts, and a real GAMA
+    coordinate. Nothing about them is invented, and until Phase 101 every one of
+    them wore an unconditional "sample data" pill on its Identification header —
+    the inverse of the truth, live on the public demo.
+
+    **The signal is the foreign key, never the ``MER-PWS-`` prefix.** That prefix
+    is a demonstration seed constant
+    (``drinking/management/commands/seed_merced_drinking.py``); hardcoding it here
+    would make a real agency's behaviour depend on our demo's naming. The FK is
+    the general fact.
+
+    **Guarded on the module, because ``drinking`` is truly optional** — not
+    schema-resident. Dropped, its app leaves ``INSTALLED_APPS`` entirely, so
+    ``well.drinking_facilities`` is not merely empty, it does not exist. Phase 88
+    softened ``drinking.requires`` to ``("standards",)``, so wells-without-drinking
+    is a real deployment and it must render exactly as it did before this
+    function existed.
+
+    One ``EXISTS`` query per rendered pane, and the pane renders one well at a
+    time (``well_detail`` and the workspace's pre-loaded ``?selected=``), so
+    there is no N+1 here to prefetch away.
+    """
+    from core.modules import is_enabled
+
+    if not is_enabled("drinking"):
+        return None
+    if not well.drinking_facilities.exists():
+        return None
+
+    from drinking.provenance import PUBLISHED_SUPPLY_SOURCE
+
+    return PUBLISHED_SUPPLY_SOURCE
+
+
 def _well_detail_context(well):
     """Build the per-well detail context.
 
@@ -150,7 +190,26 @@ def _well_detail_context(well):
         # Pass the Python object (or None); the template escapes it via
         # json_script so a malicious place-name can't break out of <script>.
         "geojson": geojson,
+        # Both None for an ordinary well, which is what keeps the pre-Phase-101
+        # rendering byte-identical there. Resolved in Python rather than in the
+        # template because a `wells` template must not `{% load drinking_display %}`
+        # — loading a dropped app's tag library is a TemplateSyntaxError, not a
+        # missing label. The second one rides on the first: the composed
+        # registration ID only needs a label where the section above it has just
+        # claimed a publisher.
+        **_identity_provenance(well),
     }
+
+
+def _identity_provenance(well):
+    """The two provenance strings the Identification section needs, or two Nones."""
+    published = published_source_publisher(well)
+    if published is None:
+        return {"published_source": None, "local_registry_source": None}
+
+    from drinking.provenance import LOCAL_REGISTRY
+
+    return {"published_source": published, "local_registry_source": LOCAL_REGISTRY}
 
 
 @login_required
