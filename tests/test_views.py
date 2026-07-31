@@ -557,10 +557,30 @@ class TestAccessibilityAndHelp:
 
 
 class TestResponsiveTables:
-    """E5: dense tables (ledger, dashboard account/zone) carry the phone-only
-    horizontal-scroll wrapper so a wide table scrolls within itself on a phone
-    instead of dragging the whole page sideways. Desktop is left untouched (the
-    class only adds overflow under 767px)."""
+    """E5: dense tables (ledger, dashboard account/zone) carry a horizontal-scroll
+    wrapper so a wide table scrolls within itself on a phone instead of dragging
+    the whole page sideways.
+
+    TWO utility classes deliver that property, and which one a page uses is a
+    real design decision, not drift (see the comment beside them in
+    ``static/css/app.css``):
+
+      * ``.table-scroll`` — ``overflow-x: auto`` at EVERY width. What the
+        dashboard's account and zone tables use.
+      * ``.table-scroll-mobile`` — the same, confined to ``max-width: 767px``.
+        The LEDGER needs the weaker variant because its sticky ``<thead>``
+        sticks relative to ``.app-content``, and an overflow context on desktop
+        would break it.
+
+    ISS-081 read the dashboard as unwrapped because it grepped
+    ``templates/accounting/dashboard.html``, which holds no ``<table>`` at all —
+    both tables live in ``partials/_dashboard_content.html`` and have been
+    wrapped since ``939a4ba``, the very commit that wrote this assertion. So the
+    behaviour always shipped; only the assertion named the wrong class. It now
+    pins the PROPERTY (a scroll container per dense table) rather than one
+    implementation token, which is the same rule 101-02 wrote into DESIGN.md
+    after a pinned sentence turned corrected copy red.
+    """
 
     def test_dashboard_tables_have_mobile_scroll_wrapper(self, auth_client):
         from datetime import date
@@ -587,8 +607,13 @@ class TestResponsiveTables:
         )
         html = response.content.decode()
         assert response.status_code == 200
-        # Both the account and the zone table are wrapped.
-        assert html.count("table-scroll-mobile") >= 2
+        # Both the account and the zone table are wrapped. Count either utility,
+        # so a page may pick the variant its sticky-header situation calls for.
+        wrapped = html.count("table-scroll")
+        assert wrapped >= 2, (
+            f"expected the account and zone tables each inside a horizontal-scroll "
+            f"container, found {wrapped}"
+        )
 
 
 class TestAccountingPages:

@@ -13,6 +13,7 @@ These cover the data-integrity boundary for live state data:
 import importlib
 import logging
 import subprocess
+import sys
 from datetime import date
 from io import StringIO
 from types import SimpleNamespace
@@ -258,10 +259,33 @@ class TestProductionLogging:
         monkeypatch.setenv("ALLOWED_HOSTS", "water.example.org")
         monkeypatch.setenv("SECRET_KEY", "test-only-secret-not-for-production-use")
 
-        prod = importlib.import_module("config.settings.production")
-        prod = importlib.reload(prod)
+        # Reloading `production` alone is not enough. Its `from .base import *`
+        # resolves `config.settings.base` out of sys.modules, where it was
+        # already built — under `--ds=config.settings.local` — from the
+        # CONTAINER's environment. So `DATABASES["default"]["PASSWORD"]` kept the
+        # dev password, production's fail-fast guard saw a blacklisted default,
+        # and the import raised ImproperlyConfigured before ever defining
+        # LOGGING. The env vars set above were being read past.
+        #
+        # That is also why this test's result tracked the container rather than
+        # the code: it passed wherever the ambient DB password happened not to be
+        # one of the blacklisted defaults. Drop the whole `config.settings.*`
+        # branch so `base` re-reads the patched environment, then put sys.modules
+        # back — `django.conf.settings` holds its own materialized copy and is
+        # untouched either way, so no later test inherits this.
+        saved = {
+            name: mod
+            for name, mod in sys.modules.items()
+            if name == "config.settings" or name.startswith("config.settings.")
+        }
+        for name in saved:
+            del sys.modules[name]
+        try:
+            prod = importlib.import_module("config.settings.production")
+            logging_cfg = prod.LOGGING
+        finally:
+            sys.modules.update(saved)
 
-        logging_cfg = prod.LOGGING
         req = logging_cfg["loggers"]["django.request"]
         assert req["level"] == "ERROR"
         assert any(

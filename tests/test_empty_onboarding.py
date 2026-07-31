@@ -59,8 +59,23 @@ def test_configured_empty_list_offers_add_and_import():
 @pytest.mark.django_db
 def test_fresh_instance_defers_to_setup_wizard():
     """A fresh instance (no boundary) points the empty list at the Setup Wizard
-    — the onboarding spine — instead of a per-screen add."""
-    resp = _list_partial(_client())  # no boundary → needs_setup True
+    — the onboarding spine — instead of a per-screen add.
+
+    The client must be an ADMIN, which is what this module's own docstring says
+    ("fresh instance (admin, no boundary)") and what the flag requires:
+    ``core.context_processors.setup_status`` computes ``needs_setup`` only for a
+    viewer who could actually run setup —
+    ``(not ACCESS_CONTROL_ENFORCED) or is_administrator(user)`` — deliberately,
+    so a read-only operator never sees a call-to-action they cannot act on.
+
+    Why it used to pass with a plain user: ``ACCESS_CONTROL_ENFORCED`` defaults
+    True only since ``d6bbca6`` (2026-06-07), and it is an ``env.bool``, so the
+    branch this test takes followed the CONTAINER's environment rather than the
+    code. That is the "ordering-dependent setup" ISS-086 suspected — it was
+    environment-dependent, not order-dependent, which is why it also failed in
+    isolation.
+    """
+    resp = _list_partial(_client(agency_admin=True))  # no boundary → needs_setup
     body = resp.content.decode()
     assert "Set up your watershed" in body
     assert reverse("setup:wizard") in body

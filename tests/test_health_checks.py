@@ -381,8 +381,20 @@ class TestDbProbe:
         assert resp.status_code == 200
         assert resp.content == b"ok"
 
-    def test_dbz_returns_503_when_db_unreachable(self, monkeypatch):
-        """Simulate a dead connection: the probe must degrade to 503, never raise."""
+    def test_dbz_returns_503_when_db_unreachable(self):
+        """Simulate a dead connection: the probe must degrade to 503, never raise.
+
+        The break is scoped to the request with a context manager rather than
+        `monkeypatch`. `monkeypatch` undoes its patches during teardown, and
+        pytest tears fixtures down in reverse order — so the database fixture's
+        own teardown ran first, called `connection.cursor()`, and hit `boom`.
+        The test passed and then errored on the way out, which is the fourth of
+        the four long-standing non-passes (ISS-086 counted three). Lifting the
+        patch before the assertion leaves the connection whole for teardown and
+        breaks nothing the test is actually pinning.
+        """
+        from unittest import mock
+
         from django.test import Client
         from django.urls import reverse
         from django.db import connection
@@ -390,8 +402,8 @@ class TestDbProbe:
         def boom(*a, **k):
             raise RuntimeError("connection refused")
 
-        monkeypatch.setattr(connection, "cursor", boom)
-        resp = Client().get(reverse("health:db"))
+        with mock.patch.object(connection, "cursor", boom):
+            resp = Client().get(reverse("health:db"))
         assert resp.status_code == 503
 
 
