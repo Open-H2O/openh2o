@@ -19,9 +19,24 @@
             header_up X-Forwarded-Proto https
             # Ride out a brief web outage (nightly DB reset, a manual or
             # deploy-time restart) instead of 502-ing the visitor: retry the
-            # upstream for up to 10 s, so a request that arrives mid-restart
+            # upstream until it answers, so a request that arrives mid-restart
             # waits for web to come back rather than failing.
-            lb_try_duration 10s
+            #
+            # This is a CEILING, not a fixed wait: lb_try_interval retries every
+            # 250 ms and the request completes the instant web is listening
+            # again, so raising it costs a healthy visitor nothing.
+            #
+            # It must exceed how long `web` is actually stopped, or the retry
+            # budget runs out mid-outage and the visitor gets a 502 anyway.
+            # `scripts/reset-demo.sh` does `docker compose stop web`, restores
+            # the golden dump, then starts web. Measured from the container's
+            # own gunicorn term/start log lines (2026-07-31):
+            #     nightly reset 03:15  ->  13.1 s stopped
+            #     v2.7 deploy   20:20  ->  14.0 s stopped
+            # At the previous 10 s a request landing in the first ~3 s of the
+            # window exhausted the budget and 502'd. 30 s leaves roughly a 2x
+            # margin over the measured worst case; re-measure before lowering.
+            lb_try_duration 30s
             lb_try_interval 250ms
         }
     }
