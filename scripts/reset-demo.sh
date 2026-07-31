@@ -22,13 +22,24 @@
 # its own page promising the demonstration "names no real water district at
 # all", and nothing noticed until a person happened to look at a screen. So
 # after the restore — the moment the database holds exactly the content that
-# will be served all day — we run `scan_demo_identity` against it. A finding
-# fires a high-priority ntfy naming table, column and value. The scan NEVER
-# fails the reset: by the time it runs the demo is already restored and serving,
-# so aborting would leave the site worse off, not better. The alert is the
-# deliverable, not a non-zero exit. A scan that could not RUN is alerted
-# separately and just as loudly — "could not scan" is not an all-clear, exactly
-# as an unreadable fingerprint above is not a matching one.
+# will be served all day — we run `scan_demo_identity` against it. The scan
+# NEVER fails the reset: by the time it runs the demo is already restored and
+# serving, so aborting would leave the site worse off, not better. The alert is
+# the deliverable, not a non-zero exit. A scan that could not RUN is alerted
+# separately — "could not scan" is not an all-clear, exactly as an unreadable
+# fingerprint above is not a matching one.
+#
+# BOTH ALERTS ARE ntfy `low` ON PURPOSE, and the reasoning is worth keeping.
+# The golden snapshot does not change between nights, so this check re-answers
+# the same question every night until somebody deliberately promotes a new
+# golden. It earns its keep in that one moment. And when it does fire, nothing
+# is on fire: the site is up and serving, a real name on invented data is an
+# honesty problem rather than an outage. `low` means the phone stays silent and
+# the message is waiting in the morning. Contrast the alerts above, which are
+# `high` because a demo that did NOT reset is an operational failure needing
+# attention now. An alarm that wakes somebody for something that can wait until
+# morning is an alarm that gets muted, and then the real one is muted too.
+# (Directed by Brent at the 102-02 checkpoint, 2026-07-31.)
 #
 # Mechanism: drop + recreate the database from the golden snapshot (pg_dump -Fc
 # written by snapshot-demo.sh), which cleanly rebuilds PostGIS and all data. The
@@ -185,40 +196,52 @@ if [ -z "$scan_violations" ]; then
   # No parseable count: the command never produced its payload. Bad policy JSON,
   # web container not ready, image missing the command. NOT an all-clear.
   log "IDENTITY SCAN COULD NOT RUN (exit ${scan_status}) — this is not an all-clear."
-  demo_ntfy high "OpenH2O identity scan COULD NOT RUN" \
-    "$(hostname): scan_demo_identity produced no readable result after the demo reset (exit ${scan_status}). The demo is restored and serving, but NOTHING has checked it for real water-district names. Check $LOG."
+  demo_ntfy low "OpenH2O demo check did not run" \
+    "The nightly check for real water-district names could not run on $(hostname) tonight.
+
+The demo has been restored and is serving normally, but nothing has verified it. That is NOT the same as it being clean.
+
+Details are in $LOG."
 elif [ "$scan_violations" = "0" ]; then
   log "reset-demo: identity scan clean — no real agency/district/farm/owner name on the restored demo."
 else
   log "IDENTITY SCAN FAILED — ${scan_violations} real name(s) on the restored demo:"
   printf '%s\n' "$scan_json" >>"$LOG"
-  # Build a body naming table, column and value. Capped at the first few
-  # findings so a mass violation cannot produce an unreadable push, and the cap
-  # says so — a truncated list read as a complete one is its own defect.
+  # Build the alert body. This is read by a person on a phone, half asleep, so
+  # it quotes the offending TEXT rather than naming a table and a column — the
+  # database coordinates are precise and useless at 3am, and they are already
+  # written to the log above. Capped at the first few findings so a mass
+  # violation cannot produce an unreadable push, and the cap says so: a
+  # truncated list read as a complete one is its own defect.
   scan_body="$(printf '%s' "$scan_json" | docker compose exec -T web python -c '
 import json, sys
 
-CAP = 4
-VALUE_CHARS = 90
+CAP = 3
+VALUE_CHARS = 110
 data = json.load(sys.stdin)
 findings = data.get("findings", [])
 lines = []
 for f in findings[:CAP]:
-    value = f["value"]
+    # Collapse whitespace: a description field carrying newlines would
+    # otherwise arrive as a mangled block in the notification.
+    value = " ".join(f["value"].split())
     if len(value) > VALUE_CHARS:
         value = value[:VALUE_CHARS] + "..."
-    lines.append("%s.%s pk=%s = %s  (banned: %s)" % (
-        f["table"], f["column"], f["pk"], value, f["matched"]))
+    lines.append("Found \"%s\" in: \"%s\"" % (f["matched"], value))
 if len(findings) > CAP:
-    lines.append("TRUNCATED - showing %d of %d findings; the rest are in the log."
-                 % (CAP, len(findings)))
+    lines.append("...and %d more. This list is shortened; the log has all of them."
+                 % (len(findings) - CAP))
 print("\n".join(lines))
 ' 2>>"$LOG")" || scan_body=""
-  [ -n "$scan_body" ] || scan_body="See $LOG — ${scan_violations} findings, body could not be formatted."
-  demo_ntfy high "OpenH2O demo identity VIOLATION" \
-    "$(hostname): ${scan_violations} real agency/district/farm/owner name(s) are on the restored demo, which the honesty page says names no real water district at all.
+  [ -n "$scan_body" ] || scan_body="The findings could not be formatted for this message. All ${scan_violations} of them are in $LOG."
+  demo_ntfy low "OpenH2O demo is showing a real name" \
+    "The demo on $(hostname) is showing ${scan_violations} real name(s) where only invented ones belong. Its own honesty page promises it names no real water district at all.
+
 ${scan_body}
-Demo was NOT rolled back - it is restored and serving. Fix the data or the golden."
+
+The site is up and serving normally - nothing is broken for visitors. What needs fixing is the demo data, or the golden snapshot it gets restored from each night.
+
+Exact database locations are in $LOG."
 fi
 
 # ---------------------------------------------------------------------------
