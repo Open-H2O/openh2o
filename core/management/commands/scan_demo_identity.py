@@ -104,6 +104,10 @@ class Command(BaseCommand):
         "any finding."
     )
 
+    #: How many findings the CommandError message repeats before truncating.
+    #: The full list always goes to stderr and to --json.
+    MAX_IN_MESSAGE = 10
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--policy",
@@ -347,12 +351,27 @@ class Command(BaseCommand):
             self._explain(policy, blanket_skipped)
 
         if findings:
+            # The findings are repeated INTO the exception message on purpose.
+            # This exception is what a CI log, a cron mail and 102-02's alert
+            # body will carry, and a message saying only "3 violations" sends
+            # the reader back to the database to find out which — the exact
+            # count-without-content failure §0.2 warns about.
+            shown = findings[: self.MAX_IN_MESSAGE]
+            lines = [
+                f"{f['table']}.{f['column']} pk={f['pk']}: {f['value']!r} "
+                f"matches banned {f['matched']!r}"
+                + ("  [OUT OF SCOPE]" if f["out_of_scope"] else "")
+                for f in shown
+            ]
+            if len(findings) > len(shown):
+                lines.append(f"... and {len(findings) - len(shown)} more")
             raise CommandError(
                 f"{len(findings)} real agency/district/farm/owner name(s) are "
                 "attached to invented demonstration data. The honesty page says "
                 "this demonstration names no real water district at all — fix the "
-                "data or the page is a false statement. Policy: "
-                f"{policy_path}"
+                "data or the page is a false statement.\n  "
+                + "\n  ".join(lines)
+                + f"\nPolicy: {policy_path}"
             )
 
         if not options["as_json"]:
