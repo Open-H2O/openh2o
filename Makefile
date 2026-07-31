@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo merced teardown-demo \
-        check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod deploy
+        check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod deploy rebuild-golden
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
@@ -145,6 +145,9 @@ show-cron: ## Display current crontab entries
 
 sync: ## Run sync_all manually (syncs all active data sources)
 	$(EXEC) sync_all
+
+rebuild-golden: ## Build a candidate demo database from the repository in a disposable stack (does NOT promote it)
+	bash scripts/rebuild-golden.sh
 
 # ---------------------------------------------------------------------------
 # Composite Targets
