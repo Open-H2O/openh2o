@@ -292,3 +292,163 @@ def test_every_forwarded_command_is_actually_in_the_sequence():
     """A name that has fallen out of SEQUENCE would forward to nothing at all."""
     sequence_names = {cmd for cmd, _kwargs in seed_merced_module.SEQUENCE}
     assert set(seed_merced_module.ACCEPTS_PROD_CLOBBER) <= sequence_names
+
+
+# ---------------------------------------------------------------------------
+# --skip-auto-populate — the offline run, and the guard that refuses up front.
+#
+# These live beside the clobber tests because both are about `seed_merced`'s own
+# arguments: what the top command accepts, what it forwards, and what it reshapes
+# in SEQUENCE. A flag that quietly dropped the wrong step, or that let an offline
+# run start with no base layer, would fail deep inside a sub-command with an error
+# naming neither the flag nor the fixture.
+# ---------------------------------------------------------------------------
+
+LOWER_BOUNDARY = "Merced Subbasin"
+CANAL = "Canal"
+RIVER = "Channel Line"
+
+
+def _seed_offline_base_layer(canals=1, rivers=1):
+    """The minimum `--skip-auto-populate` is allowed to proceed on."""
+    from tests import factories
+
+    boundary = factories.BoundaryFactory(name=LOWER_BOUNDARY)
+    for _ in range(canals):
+        factories.FlowlineFactory(boundary=boundary, feature_type=CANAL)
+    for _ in range(rivers):
+        factories.FlowlineFactory(boundary=boundary, feature_type=RIVER)
+    return boundary
+
+
+def _record_sequence(**options):
+    """Run seed_merced with every sub-command stubbed; return the names called."""
+    calls = []
+
+    def record(name, *args, **kwargs):
+        calls.append(name)
+
+    with mock.patch.object(seed_merced_module, "call_command", side_effect=record):
+        call_command("seed_merced", stdout=StringIO(), **options)
+    return calls
+
+
+def test_skip_auto_populate_omits_exactly_the_networked_step():
+    _seed_offline_base_layer()
+
+    calls = _record_sequence(skip_auto_populate=True)
+
+    assert seed_merced_module.AUTO_POPULATE not in calls
+    # Everything else still runs, in the declared order. Skipping one step must
+    # not reshape the sequence around it.
+    assert calls == [
+        cmd
+        for cmd, _kwargs in seed_merced_module.SEQUENCE
+        if cmd != seed_merced_module.AUTO_POPULATE
+    ]
+
+
+def test_auto_populate_still_runs_when_the_flag_is_absent():
+    calls = _record_sequence()
+
+    assert seed_merced_module.AUTO_POPULATE in calls
+    assert calls == [cmd for cmd, _kwargs in seed_merced_module.SEQUENCE]
+
+
+def test_offline_run_refuses_when_the_boundary_does_not_exist_yet():
+    with pytest.raises(CommandError) as exc:
+        _record_sequence(skip_auto_populate=True)
+
+    message = str(exc.value)
+    assert seed_merced_module.FLOWLINES_FIXTURE in message
+    assert "--skip-auto-populate" in message
+
+
+def test_offline_run_refuses_before_writing_a_single_row():
+    """
+    The point of guarding up front rather than letting step 4 fail.
+
+    Without this the command writes the boundary and the GSA zones, THEN dies —
+    leaving a half-seeded database and an error that names neither the flag nor
+    the fixture.
+    """
+    called = []
+
+    def record(name, *args, **kwargs):
+        called.append(name)
+
+    with mock.patch.object(seed_merced_module, "call_command", side_effect=record):
+        with pytest.raises(CommandError):
+            call_command("seed_merced", stdout=StringIO(), skip_auto_populate=True)
+
+    assert called == []
+
+
+def test_offline_run_refuses_when_the_river_type_is_missing():
+    """
+    Canals alone are not enough, and this is the case a row COUNT would miss.
+
+    `seed_merced_operations` guards on both a "Canal" and a "Channel Line"
+    flowline separately, so a fixture carrying only canals passes any
+    "are there flowlines?" check and still fails three steps later.
+    """
+    _seed_offline_base_layer(canals=3, rivers=0)
+
+    with pytest.raises(CommandError) as exc:
+        _record_sequence(skip_auto_populate=True)
+
+    assert seed_merced_module.FLOWLINES_FIXTURE in str(exc.value)
+
+
+def test_offline_run_refuses_when_the_canal_type_is_missing():
+    _seed_offline_base_layer(canals=0, rivers=3)
+
+    with pytest.raises(CommandError) as exc:
+        _record_sequence(skip_auto_populate=True)
+
+    assert seed_merced_module.FLOWLINES_FIXTURE in str(exc.value)
+
+
+def test_flowlines_on_a_different_boundary_do_not_satisfy_the_guard():
+    """
+    The guard is scoped to the Merced Subbasin, not to the flowline table.
+
+    A deployment carrying another agency's hydrography would otherwise pass the
+    check with zero Merced flowlines loaded — the guard would be measuring the
+    wrong basin.
+    """
+    from tests import factories
+
+    other = factories.BoundaryFactory(name="Some Other Basin")
+    factories.FlowlineFactory(boundary=other, feature_type=CANAL)
+    factories.FlowlineFactory(boundary=other, feature_type=RIVER)
+
+    with pytest.raises(CommandError) as exc:
+        _record_sequence(skip_auto_populate=True)
+
+    assert seed_merced_module.FLOWLINES_FIXTURE in str(exc.value)
+
+
+def test_the_committed_fixture_actually_satisfies_the_guard():
+    """
+    The fixture and the guard must describe each other, or CI breaks on a push
+    that touched neither.
+
+    Read from the committed file rather than from a factory: a factory proves
+    the guard's logic, and this proves the artifact CI actually loads carries
+    what the guard demands. `memory/feedback_verify_manifest_matches_disk.md` is
+    the reason — a missing entry is silent unless something checks.
+    """
+    import json
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parent.parent
+    rows = json.loads((repo_root / seed_merced_module.FLOWLINES_FIXTURE).read_text())
+
+    types = {r["fields"]["feature_type"] for r in rows}
+    assert CANAL in types
+    assert RIVER in types
+    # The boundary is referenced by natural key, never by pk: it is pk 1 on
+    # staging and pk 6 on production, so a pk would attach these rows to a
+    # different boundary on every deployment.
+    assert {tuple(r["fields"]["boundary"]) for r in rows} == {(LOWER_BOUNDARY,)}

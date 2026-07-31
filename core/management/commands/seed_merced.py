@@ -65,6 +65,20 @@ cache, step 8 falls back to face-value sizing and the demo is still coherent.
 Each sub-command is idempotent, so re-running is safe. Step 2 is a live
 network fetch (a few minutes); everything else is local.
 
+**Step 2 is the ONLY networked step in the whole sequence**, and
+``--skip-auto-populate`` omits it so the demo seeds with no external calls at
+all. Everything it fetches is static geography: rivers and the MID canal
+network change on a five-to-ten-year timescale, so ``data/merced/flowlines.json``
+carries a frozen copy (5,658 rows, frozen 2026-07-31) and CI loads that instead
+of asking USGS 3DHP and DWR ArcGIS on every push. A gate that goes red because
+an external map service had a bad afternoon is a gate people learn to ignore.
+
+The monitoring stations step 2 also fetches are deliberately NOT replaced by a
+fixture. Nothing later in ``SEQUENCE`` references ``MonitoredStation``, so an
+offline run simply has no stations and no downstream step notices; the identity
+policy treats station names as protected rather than required. A second fixture
+nothing reads would be weight with no purpose.
+
 On a DEBUG=False deployment step 4 guards itself, because it deletes and
 regenerates parcel/well geometry. A FIRST-TIME seed passes straight through —
 with no ``MER-`` parcels or wells in the database there is nothing to clobber.
@@ -74,7 +88,7 @@ whole of ISS-095: the flag had nowhere to enter, so ``make fresh`` and the
 DEPLOY.md/AI-OPERATOR-GUIDE seed instruction both died at step 3 of 10.
 """
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 SEQUENCE = [
     ("seed_merced_base", {}),
@@ -130,6 +144,15 @@ SEQUENCE = [
 #: of failing a rebuild.
 ACCEPTS_PROD_CLOBBER = ("seed_merced_operations",)
 
+#: The one step in SEQUENCE that reaches the network. ``--skip-auto-populate``
+#: omits exactly this name and nothing else.
+AUTO_POPULATE = "auto_populate"
+
+#: The committed replacement for what ``auto_populate`` fetches. Named in the
+#: guard's refusal message, because an error that does not say which file to
+#: load sends the reader back into the sequence to work it out.
+FLOWLINES_FIXTURE = "data/merced/flowlines.json"
+
 
 class Command(BaseCommand):
     help = "Run the full Merced Subbasin demo seed sequence in dependency order."
@@ -142,15 +165,91 @@ class Command(BaseCommand):
             "instance that already holds MER- demo rows; a genuinely first-time "
             "seed needs no flag, because there is nothing to clobber.",
         )
+        parser.add_argument(
+            "--skip-auto-populate", action="store_true",
+            help="Omit the auto_populate step, the only one that reaches the "
+            "network. What it fetches is static geography, so an offline run "
+            f"(CI, or a rebuild on a boxed network) loads {FLOWLINES_FIXTURE} "
+            "instead. Refuses to start if that fixture has not been loaded.",
+        )
 
     def handle(self, *args, **options):
-        for cmd, kwargs in SEQUENCE:
+        sequence = SEQUENCE
+        if options.get("skip_auto_populate"):
+            self._require_frozen_flowlines()
+            sequence = [(cmd, kw) for cmd, kw in SEQUENCE if cmd != AUTO_POPULATE]
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Skipping {AUTO_POPULATE} — running offline against "
+                    f"{FLOWLINES_FIXTURE}. No monitoring stations will exist; "
+                    "nothing in this sequence reads them."
+                )
+            )
+
+        for cmd, kwargs in sequence:
             if options.get("allow_prod_clobber") and cmd in ACCEPTS_PROD_CLOBBER:
                 kwargs = {**kwargs, "allow_prod_clobber": True}
             self.stdout.write(self.style.MIGRATE_HEADING(f"\n=== {cmd} ==="))
             call_command(cmd, stdout=self.stdout, **kwargs)
         self.stdout.write(self.style.SUCCESS("\nMerced Subbasin demo seeded."))
         self._report_engine_gap()
+
+    def _require_frozen_flowlines(self):
+        """Refuse an offline run before it writes anything, if the fixture is absent.
+
+        Skipping step 2 with no flowlines loaded does not fail here — it fails
+        three steps later inside ``seed_merced_operations``, with a message
+        about a missing base layer that never mentions the flag that caused it.
+        By then steps 1 and 3 have already written the boundary and the GSA
+        zones, so the operator is debugging a half-seeded database.
+
+        The two feature types are the ones ``seed_merced_operations`` itself
+        guards on, imported rather than re-listed: a second copy of a constant
+        is a second thing to drift.
+        """
+        from geography.models import Boundary, Flowline
+
+        from core.management.commands.seed_merced_operations import (
+            CANAL,
+            LOWER_BOUNDARY,
+            RIVER,
+        )
+
+        boundary = Boundary.objects.filter(name=LOWER_BOUNDARY).first()
+        counts = {
+            kind: (
+                Flowline.objects.filter(boundary=boundary, feature_type=kind).count()
+                if boundary is not None
+                else 0
+            )
+            for kind in (CANAL, RIVER)
+        }
+        if all(counts.values()):
+            self.stdout.write(
+                f'"{LOWER_BOUNDARY}" carries '
+                + ", ".join(f"{n} {kind}" for kind, n in counts.items())
+                + " flowlines — the offline base layer is loaded."
+            )
+            return
+
+        found = (
+            f'"{LOWER_BOUNDARY}" exists but carries '
+            + ", ".join(f"{n} {kind}" for kind, n in counts.items())
+            + " flowlines"
+            if boundary is not None
+            else f'the "{LOWER_BOUNDARY}" boundary does not exist yet'
+        )
+        raise CommandError(
+            f"--skip-auto-populate omits the step that fetches flowlines, and "
+            f"{found}. Step 4 (seed_merced_operations) needs both a "
+            f'"{CANAL}" and a "{RIVER}" flowline and would fail three steps '
+            "from here, after this command had already written the boundary "
+            "and the GSA zones.\n"
+            "Load the frozen base layer first:\n"
+            "  python manage.py seed_merced_base\n"
+            f"  python manage.py loaddata {FLOWLINES_FIXTURE}\n"
+            "Or drop --skip-auto-populate to fetch them live from USGS 3DHP."
+        )
 
     def _report_engine_gap(self):
         """Say what this sequence deliberately did NOT do (ISS-099).
