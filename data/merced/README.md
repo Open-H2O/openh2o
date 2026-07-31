@@ -51,6 +51,57 @@ Merced Irrigation District's fine canal laterals are only partially present
 in USGS 3DHP; the main canals and natural rivers are. Full MID GIS would
 require a district data request (out of scope for the base layer).
 
+### `flowlines.json` — the frozen flowlines, and why they are frozen
+
+**Do not delete this as stale cached data.** It is deliberately frozen, and
+the reason is the whole point of the file.
+
+`auto_populate` is the only networked step in the entire `seed_merced`
+sequence — every other step reads committed files in this directory. Leaving
+it live meant CI could not seed the demonstration without calling USGS 3DHP
+and DWR ArcGIS on every push. Flowlines are static geography: rivers and the
+MID canal network change on a five-to-ten-year timescale, so fetching them
+live on every build buys nothing and costs a permanent dependency on two
+external map services. A gate that goes red because USGS had a bad afternoon
+is a gate people learn to ignore, and this file exists so that never happens.
+
+| | |
+|---|---|
+| **Frozen** | 2026-07-31, from the OpenH2O staging database |
+| **Rows** | 5,658 flowlines, all in the Merced Subbasin |
+| **Feature types** | Canal 2,365 · Channel Line 2,028 · Waterbody Connector 1,187 · Surface Connector 41 · Hydro Unenforced Connector 37 |
+| **Size** | 7.2 MB on disk (~2.2 MB of repository weight after git compresses it) |
+| **Used by** | `.github/workflows/clean-install.yml` job `demo-identity-guard`, and any offline rebuild |
+
+The boundary is referenced by **natural key** (`["Merced Subbasin"]`), not by
+primary key. That is load-bearing: the Merced Subbasin is pk 1 on staging and
+pk 6 on production, so a pk-keyed fixture would attach all 5,658 rows to
+whatever boundary happened to occupy that number, silently and differently on
+every instance. `geography.BoundaryManager.get_by_natural_key` is what
+resolves it back.
+
+Regenerate it (needs network, and a database that has already run
+`auto_populate`):
+
+```bash
+python manage.py seed_merced_base
+python manage.py auto_populate --boundary "Merced Subbasin" --steps flowlines,stations
+python manage.py dumpdata geography.Flowline --indent 2 --natural-foreign \
+  > data/merced/flowlines.json
+```
+
+Load it (the boundary must exist first — `seed_merced_base` creates it):
+
+```bash
+python manage.py loaddata data/merced/flowlines.json
+```
+
+**The monitoring stations `auto_populate` also fetches are deliberately NOT
+frozen.** Nothing later in the `seed_merced` sequence references
+`MonitoredStation`, so an offline run simply has no stations and every
+downstream step is unaffected. Freezing a second fixture nothing reads would
+be weight with no purpose.
+
 ## Usage
 
 ```bash
