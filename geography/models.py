@@ -14,7 +14,24 @@ from django.db import models
 from core.constants import RECOVERY_HORIZON_CHOICES
 
 
+class BoundaryManager(models.Manager):
+    """Resolve a Boundary by name, so fixtures can reference it without a pk.
+
+    Primary keys are per-deployment accidents: the Merced Subbasin is pk 1 on
+    staging and pk 6 on production, measured 2026-07-31. A committed fixture
+    that names a pk therefore attaches its rows to whatever boundary happens to
+    occupy that number — silently, and differently on every instance.
+    ``data/merced/flowlines.json`` is dumped with ``--natural-foreign`` and
+    loaded back through this method instead.
+    """
+
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Boundary(models.Model):
+    objects = BoundaryManager()
+
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     geometry = gis_models.MultiPolygonField(srid=4326)
@@ -40,6 +57,9 @@ class Boundary(models.Model):
 
     def __str__(self):
         return self.name
+
+    def natural_key(self):
+        return (self.name,)
 
 
 class Zone(models.Model):
