@@ -1,0 +1,524 @@
+{
+  "_source": {
+    "banned": ".planning/phases/97-demo-identity-scrub/97-01-NAMES.md — all four name tables, approved by Brent 2026-07-28 and FINAL. Every banned value below is transcribed from the 'Current' column of those tables. Do not re-derive, re-search or invent a name here; if the list is wrong, the artifact is what changes.",
+    "protected": "openh2o-staging-to-production-propagation-plan-2026-07-31.md §0.2 ('Verified identical on both sides, therefore protected and NOT to be touched') and §4 ('The rule the denylist encodes'). Restated in .planning/ROADMAP.md under Phase 102.",
+    "composed_cases": "propagation-analysis §0.2 measured the two composed exposures no whole-name list catches: the 'MID ' prefix (1 point-of-diversion name, cascading to 55 parcel-ledger descriptions) and 7 water-account contact names. The contact strings are derived from core/management/commands/seed_merced_ledgers.py::_build_accounts, which composes contact_name as '{first word of owner} Water Manager', applied to the pre-Phase-97 owner list read out of git at 5f46b16.",
+    "doctrine": "drinking/provenance.py, pinned by tests/test_drinking_provenance.py, and stated on /about/demonstration-data/: real published records are carried as published, named with their publisher, and labelled on screen. Invented data may never carry a real agency, district, farm or owner name. The two halves of this file are the two halves of that sentence.",
+    "consumed_by": "core/management/commands/scan_demo_identity.py"
+  },
+
+  "notes": [
+    "DELIBERATE EXCLUSION 1 — 'Diversion Canal Growers' is NOT banned. 97-01-NAMES.md records it as not a real-place exposure: it is a generic invented name that was merely aligned to the seed's naming so one demo carries one set of names. Banning it would also collide with 'Diversion Canal', which is protected real geography in the list below.",
+    "DELIBERATE EXCLUSION 2 — 'Bottomlands Cattle Co.' is NOT banned. 97-01-NAMES.md records it as not a real-place exposure either: it was simply stale, no longer matching its right's holder after 97-01 renamed San Joaquin Bottomlands Ranch.",
+    "SCOPE IS METADATA, NOT A FILTER, for entries with the default match mode 'global'. The scope records where propagation-analysis §0.2 measured the value. A real district name is wrong in ANY column, so the scan matches global entries everywhere and reports an out-of-scope hit louder, not quieter.",
+    "A '*' value means the whole scoped column is real published content and is protected wholesale. This is how §0.2's whole-column protections are expressed, because enumerating values nobody measured would be a list that lies.",
+    "KNOWN BLIND SPOT, measured 2026-07-31 and currently empty. core/management/commands/seed_merced_details.py::_fill_account_contacts composes accounting_wateraccount.contact_email by slugifying contact_name (lowercase, non-alphanumerics collapsed to '.'), so a real contact string would survive there as 'merced.water.manager@example.com' — a form no case-insensitive substring of 'Merced Water Manager' matches. Checked on both deployments on 2026-07-31: 0 of 11 accounts carry a contact_email on production and 0 of 11 on staging, so no slug form exists to ban. Deliberately NOT listed as banned values, because they are unmeasured strings. Filed as an issue instead.",
+    "On the demo as it stands (2026-07-31) no banned span is suppressed by a protected entry — the two halves do not currently overlap on live data. That is the healthy state, not evidence the protected half is inert: run the scan with --explain to see the protected values it matched in live rows, and see tests/test_identity_policy.py for the widened-policy case that proves suppression works."
+  ],
+
+  "banned": [
+    {
+      "value": "Merced Irrigation District",
+      "reason": "Real public agency (MID). Shown on production for three days as the holder of an invented water right and the operator of seven invented recharge basins, beneath an honesty page promising the demo 'names no real water district at all'. Rights-holder table, 97-01-NAMES.md. Replaced by Halvern Irrigation District.",
+      "scope": [
+        "surface_waterright.holder_name",
+        "geography_zone.name",
+        "geography_zone.description",
+        "accounting_allocationplan.name",
+        "recharge_rechargesite.operator"
+      ]
+    },
+    {
+      "value": "Le Grand-Athlone Water District",
+      "reason": "Real water district built from the real Merced County places Le Grand and Athlone, carrying an invented water right. Rights-holder table, 97-01-NAMES.md. Replaced by Ashvale-Dunmoor Water District.",
+      "scope": [
+        "surface_waterright.holder_name",
+        "geography_zone.name",
+        "geography_zone.description",
+        "accounting_allocationplan.name"
+      ]
+    },
+    {
+      "value": "Stevinson Water District",
+      "reason": "Real water district named for the real Merced County place Stevinson, carrying an invented water right. Rights-holder table, 97-01-NAMES.md. Replaced by Wrenfield Water District.",
+      "scope": [
+        "surface_waterright.holder_name",
+        "geography_zone.name",
+        "geography_zone.description",
+        "accounting_allocationplan.name"
+      ]
+    },
+    {
+      "value": "San Joaquin Bottomlands Ranch",
+      "reason": "Built from the real San Joaquin River, carrying an invented riparian right and an invented pumping ledger. Rights-holder table, 97-01-NAMES.md. Replaced by Tulepine Bottomlands Ranch.",
+      "scope": [
+        "surface_waterright.holder_name",
+        "geography_zone.name",
+        "geography_zone.description",
+        "accounting_allocationplan.name",
+        "parcels_parcel.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Plainsburg Irrigation District",
+      "reason": "Real-place district (Plainsburg, Merced County) carrying an invented CURTAILED right — the demo names it as the subject of a curtailment order that never happened. Rights-holder table, 97-01-NAMES.md. Replaced by Saddlebow Irrigation District.",
+      "scope": [
+        "surface_waterright.holder_name",
+        "geography_zone.name",
+        "geography_zone.description",
+        "accounting_allocationplan.name",
+        "surface_curtailmentorder.title"
+      ]
+    },
+    {
+      "value": "Merced Falls Hydroelectric Co.",
+      "reason": "Named for the real Merced Falls hydroelectric facility, carrying an invented right. Rights-holder table, 97-01-NAMES.md. Replaced by Halvern Hydroelectric Co. NOTE the point-of-diversion name 'Merced Falls Hydroelectric Diversion' is deliberately KEPT and is in the protected half — the facility is real public geography; the company holding an invented right is not.",
+      "scope": ["surface_waterright.holder_name"]
+    },
+
+    {
+      "value": "Merced Valley Farms LLC",
+      "reason": "Farm operator built from the real Merced Valley, carrying an invented monthly pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Halvern Valley Farms LLC.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Snelling Ranch Co.",
+      "reason": "Built from the real Merced County place Snelling, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Dunmoor Ranch Co.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Le Grand Orchards Inc.",
+      "reason": "Built from the real Merced County place Le Grand, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Ashvale Orchards Inc.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Stevinson Land & Cattle",
+      "reason": "Built from the real Merced County place Stevinson, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Wrenfield Land & Cattle.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "El Nido Growers",
+      "reason": "Built from the real Merced County place El Nido, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Verdano Growers.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Athlone Farming Partners",
+      "reason": "Built from the real Merced County place Athlone, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Larkbend Farming Partners.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Cressey Ag Holdings",
+      "reason": "Built from the real Merced County place Cressey, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Brayfield Ag Holdings.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Sandy Mush Family Farm",
+      "reason": "Built from the real Merced County place Sandy Mush, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Muddy Bar Family Farm.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Plainsburg Field Co.",
+      "reason": "Built from the real Merced County place Plainsburg, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Saddlebow Field Co.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Bear Creek Bottomlands LLC",
+      "reason": "Built from the real Bear Creek, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Sablecreek Bottomlands LLC. NOTE 'Bear Creek' on its own is protected real geography below — only the full operator name is banned, which is exactly why this file matches whole strings and not tokens.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Foothill River Ranch",
+      "reason": "Built from real Merced County foothill river country, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Granite Bench River Ranch.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Yosemite Gateway Farms",
+      "reason": "Built from the real Yosemite gateway corridor, carrying an invented pumping ledger. Farm-and-well-operator table, 97-01-NAMES.md. Replaced by Alder Gate Farms.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+
+    {
+      "value": "Merced Subbasin GSA",
+      "reason": "Real Groundwater Sustainability Agency named as the container of every invented parcel and pumping ledger, and as the demo's own agency identity. GSA table, 97-01-NAMES.md. Replaced by Halvern Valley GSA. The Merced Subbasin ITSELF stays — it is real published geography and is in the protected half.",
+      "scope": ["geography_zone.name", "core_siteconfig.agency_name"]
+    },
+    {
+      "value": "Merced Irrigation-Urban GSA",
+      "reason": "Real Groundwater Sustainability Agency named as the container of invented accounting. GSA table, 97-01-NAMES.md. Replaced by Halvern Irrigation-Urban GSA. 97-02 also removed its real DWR GSA_ID and its live agency URL.",
+      "scope": ["geography_zone.name", "core_siteconfig.agency_name"]
+    },
+    {
+      "value": "Turner Island Water District GSA - Merced",
+      "reason": "Real Groundwater Sustainability Agency named as the container of invented accounting. GSA table, 97-01-NAMES.md. Replaced by Verdano Island Water District GSA. 97-02 also removed its real DWR GSA_ID and its live agency URL.",
+      "scope": ["geography_zone.name", "core_siteconfig.agency_name"]
+    },
+
+    {
+      "value": "Turner Island Farms LLC",
+      "reason": "Built from the real Turner Island (also a real water district), carrying an invented pumping ledger. Second operator list (ISS-094), 97-01-NAMES.md. Replaced by Verdano Island Farms LLC.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Sandy Mush Growers",
+      "reason": "Built from the real Sandy Mush Road, carrying an invented pumping ledger. Second operator list (ISS-094), 97-01-NAMES.md. Replaced by Muddy Bar Growers.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Atwater Ranch Partners",
+      "reason": "Built from the real city of Atwater, carrying an invented pumping ledger. Second operator list (ISS-094), 97-01-NAMES.md. Replaced by Tulepine Ranch Partners.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Plainsburg Ag Holdings",
+      "reason": "Built from the real Merced County place Plainsburg, carrying an invented pumping ledger. Second operator list (ISS-094), 97-01-NAMES.md. Replaced by Saddlebow Ag Holdings.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Crocker Bottoms Farming",
+      "reason": "Built from the real Crocker-Huffman Diversion Dam, carrying an invented pumping ledger. Second operator list (ISS-094), 97-01-NAMES.md. Replaced by Dunmoor Bottoms Farming.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Cressey Family Farms",
+      "reason": "Built from the real Merced County place Cressey, carrying an invented pumping ledger. Second operator list (ISS-094), 97-01-NAMES.md. Replaced by Brayfield Family Ranch — the obvious Brayfield Family Farms was rejected on its collision check against the real Brayfield Farms Limited.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+
+    {
+      "value": "Le Grand Orchards",
+      "reason": "Real-place exposure from the CalWATRS-native export list, 97-01-NAMES.md. Listed separately from 'Le Grand Orchards Inc.' because the export copy had DIVERGED and carried no 'Inc.' — which is exactly how it survived 97-01's grep. Both spellings stay on the list so a substring scan cannot be defeated by the same divergence twice. Replaced by Ashvale Orchards Inc.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "El Nido Farming Co.",
+      "reason": "Real-place exposure (El Nido) from the CalWATRS-native export list, 97-01-NAMES.md. Replaced by Saddlebow Ag Holdings.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Crocker-Huffman Ranch",
+      "reason": "Real-place exposure (the Crocker-Huffman Diversion Dam) from the CalWATRS-native export list, 97-01-NAMES.md. Replaced by Dunmoor Bottoms Farming. NOTE the point-of-diversion name 'Crocker-Huffman River Diversion' is real public geography and stays.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Cressey Land Partners",
+      "reason": "Real-place exposure (Cressey) from the CalWATRS-native export list, 97-01-NAMES.md. Replaced by Brayfield Land Partners.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Planada Ag Holdings",
+      "reason": "Real-place exposure (Planada, a real Merced County town) from the CalWATRS-native export list, 97-01-NAMES.md. Replaced by Larkbend Ag Holdings.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Le Grand Family Farms",
+      "reason": "Real-place exposure (Le Grand) from the CalWATRS-native export list, 97-01-NAMES.md. Replaced by Wrenfield Family Farms.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+    {
+      "value": "Snelling Orchard Co.",
+      "reason": "Real-place exposure (Snelling) from the CalWATRS-native export list, 97-01-NAMES.md. Replaced by Dunmoor Orchard Co.",
+      "scope": [
+        "parcels_parcel.owner_name",
+        "wells_well.owner_name",
+        "accounting_wateraccount.name"
+      ]
+    },
+
+    {
+      "value": "MID ",
+      "match": "scoped",
+      "reason": "Merced Irrigation District's abbreviation, with the trailing space that makes it a name prefix rather than a word. Measured in propagation-analysis §0.2: it produced 'MID Atwater Canal Headgate' in surface_pointofdiversion.name, and 55 rows of parcels_parcelledger.description are COMPOSED from that string — so dropping this one prefix is what cleared all 55. Matched SCOPED rather than globally on purpose: a bare three-letter token matched against every text column in the database would fire on ordinary prose (the middle of a word, an abbreviation in a note) and a tripwire that cries wolf is one people learn to ignore.",
+      "scope": [
+        "surface_pointofdiversion.name",
+        "parcels_parcelledger.description"
+      ]
+    },
+
+    {
+      "value": "Merced Water Manager",
+      "reason": "Composed water-account contact string. seed_merced_ledgers.py::_build_accounts writes contact_name as '{first word of owner} Water Manager', so the real owner Merced Valley Farms LLC produced this. Quoted verbatim in propagation-analysis §0.2 as one of the 7 contact names found on production. No whole-name list catches it, because the string it is built from is only the FIRST WORD of a banned name.",
+      "scope": ["accounting_wateraccount.contact_name"]
+    },
+    {
+      "value": "Atwater Water Manager",
+      "reason": "Composed water-account contact string from the real city of Atwater, via the pre-Phase-97 owner Atwater Ranch Partners (git 5f46b16). One of the 7 real-place contact names §0.2 measured on production.",
+      "scope": ["accounting_wateraccount.contact_name"]
+    },
+    {
+      "value": "Stevinson Water Manager",
+      "reason": "Composed water-account contact string from the real Merced County place Stevinson, via the pre-Phase-97 owner Stevinson Land & Cattle (git 5f46b16). One of the 7 real-place contact names §0.2 measured on production.",
+      "scope": ["accounting_wateraccount.contact_name"]
+    },
+    {
+      "value": "Plainsburg Water Manager",
+      "reason": "Composed water-account contact string from the real Merced County place Plainsburg, via the pre-Phase-97 owner Plainsburg Ag Holdings (git 5f46b16). One of the 7 real-place contact names §0.2 measured on production.",
+      "scope": ["accounting_wateraccount.contact_name"]
+    },
+    {
+      "value": "Crocker Water Manager",
+      "reason": "Composed water-account contact string from the real Crocker-Huffman Diversion Dam, via the pre-Phase-97 owner Crocker Bottoms Farming (git 5f46b16). One of the 7 real-place contact names §0.2 measured on production.",
+      "scope": ["accounting_wateraccount.contact_name"]
+    },
+    {
+      "value": "Cressey Water Manager",
+      "reason": "Composed water-account contact string from the real Merced County place Cressey, via the pre-Phase-97 owner Cressey Family Farms (git 5f46b16). One of the 7 real-place contact names §0.2 measured on production.",
+      "scope": ["accounting_wateraccount.contact_name"]
+    },
+    {
+      "value": "Snelling Water Manager",
+      "reason": "Composed water-account contact string from the real Merced County place Snelling, via the pre-Phase-97 owner Snelling Ranch Co. (git 5f46b16). One of the 7 real-place contact names §0.2 measured on production. The four remaining pre-Phase-97 contact names — Turner, Sandy, Le and San Water Manager — are NOT listed: their first word is a generic fragment naming no real place, which is why §0.2's sweep counted 7 of 11 and not 11 of 11.",
+      "scope": ["accounting_wateraccount.contact_name"]
+    }
+  ],
+
+  "protected": [
+    {
+      "value": "CITY OF MERCED",
+      "reason": "The real drinking-water utility, PWSID CA2410009, carrying REAL published EPA Envirofacts and State Water Board DDW laboratory results — named deliberately, labelled on screen, and 21 wells deep. §0.2 verified it identical on production and staging. Banning it would delete a designed feature and turn the honesty page ('genuine published laboratory results under the City of Merced's real name') into a false statement.",
+      "scope": ["wells_well.owner_name", "drinking_*.*"]
+    },
+    {
+      "value": "Merced River",
+      "reason": "Real river, real published USGS geography. §0.2 verified all geography_flowline rows identical on both sides. Every point of diversion in the demo sits on the real flowline it names (seed_merced_operations.py), so renaming the river would make the map lie about where the water comes from.",
+      "scope": [
+        "geography_flowline.name",
+        "surface_pointofdiversion.stream_name",
+        "surface_waterright.source_name",
+        "recharge_rechargesite.name"
+      ]
+    },
+    {
+      "value": "Bear Creek",
+      "reason": "Real creek, real published USGS geography, verified identical on both sides in §0.2. Note the banned 'Bear Creek Bottomlands LLC' is a different string — the operator was invented, the creek was not.",
+      "scope": ["geography_flowline.name"]
+    },
+    {
+      "value": "San Joaquin River",
+      "reason": "Real river, real published USGS geography, verified identical on both sides in §0.2. Note the banned 'San Joaquin Bottomlands Ranch' is a different string.",
+      "scope": ["geography_flowline.name"]
+    },
+    {
+      "value": "Atwater Canal",
+      "reason": "Real canal, real published infrastructure, verified identical on both sides in §0.2. The reason the banned entry is 'MID ' and not the headgate name: 'Atwater Canal Headgate' is the geography and stays; 'MID' was the operator attribution and went.",
+      "scope": [
+        "geography_flowline.name",
+        "surface_pointofdiversion.stream_name",
+        "surface_pointofdiversion.name",
+        "surface_waterright.source_name"
+      ]
+    },
+    {
+      "value": "Le Grand Canal",
+      "reason": "Real canal, real published infrastructure, verified identical on both sides in §0.2. Le Grand as a PLACE is protected here even though 'Le Grand Orchards' as an OPERATOR is banned — that difference is the whole rule this file encodes.",
+      "scope": [
+        "geography_flowline.name",
+        "surface_pointofdiversion.stream_name",
+        "surface_pointofdiversion.name",
+        "surface_waterright.source_name"
+      ]
+    },
+    {
+      "value": "Diversion Canal",
+      "reason": "Real canal, real published infrastructure, verified identical on both sides in §0.2. This is also why 'Diversion Canal Growers' is a documented exclusion rather than a banned entry: banning the operator name would collide with the canal.",
+      "scope": [
+        "geography_flowline.name",
+        "surface_pointofdiversion.stream_name",
+        "surface_pointofdiversion.name",
+        "surface_waterright.source_name"
+      ]
+    },
+    {
+      "value": "El Nido Canal",
+      "reason": "Real canal, real published infrastructure, verified identical on both sides in §0.2. Names five of the seven recharge basins and the recharge intake point of diversion.",
+      "scope": [
+        "geography_flowline.name",
+        "surface_pointofdiversion.stream_name",
+        "surface_pointofdiversion.name",
+        "surface_waterright.source_name",
+        "recharge_rechargesite.name"
+      ]
+    },
+    {
+      "value": "Merced Subbasin",
+      "reason": "Real DWR-designated groundwater subbasin. The demo openly sits in it and the honesty page says so. §0.2 verified geography_boundary identical on both sides. This is why the three GSA replacements DROP the word 'Subbasin' rather than inventing a basin that would contradict the geography beside it.",
+      "scope": ["geography_boundary.name"]
+    },
+    {
+      "value": "5-022.04",
+      "reason": "The real DWR basin number for the Merced Subbasin. Real published identifier, verified identical on both sides in §0.2. Contrast the three GSA_IDs, which WERE real DWR identifiers on invented agencies and were replaced with synthetic 9001/9002/9003 in 97-02.",
+      "scope": ["geography_boundary.basin_code"]
+    },
+    {
+      "value": "Merced Falls Hydroelectric Diversion",
+      "reason": "Point-of-diversion name Phase 97 deliberately KEPT. Merced Falls is a genuine lower-Merced hydroelectric facility — public geography. A fictional company diverting at a real named facility is how the real world works, and it keeps the river geography honest. §0.4 records it as one of two false positives that look like defects and are not.",
+      "scope": ["surface_pointofdiversion.name"]
+    },
+    {
+      "value": "Snelling Re-Diversion",
+      "reason": "Point-of-diversion name Phase 97 deliberately KEPT. Snelling is a genuine place — public geography, covered by the no-rename boundary. §0.4 records it as the second of two false positives that look like defects and are not.",
+      "scope": ["surface_pointofdiversion.name"]
+    },
+    {
+      "value": "Atwater Canal Headgate",
+      "reason": "The name that remains once the 'MID ' operator prefix is gone. The canal and its headgate are real published infrastructure; only the district attribution was the defect.",
+      "scope": ["surface_pointofdiversion.name"]
+    },
+    {
+      "value": "Crocker-Huffman River Diversion",
+      "reason": "Point-of-diversion name built from the real Crocker-Huffman Diversion Dam — public geography, kept under the same 97-01 ruling as Merced Falls and Snelling. Listed explicitly because the banned 'Crocker-Huffman Ranch' sits one word away, and the difference between them is the whole rule.",
+      "scope": ["surface_pointofdiversion.name"]
+    },
+    {
+      "value": "Le Grand Ag Well",
+      "reason": "A well NAME, not an owner name. Naming a well for the place it sits near is how wells are actually named, and Le Grand is protected public geography. 97-01-NAMES.md rules these six explicitly: their OWNERS were renamed, their labels stay.",
+      "scope": ["wells_well.name"]
+    },
+    {
+      "value": "Plainsburg Ag Well",
+      "reason": "A well NAME, not an owner name — a location label on protected public geography. Ruled explicitly in 97-01-NAMES.md.",
+      "scope": ["wells_well.name"]
+    },
+    {
+      "value": "Stevinson Ag Well",
+      "reason": "A well NAME, not an owner name — a location label on protected public geography. Ruled explicitly in 97-01-NAMES.md.",
+      "scope": ["wells_well.name"]
+    },
+    {
+      "value": "El Nido Ag Well",
+      "reason": "A well NAME, not an owner name — a location label on protected public geography. Ruled explicitly in 97-01-NAMES.md.",
+      "scope": ["wells_well.name"]
+    },
+    {
+      "value": "Cressey Ag Well",
+      "reason": "A well NAME, not an owner name — a location label on protected public geography. Ruled explicitly in 97-01-NAMES.md.",
+      "scope": ["wells_well.name"]
+    },
+    {
+      "value": "Sandy Mush Ag Well",
+      "reason": "A well NAME, not an owner name — a location label on protected public geography. Ruled explicitly in 97-01-NAMES.md.",
+      "scope": ["wells_well.name"]
+    },
+    {
+      "value": "*",
+      "reason": "WHOLE COLUMN. parcels_parcel.address — 61 rows of real Merced County street addresses (Le Grand Rd, Plainsburg Rd, Sandy Mush Rd, Planada), real published county parcel data, verified identical on production and staging in §0.2. Expressed as a wildcard rather than 61 enumerated values, because a list of values nobody measured is a list that lies.",
+      "scope": ["parcels_parcel.address"]
+    },
+    {
+      "value": "*",
+      "reason": "WHOLE COLUMN. parcels_parcel.notes — 76 rows of real DWR land-use provenance ('DWR field 2414906 | Pasture (P1) | Merced | source=surface'), verified identical on both sides in §0.2. The word Merced here is the real county, carried as published.",
+      "scope": ["parcels_parcel.notes"]
+    },
+    {
+      "value": "*",
+      "reason": "WHOLE COLUMNS. recharge_rechargesite.name and .notes — basin labels and siting notes built from real canal and river geography ('beside the El Nido Canal', 'served by the Merced River diversion'), verified identical on both sides in §0.2. The recharge OPERATOR column is deliberately NOT protected: that is where the real district name was, and it is a banned scope above.",
+      "scope": ["recharge_rechargesite.name", "recharge_rechargesite.notes"]
+    },
+    {
+      "value": "*",
+      "reason": "WHOLE COLUMN. datasync_monitoredstation.station_name — real CDEC and DWR station identifiers and state well numbers, carried unaltered as published record. §0.2 verified the monitoring stations identical on both sides.",
+      "scope": ["datasync_monitoredstation.station_name"]
+    },
+    {
+      "value": "*",
+      "reason": "WHOLE TABLE GROUP. Every drinking_* table — watersystem, systemfacility, samplingpoint, analyte, regulatorylimit, sampleevent, sampleresult, and envirofactscache. This is real published record end to end: the City of Merced's 61 facilities from EPA Envirofacts, 27 sampling points and all 2023-2026 laboratory results from State Water Board DDW and GAMA. The honesty page states the exception in its own words — 'the drinking-water side is deliberately the opposite: genuine published laboratory results under the City of Merced's real name'. §0.2 verified all of it identical on both sides. Phase 97 changed zero files under drinking/.",
+      "scope": ["drinking_*.*"]
+    }
+  ]
+}
