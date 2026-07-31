@@ -1012,7 +1012,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelZone",
         field="parcel",
         target="parcels",
-        where="geography/models.py:106",
+        where="geography/models.py:126",
         why=(
             "ParcelZone is the use-area-to-zone join, and zoning is geography's "
             "job. geography is standard, so this arrow is what pins parcels "
