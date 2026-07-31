@@ -223,7 +223,36 @@ it has not counted: a draft once explained an unlocated facility by its type,
 and measured, 10 of the 40 unlocated were neither of the types named. Count how
 many rows a cause holds for before writing it.
 
-### 9. Multi-line template comments use `{% comment %}`
+### 9. A message an operator reads may not name a database column
+
+An error or status string that reaches a screen is copy, and it is bound by every
+rule above. Field names, model attributes and payload keys are developer
+vocabulary: they belong in a log line, an exception attribute, or a docstring.
+
+The measured instance (ISS-101) is `drinking/envirofacts_mapping.py`'s
+`UnmappableFacility`, which told an operator a facility *"has no
+**state_facility_id**"* on the onboarding review screen — two lines above that
+same screen's own English for the same fact, *"missing the state-assigned ID that
+sample codes are built from"*. The page stated one thing twice, once in English
+and once in Python.
+
+Two properties made it durable, and both are worth recognising elsewhere:
+
+* **It was not in a template.** The whole 101-02 copy pass swept 22 templates
+  and `drinking/glossary.py` and never saw it, because the string is raised in a
+  mapping module. Rule 3's list of code files that hold copy is a list to keep
+  extending, not a boundary.
+* **A test was holding it in place.** `tests/test_drinking_onboard.py` asserted
+  the literal `state_facility_id` appeared in the response body. The assertion
+  was right that the reason must be on screen and wrong about what the reason
+  should say, so the suite went green on the defect. Both assertions now require
+  the readable wording **and** forbid the field name.
+
+Splitting the two audiences is the fix: `str(exc)` is the operator's sentence,
+`UnmappableFacility.field` and the `logger.info` on the skip path carry the key.
+A message written to serve both ends up serving the one who is not reading it.
+
+### 10. Multi-line template comments use `{% comment %}`
 
 Not `<!-- -->`, which ships to the browser, and not `{# #}`, which closes at end
 of line and renders its second line onward as page text — the defect

@@ -61,7 +61,17 @@ class UnmappableFacility(Exception):
     Writing it with a blank ``facility_id`` would be worse than skipping it —
     the second such facility would collide on ``unique_together`` and the first
     would sit in the system looking legitimate.
+
+    ``str(exc)`` is READER-FACING — the onboarding review and result screens
+    render it to an operator verbatim — so it says "state-assigned facility ID"
+    rather than naming a column (ISS-101). ``field`` carries the payload key a
+    developer needs, and ``commit_system`` logs it on the skip path. Keep the two
+    apart: a message that has to serve both audiences ends up serving the one who
+    is not reading it.
     """
+
+    #: The EPA payload key whose absence caused this. Developer-facing.
+    field = "state_facility_id"
 
 
 # ── Small helpers ───────────────────────────────────────────────────────────
@@ -212,10 +222,18 @@ def map_facility(payload, warnings=None):
     state_facility_id = _text(payload.get("state_facility_id"))
 
     if not state_facility_id:
+        # ISS-101: this string is rendered VERBATIM to an operator, in the
+        # onboarding review's "Which one, and why it cannot be saved" panel and
+        # again on the result page. It used to name `state_facility_id` — a
+        # Django field name — two lines above the same screen's own English for
+        # the same fact. The field name is not lost: it is on the exception as
+        # `.field`, and `commit_system`'s skip path logs it. A developer looks in
+        # the log; the operator reads the page.
         raise UnmappableFacility(
             f"EPA facility {epa_facility_id or '(unidentified)'} "
             f"(\"{_text(payload.get('facility_name'))}\") has no "
-            f"state_facility_id, so it cannot be given a PS Code. Skipped."
+            f"state-assigned facility ID, so no PS Code can be built for it. "
+            f"Skipped."
         )
 
     kwargs = {
@@ -350,8 +368,13 @@ def commit_system(system_payload, facility_payloads):
         try:
             mapped = map_facility(payload, warnings=warnings)
         except UnmappableFacility as exc:
+            # `result.skipped` reaches the operator's screen, the log line reaches
+            # a developer — which is why the payload key lives here and not in the
+            # message (ISS-101).
             result.skipped.append(str(exc))
-            logger.info("envirofacts: %s", exc)
+            logger.info(
+                "envirofacts: %s (payload key: %s)", exc, UnmappableFacility.field
+            )
             continue
 
         _, facility_created = SystemFacility.objects.update_or_create(

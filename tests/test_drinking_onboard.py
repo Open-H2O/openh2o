@@ -150,7 +150,11 @@ class TestLookupReview:
         ).content.decode()
 
         assert "skipped" in body.lower()
-        assert "state_facility_id" in body
+        # ISS-101: the reason must be READABLE, not a Django field name. This
+        # assertion used to require the literal `state_facility_id`, which is
+        # what held the defect in place through a whole copy pass.
+        assert "state-assigned facility ID" in body
+        assert "state_facility_id" not in body
 
     def test_a_lookup_writes_nothing(self, client_in, epa):
         """The successful path is the one where a stray save would hide."""
@@ -350,7 +354,10 @@ class TestCommit:
         body = self._lookup_then_commit(client_in).content.decode()
 
         assert "Facilities that were not written" in body
-        assert "state_facility_id" in body
+        # ISS-101, same rule as the review screen: this page is read by the same
+        # operator and carries the same sentence.
+        assert "state-assigned facility ID" in body
+        assert "state_facility_id" not in body
 
     def test_the_result_names_the_next_step(self, client_in, epa):
         body = self._lookup_then_commit(client_in).content.decode()
