@@ -512,6 +512,11 @@
     },
     {
       "value": "*",
+      "reason": "WHOLE COLUMN. geography_boundary.description — the DWR Bulletin 118 basin description, carried as published: 'Valley floor south of the Merced River to the Chowchilla, San Joaquin River on the west, Sierra foothills on the east... served by Merced Irrigation District's canal network'. That last clause is REAL public infrastructure, and 97-02-SUMMARY.md rules it explicitly as one of the eight justified survivors of the Phase 97 sweep (seed_merced_base.py:55): true public geography, not an attribution of invented data. §0.2 protects geography_boundary as a table. Scoped to the description column only, deliberately — the boundary NAME column stays live, so a real district name landing THERE is still caught.",
+      "scope": ["geography_boundary.description"]
+    },
+    {
+      "value": "*",
       "reason": "WHOLE COLUMN. datasync_monitoredstation.station_name — real CDEC and DWR station identifiers and state well numbers, carried unaltered as published record. §0.2 verified the monitoring stations identical on both sides.",
       "scope": ["datasync_monitoredstation.station_name"]
     },
