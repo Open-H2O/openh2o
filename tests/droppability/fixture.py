@@ -274,7 +274,7 @@ def seed_droppable_fixture() -> dict:
         event = factories.SampleEventFactory(sampling_point=point)
 
         # One of each `result_kind`, which is coverage nothing else in this
-        # repository has: the real Merced data is 22,311 rows of `numeric` and
+        # repository has: the real Merced data is 22,367 rows of `numeric` and
         # not one presence/absence row, so the rule that an *Absent* result must
         # never render as a number had no page anywhere to be seen on.
         numeric = factories.SampleResultFactory(

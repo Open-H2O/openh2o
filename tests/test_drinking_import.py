@@ -1089,3 +1089,158 @@ class TestTheRealDDWSliceValidatesClean:
         )
         assert landed == set(ddw_system["points"])
         assert len(landed) == DDW_PS_CODE_COUNT
+
+
+# ---------------------------------------------------------------------------
+# ISS-102 — a re-analysis is not a duplicate
+# ---------------------------------------------------------------------------
+
+
+class TestARepeatIsNotAlwaysARepeat:
+    """The guard must keep re-import idempotent WITHOUT discarding real data.
+
+    Before this, a result was identified by (event, analyte, method) — which is
+    not a description of a measurement, so it could not tell a second analysis
+    of one sample from a repeat of the first. Over the City of Merced's own
+    three-year file that dropped 56 rows, and **not one was a clerical
+    duplicate**: 27 carried a different `Result`, and the other 29 differed in
+    `reporting_level` (26) or `analysis_date` (3). Four stored a non-detect and
+    threw away a detection, including 300 ug/L of free copper at a Lead and
+    Copper Rule tap.
+
+    Brent's ruling, 2026-07-30: store them as separate results. We do not drop
+    published data to make a count tidier.
+    """
+
+    @staticmethod
+    def _rerun(text):
+        parsed = importer.parse_upload(_csv_file(text), "lab.csv")
+        mapping = importer.auto_map_columns(parsed["columns"])
+        return importer.commit_rows(importer.validate_rows(parsed["rows"], mapping))
+
+    @staticmethod
+    def _row_1_variant(text, column, new_value):
+        """Append a copy of the fixture's first data row with one field changed.
+
+        Row 1 is Nitrate at CA0000042_001_001 on 2026-03-10 09:15 — the same
+        collection row 29 repeats exactly, so the two cases sit side by side:
+        29 is still a duplicate, this one is not.
+        """
+        lines = text.rstrip("\n").split("\n")
+        header = lines[0].split(",")
+        fields = lines[1].split(",")
+        fields[header.index(column)] = new_value
+        return "\n".join(lines + [",".join(fields)]) + "\n"
+
+    def test_an_exact_repeat_is_still_a_duplicate(self, system, fixture_text):
+        """The idempotency promise is untouched. This is the control."""
+        counts = self._rerun(fixture_text)
+        assert counts["duplicates"] == EXPECTED_DUPLICATES
+        assert counts["results"] == EXPECTED_RESULTS
+
+    @pytest.mark.parametrize(
+        "column,new_value,why",
+        [
+            ("Result", "3.9", "a different concentration is a different finding"),
+            ("Reporting Level", "0.05", "a more sensitive instrument is a second analysis"),
+            ("Analysis Date", "2026-03-19", "analysed again, six days later"),
+            ("Lab Name", "Second Opinion Labs", "a different laboratory"),
+            ("ELAP Cert#", "9999", "a different certification behind the number"),
+            ("Units of Measure", "ug/L", "a different unit is a different claim"),
+        ],
+    )
+    def test_a_row_differing_in_one_field_is_kept(
+        self, system, fixture_text, column, new_value, why
+    ):
+        counts = self._rerun(self._row_1_variant(fixture_text, column, new_value))
+
+        assert counts["results"] == EXPECTED_RESULTS + 1, why
+        assert counts["duplicates"] == EXPECTED_DUPLICATES, (
+            f"changing {column} made the row a duplicate; it is a second "
+            f"analysis of one sample, not a repeat"
+        )
+
+    def test_both_analyses_are_stored_against_the_same_collection(
+        self, system, fixture_text
+    ):
+        """Not two events — one sample, analysed twice."""
+        self._rerun(self._row_1_variant(fixture_text, "Result", "3.9"))
+
+        event = SampleEvent.objects.get(
+            sampling_point__ps_code="CA0000042_001_001",
+            sample_date=date(2026, 3, 10),
+            sample_time="09:15:00",
+        )
+        values = set(
+            SampleResult.objects.filter(
+                event=event, analyte__name="Nitrate (as N)"
+            ).values_list("result_value", flat=True)
+        )
+        assert values == {Decimal("3.2"), Decimal("3.9")}
+        assert SampleEvent.objects.count() == EXPECTED_EVENTS
+
+    def test_a_detection_is_never_replaced_by_a_non_detect(self, system, fixture_text):
+        """The four Merced cases, in miniature — the sharpest shape of the bug.
+
+        A non-detect and a detection are not two versions of a number, they are
+        opposite answers. Keeping whichever the file listed first meant a
+        measured 300 ug/L could vanish behind a `<`.
+        """
+        text = self._row_1_variant(fixture_text, "Less Than Reporting Level", "Y")
+        # A non-detect carries no value, matching how the state publishes one.
+        lines = text.rstrip("\n").split("\n")
+        header = lines[0].split(",")
+        fields = lines[-1].split(",")
+        fields[header.index("Result")] = ""
+        text = "\n".join(lines[:-1] + [",".join(fields)]) + "\n"
+
+        self._rerun(text)
+
+        rows = SampleResult.objects.filter(
+            event__sampling_point__ps_code="CA0000042_001_001",
+            event__sample_date=date(2026, 3, 10),
+            analyte__name="Nitrate (as N)",
+        )
+        assert rows.count() == 2
+        assert rows.filter(less_than_rl=False, result_value=Decimal("3.2")).exists()
+        assert rows.filter(less_than_rl=True, result_value__isnull=True).exists()
+
+    def test_re_importing_a_file_that_gained_a_re_analysis_adds_only_that_row(
+        self, system, fixture_text
+    ):
+        """The realistic operator case: last month's file, plus one re-analysis."""
+        first = self._rerun(fixture_text)
+        assert first["results"] == EXPECTED_RESULTS
+
+        second = self._rerun(self._row_1_variant(fixture_text, "Result", "3.9"))
+
+        assert second["results"] == 1
+        assert second["events"] == 0
+        assert SampleResult.objects.count() == EXPECTED_RESULTS + 1
+
+    def test_identity_covers_every_field_the_writer_sets(self):
+        """The two lists must not drift.
+
+        `_IDENTITY_FIELDS` has to name every column `commit_rows` writes beyond
+        the event and analyte FKs. A field written but not compared is a field
+        that can differ between two rows while the guard calls them identical —
+        which is exactly ISS-102, and `method` alone was that bug at its widest.
+        """
+        import ast
+        import inspect
+
+        source = inspect.getsource(importer.commit_rows)
+        call = next(
+            node
+            for node in ast.walk(ast.parse(source.strip()))
+            if isinstance(node, ast.Call)
+            and getattr(node.func, "attr", None) == "create"
+        )
+        written = {kw.arg for kw in call.keywords} - {"event_id", "analyte_id"}
+
+        assert written == set(importer._IDENTITY_FIELDS), (
+            "drinking/importer.py: SampleResult.objects.create() and "
+            "_IDENTITY_FIELDS disagree.\n"
+            f"  written but not compared: {sorted(written - set(importer._IDENTITY_FIELDS))}\n"
+            f"  compared but not written: {sorted(set(importer._IDENTITY_FIELDS) - written)}"
+        )

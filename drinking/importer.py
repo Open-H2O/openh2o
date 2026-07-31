@@ -533,6 +533,65 @@ def _parse_result(raw_result, raw_lt_rl, raw_rl, errors):
     }
 
 
+#: Every field beyond (event, analyte) that a `SampleResult` row asserts, and so
+#: every field that can make two rows two different analyses rather than one
+#: repeated one. Deliberately the SAME list `commit_rows` writes — see
+#: `test_identity_covers_every_field_the_writer_sets`, which compares the two and
+#: fails when a new column is added to one and not the other.
+#:
+#: **This list is the whole of ISS-102.** The guard used to key on
+#: (event, analyte, method) alone, which is not a description of a measurement:
+#: it cannot tell a re-analysis from a repeat. Over the City of Merced's own
+#: three-year lab file that discarded 56 rows, and NOT ONE of them was a clerical
+#: duplicate — 27 carried a different `Result`, and the remaining 29 differed in
+#: `reporting_level` (26) or `analysis_date` (3). Four of the 56 stored a
+#: non-detect and threw away a detection, including 300 µg/L of free copper at a
+#: Lead and Copper Rule tap.
+_IDENTITY_FIELDS = (
+    "result_kind",
+    "result_value",
+    "presence",
+    "unit",
+    "less_than_rl",
+    "reporting_level",
+    "counting_error",
+    "analysis_date",
+    "method",
+    "lab_name",
+    "lab_cert_no",
+)
+
+#: The identity fields that are free text, and so need normalizing before
+#: comparison. A trailing space is not a second analysis.
+_IDENTITY_TEXT_FIELDS = frozenset({"unit", "method", "lab_name", "lab_cert_no"})
+
+
+def _result_identity(event_id, analyte_id, values):
+    """What makes a result THIS result, for the re-import guard.
+
+    Two rows are the same result only when they say the same thing about the
+    same analyte at the same collection — same value, same limits, same method,
+    same laboratory, analysed the same day. Anything else is a second analysis
+    of one sample, which is a real laboratory event with real meaning, and the
+    platform's job is to carry it rather than to choose between it and its twin
+    ("prepare, never determine", `drinking/models.py`).
+
+    Keeping re-import idempotent is why this is a widened key rather than no key
+    at all: loading the same file twice still produces identical identities, so
+    every row on the second pass is recognised and skipped.
+
+    `values` is a mapping of `_IDENTITY_FIELDS` to their values, from either a
+    parsed row or the database. Decimals compare and hash by numeric value in
+    Python, so `Decimal("0.5")` read back as `Decimal("0.500000")` matches.
+    """
+    return (event_id, analyte_id) + tuple(
+        (values.get(field) or "").strip().lower()
+        if field in _IDENTITY_TEXT_FIELDS
+        else values.get(field)
+        for field in _IDENTITY_FIELDS
+    )
+
+
 def validate_rows(rows, mapping):
     """Validate + coerce a batch into writer-ready `data` dicts.
 
@@ -541,8 +600,12 @@ def validate_rows(rows, mapping):
 
     Warning taxonomy the preview surfaces:
       - "new analyte"  -> this file will extend the analyte vocabulary
-      - "duplicate"    -> an identical result already exists (or repeats within
-                          this same file); committing will skip it
+      - "duplicate"    -> an IDENTICAL result already exists (or repeats within
+                          this same file); committing will skip it. Identical
+                          means every field matches — see `_result_identity`. A
+                          row differing only in its result, its reporting level
+                          or its analysis date is a second analysis of the same
+                          sample and is KEPT (ISS-102).
     """
     results = []
 
@@ -562,11 +625,18 @@ def validate_rows(rows, mapping):
         .values_list("pk", "ddw_code")
     }
 
-    # Existing results, keyed the way the duplicate guard keys them.
+    # Existing results, keyed the way the duplicate guard keys them — through the
+    # SAME helper the row side uses, so the two can never drift apart (ISS-102).
     existing_keys = {
-        (event_id, analyte_id, (method or "").strip().lower())
-        for event_id, analyte_id, method in SampleResult.objects.values_list(
-            "event_id", "analyte_id", "method"
+        _result_identity(
+            event_id,
+            analyte_id,
+            dict(
+                zip(_IDENTITY_FIELDS, stored),
+            ),
+        )
+        for event_id, analyte_id, *stored in SampleResult.objects.values_list(
+            "event_id", "analyte_id", *_IDENTITY_FIELDS
         )
     }
     existing_events = {
@@ -688,10 +758,12 @@ def validate_rows(rows, mapping):
             )
         data["analysis_date"] = analysis_date
 
-        # --- duplicate guard -------------------------------------------------
-        # Keyed on (event, analyte, method) so re-importing the same file is a
-        # no-op rather than a doubling. Checked against both the DB and the rest
-        # of this batch.
+        # --- re-import guard --------------------------------------------------
+        # Keyed on the WHOLE measurement (`_result_identity`) so re-importing the
+        # same file is a no-op rather than a doubling — while a row that differs
+        # in any respect is kept, because it is a second analysis of one sample
+        # and not a repeat of the first (ISS-102). Checked against both the DB
+        # and the rest of this batch.
         if not errors and data.get("analyte_id") is not None:
             event_pk = existing_events.get(
                 (
@@ -701,24 +773,26 @@ def validate_rows(rows, mapping):
                     sample_type,
                 )
             )
-            method_key = data["method"].strip().lower()
             if event_pk is not None:
-                if (event_pk, data["analyte_id"], method_key) in existing_keys:
+                if _result_identity(event_pk, data["analyte_id"], data) in existing_keys:
                     data["is_duplicate"] = True
                     warnings.append(
                         "This result is already recorded; it will be skipped."
                     )
 
         if not errors:
+            # The event has no pk yet for a collection this file is introducing,
+            # so the batch key names the event by its natural key and then reuses
+            # the identity helper for everything after it. `analyte_name` stays
+            # in the key for a row whose analyte is also new in this file and so
+            # has no id to compare either.
             batch_key = (
                 data.get("sampling_point_id"),
                 sample_date,
                 sample_time,
                 sample_type,
-                data.get("analyte_id"),
                 analyte_name.lower(),
-                data.get("method", "").strip().lower(),
-            )
+            ) + _result_identity(None, data.get("analyte_id"), data)
             if batch_key in seen_in_batch:
                 data["is_duplicate"] = True
                 warnings.append(

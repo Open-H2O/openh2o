@@ -488,7 +488,7 @@ def facilities_geojson(request):
 
 #: How many of a sampling point's results its detail page shows.
 #:
-#: A point in the Merced demonstration carries roughly 800 results (22,311
+#: A point in the Merced demonstration carries roughly 800 results (22,367
 #: across 27 points), so rendering "its results" unbounded is an 800-row page.
 #: Paginating them here would be a second, worse copy of the results log, which
 #: already filters by ``?sampling_point=``. The page shows the most recent 25
