@@ -102,6 +102,53 @@ frozen.** Nothing later in the `seed_merced` sequence references
 downstream step is unaffected. Freezing a second fixture nothing reads would
 be weight with no purpose.
 
+## The frozen OpenET cache (`openet_cache.json`)
+
+| | |
+|---|---|
+| **What** | Every real satellite evapotranspiration draw behind the demonstration's water accounting |
+| **Measured** | 380 rows = 76 parcels × 5 variables × 1 window (WY 2024-25, `2024-10-01` → `2025-09-30`) |
+| **Variables** | `ET`, `et_mad_max`, `et_mad_min`, `model_count`, `precip` |
+| **Size** | 481,352 bytes (470 kB) on disk |
+| **Dumped from** | STAGING (`~/openh2o-staging`) on **2026-07-31**, and proven byte-identical to a dump of PRODUCTION taken the same day (sha256 `2b4b6a18…`) |
+| **Used by** | `load_openet_fixture`, and therefore `scripts/rebuild-golden.sh` |
+
+Without this file a rebuilt demonstration has two bad options: no ET at all —
+and the accounting engine then computes nothing — or spend OpenET quota
+re-fetching numbers that have not moved since WY 2024-25 closed. It is the
+reason the golden snapshot can become a build output rather than a photocopy of
+a live database.
+
+Rows are keyed by **`parcel_number`**, never by primary key, for the same
+reason `flowlines.json` uses a natural key: pks differ per deployment.
+
+**`geometry` is deliberately absent.** It is `parcel.geometry` — the same
+polygon, already committed in `selected_parcels.geojson` and already loaded by
+the seed. Storing it again would add roughly a megabyte of duplicate
+coordinates whose only possible future is to disagree with the parcel it claims
+to describe. `load_openet_fixture` fills the column from the parcel.
+
+**The file carries no timestamp, hostname or git hash, on purpose.**
+Re-running the dump against an unchanged database produces a byte-identical
+file, so `git diff` is an honest answer to "has the cache moved?" A
+generated-at stamp would make every regeneration look like a change and the
+diff would stop meaning anything. Reservation rows (`model_name` =
+`__PENDING__`) and ad-hoc `parcel=NULL` geometry queries are excluded — neither
+is data. Both deployments held **0** pending rows when this was taken.
+
+Regenerate it (read-only; needs a database that already holds the cache):
+
+```bash
+python manage.py dump_openet_fixture          # -> data/merced/openet_cache.json
+```
+
+Load it (the parcels must exist first — `seed_merced` creates them; the loader
+refuses before writing anything if any `parcel_number` is missing):
+
+```bash
+python manage.py load_openet_fixture
+```
+
 ## Usage
 
 ```bash
