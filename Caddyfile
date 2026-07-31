@@ -40,6 +40,23 @@
             lb_try_interval 250ms
         }
     }
+
+    # Branded page for a REAL outage — reached only when the retry budget above
+    # is exhausted, i.e. web has been unreachable for 30 s+. The nightly demo
+    # reset finishes well inside that budget, so this never shows for it.
+    #
+    # This does NOT intercept Django's own 404s and 500s: handle_errors fires on
+    # errors CADDY produces (a reverse_proxy that could not get a response). A
+    # 404 rendered BY the app is a successful proxy and passes straight through,
+    # so the app keeps owning its own error pages.
+    handle_errors {
+        root * /srv/error
+        rewrite * /503.html
+        file_server
+        header Cache-Control "no-store"
+        # Tell crawlers and uptime checks this is temporary, not the new truth.
+        header Retry-After "30"
+    }
 }
 
 # Production config (uncomment and replace domain):

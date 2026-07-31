@@ -53,6 +53,11 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - static_files:/srv/static:ro
+      # Branded outage page (Caddyfile handle_errors). A DIRECTORY mount on
+      # purpose: a single-file mount detaches whenever the host file is replaced
+      # by a rename (git checkout, sed -i), leaving the container serving a stale
+      # copy; files inside a mounted directory resolve by name and stay correct.
+      - ./error-pages:/srv/error:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

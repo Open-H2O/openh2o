@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<!--
+  Served by Caddy's handle_errors when the Django upstream cannot be reached at
+  all: `lb_try_duration` has been exhausted, so this is a REAL outage, not the
+  nightly demo reset (that finishes inside the retry budget and never lands
+  here). Deliberately self-contained — no CSS, font or image request — because
+  the very thing that failed is the app that serves those.
+
+  Colours are lifted from static/css/tokens.css so this reads as the same
+  product: surface #040608, card #080b10, teal #46B3C4 is OpenH2O's identity
+  accent. Gold is CTA-only and there is no action to take here, so none is used.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<!-- Re-check on its own so a visitor who walks away comes back to a live page. -->
+<meta http-equiv="refresh" content="20">
+<title>OpenH2O is starting up</title>
+<style>
+  :root {
+    --surface: #040608;
+    --card: #080b10;
+    --border: #1b2430;
+    --text: #e8edf4;
+    --muted: #8899aa;
+    --faint: #4d5e6f;
+    --accent: #46B3C4;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--text);
+    font-family: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .panel {
+    width: 100%;
+    max-width: 34rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+  }
+  .mark {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 1.25rem;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 0 0 0.75rem;
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  p { margin: 0 0 1rem; color: var(--muted); }
+  p:last-of-type { margin-bottom: 0; }
+  .note {
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--faint);
+  }
+  .brand { color: var(--accent); font-weight: 600; }
+  @media (max-width: 30rem) {
+    .panel { padding: 2rem 1.25rem; }
+    h1 { font-size: 1.1875rem; }
+  }
+</style>
+</head>
+<body>
+  <main class="panel">
+    <svg class="mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2.5c-3.6 4.2-6.5 7.9-6.5 11.2A6.5 6.5 0 0 0 12 20.5a6.5 6.5 0 0 0 6.5-6.8c0-3.3-2.9-7-6.5-11.2z"/>
+    </svg>
+    <h1>OpenH2O is starting up</h1>
+    <p>
+      The platform is briefly unavailable while it restarts. Nothing has been
+      lost, and no action is needed on your part.
+    </p>
+    <p>
+      This page checks for you every 20 seconds and will load the site as soon
+      as it is back.
+    </p>
+    <p class="note">
+      <span class="brand">OpenH2O</span> — open water accounting
+    </p>
+  </main>
+</body>
+</html>
