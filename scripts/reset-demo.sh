@@ -17,6 +17,19 @@
 # touching the data. Set FORCE=1 to bypass the guard (the deploy hook does this
 # deliberately, because it restores+migrates-forward+re-stamps in one shot).
 #
+# IDENTITY TRIPWIRE: for three days in July 2026 production served four real
+# water-district names as the holders of invented water rights, directly beneath
+# its own page promising the demonstration "names no real water district at
+# all", and nothing noticed until a person happened to look at a screen. So
+# after the restore — the moment the database holds exactly the content that
+# will be served all day — we run `scan_demo_identity` against it. A finding
+# fires a high-priority ntfy naming table, column and value. The scan NEVER
+# fails the reset: by the time it runs the demo is already restored and serving,
+# so aborting would leave the site worse off, not better. The alert is the
+# deliverable, not a non-zero exit. A scan that could not RUN is alerted
+# separately and just as loudly — "could not scan" is not an all-clear, exactly
+# as an unreadable fingerprint above is not a matching one.
+#
 # Mechanism: drop + recreate the database from the golden snapshot (pg_dump -Fc
 # written by snapshot-demo.sh), which cleanly rebuilds PostGIS and all data. The
 # web container is paused during the swap (a few seconds) so nothing races the
@@ -146,6 +159,66 @@ fi
 # fine, the limit is a brake, not an auth control.
 if ! docker compose exec -T web python manage.py createcachetable >>"$LOG" 2>&1; then
   log "WARN: createcachetable after restore returned nonzero (check $LOG)"
+fi
+
+# ---------------------------------------------------------------------------
+# Identity tripwire — does the restored golden carry a real district's name?
+#
+# Runs HERE, after the restore/migrate/createcachetable and deliberately BEFORE
+# the feedback reload. `feedback_feedback.message` and `.name` are free-text
+# visitor input and the scan reads every first-party text column, so a visitor
+# typing "Merced Irrigation District" into the feedback form would otherwise
+# fire a high-priority alert at 3am about something that is not a violation at
+# all — visitor prose is attributed to the visitor, it is not demonstration
+# content the platform presents as its own. A tripwire that cries wolf is one
+# people learn to ignore, which is the whole failure mode this exists to avoid.
+# Scanning here measures exactly what the golden restore produced.
+# ---------------------------------------------------------------------------
+scan_status=0
+scan_json="$(docker compose exec -T web python manage.py scan_demo_identity --json 2>>"$LOG")" || scan_status=$?
+# $? is captured on the SAME line, on purpose. Read after an if/fi it would be
+# the compound's status — 0 — turning every real finding into a silent success.
+
+scan_violations="$(printf '%s' "$scan_json" | sed -n 's/.*"violations": *\([0-9]*\).*/\1/p' | head -1)"
+
+if [ -z "$scan_violations" ]; then
+  # No parseable count: the command never produced its payload. Bad policy JSON,
+  # web container not ready, image missing the command. NOT an all-clear.
+  log "IDENTITY SCAN COULD NOT RUN (exit ${scan_status}) — this is not an all-clear."
+  demo_ntfy high "OpenH2O identity scan COULD NOT RUN" \
+    "$(hostname): scan_demo_identity produced no readable result after the demo reset (exit ${scan_status}). The demo is restored and serving, but NOTHING has checked it for real water-district names. Check $LOG."
+elif [ "$scan_violations" = "0" ]; then
+  log "reset-demo: identity scan clean — no real agency/district/farm/owner name on the restored demo."
+else
+  log "IDENTITY SCAN FAILED — ${scan_violations} real name(s) on the restored demo:"
+  printf '%s\n' "$scan_json" >>"$LOG"
+  # Build a body naming table, column and value. Capped at the first few
+  # findings so a mass violation cannot produce an unreadable push, and the cap
+  # says so — a truncated list read as a complete one is its own defect.
+  scan_body="$(printf '%s' "$scan_json" | docker compose exec -T web python -c '
+import json, sys
+
+CAP = 4
+VALUE_CHARS = 90
+data = json.load(sys.stdin)
+findings = data.get("findings", [])
+lines = []
+for f in findings[:CAP]:
+    value = f["value"]
+    if len(value) > VALUE_CHARS:
+        value = value[:VALUE_CHARS] + "..."
+    lines.append("%s.%s pk=%s = %s  (banned: %s)" % (
+        f["table"], f["column"], f["pk"], value, f["matched"]))
+if len(findings) > CAP:
+    lines.append("TRUNCATED - showing %d of %d findings; the rest are in the log."
+                 % (CAP, len(findings)))
+print("\n".join(lines))
+' 2>>"$LOG")" || scan_body=""
+  [ -n "$scan_body" ] || scan_body="See $LOG — ${scan_violations} findings, body could not be formatted."
+  demo_ntfy high "OpenH2O demo identity VIOLATION" \
+    "$(hostname): ${scan_violations} real agency/district/farm/owner name(s) are on the restored demo, which the honesty page says names no real water district at all.
+${scan_body}
+Demo was NOT rolled back - it is restored and serving. Fix the data or the golden."
 fi
 
 # ---------------------------------------------------------------------------
