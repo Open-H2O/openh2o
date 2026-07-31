@@ -45,6 +45,7 @@ calls it outside pytest entirely.
 """
 
 from datetime import date
+from decimal import Decimal
 
 #: The reporting period every seeded configuration shares. Fixed, because
 #: ``accounting.ReportingPeriod`` carries a ``reporting_period_no_overlap``
@@ -85,6 +86,16 @@ FIXTURE_MODELS = (
     (("surface",), "surface.PointOfDiversion"),
     (("accounting",), "accounting.ReportingPeriod"),
     (("reporting", "accounting"), "reporting.ReportSubmission"),
+    # ISS-097. `drinking` was the one enabled domain this table never named, and
+    # the consequence was measured rather than assumed: a probe running the real
+    # crawl visited 59 paths from 33 seeds and reached five drinking paths, all
+    # of them lists. With no facility, point or result row the lists render their
+    # empty states, so there is no row href to follow and the three detail routes
+    # Phase 98 added were never entered by any of the 30 configurations.
+    (("drinking",), "drinking.WaterSystem"),
+    (("drinking",), "drinking.SystemFacility"),
+    (("drinking",), "drinking.SamplingPoint"),
+    (("drinking",), "drinking.SampleResult"),
 )
 
 
@@ -209,5 +220,79 @@ def seed_droppable_fixture() -> dict:
             "reporting",
             factories.ReportSubmissionFactory(reporting_period=period),
         )
+
+    # -- drinking: the rows that give the crawl something to follow (ISS-097) --
+    #
+    # Two facilities, and the pair is the point. The crawl reaches a detail page
+    # only by following a row link off a list, so the lists have to be non-empty;
+    # but what these pages have to survive is the CROSS-MODULE link, and only a
+    # facility carrying a `well` exercises it. The second facility has no well on
+    # purpose, so the same template renders both arms of that condition — the arm
+    # no fixture happens to take is exactly where 101-02 found three defects.
+    #
+    # The well is guarded on `wells` separately from the block itself: `wells` is
+    # schema-resident, so with it demoted its tables must stay EMPTY
+    # (`test_schema_resident_module_tables_are_present_and_empty`), and the FK is
+    # simply left null there. `drinking` survives that configuration — it is the
+    # drinking-water utility flavor the module composition rule describes.
+    if is_enabled("drinking"):
+        system = factories.WaterSystemFactory(
+            pwsid="CA1900001", name="Fixture Water System"
+        )
+
+        linked_well = None
+        if is_enabled("wells"):
+            linked_well = factories.WellFactory(
+                name="Fixture Supply Well",
+                well_type=factories.WellTypeFactory(name="Fixture Supply Well Type"),
+            )
+
+        sourced = factories.SystemFacilityFactory(
+            system=system,
+            facility_id="F0001",
+            name="Fixture Source Facility",
+            facility_type="WL",
+            well=linked_well,
+        )
+        # Not a well, and not a source. `_present_choices` builds the facility
+        # filter from the types PRESENT in the database, so seeding two types
+        # renders two options and covers the branch a single-type fixture cannot.
+        unlinked = factories.SystemFacilityFactory(
+            system=system,
+            facility_id="F0002",
+            name="Fixture Treatment Facility",
+            facility_type="TP",
+            is_source=False,
+            well=None,
+        )
+
+        point = factories.SamplingPointFactory(
+            ps_code="CA1900001_F0001_001",
+            name="Fixture Sampling Point",
+            facility=sourced,
+        )
+        event = factories.SampleEventFactory(sampling_point=point)
+
+        # One of each `result_kind`, which is coverage nothing else in this
+        # repository has: the real Merced data is 22,311 rows of `numeric` and
+        # not one presence/absence row, so the rule that an *Absent* result must
+        # never render as a number had no page anywhere to be seen on.
+        numeric = factories.SampleResultFactory(
+            event=event,
+            analyte=factories.AnalyteFactory(name="Fixture Numeric Analyte"),
+            result_kind="numeric",
+            result_value=Decimal("0.004000"),
+            unit="mg/L",
+        )
+        presence = factories.SampleResultFactory(
+            event=event,
+            analyte=factories.AnalyteFactory(name="Fixture Presence Analyte"),
+            result_kind="presence_absence",
+            result_value=None,
+            presence=False,
+            unit="",
+        )
+
+        record("drinking", system, sourced, unlinked, point, numeric, presence)
 
     return created

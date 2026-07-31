@@ -1275,6 +1275,59 @@ def test_no_kept_page_reachable_by_a_link_returns_5xx(request, nav_mode):
     )
 
 
+#: The three Phase-98 drinking detail shapes, as prefixes. ISS-097 was filed
+#: because Plan 98-01 ASSUMED the crawl would reach them for free by following
+#: the new row links, and measurement said otherwise: it visited 59 paths and
+#: entered five drinking paths, every one of them a list.
+_DRINKING_DETAIL_PREFIXES = (
+    "/drinking/facilities/",
+    "/drinking/sampling-points/",
+    "/drinking/results/",
+)
+
+
+@pytest.mark.skipif(
+    "drinking" not in ENABLED_NAMES,
+    reason="This configuration drops drinking; its routes are supposed to 404.",
+)
+def test_the_crawl_reaches_a_drinking_detail_page(seeded_client):
+    """The coverage ISS-097 recorded as missing, pinned so it cannot go missing again.
+
+    An assumption about reachability is worth exactly nothing once it is wrong,
+    and this one was wrong for two phases while every gate stayed green — the
+    lists rendered their empty states, so there was no row href to follow and
+    nothing anywhere said so. Seeding drinking rows (tests/droppability/fixture.py)
+    is what closed it; this assertion is what keeps it closed.
+
+    Deliberately asserts on a DETAIL path rather than a count. "The crawl visits
+    more paths than before" would pass just as happily if the extra paths were
+    three more lists, which is the exact confusion the issue warns against.
+    """
+    result = crawl(seeded_client, KEPT_PAGES)
+
+    detail_paths = sorted(
+        path
+        for path in result.visited
+        if any(path.startswith(prefix) for prefix in _DRINKING_DETAIL_PREFIXES)
+        and path.rstrip("/").rsplit("/", 1)[-1].isdigit()
+    )
+
+    assert detail_paths, (
+        "The crawl reached no drinking detail page. It visited "
+        f"{len(result.visited)} paths from {len(KEPT_PAGES)} seeds, of which "
+        f"{sorted(p for p in result.visited if p.startswith('/drinking/'))} were "
+        "under /drinking/ — all lists. That is ISS-097 exactly: with no facility, "
+        "point or result row the lists render their empty states and there is no "
+        "row link to follow. Check seed_droppable_fixture still seeds `drinking`."
+    )
+
+    # And they rendered. A detail page reached and 500ing is a worse outcome than
+    # one never reached, because the crawl assertion above would already have
+    # caught it — this makes the reason explicit if both fire together.
+    broken = {p: result.visited[p] for p in detail_paths if result.visited[p] >= 500}
+    assert not broken, f"Drinking detail pages reached and failed: {broken}"
+
+
 def test_the_two_nav_modes_render_different_sidebars():
     """The mode cookie takes effect, so the parametrization above proves something.
 
