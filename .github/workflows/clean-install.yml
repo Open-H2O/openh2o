@@ -77,3 +77,102 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down -v
+
+  # Proves the demonstration content is honest: this build fails if a real water
+  # district, agency or farm name appears anywhere in it. The platform's own
+  # honesty page states that the groundwater side of the demonstration names no
+  # real water district at all — and for three days in July 2026 production
+  # served four of them as the holders of invented water rights, beneath that
+  # very sentence, with nothing in this repository able to notice.
+  #
+  # NOTE THE DELIBERATE OPPOSITE OF THE JOB ABOVE. `clean-install` proves the
+  # shipped software carries NO demo content. `demo-identity-guard` seeds the
+  # full demo and proves that content, when present, carries NO real names.
+  # They are opposite assertions and both must hold.
+  #
+  # This job makes ZERO external network calls beyond the container registry.
+  # `auto_populate` is the only networked step in `seed_merced`, and
+  # `--skip-auto-populate` replaces it with the committed
+  # `data/merced/flowlines.json`. If you ever find yourself adding a credential
+  # or a retry for an external API here, stop: something has gone wrong. A gate
+  # that goes red because USGS had a bad afternoon is one people learn to ignore.
+  demo-identity-guard:
+    runs-on: ubuntu-latest
+    # Backstop: a hung step fails here instead of running to the 6h runner limit.
+    # 25 rather than the 15 above because this job seeds 76 parcels, the full
+    # keyed ledger and three years of lab results — real work even offline,
+    # where the job above installs reference data only.
+    timeout-minutes: 25
+    env:
+      # Throwaway values for CI only — not secrets. Same as the job above.
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      SECRET_KEY: ci-clean-install-guard-not-a-secret
+      POSTGRES_DB: openh2o
+      POSTGRES_USER: openh2o
+      POSTGRES_PASSWORD: openh2o
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write throwaway CI .env
+        run: |
+          cat > .env <<'EOF'
+          SECRET_KEY=ci-clean-install-guard-not-a-secret
+          DJANGO_SETTINGS_MODULE=config.settings.local
+          POSTGRES_DB=openh2o
+          POSTGRES_USER=openh2o
+          POSTGRES_PASSWORD=openh2o
+          EOF
+
+      - name: Start PostGIS database
+        run: docker compose up -d --wait db
+
+      - name: Build web image
+        run: docker compose build web
+
+      - name: Migrate (fresh schema)
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py migrate --noinput
+
+      # Reference vocabularies. seed_merced depends on them: step 11 needs the
+      # wells module's `Production` well type and the drinking analyte list.
+      - name: Seed reference data
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py seed_data
+
+      # The boundary must exist BEFORE the fixture loads: flowlines.json names
+      # its boundary by natural key ("Merced Subbasin") rather than by pk,
+      # because the pk differs per deployment. seed_merced runs this same step
+      # again a moment later; it is idempotent.
+      - name: Seed the Merced boundary (the fixture's natural key target)
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py seed_merced_base
+
+      - name: Load the frozen flowlines (replaces the one networked step)
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py loaddata data/merced/flowlines.json
+
+      - name: Seed the FULL demo, offline
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py seed_merced --skip-auto-populate
+
+      # The gate. Exits non-zero on any finding, and the failure names table,
+      # column and value rather than just a count.
+      - name: Assert no real district/agency/farm name is on the demo
+        run: >-
+          docker compose run --rm
+          -e DJANGO_SETTINGS_MODULE -e SECRET_KEY
+          web python manage.py scan_demo_identity
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
