@@ -187,7 +187,16 @@ minutes, no key required). For real satellite-ET figures, set an OpenET key (see
 section 11) and run the ET sync; without it the demo uses representative
 face-value figures and is still internally coherent.
 
-Each sub-step is idempotent, so re-running is safe.
+Each sub-step is idempotent, so re-running is safe — with one deliberate
+exception. The operations step deletes and regenerates parcel and well geometry,
+so on a production instance (`DEBUG=False`) it refuses to run a *second* time
+over demo rows that already exist, rather than silently destroying hand-adjusted
+boundaries. A first-time seed on an empty database is unaffected and needs no
+flag. To rebuild the demo on purpose:
+
+```bash
+docker compose exec web python manage.py seed_merced --allow-prod-clobber
+```
 
 ---
 

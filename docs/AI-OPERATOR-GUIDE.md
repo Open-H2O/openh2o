@@ -77,6 +77,8 @@ docker compose exec web python manage.py seed_merced   # the Merced Subbasin dem
 ```
 This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — a fully populated example the agency can click through while you gather their real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed); for real satellite-ET numbers, add an OpenET key and run the ET sync (Phase 4). Each sub-step is idempotent, so re-running is safe.
 
+If you need to **rebuild** the demo later on this same server, add `--allow-prod-clobber`. The operations step regenerates parcel and well geometry, so it refuses a second run over demo rows that already exist unless you say so explicitly. The first run above needs no flag.
+
 ### Option B — Their real data
 Three import routes, in rough order of preference:
 

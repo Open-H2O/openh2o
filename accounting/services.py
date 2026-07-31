@@ -846,7 +846,16 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
              "supplies": {"surface": Decimal, "groundwater": Decimal,
                           "precip": Decimal},
              "supply_total": Decimal,            # surface + groundwater + precip
-             "net_vs_supply": Decimal}           # supply_total − consumptive_use_gross
+             "net_vs_supply": Decimal,           # supply_total − consumptive_use_gross
+             "calculation_runs": int}            # how many runs the sums came from
+
+    ``calculation_runs`` is the difference between "these parcels consumed no
+    water" and "nobody has ever asked" — and the three consumptive terms above
+    cannot tell you which, because both produce ``Decimal("0")`` (ISS-099).
+    Zero here means the demand figures are the ABSENCE of a measurement, not a
+    measurement of absence, and a caller that renders them as numbers is
+    publishing a claim the database never made. It costs nothing: the loop below
+    already visits exactly these rows.
     """
     parcel_ids = list(parcel_ids)
 
@@ -868,11 +877,13 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
     gross = Decimal("0")
     net = Decimal("0")
     precip = Decimal("0")
+    run_count = 0
     for parcel in Parcel.objects.filter(id__in=parcel_ids):
         for run in _calculation_runs_for_period(parcel, reporting_period):
             gross += run.gross_et_af or Decimal("0")
             net += run.net_consumptive_use_af or Decimal("0")
             precip += run.effective_precip_af or Decimal("0")
+            run_count += 1
 
     supply_total = surface + groundwater + precip
     return {
@@ -885,6 +896,11 @@ def consumptive_use_balance(parcel_ids, reporting_period=None):
         },
         "supply_total": supply_total,
         "net_vs_supply": supply_total - gross,
+        # Counted from the rows actually summed, NOT from a second query. A
+        # separate `.count()` could disagree with the loop the moment the
+        # membership rule in `runs_in_period` changes, and then the dashboard
+        # would claim a number was measured by rows it never added up.
+        "calculation_runs": run_count,
     }
 
 

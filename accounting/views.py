@@ -55,6 +55,7 @@ from accounting.services import (
     account_consumptive_balance,
     parcel_consumptive_balance,
     parse_ledger_csv,
+    runs_in_period,
     zone_carryover,
     zone_consumptive_balance,
 )
@@ -174,6 +175,11 @@ def dashboard(request):
 
             account_summaries.append({
                 "account": account,
+                # ISS-099: a row with no runs behind it has no consumptive-use
+                # measurement, and 0.00 would read as one. The template shows a
+                # dash instead — for the derived Net and Remaining columns too,
+                # since both subtract a demand figure that does not exist.
+                "has_calculations": cu["calculation_runs"] > 0,
                 "consumptive_use_gross": cu["consumptive_use_gross"],
                 "consumptive_use_net": cu["consumptive_use_net"],
                 "surface": cu["supplies"]["surface"],
@@ -221,6 +227,11 @@ def dashboard(request):
                 zone_remaining = None
             zone_summaries.append({
                 "zone": zone,
+                # ISS-099, same rule as the account rows above. Counted per zone
+                # rather than inherited from the deployment-wide flag: a zone
+                # whose parcels were all added after the last engine run has no
+                # measurement of its own even where the rest of the basin does.
+                "has_calculations": zcu["calculation_runs"] > 0,
                 "consumptive_use_gross": zcu["consumptive_use_gross"],
                 "consumptive_use_net": zcu["consumptive_use_net"],
                 "surface": zcu["supplies"]["surface"],
@@ -235,6 +246,44 @@ def dashboard(request):
 
     # Bottom-line: supplies minus estimated consumptive use.
     grand_net = grand_supply_total - grand_consumptive_use
+
+    # ISS-099 — "the engine has never run here", told apart from "demand really
+    # was zero". Both render 0.00, and the second is a finding while the first is
+    # a missing step, so a dashboard that cannot tell them apart reports a basin
+    # in perfect balance when nobody has measured it. That is what staging showed
+    # for two days after its 2026-07-28 rebuild.
+    #
+    # Asked over EVERY parcel's runs, deliberately NOT by summing the per-row
+    # `calculation_runs` above: those rows cover only parcels attached to an
+    # ACTIVE water account, so a deployment whose accounts are all inactive — or
+    # not yet created, which is every deployment on day one — would look
+    # calculated when nothing had run. `runs_in_period` is the single membership
+    # rule; asking any other way is how this codebase previously ended up with
+    # three answers to one question.
+    #
+    # Skipped entirely with no period selected: the template renders the "create
+    # your first reporting period" empty state there and never reaches the
+    # banner, and `runs_in_period(qs, None)` is a no-op that would count every
+    # run ever — an answer to a question nobody asked.
+    engine_has_never_run = False
+    has_calculation_plan = False
+    if selected_period is not None:
+        # Guarded on parcels existing: with no parcels this is a brand-new
+        # instance whose empty tables are honest, and telling that operator to
+        # run the calculation engine would send them at the wrong step entirely.
+        engine_has_never_run = (
+            Parcel.objects.exists()
+            and not runs_in_period(
+                CalculationRun.objects.all(), selected_period
+            ).exists()
+        )
+
+        # Named separately because it is the FIRST thing that has to be true, and
+        # the failure is otherwise cryptic: with no active plan
+        # `run_calculations` does not run and produce nothing, it hard-fails with
+        # `ValueError: no active CalculationPlan`. An operator told only to run
+        # the engine walks straight into that.
+        has_calculation_plan = CalculationPlan.active() is not None
 
     # "What needs attention" strip (E1): three exception counts a returning admin
     # should see at a glance, each derived from data the dashboard already has.
@@ -292,6 +341,8 @@ def dashboard(request):
         "grand_supply_groundwater": grand_supply_groundwater,
         "grand_supply_precip": grand_supply_precip,
         "grand_net": grand_net,
+        "engine_has_never_run": engine_has_never_run,
+        "has_calculation_plan": has_calculation_plan,
         "has_allocations": has_allocations,
         "periods_to_close": periods_to_close,
         "accounts_over_budget": accounts_over_budget,

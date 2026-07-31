@@ -6,7 +6,17 @@
   Counts come from the dashboard view (periods_to_close / stations_down /
   accounts_over_budget / attention_total). Sits at the top of the HTMX-swapped
   dashboard content, so the period-dependent over-budget count stays correct.
+
+  ISS-099: "All clear" is a CLAIM, and it is only true if the exception counters
+  above it could have seen a problem. When the calculation engine has never run,
+  every consumptive-use figure on the page is 0.00 for want of a measurement, so
+  `accounts_over_budget` is structurally zero — no account can exceed its
+  allocation by consuming nothing. The strip therefore has nothing to report and
+  says so, which read as reassurance on staging for two days. It now stands down
+  entirely and lets the banner below explain why, rather than certifying a basin
+  nobody has measured.
 {% endcomment %}
+{% if attention_total or not engine_has_never_run %}
 <div class="attention-strip card-raised">
   {% if attention_total %}
   <span class="attention-strip-label">Needs attention</span>
@@ -39,3 +49,4 @@
   </span>
   {% endif %}
 </div>
+{% endif %}

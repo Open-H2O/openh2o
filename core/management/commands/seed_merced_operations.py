@@ -369,15 +369,34 @@ class Command(BaseCommand):
         # settings, so refuse there unless the operator explicitly opts in. The
         # Makefile guard does not cover this command (it runs via manage.py), so
         # this is the only thing standing between a stray rerun and lost geometry.
+        #
+        # ...unless there is no geometry to lose. A guard that fires on an empty
+        # database protects nothing and blocks the one path the platform promises:
+        # DEPLOY.md §9 and docs/AI-OPERATOR-GUIDE.md Phase 3 both tell a
+        # production operator to run `seed_merced`, and until ISS-095 that command
+        # died at step 3 of 10 on every deployment that followed them, leaving a
+        # half-seeded database. The emptiness test below is scoped to exactly the
+        # rows the destructive path touches — the `MER-` prefixed parcels, wells
+        # and water rights `_flush` deletes and `_seed` regenerates — so any
+        # deployment holding even one of them keeps the guard in full.
         if not settings.DEBUG and not options.get("allow_prod_clobber"):
-            raise CommandError(
-                "Refusing to run the full Merced operations seed on a production "
-                "instance (DEBUG=False): it deletes and regenerates parcel/well "
-                "geometry, destroying any hand-drawn QGIS shapes on the live demo.\n"
-                "  • To add the diversion-reach journey to a live demo, use "
-                "--journey-only (safe, touches no parcels).\n"
-                "  • For an intentional first-time setup or rebuild, re-run with "
-                "--allow-prod-clobber."
+            existing = self._clobberable_row_count()
+            if existing:
+                raise CommandError(
+                    "Refusing to run the full Merced operations seed on a "
+                    "production instance (DEBUG=False): it deletes and "
+                    "regenerates parcel/well geometry, destroying any hand-drawn "
+                    f"QGIS shapes on the live demo ({existing} MER- demo rows "
+                    "would be rebuilt).\n"
+                    "  • To add the diversion-reach journey to a live demo, use "
+                    "--journey-only (safe, touches no parcels).\n"
+                    "  • For an intentional first-time setup or rebuild, re-run "
+                    "with --allow-prod-clobber."
+                )
+            self.stdout.write(
+                "No MER- parcels, wells or water rights exist yet — nothing to "
+                "clobber, so the production guard does not apply to this "
+                "first-time seed."
             )
 
         if options["flush"]:
@@ -429,6 +448,35 @@ class Command(BaseCommand):
     # Demo Valley rows are never touched. Delete links before the rows they
     # reference (defensive ordering, defensive ordering).
     # ------------------------------------------------------------------
+    def _clobberable_row_count(self) -> int:
+        """How many rows the destructive path would delete and rebuild.
+
+        Read `_flush` alongside this: the two must name the same rows, and the
+        three prefixes below are exactly the three it deletes by prefix
+        (`MER-APN-` parcels, `MER-W-` wells, `MER-WR-` water rights — the PODs
+        and link rows follow from the rights and parcels, so counting them again
+        would double-count the same loss). `_seed` rewrites all three through
+        `update_or_create` even without `--flush`, so the exposure is the same
+        either way.
+
+        Deliberately NOT a general "is this database empty" test. A deployment
+        carrying an agency's own imported parcels under their own numbering has
+        no MER- rows, and this seed neither deletes nor rewrites theirs — so
+        refusing there would be a false positive that blocks the demo for the
+        very operators the demo exists to convince.
+
+        Counted, not `.exists()`, so the refusal can say how much is at stake.
+        """
+        # Local import for the same reason `_flush` uses one: `surface` is an
+        # optional module (Phase 87) and this must not run at module scope.
+        from surface.models import WaterRight
+
+        return (
+            Parcel.objects.filter(parcel_number__startswith="MER-APN-").count()
+            + Well.objects.filter(well_registration_id__startswith="MER-W-").count()
+            + WaterRight.objects.filter(right_id__startswith="MER-WR-").count()
+        )
+
     def _flush(self):
         # Local import: `surface` is an optional module (Phase 87), so this must
         # not run at module scope.

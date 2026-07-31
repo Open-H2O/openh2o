@@ -175,7 +175,11 @@ fresh: guard-prod down ## Full reset: destroy volumes, rebuild, migrate, seed, M
 	@sleep 5
 	$(EXEC) migrate
 	$(EXEC) seed_data
-	$(EXEC) seed_merced
+	# --allow-prod-clobber because this target has ALREADY destroyed the volumes
+	# two lines up. On a DEBUG=False deployment seed_merced_operations' guard
+	# would otherwise stop the sequence at step 3 of 10 and leave the database
+	# half-seeded (ISS-095) — refusing to clobber data this target just deleted.
+	$(EXEC) seed_merced --allow-prod-clobber
 	@echo ""
 	@echo "Fresh environment ready (Merced Subbasin demo). Run 'make createsuperuser' to create an admin."
 

@@ -26,12 +26,27 @@
     <div class="budget-op">&minus;</div>
     <div class="budget-seg">
       <div class="budget-seg-label">Consumptive use</div>
+      {% comment %}
+        ISS-099: with no calculation runs behind it this is not a zero, it is a
+        blank. Rendering 0.00 here is what made the balance below read as a
+        healthy surplus on an unmeasured basin. The supplies term keeps its real
+        figure — ledger rows exist and are genuinely measured — so the panel
+        shows what is known beside what is not, rather than blanking the lot.
+      {% endcomment %}
+      {% if engine_has_never_run %}
+      <div class="budget-seg-value text-tertiary">Not calculated</div>
+      {% else %}
       <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+      {% endif %}
     </div>
     <div class="budget-op">&equals;</div>
     <div class="budget-seg">
       <div class="budget-seg-label">Balance</div>
+      {% if engine_has_never_run %}
+      <div class="budget-seg-value text-tertiary">&mdash;</div>
+      {% else %}
       <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+      {% endif %}
     </div>
   </div>
   <div class="budget-panel-foot">
@@ -48,6 +63,36 @@
     <span class="text-supply">Consumptive use</span> — the water crops actually consumed, estimated from satellite evapotranspiration (ET) — is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. The columns below show each area's consumptive use beside the supplies that met it; the balance is the supplies minus consumptive use.
   </p>
 </div>
+
+{% if engine_has_never_run %}
+{% comment %}
+  ISS-099 — the engine has produced nothing for this period, so every demand
+  figure above and below is absent rather than zero. Same shape as the
+  no-allocations banner beneath it, deliberately: both say "a setup step has not
+  happened yet", and the same idea must look the same (DESIGN.md).
+
+  Two branches because the order matters and the failure is otherwise cryptic —
+  without an active methodology plan `run_calculations` does not quietly produce
+  nothing, it raises `ValueError: no active CalculationPlan`.
+{% endcomment %}
+<div class="card-raised" style="border-left: 3px solid var(--color-accent); padding: var(--space-md);">
+  <p class="text-secondary text-sm" style="margin: 0;">
+    <strong class="text-primary">Consumptive use has not been calculated for this period.</strong>
+    The figures above show the supplies on record; the water actually consumed has not been
+    estimated yet, so the balance cannot be worked out. This is a missing step, not a finding &mdash;
+    it does not mean nothing was consumed.
+    {% if not has_calculation_plan %}
+    Start by setting up a calculation method on the
+    <a href="{% url 'accounting:methodology_settings' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Methodology</a>
+    page, then run the calculation engine.
+    {% else %}
+    A calculation method is set up on the
+    <a href="{% url 'accounting:methodology_settings' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Methodology</a>
+    page; the engine has not been run against it yet.
+    {% endif %}
+  </p>
+</div>
+{% endif %}
 
 {% if not has_allocations %}
 <!-- Info banner: no allocations for this period -->
@@ -93,8 +138,17 @@
           <span class="block text-secondary text-sm">{{ row.account.name }}</span>
           {% endif %}
         </td>
-        <td class="td-num text-usage">
-          {{ row.consumptive_use_gross|floatformat:2|intcomma }}
+        {% comment %}
+          ISS-099: three of these columns are demand-derived, and all three are
+          dashed together when this row has no calculation runs. Consumptive use
+          is the missing measurement itself; Net is supplies minus it, so with no
+          measurement it silently equals the full supply and reads as surplus;
+          Remaining is allocation minus it, so it reads as a completely unused
+          budget. The supply columns keep their figures — those are ledger rows,
+          measured whether or not the engine has ever run.
+        {% endcomment %}
+        <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
+          {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         <td class="td-num text-supply">
           {{ row.surface|floatformat:2|intcomma }}
@@ -108,15 +162,15 @@
         <td class="td-num-bold text-supply">
           {{ row.supply_total|floatformat:2|intcomma }}
         </td>
-        <td class="td-num-bold {% if row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.net_vs_supply|floatformat:2|intcomma }}
+        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+          {% if row.has_calculations %}{{ row.net_vs_supply|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% if has_allocations %}
         <td class="td-num">
           {{ row.allocation|floatformat:2|intcomma }}
         </td>
-        <td class="td-num-bold {% if row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.remaining|floatformat:2|intcomma }}
+        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+          {% if row.has_calculations %}{{ row.remaining|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% endif %}
       </tr>
@@ -159,8 +213,14 @@
       {% for row in zone_summaries %}
       <tr>
         <td class="font-semibold">{{ row.zone.name }}</td>
-        <td class="td-num text-usage">
-          {{ row.consumptive_use_gross|floatformat:2|intcomma }}
+        {% comment %}
+          ISS-099, same three demand-derived columns as the account table above.
+          Carried forward is NOT dashed: it is last year's closing position,
+          already computed and stored, and true whatever this period's engine has
+          or has not done.
+        {% endcomment %}
+        <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
+          {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         <td class="td-num text-supply">
           {{ row.surface|floatformat:2|intcomma }}
@@ -174,8 +234,8 @@
         <td class="td-num-bold text-supply">
           {{ row.supply_total|floatformat:2|intcomma }}
         </td>
-        <td class="td-num-bold {% if row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.net_vs_supply|floatformat:2|intcomma }}
+        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+          {% if row.has_calculations %}{{ row.net_vs_supply|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% if has_allocations %}
         <td class="td-num">
@@ -184,8 +244,8 @@
         <td class="td-num {% if row.carryover > 0 %}text-surplus{% elif row.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
           {% if row.carryover > 0 %}+{% endif %}{{ row.carryover|floatformat:2|intcomma }}
         </td>
-        <td class="td-num-bold {% if row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {{ row.remaining|floatformat:2|intcomma }}
+        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+          {% if row.has_calculations %}{{ row.remaining|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% endif %}
       </tr>

@@ -64,6 +64,14 @@ cache, step 8 falls back to face-value sizing and the demo is still coherent.
 
 Each sub-command is idempotent, so re-running is safe. Step 2 is a live
 network fetch (a few minutes); everything else is local.
+
+On a DEBUG=False deployment step 4 guards itself, because it deletes and
+regenerates parcel/well geometry. A FIRST-TIME seed passes straight through —
+with no ``MER-`` parcels or wells in the database there is nothing to clobber.
+RE-running over an existing demo is refused unless you pass
+``--allow-prod-clobber``, which this command forwards to step 4. That is the
+whole of ISS-095: the flag had nowhere to enter, so ``make fresh`` and the
+DEPLOY.md/AI-OPERATOR-GUIDE seed instruction both died at step 3 of 10.
 """
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -108,12 +116,92 @@ SEQUENCE = [
     ("seed_merced_drinking", {}),
 ]
 
+#: Sub-commands that accept ``--allow-prod-clobber``, so this command can forward
+#: it (ISS-095). Only ``seed_merced_operations`` guards on ``DEBUG`` today, and
+#: before this existed there was no way to pass the flag through — so the
+#: documented "full reset" died at step 3 of 10 on every DEBUG=False deployment,
+#: leaving a wiped database with only steps 1-3 in it.
+#:
+#: Declared rather than introspected at call time, because forwarding a flag to a
+#: command that does not define it is a hard ``TypeError`` mid-sequence — after
+#: earlier steps have already written rows. ``tests/test_seed_merced_prod_clobber.py``
+#: asserts this tuple and the real parsers describe each other exactly, so adding
+#: a guarded command to SEQUENCE without listing it here fails the suite instead
+#: of failing a rebuild.
+ACCEPTS_PROD_CLOBBER = ("seed_merced_operations",)
+
 
 class Command(BaseCommand):
     help = "Run the full Merced Subbasin demo seed sequence in dependency order."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--allow-prod-clobber", action="store_true",
+            help="Forward --allow-prod-clobber to the sub-commands that guard on "
+            "DEBUG=False. Required for a deliberate REBUILD of a production "
+            "instance that already holds MER- demo rows; a genuinely first-time "
+            "seed needs no flag, because there is nothing to clobber.",
+        )
+
     def handle(self, *args, **options):
         for cmd, kwargs in SEQUENCE:
+            if options.get("allow_prod_clobber") and cmd in ACCEPTS_PROD_CLOBBER:
+                kwargs = {**kwargs, "allow_prod_clobber": True}
             self.stdout.write(self.style.MIGRATE_HEADING(f"\n=== {cmd} ==="))
             call_command(cmd, stdout=self.stdout, **kwargs)
-        self.stdout.write(self.style.SUCCESS("\nMerced Subbasin demo fully seeded."))
+        self.stdout.write(self.style.SUCCESS("\nMerced Subbasin demo seeded."))
+        self._report_engine_gap()
+
+    def _report_engine_gap(self):
+        """Say what this sequence deliberately did NOT do (ISS-099).
+
+        This command used to sign off with "fully seeded" — after skipping the ET
+        cache, the CalculationPlan and the engine run, three exclusions recorded
+        only in the docstring above. An operator who stopped here got a dashboard
+        reading consumptive use 0.00 for every account and zone, which is not the
+        demo working; it is the demo with its headline number missing.
+
+        Checked rather than printed unconditionally, so the message is a
+        description of THIS database and not a standing disclaimer that gets
+        skimmed. Where the operator ran the ET sync first, they are told so.
+        """
+        from accounting.models import CalculationPlan, CalculationRun
+        from datasync.models import OpenETCache
+
+        missing = []
+        if not OpenETCache.objects.exists():
+            missing.append(
+                "  • No satellite ET data. Run `sync_openet_parcels` and "
+                "`sync_precip_parcels` (needs an OpenET key; without them the "
+                "ledgers fall back to face-value sizing)."
+            )
+        if CalculationPlan.active() is None:
+            missing.append(
+                "  • No active calculation method. Run `seed_calculation_plan` "
+                "— without it `run_calculations` fails with `ValueError: no "
+                "active CalculationPlan`."
+            )
+        if not CalculationRun.objects.exists():
+            missing.append(
+                "  • The calculation engine has never run. Run "
+                "`run_calculations` last, once the two above are in place."
+            )
+
+        if not missing:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "The calculation engine has output in this database — the "
+                    "dashboard's consumptive-use figures are real."
+                )
+            )
+            return
+
+        self.stdout.write(
+            self.style.WARNING(
+                "\nNOT seeded by this command, by design — until these are done "
+                "the dashboard shows no consumptive use, and its balance is "
+                "supplies only:"
+            )
+        )
+        for line in missing:
+            self.stdout.write(self.style.WARNING(line))
