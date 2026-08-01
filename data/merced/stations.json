@@ -2,6 +2,7 @@
  {
   "external_station_id": "142",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1861,
   "lon": -120.6829,
   "notes": "",
@@ -22,6 +23,7 @@
  {
   "external_station_id": "AMR",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.46806,
   "lon": -120.53889,
   "notes": "",
@@ -38,6 +40,7 @@
  {
   "external_station_id": "BAR",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.367,
   "lon": -120.217,
   "notes": "",
@@ -58,6 +61,7 @@
  {
   "external_station_id": "BDV",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.3328,
   "lon": -120.3944,
   "notes": "",
@@ -74,6 +78,7 @@
  {
   "external_station_id": "BPL",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3667,
   "lon": -120.61,
   "notes": "",
@@ -94,6 +99,7 @@
  {
   "external_station_id": "BPO",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3767,
   "lon": -120.275,
   "notes": "",
@@ -114,6 +120,7 @@
  {
   "external_station_id": "BSD",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.2547,
   "lon": -120.7194,
   "notes": "",
@@ -129,6 +136,7 @@
  {
   "external_station_id": "BUR",
   "is_active": true,
+  "last_data_at": "2026-08-01T07:00:00+00:00",
   "lat": 37.377,
   "lon": -120.275,
   "notes": "",
@@ -146,6 +154,7 @@
  {
   "external_station_id": "CRS",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.425,
   "lon": -120.663,
   "notes": "",
@@ -166,6 +175,7 @@
  {
   "external_station_id": "CVR",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3803,
   "lon": -120.0769,
   "notes": "",
@@ -186,6 +196,7 @@
  {
   "external_station_id": "DML",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.22516,
   "lon": -120.19852,
   "notes": "",
@@ -200,6 +211,7 @@
  {
   "external_station_id": "EBM",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.205,
   "lon": -120.6981,
   "notes": "",
@@ -215,6 +227,7 @@
  {
   "external_station_id": "EW3",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.4775,
   "lon": -120.70306,
   "notes": "",
@@ -235,6 +248,7 @@
  {
   "external_station_id": "FFB",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.30994,
   "lon": -120.931038,
   "notes": "",
@@ -255,6 +269,7 @@
  {
   "external_station_id": "H59",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.47028,
   "lon": -120.5,
   "notes": "",
@@ -271,6 +286,7 @@
  {
   "external_station_id": "M59",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.4697,
   "lon": -120.50275,
   "notes": "",
@@ -291,6 +307,7 @@
  {
   "external_station_id": "MAR",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.292,
   "lon": -120.147,
   "notes": "",
@@ -311,6 +328,7 @@
  {
   "external_station_id": "MBH",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.518223,
   "lon": -120.380196,
   "notes": "",
@@ -331,6 +349,7 @@
  {
   "external_station_id": "MBM",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.201025,
   "lon": -120.696514,
   "notes": "",
@@ -345,6 +364,7 @@
  {
   "external_station_id": "MBN",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.454224,
   "lon": -120.608803,
   "notes": "",
@@ -365,6 +385,7 @@
  {
   "external_station_id": "MCE",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.313611,
   "lon": -120.386389,
   "notes": "",
@@ -385,6 +406,7 @@
  {
   "external_station_id": "MCK",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.3092,
   "lon": -120.4456,
   "notes": "",
@@ -400,6 +422,7 @@
  {
   "external_station_id": "MCS",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.52,
   "lon": -120.309,
   "notes": "",
@@ -420,6 +443,7 @@
  {
   "external_station_id": "MDB",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.488056,
   "lon": -120.655281,
   "notes": "",
@@ -440,6 +464,7 @@
  {
   "external_station_id": "MDS",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.52,
   "lon": -120.309,
   "notes": "",
@@ -460,6 +485,7 @@
  {
   "external_station_id": "MFF",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.523,
   "lon": -120.329,
   "notes": "",
@@ -480,6 +506,7 @@
  {
   "external_station_id": "MFS",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.283,
   "lon": -120.517,
   "notes": "",
@@ -500,6 +527,7 @@
  {
   "external_station_id": "MGS",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.50383,
   "lon": -120.4524,
   "notes": "",
@@ -520,6 +548,7 @@
  {
   "external_station_id": "MHA",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3708,
   "lon": -120.83588,
   "notes": "",
@@ -540,6 +569,7 @@
  {
   "external_station_id": "MHT",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.51459,
   "lon": -120.37148,
   "notes": "",
@@ -560,6 +590,7 @@
  {
   "external_station_id": "MMF",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.522,
   "lon": -120.331,
   "notes": "",
@@ -580,6 +611,7 @@
  {
   "external_station_id": "MMS",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.52239,
   "lon": -120.31111,
   "notes": "",
@@ -600,6 +632,7 @@
  {
   "external_station_id": "MRC",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.522,
   "lon": -120.331,
   "notes": "",
@@ -620,6 +653,7 @@
  {
   "external_station_id": "MRQ",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.28,
   "lon": -120.1617,
   "notes": "",
@@ -640,6 +674,7 @@
  {
   "external_station_id": "MSF",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.43362,
   "lon": -120.65454,
   "notes": "",
@@ -660,6 +695,7 @@
  {
   "external_station_id": "MSG",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.2625,
   "lon": -120.9056,
   "notes": "",
@@ -680,6 +716,7 @@
  {
   "external_station_id": "MSJ",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3476,
   "lon": -120.97183,
   "notes": "",
@@ -700,6 +737,7 @@
  {
   "external_station_id": "MSN",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.502,
   "lon": -120.451,
   "notes": "",
@@ -715,6 +753,7 @@
  {
   "external_station_id": "MST",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.371,
   "lon": -120.931,
   "notes": "",
@@ -735,6 +774,7 @@
  {
   "external_station_id": "MWR",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.177254,
   "lon": -120.652117,
   "notes": "",
@@ -755,6 +795,7 @@
  {
   "external_station_id": "NEW",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.350494,
   "lon": -120.97715,
   "notes": "",
@@ -775,6 +816,7 @@
  {
   "external_station_id": "OCD",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.21911,
   "lon": -120.699084,
   "notes": "",
@@ -790,6 +832,7 @@
  {
   "external_station_id": "OWN",
   "is_active": true,
+  "last_data_at": "2026-08-01T07:00:00+00:00",
   "lat": 37.282,
   "lon": -120.187,
   "notes": "",
@@ -808,6 +851,7 @@
  {
   "external_station_id": "OWQ",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.2733,
   "lon": -120.2783,
   "notes": "",
@@ -828,6 +872,7 @@
  {
   "external_station_id": "SAN",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.182,
   "lon": -120.794,
   "notes": "",
@@ -848,6 +893,7 @@
  {
   "external_station_id": "SJH",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.05542,
   "lon": -120.548302,
   "notes": "",
@@ -863,6 +909,7 @@
  {
   "external_station_id": "SJS",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.295,
   "lon": -120.851,
   "notes": "",
@@ -883,6 +930,7 @@
  {
   "external_station_id": "SMN",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.347214,
   "lon": -120.976181,
   "notes": "",
@@ -903,6 +951,7 @@
  {
   "external_station_id": "SSH",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.2478,
   "lon": -120.8511,
   "notes": "",
@@ -923,6 +972,7 @@
  {
   "external_station_id": "ST3",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.33028,
   "lon": -120.81444,
   "notes": "",
@@ -943,6 +993,7 @@
  {
   "external_station_id": "SWA",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.11532,
   "lon": -120.587,
   "notes": "",
@@ -958,6 +1009,7 @@
  {
   "external_station_id": "TID",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.501,
   "lon": -120.854,
   "notes": "",
@@ -978,6 +1030,7 @@
  {
   "external_station_id": "UCM",
   "is_active": true,
+  "last_data_at": "2026-08-01T06:00:00+00:00",
   "lat": 37.36911,
   "lon": -120.42013,
   "notes": "",
@@ -992,6 +1045,7 @@
  {
   "external_station_id": "W90",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1284,
   "lon": -120.5848,
   "notes": "",
@@ -1012,6 +1066,7 @@
  {
   "external_station_id": "W92",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1045,
   "lon": -120.5916,
   "notes": "",
@@ -1032,6 +1087,7 @@
  {
   "external_station_id": "105",
   "is_active": false,
+  "last_data_at": "2026-06-05T07:00:00+00:00",
   "lat": 36.634028,
   "lon": -120.38181,
   "notes": "",
@@ -1050,6 +1106,7 @@
  {
   "external_station_id": "124",
   "is_active": false,
+  "last_data_at": "2026-06-05T07:00:00+00:00",
   "lat": 36.890056,
   "lon": -120.73141,
   "notes": "Nearest representative CIMIS station \u2014 ~24 km outside the Merced Subbasin (the subbasin has no CIMIS station of its own; the only one, Merced #148, was decommissioned in 2024).",
@@ -1068,6 +1125,7 @@
  {
   "external_station_id": "145",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.016528,
   "lon": -120.18639,
   "notes": "",
@@ -1086,6 +1144,7 @@
  {
   "external_station_id": "148",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.314139,
   "lon": -120.3867,
   "notes": "",
@@ -1104,6 +1163,7 @@
  {
   "external_station_id": "161",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.438944,
   "lon": -121.13851,
   "notes": "",
@@ -1122,6 +1182,7 @@
  {
   "external_station_id": "168",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.553111,
   "lon": -120.77928,
   "notes": "",
@@ -1140,6 +1201,7 @@
  {
   "external_station_id": "188",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.02,
   "lon": -120.15,
   "notes": "",
@@ -1158,6 +1220,7 @@
  {
   "external_station_id": "194",
   "is_active": false,
+  "last_data_at": "2026-06-05T07:00:00+00:00",
   "lat": 37.727194,
   "lon": -120.85086,
   "notes": "",
@@ -1176,6 +1239,7 @@
  {
   "external_station_id": "206",
   "is_active": false,
+  "last_data_at": "2026-06-05T07:00:00+00:00",
   "lat": 37.545869,
   "lon": -120.75453,
   "notes": "Nearest representative CIMIS station \u2014 ~14 km outside the Merced Subbasin (the subbasin has no CIMIS station of its own; the only one, Merced #148, was decommissioned in 2024).",
@@ -1194,6 +1258,7 @@
  {
   "external_station_id": "269",
   "is_active": false,
+  "last_data_at": "2026-06-05T07:00:00+00:00",
   "lat": 37.108935,
   "lon": -120.797387,
   "notes": "Nearest representative CIMIS station \u2014 ~7 km outside the Merced Subbasin (the subbasin has no CIMIS station of its own; the only one, Merced #148, was decommissioned in 2024).",
@@ -1212,6 +1277,7 @@
  {
   "external_station_id": "40",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.683333,
   "lon": -120.38722,
   "notes": "",
@@ -1230,6 +1296,7 @@
  {
   "external_station_id": "56",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.096694,
   "lon": -120.7539,
   "notes": "",
@@ -1248,6 +1315,7 @@
  {
   "external_station_id": "7",
   "is_active": false,
+  "last_data_at": "2026-06-05T07:00:00+00:00",
   "lat": 36.851222,
   "lon": -120.59092,
   "notes": "Nearest representative CIMIS station \u2014 ~22 km outside the Merced Subbasin (the subbasin has no CIMIS station of its own; the only one, Merced #148, was decommissioned in 2024).",
@@ -1266,6 +1334,7 @@
  {
   "external_station_id": "71",
   "is_active": false,
+  "last_data_at": "2026-06-05T07:00:00+00:00",
   "lat": 37.645222,
   "lon": -121.18776,
   "notes": "",
@@ -1284,6 +1353,7 @@
  {
   "external_station_id": "92",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.231861,
   "lon": -120.88082,
   "notes": "",
@@ -1302,6 +1372,7 @@
  {
   "external_station_id": "370000N1200000W001",
   "is_active": false,
+  "last_data_at": "2024-03-19T18:30:00+00:00",
   "lat": 37.38973,
   "lon": -120.62316,
   "notes": "",
@@ -1316,6 +1387,7 @@
  {
   "external_station_id": "370463N1208110W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.04636,
   "lon": -120.811,
   "notes": "",
@@ -1330,6 +1402,7 @@
  {
   "external_station_id": "370516N1202571W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0516,
   "lon": -120.2571,
   "notes": "",
@@ -1344,6 +1417,7 @@
  {
   "external_station_id": "370539N1202948W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05455,
   "lon": -120.28628,
   "notes": "",
@@ -1358,6 +1432,7 @@
  {
   "external_station_id": "370692N1200745W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.06922,
   "lon": -120.07446,
   "notes": "",
@@ -1372,6 +1447,7 @@
  {
   "external_station_id": "370721N1205425W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.07218,
   "lon": -120.54256,
   "notes": "",
@@ -1386,6 +1462,7 @@
  {
   "external_station_id": "370721N1205425W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.07218,
   "lon": -120.54256,
   "notes": "",
@@ -1400,6 +1477,7 @@
  {
   "external_station_id": "370732N1202342W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0732,
   "lon": -120.2342,
   "notes": "",
@@ -1414,6 +1492,7 @@
  {
   "external_station_id": "370747N1201933W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.07499,
   "lon": -120.19475,
   "notes": "",
@@ -1428,6 +1507,7 @@
  {
   "external_station_id": "370874N1205372W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0874,
   "lon": -120.5372,
   "notes": "",
@@ -1442,6 +1522,7 @@
  {
   "external_station_id": "370902N1203741W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0902,
   "lon": -120.3741,
   "notes": "",
@@ -1456,6 +1537,7 @@
  {
   "external_station_id": "370904N1202610W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0904,
   "lon": -120.261,
   "notes": "",
@@ -1470,6 +1552,7 @@
  {
   "external_station_id": "370904N1202610W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0904,
   "lon": -120.261,
   "notes": "",
@@ -1484,6 +1567,7 @@
  {
   "external_station_id": "370929N1209258W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.09294,
   "lon": -120.9258,
   "notes": "",
@@ -1498,6 +1582,7 @@
  {
   "external_station_id": "370985N1204894W002",
   "is_active": true,
+  "last_data_at": "2026-03-17T17:42:00+00:00",
   "lat": 37.09856,
   "lon": -120.48948,
   "notes": "",
@@ -1512,6 +1597,7 @@
  {
   "external_station_id": "371049N1203296W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1049,
   "lon": -120.3296,
   "notes": "",
@@ -1526,6 +1612,7 @@
  {
   "external_station_id": "371075N1209314W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1075,
   "lon": -120.93136,
   "notes": "",
@@ -1540,6 +1627,7 @@
  {
   "external_station_id": "371123N1202020W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1123,
   "lon": -120.202,
   "notes": "",
@@ -1554,6 +1642,7 @@
  {
   "external_station_id": "371160N1204207W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.11664,
   "lon": -120.41927,
   "notes": "",
@@ -1568,6 +1657,7 @@
  {
   "external_station_id": "371219N1202818W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.12195,
   "lon": -120.28182,
   "notes": "",
@@ -1582,6 +1672,7 @@
  {
   "external_station_id": "371219N1202818W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.12195,
   "lon": -120.28182,
   "notes": "",
@@ -1596,6 +1687,7 @@
  {
   "external_station_id": "371332N1203827W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.13329,
   "lon": -120.38274,
   "notes": "",
@@ -1610,6 +1702,7 @@
  {
   "external_station_id": "371332N1203827W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.13329,
   "lon": -120.38274,
   "notes": "",
@@ -1624,6 +1717,7 @@
  {
   "external_station_id": "371347N1204928W002",
   "is_active": true,
+  "last_data_at": "2026-03-17T17:19:00+00:00",
   "lat": 37.13473,
   "lon": -120.49286,
   "notes": "",
@@ -1638,6 +1732,7 @@
  {
   "external_station_id": "371365N1202206W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.13709,
   "lon": -120.22047,
   "notes": "",
@@ -1652,6 +1747,7 @@
  {
   "external_station_id": "371365N1202206W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.13709,
   "lon": -120.22047,
   "notes": "",
@@ -1666,6 +1762,7 @@
  {
   "external_station_id": "371365N1202206W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.13709,
   "lon": -120.22047,
   "notes": "",
@@ -1680,6 +1777,7 @@
  {
   "external_station_id": "371635N1208181W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1635,
   "lon": -120.81814,
   "notes": "",
@@ -1694,6 +1792,7 @@
  {
   "external_station_id": "371710N1203746W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.171,
   "lon": -120.3746,
   "notes": "",
@@ -1708,6 +1807,7 @@
  {
   "external_station_id": "371827N1203254W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.18316,
   "lon": -120.32544,
   "notes": "",
@@ -1722,6 +1822,7 @@
  {
   "external_station_id": "371827N1203254W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.18316,
   "lon": -120.32544,
   "notes": "",
@@ -1736,6 +1837,7 @@
  {
   "external_station_id": "371902N1201985W001",
   "is_active": true,
+  "last_data_at": "2026-03-16T18:26:00+00:00",
   "lat": 37.1902,
   "lon": -120.1985,
   "notes": "",
@@ -1750,6 +1852,7 @@
  {
   "external_station_id": "372292N1204837W001",
   "is_active": true,
+  "last_data_at": "2026-03-17T16:12:00+00:00",
   "lat": 37.2292,
   "lon": -120.4837,
   "notes": "",
@@ -1764,6 +1867,7 @@
  {
   "external_station_id": "372538N1203160W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.25385,
   "lon": -120.31603,
   "notes": "",
@@ -1778,6 +1882,7 @@
  {
   "external_station_id": "372617N1204747W001",
   "is_active": true,
+  "last_data_at": "2026-03-17T15:21:00+00:00",
   "lat": 37.26173,
   "lon": -120.47461,
   "notes": "",
@@ -1792,6 +1897,7 @@
  {
   "external_station_id": "372734N1203071W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.27332,
   "lon": -120.30705,
   "notes": "",
@@ -1806,6 +1912,7 @@
  {
   "external_station_id": "372734N1203071W002",
   "is_active": true,
+  "last_data_at": "2026-03-16T16:37:00+00:00",
   "lat": 37.29644,
   "lon": -120.37487,
   "notes": "",
@@ -1820,6 +1927,7 @@
  {
   "external_station_id": "372806N1205241W001",
   "is_active": true,
+  "last_data_at": "2026-03-17T15:02:00+00:00",
   "lat": 37.2806,
   "lon": -120.52411,
   "notes": "",
@@ -1834,6 +1942,7 @@
  {
   "external_station_id": "372904N1204207W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.29038,
   "lon": -120.45288,
   "notes": "",
@@ -1848,6 +1957,7 @@
  {
   "external_station_id": "372904N1204529W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.29038,
   "lon": -120.45288,
   "notes": "",
@@ -1862,6 +1972,7 @@
  {
   "external_station_id": "372904N1204529W002",
   "is_active": true,
+  "last_data_at": "2026-03-03T21:22:00+00:00",
   "lat": 37.29038,
   "lon": -120.45288,
   "notes": "",
@@ -1876,6 +1987,7 @@
  {
   "external_station_id": "372904N1204529W003",
   "is_active": true,
+  "last_data_at": "2026-03-03T21:34:00+00:00",
   "lat": 37.29038,
   "lon": -120.45288,
   "notes": "",
@@ -1890,6 +2002,7 @@
  {
   "external_station_id": "372991N1209446W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.29914,
   "lon": -120.94467,
   "notes": "",
@@ -1904,6 +2017,7 @@
  {
   "external_station_id": "373083N1209326W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.30833,
   "lon": -120.93264,
   "notes": "",
@@ -1918,6 +2032,7 @@
  {
   "external_station_id": "373166N1207091W001",
   "is_active": true,
+  "last_data_at": "2026-03-13T19:43:00+00:00",
   "lat": 37.3167,
   "lon": -120.70898,
   "notes": "",
@@ -1932,6 +2047,7 @@
  {
   "external_station_id": "373202N1208591W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.32023,
   "lon": -120.85913,
   "notes": "",
@@ -1946,6 +2062,7 @@
  {
   "external_station_id": "373260N1204432W001",
   "is_active": true,
+  "last_data_at": "2026-03-05T22:14:00+00:00",
   "lat": 37.32603,
   "lon": -120.44316,
   "notes": "",
@@ -1960,6 +2077,7 @@
  {
   "external_station_id": "373260N1204432W002",
   "is_active": true,
+  "last_data_at": "2026-03-05T22:16:00+00:00",
   "lat": 37.32603,
   "lon": -120.44316,
   "notes": "",
@@ -1974,6 +2092,7 @@
  {
   "external_station_id": "373260N1204432W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.32603,
   "lon": -120.44316,
   "notes": "",
@@ -1988,6 +2107,7 @@
  {
   "external_station_id": "373260N1204432W004",
   "is_active": true,
+  "last_data_at": "2026-03-05T22:20:00+00:00",
   "lat": 37.32603,
   "lon": -120.44316,
   "notes": "",
@@ -2002,6 +2122,7 @@
  {
   "external_station_id": "373260N1204880W004",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.32603,
   "lon": -120.48801,
   "notes": "",
@@ -2016,6 +2137,7 @@
  {
   "external_station_id": "373262N1208920W001",
   "is_active": true,
+  "last_data_at": "2026-03-23T07:00:00+00:00",
   "lat": 37.32627,
   "lon": -120.89207,
   "notes": "",
@@ -2030,6 +2152,7 @@
  {
   "external_station_id": "373302N1208144W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.33028,
   "lon": -120.81444,
   "notes": "",
@@ -2044,6 +2167,7 @@
  {
   "external_station_id": "373304N1208447W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3304,
   "lon": -120.8447,
   "notes": "",
@@ -2058,6 +2182,7 @@
  {
   "external_station_id": "373306N1208433W001",
   "is_active": true,
+  "last_data_at": "2026-03-23T07:00:00+00:00",
   "lat": 37.33065,
   "lon": -120.84336,
   "notes": "",
@@ -2072,6 +2197,7 @@
  {
   "external_station_id": "373457N1205429W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.34607,
   "lon": -120.54089,
   "notes": "",
@@ -2086,6 +2212,7 @@
  {
   "external_station_id": "373496N1205890W001",
   "is_active": true,
+  "last_data_at": "2026-03-05T17:00:00+00:00",
   "lat": 37.34955,
   "lon": -120.58897,
   "notes": "",
@@ -2100,6 +2227,7 @@
  {
   "external_station_id": "373510N1209113W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.35102,
   "lon": -120.91133,
   "notes": "",
@@ -2114,6 +2242,7 @@
  {
   "external_station_id": "373510N1209114W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.35101,
   "lon": -120.91138,
   "notes": "",
@@ -2128,6 +2257,7 @@
  {
   "external_station_id": "373532N1206432W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3531,
   "lon": -120.64383,
   "notes": "",
@@ -2142,6 +2272,7 @@
  {
   "external_station_id": "373603N1204695W001",
   "is_active": true,
+  "last_data_at": "2026-03-05T21:51:00+00:00",
   "lat": 37.36033,
   "lon": -120.46956,
   "notes": "",
@@ -2156,6 +2287,7 @@
  {
   "external_station_id": "373877N1208027W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.38773,
   "lon": -120.80275,
   "notes": "",
@@ -2170,6 +2302,7 @@
  {
   "external_station_id": "373877N1208027W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.38777,
   "lon": -120.80273,
   "notes": "",
@@ -2184,6 +2317,7 @@
  {
   "external_station_id": "373877N1208027W005",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.38777,
   "lon": -120.80273,
   "notes": "",
@@ -2198,6 +2332,7 @@
  {
   "external_station_id": "373877N1208028W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.38774,
   "lon": -120.8028,
   "notes": "",
@@ -2212,6 +2347,7 @@
  {
   "external_station_id": "373968N1208146W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.39668,
   "lon": -120.81349,
   "notes": "",
@@ -2226,6 +2362,7 @@
  {
   "external_station_id": "373973N1208003W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.39737,
   "lon": -120.80035,
   "notes": "",
@@ -2240,6 +2377,7 @@
  {
   "external_station_id": "373973N1208003W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.39737,
   "lon": -120.80035,
   "notes": "",
@@ -2254,6 +2392,7 @@
  {
   "external_station_id": "373973N1209044W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.39738,
   "lon": -120.90442,
   "notes": "",
@@ -2268,6 +2407,7 @@
  {
   "external_station_id": "374146N1208602W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.41447,
   "lon": -120.86036,
   "notes": "",
@@ -2282,6 +2422,7 @@
  {
   "external_station_id": "374289N1206673W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.42893,
   "lon": -120.66742,
   "notes": "",
@@ -2296,6 +2437,7 @@
  {
   "external_station_id": "374289N1206673W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.42893,
   "lon": -120.66742,
   "notes": "",
@@ -2310,6 +2452,7 @@
  {
   "external_station_id": "374289N1206673W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.42893,
   "lon": -120.66742,
   "notes": "",
@@ -2324,6 +2467,7 @@
  {
   "external_station_id": "374296N1208907W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.42986,
   "lon": -120.89066,
   "notes": "",
@@ -2338,6 +2482,7 @@
  {
   "external_station_id": "374305N1209321W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.43053,
   "lon": -120.93104,
   "notes": "",
@@ -2352,6 +2497,7 @@
  {
   "external_station_id": "374416N1206561W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.44169,
   "lon": -120.65616,
   "notes": "",
@@ -2366,6 +2512,7 @@
  {
   "external_station_id": "374421N1205407W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.44218,
   "lon": -120.54066,
   "notes": "",
@@ -2380,6 +2527,7 @@
  {
   "external_station_id": "374499N1207220W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.44997,
   "lon": -120.72207,
   "notes": "",
@@ -2394,6 +2542,7 @@
  {
   "external_station_id": "374501N1207220W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.45016,
   "lon": -120.72205,
   "notes": "",
@@ -2408,6 +2557,7 @@
  {
   "external_station_id": "374527N1209768W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.45272,
   "lon": -120.97657,
   "notes": "",
@@ -2422,6 +2572,7 @@
  {
   "external_station_id": "374629N1209301W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.46297,
   "lon": -120.93019,
   "notes": "",
@@ -2436,6 +2587,7 @@
  {
   "external_station_id": "374629N1209302W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.46297,
   "lon": -120.93025,
   "notes": "",
@@ -2450,6 +2602,7 @@
  {
   "external_station_id": "374630N1207267W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.46304,
   "lon": -120.72675,
   "notes": "",
@@ -2464,6 +2617,7 @@
  {
   "external_station_id": "374630N1207267W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.46304,
   "lon": -120.72675,
   "notes": "",
@@ -2478,6 +2632,7 @@
  {
   "external_station_id": "374630N1207267W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.46304,
   "lon": -120.72675,
   "notes": "",
@@ -2492,6 +2647,7 @@
  {
   "external_station_id": "374887N1208756W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.48876,
   "lon": -120.87563,
   "notes": "",
@@ -2506,6 +2662,7 @@
  {
   "external_station_id": "374887N1208756W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.48876,
   "lon": -120.87563,
   "notes": "",
@@ -2520,6 +2677,7 @@
  {
   "external_station_id": "374971N1204893W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.49737,
   "lon": -120.48932,
   "notes": "",
@@ -2534,6 +2692,7 @@
  {
   "external_station_id": "374971N1204893W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.49737,
   "lon": -120.48932,
   "notes": "",
@@ -2548,6 +2707,7 @@
  {
   "external_station_id": "374971N1204893W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.49737,
   "lon": -120.48932,
   "notes": "",
@@ -2562,6 +2722,7 @@
  {
   "external_station_id": "375103N1207329W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.51035,
   "lon": -120.7328,
   "notes": "",
@@ -2576,6 +2737,7 @@
  {
   "external_station_id": "375136N1206739W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.51358,
   "lon": -120.67387,
   "notes": "",
@@ -2590,6 +2752,7 @@
  {
   "external_station_id": "375145N1208073W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.51456,
   "lon": -120.80737,
   "notes": "",
@@ -2604,6 +2767,7 @@
  {
   "external_station_id": "375193N1205699W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.51964,
   "lon": -120.57025,
   "notes": "",
@@ -2618,6 +2782,7 @@
  {
   "external_station_id": "375222N1207348W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.52221,
   "lon": -120.73483,
   "notes": "",
@@ -2632,6 +2797,7 @@
  {
   "external_station_id": "370000N1200000W001",
   "is_active": true,
+  "last_data_at": "2024-03-19T18:30:00+00:00",
   "lat": 37.38973,
   "lon": -120.62316,
   "notes": "",
@@ -2646,6 +2812,7 @@
  {
   "external_station_id": "370000N1200000W002",
   "is_active": true,
+  "last_data_at": "2025-03-07T16:52:00+00:00",
   "lat": 37.40341,
   "lon": -120.62281,
   "notes": "",
@@ -2660,6 +2827,7 @@
  {
   "external_station_id": "370449N1203969W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.04491,
   "lon": -120.39685,
   "notes": "",
@@ -2674,6 +2842,7 @@
  {
   "external_station_id": "370457N1201260W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0457,
   "lon": -120.126,
   "notes": "",
@@ -2688,6 +2857,7 @@
  {
   "external_station_id": "370460N1208107W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.046,
   "lon": -120.8107,
   "notes": "",
@@ -2702,6 +2872,7 @@
  {
   "external_station_id": "370463N1202207W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0463,
   "lon": -120.2207,
   "notes": "",
@@ -2716,6 +2887,7 @@
  {
   "external_station_id": "370463N1207782W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0463,
   "lon": -120.7782,
   "notes": "",
@@ -2730,6 +2902,7 @@
  {
   "external_station_id": "370463N1208110W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.04636,
   "lon": -120.811,
   "notes": "",
@@ -2744,6 +2917,7 @@
  {
   "external_station_id": "370463N1208554W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0463,
   "lon": -120.8554,
   "notes": "",
@@ -2758,6 +2932,7 @@
  {
   "external_station_id": "370468N1201663W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0468,
   "lon": -120.1663,
   "notes": "",
@@ -2772,6 +2947,7 @@
  {
   "external_station_id": "370468N1204421W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0468,
   "lon": -120.4421,
   "notes": "",
@@ -2786,6 +2962,7 @@
  {
   "external_station_id": "370468N1205016W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0468,
   "lon": -120.5016,
   "notes": "",
@@ -2800,6 +2977,7 @@
  {
   "external_station_id": "370468N1207793W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0468,
   "lon": -120.7793,
   "notes": "",
@@ -2814,6 +2992,7 @@
  {
   "external_station_id": "370468N1209271W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0468,
   "lon": -120.9271,
   "notes": "",
@@ -2828,6 +3007,7 @@
  {
   "external_station_id": "370471N1202571W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0471,
   "lon": -120.2571,
   "notes": "",
@@ -2842,6 +3022,7 @@
  {
   "external_station_id": "370471N1203016W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0471,
   "lon": -120.3016,
   "notes": "",
@@ -2856,6 +3037,7 @@
  {
   "external_station_id": "370471N1203154W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0471,
   "lon": -120.3154,
   "notes": "",
@@ -2870,6 +3052,7 @@
  {
   "external_station_id": "370474N1204557W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0474,
   "lon": -120.4557,
   "notes": "",
@@ -2884,6 +3067,7 @@
  {
   "external_station_id": "370477N1203377W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0477,
   "lon": -120.3377,
   "notes": "",
@@ -2898,6 +3082,7 @@
  {
   "external_station_id": "370477N1203741W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0477,
   "lon": -120.3741,
   "notes": "",
@@ -2912,6 +3097,7 @@
  {
   "external_station_id": "370480N1205104W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.048,
   "lon": -120.5104,
   "notes": "",
@@ -2926,6 +3112,7 @@
  {
   "external_station_id": "370480N1208166W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.048,
   "lon": -120.8166,
   "notes": "",
@@ -2940,6 +3127,7 @@
  {
   "external_station_id": "370480N1208174W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.048,
   "lon": -120.8174,
   "notes": "",
@@ -2954,6 +3142,7 @@
  {
   "external_station_id": "370489N1205400W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0489,
   "lon": -120.54,
   "notes": "",
@@ -2968,6 +3157,7 @@
  {
   "external_station_id": "370493N1209577W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0493,
   "lon": -120.9577,
   "notes": "",
@@ -2982,6 +3172,7 @@
  {
   "external_station_id": "370509N1203251W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05091,
   "lon": -120.32507,
   "notes": "",
@@ -2996,6 +3187,7 @@
  {
   "external_station_id": "370513N1204738W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0513,
   "lon": -120.4738,
   "notes": "",
@@ -3010,6 +3202,7 @@
  {
   "external_station_id": "370513N1205816W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0513,
   "lon": -120.5816,
   "notes": "",
@@ -3024,6 +3217,7 @@
  {
   "external_station_id": "370513N1208938W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0513,
   "lon": -120.89379,
   "notes": "",
@@ -3038,6 +3232,7 @@
  {
   "external_station_id": "370516N1202571W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0516,
   "lon": -120.2571,
   "notes": "",
@@ -3052,6 +3247,7 @@
  {
   "external_station_id": "370518N1202029W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0518,
   "lon": -120.2029,
   "notes": "",
@@ -3066,6 +3262,7 @@
  {
   "external_station_id": "370518N1202571W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0518,
   "lon": -120.2571,
   "notes": "",
@@ -3080,6 +3277,7 @@
  {
   "external_station_id": "370523N1208684W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05231,
   "lon": -120.8684,
   "notes": "",
@@ -3094,6 +3292,7 @@
  {
   "external_station_id": "370524N1203566W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0524,
   "lon": -120.3566,
   "notes": "",
@@ -3108,6 +3307,7 @@
  {
   "external_station_id": "370524N1204035W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0524,
   "lon": -120.4035,
   "notes": "",
@@ -3122,6 +3322,7 @@
  {
   "external_station_id": "370527N1203571W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0527,
   "lon": -120.3571,
   "notes": "",
@@ -3136,6 +3337,7 @@
  {
   "external_station_id": "370527N1205724W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0527,
   "lon": -120.5724,
   "notes": "",
@@ -3150,6 +3352,7 @@
  {
   "external_station_id": "370530N1208571W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.053,
   "lon": -120.8571,
   "notes": "",
@@ -3164,6 +3367,7 @@
  {
   "external_station_id": "370530N1209568W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.053,
   "lon": -120.9568,
   "notes": "",
@@ -3178,6 +3382,7 @@
  {
   "external_station_id": "370531N1208260W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05317,
   "lon": -120.826,
   "notes": "",
@@ -3192,6 +3397,7 @@
  {
   "external_station_id": "370532N1200749W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0532,
   "lon": -120.0749,
   "notes": "",
@@ -3206,6 +3412,7 @@
  {
   "external_station_id": "370532N1207068W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0532,
   "lon": -120.7068,
   "notes": "",
@@ -3220,6 +3427,7 @@
  {
   "external_station_id": "370535N1205543W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0535,
   "lon": -120.5543,
   "notes": "",
@@ -3234,6 +3442,7 @@
  {
   "external_station_id": "370535N1205632W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0535,
   "lon": -120.5632,
   "notes": "",
@@ -3248,6 +3457,7 @@
  {
   "external_station_id": "370538N1209604W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0538,
   "lon": -120.9604,
   "notes": "",
@@ -3262,6 +3472,7 @@
  {
   "external_station_id": "370539N1202948W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05455,
   "lon": -120.28628,
   "notes": "",
@@ -3276,6 +3487,7 @@
  {
   "external_station_id": "370539N1202948W002",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05455,
   "lon": -120.28628,
   "notes": "",
@@ -3290,6 +3502,7 @@
  {
   "external_station_id": "370539N1202948W003",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05455,
   "lon": -120.28628,
   "notes": "",
@@ -3304,6 +3517,7 @@
  {
   "external_station_id": "370541N1203921W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0541,
   "lon": -120.3921,
   "notes": "",
@@ -3318,6 +3532,7 @@
  {
   "external_station_id": "370541N1205543W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0541,
   "lon": -120.5543,
   "notes": "",
@@ -3332,6 +3547,7 @@
  {
   "external_station_id": "370541N1205996W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0541,
   "lon": -120.5996,
   "notes": "",
@@ -3346,6 +3562,7 @@
  {
   "external_station_id": "370541N1209154W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0541,
   "lon": -120.9154,
   "notes": "",
@@ -3360,6 +3577,7 @@
  {
   "external_station_id": "370543N1201085W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0543,
   "lon": -120.1085,
   "notes": "",
@@ -3374,6 +3592,7 @@
  {
   "external_station_id": "370543N1202391W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0543,
   "lon": -120.2391,
   "notes": "",
@@ -3388,6 +3607,7 @@
  {
   "external_station_id": "370543N1203018W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0543,
   "lon": -120.3018,
   "notes": "",
@@ -3402,6 +3622,7 @@
  {
   "external_station_id": "370543N1204471W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0543,
   "lon": -120.4471,
   "notes": "",
@@ -3416,6 +3637,7 @@
  {
   "external_station_id": "370543N1206316W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0543,
   "lon": -120.6316,
   "notes": "",
@@ -3430,6 +3652,7 @@
  {
   "external_station_id": "370543N1207074W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0543,
   "lon": -120.7074,
   "notes": "",
@@ -3444,6 +3667,7 @@
  {
   "external_station_id": "370545N1202066W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05445,
   "lon": -120.20658,
   "notes": "",
@@ -3458,6 +3682,7 @@
  {
   "external_station_id": "370546N1207435W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0546,
   "lon": -120.7435,
   "notes": "",
@@ -3472,6 +3697,7 @@
  {
   "external_station_id": "370546N1208166W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0546,
   "lon": -120.8166,
   "notes": "",
@@ -3486,6 +3712,7 @@
  {
   "external_station_id": "370546N1208293W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0546,
   "lon": -120.8293,
   "notes": "",
@@ -3500,6 +3727,7 @@
  {
   "external_station_id": "370549N1207427W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0549,
   "lon": -120.7427,
   "notes": "",
@@ -3514,6 +3742,7 @@
  {
   "external_station_id": "370549N1209593W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0549,
   "lon": -120.9593,
   "notes": "",
@@ -3528,6 +3757,7 @@
  {
   "external_station_id": "370552N1207618W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0552,
   "lon": -120.7618,
   "notes": "",
@@ -3542,6 +3772,7 @@
  {
   "external_station_id": "370552N1208168W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0552,
   "lon": -120.8168,
   "notes": "",
@@ -3556,6 +3787,7 @@
  {
   "external_station_id": "370552N1209616W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0552,
   "lon": -120.9616,
   "notes": "",
@@ -3570,6 +3802,7 @@
  {
   "external_station_id": "370555N1204193W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0555,
   "lon": -120.4193,
   "notes": "",
@@ -3584,6 +3817,7 @@
  {
   "external_station_id": "370555N1207052W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0555,
   "lon": -120.7052,
   "notes": "",
@@ -3598,6 +3832,7 @@
  {
   "external_station_id": "370555N1208093W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0555,
   "lon": -120.8093,
   "notes": "",
@@ -3612,6 +3847,7 @@
  {
   "external_station_id": "370555N1209607W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0555,
   "lon": -120.9607,
   "notes": "",
@@ -3626,6 +3862,7 @@
  {
   "external_station_id": "370557N1207624W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0557,
   "lon": -120.7624,
   "notes": "",
@@ -3640,6 +3877,7 @@
  {
   "external_station_id": "370557N1208032W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0557,
   "lon": -120.8032,
   "notes": "",
@@ -3654,6 +3892,7 @@
  {
   "external_station_id": "370557N1209557W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0557,
   "lon": -120.9557,
   "notes": "",
@@ -3668,6 +3907,7 @@
  {
   "external_station_id": "370560N1207802W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.056,
   "lon": -120.7802,
   "notes": "",
@@ -3682,6 +3922,7 @@
  {
   "external_station_id": "370563N1207627W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0563,
   "lon": -120.7627,
   "notes": "",
@@ -3696,6 +3937,7 @@
  {
   "external_station_id": "370563N1208852W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0563,
   "lon": -120.8852,
   "notes": "",
@@ -3710,6 +3952,7 @@
  {
   "external_station_id": "370563N1209368W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0563,
   "lon": -120.9368,
   "notes": "",
@@ -3724,6 +3967,7 @@
  {
   "external_station_id": "370566N1206066W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0566,
   "lon": -120.6066,
   "notes": "",
@@ -3738,6 +3982,7 @@
  {
   "external_station_id": "370568N1203307W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0568,
   "lon": -120.3307,
   "notes": "",
@@ -3752,6 +3997,7 @@
  {
   "external_station_id": "370568N1205491W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0568,
   "lon": -120.5491,
   "notes": "",
@@ -3766,6 +4012,7 @@
  {
   "external_station_id": "370568N1206613W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.05679,
   "lon": -120.66129,
   "notes": "",
@@ -3780,6 +4027,7 @@
  {
   "external_station_id": "370568N1207793W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0568,
   "lon": -120.7793,
   "notes": "",
@@ -3794,6 +4042,7 @@
  {
   "external_station_id": "370568N1209079W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0568,
   "lon": -120.9079,
   "notes": "",
@@ -3808,6 +4057,7 @@
  {
   "external_station_id": "370568N1209263W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0568,
   "lon": -120.9263,
   "notes": "",
@@ -3822,6 +4072,7 @@
  {
   "external_station_id": "370568N1209438W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0568,
   "lon": -120.9438,
   "notes": "",
@@ -3836,6 +4087,7 @@
  {
   "external_station_id": "370571N1207877W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0571,
   "lon": -120.7877,
   "notes": "",
@@ -3850,6 +4102,7 @@
  {
   "external_station_id": "370574N1209457W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0574,
   "lon": -120.9457,
   "notes": "",
@@ -3864,6 +4117,7 @@
  {
   "external_station_id": "370582N1204596W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0582,
   "lon": -120.4596,
   "notes": "",
@@ -3878,6 +4132,7 @@
  {
   "external_station_id": "370582N1204927W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0582,
   "lon": -120.4927,
   "notes": "",
@@ -3892,6 +4147,7 @@
  {
   "external_station_id": "370585N1208682W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0585,
   "lon": -120.8682,
   "notes": "",
@@ -3906,6 +4162,7 @@
  {
   "external_station_id": "370588N1205954W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0588,
   "lon": -120.5954,
   "notes": "",
@@ -3920,6 +4177,7 @@
  {
   "external_station_id": "370591N1209724W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0591,
   "lon": -120.9724,
   "notes": "",
@@ -3934,6 +4192,7 @@
  {
   "external_station_id": "370593N1206893W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0593,
   "lon": -120.6893,
   "notes": "",
@@ -3948,6 +4207,7 @@
  {
   "external_station_id": "370593N1208979W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0593,
   "lon": -120.8979,
   "notes": "",
@@ -3962,6 +4222,7 @@
  {
   "external_station_id": "370599N1206118W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0599,
   "lon": -120.6118,
   "notes": "",
@@ -3976,6 +4237,7 @@
  {
   "external_station_id": "370599N1206760W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0599,
   "lon": -120.676,
   "notes": "",
@@ -3990,6 +4252,7 @@
  {
   "external_station_id": "370610N1203813W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.061,
   "lon": -120.3813,
   "notes": "",
@@ -4004,6 +4267,7 @@
  {
   "external_station_id": "371707N1202793W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1707,
   "lon": -120.2793,
   "notes": "",
@@ -4018,6 +4282,7 @@
  {
   "external_station_id": "371707N1203832W001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1707,
   "lon": -120.3832,
   "notes": "",
@@ -4032,6 +4297,7 @@
  {
   "external_station_id": "US1CAMA0008",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.116,
   "lon": -120.252,
   "notes": "",
@@ -4049,6 +4315,7 @@
  {
   "external_station_id": "US1CAME0004",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.310242,
   "lon": -120.496842,
   "notes": "",
@@ -4066,6 +4333,7 @@
  {
   "external_station_id": "US1CAME0006",
   "is_active": true,
+  "last_data_at": "2026-05-29T07:00:00+00:00",
   "lat": 37.308,
   "lon": -120.4692,
   "notes": "",
@@ -4083,6 +4351,7 @@
  {
   "external_station_id": "US1CAMP0004",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.415248,
   "lon": -120.099768,
   "notes": "",
@@ -4100,6 +4369,7 @@
  {
   "external_station_id": "USC00041590",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.4,
   "lon": -120.11667,
   "notes": "",
@@ -4117,6 +4387,7 @@
  {
   "external_station_id": "USC00042920",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.353,
   "lon": -120.1623,
   "notes": "",
@@ -4134,6 +4405,7 @@
  {
   "external_station_id": "USC00044884",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.23333,
   "lon": -120.25,
   "notes": "",
@@ -4151,6 +4423,7 @@
  {
   "external_station_id": "USC00045118",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0563,
   "lon": -120.8666,
   "notes": "",
@@ -4168,6 +4441,7 @@
  {
   "external_station_id": "USC00045532",
   "is_active": true,
+  "last_data_at": "2026-03-18T07:00:00+00:00",
   "lat": 37.2888,
   "lon": -120.5158,
   "notes": "",
@@ -4185,6 +4459,7 @@
  {
   "external_station_id": "USC00045535",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3053,
   "lon": -120.4857,
   "notes": "",
@@ -4202,6 +4477,7 @@
  {
   "external_station_id": "USC00049073",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.50193,
   "lon": -120.84566,
   "notes": "",
@@ -4219,6 +4495,7 @@
  {
   "external_station_id": "USR0000CCAT",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.4681,
   "lon": -120.1106,
   "notes": "",
@@ -4236,6 +4513,7 @@
  {
   "external_station_id": "USR0000CSNL",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.1822,
   "lon": -120.7939,
   "notes": "",
@@ -4253,6 +4531,7 @@
  {
   "external_station_id": "USW00023203",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.38333,
   "lon": -120.56667,
   "notes": "",
@@ -4270,6 +4549,7 @@
  {
   "external_station_id": "USW00023257",
   "is_active": true,
+  "last_data_at": "2026-07-27T07:00:00+00:00",
   "lat": 37.28597,
   "lon": -120.51788,
   "notes": "",
@@ -4287,6 +4567,7 @@
  {
   "external_station_id": "USW00093243",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.2381,
   "lon": -120.8825,
   "notes": "",
@@ -4304,6 +4585,7 @@
  {
   "external_station_id": "11152870",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0494722,
   "lon": -121.2910833,
   "notes": "",
@@ -4320,6 +4602,7 @@
  {
   "external_station_id": "11153000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.98,
   "lon": -121.38027778,
   "notes": "",
@@ -4336,6 +4619,7 @@
  {
   "external_station_id": "11156500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.614128,
   "lon": -121.211361,
   "notes": "",
@@ -4352,6 +4636,7 @@
  {
   "external_station_id": "11157500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.765753,
   "lon": -121.2996128,
   "notes": "",
@@ -4368,6 +4653,7 @@
  {
   "external_station_id": "11158600",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.81675,
   "lon": -121.3926806,
   "notes": "",
@@ -4384,6 +4670,7 @@
  {
   "external_station_id": "11249500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.0027273,
   "lon": -119.7068118,
   "notes": "",
@@ -4400,6 +4687,7 @@
  {
   "external_station_id": "11250000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.9980051,
   "lon": -119.7040338,
   "notes": "",
@@ -4416,6 +4704,7 @@
  {
   "external_station_id": "11250110",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.99916667,
   "lon": -119.706111,
   "notes": "",
@@ -4432,6 +4721,7 @@
  {
   "external_station_id": "11251000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.98439397,
   "lon": -119.7243124,
   "notes": "",
@@ -4448,6 +4738,7 @@
  {
   "external_station_id": "11252275",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.87638889,
   "lon": -119.7930556,
   "notes": "",
@@ -4464,6 +4755,7 @@
  {
   "external_station_id": "11252975",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.82194444,
   "lon": -120.0594444,
   "notes": "",
@@ -4480,6 +4772,7 @@
  {
   "external_station_id": "11253058",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.79916667,
   "lon": -120.163611,
   "notes": "",
@@ -4496,6 +4789,7 @@
  {
   "external_station_id": "11253115",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.77375,
   "lon": -120.286,
   "notes": "",
@@ -4512,6 +4806,7 @@
  {
   "external_station_id": "11254000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.8105046,
   "lon": -120.3782256,
   "notes": "",
@@ -4528,6 +4823,7 @@
  {
   "external_station_id": "11255575",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.65245145,
   "lon": -120.6321186,
   "notes": "",
@@ -4544,6 +4840,7 @@
  {
   "external_station_id": "11260815",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.29513418,
   "lon": -120.8436176,
   "notes": "",
@@ -4560,6 +4857,7 @@
  {
   "external_station_id": "11261100",
   "is_active": true,
+  "last_data_at": "2026-07-31T07:00:00+00:00",
   "lat": 37.2476912,
   "lon": -120.8521075,
   "notes": "",
@@ -4576,6 +4874,7 @@
  {
   "external_station_id": "11261500",
   "is_active": true,
+  "last_data_at": "2026-07-31T07:00:00+00:00",
   "lat": 37.3099115,
   "lon": -120.9309993,
   "notes": "",
@@ -4592,6 +4891,7 @@
  {
   "external_station_id": "11262900",
   "is_active": true,
+  "last_data_at": "2026-07-31T07:00:00+00:00",
   "lat": 37.26241267,
   "lon": -120.9065536,
   "notes": "",
@@ -4608,6 +4908,7 @@
  {
   "external_station_id": "11266500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.71627778,
   "lon": -119.6656667,
   "notes": "",
@@ -4624,6 +4925,7 @@
  {
   "external_station_id": "11270900",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.5216029,
   "lon": -120.3324114,
   "notes": "",
@@ -4640,6 +4942,7 @@
  {
   "external_station_id": "11271290",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.45410365,
   "lon": -120.6088084,
   "notes": "",
@@ -4656,6 +4959,7 @@
  {
   "external_station_id": "11271360",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.42490969,
   "lon": -120.6646985,
   "notes": "",
@@ -4672,6 +4976,7 @@
  {
   "external_station_id": "11273400",
   "is_active": true,
+  "last_data_at": "2026-08-01T07:00:00+00:00",
   "lat": 37.34718815,
   "lon": -120.9761399,
   "notes": "",
@@ -4688,6 +4993,7 @@
  {
   "external_station_id": "11274000",
   "is_active": true,
+  "last_data_at": "2026-07-31T07:00:00+00:00",
   "lat": 37.35046585,
   "lon": -120.9771121,
   "notes": "",
@@ -4704,6 +5010,7 @@
  {
   "external_station_id": "11274500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.3154653,
   "lon": -121.125171,
   "notes": "",
@@ -4720,6 +5027,7 @@
  {
   "external_station_id": "11274550",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.43218889,
   "lon": -121.0133444,
   "notes": "",
@@ -4736,6 +5044,7 @@
  {
   "external_station_id": "11274630",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.48657227,
   "lon": -121.2090645,
   "notes": "",
@@ -4752,6 +5061,7 @@
  {
   "external_station_id": "11274790",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.91657698,
   "lon": -119.6598627,
   "notes": "",
@@ -4768,6 +5078,7 @@
  {
   "external_station_id": "11276500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.93740877,
   "lon": -119.7982,
   "notes": "",
@@ -4784,6 +5095,7 @@
  {
   "external_station_id": "11276600",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.87935307,
   "lon": -119.947092,
   "notes": "",
@@ -4800,6 +5112,7 @@
  {
   "external_station_id": "11276900",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.88157506,
   "lon": -119.9701483,
   "notes": "",
@@ -4816,6 +5129,7 @@
  {
   "external_station_id": "11277300",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.96768499,
   "lon": -119.91737025,
   "notes": "",
@@ -4832,6 +5146,7 @@
  {
   "external_station_id": "11278000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.96907415,
   "lon": -119.8820916,
   "notes": "",
@@ -4848,6 +5163,7 @@
  {
   "external_station_id": "11278300",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.89435266,
   "lon": -119.9626483,
   "notes": "",
@@ -4864,6 +5180,7 @@
  {
   "external_station_id": "11278400",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.890186,
   "lon": -119.9698706,
   "notes": "",
@@ -4880,6 +5197,7 @@
  {
   "external_station_id": "11284400",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.8418518,
   "lon": -120.1848757,
   "notes": "",
@@ -4896,6 +5214,7 @@
  {
   "external_station_id": "11289000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.67240817,
   "lon": -120.474881,
   "notes": "",
@@ -4912,6 +5231,7 @@
  {
   "external_station_id": "11289500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.6657419,
   "lon": -120.4409912,
   "notes": "",
@@ -4928,6 +5248,7 @@
  {
   "external_station_id": "11289650",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.66629746,
   "lon": -120.4421023,
   "notes": "",
@@ -4944,6 +5265,7 @@
  {
   "external_station_id": "11289651",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.666321,
   "lon": -120.4421394,
   "notes": "",
@@ -4960,6 +5282,7 @@
  {
   "external_station_id": "11289850",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.71144167,
   "lon": -120.6098028,
   "notes": "",
@@ -4976,6 +5299,7 @@
  {
   "external_station_id": "11290000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.627153,
   "lon": -120.9843777,
   "notes": "",
@@ -4992,6 +5316,7 @@
  {
   "external_station_id": "11299600",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.96103615,
   "lon": -120.6152035,
   "notes": "",
@@ -5008,6 +5333,7 @@
  {
   "external_station_id": "11300500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.85437157,
   "lon": -120.6382594,
   "notes": "",
@@ -5024,6 +5350,7 @@
  {
   "external_station_id": "11301000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.85881594,
   "lon": -120.6332592,
   "notes": "",
@@ -5040,6 +5367,7 @@
  {
   "external_station_id": "11302000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.85159385,
   "lon": -120.6379816,
   "notes": "",
@@ -5056,6 +5384,7 @@
  {
   "external_station_id": "11302500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.77715006,
   "lon": -120.852988,
   "notes": "",
@@ -5072,6 +5401,7 @@
  {
   "external_station_id": "11303000",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.72962389,
   "lon": -121.110454,
   "notes": "",
@@ -5088,6 +5418,7 @@
  {
   "external_station_id": "11303500",
   "is_active": false,
+  "last_data_at": null,
   "lat": 37.67601249,
   "lon": -121.2662907,
   "notes": "",
@@ -5104,6 +5435,7 @@
  {
   "external_station_id": "364358120314906",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.73263889,
   "lon": -120.5315278,
   "notes": "",
@@ -5120,6 +5452,7 @@
  {
   "external_station_id": "364518120222001",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.75516667,
   "lon": -120.37325,
   "notes": "",
@@ -5136,6 +5469,7 @@
  {
   "external_station_id": "365325120391504",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.8903333,
   "lon": -120.6554167,
   "notes": "",
@@ -5152,6 +5486,7 @@
  {
   "external_station_id": "365325120391505",
   "is_active": false,
+  "last_data_at": null,
   "lat": 36.8903333,
   "lon": -120.6557778,
   "notes": "",

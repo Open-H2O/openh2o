@@ -20,11 +20,17 @@ truth for which upstream services the platform knows about — and the rebuild
 runs ``seed_data`` before this command precisely so the six codes already exist.
 A missing code means the build sequence is wrong, which is worth stopping for.
 
-``last_data_at`` is set to ``None`` explicitly, because the fixture deliberately
-does not carry it (see ``dump_station_fixture``'s docstring). The hourly
-``sync_source`` cron fills it — ``sync_source`` cannot *create* a station, but it
-does write readings into existing ones, which is the whole design: **the fixture
-restores the stations and the ordinary sync restores the readings.**
+``last_data_at`` is restored from the fixture. An earlier cut of this command
+forced it to ``None`` on the theory that the hourly sync would refill it; that
+was measured wrong for the two quarterly sources and would have permanently
+dropped 19 of the demonstration's 42 active stations (see
+``dump_station_fixture``'s docstring for the full reversal). The value is a real
+publication time, restored as a real publication time.
+
+That does not make the sync redundant — the two halves do different jobs.
+``sync_source`` cannot *create* a station, but it does write readings into
+existing ones: **the fixture restores the stations and their last-known
+publication times; the ordinary sync brings the readings forward from there.**
 
 Idempotent by ``update_or_create`` on the ``(data_source, external_station_id)``
 unique pair. The rebuild runs it exactly once, but ``seed_merced`` is idempotent
@@ -36,6 +42,7 @@ Usage:
 """
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from django.contrib.gis.geos import Point
@@ -44,6 +51,17 @@ from django.core.management.base import BaseCommand, CommandError
 from datasync.models import DataSource, MonitoredStation
 
 DEFAULT_FIXTURE = "data/merced/stations.json"
+
+
+def _parse_timestamp(value):
+    """ISO-8601 string -> aware datetime, or None.
+
+    Kept explicit rather than leaning on Django's field coercion so a malformed
+    value fails here, naming the fixture, instead of somewhere inside the ORM.
+    """
+    if not value:
+        return None
+    return datetime.fromisoformat(value)
 
 
 class Command(BaseCommand):
@@ -98,9 +116,10 @@ class Command(BaseCommand):
                     "parameters": row["parameters"],
                     "is_active": row["is_active"],
                     "notes": row["notes"],
-                    # Explicitly NULL: the fixture carries no reading times, and
-                    # asserting one would claim data arrived when it did not.
-                    "last_data_at": None,
+                    # A real publication time from the source, restored as one.
+                    # `.get` with a None default so a fixture written before
+                    # 2026-08-01 still loads instead of raising KeyError.
+                    "last_data_at": _parse_timestamp(row.get("last_data_at")),
                 },
             )
             if created:
@@ -109,6 +128,9 @@ class Command(BaseCommand):
                 updated_count += 1
 
         active = sum(1 for row in rows if row["is_active"])
+        with_readings = sum(
+            1 for row in rows if row["is_active"] and row.get("last_data_at")
+        )
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -120,3 +142,8 @@ class Command(BaseCommand):
         # The active count is the number the landing page displays, so it is
         # reported on its own line rather than buried in the summary.
         self.stdout.write(f"  active stations: {active} of {len(rows)}")
+        # The count that decides what the landing page displays: an active
+        # station with no last_data_at cannot be "reporting" on any screen.
+        self.stdout.write(
+            f"  active stations carrying a last-reading time: {with_readings} of {active}"
+        )

@@ -35,40 +35,37 @@ dump against an unchanged database produces a byte-identical file, so
 stamp would make every regeneration look like a change and the diff would stop
 meaning anything.
 
-**``last_data_at`` is deliberately not stored** — and as of 2026-08-01 that
-decision is DISPUTED AND UNRESOLVED. Do not treat the reasoning below as
-settled; read
+**``last_data_at`` IS stored, and the first cut of this command got that wrong.**
+The reversal is worth reading, because the mistake was a good principle applied
+to the wrong thing.
+
+The original argument was that a frozen timestamp "asserts data arrived at a
+moment it did not, in a file whose whole purpose is honesty about provenance",
+and that the hourly sync would refill it anyway. Both halves were measured wrong
+on 2026-08-01:
+
+* **It is not a fabrication.** DWR SGMA genuinely published on 2026-03-23. That
+  is a true fact about a real published record — the same *kind* of fact as the
+  station's name and its coordinates, which this fixture freezes without
+  hesitation. The honesty principle was aimed at invented data; this is not
+  invented.
+* **The sync could not refill it.** ``sync_source`` used a flat 7-day window
+  while ``dwr_sgma`` and ``dwr_wdl`` publish roughly quarterly, so both fetched
+  **zero** rows for their 19 stations. Dropping ``last_data_at`` would have taken
+  production's landing page from "37 of 42" to "20 of 42" **permanently**, with
+  the nightly 03:15 restore re-applying it — the exact "a fix does not survive
+  the reset" trap this milestone exists to end. (That window bug is now fixed
+  too; see ``sync_source.default_window_days``. Both were needed: the wider
+  window lets the data be re-fetched, the frozen timestamp means the
+  demonstration is coherent the moment it is restored rather than a day later.)
+
+Determinism survives, because a stored ``last_data_at`` only moves when somebody
+re-dumps against a database whose readings have moved — which is precisely what
+``git diff`` should show. It is serialised as an ISO-8601 UTC string, or
+``null`` for a station that has never reported.
+
+Full measurement:
 ``.planning/phases/104-deploy-cutover/104-02-station-freshness-findings-2026-08-01.md``
-before changing anything here.
-
-The original three reasons were:
-
-1. A frozen timestamp asserts that data arrived at a moment it did not — in a
-   file whose entire purpose is honesty about provenance.
-2. It is not needed. The hourly ``sync_source`` cron fills it, five minutes
-   after the nightly reset, into the stations this fixture restores.
-3. It would churn on every re-dump and destroy the byte-identical property
-   above.
-
-**Reasons 1 and 2 are now MEASURED WRONG.**
-
-*Reason 1 is wrong* because these timestamps are not fabrications. DWR SGMA
-genuinely published on 2026-03-23. That is a true fact about a real published
-record — the same *kind* of fact as the station's name and coordinates, which
-this fixture freezes without hesitation.
-
-*Reason 2 is wrong* because the sync CANNOT fill it for two of the six sources.
-``sync_source.py:64`` defaults its pull window to ``end_date - 7 days``, and
-``dwr_sgma``/``dwr_wdl`` publish roughly QUARTERLY — ``freshness.py:30-31`` sets
-their expected interval to 120 days. Measured on staging 2026-08-01 against
-fixture-restored stations: ``sync_source dwr_sgma`` fetched **0** rows for its 17
-stations and ``sync_source dwr_wdl`` fetched **0** for its 2. A 7-day window
-aimed at a 120-day cadence returns nothing every night, forever.
-
-The consequence is therefore NOT the benign intermediate state described here
-before. On production it would drop the landing page from "37 of 42" to "20 of
-42" **permanently**, with the nightly 03:15 restore re-applying the damage — the
-exact "a fix does not survive the reset" trap this milestone exists to end.
 
 ``created_at``/``updated_at`` are ``auto_now_add``/``auto_now`` and belong to
 Django. No primary key appears anywhere.
@@ -84,6 +81,7 @@ Usage:
 """
 
 import json
+from datetime import timezone as dt_timezone
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -139,6 +137,13 @@ class Command(BaseCommand):
                 "wqx_monitoring_location_id": station.wqx_monitoring_location_id,
                 "parameters": _stable_parameters(station.parameters),
                 "is_active": station.is_active,
+                # Normalised to UTC before serialising so the file does not
+                # change shape with the dumping host's timezone.
+                "last_data_at": (
+                    station.last_data_at.astimezone(dt_timezone.utc).isoformat()
+                    if station.last_data_at
+                    else None
+                ),
                 "notes": station.notes,
             }
             for station in queryset

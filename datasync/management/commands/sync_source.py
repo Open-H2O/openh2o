@@ -2,6 +2,24 @@
 """
 Sync all active stations for a single data source.
 
+**The default pull window is sized to the SOURCE's own publishing cadence, not
+a flat week**, and that is a correctness fix rather than a tuning knob. Until
+2026-08-01 every source got a 7-day window. `dwr_sgma` and `dwr_wdl` publish
+roughly QUARTERLY — `freshness.EXPECTED_DATA_INTERVAL_HOURS` records their
+expected interval as 120 days — so a 7-day pull returned **zero rows every
+night, forever**, for 19 of the demonstration's 42 active stations. Measured on
+staging 2026-08-01: `sync_source dwr_sgma` fetched 0 for its 17 stations and
+`sync_source dwr_wdl` fetched 0 for its 2, while cdec/usgs/noaa fetched
+13,173/47/9. Nobody noticed because the freshness classifier is ALSO
+cadence-aware, so those stations kept a green dot from a reading fetched months
+earlier — right up until something cleared `last_data_at` (the stations fixture
+did exactly that, which is how this was found).
+
+The window is `max(7 days, expected interval x WINDOW_INTERVAL_MULTIPLIER)`. The
+7-day floor is deliberate: it means no source's window ever became NARROWER than
+it was before this change, so a daily source that missed a few nights still
+catches up exactly as it always did. `--start` overrides it entirely.
+
 Usage:
     python manage.py sync_source cdec
     python manage.py sync_source cdec --start 2024-01-01 --end 2024-01-31
@@ -13,8 +31,30 @@ from datetime import date, timedelta
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
+from datasync import freshness
 from datasync.adapters import get_adapter
 from datasync.models import DataSource, DataSyncLog, MonitoredStation
+
+# Pull twice the source's expected publishing interval, so a single missed
+# publication still lands inside the next window rather than falling through it.
+WINDOW_INTERVAL_MULTIPLIER = 2
+
+# Never pull a narrower window than the flat 7 days every source used before
+# 2026-08-01. This makes the change strictly widening: nothing that worked
+# before can fetch less now.
+MINIMUM_WINDOW_DAYS = 7
+
+
+def default_window_days(source_code):
+    """How many days back to pull for a source that was given no --start.
+
+    Sized from `freshness.expected_interval_hours`, which is the same table the
+    UI uses to decide whether a station counts as reporting. Deriving both from
+    one place is the point: a source the dashboard judges on a 120-day cadence
+    must not be fetched on a 7-day one.
+    """
+    interval_days = freshness.expected_interval_hours(source_code) / 24
+    return max(MINIMUM_WINDOW_DAYS, int(interval_days * WINDOW_INTERVAL_MULTIPLIER))
 
 
 class Command(BaseCommand):
@@ -61,7 +101,7 @@ class Command(BaseCommand):
 
         # Parse dates
         end_date = date.today()
-        start_date = end_date - timedelta(days=7)
+        start_date = end_date - timedelta(days=default_window_days(code))
         if options["start"]:
             start_date = date.fromisoformat(options["start"])
         if options["end"]:

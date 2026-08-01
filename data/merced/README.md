@@ -109,7 +109,7 @@ that fails whenever one of them has a bad afternoon.
 | **Frozen** | 2026-08-01, read-only from the OpenH2O **production** database |
 | **Rows** | 335 stations — **42 active**, 293 inactive |
 | **Per source** | `dwr_wdl` 100 (2 active) · `dwr_sgma` 95 (17) · `cdec` 55 (15) · `usgs` 54 (5) · `noaa` 16 (3) · `cimis` 15 (0) |
-| **Size** | 100 kB on disk — roughly 1/75th of `flowlines.json` |
+| **Size** | 106 kB on disk — roughly 1/68th of `flowlines.json` |
 | **Used by** | `scripts/rebuild-golden.sh`, and any offline rebuild |
 | **Gate** | `data/demo/expected_shape.json` pins `datasync.MonitoredStation` to 335 at tolerance 0 |
 
@@ -132,27 +132,55 @@ silently attach stations to the wrong source. `load_station_fixture` resolves
 the codes, and refuses before writing anything if one is unknown. It never
 creates a `DataSource`: `seed_data_sources` owns that table.
 
-**The file carries no timestamp, hostname or git hash.** Re-running the dump
-against an unchanged database produces a byte-identical file, so `git diff` is
-an honest answer to "have the stations moved?"
+**The file carries no generated-at timestamp, hostname or git hash.** Re-running
+the dump against an unchanged database produces a byte-identical file, so
+`git diff` is an honest answer to "have the stations moved?"
 
-> **⚠ `last_data_at` is absent, and that decision is DISPUTED as of 2026-08-01.**
-> The original argument — that a frozen reading time would claim data arrived
-> when it did not, and that the hourly sync refills it anyway — has been measured
-> wrong on both halves. The timestamps are real published facts, and the sync
-> **cannot** refill two of the six sources: `sync_source` pulls a 7-day window
-> while `dwr_sgma` and `dwr_wdl` publish roughly quarterly, so both fetched **0**
-> rows for their 19 stations on staging. Read
-> `.planning/phases/104-deploy-cutover/104-02-station-freshness-findings-2026-08-01.md`
-> before changing this file or the loader.
+### `last_data_at` is stored — and the first cut of this got it wrong
 
-For the four sources whose cadence fits inside a 7-day window (`cdec`, `usgs`,
-`noaa`, and `cimis` once it has an active station), the intended design does
-hold and was observed: **the fixture restores the stations; the ordinary sync
-restores the readings** — `sync_source` cannot create a station but does fill
-readings into existing ones, which is why `DataRecordStaging` stays unfrozen.
-CDEC published 13,173 readings and USGS 47 into fixture-restored stations on
-first run.
+Each active station carries the time its source last published, as an ISO-8601
+UTC string. All 42 do:
+
+| Source | Active | Newest published reading |
+|---|---|---|
+| `cdec` | 15 | 2026-08-01 |
+| `dwr_sgma` | 17 | **2026-03-23** |
+| `usgs` | 5 | 2026-08-01 |
+| `noaa` | 3 | 2026-07-27 |
+| `dwr_wdl` | 2 | 2025-03-07 |
+
+**The first version of this fixture threw those away**, arguing that a frozen
+reading time would claim data arrived when it did not, and that the hourly sync
+would refill it. Both halves were measured wrong on 2026-08-01:
+
+- **They are not fabrications.** DWR SGMA genuinely published on 23 March. That
+  is a real fact about a real published record — the same kind of fact as the
+  station's name and coordinates, which this file freezes without hesitation.
+  The honesty principle was aimed at invented data; this is not invented.
+- **The sync could not refill them.** `sync_source` used a flat 7-day window
+  while SGMA and WDL publish roughly quarterly, so both fetched **zero** rows
+  for their 19 stations. Dropping the field would have taken production's
+  landing page from "37 of 42" to "20 of 42" permanently, with the nightly 03:15
+  restore re-applying it every night.
+
+The 17 SGMA stations are the reason this matters. Four-month-old readings count
+as **fresh** for them, because `freshness.py` records their expected cadence as
+120 days. Without a stored `last_data_at` they read as dormant forever.
+
+Both halves were fixed together: `sync_source.default_window_days` now sizes the
+pull window from each source's own cadence (SGMA and WDL go from 7 days to 240),
+so the data can be re-fetched — and the frozen timestamp means the demonstration
+is coherent the moment it is restored rather than a day later.
+
+**Readings themselves are still not frozen**, and `DataRecordStaging` stays
+pinned at 0 in the shape gate: `sync_source` cannot create a station but does
+fill readings into existing ones. **The fixture restores the stations and their
+last-known publication times; the ordinary sync brings the readings forward.**
+Observed on first run into fixture-restored stations: CDEC published 13,173
+readings, USGS 47, NOAA 9.
+
+Full measurement:
+`.planning/phases/104-deploy-cutover/104-02-station-freshness-findings-2026-08-01.md`
 
 These are real public USGS/CDEC/DWR/NOAA/CIMIS stations, which is consistent
 rather than a leak: the identity policy treats station names as **protected**,
