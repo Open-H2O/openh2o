@@ -73,11 +73,24 @@ carries a frozen copy (5,658 rows, frozen 2026-07-31) and CI loads that instead
 of asking USGS 3DHP and DWR ArcGIS on every push. A gate that goes red because
 an external map service had a bad afternoon is a gate people learn to ignore.
 
-The monitoring stations step 2 also fetches are deliberately NOT replaced by a
-fixture. Nothing later in ``SEQUENCE`` references ``MonitoredStation``, so an
-offline run simply has no stations and no downstream step notices; the identity
-policy treats station names as protected rather than required. A second fixture
-nothing reads would be weight with no purpose.
+The monitoring stations step 2 also fetches ARE likewise frozen, in
+``data/merced/stations.json`` (335 stations, 42 of them active, frozen
+2026-08-01). ``scripts/rebuild-golden.sh`` loads them with
+``load_station_fixture``. This command deliberately does **not** — step 2's
+``auto_populate`` is still the right thing for a genuine first-time deployment
+standing this platform up against its own boundary, because it discovers *that*
+deployment's real stations. The fixture is the *demonstration's* stations, which
+is the rebuild's scope, exactly as ``load_openet_fixture`` is.
+
+**This docstring used to say the opposite, and why it was wrong is the part
+worth keeping.** It argued the stations needed no fixture because nothing later
+in ``SEQUENCE`` references ``MonitoredStation``. That test is build-internal: it
+asks what the seed *consumes*, not what the demonstration *shows*. The stations
+are on the map, on ``/datasync/``, named on the about page under "Real published
+records", and counted in the landing-page hero — so an offline build carrying
+none rendered "0 of 0 stations reporting" where production read "21 of 42".
+Re-discovering them nightly does not fix it either: ``discover_stations``
+creates rows with ``is_active=False`` and the hero counts ``is_active=True``.
 
 On a DEBUG=False deployment step 4 guards itself, because it deletes and
 regenerates parcel/well geometry. A FIRST-TIME seed passes straight through —

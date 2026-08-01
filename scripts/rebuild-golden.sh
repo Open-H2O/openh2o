@@ -157,6 +157,13 @@ run_step loaddata data/merced/flowlines.json
 # nothing to clobber and a first-time seed passes the guard unaided (ISS-095).
 # Passed anyway so the sequence does not depend on that emptiness holding.
 run_step seed_merced --skip-auto-populate --allow-prod-clobber
+# The two frozen-data loads sit together, and both exist because the step they
+# replace is a live network call. Station discovery is part of auto_populate,
+# which --skip-auto-populate above omits, so without this the build carries ZERO
+# monitoring stations and the landing page reads "0 of 0 stations reporting".
+# Must run after seed_data: load_station_fixture resolves DataSource by code and
+# refuses on an unknown one rather than creating it.
+run_step load_station_fixture
 run_step load_openet_fixture
 run_step seed_calculation_plan
 run_step refresh_merced_accounting

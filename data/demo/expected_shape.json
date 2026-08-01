@@ -107,9 +107,9 @@
       "reason": "One row per sync pull performed. Zero because the build performs none."
     },
     "datasync.MonitoredStation": {
-      "expected": 0,
+      "expected": 335,
       "tolerance": 0,
-      "reason": "Deliberately NOT frozen into a fixture, pre-documented in 103-01. Stations are discovered from live upstream catalogues; freezing them would ship a snapshot of somebody else's registry. Production carries 335."
+      "reason": "Frozen into data/merced/stations.json and loaded by load_station_fixture, for the same reason data/merced/flowlines.json is frozen: a gate that reddens because an upstream catalogue had a bad afternoon is a gate people learn to ignore. The demonstration's own about page lists these stations under 'Real published records -- USGS and CDEC', beside the river network, so they are demonstration content and not somebody else's registry passing through. 335 total, 42 of them is_active -- and 42 is the number the landing-page hero displays. Tolerance 0 is correct precisely because the count cannot move unless data/merced/stations.json moves. Supersedes the 103-01 reasoning that stations need not be frozen because no later seed step reads MonitoredStation: that judged them by what the build consumes rather than by what the demonstration shows."
     },
     "datasync.OpenETCache": {
       "expected": 380,
@@ -209,7 +209,7 @@
     "measurements.Sensor": {
       "expected": 0,
       "tolerance": 0,
-      "reason": "Sensors are discovered from live upstream catalogues, like datasync.MonitoredStation. Not frozen."
+      "reason": "Sensors are an operator's own telemetry, registered on a live deployment rather than discovered or seeded. The demonstration has never carried any. (This entry used to cite datasync.MonitoredStation as the parallel case; that is no longer one -- the stations ARE frozen, in data/merced/stations.json.)"
     },
     "measurements.SensorMeasurement": {
       "expected": 0,
