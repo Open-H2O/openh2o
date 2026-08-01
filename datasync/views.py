@@ -56,7 +56,9 @@ def _build_source_status(boundary, now):
             if freshness.classify_freshness(src.code, s.last_data_at, now) == "fresh"
         )
         log = DataSyncLog.objects.filter(data_source=src).order_by("-started_at").first()
-        status_code = freshness.classify_source_status(src.code, active, log, fresh)
+        status_code = freshness.classify_source_status(
+            src.code, active, log, fresh, total_stations=total
+        )
         result.append({
             "source": src,
             "display": freshness.source_display(src.code),

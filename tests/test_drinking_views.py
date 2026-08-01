@@ -30,7 +30,9 @@ from decimal import Decimal
 import factory
 import pytest
 from django.contrib.auth.hashers import make_password
+from django.db import connection
 from django.test import Client
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from drinking.models import SampleResult
@@ -441,22 +443,43 @@ class TestTheOverviewIsAFrontDoor:
                 system.result_count) == (2, 1, 3)
 
     def test_the_page_costs_the_same_at_one_system_and_three(
-        self, client_in, sampled_system, django_assert_num_queries
+        self, client_in, sampled_system
     ):
-        """`django_assert_num_queries` asserts EQUALITY, not a ceiling.
+        """The claim is "the count does not move with the data" — so measure it.
 
-        So the shape is proven by holding the SAME count at two fixture sizes
-        rather than by picking a magic number (the 99-01 method).
+        This used to assert `django_assert_num_queries(5)` at both sizes, which
+        pinned an absolute number the page's cost does not actually depend on.
+        It measured 6 inside the staging container and 5 in CI, and the
+        difference had nothing to do with N+1 (ISS-104):
+        `core/context_processors.py::setup_status` runs an extra
+        `Boundary.objects.exists()` only when access control is OFF, so the same
+        commit passed in CI and failed on staging — a red test on every staging
+        run that somebody had to re-derive each time.
+
+        Worse, it hid the thing it was for. A genuine extra query added on the
+        access-control-off path would be invisible to anyone running the suite
+        in CI only, because CI never walks that branch.
+
+        Comparing the page against ITSELF removes the setting from the
+        question entirely. Whatever the context processor costs, it costs the
+        same at one system and at three; what must not change is the cost per
+        row, and that is what this now asserts.
         """
-        with django_assert_num_queries(5):
+        with CaptureQueriesContext(connection) as small:
             client_in.get(reverse("drinking:overview"))
 
         for pwsid in ("CA1910068", "CA1910069"):
             other = WaterSystemFactory(pwsid=pwsid)
             SystemFacilityFactory.create_batch(3, system=other)
 
-        with django_assert_num_queries(5):
+        with CaptureQueriesContext(connection) as large:
             client_in.get(reverse("drinking:overview"))
+
+        assert len(large) == len(small), (
+            f"the overview cost {len(small)} queries at one system and "
+            f"{len(large)} at three — it is doing work per row:\n  "
+            + "\n  ".join(q["sql"][:160] for q in large.captured_queries)
+        )
 
 
 # -- Query counts ------------------------------------------------------------

@@ -164,6 +164,14 @@ run_step seed_merced --skip-auto-populate --allow-prod-clobber
 # Must run after seed_data: load_station_fixture resolves DataSource by code and
 # refuses on an unknown one rather than creating it.
 run_step load_station_fixture
+# The stations were not enough. v2.8 shipped with all 335 of them and every
+# station chart still blank, because the charts read DataRecordStaging and the
+# build makes no network call to fill it. Worse than blank: the stations fixture
+# freezes last_data_at, so the landing hero announced "37 of 42 stations
+# reporting" over an empty canvas — the site asserting freshness it could not
+# show. This is the third frozen load and it must follow load_station_fixture,
+# which owns the station table and which this command refuses to work without.
+run_step load_reading_fixture
 run_step load_openet_fixture
 run_step seed_calculation_plan
 run_step refresh_merced_accounting

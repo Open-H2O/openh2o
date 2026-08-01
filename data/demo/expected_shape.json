@@ -92,9 +92,9 @@
       "reason": "Follows core.User. A role assignment cannot exist without a user to assign it to, so any non-zero count here means the same leak."
     },
     "datasync.DataRecordStaging": {
-      "expected": 0,
+      "expected": 30217,
       "tolerance": 0,
-      "reason": "Landing table for live sync pulls. The build makes zero network calls, so it is correctly empty. Production carries ~206,000 rows here -- 99.6% of the entire prod-vs-candidate row gap -- and that difference is expected, not a defect. Staging rows are transient sync output, never demonstration content."
+      "reason": "The demonstration's frozen telemetry: two water years (2024-10-01 onward) for the 42 active stations, loaded from data/merced/readings.json by load_reading_fixture. The previous pin of 0 was right about build hygiene and wrong about the demonstration -- the build makes no network call, so an unfrozen table meant every station chart on the site was blank while the landing hero, reading a frozen last_data_at, announced '37 of 42 stations reporting'. Found on production 2026-08-01, minutes after the v2.8 cutover. The count is the generator's own output, not an estimate: dump_reading_fixture keeps the last real reading of each (station, parameter, calendar day) and two consecutive dumps of the same database were byte-identical (sha256 89b8ec28...). Tolerance stays 0 because nothing here is sampled or random -- if this number moves, the fixture was regenerated and that is a change somebody made."
     },
     "datasync.DataSource": {
       "expected": 8,

@@ -78,6 +78,13 @@ STATUS_META = {
     "healthy": {"label": "Healthy", "tone": "fresh"},
     "needs_key": {"label": "Needs API key", "tone": "info"},
     "no_stations": {"label": "No stations wired", "tone": "neutral"},
+    # Distinct from "no_stations" and the distinction is the whole of ISS-107.
+    # CIMIS carries 15 stations and none is switched on; the old single state
+    # made the card read "No stations wired" directly above its own body text
+    # printing "0 active / 15 total", and then advise discovery — which
+    # `discover_stations.py` creates rows with is_active=False, so following the
+    # advice changes nothing at all.
+    "none_activated": {"label": "None activated", "tone": "neutral"},
     "no_data": {"label": "No recent data", "tone": "stale"},
     "running": {"label": "Syncing…", "tone": "stale"},
     "failed": {"label": "Last sync failed", "tone": "dead"},
@@ -125,17 +132,28 @@ def classify_freshness(source_code, last_data_at, now=None):
     return "dead"
 
 
-def classify_source_status(source_code, active_stations, last_log, fresh_count):
+def classify_source_status(
+    source_code, active_stations, last_log, fresh_count, total_stations=None
+):
     """
     Roll per-station state up into one honest per-source status code.
 
     Returns a status key from STATUS_META. The order of checks matters: a
     missing credential or zero wired stations explains the silence before we
     ever blame a "failed" sync.
+
+    ``total_stations`` separates the two ways a source can have nothing to sync,
+    because they need opposite advice (ISS-107). Zero stations means go and find
+    some. Fifteen stations and none active means switch one on — telling that
+    operator to run discovery sends them round a loop that cannot terminate.
+    It defaults to None only so an older three-argument call still classifies;
+    without it the two cases are indistinguishable and the old wording stands.
     """
     if credential_missing(source_code):
         return "needs_key"
     if active_stations == 0:
+        if total_stations:
+            return "none_activated"
         return "no_stations"
     if last_log is None:
         return "never"

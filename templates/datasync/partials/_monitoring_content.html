@@ -54,6 +54,10 @@
         <p class="text-tertiary text-xs" style="margin: 0;">Add the API credential on the server to enable this source.</p>
         {% elif info.status_code == "no_stations" %}
         <p class="text-tertiary text-xs" style="margin: 0;">No stations wired yet &mdash; run station discovery for this source.</p>
+        {% elif info.status_code == "none_activated" %}
+        <p class="text-tertiary text-xs" style="margin: 0;">
+          {{ info.total }} station{{ info.total|pluralize }} known here, none switched on. Discovery adds stations dormant &mdash; open one and activate it to start syncing.
+        </p>
         {% elif info.log %}
         <p class="text-tertiary text-xs" style="margin: 0;">
           Last sync: {{ info.log.started_at|timesince }} ago
