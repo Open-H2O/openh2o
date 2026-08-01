@@ -48,13 +48,22 @@
 # after row-count report is logged and ntfy'd as a data-loss backstop. Uses the
 # db container's own POSTGRES_* env, so it adapts to prod and staging.
 #
+# SNAPSHOT DIRECTORY IS DERIVED FROM THE CHECKOUT — see rebuild-golden.sh for the
+# reasoning. The 03:15 production cron passes its path explicitly and is
+# unaffected; the derivation only changes what happens when nobody passes one.
+#
 # Usage:  scripts/reset-demo.sh [SNAPSHOT_PATH]
 #         FORCE=1 scripts/reset-demo.sh [SNAPSHOT_PATH]   # skip staleness guard
 set -euo pipefail
 
 OPENH2O_DIR="${OPENH2O_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-SNAP="${1:-$HOME/openh2o-demo-snapshot/golden.dump}"
+SNAPDIR="${OPENH2O_SNAPSHOT_DIR:-$HOME/$(basename "$OPENH2O_DIR")-demo-snapshot}"
+SNAP="${1:-$SNAPDIR/golden.dump}"
 META="${SNAP%.dump}.meta"
+
+echo "reset-demo: checkout=$OPENH2O_DIR"
+echo "reset-demo: snapshot directory=$SNAPDIR"
+echo "reset-demo: restoring from=$SNAP"
 LOG="${LOG:-$HOME/openh2o-logs/reset-demo.log}"
 FORCE="${FORCE:-0}"
 

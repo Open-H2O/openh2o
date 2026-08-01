@@ -28,13 +28,23 @@
 # aborting would leave the site worse off. Here the opposite holds: nothing has
 # been written yet, and not creating a bad snapshot costs nothing at all.
 #
+# SNAPSHOT DIRECTORY IS DERIVED FROM THE CHECKOUT — see rebuild-golden.sh for the
+# reasoning. Two checkouts on one host get two snapshot directories, so a manual
+# snapshot taken in the staging checkout can no longer overwrite production's
+# golden.
+#
 # Usage:  scripts/snapshot-demo.sh [SNAPSHOT_PATH]
 #         FORCE=1 scripts/snapshot-demo.sh [SNAPSHOT_PATH]   # skip identity gate
 set -euo pipefail
 
 OPENH2O_DIR="${OPENH2O_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-SNAP="${1:-$HOME/openh2o-demo-snapshot/golden.dump}"
+SNAPDIR="${OPENH2O_SNAPSHOT_DIR:-$HOME/$(basename "$OPENH2O_DIR")-demo-snapshot}"
+SNAP="${1:-$SNAPDIR/golden.dump}"
 META="${SNAP%.dump}.meta"
+
+echo "snapshot-demo: checkout=$OPENH2O_DIR"
+echo "snapshot-demo: snapshot directory=$SNAPDIR"
+echo "snapshot-demo: writing=$SNAP"
 
 # shellcheck source=scripts/_demo-lib.sh
 . "$(dirname "$0")/_demo-lib.sh"

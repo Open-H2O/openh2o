@@ -23,15 +23,31 @@
 # Phase 104 wires this into the production deploy, and a scratch project inside
 # the production checkout is safe precisely because its volume is separate.
 #
+# SNAPSHOT DIRECTORY AND SCRATCH PROJECT ARE DERIVED FROM THE CHECKOUT.
+# Two checkouts on one host (Butler runs ~/openh2o = PRODUCTION and
+# ~/openh2o-staging = STAGING as the same unix user) must never be able to write
+# each other's snapshot or tear down each other's scratch stack. A hardcoded
+# $HOME/openh2o-demo-snapshot made both resolve to the same files. Deriving from
+# basename "$OPENH2O_DIR" keeps production's path byte-identical to what it has
+# always been and separates staging automatically, with no env var anyone has to
+# remember to set. OPENH2O_SNAPSHOT_DIR and the positional argument still win.
+#
 # Usage:  scripts/rebuild-golden.sh [CANDIDATE_PATH]
-#   OPENH2O_DIR      checkout to build from   (default: this script's parent)
-#   REBUILD_PROJECT  scratch compose project  (default: openh2o-rebuild)
+#   OPENH2O_DIR           checkout to build from   (default: this script's parent)
+#   OPENH2O_SNAPSHOT_DIR  snapshot directory       (default: derived, see above)
+#   REBUILD_PROJECT       scratch compose project  (default: <checkout>-rebuild)
 set -euo pipefail
 
 OPENH2O_DIR="${OPENH2O_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-CANDIDATE="${1:-$HOME/openh2o-demo-snapshot/candidate.dump}"
+SNAPDIR="${OPENH2O_SNAPSHOT_DIR:-$HOME/$(basename "$OPENH2O_DIR")-demo-snapshot}"
+CANDIDATE="${1:-$SNAPDIR/candidate.dump}"
 META="${CANDIDATE%.dump}.meta"
-REBUILD_PROJECT="${REBUILD_PROJECT:-openh2o-rebuild}"
+REBUILD_PROJECT="${REBUILD_PROJECT:-$(basename "$OPENH2O_DIR")-rebuild}"
+
+echo "rebuild-golden: checkout=$OPENH2O_DIR"
+echo "rebuild-golden: snapshot directory=$SNAPDIR"
+echo "rebuild-golden: candidate=$CANDIDATE"
+echo "rebuild-golden: scratch compose project=$REBUILD_PROJECT"
 
 # shellcheck source=scripts/_demo-lib.sh
 . "$(dirname "$0")/_demo-lib.sh"

@@ -39,17 +39,28 @@
 # server. (Gate 4 does create a throwaway superuser on purpose; it runs AFTER
 # gate 2 has counted, and it writes into the scratch database, never the file.)
 #
+# SNAPSHOT DIRECTORY AND SCRATCH PROJECT ARE DERIVED FROM THE CHECKOUT — see the
+# same block in rebuild-golden.sh for the reasoning. Two checkouts on one host
+# get two snapshot directories and two scratch projects, automatically.
+#
 # Usage:  scripts/verify-candidate.sh [CANDIDATE_PATH]
-#   OPENH2O_DIR      checkout to build the image from (default: script's parent)
-#   REBUILD_PROJECT  scratch compose project          (default: openh2o-rebuild)
-#   SHAPE            expected shape file              (default: data/demo/expected_shape.json)
-#   MAX_PAGES        crawl page cap for gate 4        (default: 3000)
+#   OPENH2O_DIR           checkout to build the image from (default: script's parent)
+#   OPENH2O_SNAPSHOT_DIR  snapshot directory               (default: derived, see above)
+#   REBUILD_PROJECT       scratch compose project          (default: <checkout>-rebuild)
+#   SHAPE                 expected shape file              (default: data/demo/expected_shape.json)
+#   MAX_PAGES             crawl page cap for gate 4        (default: 3000)
 set -euo pipefail
 
 OPENH2O_DIR="${OPENH2O_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-CANDIDATE="${1:-$HOME/openh2o-demo-snapshot/candidate.dump}"
+SNAPDIR="${OPENH2O_SNAPSHOT_DIR:-$HOME/$(basename "$OPENH2O_DIR")-demo-snapshot}"
+CANDIDATE="${1:-$SNAPDIR/candidate.dump}"
 META="${CANDIDATE%.dump}.meta"
-REBUILD_PROJECT="${REBUILD_PROJECT:-openh2o-rebuild}"
+REBUILD_PROJECT="${REBUILD_PROJECT:-$(basename "$OPENH2O_DIR")-rebuild}"
+
+echo "verify-candidate: checkout=$OPENH2O_DIR"
+echo "verify-candidate: snapshot directory=$SNAPDIR"
+echo "verify-candidate: candidate=$CANDIDATE"
+echo "verify-candidate: scratch compose project=$REBUILD_PROJECT"
 SHAPE="${SHAPE:-$OPENH2O_DIR/data/demo/expected_shape.json}"
 MAX_PAGES="${MAX_PAGES:-3000}"
 

@@ -33,16 +33,29 @@
 # something that can wait until morning is an alarm that gets muted — and then
 # the real one is muted too. (Directed by Brent at the 102-02 checkpoint.)
 #
+# SNAPSHOT DIRECTORY IS DERIVED FROM THE CHECKOUT, and here that derivation is
+# load-bearing rather than tidy: this is the only script that WRITES golden.dump.
+# With a hardcoded $HOME/openh2o-demo-snapshot, running a deploy in the staging
+# checkout would install a staging-built database as PRODUCTION's golden and the
+# 03:15 cron would serve it that night. See rebuild-golden.sh for the full note.
+#
 # Usage:  scripts/promote-golden.sh [CANDIDATE_PATH] [GOLDEN_PATH]
-#   OPENH2O_DIR      checkout to verify against (default: this script's parent)
-#   REBUILD_PROJECT  scratch compose project    (default: openh2o-rebuild)
+#   OPENH2O_DIR           checkout to verify against (default: this script's parent)
+#   OPENH2O_SNAPSHOT_DIR  snapshot directory         (default: derived, see above)
+#   REBUILD_PROJECT       scratch compose project    (default: <checkout>-rebuild)
 set -euo pipefail
 
 OPENH2O_DIR="${OPENH2O_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
-CANDIDATE="${1:-$HOME/openh2o-demo-snapshot/candidate.dump}"
-GOLDEN="${2:-$HOME/openh2o-demo-snapshot/golden.dump}"
+SNAPDIR="${OPENH2O_SNAPSHOT_DIR:-$HOME/$(basename "$OPENH2O_DIR")-demo-snapshot}"
+CANDIDATE="${1:-$SNAPDIR/candidate.dump}"
+GOLDEN="${2:-$SNAPDIR/golden.dump}"
 CAND_META="${CANDIDATE%.dump}.meta"
 GOLDEN_META="${GOLDEN%.dump}.meta"
+
+echo "promote-golden: checkout=$OPENH2O_DIR"
+echo "promote-golden: snapshot directory=$SNAPDIR"
+echo "promote-golden: candidate=$CANDIDATE"
+echo "promote-golden: golden=$GOLDEN"
 
 # shellcheck source=scripts/_demo-lib.sh
 . "$(dirname "$0")/_demo-lib.sh"

@@ -448,6 +448,21 @@ cron for an unattended nightly reset, e.g.:
 Set `OPENH2O_NTFY_URL` (optional) to receive ntfy notifications — high-priority on
 a skipped/failed reset, a routine before→after row-count summary on success.
 
+**Where the snapshot lives — one directory per checkout, derived automatically.**
+Every demo script resolves its snapshot directory as
+`${OPENH2O_SNAPSHOT_DIR:-$HOME/$(basename "$OPENH2O_DIR")-demo-snapshot}`, so a
+checkout at `~/openh2o` uses `~/openh2o-demo-snapshot` and a checkout at
+`~/openh2o-staging` uses `~/openh2o-staging-demo-snapshot`. The scratch compose
+project that `rebuild-golden` and `verify-candidate` build in is derived the same
+way (`<checkout>-rebuild`). **Two deployments on one host therefore get two
+snapshot directories and two scratch projects, and neither can write or tear down
+the other's.** That separation is not cosmetic: `promote-golden` is the one script
+that writes `golden.dump`, and before this derivation existed a deploy run in a
+staging checkout would have installed a staging-built database as production's
+golden. Each script echoes its resolved directory on startup, so the path that was
+actually used is in the log of the run that used it. Set `OPENH2O_SNAPSHOT_DIR`, or
+pass a path argument, to override.
+
 **Staleness guard (the safety net for the discipline below).** Before wiping,
 `reset-demo` compares the live schema's migration fingerprint against the one in
 `golden.meta`. If they differ — meaning a migration ran since the snapshot was
