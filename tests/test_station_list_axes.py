@@ -22,12 +22,27 @@ fifteen dormant rows would have meant fifteen separate page visits.
 
 from datetime import timedelta
 
+import factory
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.contrib.gis.geos import Point
+from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
 from datasync.models import DataSource, MonitoredStation
+
+
+class UserFactory(factory.django.DjangoModelFactory):
+    """Local, matching the house convention — every suite file defines its own."""
+
+    class Meta:
+        model = "core.User"
+
+    username = factory.Sequence(lambda n: f"stationaxes{n}")
+    email = factory.Sequence(lambda n: f"stationaxes{n}@example.com")
+    password = factory.LazyFunction(lambda: make_password("testpass123"))
+    is_active = True
 
 pytestmark = pytest.mark.django_db
 
@@ -72,11 +87,9 @@ def _names(response):
 
 
 @pytest.fixture
-def client_in(client, django_user_model):
-    user = django_user_model.objects.create_user(
-        email="axes@example.com", password="axes-test-pw-2026"
-    )
-    client.force_login(user)
+def client_in(db):
+    client = Client()
+    client.force_login(UserFactory())
     return client
 
 
