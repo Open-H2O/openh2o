@@ -114,6 +114,16 @@ run_step() {
 
 run_step migrate --noinput
 run_step seed_data
+# NOT part of the seed_data umbrella, deliberately — core/modules.py records why
+# (listing it in the registry would change behaviour for anyone composing
+# seed_data from it). But the umbrella's scope is not this build's scope: a
+# rebuild that skips it produces a demonstration with an EMPTY SensorThings
+# crosswalk — measured 2026-07-31, production carries 17 ObservedProperty and 26
+# SourceParameter rows and the first candidate carried 0 of each. Nothing a
+# visitor sees (standards ships no views or urls), but check_conformance and
+# every adapter's PARAMETER_MAP resolve against it. Idempotent, so this neither
+# changes seed_data nor double-seeds.
+run_step seed_observed_properties
 # The boundary must exist BEFORE the flowlines fixture: flowlines.json names it
 # by natural key, and it is pk 1 on staging and pk 6 on production. seed_merced
 # runs this same step again a moment later; it is idempotent.
