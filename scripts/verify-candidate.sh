@@ -479,6 +479,20 @@ echo "  PASS — schema ${live_fp:0:12}… matches the manifest, built from this
 # ===========================================================================
 echo ""
 echo "=== GATE 4: authenticated render crawl ==="
+
+# Collect static files first. Production settings use
+# CompressedManifestStaticFilesStorage, which resolves every {% static %} through
+# a manifest and RAISES when an entry is missing — so without this every page
+# raises ValueError and the crawl reports the whole app as 500s.
+#
+# Collected rather than switched to a plain storage backend on purpose. A
+# template referencing a static asset that does not exist is a genuine
+# production 500, and running the real storage backend is what lets gate 4 catch
+# it. Swapping in a lenient backend would make the gate quieter and blinder.
+# entrypoint.sh does this on a normal boot; the scratch stack never boots web.
+# shellcheck disable=SC2086
+run_web python manage.py collectstatic --noinput >/dev/null
+
 crawl_status=0
 run_web python scripts/render_crawl.py \
   --policy data/demo/identity_policy.json \
