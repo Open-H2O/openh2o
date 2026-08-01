@@ -120,7 +120,9 @@ frozen" because nothing later in the `seed_merced` sequence reads
 consumes, not what the *demonstration shows*. The stations are on the map, on
 `/datasync/`, named on the about page under "Real published records — USGS and
 CDEC", and counted in the landing-page hero. A repository build without them
-rendered "0 of 0 stations reporting" where production read "21 of 42".
+rendered "0 of 0 stations reporting" where production reads **"37 of 42"**
+(re-derived from production 2026-08-01 — the "21 of 42" figure carried in
+104-01/104-02 was never re-derived and is wrong).
 
 Records are keyed by the natural pair **(`source` code, `external_station_id`)**,
 never by primary key. `DataSource` has no natural-key manager — only
@@ -130,15 +132,27 @@ silently attach stations to the wrong source. `load_station_fixture` resolves
 the codes, and refuses before writing anything if one is unknown. It never
 creates a `DataSource`: `seed_data_sources` owns that table.
 
-**`last_data_at` is deliberately absent, and the file carries no timestamp,
-hostname or git hash.** Re-running the dump against an unchanged database
-produces a byte-identical file, so `git diff` is an honest answer to "have the
-stations moved?" A frozen reading time would also claim data arrived at a
-moment it did not. The visible consequence is intended: straight after a
-restore the hero reads "0 of 42 stations reporting" until the hourly
-`sync_source` cron runs. **The fixture restores the stations; the ordinary sync
+**The file carries no timestamp, hostname or git hash.** Re-running the dump
+against an unchanged database produces a byte-identical file, so `git diff` is
+an honest answer to "have the stations moved?"
+
+> **⚠ `last_data_at` is absent, and that decision is DISPUTED as of 2026-08-01.**
+> The original argument — that a frozen reading time would claim data arrived
+> when it did not, and that the hourly sync refills it anyway — has been measured
+> wrong on both halves. The timestamps are real published facts, and the sync
+> **cannot** refill two of the six sources: `sync_source` pulls a 7-day window
+> while `dwr_sgma` and `dwr_wdl` publish roughly quarterly, so both fetched **0**
+> rows for their 19 stations on staging. Read
+> `.planning/phases/104-deploy-cutover/104-02-station-freshness-findings-2026-08-01.md`
+> before changing this file or the loader.
+
+For the four sources whose cadence fits inside a 7-day window (`cdec`, `usgs`,
+`noaa`, and `cimis` once it has an active station), the intended design does
+hold and was observed: **the fixture restores the stations; the ordinary sync
 restores the readings** — `sync_source` cannot create a station but does fill
 readings into existing ones, which is why `DataRecordStaging` stays unfrozen.
+CDEC published 13,173 readings and USGS 47 into fixture-restored stations on
+first run.
 
 These are real public USGS/CDEC/DWR/NOAA/CIMIS stations, which is consistent
 rather than a leak: the identity policy treats station names as **protected**,

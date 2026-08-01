@@ -9,7 +9,9 @@ stations lived inside a running database. ``seed_merced`` step 2
 ``--skip-auto-populate`` — which every offline build uses — therefore produced a
 demonstration with **no stations at all**. The landing page counts them
 (``config/views.py``), so a repository-built demonstration read "0 of 0 stations
-reporting" while production read "21 of 42".
+reporting" while production read "37 of 42" (re-derived 2026-08-01 by running
+`config/views.py`'s own expression against production; the "21 of 42" figure
+carried in 104-01 and 104-02 was never re-derived and is wrong).
 
 103-01 argued the stations did not need freezing because nothing later in
 ``seed_merced``'s ``SEQUENCE`` reads ``MonitoredStation``. That test was
@@ -33,8 +35,13 @@ dump against an unchanged database produces a byte-identical file, so
 stamp would make every regeneration look like a change and the diff would stop
 meaning anything.
 
-**``last_data_at`` is deliberately not stored**, and that is the load-bearing
-omission. Three reasons, the third decisive:
+**``last_data_at`` is deliberately not stored** — and as of 2026-08-01 that
+decision is DISPUTED AND UNRESOLVED. Do not treat the reasoning below as
+settled; read
+``.planning/phases/104-deploy-cutover/104-02-station-freshness-findings-2026-08-01.md``
+before changing anything here.
+
+The original three reasons were:
 
 1. A frozen timestamp asserts that data arrived at a moment it did not — in a
    file whose entire purpose is honesty about provenance.
@@ -43,9 +50,25 @@ omission. Three reasons, the third decisive:
 3. It would churn on every re-dump and destroy the byte-identical property
    above.
 
-The consequence is visible and intended: immediately after a restore the landing
-page reads "0 of 42 stations reporting" until the first sync runs. That is the
-honest intermediate state.
+**Reasons 1 and 2 are now MEASURED WRONG.**
+
+*Reason 1 is wrong* because these timestamps are not fabrications. DWR SGMA
+genuinely published on 2026-03-23. That is a true fact about a real published
+record — the same *kind* of fact as the station's name and coordinates, which
+this fixture freezes without hesitation.
+
+*Reason 2 is wrong* because the sync CANNOT fill it for two of the six sources.
+``sync_source.py:64`` defaults its pull window to ``end_date - 7 days``, and
+``dwr_sgma``/``dwr_wdl`` publish roughly QUARTERLY — ``freshness.py:30-31`` sets
+their expected interval to 120 days. Measured on staging 2026-08-01 against
+fixture-restored stations: ``sync_source dwr_sgma`` fetched **0** rows for its 17
+stations and ``sync_source dwr_wdl`` fetched **0** for its 2. A 7-day window
+aimed at a 120-day cadence returns nothing every night, forever.
+
+The consequence is therefore NOT the benign intermediate state described here
+before. On production it would drop the landing page from "37 of 42" to "20 of
+42" **permanently**, with the nightly 03:15 restore re-applying the damage — the
+exact "a fix does not survive the reset" trap this milestone exists to end.
 
 ``created_at``/``updated_at`` are ``auto_now_add``/``auto_now`` and belong to
 Django. No primary key appears anywhere.

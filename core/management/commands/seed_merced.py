@@ -88,7 +88,8 @@ in ``SEQUENCE`` references ``MonitoredStation``. That test is build-internal: it
 asks what the seed *consumes*, not what the demonstration *shows*. The stations
 are on the map, on ``/datasync/``, named on the about page under "Real published
 records", and counted in the landing-page hero — so an offline build carrying
-none rendered "0 of 0 stations reporting" where production read "21 of 42".
+none rendered "0 of 0 stations reporting" where production reads "37 of 42"
+(re-derived 2026-08-01; the "21 of 42" figure in 104-01/104-02 is wrong).
 Re-discovering them nightly does not fix it either: ``discover_stations``
 creates rows with ``is_active=False`` and the hero counts ``is_active=True``.
 
