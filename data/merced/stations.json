@@ -1,0 +1,5168 @@
+[
+ {
+  "external_station_id": "142",
+  "is_active": false,
+  "lat": 37.1861,
+  "lon": -120.6829,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN R - MONITORING WELL #142",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "AMR",
+  "is_active": true,
+  "lat": 37.46806,
+  "lon": -120.53889,
+  "notes": "",
+  "parameters": [
+   "1",
+   "2",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED R AT AMSTERDAM RD",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "BAR",
+  "is_active": false,
+  "lat": 37.367,
+  "lon": -120.217,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "BEAR",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "BDV",
+  "is_active": true,
+  "lat": 37.3328,
+  "lon": -120.3944,
+  "notes": "",
+  "parameters": [
+   "1",
+   "2",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "BLACK RASCAL DIVERSION",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "BPL",
+  "is_active": false,
+  "lat": 37.3667,
+  "lon": -120.61,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "BEAR POOL",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "BPO",
+  "is_active": false,
+  "lat": 37.3767,
+  "lon": -120.275,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "BURNS POOL",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "BSD",
+  "is_active": true,
+  "lat": 37.2547,
+  "lon": -120.7194,
+  "notes": "",
+  "parameters": [
+   "1",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "BEAR CK BLW EASTSIDE CANAL",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "BUR",
+  "is_active": true,
+  "lat": 37.377,
+  "lon": -120.275,
+  "notes": "",
+  "parameters": [
+   "15",
+   "2",
+   "23",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "BURNS CREEK DAM",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "CRS",
+  "is_active": false,
+  "lat": 37.425,
+  "lon": -120.663,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER AT CRESSY",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "CVR",
+  "is_active": false,
+  "lat": 37.3803,
+  "lon": -120.0769,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "CATHEY'S VALLEY",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "DML",
+  "is_active": true,
+  "lat": 37.22516,
+  "lon": -120.19852,
+  "notes": "",
+  "parameters": [
+   "1"
+  ],
+  "source": "cdec",
+  "station_name": "DEADMAN CREEK NEAR LE GRAND",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "EBM",
+  "is_active": true,
+  "lat": 37.205,
+  "lon": -120.6981,
+  "notes": "",
+  "parameters": [
+   "1",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "EASTSIDE BYPASS BLW MARIPOSA BYPASS",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "EW3",
+  "is_active": false,
+  "lat": 37.4775,
+  "lon": -120.70306,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "EASTSIDE WELL MW-3",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "FFB",
+  "is_active": false,
+  "lat": 37.30994,
+  "lon": -120.931038,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN R AT FREMONT FORD BRIDGE",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "H59",
+  "is_active": true,
+  "lat": 37.47028,
+  "lon": -120.5,
+  "notes": "",
+  "parameters": [
+   "1",
+   "2",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED R AT HWY 59 (MID)",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "M59",
+  "is_active": false,
+  "lat": 37.4697,
+  "lon": -120.50275,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER NEAR HWY 59 BRIDGE SNELLING",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MAR",
+  "is_active": false,
+  "lat": 37.292,
+  "lon": -120.147,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MARIPOSA CREEK DAM",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MBH",
+  "is_active": false,
+  "lat": 37.518223,
+  "lon": -120.380196,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED R BLW CROCKER-HUFFMAN DAM",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MBM",
+  "is_active": true,
+  "lat": 37.201025,
+  "lon": -120.696514,
+  "notes": "",
+  "parameters": [
+   "1"
+  ],
+  "source": "cdec",
+  "station_name": "MARIPOSSA BYPASS NEAR CRANES ROAD",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MBN",
+  "is_active": false,
+  "lat": 37.454224,
+  "lon": -120.608803,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED R AT SHAFFER BRIDGE NR CRESSY",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MCE",
+  "is_active": false,
+  "lat": 37.313611,
+  "lon": -120.386389,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED (CIMIS 148)",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MCK",
+  "is_active": true,
+  "lat": 37.3092,
+  "lon": -120.4456,
+  "notes": "",
+  "parameters": [
+   "1",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "BEAR CREEK AT MC KEE ROAD",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MCS",
+  "is_active": false,
+  "lat": 37.52,
+  "lon": -120.309,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "LAKE MC SWAIN",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MDB",
+  "is_active": false,
+  "lat": 37.488056,
+  "lon": -120.655281,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MUSTANG CREEK DETENTION BASIN",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MDS",
+  "is_active": false,
+  "lat": 37.52,
+  "lon": -120.309,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER-NORTH SIDE CANAL",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MFF",
+  "is_active": false,
+  "lat": 37.523,
+  "lon": -120.329,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED FALLS FOREBAY",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MFS",
+  "is_active": false,
+  "lat": 37.283,
+  "lon": -120.517,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MGS",
+  "is_active": false,
+  "lat": 37.50383,
+  "lon": -120.4524,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER NEAR G ST IN SNELLING",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MHA",
+  "is_active": false,
+  "lat": 37.3708,
+  "lon": -120.83588,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER NEAR HAGAMAN PARK",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MHT",
+  "is_active": false,
+  "lat": 37.51459,
+  "lon": -120.37148,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER AT MERCED RIVER HATCHERY",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MMF",
+  "is_active": false,
+  "lat": 37.522,
+  "lon": -120.331,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER BELOW MERCED FALLS",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MMS",
+  "is_active": false,
+  "lat": 37.52239,
+  "lon": -120.31111,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER BELOW MCSWAIN DAM",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MRC",
+  "is_active": false,
+  "lat": 37.522,
+  "lon": -120.331,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED R NR MERCED FALLS",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MRQ",
+  "is_active": false,
+  "lat": 37.28,
+  "lon": -120.1617,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MARIPOSA CK BLW MARIPOSA DAM",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MSF",
+  "is_active": false,
+  "lat": 37.43362,
+  "lon": -120.65454,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER NR SANTE FE BRIDGE CRESSEY",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MSG",
+  "is_active": false,
+  "lat": 37.2625,
+  "lon": -120.9056,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MUD SLOUGH NR GUSTINE",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MSJ",
+  "is_active": false,
+  "lat": 37.3476,
+  "lon": -120.97183,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER ABV SAN JOAQUIN RIVER CONFL",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MSN",
+  "is_active": true,
+  "lat": 37.502,
+  "lon": -120.451,
+  "notes": "",
+  "parameters": [
+   "1",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER NEAR SNELLING",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MST",
+  "is_active": false,
+  "lat": 37.371,
+  "lon": -120.931,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "MERCED RIVER NEAR STEVINSON",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "MWR",
+  "is_active": false,
+  "lat": 37.177254,
+  "lon": -120.652117,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "EASTSIDE BYPASS AT MERCED NWR",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "NEW",
+  "is_active": false,
+  "lat": 37.350494,
+  "lon": -120.97715,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN RIVER NEAR NEWMAN",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "OCD",
+  "is_active": true,
+  "lat": 37.21911,
+  "lon": -120.699084,
+  "notes": "",
+  "parameters": [
+   "1",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "OWENS CK BLW EASTSIDE CNL NR CRANE RNCH",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "OWN",
+  "is_active": true,
+  "lat": 37.282,
+  "lon": -120.187,
+  "notes": "",
+  "parameters": [
+   "15",
+   "2",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "OWENS CREEK DAM",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "OWQ",
+  "is_active": false,
+  "lat": 37.2733,
+  "lon": -120.2783,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "OWENS CK BLW OWENS DAM",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "SAN",
+  "is_active": false,
+  "lat": 37.182,
+  "lon": -120.794,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SAN LUIS NWR",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "SJH",
+  "is_active": true,
+  "lat": 37.05542,
+  "lon": -120.548302,
+  "notes": "",
+  "parameters": [
+   "1",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN RIVER NEAR HWY 152",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "SJS",
+  "is_active": false,
+  "lat": 37.295,
+  "lon": -120.851,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN RIVER NEAR STEVINSON",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "SMN",
+  "is_active": false,
+  "lat": 37.347214,
+  "lon": -120.976181,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN R ABV MERCED R NR NEWMAN",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "SSH",
+  "is_active": false,
+  "lat": 37.2478,
+  "lon": -120.8511,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SALT SLOUGH AT HWY 165 NR STEVINSON",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "ST3",
+  "is_active": false,
+  "lat": 37.33028,
+  "lon": -120.81444,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "STEVINSON WELL MW-OA-3",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "SWA",
+  "is_active": true,
+  "lat": 37.11532,
+  "lon": -120.587,
+  "notes": "",
+  "parameters": [
+   "1",
+   "20"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN R NR WASHINGTON RD",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "TID",
+  "is_active": false,
+  "lat": 37.501,
+  "lon": -120.854,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "TURLOCK IRRIGATION DISTRICT OFFICE",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "UCM",
+  "is_active": true,
+  "lat": 37.36911,
+  "lon": -120.42013,
+  "notes": "",
+  "parameters": [
+   "2"
+  ],
+  "source": "cdec",
+  "station_name": "UC MERCED WEATHER STATION",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "W90",
+  "is_active": false,
+  "lat": 37.1284,
+  "lon": -120.5848,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN R - MONITORING WELL #90",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "W92",
+  "is_active": false,
+  "lat": 37.1045,
+  "lon": -120.5916,
+  "notes": "",
+  "parameters": [
+   "1",
+   "15",
+   "2",
+   "20",
+   "23",
+   "6",
+   "76"
+  ],
+  "source": "cdec",
+  "station_name": "SAN JOAQUIN R - MONITORING WELL #92",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "105",
+  "is_active": false,
+  "lat": 36.634028,
+  "lon": -120.38181,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Westlands",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "124",
+  "is_active": false,
+  "lat": 36.890056,
+  "lon": -120.73141,
+  "notes": "Nearest representative CIMIS station \u2014 ~24 km outside the Merced Subbasin (the subbasin has no CIMIS station of its own; the only one, Merced #148, was decommissioned in 2024).",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Panoche",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "145",
+  "is_active": false,
+  "lat": 37.016528,
+  "lon": -120.18639,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Madera",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "148",
+  "is_active": false,
+  "lat": 37.314139,
+  "lon": -120.3867,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Merced",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "161",
+  "is_active": false,
+  "lat": 37.438944,
+  "lon": -121.13851,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Patterson",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "168",
+  "is_active": false,
+  "lat": 37.553111,
+  "lon": -120.77928,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Denair",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "188",
+  "is_active": false,
+  "lat": 37.02,
+  "lon": -120.15,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Madera II",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "194",
+  "is_active": false,
+  "lat": 37.727194,
+  "lon": -120.85086,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Oakdale",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "206",
+  "is_active": false,
+  "lat": 37.545869,
+  "lon": -120.75453,
+  "notes": "Nearest representative CIMIS station \u2014 ~14 km outside the Merced Subbasin (the subbasin has no CIMIS station of its own; the only one, Merced #148, was decommissioned in 2024).",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Denair II",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "269",
+  "is_active": false,
+  "lat": 37.108935,
+  "lon": -120.797387,
+  "notes": "Nearest representative CIMIS station \u2014 ~7 km outside the Merced Subbasin (the subbasin has no CIMIS station of its own; the only one, Merced #148, was decommissioned in 2024).",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Los Banos II",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "40",
+  "is_active": false,
+  "lat": 36.683333,
+  "lon": -120.38722,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Mendota/MuriettaUSDA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "56",
+  "is_active": false,
+  "lat": 37.096694,
+  "lon": -120.7539,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Los Banos",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "7",
+  "is_active": false,
+  "lat": 36.851222,
+  "lon": -120.59092,
+  "notes": "Nearest representative CIMIS station \u2014 ~22 km outside the Merced Subbasin (the subbasin has no CIMIS station of its own; the only one, Merced #148, was decommissioned in 2024).",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Firebaugh/Telles",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "71",
+  "is_active": false,
+  "lat": 37.645222,
+  "lon": -121.18776,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Modesto",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "92",
+  "is_active": false,
+  "lat": 37.231861,
+  "lon": -120.88082,
+  "notes": "",
+  "parameters": [
+   "day-air-tmp-avg",
+   "day-asce-eto",
+   "day-precip",
+   "day-sol-rad-avg",
+   "day-wind-spd-avg"
+  ],
+  "source": "cimis",
+  "station_name": "Kesterson",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370000N1200000W001",
+  "is_active": false,
+  "lat": 37.38973,
+  "lon": -120.62316,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Well #13 Tok & Thom",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370463N1208110W001",
+  "is_active": false,
+  "lat": 37.04636,
+  "lon": -120.811,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "1PU-2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370516N1202571W001",
+  "is_active": false,
+  "lat": 37.0516,
+  "lon": -120.2571,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CWD RMS-16",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370539N1202948W001",
+  "is_active": false,
+  "lat": 37.05455,
+  "lon": -120.28628,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB05A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370692N1200745W003",
+  "is_active": false,
+  "lat": 37.06922,
+  "lon": -120.07446,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MSB11C",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370721N1205425W001",
+  "is_active": false,
+  "lat": 37.07218,
+  "lon": -120.54256,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "HR1-S",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370721N1205425W002",
+  "is_active": false,
+  "lat": 37.07218,
+  "lon": -120.54256,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "HR1-D",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370732N1202342W001",
+  "is_active": false,
+  "lat": 37.0732,
+  "lon": -120.2342,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CWD RMS-15",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370747N1201933W001",
+  "is_active": false,
+  "lat": 37.07499,
+  "lon": -120.19475,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MSB10A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370874N1205372W001",
+  "is_active": false,
+  "lat": 37.0874,
+  "lon": -120.5372,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Baker 3",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370902N1203741W001",
+  "is_active": false,
+  "lat": 37.0902,
+  "lon": -120.3741,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CWD RMS-10",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370904N1202610W002",
+  "is_active": false,
+  "lat": 37.0904,
+  "lon": -120.261,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB12B",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370904N1202610W003",
+  "is_active": false,
+  "lat": 37.0904,
+  "lon": -120.261,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB12C",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370929N1209258W001",
+  "is_active": false,
+  "lat": 37.09294,
+  "lon": -120.9258,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Well 1",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370985N1204894W002",
+  "is_active": true,
+  "lat": 37.09856,
+  "lon": -120.48948,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Jefferson Road - Above Corcoran Shallow",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371049N1203296W001",
+  "is_active": false,
+  "lat": 37.1049,
+  "lon": -120.3296,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CWD RMS-5",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371075N1209314W002",
+  "is_active": false,
+  "lat": 37.1075,
+  "lon": -120.93136,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "1ML-6",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371123N1202020W001",
+  "is_active": false,
+  "lat": 37.1123,
+  "lon": -120.202,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB13A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371160N1204207W001",
+  "is_active": false,
+  "lat": 37.11664,
+  "lon": -120.41927,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CWD RMS-1",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371219N1202818W001",
+  "is_active": false,
+  "lat": 37.12195,
+  "lon": -120.28182,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB08A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371219N1202818W003",
+  "is_active": false,
+  "lat": 37.12195,
+  "lon": -120.28182,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB08C",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371332N1203827W002",
+  "is_active": false,
+  "lat": 37.13329,
+  "lon": -120.38274,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB01B",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371332N1203827W003",
+  "is_active": false,
+  "lat": 37.13329,
+  "lon": -120.38274,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB01C",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371347N1204928W002",
+  "is_active": true,
+  "lat": 37.13473,
+  "lon": -120.49286,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "El Nido Fire Station - Above Corcoran Shallow",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371365N1202206W001",
+  "is_active": false,
+  "lat": 37.13709,
+  "lon": -120.22047,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB03A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371365N1202206W002",
+  "is_active": false,
+  "lat": 37.13709,
+  "lon": -120.22047,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB03B",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371365N1202206W003",
+  "is_active": false,
+  "lat": 37.13709,
+  "lon": -120.22047,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB03C",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371635N1208181W001",
+  "is_active": false,
+  "lat": 37.1635,
+  "lon": -120.81814,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "1PL-6",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371710N1203746W001",
+  "is_active": false,
+  "lat": 37.171,
+  "lon": -120.3746,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CWD RMS-2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371827N1203254W002",
+  "is_active": false,
+  "lat": 37.18316,
+  "lon": -120.32544,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB02B",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371827N1203254W003",
+  "is_active": false,
+  "lat": 37.18316,
+  "lon": -120.32544,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CSB02C",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371902N1201985W001",
+  "is_active": true,
+  "lat": 37.1902,
+  "lon": -120.1985,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "CH2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372292N1204837W001",
+  "is_active": true,
+  "lat": 37.2292,
+  "lon": -120.4837,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Dejager #3",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372538N1203160W001",
+  "is_active": false,
+  "lat": 37.25385,
+  "lon": -120.31603,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Cardwell Ranches - Deep",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372617N1204747W001",
+  "is_active": true,
+  "lat": 37.26173,
+  "lon": -120.47461,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "212",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372734N1203071W001",
+  "is_active": false,
+  "lat": 37.27332,
+  "lon": -120.30705,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "95",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372734N1203071W002",
+  "is_active": true,
+  "lat": 37.29644,
+  "lon": -120.37487,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "98A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372806N1205241W001",
+  "is_active": true,
+  "lat": 37.2806,
+  "lon": -120.52411,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "206",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372904N1204207W001",
+  "is_active": false,
+  "lat": 37.29038,
+  "lon": -120.45288,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW1-Well Site 2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372904N1204529W001",
+  "is_active": false,
+  "lat": 37.29038,
+  "lon": -120.45288,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW2-Well Site 2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372904N1204529W002",
+  "is_active": true,
+  "lat": 37.29038,
+  "lon": -120.45288,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW3-Well Site 2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372904N1204529W003",
+  "is_active": true,
+  "lat": 37.29038,
+  "lon": -120.45288,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW4-Well Site 2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "372991N1209446W001",
+  "is_active": false,
+  "lat": 37.29914,
+  "lon": -120.94467,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "2MU-4",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373083N1209326W001",
+  "is_active": false,
+  "lat": 37.30833,
+  "lon": -120.93264,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "2MU-5",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373166N1207091W001",
+  "is_active": true,
+  "lat": 37.3167,
+  "lon": -120.70898,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "50",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373202N1208591W001",
+  "is_active": false,
+  "lat": 37.32023,
+  "lon": -120.85913,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "DW9",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373260N1204432W001",
+  "is_active": true,
+  "lat": 37.32603,
+  "lon": -120.44316,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW1-Well Site 7",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373260N1204432W002",
+  "is_active": true,
+  "lat": 37.32603,
+  "lon": -120.44316,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW2-Well Site 7",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373260N1204432W003",
+  "is_active": false,
+  "lat": 37.32603,
+  "lon": -120.44316,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW3-Well Site 7",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373260N1204432W004",
+  "is_active": true,
+  "lat": 37.32603,
+  "lon": -120.44316,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW4-Well Site 7",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373260N1204880W004",
+  "is_active": false,
+  "lat": 37.32603,
+  "lon": -120.48801,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW4-Well Site 9",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373262N1208920W001",
+  "is_active": true,
+  "lat": 37.32627,
+  "lon": -120.89207,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "DW16",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373302N1208144W001",
+  "is_active": false,
+  "lat": 37.33028,
+  "lon": -120.81444,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW-OA-3",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373304N1208447W001",
+  "is_active": false,
+  "lat": 37.3304,
+  "lon": -120.8447,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "DW7",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373306N1208433W001",
+  "is_active": true,
+  "lat": 37.33065,
+  "lon": -120.84336,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "DW18",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373457N1205429W001",
+  "is_active": false,
+  "lat": 37.34607,
+  "lon": -120.54089,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "224",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373496N1205890W001",
+  "is_active": true,
+  "lat": 37.34955,
+  "lon": -120.58897,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW1013",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373510N1209113W001",
+  "is_active": false,
+  "lat": 37.35102,
+  "lon": -120.91133,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW-5B",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373510N1209114W001",
+  "is_active": false,
+  "lat": 37.35101,
+  "lon": -120.91138,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW-5A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373532N1206432W001",
+  "is_active": false,
+  "lat": 37.3531,
+  "lon": -120.64383,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "13",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373603N1204695W001",
+  "is_active": true,
+  "lat": 37.36033,
+  "lon": -120.46956,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW1-Well Site 21",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373877N1208027W001",
+  "is_active": false,
+  "lat": 37.38773,
+  "lon": -120.80275,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Blum 3-1",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373877N1208027W003",
+  "is_active": false,
+  "lat": 37.38777,
+  "lon": -120.80273,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Blum 3-2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373877N1208027W005",
+  "is_active": false,
+  "lat": 37.38777,
+  "lon": -120.80273,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Blum 1-3",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373877N1208028W002",
+  "is_active": false,
+  "lat": 37.38774,
+  "lon": -120.8028,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Blum 1-2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373968N1208146W001",
+  "is_active": false,
+  "lat": 37.39668,
+  "lon": -120.81349,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "TID 303",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373973N1208003W002",
+  "is_active": false,
+  "lat": 37.39737,
+  "lon": -120.80035,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Balv 3",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373973N1208003W003",
+  "is_active": false,
+  "lat": 37.39737,
+  "lon": -120.80035,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Balv 2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "373973N1209044W001",
+  "is_active": false,
+  "lat": 37.39738,
+  "lon": -120.90442,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "WTS-2 Shallow",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374146N1208602W002",
+  "is_active": false,
+  "lat": 37.41447,
+  "lon": -120.86036,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "TID 113A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374289N1206673W001",
+  "is_active": false,
+  "lat": 37.42893,
+  "lon": -120.66742,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-03 Upper",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374289N1206673W002",
+  "is_active": false,
+  "lat": 37.42893,
+  "lon": -120.66742,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-03 Middle",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374289N1206673W003",
+  "is_active": false,
+  "lat": 37.42893,
+  "lon": -120.66742,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-03 Lower",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374296N1208907W001",
+  "is_active": false,
+  "lat": 37.42986,
+  "lon": -120.89066,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "TID 118",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374305N1209321W001",
+  "is_active": false,
+  "lat": 37.43053,
+  "lon": -120.93104,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "TID 083",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374416N1206561W001",
+  "is_active": false,
+  "lat": 37.44169,
+  "lon": -120.65616,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETSGSA-23",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374421N1205407W001",
+  "is_active": false,
+  "lat": 37.44218,
+  "lon": -120.54066,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "236",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374499N1207220W001",
+  "is_active": false,
+  "lat": 37.44997,
+  "lon": -120.72207,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "MW-68A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374501N1207220W001",
+  "is_active": false,
+  "lat": 37.45016,
+  "lon": -120.72205,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETSGSA-24",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374527N1209768W001",
+  "is_active": false,
+  "lat": 37.45272,
+  "lon": -120.97657,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "TID 061A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374629N1209301W001",
+  "is_active": false,
+  "lat": 37.46297,
+  "lon": -120.93019,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "WTS-1 Shallow",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374629N1209302W001",
+  "is_active": false,
+  "lat": 37.46297,
+  "lon": -120.93025,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "WTS-1 Deep",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374630N1207267W001",
+  "is_active": false,
+  "lat": 37.46304,
+  "lon": -120.72675,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-04 Upper",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374630N1207267W002",
+  "is_active": false,
+  "lat": 37.46304,
+  "lon": -120.72675,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-04 Middle",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374630N1207267W003",
+  "is_active": false,
+  "lat": 37.46304,
+  "lon": -120.72675,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-04 Lower",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374887N1208756W002",
+  "is_active": false,
+  "lat": 37.48876,
+  "lon": -120.87563,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "SWW Reservoir MW-235",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374887N1208756W003",
+  "is_active": false,
+  "lat": 37.48876,
+  "lon": -120.87563,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "SWW Reservoir MW-417",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374971N1204893W001",
+  "is_active": false,
+  "lat": 37.49737,
+  "lon": -120.48932,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-02 Upper",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374971N1204893W002",
+  "is_active": false,
+  "lat": 37.49737,
+  "lon": -120.48932,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-02 Middle",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "374971N1204893W003",
+  "is_active": false,
+  "lat": 37.49737,
+  "lon": -120.48932,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETTSS-02 Lower",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "375103N1207329W001",
+  "is_active": false,
+  "lat": 37.51035,
+  "lon": -120.7328,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETSGSA-15",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "375136N1206739W001",
+  "is_active": false,
+  "lat": 37.51358,
+  "lon": -120.67387,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "EWD 03 (identified as EWD-05 in ETSGSA)",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "375145N1208073W003",
+  "is_active": false,
+  "lat": 37.51456,
+  "lon": -120.80737,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "Denair NW-11 605",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "375193N1205699W001",
+  "is_active": false,
+  "lat": 37.51964,
+  "lon": -120.57025,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETSGSA-18",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "375222N1207348W001",
+  "is_active": false,
+  "lat": 37.52221,
+  "lon": -120.73483,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_sgma",
+  "station_name": "ETSGSA-25",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370000N1200000W001",
+  "is_active": true,
+  "lat": 37.38973,
+  "lon": -120.62316,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "Well #13 Tok & Thom",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370000N1200000W002",
+  "is_active": true,
+  "lat": 37.40341,
+  "lon": -120.62281,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "Well #16 Jon & Eucal",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370449N1203969W001",
+  "is_active": false,
+  "lat": 37.04491,
+  "lon": -120.39685,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E24M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370457N1201260W001",
+  "is_active": false,
+  "lat": 37.0457,
+  "lon": -120.126,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S17E21M001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370460N1208107W001",
+  "is_active": false,
+  "lat": 37.046,
+  "lon": -120.8107,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E19L001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370463N1202207W001",
+  "is_active": false,
+  "lat": 37.0463,
+  "lon": -120.2207,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S16E21J001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370463N1207782W001",
+  "is_active": false,
+  "lat": 37.0463,
+  "lon": -120.7782,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E21M001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370463N1208110W001",
+  "is_active": false,
+  "lat": 37.04636,
+  "lon": -120.811,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "1PU-2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370463N1208554W001",
+  "is_active": false,
+  "lat": 37.0463,
+  "lon": -120.8554,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S10E22J001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370468N1201663W001",
+  "is_active": false,
+  "lat": 37.0468,
+  "lon": -120.1663,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S16E24J001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370468N1204421W001",
+  "is_active": false,
+  "lat": 37.0468,
+  "lon": -120.4421,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E21G001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370468N1205016W001",
+  "is_active": false,
+  "lat": 37.0468,
+  "lon": -120.5016,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E24L001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370468N1207793W001",
+  "is_active": false,
+  "lat": 37.0468,
+  "lon": -120.7793,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E21M002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370468N1209271W001",
+  "is_active": false,
+  "lat": 37.0468,
+  "lon": -120.9271,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E24J001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370471N1202571W001",
+  "is_active": false,
+  "lat": 37.0471,
+  "lon": -120.2571,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S16E19J001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370471N1203016W001",
+  "is_active": false,
+  "lat": 37.0471,
+  "lon": -120.3016,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E23K001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370471N1203154W001",
+  "is_active": false,
+  "lat": 37.0471,
+  "lon": -120.3154,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E22K001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370474N1204557W001",
+  "is_active": false,
+  "lat": 37.0474,
+  "lon": -120.4557,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E20H002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370477N1203377W001",
+  "is_active": false,
+  "lat": 37.0477,
+  "lon": -120.3377,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E21F001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370477N1203741W001",
+  "is_active": false,
+  "lat": 37.0477,
+  "lon": -120.3741,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E19F001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370480N1205104W001",
+  "is_active": false,
+  "lat": 37.048,
+  "lon": -120.5104,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E24E001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370480N1208166W001",
+  "is_active": false,
+  "lat": 37.048,
+  "lon": -120.8166,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "8.06",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370480N1208174W001",
+  "is_active": false,
+  "lat": 37.048,
+  "lon": -120.8174,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E19M002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370489N1205400W001",
+  "is_active": false,
+  "lat": 37.0489,
+  "lon": -120.54,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E22F002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370493N1209577W001",
+  "is_active": false,
+  "lat": 37.0493,
+  "lon": -120.9577,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E23F001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370509N1203251W001",
+  "is_active": false,
+  "lat": 37.05091,
+  "lon": -120.32507,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E22D",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370513N1204738W001",
+  "is_active": false,
+  "lat": 37.0513,
+  "lon": -120.4738,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E19A002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370513N1205816W001",
+  "is_active": false,
+  "lat": 37.0513,
+  "lon": -120.5816,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "188A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370513N1208938W001",
+  "is_active": false,
+  "lat": 37.0513,
+  "lon": -120.89379,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S10E20H001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370516N1202571W001",
+  "is_active": false,
+  "lat": 37.0516,
+  "lon": -120.2571,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "CWD RMS-16",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370518N1202029W001",
+  "is_active": false,
+  "lat": 37.0518,
+  "lon": -120.2029,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S16E22A001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370518N1202571W001",
+  "is_active": false,
+  "lat": 37.0518,
+  "lon": -120.2571,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S16E19A001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370523N1208684W001",
+  "is_active": false,
+  "lat": 37.05231,
+  "lon": -120.8684,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "CLB Well #12",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370524N1203566W001",
+  "is_active": false,
+  "lat": 37.0524,
+  "lon": -120.3566,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E20C003M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370524N1204035W001",
+  "is_active": false,
+  "lat": 37.0524,
+  "lon": -120.4035,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E23A001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370527N1203571W001",
+  "is_active": false,
+  "lat": 37.0527,
+  "lon": -120.3571,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E20C004M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370527N1205724W001",
+  "is_active": false,
+  "lat": 37.0527,
+  "lon": -120.5724,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E20C001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370530N1208571W001",
+  "is_active": false,
+  "lat": 37.053,
+  "lon": -120.8571,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "074A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370530N1209568W001",
+  "is_active": false,
+  "lat": 37.053,
+  "lon": -120.9568,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E23C002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370531N1208260W001",
+  "is_active": false,
+  "lat": 37.05317,
+  "lon": -120.826,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "CLB Well #10",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370532N1200749W001",
+  "is_active": false,
+  "lat": 37.0532,
+  "lon": -120.0749,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S17E23A001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370532N1207068W001",
+  "is_active": false,
+  "lat": 37.0532,
+  "lon": -120.7068,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S12E19D002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370535N1205543W001",
+  "is_active": false,
+  "lat": 37.0535,
+  "lon": -120.5543,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E21C002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370535N1205632W001",
+  "is_active": false,
+  "lat": 37.0535,
+  "lon": -120.5632,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "189A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370538N1209604W001",
+  "is_active": false,
+  "lat": 37.0538,
+  "lon": -120.9604,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E23D002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370539N1202948W001",
+  "is_active": false,
+  "lat": 37.05455,
+  "lon": -120.28628,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "CSB05A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370539N1202948W002",
+  "is_active": false,
+  "lat": 37.05455,
+  "lon": -120.28628,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "CSB05B",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370539N1202948W003",
+  "is_active": false,
+  "lat": 37.05455,
+  "lon": -120.28628,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "CSB05C",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370541N1203921W001",
+  "is_active": false,
+  "lat": 37.0541,
+  "lon": -120.3921,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E24C001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370541N1205543W001",
+  "is_active": false,
+  "lat": 37.0541,
+  "lon": -120.5543,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E21C001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370541N1205996W001",
+  "is_active": false,
+  "lat": 37.0541,
+  "lon": -120.5996,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "181",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370541N1209154W001",
+  "is_active": false,
+  "lat": 37.0541,
+  "lon": -120.9154,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "034",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370543N1201085W001",
+  "is_active": false,
+  "lat": 37.0543,
+  "lon": -120.1085,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S17E22D",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370543N1202391W001",
+  "is_active": false,
+  "lat": 37.0543,
+  "lon": -120.2391,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S16E20A001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370543N1203018W001",
+  "is_active": false,
+  "lat": 37.0543,
+  "lon": -120.3018,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E23C001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370543N1204471W001",
+  "is_active": false,
+  "lat": 37.0543,
+  "lon": -120.4471,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E21C003M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370543N1206316W001",
+  "is_active": false,
+  "lat": 37.0543,
+  "lon": -120.6316,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "SJ2",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370543N1207074W001",
+  "is_active": false,
+  "lat": 37.0543,
+  "lon": -120.7074,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S12E19D001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370545N1202066W001",
+  "is_active": false,
+  "lat": 37.05445,
+  "lon": -120.20658,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S16E22A",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370546N1207435W001",
+  "is_active": false,
+  "lat": 37.0546,
+  "lon": -120.7435,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E23D001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370546N1208166W001",
+  "is_active": false,
+  "lat": 37.0546,
+  "lon": -120.8166,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E19D002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370546N1208293W001",
+  "is_active": false,
+  "lat": 37.0546,
+  "lon": -120.8293,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "066B",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370549N1207427W001",
+  "is_active": false,
+  "lat": 37.0549,
+  "lon": -120.7427,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E23D002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370549N1209593W001",
+  "is_active": false,
+  "lat": 37.0549,
+  "lon": -120.9593,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E23D001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370552N1207618W001",
+  "is_active": false,
+  "lat": 37.0552,
+  "lon": -120.7618,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E22D001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370552N1208168W001",
+  "is_active": false,
+  "lat": 37.0552,
+  "lon": -120.8168,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E19D001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370552N1209616W001",
+  "is_active": false,
+  "lat": 37.0552,
+  "lon": -120.9616,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E23D003M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370555N1204193W001",
+  "is_active": false,
+  "lat": 37.0555,
+  "lon": -120.4193,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E15R001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370555N1207052W001",
+  "is_active": false,
+  "lat": 37.0555,
+  "lon": -120.7052,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S12E18N001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370555N1208093W001",
+  "is_active": false,
+  "lat": 37.0555,
+  "lon": -120.8093,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E19B002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370555N1209607W001",
+  "is_active": false,
+  "lat": 37.0555,
+  "lon": -120.9607,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E23D004M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370557N1207624W001",
+  "is_active": false,
+  "lat": 37.0557,
+  "lon": -120.7624,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E16R002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370557N1208032W001",
+  "is_active": false,
+  "lat": 37.0557,
+  "lon": -120.8032,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E19A001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370557N1209557W001",
+  "is_active": false,
+  "lat": 37.0557,
+  "lon": -120.9557,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E23C001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370560N1207802W001",
+  "is_active": false,
+  "lat": 37.056,
+  "lon": -120.7802,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E16N002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370563N1207627W001",
+  "is_active": false,
+  "lat": 37.0563,
+  "lon": -120.7627,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E16R001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370563N1208852W001",
+  "is_active": false,
+  "lat": 37.0563,
+  "lon": -120.8852,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "035",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370563N1209368W001",
+  "is_active": false,
+  "lat": 37.0563,
+  "lon": -120.9368,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E24C001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370566N1206066W001",
+  "is_active": false,
+  "lat": 37.0566,
+  "lon": -120.6066,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S12E13Q001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370568N1203307W001",
+  "is_active": false,
+  "lat": 37.0568,
+  "lon": -120.3307,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "CWD RMS-11",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370568N1205491W001",
+  "is_active": false,
+  "lat": 37.0568,
+  "lon": -120.5491,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E16R001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370568N1206613W001",
+  "is_active": false,
+  "lat": 37.05679,
+  "lon": -120.66129,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "16A@",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370568N1207793W001",
+  "is_active": false,
+  "lat": 37.0568,
+  "lon": -120.7793,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E16N001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370568N1209079W001",
+  "is_active": false,
+  "lat": 37.0568,
+  "lon": -120.9079,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "343",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370568N1209263W001",
+  "is_active": false,
+  "lat": 37.0568,
+  "lon": -120.9263,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S10E18N001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370568N1209438W001",
+  "is_active": false,
+  "lat": 37.0568,
+  "lon": -120.9438,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "345",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370571N1207877W001",
+  "is_active": false,
+  "lat": 37.0571,
+  "lon": -120.7877,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S11E17Q001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370574N1209457W001",
+  "is_active": false,
+  "lat": 37.0574,
+  "lon": -120.9457,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E14R001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370582N1204596W001",
+  "is_active": false,
+  "lat": 37.0582,
+  "lon": -120.4596,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S14E17J001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370582N1204927W001",
+  "is_active": false,
+  "lat": 37.0582,
+  "lon": -120.4927,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E13J001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370585N1208682W001",
+  "is_active": false,
+  "lat": 37.0585,
+  "lon": -120.8682,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S10E15N001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370588N1205954W001",
+  "is_active": false,
+  "lat": 37.0588,
+  "lon": -120.5954,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S13E18M001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370591N1209724W001",
+  "is_active": false,
+  "lat": 37.0591,
+  "lon": -120.9724,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S09E15F002M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370593N1206893W001",
+  "is_active": false,
+  "lat": 37.0593,
+  "lon": -120.6893,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "17C@",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370593N1208979W001",
+  "is_active": false,
+  "lat": 37.0593,
+  "lon": -120.8979,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S10E17Q001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370599N1206118W001",
+  "is_active": false,
+  "lat": 37.0599,
+  "lon": -120.6118,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "2410(SLCC Well T-02)",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370599N1206760W001",
+  "is_active": false,
+  "lat": 37.0599,
+  "lon": -120.676,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "17B",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "370610N1203813W001",
+  "is_active": false,
+  "lat": 37.061,
+  "lon": -120.3813,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "10S15E18M001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371707N1202793W001",
+  "is_active": false,
+  "lat": 37.1707,
+  "lon": -120.2793,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "09S15E12B001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "371707N1203832W001",
+  "is_active": false,
+  "lat": 37.1707,
+  "lon": -120.3832,
+  "notes": "",
+  "parameters": [
+   "gw_level"
+  ],
+  "source": "dwr_wdl",
+  "station_name": "09S14E12A001M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "US1CAMA0008",
+  "is_active": false,
+  "lat": 37.116,
+  "lon": -120.252,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "CHOWCHILLA 0.3 E, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "US1CAME0004",
+  "is_active": false,
+  "lat": 37.310242,
+  "lon": -120.496842,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "MERCED 1.2 NW, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "US1CAME0006",
+  "is_active": true,
+  "lat": 37.308,
+  "lon": -120.4692,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "MERCED 1.2 NE, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "US1CAMP0004",
+  "is_active": false,
+  "lat": 37.415248,
+  "lon": -120.099768,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "CATHEYS VALLEY 1.2 S, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USC00041590",
+  "is_active": false,
+  "lat": 37.4,
+  "lon": -120.11667,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "CATHEYS VALLEY WYRE, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USC00042920",
+  "is_active": false,
+  "lat": 37.353,
+  "lon": -120.1623,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "EXCHEQUER DAM, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USC00044884",
+  "is_active": false,
+  "lat": 37.23333,
+  "lon": -120.25,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "LE GRAND, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USC00045118",
+  "is_active": false,
+  "lat": 37.0563,
+  "lon": -120.8666,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "LOS BANOS, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USC00045532",
+  "is_active": true,
+  "lat": 37.2888,
+  "lon": -120.5158,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "MERCED, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USC00045535",
+  "is_active": false,
+  "lat": 37.3053,
+  "lon": -120.4857,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "MERCED 2, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USC00049073",
+  "is_active": false,
+  "lat": 37.50193,
+  "lon": -120.84566,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "TURLOCK NUMBER 2, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USR0000CCAT",
+  "is_active": false,
+  "lat": 37.4681,
+  "lon": -120.1106,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "CATHEYS VALLEY CALIFORNIA, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USR0000CSNL",
+  "is_active": false,
+  "lat": 37.1822,
+  "lon": -120.7939,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "SAN LUIS NWR CALIFORNIA, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USW00023203",
+  "is_active": false,
+  "lat": 37.38333,
+  "lon": -120.56667,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "CASTLE AFB, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USW00023257",
+  "is_active": true,
+  "lat": 37.28597,
+  "lon": -120.51788,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "MERCED MUNICIPAL AIRPORT, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "USW00093243",
+  "is_active": false,
+  "lat": 37.2381,
+  "lon": -120.8825,
+  "notes": "",
+  "parameters": [
+   "PRCP",
+   "SNOW",
+   "TMAX",
+   "TMIN"
+  ],
+  "source": "noaa",
+  "station_name": "MERCED 23 WSW, CA US",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11152870",
+  "is_active": false,
+  "lat": 37.0494722,
+  "lon": -121.2910833,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "NF PACHECO C BLW PACHECO RES NR BELL STATION CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11153000",
+  "is_active": false,
+  "lat": 36.98,
+  "lon": -121.38027778,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "PACHECO C NR DUNNEVILLE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11156500",
+  "is_active": false,
+  "lat": 36.614128,
+  "lon": -121.211361,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN BENITO R NR WILLOW CREEK SCHOOL CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11157500",
+  "is_active": false,
+  "lat": 36.765753,
+  "lon": -121.2996128,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "TRES PINOS C NR TRES PINOS CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11158600",
+  "is_active": false,
+  "lat": 36.81675,
+  "lon": -121.3926806,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN BENITO R BL HOSPITAL RD BRIDGE NR HOLLISTER CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11249500",
+  "is_active": false,
+  "lat": 37.0027273,
+  "lon": -119.7068118,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "MADERA CN A FRIANT CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11250000",
+  "is_active": false,
+  "lat": 36.9980051,
+  "lon": -119.7040338,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "FRIANT-KERN CN A FRIANT CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11250110",
+  "is_active": false,
+  "lat": 36.99916667,
+  "lon": -119.706111,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R RELEASE A FRIANT DAM CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11251000",
+  "is_active": false,
+  "lat": 36.98439397,
+  "lon": -119.7243124,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R BL FRIANT CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11252275",
+  "is_active": false,
+  "lat": 36.87638889,
+  "lon": -119.7930556,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R BL HWY 41 NR PINEDALE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11252975",
+  "is_active": false,
+  "lat": 36.82194444,
+  "lon": -120.0594444,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R A SKAGGS BR NR RIPPERDAN CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11253058",
+  "is_active": false,
+  "lat": 36.79916667,
+  "lon": -120.163611,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R A GRAVELLY FORD CN NR KERMAN CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11253115",
+  "is_active": false,
+  "lat": 36.77375,
+  "lon": -120.286,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R BL CHOWCHILLA CN INTAKE NR MENDOTA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11254000",
+  "is_active": false,
+  "lat": 36.8105046,
+  "lon": -120.3782256,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R NR MENDOTA CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11255575",
+  "is_active": false,
+  "lat": 36.65245145,
+  "lon": -120.6321186,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "PANOCHE C A I-5 NR SILVER CREEK CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11260815",
+  "is_active": false,
+  "lat": 37.29513418,
+  "lon": -120.8436176,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R NR STEVINSON CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11261100",
+  "is_active": true,
+  "lat": 37.2476912,
+  "lon": -120.8521075,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SALT SLOUGH A HWY 165 NR STEVINSON CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11261500",
+  "is_active": true,
+  "lat": 37.3099115,
+  "lon": -120.9309993,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R A FREMONT FORD BRIDGE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11262900",
+  "is_active": true,
+  "lat": 37.26241267,
+  "lon": -120.9065536,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "MUD SLOUGH NR GUSTINE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11266500",
+  "is_active": false,
+  "lat": 37.71627778,
+  "lon": -119.6656667,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "MERCED R A POHONO BRIDGE NR YOSEMITE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11270900",
+  "is_active": false,
+  "lat": 37.5216029,
+  "lon": -120.3324114,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "MERCED R BL MERCED FALLS DAM NR SNELL CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11271290",
+  "is_active": false,
+  "lat": 37.45410365,
+  "lon": -120.6088084,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "MERCED R A SHAFFER BRIDGE NR CRESSEY CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11271360",
+  "is_active": false,
+  "lat": 37.42490969,
+  "lon": -120.6646985,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "MERCED R NR ALVES RD NR CRESSEY CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11273400",
+  "is_active": true,
+  "lat": 37.34718815,
+  "lon": -120.9761399,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R AB MERCED R NR NEWMAN CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11274000",
+  "is_active": true,
+  "lat": 37.35046585,
+  "lon": -120.9771121,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R NR NEWMAN CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11274500",
+  "is_active": false,
+  "lat": 37.3154653,
+  "lon": -121.125171,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "ORESTIMBA C NR NEWMAN CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11274550",
+  "is_active": false,
+  "lat": 37.43218889,
+  "lon": -121.0133444,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R NR CROWS LANDING CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11274630",
+  "is_active": false,
+  "lat": 37.48657227,
+  "lon": -121.2090645,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "DEL PUERTO C NR PATTERSON CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11274790",
+  "is_active": false,
+  "lat": 37.91657698,
+  "lon": -119.6598627,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "TUOLUMNE R A GRAND CYN OF TUOLUMNE AB HETCH HETCHY",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11276500",
+  "is_active": false,
+  "lat": 37.93740877,
+  "lon": -119.7982,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "TUOLUMNE R NR HETCH HETCHY CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11276600",
+  "is_active": false,
+  "lat": 37.87935307,
+  "lon": -119.947092,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "TUOLUMNE R AB EARLY INTAKE NR MATHER CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11276900",
+  "is_active": false,
+  "lat": 37.88157506,
+  "lon": -119.9701483,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "TUOLUMNE R BL EARLY INTAKE NR MATHER CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11277300",
+  "is_active": false,
+  "lat": 37.96768499,
+  "lon": -119.91737025,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "CHERRY C BL VALLEY DAM NR HETCH HETCHY CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11278000",
+  "is_active": false,
+  "lat": 37.96907415,
+  "lon": -119.8820916,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "ELEANOR C NR HETCH HETCHY CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11278300",
+  "is_active": false,
+  "lat": 37.89435266,
+  "lon": -119.9626483,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "CHERRY C NR EARLY INTAKE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11278400",
+  "is_active": false,
+  "lat": 37.890186,
+  "lon": -119.9698706,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "CHERRY C BL DION R HOLM PH NR MATHER CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11284400",
+  "is_active": false,
+  "lat": 37.8418518,
+  "lon": -120.1848757,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "BIG C AB WHITES GULCH NR GROVELAND CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11289000",
+  "is_active": false,
+  "lat": 37.67240817,
+  "lon": -120.474881,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "MODESTO CN NR LA GRANGE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11289500",
+  "is_active": false,
+  "lat": 37.6657419,
+  "lon": -120.4409912,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "TURLOCK CN NR LA GRANGE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11289650",
+  "is_active": false,
+  "lat": 37.66629746,
+  "lon": -120.4421023,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "TUOLUMNE R BL LAGRANGE DAM NR LAGRANGE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11289651",
+  "is_active": false,
+  "lat": 37.666321,
+  "lon": -120.4421394,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "COMBINED FLOW TUOLUMNE R + MODESTO CN + TURLOCK CN",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11289850",
+  "is_active": false,
+  "lat": 37.71144167,
+  "lon": -120.6098028,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "DRY C A CRABTREE RD NR LA GRANGE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11290000",
+  "is_active": false,
+  "lat": 37.627153,
+  "lon": -120.9843777,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "TUOLUMNE R A MODESTO CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11299600",
+  "is_active": false,
+  "lat": 37.96103615,
+  "lon": -120.6152035,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "BLACK C NR COPPEROPOLIS CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11300500",
+  "is_active": false,
+  "lat": 37.85437157,
+  "lon": -120.6382594,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "S SAN JOAQUIN CN NR KNIGHTS FERRY CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11301000",
+  "is_active": false,
+  "lat": 37.85881594,
+  "lon": -120.6332592,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "OAKDALE CN NR KNIGHTS FERRY CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11302000",
+  "is_active": false,
+  "lat": 37.85159385,
+  "lon": -120.6379816,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "STANISLAUS R BL GOODWIN DAM NR KNIGHTS FERRY CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11302500",
+  "is_active": false,
+  "lat": 37.77715006,
+  "lon": -120.852988,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "STANISLAUS R A OAKDALE CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11303000",
+  "is_active": false,
+  "lat": 37.72962389,
+  "lon": -121.110454,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "STANISLAUS R A RIPON CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "11303500",
+  "is_active": false,
+  "lat": 37.67601249,
+  "lon": -121.2662907,
+  "notes": "",
+  "parameters": [
+   "00010",
+   "00060",
+   "00065"
+  ],
+  "source": "usgs",
+  "station_name": "SAN JOAQUIN R NR VERNALIS CA",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "364358120314906",
+  "is_active": false,
+  "lat": 36.73263889,
+  "lon": -120.5315278,
+  "notes": "",
+  "parameters": [
+   "62610",
+   "72019",
+   "72020"
+  ],
+  "source": "usgs",
+  "station_name": "014S013E11D006M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "364518120222001",
+  "is_active": false,
+  "lat": 36.75516667,
+  "lon": -120.37325,
+  "notes": "",
+  "parameters": [
+   "62610",
+   "72019",
+   "72020"
+  ],
+  "source": "usgs",
+  "station_name": "013S015E31J006M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "365325120391504",
+  "is_active": false,
+  "lat": 36.8903333,
+  "lon": -120.6554167,
+  "notes": "",
+  "parameters": [
+   "62610",
+   "72019",
+   "72020"
+  ],
+  "source": "usgs",
+  "station_name": "012S012E16H005M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ },
+ {
+  "external_station_id": "365325120391505",
+  "is_active": false,
+  "lat": 36.8903333,
+  "lon": -120.6557778,
+  "notes": "",
+  "parameters": [
+   "62610",
+   "72019",
+   "72020"
+  ],
+  "source": "usgs",
+  "station_name": "012S012E16H006M",
+  "usgs_site_id": "",
+  "wqx_monitoring_location_id": ""
+ }
+]

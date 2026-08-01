@@ -96,11 +96,65 @@ Load it (the boundary must exist first — `seed_merced_base` creates it):
 python manage.py loaddata data/merced/flowlines.json
 ```
 
-**The monitoring stations `auto_populate` also fetches are deliberately NOT
-frozen.** Nothing later in the `seed_merced` sequence references
-`MonitoredStation`, so an offline run simply has no stations and every
-downstream step is unaffected. Freezing a second fixture nothing reads would
-be weight with no purpose.
+### `stations.json` — the frozen monitoring stations
+
+The monitoring stations `auto_populate` fetches are frozen here for the same
+reason the flowlines are, and by the same argument: a station catalogue is a
+published registry that moves on a multi-year timescale, and a build that has
+to reach CDEC, USGS, DWR, NOAA and CIMIS to produce a demonstration is a build
+that fails whenever one of them has a bad afternoon.
+
+| | |
+|---|---|
+| **Frozen** | 2026-08-01, read-only from the OpenH2O **production** database |
+| **Rows** | 335 stations — **42 active**, 293 inactive |
+| **Per source** | `dwr_wdl` 100 (2 active) · `dwr_sgma` 95 (17) · `cdec` 55 (15) · `usgs` 54 (5) · `noaa` 16 (3) · `cimis` 15 (0) |
+| **Size** | 100 kB on disk — roughly 1/75th of `flowlines.json` |
+| **Used by** | `scripts/rebuild-golden.sh`, and any offline rebuild |
+| **Gate** | `data/demo/expected_shape.json` pins `datasync.MonitoredStation` to 335 at tolerance 0 |
+
+**This file used to say the opposite, and the correction is worth reading.**
+Until 2026-08-01 this section recorded that stations were "deliberately NOT
+frozen" because nothing later in the `seed_merced` sequence reads
+`MonitoredStation`. That test was build-internal — it asked what the *seed*
+consumes, not what the *demonstration shows*. The stations are on the map, on
+`/datasync/`, named on the about page under "Real published records — USGS and
+CDEC", and counted in the landing-page hero. A repository build without them
+rendered "0 of 0 stations reporting" where production read "21 of 42".
+
+Records are keyed by the natural pair **(`source` code, `external_station_id`)**,
+never by primary key. `DataSource` has no natural-key manager — only
+`geography.Boundary` defines one — so a plain `loaddata` fixture would bake
+`data_source_id` integers that differ between production and staging and
+silently attach stations to the wrong source. `load_station_fixture` resolves
+the codes, and refuses before writing anything if one is unknown. It never
+creates a `DataSource`: `seed_data_sources` owns that table.
+
+**`last_data_at` is deliberately absent, and the file carries no timestamp,
+hostname or git hash.** Re-running the dump against an unchanged database
+produces a byte-identical file, so `git diff` is an honest answer to "have the
+stations moved?" A frozen reading time would also claim data arrived at a
+moment it did not. The visible consequence is intended: straight after a
+restore the hero reads "0 of 42 stations reporting" until the hourly
+`sync_source` cron runs. **The fixture restores the stations; the ordinary sync
+restores the readings** — `sync_source` cannot create a station but does fill
+readings into existing ones, which is why `DataRecordStaging` stays unfrozen.
+
+These are real public USGS/CDEC/DWR/NOAA/CIMIS stations, which is consistent
+rather than a leak: the identity policy treats station names as **protected**,
+not banned, exactly as it does the river network beside them.
+
+Regenerate it (read-only; needs a database that already holds the stations):
+
+```bash
+python manage.py dump_station_fixture         # -> data/merced/stations.json
+```
+
+Load it (the data sources must exist first — `seed_data` creates them):
+
+```bash
+python manage.py load_station_fixture
+```
 
 ## The frozen OpenET cache (`openet_cache.json`)
 
