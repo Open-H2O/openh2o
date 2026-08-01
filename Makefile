@@ -41,6 +41,25 @@ build: guard-prod ## Rebuild containers without starting (refuses in prod — us
 # workaround that docs/2.0-UX-ROADMAP.md used to document.
 REF ?= origin/main
 
+# ISS-106: a REFUSED promotion has to alert somebody, and it did not.
+#
+# `scripts/_demo-lib.sh` reads OPENH2O_NTFY_URL out of the SHELL environment,
+# and promote-golden.sh runs on the HOST. Nothing under scripts/ sources .env —
+# that file is consumed by `docker compose` to populate the CONTAINER's
+# environment, so a key placed there never reaches the deploy path. The topic
+# was set only inline on the crontab lines, which is why the nightly jobs alert
+# and `make deploy` was silent.
+#
+# So the Makefile lifts the key out of .env itself and exports it for every
+# recipe. `?=` means an operator's own `OPENH2O_NTFY_URL=… make deploy` still
+# wins; a host whose .env has no such key gets an empty value and alerting stays
+# disabled exactly as before, which is the case for most deployments.
+#
+# HARDCODE NO URL HERE. The repository ships the mechanism, never an address —
+# this platform is meant to be self-deployed by agencies who have their own.
+OPENH2O_NTFY_URL ?= $(shell sed -n 's/^OPENH2O_NTFY_URL=//p' .env 2>/dev/null | tail -1)
+export OPENH2O_NTFY_URL
+
 # THE ORDER BELOW IS LOAD-BEARING. Three things about it will look like waste to
 # the next person who reads it, and all three are deliberate:
 #
