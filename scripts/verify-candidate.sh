@@ -383,8 +383,105 @@ fi
 g2="PASS"; g2_note="all $(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))['models']))" "$SHAPE") models exact"
 
 # ===========================================================================
-# GATES 3 and 4 are added by Task 2 of this plan.
+# GATE 3 — migration fingerprint. Is this candidate at the schema the code
+# being promoted expects?
+#
+# Two comparisons, because they catch different mistakes:
+#   a) the RESTORED candidate's applied-migration plan vs the fingerprint
+#      rebuild-golden.sh stamped into the manifest at build time. A mismatch
+#      means the dump and its manifest describe different databases, or the tree
+#      has gained a migration the candidate never had applied.
+#   b) candidate.meta's source_commit vs this checkout's HEAD. A candidate built
+#      from a different tree than the one being promoted is not this release's
+#      demonstration, however clean it looks.
+#
+# An unreadable fingerprint on EITHER side is a refusal, never a match. Same
+# reasoning reset-demo.sh's staleness guard applies: "could not read" and
+# "matches" must never produce the same outcome.
 # ===========================================================================
+echo ""
+echo "=== GATE 3: migration fingerprint ==="
+
+meta_fp="$(sed -n 's/^migration_fingerprint=//p' "$META" | head -1)"
+meta_commit="$(sed -n 's/^source_commit=//p' "$META" | head -1)"
+meta_version="$(sed -n 's/^schema_version=//p' "$META" | head -1)"
+live_fp="$(demo_migration_fingerprint)"
+head_commit="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+
+if [ -z "$meta_fp" ]; then
+  g3="REFUSE"; g3_note="manifest carries no migration_fingerprint"
+  fail_gate 3 "The manifest at $META has no migration_fingerprint. It is what reset-demo.sh's nightly staleness guard reads; installing a golden without one disables that guard silently. Rebuild the candidate with 'make rebuild-golden'."
+fi
+if [ -z "$live_fp" ]; then
+  g3="REFUSE"; g3_note="could not read the restored candidate's schema"
+  fail_gate 3 "Could not read the restored candidate's migration plan. Run 'showmigrations --plan' by hand in the scratch stack; an unreadable schema is not a matching one."
+fi
+
+if [ "$live_fp" != "$meta_fp" ]; then
+  g3="FAIL"; g3_note="restored ${live_fp:0:12}… != manifest ${meta_fp:0:12}…"
+  echo "  FINGERPRINT MISMATCH" >&2
+  echo "    restored candidate: $live_fp" >&2
+  echo "    candidate.meta:     $meta_fp" >&2
+  fail_gate 3 "The dump and its manifest describe different schemas, or this tree has gained a migration the candidate never had applied. Rebuild the candidate from the tree you intend to promote."
+fi
+
+if [ "$meta_commit" != "$head_commit" ]; then
+  g3="FAIL"; g3_note="built from ${meta_commit:0:12}…, HEAD is ${head_commit:0:12}…"
+  echo "  SOURCE COMMIT MISMATCH" >&2
+  echo "    candidate built from: $meta_commit" >&2
+  echo "    this checkout's HEAD: $head_commit" >&2
+  fail_gate 3 "The candidate was built from a different tree than the one being promoted. Re-run 'make rebuild-golden' at this commit, or check out the commit the candidate was built from."
+fi
+
+# A commit sha alone does not prove reproducibility. `git describe --dirty`
+# stamps "-dirty" when the tree carried uncommitted changes at build time, and a
+# candidate built from such a tree cannot be rebuilt by anyone else from any
+# commit — which is the one guarantee this whole milestone exists to establish.
+# The sha would match perfectly and the artifact would still be unreproducible.
+case "$meta_version" in
+  *-dirty)
+    g3="FAIL"; g3_note="candidate built from a DIRTY tree ($meta_version)"
+    echo "  CANDIDATE BUILT FROM AN UNCOMMITTED TREE: $meta_version" >&2
+    fail_gate 3 "The candidate was built while the checkout had uncommitted changes, so nothing in the repository reproduces it. Commit the tree, then re-run 'make rebuild-golden'."
+    ;;
+esac
+
+# The same argument applies to the tree the GATES are running from: the web image
+# above was built from this checkout, so a dirty tree here means the gates just
+# tested code that exists in no commit.
+if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+  g3="FAIL"; g3_note="the checkout being verified has uncommitted changes"
+  echo "  WORKING TREE IS DIRTY — the gates just ran against code in no commit:" >&2
+  git status --short >&2
+  fail_gate 3 "Commit or stash these changes and re-run. A verification that passes against uncommitted code says nothing about what will actually deploy."
+fi
+
+g3="PASS"; g3_note="${live_fp:0:12}… at $meta_version"
+echo "  PASS — schema ${live_fp:0:12}… matches the manifest, built from this HEAD ($meta_version)"
+
+# ===========================================================================
+# GATE 4 — the authenticated render crawl. Does a person actually SEE a real
+# name, or a 500?
+#
+# The only gate that can catch a banned name in a TEMPLATE, and the only one
+# that exercises views against real rows. Runs LAST because it writes a
+# throwaway superuser into the scratch database — after gate 2 has counted, so
+# the pinned core.User=0 is measured before that row exists. The candidate FILE
+# is never written.
+# ===========================================================================
+echo ""
+echo "=== GATE 4: authenticated render crawl ==="
+crawl_status=0
+run_web python scripts/render_crawl.py \
+  --policy data/demo/identity_policy.json \
+  --max-pages "$MAX_PAGES" || crawl_status=$?
+# $? on the SAME line — see the note at the restore above.
+
+if [ "$crawl_status" != "0" ]; then
+  g4="FAIL"; g4_note="see the crawl output above"
+  fail_gate 4 "A page a signed-in operator can reach either crashed, showed a real district's name, or was never reached because the crawl hit its cap. A name here is in a TEMPLATE or in data no other gate reads — gates 1-3 cannot see it."
+fi
+g4="PASS"; g4_note="frontier exhausted, zero 5xx, no banned name rendered"
 
 # ---------------------------------------------------------------------------
 # Tear down and PROVE it. A teardown that silently left its volume behind would
