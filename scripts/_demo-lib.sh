@@ -33,6 +33,38 @@ DEMO_COMPOSE="${DEMO_COMPOSE:-docker compose}"
 # which execs and exits without ever booting a server.
 DEMO_WEB="${DEMO_WEB:-exec -T web}"
 
+# Block until the db container actually accepts queries, or fail after a timeout.
+#
+# `docker compose up -d --wait db` is NOT sufficient on its own, and the reason
+# is worth knowing. The postgres entrypoint starts a TEMPORARY server to run
+# initdb, then shuts it down and starts the real one. A healthcheck can pass
+# against that temporary server, so `--wait` returns and the next command hits
+# "FATAL: the database system is shutting down".
+#
+# Measured 2026-07-31 in Plan 103-02: this never fired on an idle box and fired
+# every time with the test suite running beside it, because load widens the
+# window. Phase 104 wires these scripts into an automated deploy, where a
+# transient race that only appears under load is exactly the failure that will
+# appear in production and nowhere else.
+#
+#   demo_wait_for_db [seconds]      (default 90)
+demo_wait_for_db() {
+  local deadline
+  deadline=$(( $(date +%s) + ${1:-90} ))
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    # shellcheck disable=SC2086,SC2016
+    # SC2086: DEMO_COMPOSE is a multi-word command and must word-split.
+    # SC2016: POSTGRES_USER must expand inside the db container, from its own
+    # env, not on this host — the same idiom snapshot-demo.sh uses.
+    if $DEMO_COMPOSE exec -T db sh -c \
+         'psql -tAqc "SELECT 1" -U "$POSTGRES_USER" -d postgres' >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
+
 # Pipe data in, get its sha256 hex digest out. Works on Linux (sha256sum) and
 # macOS (shasum), so the same lib runs on the server and a dev's laptop.
 _sha256() {

@@ -89,6 +89,14 @@ $C build web
 # ports 80/443 and would collide with the live deployment on this same box.
 # shellcheck disable=SC2086
 $C up -d --wait db
+# `--wait` alone is not enough on a loaded box — see demo_wait_for_db in
+# _demo-lib.sh. Phase 104 runs this inside an automated deploy, so the race has
+# to be closed here too, not only in verify-candidate.sh where it was found.
+export DEMO_COMPOSE="$C"
+if ! demo_wait_for_db 120; then
+  echo "rebuild-golden: ERROR the scratch database never accepted a query" >&2
+  fail
+fi
 
 # Every step runs as `run --rm`, never against a running web container.
 #

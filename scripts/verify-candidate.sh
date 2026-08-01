@@ -79,6 +79,9 @@ for reserved in "$own_project" openh2o openh2o-staging; do
 done
 
 C="docker compose -p $REBUILD_PROJECT"
+# Exported here rather than after the restore: demo_wait_for_db needs it before
+# the first query, and the helpers below need it after.
+export DEMO_COMPOSE="$C"
 started=$(date +%s)
 
 # Gate verdicts, filled in as we go. "not run" is a distinct state from PASS and
@@ -167,6 +170,10 @@ $C build web
 # host ports 80/443 and would collide with the live deployment on this box.
 # shellcheck disable=SC2086
 $C up -d --wait db
+if ! demo_wait_for_db 120; then
+  echo "verify-candidate: REFUSING — the scratch database never accepted a query." >&2
+  exit 1
+fi
 
 echo ""
 echo "=== restoring the candidate into the scratch database ==="
@@ -203,10 +210,9 @@ if [ -z "$applied" ] || [ "$applied" = "0" ]; then
 fi
 echo "verify-candidate: restored — $applied applied migrations in the scratch database"
 
-# The helpers must talk to the SCRATCH project, and via `run --rm` because there
-# is no running web container on purpose. Exported so _demo-lib.sh's functions
-# pick them up.
-export DEMO_COMPOSE="$C"
+# DEMO_COMPOSE is already exported above. DEMO_WEB is `run --rm` because there is
+# no running web container on purpose — see the header on why `up web` would
+# write a user row into the candidate.
 export DEMO_WEB="run --rm --no-deps -e OPENH2O_MODULES= web"
 
 # -e OPENH2O_MODULES= is load-bearing: empty means the FULL module list. This
