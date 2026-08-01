@@ -109,7 +109,10 @@
             </svg>
           </div>
           {% else %}
-          <span class="text-tertiary text-xs">No data</span>
+          {# A sparkline needs two numeric readings (datasync/views.py:165). One
+             reading is not "no data" — the dot and the time below it say
+             otherwise — it is not enough points to draw a line. ISS-110. #}
+          <span class="text-tertiary text-xs">No trend yet</span>
           {% endif %}
         </div>
         {% if item.station.last_data_at %}

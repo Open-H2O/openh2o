@@ -75,3 +75,63 @@ def test_fetched_but_zero_staged_is_not_success(monkeypatch):
     assert log.records_staged == 0
     assert log.status != "success"
     assert log.status == "partial"
+
+
+# ---------------------------------------------------------------------------
+# ISS-110 — one reading is "no trend yet", never "no data"
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_a_station_with_one_reading_is_not_labelled_no_data():
+    """The trend slot must not contradict the dot and timestamp beside it.
+
+    A sparkline needs two numeric readings (views.py refuses to draw one from
+    fewer). A quarterly source like dwr_sgma gains a point every three months,
+    so its stations sit on exactly one reading for a very long time. Calling
+    that "No data" denies a reading the same page is displaying.
+    """
+    from datetime import datetime, timezone as dt_timezone
+
+    from django.test import Client
+    from django.urls import reverse
+
+    from core.models import User
+    from datasync.models import DataRecordStaging
+
+    src = DataSource.objects.create(
+        code="dwr_sgma", name="DWR SGMA Monitoring", is_active=True
+    )
+    observed = datetime(2026, 3, 23, 12, 0, tzinfo=dt_timezone.utc)
+    station = MonitoredStation.objects.create(
+        data_source=src,
+        external_station_id="SGMA-1",
+        station_name="Quarterly Groundwater Well",
+        location=Point(-120.5, 37.3),
+        is_active=True,
+        last_data_at=observed,
+    )
+    DataRecordStaging.objects.create(
+        data_source=src,
+        station=station,
+        raw_data={},
+        observation_date=observed,
+        parameter_code="gw_level",
+        value="17.2300",
+        unit="ft",
+        status="published",
+    )
+
+    user = User.objects.create(
+        username="evaluator-iss110",
+        email="evaluator-iss110@example.com",
+        is_active=True,
+    )
+    client = Client()
+    client.force_login(user)
+    body = client.get(reverse("datasync:monitoring_dashboard")).content.decode()
+
+    assert "Quarterly Groundwater Well" in body
+    # The page holds a reading for this station, so it may not claim otherwise.
+    assert ">No data<" not in body
+    assert "No trend yet" in body
