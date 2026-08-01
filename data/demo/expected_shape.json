@@ -1,0 +1,370 @@
+{
+  "_source": "Row counts measured by Plan 103-01 on 2026-07-31 from a candidate built offline by scripts/rebuild-golden.sh at v2.7-20-g7f121cc, and reconciled model-by-model against production. The classified difference table is in .planning/phases/103-rebuild-golden-and-gates/103-01-rebuild-evidence-2026-07-31.txt SS4.",
+
+  "notes": [
+    "Per-model row counts a rebuilt candidate MUST produce before it may become the golden snapshot.",
+    "",
+    "WHY EVERY TOLERANCE IS ZERO. The rebuild makes no network calls and contains no randomness: parcels come from the committed data/merced/selected_parcels.geojson, flowlines from the committed data/merced/flowlines.json, and evapotranspiration from the committed data/merced/openet_cache.json. The same tree therefore has to produce the same numbers every time. A count that moves is not variance -- it is a change somebody made, and this gate's job is to make them say so in writing before it ships. A non-zero tolerance would have to name what varies and why; nothing here qualifies, so nothing here has one.",
+    "",
+    "WHY NOT '> 0'. A check that only asserts not-zero passes a demonstration that quietly lost ninety percent of its rows and still renders every page. That is the precise failure this file exists to catch, so the comparison is equality against a written-down number.",
+    "",
+    "SHAPE IS NOT SUFFICIENT ON ITS OWN. Production and staging once differed in only seven tables by COUNT while three tables held identical counts and completely different names. This is gate 2 of four; gates 1 and 4 read content.",
+    "",
+    "WHEN A SEED CHANGE FAILS THIS GATE: that is the design, not a bug. Update the entry, change the reason to say what moved and why, and commit both together with the seed change."
+  ],
+
+  "unlisted_model": "fail",
+
+  "models": {
+    "accounting.AllocationCarryover": {
+      "expected": 4,
+      "tolerance": 0,
+      "reason": "Written by seed_merced's allocation step, one row per account carrying unused allocation out of the closed reporting period. Fixed by the account set and the period definition, both committed."
+    },
+    "accounting.AllocationPlan": {
+      "expected": 16,
+      "tolerance": 0,
+      "reason": "One plan per water account per reporting period, created by seed_merced. Moves only if the account set or the number of periods changes."
+    },
+    "accounting.CalculationPlan": {
+      "expected": 1,
+      "tolerance": 0,
+      "reason": "The single methodology version the demonstration is locked to, created by seed_calculation_plan. A second row means a methodology was added without the version lock being considered (Phase 42)."
+    },
+    "accounting.CalculationRun": {
+      "expected": 912,
+      "tolerance": 0,
+      "reason": "Output of refresh_merced_accounting over the committed parcel set. 103-01 reproduced production's 912 exactly, of which 362 are zero-precipitation runs. This is the number that proves the engine ran and produced the same answer as the live site; a candidate with 0 here has data but no accounting."
+    },
+    "accounting.CalculationStep": {
+      "expected": 5,
+      "tolerance": 0,
+      "reason": "The five ordered steps of the locked calculation plan. Structural, not data -- a change here is a methodology change."
+    },
+    "accounting.ReportingPeriod": {
+      "expected": 2,
+      "tolerance": 0,
+      "reason": "The two water years the demonstration covers. The ET cache holds exactly one window (WY 2024-25), so adding a period without extending the cache would produce empty accounting for it."
+    },
+    "accounting.WaterAccount": {
+      "expected": 11,
+      "tolerance": 0,
+      "reason": "The invented accounts seed_merced creates. Every holder name here is fabricated by design; gate 1 is what proves that separately."
+    },
+    "accounting.WaterAccountParcel": {
+      "expected": 76,
+      "tolerance": 0,
+      "reason": "One row per parcel, tying each to its account. Must equal parcels.Parcel exactly -- a lower number means parcels exist that no account is responsible for, which renders as blank accounting rather than an error."
+    },
+    "accounting.WaterCredit": {
+      "expected": 5,
+      "tolerance": 0,
+      "reason": "Banked-water credits created by seed_merced to exercise the credit ledger. Fixed set."
+    },
+    "accounting.WaterCreditDraw": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Draws against credits are a visitor action, not seeded content. Non-zero in a candidate means the build captured somebody's session."
+    },
+    "accounting.WaterType": {
+      "expected": 6,
+      "tolerance": 0,
+      "reason": "Reference data from seed_data: the water types the accounting engine apportions across. Production carries the same 6."
+    },
+    "core.Role": {
+      "expected": 3,
+      "tolerance": 0,
+      "reason": "Reference data from seed_roles. Roles are structure; the users that would hold them are deliberately absent."
+    },
+    "core.SiteConfig": {
+      "expected": 1,
+      "tolerance": 0,
+      "reason": "The single site configuration row. Zero means the deployment has no identity and the header renders unbranded."
+    },
+    "core.User": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "THE POINT OF THE WHOLE MILESTONE. The rebuild never boots a serving web container, so entrypoint.sh's no-argument branch -- and with it ensure_superuser -- never runs. A non-zero count means a deployment's admin account got baked into an artifact that ships to production. That is the exact mechanism by which staging admin rows once reached production, and it is why every step of rebuild-golden.sh is 'run --rm' rather than 'up web'. Production's own admin returns from its .env on the next container boot after a restore, so nothing is lost by shipping zero."
+    },
+    "core.UserRole": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Follows core.User. A role assignment cannot exist without a user to assign it to, so any non-zero count here means the same leak."
+    },
+    "datasync.DataRecordStaging": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Landing table for live sync pulls. The build makes zero network calls, so it is correctly empty. Production carries ~206,000 rows here -- 99.6% of the entire prod-vs-candidate row gap -- and that difference is expected, not a defect. Staging rows are transient sync output, never demonstration content."
+    },
+    "datasync.DataSource": {
+      "expected": 8,
+      "tolerance": 0,
+      "reason": "Reference data: the external data sources the platform knows how to pull from. Definitions, not fetched records."
+    },
+    "datasync.DataSyncLog": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "One row per sync pull performed. Zero because the build performs none."
+    },
+    "datasync.MonitoredStation": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Deliberately NOT frozen into a fixture, pre-documented in 103-01. Stations are discovered from live upstream catalogues; freezing them would ship a snapshot of somebody else's registry. Production carries 335."
+    },
+    "datasync.OpenETCache": {
+      "expected": 380,
+      "tolerance": 0,
+      "reason": "76 parcels x 5 variables x 1 window (WY 2024-25), loaded from the committed data/merced/openet_cache.json by load_openet_fixture. 103-01 predicted 380 and measured 380, and proved the staging and production caches byte-identical by sha256. Without these rows the accounting engine has no demand side and every calculation run comes out empty."
+    },
+    "drinking.Analyte": {
+      "expected": 178,
+      "tolerance": 0,
+      "reason": "Reference data: the contaminant list the drinking-water module reports against. Published regulatory content, seeded."
+    },
+    "drinking.EnvirofactsCache": {
+      "expected": 3,
+      "tolerance": 0,
+      "reason": "Cached responses committed as fixture data so the build stays offline. Not fetched at build time -- if this required a network call the rebuild would not be reproducible."
+    },
+    "drinking.RegulatoryLimit": {
+      "expected": 32,
+      "tolerance": 0,
+      "reason": "Reference data: published maximum contaminant levels. Real published record, carried as published."
+    },
+    "drinking.SampleEvent": {
+      "expected": 559,
+      "tolerance": 0,
+      "reason": "Real published sampling events for the demonstration water system. Carried as published and labelled on screen, per the honesty doctrine."
+    },
+    "drinking.SampleResult": {
+      "expected": 22367,
+      "tolerance": 0,
+      "reason": "The lab results behind those events -- the largest single table in the demonstration. 103-01 reproduced production's 22,367 exactly. A collapse here would empty the drinking-water pages that Phase 92-99 built, while every page still rendered."
+    },
+    "drinking.SamplingPoint": {
+      "expected": 27,
+      "tolerance": 0,
+      "reason": "The sampling points those events belong to. Published record."
+    },
+    "drinking.SystemFacility": {
+      "expected": 61,
+      "tolerance": 0,
+      "reason": "Facilities of the demonstration water system. Published record."
+    },
+    "drinking.WaterSystem": {
+      "expected": 1,
+      "tolerance": 0,
+      "reason": "The single water system the drinking-water module demonstrates. Zero would leave the drinking front door pointing at nothing -- which is exactly what production served from the 7/27 launch until this milestone, because the domain was empty on prod and nobody could tell from the repository."
+    },
+    "feedback.Feedback": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Visitor submissions. Never build output. Production carries these and reset-demo.sh deliberately preserves them across the nightly restore; a candidate must not carry anybody's message."
+    },
+    "feedback.FeedbackAttachment": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Screenshots attached to visitor submissions. Same reasoning as feedback.Feedback."
+    },
+    "geography.Boundary": {
+      "expected": 1,
+      "tolerance": 0,
+      "reason": "The subbasin boundary, created by seed_merced_base before the flowlines load. It must exist first: flowlines.json names it by natural key, and its primary key differs between deployments (1 on staging, 6 on production), which is why the fixture keys on the name rather than the pk."
+    },
+    "geography.Flowline": {
+      "expected": 5658,
+      "tolerance": 0,
+      "reason": "Loaded from the committed data/merced/flowlines.json fixture (Phase 102-02, 7.5 MB). This fixture is what lets the build skip auto_populate -- the only networked step in the eleven-step seed. seed_merced --skip-auto-populate refuses up front if the fixture is not loaded, so a zero here should be impossible rather than merely wrong."
+    },
+    "geography.ParcelZone": {
+      "expected": 135,
+      "tolerance": 0,
+      "reason": "Parcel-to-zone memberships, derived from the committed parcel and zone geometry by spatial intersection. Deterministic given both inputs."
+    },
+    "geography.Zone": {
+      "expected": 8,
+      "tolerance": 0,
+      "reason": "The management zones the subbasin is divided into. Committed geometry."
+    },
+    "geography.ZoneGroup": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Zone grouping is an operator feature the demonstration does not exercise. Empty by design, not by omission."
+    },
+    "health.HealthCheckResult": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Cron output on a running deployment. Production carries 321. A build produces none, and shipping a golden full of another machine's health history would make the health page lie about this one."
+    },
+    "measurements.Meter": {
+      "expected": 12,
+      "tolerance": 0,
+      "reason": "The meters seed_merced installs on wells. Must stay equal to wells.WellMeter."
+    },
+    "measurements.MeterReading": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Readings arrive from datasync pulls or operator entry, neither of which happens in an offline build. Flagged by ISS-105 as a gap in what the demonstration shows."
+    },
+    "measurements.Sensor": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Sensors are discovered from live upstream catalogues, like datasync.MonitoredStation. Not frozen."
+    },
+    "measurements.SensorMeasurement": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Follows measurements.Sensor -- no sensors, no measurements."
+    },
+    "measurements.WaterMeasurement": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Operator-entered measurements. Not seeded; noted in ISS-105 as content the demonstration could usefully gain."
+    },
+    "parcels.CropType": {
+      "expected": 5,
+      "tolerance": 0,
+      "reason": "Reference data from seed_data. Production carries 7 because two rows (Citrus, Pistachios) are residue from the retired Demo Valley and Kaweah datasets that no current seed command creates. The CANDIDATE is the correct side of that difference -- this is exactly the accumulated accident a build-from-source replaces."
+    },
+    "parcels.Parcel": {
+      "expected": 76,
+      "tolerance": 0,
+      "reason": "The selection is committed in data/merced/selected_parcels.geojson and seed_merced_parcels_from_selection.py has zero randomness in it, so this number cannot legitimately move without that file moving. Every other per-parcel count in this file is anchored to it: OpenETCache is 76 x 5, WaterAccountParcel is 76, UsageLocation is 76."
+    },
+    "parcels.ParcelLedger": {
+      "expected": 1271,
+      "tolerance": 0,
+      "reason": "The keyed water ledger entries the accounting engine writes per parcel per period. Derived output -- a shortfall here means the engine ran partially, which no page would show as an error."
+    },
+    "parcels.ParcelStaging": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Landing table for bulk parcel import, an operator workflow. Empty in a build."
+    },
+    "parcels.UsageLocation": {
+      "expected": 76,
+      "tolerance": 0,
+      "reason": "One usage location per parcel. Must equal parcels.Parcel."
+    },
+    "recharge.RechargeEvent": {
+      "expected": 28,
+      "tolerance": 0,
+      "reason": "Managed aquifer recharge events across the seven sites, created by seed_merced to exercise the recharge ledger."
+    },
+    "recharge.RechargeMeasurement": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Instrument readings at recharge sites. Not seeded; another ISS-105 candidate."
+    },
+    "recharge.RechargeSite": {
+      "expected": 7,
+      "tolerance": 0,
+      "reason": "The seven recharge basins. Committed geometry and invented names."
+    },
+    "recharge.RechargeSitePOD": {
+      "expected": 7,
+      "tolerance": 0,
+      "reason": "Links each recharge site to the point of diversion that supplies it (Phase 62). One per site."
+    },
+    "reporting.ReportSubmission": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "THE CANDIDATE IS THE CORRECT SIDE HERE. Production carries 11 rows that have been restored nightly since early June: orphan drafts with no user attached, all still in draft, ten of the eleven pointing at a file that does not exist. They are test artifacts that got photocopied into a golden and have been coming back every night for eight weeks. A build produces none, which is the whole thesis of this milestone in one line."
+    },
+    "reporting.ReportTemplate": {
+      "expected": 4,
+      "tolerance": 0,
+      "reason": "Reference data: the state report formats (GEARS, CalWATRS) the platform can generate. Definitions, not filings."
+    },
+    "reporting.ReportingCrosswalk": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Per-agency field mapping, configured by an operator against their own filing requirements. Not demonstration content."
+    },
+    "reporting.ReportingProfile": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Follows ReportingCrosswalk -- operator configuration, not seeded."
+    },
+    "standards.Datastream": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Production carries exactly one row created by no non-test code anywhere in the repository -- found by 103-01 and recorded in ISS-105. The candidate having none is correct."
+    },
+    "standards.ObservedProperty": {
+      "expected": 17,
+      "tolerance": 0,
+      "reason": "The SensorThings crosswalk, seeded by seed_observed_properties. THIS WAS ZERO IN THE FIRST CANDIDATE and no test and no page would ever have shown it: the standards app ships no views and no urls. seed_observed_properties sits outside the seed_data umbrella deliberately (core/modules.py:320-324), so the build sequence has to call it by name. It is the table check_conformance and every adapter's PARAMETER_MAP resolve against. Fixed in 7f121cc; this entry is the tripwire that keeps it fixed."
+    },
+    "standards.SourceParameter": {
+      "expected": 26,
+      "tolerance": 0,
+      "reason": "The other half of the same crosswalk, and the other half of the same defect -- 0 vs production's 26 until 7f121cc. Together with ObservedProperty this is the +43 rows that took the candidate from 32,275 to 32,318."
+    },
+    "surface.CurtailmentOrder": {
+      "expected": 1,
+      "tolerance": 0,
+      "reason": "One curtailment order, so the demonstration exercises the curtailment path at all. Invented."
+    },
+    "surface.DiversionRecord": {
+      "expected": 85,
+      "tolerance": 0,
+      "reason": "Reported diversions across the nine points of diversion. Invented records on real river geometry -- the river is protected published fact, the diverters are not."
+    },
+    "surface.PointOfDiversion": {
+      "expected": 9,
+      "tolerance": 0,
+      "reason": "The nine points of diversion. Their names are protected published record (Crocker-Huffman River Diversion, Snelling Re-Diversion and so on); the rights attached to them are invented."
+    },
+    "surface.PointOfDiversionParcel": {
+      "expected": 59,
+      "tolerance": 0,
+      "reason": "Which parcels each point of diversion serves. Must stay equal to surface.WaterRightParcel."
+    },
+    "surface.UnallocatedDelivery": {
+      "expected": 13,
+      "tolerance": 0,
+      "reason": "Deliveries not yet apportioned to a parcel, exercising the shared-supply apportionment path (Phase 56)."
+    },
+    "surface.WaterRight": {
+      "expected": 6,
+      "tolerance": 0,
+      "reason": "Six invented water rights. Their holder_name column is the single most dangerous field in the database: it is where four real district names sat on production for three days in July 2026 beneath a page promising the demonstration names no real water district at all. Gate 1 reads it."
+    },
+    "surface.WaterRightParcel": {
+      "expected": 59,
+      "tolerance": 0,
+      "reason": "Parcels served by each right. Equal to PointOfDiversionParcel by construction."
+    },
+    "surface.WaterRightType": {
+      "expected": 6,
+      "tolerance": 0,
+      "reason": "Reference data from seed_data. Production carries 7 because of a bare 'Appropriative' row left over from the retired Demo Valley dataset. The candidate is the correct side."
+    },
+    "wells.MonitoringWell": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Dedicated monitoring wells, as distinct from production wells. Not part of the Merced demonstration; flagged in ISS-105."
+    },
+    "wells.Well": {
+      "expected": 45,
+      "tolerance": 0,
+      "reason": "The 45 wells seed_merced creates. Their names are protected published record (Le Grand Ag Well and the rest); their owners are invented."
+    },
+    "wells.WellIrrigatedParcel": {
+      "expected": 29,
+      "tolerance": 0,
+      "reason": "Which parcels each well irrigates -- the groundwater side of the mixed-use accounting the platform exists to do."
+    },
+    "wells.WellMeter": {
+      "expected": 12,
+      "tolerance": 0,
+      "reason": "Meters installed on wells. Must equal measurements.Meter; a mismatch means one side was seeded and the other was not."
+    },
+    "wells.WellType": {
+      "expected": 5,
+      "tolerance": 0,
+      "reason": "Reference data from seed_data. Production carries 7 because Domestic and Municipal are legacy rows no current seed creates. The candidate is the correct side."
+    }
+  }
+}
