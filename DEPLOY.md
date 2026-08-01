@@ -430,9 +430,14 @@ per-visitor isolation. Any logged-in visitor's parcels, wells, and reports
 persist for everyone, and nothing prunes them. To keep the demo pristine, restore
 it on a schedule from a "golden" snapshot of the clean state.
 
+The golden snapshot is **built from the repository by `make deploy`** (see
+*The golden is a build output* below) — that is the path that keeps a deployment's
+demonstration reachable from its own source. These two targets are the manual
+handles beside it:
+
 ```bash
-make snapshot-demo   # capture the golden snapshot (scripts/snapshot-demo.sh)
-make reset-demo      # restore the demo to that snapshot now (scripts/reset-demo.sh)
+make snapshot-demo   # ESCAPE HATCH: stamp a golden from the LIVE database — the next deploy replaces it
+make reset-demo      # restore the demo to the current golden now (scripts/reset-demo.sh)
 ```
 
 `snapshot-demo` writes two files side by side: `golden.dump` (the database) and
@@ -467,23 +472,42 @@ pass a path argument, to override.
 `reset-demo` compares the live schema's migration fingerprint against the one in
 `golden.meta`. If they differ — meaning a migration ran since the snapshot was
 taken — it **refuses to wipe, fires a high-priority ntfy, and exits**, so a legit
-change is never silently erased. To proceed anyway, re-stamp with
-`make snapshot-demo`, or run with `FORCE=1` to bypass the guard.
+change is never silently erased. The normal way past it is a deploy, which
+promotes a golden built at the current commit and therefore at the current
+fingerprint; `FORCE=1` bypasses the guard (which is what the deploy's own
+restore step uses, because it has just promoted a matching golden), and
+`make snapshot-demo` re-stamps from the live database as a last resort.
 
-This is automatic on deploy: `make deploy` runs `FORCE=1 reset-demo` (restore
-golden, migrate forward to the new schema, drop visitor junk) then `snapshot-demo`
-(re-stamp at the new fingerprint), so the golden auto-stays-current and the nightly
-guard keeps passing. **Note:** `make deploy` now resets the public demo to golden —
-visitor-added data does not survive a deploy (it does not survive the nightly reset
-either, by design).
+**The golden is a BUILD OUTPUT, not a photocopy.** `make deploy` resets to the
+ref, **builds** the whole demonstration database from the repository's seed
+commands in a disposable compose stack, runs the four promotion gates against a
+restore of that build, promotes it to `golden.dump` only if every gate passes,
+*then* ships the code and restores the new golden into the live database. The
+order matters: Make aborts on the first non-zero line, so a refused promotion
+stops the deploy with the old code still serving, the old golden still installed,
+and the demo database untouched.
 
-> **Discipline — refresh the snapshot when the golden CONTENT changes.** The guard
-> catches *schema* drift, but a deliberate **content** change the schema can't see
-> (a calc rebuild, edited demo data) still needs a re-stamp, or the next reset
-> reloads the old content. After a recalculation use `make calc-rebuild PERIOD=YYYY-MM`,
-> which recomputes the period and re-stamps in one step. After any other intentional
-> content/admin change, run `make snapshot-demo`. The snapshot pins the admin
-> accounts and seeded data — recreate those *before* snapshotting, not after.
+`make deploy` no longer calls `snapshot-demo`. It used to — restore the golden,
+then immediately re-stamp a new golden from the database it had just restored.
+That closed loop is what let production's demonstration content drift out of
+reach of the repository for eight weeks: a fix to demo *content* reached staging
+(which rebuilds from the seeds) automatically and production (which only ever
+restored a photocopy) never.
+
+**Visitor-added data does not survive a deploy**, and does not survive the
+nightly reset either, by design.
+
+> **Discipline — to change what the demonstration shows, change the SEED.** Edit
+> the seed command or its committed fixture, commit it, and deploy. The next
+> deploy rebuilds from your commit, gates it, and promotes it, so the change
+> reaches every deployment that ships that commit — which is the whole point.
+>
+> Two manual paths still write a golden from the live database, and what they
+> write is **temporary by construction — the next `make deploy` replaces it**:
+> `make calc-rebuild PERIOD=YYYY-MM` (recompute a period, then re-stamp) and
+> `make snapshot-demo` (the bare escape hatch). Reach for them when you need the
+> live demo corrected *now*; reach for a seed change when you need it corrected
+> *durably*.
 
 ---
 

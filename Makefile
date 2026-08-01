@@ -35,20 +35,56 @@ down: guard-prod ## Stop all services (refuses in prod)
 build: guard-prod ## Rebuild containers without starting (refuses in prod — use `make deploy`)
 	$(COMPOSE) build
 
-deploy: ## Ship origin/main to THIS checkout (rebuild web, reset the demo to golden at the new schema, re-stamp the snapshot)
+# Which ref `deploy` ships. A deliberate branch-deploy door: it lets a release be
+# rehearsed against a throwaway branch (which is how the refusal path is proved)
+# and it retires the manual "git reset to a branch first, NOT make deploy"
+# workaround that docs/2.0-UX-ROADMAP.md used to document.
+REF ?= origin/main
+
+# THE ORDER BELOW IS LOAD-BEARING. Three things about it will look like waste to
+# the next person who reads it, and all three are deliberate:
+#
+#   1. THE REBUILD RUNS AFTER `git reset`, NEVER BEFORE. Gate 3 refuses a
+#      candidate whose source_commit is not HEAD, and refuses a -dirty tree.
+#      Building first would fail every deploy, and the fix for that is not a
+#      bypass flag — it is this ordering.
+#   2. THE GATES RUN BEFORE `up -d --build`. Make aborts a target on the first
+#      non-zero line, so a refused promotion stops the deploy with the OLD code
+#      still serving, the OLD golden still installed, and the demo database
+#      untouched. That is the strongest failure state available, and it is why
+#      this order was chosen over ship-code-first.
+#   3. promote-golden.sh RE-RUNS the gates even though nothing changed since
+#      rebuild-golden.sh. That costs a few minutes per deploy and is deliberate
+#      (103-02): promotion trusts no marker written by an earlier step. Do not
+#      add a fast path.
+#
+# snapshot-demo.sh is deliberately ABSENT. It re-stamped the golden from the
+# live database it had just restored — a closed loop, and the mechanism that let
+# production's demonstration content drift out of reach of the repository for
+# eight weeks. The repository is the source of truth now.
+deploy: ## Ship origin/main (or REF=<ref>) to THIS checkout: rebuild the demo from the repository, gate it, promote it, THEN ship the code
 	git fetch origin
-	git reset --hard origin/main
+	git reset --hard $(REF)
+	@echo ""
+	@echo "Building the demonstration database from this commit (nothing is promoted yet)…"
+	bash scripts/rebuild-golden.sh
+	@echo ""
+	@echo "Running the four promotion gates. A refusal here stops the deploy with the old code and the old golden both still in place…"
+	bash scripts/promote-golden.sh
 	# up the WHOLE stack, not just web: caddy must be recreated so it picks up
 	# the readiness gate (depends_on: service_healthy) and reloads the Caddyfile
 	# (the lb_try_duration retry). `up -d --build web` alone leaves caddy on its
 	# old config, so a Caddyfile/compose change would silently never deploy.
 	APP_VERSION=$$(git describe --tags --always --dirty 2>/dev/null || echo dev) $(COMPOSE) up -d --build
 	@echo ""
-	@echo "Promoting demo: restore golden, migrate forward to the new schema, re-stamp the snapshot…"
+	@echo "Restoring the newly promoted golden into the live database…"
 	FORCE=1 bash scripts/reset-demo.sh
-	bash scripts/snapshot-demo.sh
 	@echo ""
-	@echo "Deployed $$(git describe --tags --always --dirty). Web rebuilt; demo reset to golden and re-stamped at the new schema."
+	@echo "Deployed $$(git describe --tags --always --dirty)."
+	@echo "  The demonstration database was BUILT from this commit, passed all four gates,"
+	@echo "  and was promoted to golden (the previous golden is backed up beside it as"
+	@echo "  golden.dump.bak-pre-<version>-<date>). The live database now holds that build,"
+	@echo "  and so will every nightly reset until the next deploy."
 
 logs: ## Tail web container logs
 	$(COMPOSE) logs -f web
@@ -193,14 +229,25 @@ fresh: guard-prod down ## Full reset: destroy volumes, rebuild, migrate, seed, M
 	@echo ""
 	@echo "Fresh environment ready (Merced Subbasin demo). Run 'make createsuperuser' to create an admin."
 
-snapshot-demo: ## Capture the golden snapshot the nightly demo reset restores to (run after a fresh/intended schema or content change)
+# Kept as an explicitly-labelled MANUAL escape hatch, not part of any automated
+# path. It stamps a golden from whatever the live database happens to hold, which
+# is the photocopy habit this milestone replaced — so what it writes is temporary
+# by construction.
+snapshot-demo: ## ESCAPE HATCH: stamp a golden from the LIVE database — the next `make deploy` REPLACES it (the repository is the source of truth)
 	bash scripts/snapshot-demo.sh
 
 reset-demo: ## Restore the demo DB to its golden snapshot NOW (wipes visitor-added data); the same script runs nightly via cron
 	bash scripts/reset-demo.sh
 
-calc-rebuild: ## Re-run accounting calc for PERIOD=YYYY-MM, then re-stamp the golden snapshot (bundle promote)
+calc-rebuild: ## Re-run accounting calc for PERIOD=YYYY-MM and re-stamp the golden — TEMPORARY, the next deploy replaces it (durable fix = change the seed)
 	@test -n "$(PERIOD)" || { echo "Usage: make calc-rebuild PERIOD=YYYY-MM"; exit 1; }
 	$(EXEC) run_calculations --period $(PERIOD)
+	# The snapshot call stays. Without it a recalculation would survive until the
+	# next nightly reset and then vanish with no warning at all, which is worse
+	# than a golden everyone knows is temporary.
 	bash scripts/snapshot-demo.sh
+	@echo ""
 	@echo "Recalculated $(PERIOD) and re-stamped the golden snapshot."
+	@echo "  This golden is TEMPORARY: the next 'make deploy' rebuilds the demonstration"
+	@echo "  from the repository and replaces it. The durable fix for a calculation the"
+	@echo "  demonstration should always show is to change the seed, commit it, and deploy."
