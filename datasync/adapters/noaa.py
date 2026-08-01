@@ -14,6 +14,7 @@ Parameters:
 
 import logging
 import os
+from datetime import timedelta
 
 from datasync.adapters import register_adapter
 from datasync.adapters.base import BaseAdapter
@@ -21,6 +22,48 @@ from datasync.adapters.base import BaseAdapter
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://www.ncei.noaa.gov/cdo-web/api/v2"
+
+# NOAA's CDO v2 API refuses a single GHCND request spanning more than a year,
+# and it caps any one response at 1,000 rows. Both were measured against the
+# live API on 2026-08-01 with the Merced airport station (USW00023257):
+#
+#   2024-10-01 -> 2026-08-01  (22 months)  HTTP 400, no body worth reading
+#   2025-01-01 -> 2026-01-01  (12 months)  HTTP 200, metadata count=1423, 1000 returned
+#   2025-01-01 -> 2025-06-30  ( 6 months)  HTTP 200, metadata count= 699,  699 returned
+#
+# Those two lines are two separate bugs and the second is the nastier one. The
+# 400 is loud — a whole backfill returns "0 fetched" and somebody notices. The
+# 1,000-row cap is SILENT: the request succeeds, the rows look right, and 423 of
+# them simply are not there. Four datatypes on a daily station is ~1,460 rows a
+# year, so any pull longer than about eight months has been quietly truncating.
+# Neither ever fired on the nightly 7-day sync, which is why both survived.
+#
+# So the fetch below does two things the old one did not: it splits a long range
+# into chunks no longer than a year, and it pages each chunk with `offset` until
+# the response's own `metadata.resultset.count` is satisfied.
+MAX_SPAN_DAYS = 365
+PAGE_LIMIT = 1000
+
+# A backstop, not a real limit. Each page is 1,000 rows, so 50 pages is 50,000
+# rows from one station-year — an order of magnitude past anything GHCND can
+# produce. It exists so a malformed `count` can never spin the loop forever.
+MAX_PAGES_PER_CHUNK = 50
+
+
+def _date_chunks(start_date, end_date, max_span_days):
+    """Split [start_date, end_date] into consecutive spans of at most N days.
+
+    Inclusive of both ends, no gaps and no overlap: each chunk begins the day
+    after the previous one ended, so no reading is fetched twice and none falls
+    between two chunks.
+    """
+    chunks = []
+    cursor = start_date
+    while cursor <= end_date:
+        chunk_end = min(cursor + timedelta(days=max_span_days - 1), end_date)
+        chunks.append((cursor, chunk_end))
+        cursor = chunk_end + timedelta(days=1)
+    return chunks
 
 PARAMETER_MAP = {
     "PRCP": {"name": "Precipitation", "unit": "mm", "scale": 0.1},
@@ -46,20 +89,67 @@ class NOAAAdapter(BaseAdapter):
         return {"token": self._get_token()}
 
     def fetch(self, station, start_date, end_date):
-        """Fetch daily observations from NOAA CDO Web Services."""
-        params = {
-            "datasetid": "GHCND",
-            "stationid": f"GHCND:{station.external_station_id}",
-            "startdate": start_date.strftime("%Y-%m-%d"),
-            "enddate": end_date.strftime("%Y-%m-%d"),
-            "datatypeid": ",".join(PARAMETER_MAP.keys()),
-            "units": "metric",
-            "limit": 1000,
-        }
-        resp = self._request(
-            "GET", f"{BASE_URL}/data", params=params, headers=self._headers()
-        )
-        return resp.json()
+        """Fetch daily observations from NOAA CDO Web Services.
+
+        Chunked by year and paged to exhaustion — see MAX_SPAN_DAYS above for
+        the two API limits that make both necessary. Returns a flat list of
+        result items, which ``parse`` already accepts.
+        """
+        all_results = []
+        for chunk_start, chunk_end in _date_chunks(start_date, end_date, MAX_SPAN_DAYS):
+            all_results.extend(
+                self._fetch_chunk(station, chunk_start, chunk_end)
+            )
+        return all_results
+
+    def _fetch_chunk(self, station, start_date, end_date):
+        """Page one date chunk to exhaustion. CDO's ``offset`` is 1-based."""
+        results = []
+        offset = 1
+        for _ in range(MAX_PAGES_PER_CHUNK):
+            params = {
+                "datasetid": "GHCND",
+                "stationid": f"GHCND:{station.external_station_id}",
+                "startdate": start_date.strftime("%Y-%m-%d"),
+                "enddate": end_date.strftime("%Y-%m-%d"),
+                "datatypeid": ",".join(PARAMETER_MAP.keys()),
+                "units": "metric",
+                "limit": PAGE_LIMIT,
+                "offset": offset,
+            }
+            resp = self._request(
+                "GET", f"{BASE_URL}/data", params=params, headers=self._headers()
+            )
+            # A range with no observations comes back as an EMPTY BODY, not as
+            # an empty results list, so .json() would raise ValueError on it.
+            # An empty chunk is ordinary (a station installed mid-range), never
+            # an error.
+            try:
+                payload = resp.json()
+            except ValueError:
+                payload = {}
+            if not isinstance(payload, dict):
+                break
+
+            page = payload.get("results") or []
+            results.extend(page)
+            if len(page) < PAGE_LIMIT:
+                break
+
+            total = (
+                payload.get("metadata", {}).get("resultset", {}).get("count")
+            )
+            offset += len(page)
+            if not isinstance(total, int) or offset > total:
+                break
+        else:
+            logger.warning(
+                "NOAA %s %s→%s: hit the %d-page backstop; results may be "
+                "incomplete.",
+                station.external_station_id, start_date, end_date,
+                MAX_PAGES_PER_CHUNK,
+            )
+        return results
 
     def parse(self, raw_data):
         """Parse NOAA CDO response into standard records."""

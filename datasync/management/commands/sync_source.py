@@ -20,9 +20,17 @@ The window is `max(7 days, expected interval x WINDOW_INTERVAL_MULTIPLIER)`. The
 it was before this change, so a daily source that missed a few nights still
 catches up exactly as it always did. `--start` overrides it entirely.
 
+**A backfill longer than 60 days is downsampled to one reading per sensor per
+day.** This affects CDEC alone, because CDEC alone publishes every 15 minutes:
+two water years of its 15 active stations at native resolution is ~2.3 million
+staging rows and a ten-hour run, and the demonstration fixture keeps one row per
+day regardless. Pass `--full-resolution` to keep everything. The nightly window
+is 7 days, so routine operation is never touched.
+
 Usage:
     python manage.py sync_source cdec
     python manage.py sync_source cdec --start 2024-01-01 --end 2024-01-31
+    python manage.py sync_source cdec --start 2024-10-01 --full-resolution
     python manage.py sync_source cdec --mock
 """
 
@@ -77,6 +85,16 @@ class Command(BaseCommand):
             "--mock", action="store_true",
             help="Force mock mode (use fixture data instead of live API)",
         )
+        parser.add_argument(
+            "--full-resolution", action="store_true",
+            help=(
+                "Keep every sub-daily reading on a long backfill. By default a "
+                "range longer than 60 days is downsampled to one reading per "
+                "sensor per day (CDEC only — it is the one source publishing "
+                "every 15 minutes). Expect ~2.3 million rows and a multi-hour "
+                "run for two water years of CDEC at full resolution."
+            ),
+        )
 
     def handle(self, *args, **options):
         code = options["code"]
@@ -89,6 +107,12 @@ class Command(BaseCommand):
         adapter = get_adapter(code)
         if adapter is None:
             raise CommandError(f"No adapter registered for source code '{code}'.")
+
+        # Only CDEC publishes finer than daily, so only CDEC has a resolution to
+        # give up. setattr rather than a constructor argument keeps every other
+        # adapter's signature untouched.
+        if options.get("full_resolution"):
+            adapter.full_resolution = True
 
         # An inactive source is OFF, not a mock: skip it entirely rather than
         # syncing (previously an inactive source silently served canned fixtures

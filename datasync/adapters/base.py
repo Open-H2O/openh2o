@@ -27,6 +27,30 @@ from datasync.models import DataRecordStaging, DataSource, DataSyncLog, Monitore
 logger = logging.getLogger(__name__)
 
 
+# Transport failures that a second attempt can plausibly fix. The obvious two
+# are an HTTP error status and a refused/dropped connection. The other two were
+# added 2026-08-01 after a measured loss: a two-water-year USGS backfill lost
+# **four of its five stations** to
+#
+#     ('Received response with content-encoding: gzip, but failed to decode it.',
+#      error('Error -3 while decompressing data: incorrect header check'))
+#
+# Every one of those failures followed a 503 on the previous attempt — USGS's
+# edge, under load, answers with a body that is not gzip while still labelling
+# it gzip. requests raises ContentDecodingError, which descends from
+# RequestException but NOT from ConnectionError, so it fell straight past the
+# retry loop and killed the station. Re-requesting the same URL by hand
+# afterwards returned clean JSON every time, which is the definition of a
+# retryable error. ChunkedEncodingError is the same class of half-delivered
+# response and belongs here for the same reason.
+RETRYABLE_TRANSPORT_ERRORS = (
+    requests.HTTPError,
+    requests.ConnectionError,
+    requests.exceptions.ContentDecodingError,
+    requests.exceptions.ChunkedEncodingError,
+)
+
+
 # ── CKAN datastore_search_sql safety helpers ────────────────────────────────
 # CKAN's datastore_search_sql HTTP action accepts only a raw SQL string — there
 # is no bound-parameter form over the wire — so values interpolated into the
@@ -173,7 +197,7 @@ class BaseAdapter(ABC):
                 resp = requests.request(method, url, timeout=timeout, **kwargs)
                 resp.raise_for_status()
                 return resp
-            except (requests.HTTPError, requests.ConnectionError) as exc:
+            except RETRYABLE_TRANSPORT_ERRORS as exc:
                 last_exc = exc
                 if attempt < retries:
                     backoff = 2 ** attempt

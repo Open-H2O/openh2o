@@ -17,6 +17,7 @@ import logging
 import re
 import subprocess
 import time
+from datetime import datetime
 from urllib.parse import urlencode
 
 import requests
@@ -159,12 +160,49 @@ class CDECAdapter(BaseAdapter):
     # readings and return NOTHING for a daily-duration query. Querying "D" alone
     # left every flow gauge looking dead (59-02). Try coarsest→finest and stop at
     # the first duration that returns rows, so reservoirs stay compact (daily) while
-    # flow gauges still land their native-cadence data. The staging unique key
-    # (station, parameter_code, observation_date) dedups sub-daily rows on re-sync.
+    # flow gauges still land their native-cadence data.
+    #
+    # **Measured 2026-08-01 against the live API: not one of the Merced
+    # demonstration's 15 active CDEC stations returns anything at "D".** Probing
+    # BDV, MSN, BUR and H59 across sensors 1, 20 and 15 over a one-week window
+    # gave 0 rows for every station-sensor pair at daily duration; the data came
+    # back at "H" (MSN, BUR) or "E" (BDV, H59). Requesting daily for long ranges
+    # was considered as the fix for the volume problem below and is ruled out by
+    # that measurement — there is no daily series to ask for.
     DURATION_CODES = ("D", "H", "E")
+
+    # Past this many days, a caller is reconstructing history rather than
+    # operating a gauge, and sub-daily readings stop earning their cost.
+    #
+    # The cost is real and it is NOT in the fetching. Measured on the live API
+    # 2026-08-01, one station-sensor over two water years (BDV/20, 2024-10-01 →
+    # 2026-08-01) returned 60,017 event rows — a 10 MB response — in **9.9
+    # seconds**. The same backfill through the full pipeline took **41 minutes
+    # per station**, because every one of those rows becomes a
+    # DataRecordStaging row carrying its own raw_data JSON. Fifteen stations at
+    # native resolution is ~2.3 million rows and a ten-hour crawl, and
+    # dump_reading_fixture then throws all but one row per day away regardless.
+    #
+    # So above the threshold we keep one reading per (sensor, day) and say so in
+    # the log. **This discards real measurements — it is a downsample, never a
+    # deduplication.** The staging table's UniqueConstraint on
+    # (station, parameter_code, observation_date) makes duplicates impossible;
+    # CDEC's 15-minute cadence is genuine resolution. A caller who wants all of
+    # it can pass --full-resolution to sync_source.
+    #
+    # 60 days sits clear of every automatic window: the nightly sync pulls 7
+    # days for cdec, so routine operation never coarsens anything.
+    LONG_RANGE_DAYS = 60
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set by sync_source --full-resolution to suppress the downsample.
+        self.full_resolution = False
 
     def fetch(self, station, start_date, end_date):
         """Fetch data from CDEC JSON API, falling back across sensor durations."""
+        span_days = (end_date - start_date).days + 1
+        coarsen = span_days > self.LONG_RANGE_DAYS and not self.full_resolution
         records = []
         for param_code in station.parameters or ["15"]:
             for dur_code in self.DURATION_CODES:
@@ -196,9 +234,98 @@ class CDECAdapter(BaseAdapter):
                     )
                     continue
                 if isinstance(data, list) and data:
+                    if coarsen and dur_code != "D":
+                        kept = self._coarsen_to_daily(data)
+                        logger.info(
+                            "CDEC %s sensor %s dur %s: %d readings over %d days "
+                            "downsampled to %d daily values (one per day; real "
+                            "sub-daily detail discarded).",
+                            station.external_station_id, param_code, dur_code,
+                            len(data), span_days, len(kept),
+                        )
+                        data = kept
                     records.extend(data)
                     break  # got this sensor's data at its native duration
         return records
+
+    # ── Long-range downsample ───────────────────────────────────────────
+
+    @staticmethod
+    def _obs_datetime(item):
+        """Parse a CDEC item's observation stamp, or None if unreadable.
+
+        CDEC does not zero-pad — "2025-6-1 23:00" is a real response — so
+        fromisoformat cannot be used alone.
+        """
+        raw = item.get("obsDate") or item.get("date") or ""
+        if not isinstance(raw, str) or not raw.strip():
+            return None
+        for parser in (
+            lambda s: datetime.fromisoformat(s),
+            lambda s: datetime.strptime(s, "%Y-%m-%d %H:%M"),
+            lambda s: datetime.strptime(s, "%Y-%m-%d"),
+        ):
+            try:
+                return parser(raw.strip())
+            except ValueError:
+                continue
+        return None
+
+    @staticmethod
+    def _is_plausible(value):
+        """Mirror ``validate``'s accept rule, so the survivor is a real reading.
+
+        Without this the day's last row is often CDEC's -9999 sentinel, and
+        picking it would drop the whole day in validate() — turning a downsample
+        into data loss on exactly the days a gauge went briefly offline.
+        """
+        if value is None or value == -9999:
+            return False
+        try:
+            return -1000 <= float(value) <= 50_000_000
+        except (TypeError, ValueError):
+            return False
+
+    @classmethod
+    def _coarsen_to_daily(cls, items):
+        """Keep one reading per (sensor, calendar day): the day's LAST real one.
+
+        Deterministic by construction, which matters because the demonstration
+        fixture built from these rows is pinned at a promotion gate with zero
+        tolerance. Ordering is by (sensor, day, timestamp) and the survivor is
+        the maximum timestamp among the day's plausible readings — the value a
+        person reading "the level today" would expect, and the same rule
+        ``dump_reading_fixture`` applies downstream.
+
+        A day whose every reading is a sentinel keeps its last row anyway, so
+        the rejection is still counted rather than silently vanishing.
+        """
+        best = {}
+        unparseable = []
+        for item in items:
+            stamp = cls._obs_datetime(item)
+            if stamp is None:
+                # Never drop a row we merely failed to read — pass it through
+                # and let validate/stage report on it.
+                unparseable.append(item)
+                continue
+            key = (str(item.get("SENSOR_NUM", item.get("sensorNumber", ""))),
+                   stamp.date())
+            plausible = cls._is_plausible(item.get("value"))
+            current = best.get(key)
+            if current is None:
+                best[key] = (stamp, plausible, item)
+                continue
+            cur_stamp, cur_plausible, _ = current
+            # A real reading always beats a sentinel; among equals, the later.
+            if (plausible, stamp) > (cur_plausible, cur_stamp):
+                best[key] = (stamp, plausible, item)
+
+        ordered = [
+            item for key, (stamp, _plausible, item)
+            in sorted(best.items(), key=lambda kv: (kv[0][0], kv[0][1]))
+        ]
+        return ordered + unparseable
 
     def parse(self, raw_data):
         """Parse CDEC JSON response into standard records."""
