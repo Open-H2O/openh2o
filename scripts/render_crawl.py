@@ -341,6 +341,20 @@ def main():
     )
     print(f"  statuses: {status_summary}")
 
+    # Coverage BY SECTION, not just a total. A single number cannot answer the
+    # only question a reader actually has — "is the screen I care about in
+    # there?" — and a whole domain missing from the crawl looks exactly like a
+    # whole domain that was crawled and found clean. That is the defect ISS-097
+    # found in the droppability crawl, which was missing every drinking-water
+    # detail page while reporting a healthy total.
+    sections = {}
+    for path in result.visited:
+        head = path.strip("/").split("/")[0] if path.strip("/") else "(root)"
+        sections[head] = sections.get(head, 0) + 1
+    print("  coverage by section:")
+    for name, count in sorted(sections.items(), key=lambda kv: (-kv[1], kv[0])):
+        print(f"    {count:5d}  /{name}/" if name != "(root)" else f"    {count:5d}  /")
+
     if failures:
         print("", file=sys.stderr)
         print("  RENDER CRAWL FAILED:", file=sys.stderr)
