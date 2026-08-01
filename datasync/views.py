@@ -96,6 +96,15 @@ def station_list(request):
     q = request.GET.get("q", "").strip()
     source = request.GET.get("source", "").strip()
     active = request.GET.get("active", "").strip()
+    # The SECOND axis, and it is second on purpose (ISS-108). `active` asks
+    # "do we pull from this station"; `reporting` asks "has it published
+    # recently, judged against its own source's cadence". A station is routinely
+    # both wired and dormant, which read as a contradiction only because the two
+    # controls used to share vocabulary and there was only one of them. Adding
+    # this filter is what finally answers the question an operator actually
+    # arrives with — "what isn't reporting?" — which no control on this page
+    # could answer before.
+    reporting = request.GET.get("reporting", "").strip()
 
     queryset = MonitoredStation.objects.select_related("data_source").order_by(
         "data_source__code", "station_name"
@@ -121,12 +130,22 @@ def station_list(request):
     # we materialise the (already source/name-ordered) queryset and stable-sort
     # it by a health rank; the alphabetical order is preserved within each band.
     HEALTH_RANK = {"fresh": 0, "stale": 1, "dead": 2}
+    station_health = {
+        s.pk: freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        for s in queryset
+    }
     stations_ordered = sorted(
         queryset,
-        key=lambda s: HEALTH_RANK.get(
-            freshness.classify_freshness(s.data_source.code, s.last_data_at, now), 3
-        ),
+        key=lambda s: HEALTH_RANK.get(station_health.get(s.pk), 3),
     )
+
+    # Freshness is source-aware and computed in Python, so it filters here
+    # rather than in SQL — after the ordering, before pagination, so the page
+    # count reflects what the operator asked for.
+    if reporting in ("fresh", "stale", "dead"):
+        stations_ordered = [
+            s for s in stations_ordered if station_health.get(s.pk) == reporting
+        ]
 
     # An instance rarely exceeds ~50 stations, so show them all on one page —
     # finding one is a glance plus a type-to-filter, not a paging exercise. The
@@ -138,10 +157,7 @@ def station_list(request):
 
     # Per-row freshness + a 10-point sparkline + latest value, so each row tells
     # its at-a-glance story (health, trend, current reading) without opening it.
-    station_freshness = {
-        s.pk: freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
-        for s in page_obj
-    }
+    station_freshness = {s.pk: station_health.get(s.pk, "dead") for s in page_obj}
     page_ids = [s.pk for s in page_obj]
     staging_qs = (
         DataRecordStaging.objects
@@ -198,6 +214,7 @@ def station_list(request):
         "q": q,
         "source": source,
         "active": active,
+        "reporting": reporting,
         "data_sources": DataSource.objects.filter(is_active=True).order_by("code"),
     }
     return list_response(

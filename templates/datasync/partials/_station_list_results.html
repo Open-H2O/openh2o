@@ -2,7 +2,7 @@
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
-    station{{ total_count|pluralize }}{% if q %} matching "{{ q }}"{% endif %}{% if source %} from {{ source }}{% endif %}
+    station{{ total_count|pluralize }}{% if q %} matching "{{ q }}"{% endif %}{% if source %} from {{ source }}{% endif %}{% if active == "0" %} not syncing{% elif active == "all" %} (syncing and not){% endif %}{% if reporting == "fresh" %}, up to date{% elif reporting == "stale" %}, slightly behind{% elif reporting == "dead" %}, dormant{% endif %}
   </span>
 </div>
 
@@ -16,6 +16,7 @@
         <th>Source</th>
         <th>Last Data</th>
         <th>Trend</th>
+        <th style="width: 60px;" title="Whether this station is wired up for scheduled data pulls.">Syncing</th>
       </tr>
     </thead>
     <tbody>
@@ -79,6 +80,18 @@
           <span class="text-tertiary text-xs">--</span>
           {% endif %}
         </td>
+        <!-- ISS-109. The control to switch a station on was NOT missing — it
+             has always been on the station detail page, posting to
+             datasync:station_toggle. What was missing was any way to reach it:
+             this list defaults to syncing-only, so a dormant discovered station
+             is not even on screen, and turning on CIMIS's fifteen meant fifteen
+             separate page visits. Filter to "Not syncing" and they are all here
+             with a switch each. Same partial, same endpoint, no new view.
+             onclick:stopPropagation keeps the row's navigate-on-click from
+             firing when the operator means to hit the switch. -->
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          {% include "datasync/partials/_station_toggle.html" with station=item.station %}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -90,7 +103,7 @@
 <div class="pagination-row">
   {% if page_obj.has_previous %}
     <button
-      hx-get="{% url 'datasync:station_list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&source={{ source }}&active={{ active }}"
+      hx-get="{% url 'datasync:station_list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&source={{ source }}&active={{ active }}&reporting={{ reporting }}"
       hx-target="#results"
       class="btn-secondary btn-sm">
       Previous
@@ -101,7 +114,7 @@
   </span>
   {% if page_obj.has_next %}
     <button
-      hx-get="{% url 'datasync:station_list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&source={{ source }}&active={{ active }}"
+      hx-get="{% url 'datasync:station_list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&source={{ source }}&active={{ active }}&reporting={{ reporting }}"
       hx-target="#results"
       class="btn-secondary btn-sm">
       Next

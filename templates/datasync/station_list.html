@@ -51,7 +51,7 @@
         hx-get="{% url 'datasync:station_list' %}"
         hx-target="#results"
         hx-trigger="keyup changed delay:200ms"
-        hx-include="[name='source'],[name='active']"
+        hx-include="[name='source'],[name='active'],[name='reporting']"
         autocomplete="off"
         class="form-input search-input-icon"
       >
@@ -63,7 +63,7 @@
         hx-get="{% url 'datasync:station_list' %}"
         hx-target="#results"
         hx-trigger="change"
-        hx-include="[name='q'],[name='active']"
+        hx-include="[name='q'],[name='active'],[name='reporting']"
         class="form-select"
       >
         <option value="" {% if not source %}selected{% endif %}>All Sources</option>
@@ -72,19 +72,47 @@
         {% endfor %}
       </select>
     </div>
+    <!-- Two filters, two axes, and deliberately NO word in common (ISS-108).
+         This one is about wiring: do we pull from the station at all. It used
+         to be labelled "Status / Active / Inactive", which read as the opposite
+         of the "Dormant" dots in the rows below it — and those dots are the
+         other axis entirely. Brent, at the 104-02 checkpoint: "the filter says
+         active but a bunch of dormant stations are present — this doesn't make
+         sense." It was not the data contradicting itself; it was the
+         vocabulary. -->
     <div>
-      <label class="form-label" for="filter-active">Status</label>
+      <label class="form-label" for="filter-active">Syncing</label>
       <select
         id="filter-active" name="active"
         hx-get="{% url 'datasync:station_list' %}"
         hx-target="#results"
         hx-trigger="change"
-        hx-include="[name='q'],[name='source']"
+        hx-include="[name='q'],[name='source'],[name='reporting']"
         class="form-select"
+        title="Whether this station is wired up for scheduled data pulls. Nothing to do with how recently it published."
       >
-        <option value="1" {% if active == "1" or not active %}selected{% endif %}>Active</option>
-        <option value="0" {% if active == "0" %}selected{% endif %}>Inactive</option>
+        <option value="1" {% if active == "1" or not active %}selected{% endif %}>Syncing</option>
+        <option value="0" {% if active == "0" %}selected{% endif %}>Not syncing</option>
         <option value="all" {% if active == "all" %}selected{% endif %}>All</option>
+      </select>
+    </div>
+    <!-- And this one is about freshness, in the same three words the map
+         legend and the row dots already use. -->
+    <div>
+      <label class="form-label" for="filter-reporting">Reporting</label>
+      <select
+        id="filter-reporting" name="reporting"
+        hx-get="{% url 'datasync:station_list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q'],[name='source'],[name='active']"
+        class="form-select"
+        title="How recently the station published, judged against its own source's cadence. A station can be syncing and still dormant."
+      >
+        <option value="" {% if not reporting %}selected{% endif %}>Any</option>
+        <option value="fresh" {% if reporting == "fresh" %}selected{% endif %}>Up to date</option>
+        <option value="stale" {% if reporting == "stale" %}selected{% endif %}>Slightly behind</option>
+        <option value="dead" {% if reporting == "dead" %}selected{% endif %}>Dormant</option>
       </select>
     </div>
   </div>

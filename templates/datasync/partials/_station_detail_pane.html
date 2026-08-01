@@ -69,7 +69,11 @@
       <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
         <h2 class="section-header-flush">Station Information</h2>
         <div id="toggle-cell" class="row-start">
-          <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);" title="Active stations sync measurements during scheduled data pulls. Inactive stations are skipped.">Active</span>
+          <!-- "Syncing", not "Active" (ISS-108): this switch is the wiring
+               axis, and the freshness dot a few lines up is the other one. The
+               station list's filter now uses these same words, so the two
+               screens cannot disagree about what the switch means. -->
+          <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);" title="Whether this station is wired up for scheduled data pulls. Switch it off and syncs skip it. Nothing to do with how recently it published — that is the freshness dot.">Syncing</span>
           {% include "datasync/partials/_station_toggle.html" %}
         </div>
       </div>
