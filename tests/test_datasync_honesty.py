@@ -135,3 +135,11 @@ def test_a_station_with_one_reading_is_not_labelled_no_data():
     # The page holds a reading for this station, so it may not claim otherwise.
     assert ">No data<" not in body
     assert "No trend yet" in body
+
+    # Template syntax must never reach the reader. Django's {# #} comment is
+    # SINGLE-LINE ONLY; a multi-line one renders its own text onto the page.
+    # That shipped to staging on 2026-08-01 and all four promotion gates passed
+    # it, because gate 4 looks for 5xx and banned names, not for markup leaking
+    # into prose. Only a rendered-body assertion catches this class.
+    for leak in ("{#", "#}", "{%", "%}"):
+        assert leak not in body, f"template syntax {leak!r} rendered to the page"

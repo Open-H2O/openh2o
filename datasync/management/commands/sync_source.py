@@ -64,7 +64,10 @@ class Command(BaseCommand):
         parser.add_argument("code", type=str, help="Data source code (e.g. cdec, usgs)")
         parser.add_argument(
             "--start", type=str, default=None,
-            help="Start date (YYYY-MM-DD). Defaults to 7 days ago.",
+            help=(
+                "Start date (YYYY-MM-DD). Defaults to a window sized from the "
+                "source's own publishing cadence (7 days minimum)."
+            ),
         )
         parser.add_argument(
             "--end", type=str, default=None,

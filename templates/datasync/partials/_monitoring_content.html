@@ -109,9 +109,17 @@
             </svg>
           </div>
           {% else %}
-          {# A sparkline needs two numeric readings (datasync/views.py:165). One
-             reading is not "no data" — the dot and the time below it say
-             otherwise — it is not enough points to draw a line. ISS-110. #}
+          {% comment %}
+            A sparkline needs two numeric readings (datasync/views.py:165). One
+            reading is not "no data" — the dot and the time below it say
+            otherwise — it is not enough points to draw a line. ISS-110.
+
+            Use this block tag, never the hash form, for anything multi-line:
+            the hash form is SINGLE-LINE ONLY and a multi-line one renders its
+            own text onto the page. It did, on all 38 cards, and all four gates
+            passed it — gate 4 checks for 5xx and banned names, not for template
+            syntax leaking into prose.
+          {% endcomment %}
           <span class="text-tertiary text-xs">No trend yet</span>
           {% endif %}
         </div>
