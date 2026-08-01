@@ -447,12 +447,20 @@ case "$meta_version" in
 esac
 
 # The same argument applies to the tree the GATES are running from: the web image
-# above was built from this checkout, so a dirty tree here means the gates just
-# tested code that exists in no commit.
-if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+# above was built from this checkout, so a modified tree here means the gates
+# just tested code that exists in no commit.
+#
+# --untracked-files=no on purpose, matching `git describe --dirty` exactly, so
+# this check and the manifest's -dirty marker agree about what "modified" means.
+# A deployment checkout legitimately carries untracked local files — staging has
+# Caddyfile.staging and docker-compose.override.yml — and refusing on those would
+# make the gate unusable on the machine it has to run on, which is how a gate
+# ends up with a bypass flag.
+tree_changes="$(git status --porcelain --untracked-files=no 2>/dev/null)"
+if [ -n "$tree_changes" ]; then
   g3="FAIL"; g3_note="the checkout being verified has uncommitted changes"
-  echo "  WORKING TREE IS DIRTY — the gates just ran against code in no commit:" >&2
-  git status --short >&2
+  echo "  WORKING TREE IS MODIFIED — the gates just ran against code in no commit:" >&2
+  printf '%s\n' "$tree_changes" >&2
   fail_gate 3 "Commit or stash these changes and re-run. A verification that passes against uncommitted code says nothing about what will actually deploy."
 fi
 
