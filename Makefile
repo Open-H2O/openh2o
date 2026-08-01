@@ -149,6 +149,12 @@ sync: ## Run sync_all manually (syncs all active data sources)
 rebuild-golden: ## Build a candidate demo database from the repository in a disposable stack (does NOT promote it)
 	bash scripts/rebuild-golden.sh
 
+verify-candidate: ## Run the four promotion gates against candidate.dump (read-only; promotes nothing)
+	bash scripts/verify-candidate.sh
+
+promote-golden: ## Verify the candidate and, only if all four gates pass, install it as the golden snapshot
+	bash scripts/promote-golden.sh
+
 # ---------------------------------------------------------------------------
 # Composite Targets
 # ---------------------------------------------------------------------------
