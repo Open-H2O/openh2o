@@ -1,4 +1,4 @@
-{% load drinking_display placeholders %}{% comment %}
+{% load drinking_display humanize placeholders %}{% comment %}
   The drinking domain's dashboard card — the first real user of 77-02's
   `dashboard_cards` hook.
 
@@ -34,21 +34,27 @@
     same list — but only when there IS a date. With none, `|blank` renders "Not
     recorded", and wrapping that in a link would advertise a record to open.
 
-    No `|intcomma` here, unlike the overview page: that difference is deliberate
-    and its reasoning is recorded in drinking/overview.html.
+    The counts carry `|intcomma`, which this card did without until now. The
+    note in drinking/overview.html recorded that as a scope decision — that page
+    got separators, "the dashboard card is a different surface and was left
+    alone" — and the reasoning it gave applies here too, harder: an unseparated
+    five-digit number beside two-digit ones reads as an oversight, and on THIS
+    page it also sits under account and zone tables where every figure is
+    separated. Screenshotted on staging 2026-08-02: 22367 was the only bare
+    number on the dashboard.
   {% endcomment %}
   <div class="stat-grid-4col">
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Facilities</div>
-      <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ summary.facility_count }}</a></div>
+      <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ summary.facility_count|intcomma }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Sampling points</div>
-      <div class="stat-card-value-sm"><a href="{% url 'drinking:sampling_points' %}" class="data-table-link">{{ summary.sampling_point_count }}</a></div>
+      <div class="stat-card-value-sm"><a href="{% url 'drinking:sampling_points' %}" class="data-table-link">{{ summary.sampling_point_count|intcomma }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Sample results</div>
-      <div class="stat-card-value-sm"><a href="{% url 'drinking:results' %}" class="data-table-link">{{ summary.result_count }}</a></div>
+      <div class="stat-card-value-sm"><a href="{% url 'drinking:results' %}" class="data-table-link">{{ summary.result_count|intcomma }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Most recent sample</div>

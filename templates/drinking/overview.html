@@ -161,10 +161,11 @@
     are lifted from partials/_dashboard_card.html; both already exist in
     app.css, so nothing here adds CSS.
 
-    The values carry `|intcomma`, which the dashboard card does not. Measured on
-    staging: the result count reads 22367, and an unseparated five-digit number
-    sitting under two separated ones on the same page reads as an oversight.
-    The dashboard card is a different surface and was left alone.
+    The values carry `|intcomma`. Measured on staging: the result count reads
+    22367, and an unseparated five-digit number sitting under two separated ones
+    on the same page reads as an oversight. This page got separators first and
+    the dashboard card was left alone as out of scope; on 2026-08-02 the same
+    argument was accepted there too, so the two surfaces now agree.
     {% endcomment %}
     <div class="stat-grid-3col mt-lg">
       <div class="card-raised card-inset stat-card">
