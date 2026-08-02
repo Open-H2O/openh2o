@@ -28,30 +28,41 @@ Variables:
   el._mapInit = true;
 
   // Plain-English freshness states + their dot colours, defined ONCE so the
-  // persistent legend and the per-station popup can never drift apart.
+  // persistent legend, the per-station popup and the two map layers can never
+  // drift apart. The values were Tailwind defaults (green-500, amber-500,
+  // gray-400) rather than this platform's palette, and the two `circle-color`
+  // expressions below repeated them a third and fourth time; they now read from
+  // here. Literal hexes, not `var(--token)`, because MapLibre paint takes a
+  // colour value and cannot resolve a custom property — the tokens they mirror
+  // are named beside each one.
   var FRESH_META = {
-    fresh: { label: 'Up to date', color: '#22c55e' },
-    stale: { label: 'Slightly behind', color: '#f59e0b' },
-    dead:  { label: 'Dormant', color: '#9ca3af' }
+    fresh: { label: 'Up to date',      color: '#55B678' },  // --color-supply
+    stale: { label: 'Slightly behind', color: '#fbbf24' },  // --color-warning
+    dead:  { label: 'Dormant',         color: '#8899aa' }   // --color-text-secondary
   };
+
+  var FRESH_MATCH = ['match', ['get', 'freshness'],
+    'fresh', FRESH_META.fresh.color,
+    'stale', FRESH_META.stale.color,
+    FRESH_META.dead.color];
 
   // Persistent legend anchored in the map's bottom-left corner, token-styled to
   // match the app's cards. Built from FRESH_META so it tracks the dot colours.
   var legend = document.createElement('div');
   legend.style.cssText =
     'position:absolute;bottom:10px;left:10px;z-index:1;' +
-    'background:var(--color-card,#0e1219);border:1px solid var(--color-border,#1f2630);' +
+    'background:var(--color-card,#080b10);border:1px solid var(--color-border,#1f2630);' +
     'border-radius:var(--radius-md,6px);padding:8px 10px;' +
     'font-family:var(--font-display,sans-serif);font-size:11px;' +
     'box-shadow:0 2px 8px rgba(0,0,0,0.35);';
   legend.innerHTML =
-    '<div style="color:#8899aa;font-weight:600;text-transform:uppercase;' +
+    '<div style="color:var(--color-text-secondary,#8899aa);font-weight:600;text-transform:uppercase;' +
       'letter-spacing:0.04em;font-size:10px;margin-bottom:5px;">Station freshness</div>' +
     ['fresh', 'stale', 'dead'].map(function(k) {
       return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
         '<span style="width:9px;height:9px;border-radius:50%;flex:none;display:inline-block;' +
           'background:' + FRESH_META[k].color + ';"></span>' +
-        '<span style="color:#e8edf4;">' + FRESH_META[k].label + '</span></div>';
+        '<span style="color:var(--color-text-primary,#e8edf4);">' + FRESH_META[k].label + '</span></div>';
     }).join('');
   el.appendChild(legend);
 
@@ -95,7 +106,7 @@ Variables:
             'circle-radius': 16,
             'circle-opacity': 0.15,
             'circle-blur': 1,
-            'circle-color': ['match', ['get', 'freshness'], 'fresh', '#22c55e', 'stale', '#f59e0b', '#9ca3af']
+            'circle-color': FRESH_MATCH
           }
         });
 
@@ -105,7 +116,7 @@ Variables:
           source: '{{ map_id }}-source',
           paint: {
             'circle-radius': 7,
-            'circle-color': ['match', ['get', 'freshness'], 'fresh', '#22c55e', 'stale', '#f59e0b', '#9ca3af'],
+            'circle-color': FRESH_MATCH,
             'circle-stroke-width': 1.5,
             'circle-stroke-color': 'rgba(255,255,255,0.3)'
           }
@@ -125,7 +136,7 @@ Variables:
           }
 
           // Plain-English freshness + the matching dot colour, from the shared map.
-          var freshMeta = FRESH_META[p.freshness] || { label: p.freshness, color: '#8899aa' };
+          var freshMeta = FRESH_META[p.freshness] || { label: p.freshness, color: FRESH_META.dead.color };
 
           // The actual latest measurement, when we have one.
           var readingLine;
@@ -135,24 +146,24 @@ Variables:
             readingLine =
               '<div style="font-size:15px;font-weight:600;margin:2px 0 4px;">' +
               Number(p.latest_value).toLocaleString() + unit +
-              '<span style="color:#8899aa;font-size:12px;font-weight:400;">' + param + '</span></div>';
+              '<span style="color:var(--color-text-secondary,#8899aa);font-size:12px;font-weight:400;">' + param + '</span></div>';
           } else {
-            readingLine = '<div style="color:#8899aa;margin:2px 0 4px;">No published reading</div>';
+            readingLine = '<div style="color:var(--color-text-secondary,#8899aa);margin:2px 0 4px;">No published reading</div>';
           }
 
           new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
             .setLngLat(e.lngLat)
             .setHTML(
-              '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+              '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#e8edf4);background:var(--color-elevated,#0e1219);padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
               '<div style="font-weight:600;font-size:13px;">' + p.station_name + '</div>' +
-              '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' +
+              '<div style="color:var(--color-text-secondary,#8899aa);font-size:11px;margin-bottom:4px;">' +
                 (p.data_source_code || '').toUpperCase() + ' &middot; ' + p.external_station_id + '</div>' +
               readingLine +
               '<div style="display:flex;align-items:center;gap:6px;">' +
                 '<span style="width:8px;height:8px;border-radius:50%;background:' + freshMeta.color + ';display:inline-block;"></span>' +
-                '<span style="color:#8899aa;">' + freshMeta.label + ' &middot; ' + age + '</span></div>' +
+                '<span style="color:var(--color-text-secondary,#8899aa);">' + freshMeta.label + ' &middot; ' + age + '</span></div>' +
               '<a href="/datasync/stations/' + p.pk + '/" ' +
-                'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View station &rarr;</a>' +
+                'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View station &rarr;</a>' +
               '</div>'
             )
             .addTo(map);

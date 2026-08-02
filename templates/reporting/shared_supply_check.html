@@ -98,16 +98,16 @@
       </thead>
       <tbody>
         {% for row in group.rows %}
-        <tr{% if row.flag %} style="background: rgba(228,163,23,0.06);"{% endif %}>
+        <tr{% if row.flag %} class="row-flagged"{% endif %}>
           <td>
             <a href="{% url 'parcels:detail' row.parcel_id %}" class="data-table-link">{{ row.parcel_number }}</a>
           </td>
           <td class="td-num">{{ row.your_weight|floatformat:4 }}</td>
           <td class="td-num">
-            {% if row.et_weight is not None %}{{ row.et_weight|floatformat:4 }}{% else %}<span class="text-tertiary">—</span>{% endif %}
+            {% if row.et_weight is not None %}{{ row.et_weight|floatformat:4 }}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
           </td>
           <td class="td-num">
-            {% if row.divergence is not None %}{{ row.divergence|floatformat:4 }}{% else %}<span class="text-tertiary">—</span>{% endif %}
+            {% if row.divergence is not None %}{{ row.divergence|floatformat:4 }}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
           </td>
           <td class="th-right">
             {% if row.flag %}<span class="badge badge-orange" title="This field's entered share is {{ divergence_points }}+ points from its ET-implied share">review split</span>{% endif %}

@@ -907,6 +907,19 @@ html { color-scheme: dark; }
     background-color: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
+/* A row the page has flagged for the reader's attention (the shared-supply
+   check marks parcels drawing on a supply claimed by more than one account).
+   Warning amber, per the severity ladder in tokens.css — it was a hardcoded
+   pre-Deep-Water gold inline on the `<tr>`, which read as a primary action
+   rather than as a caution. Beats the zebra stripe, loses to hover. */
+.data-table tbody tr.row-flagged td {
+    background-color: color-mix(in srgb, var(--color-warning) 9%, transparent);
+}
+
+.data-table tbody tr.row-flagged:hover td {
+    background-color: color-mix(in srgb, var(--color-warning) 14%, transparent);
+}
+
 .data-table-link {
     /* Phase F (F2): text-sized blue routed to the brighter Pacific blue
        (#3DB4E0, 8.26:1 on a card) so identifier links clear WCAG AA. The
@@ -1456,6 +1469,25 @@ html { color-scheme: dark; }
     margin: var(--space-lg) 0 var(--space-xs);
 }
 
+/* The "honesty note": the panel that says a number on this page is a DERIVED
+   estimate rather than a measurement. It appears on the calculation run, the
+   methodology settings, and the methodology preview, and it was copy-pasted
+   into all three as an inline style carrying `rgba(228,163,23,…)` — the
+   pre-Deep-Water gold, frozen at the moment it was pasted and unable to follow
+   the palette. Composes onto `.card-raised.card-inset`.
+
+   Its lead sentence is primary text, not `--color-accent`: teal means
+   interactive, and this sentence is not a link. The gold wash and hairline
+   carry the caution on their own. */
+.honesty-note {
+    border: 1px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
+    background: color-mix(in srgb, var(--color-gold) 8%, transparent);
+}
+
+.honesty-note strong {
+    color: var(--color-text-primary);
+}
+
 /* -- Help Pages ---------------------------------------------------------- */
 
 /* The numbered gold badge already marks each step; an accent stripe beside it
@@ -1640,7 +1672,36 @@ html { color-scheme: dark; }
 
 .badge-gold {
     background-color: color-mix(in srgb, var(--color-gold) 15%, transparent);
-    color: var(--color-accent);
+    /* Gold text, not `--color-accent`. This rule was written when `--color-accent`
+       WAS California Gold; the Deep-Water palette moved that token to teal and
+       silently left a gold-backed badge with teal lettering. */
+    color: var(--color-gold);
+}
+
+/* The severity tone the general badge system was missing. `.badge-orange` is
+   furnace — the deficit/over-budget colour — and using it for a warning
+   flattened two rungs of tokens.css's ladder into one. */
+.badge-amber {
+    background-color: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    color: var(--color-warning);
+}
+
+.badge-pill.badge-amber {
+    border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+}
+
+/* A status dot ahead of the label, for badges that report the health of a thing
+   rather than classify it. The dot inherits `currentColor`, so it is correct for
+   every colour variant without a rule per colour — which is what let the old
+   `.health-status-badge-*` system be retired rather than re-implemented. */
+.badge-dot::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-right: var(--space-xs);
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
 }
 
 /* Phase 64: flag-gated meta-label marking demo sample data (e.g. a "Curtailed"
@@ -2815,57 +2876,12 @@ div[id$="-map"] {
     align-items: flex-end;
 }
 
-/* -- Health status badges ------------------------------------------------- */
-
-.health-status-badge-green,
-.health-status-badge-yellow,
-.health-status-badge-red {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-.health-status-badge-green::before,
-.health-status-badge-yellow::before,
-.health-status-badge-red::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.health-status-badge-green {
-    background: oklch(0.49 0.11 145 / 0.15);
-    color: var(--forest-400);
-}
-
-.health-status-badge-green::before {
-    background: var(--forest-400);
-}
-
-.health-status-badge-yellow {
-    background: oklch(0.49 0.12 85 / 0.15);
-    color: var(--color-warning);
-}
-
-.health-status-badge-yellow::before {
-    background: var(--color-warning);
-}
-
-.health-status-badge-red {
-    background: oklch(0.55 0.20 25 / 0.15);
-    color: oklch(0.65 0.20 25);
-}
-
-.health-status-badge-red::before {
-    background: oklch(0.65 0.20 25);
-}
+/* The `.health-status-badge-*` system lived here. It was a second, parallel
+   badge vocabulary for one semantic — a coloured status chip — differing from
+   `.badge` only by a leading dot and a `text-transform: capitalize` that was
+   quietly Title-Casing labels the platform had already written in sentence case
+   ("Needs API key" rendered as "Needs API Key"). It is now `.badge .badge-dot
+   .badge-{green,amber,red}` above. */
 
 /* -- Health grid --------------------------------------------------------- */
 

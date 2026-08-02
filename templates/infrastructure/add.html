@@ -140,7 +140,7 @@
             <div class="form-group">
               <label class="field-label" for="measurement_method">Measurement method</label>
               <select id="measurement_method" name="measurement_method" class="form-select">
-                <option value="">—</option>
+                <option value="">Not specified</option>
                 {% for val, label in measurement_method_choices %}
                 <option value="{{ val }}">{{ label }}</option>
                 {% endfor %}
@@ -189,7 +189,7 @@
             <div class="form-group">
               <label class="field-label" for="pump_type">Pump type</label>
               <select id="pump_type" name="pump_type" class="form-select">
-                <option value="">—</option>
+                <option value="">Not specified</option>
                 {% for val, label in pump_type_choices %}
                 <option value="{{ val }}">{{ label }}</option>
                 {% endfor %}

@@ -133,15 +133,19 @@
         </div>
     </div>
 
-    <!-- Entity color system: single source of truth for MapLibre configs -->
-    <script>
-    window.OH2O = { colors: {
-        gold: '#E4A317', teal: '#4ECDC4', purple: '#7B68EE',
-        red: '#FF6B6B', blue: '#1B7FAF', blueBright: '#3DB4E0',
-        boundary: '#E4A317'
-    }};
-    </script>
+    {% comment %}
+      The entity colour palette used to be declared here as well, above
+      {% block map_scripts %}, and called itself the single source of truth. It
+      was neither: static/js/map-core.js declares `OH2O.colors` too, loads from
+      inside that block, and therefore overwrote this copy on every page that
+      used it. Every consumer of `OH2O.colors` is a map page and every map page
+      loads map-core.js, so this copy could only ever be read if it had drifted
+      into being the shorter of two — which it had. It was missing `green`,
+      `river`, `canal` and `hydroCasing`, and it carried the pre-Deep-Water gold.
 
+      map-core.js is the one JS declaration; it mirrors the `--color-entity-*`
+      tokens in static/css/tokens.css, which are the authority.
+    {% endcomment %}
     {% block map_scripts %}{% endblock %}
     {% block chart_scripts %}{% endblock %}
 

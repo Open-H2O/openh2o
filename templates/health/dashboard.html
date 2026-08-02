@@ -56,11 +56,11 @@
                 {% if result.status == 'skipped' %}
                 <span class="badge badge-grey">Not applicable</span>
                 {% elif result.status == 'green' %}
-                <span class="health-status-badge-green">Healthy</span>
+                <span class="badge badge-dot badge-green">Healthy</span>
                 {% elif result.status == 'yellow' %}
-                <span class="health-status-badge-yellow">Warning</span>
+                <span class="badge badge-dot badge-amber">Warning</span>
                 {% else %}
-                <span class="health-status-badge-red">Critical</span>
+                <span class="badge badge-dot badge-red">Critical</span>
                 {% endif %}
             </div>
             <p class="text-secondary text-sm" style="margin: 0 0 var(--space-sm) 0; line-height: 1.4;">

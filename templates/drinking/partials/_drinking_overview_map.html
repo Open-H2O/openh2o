@@ -76,28 +76,28 @@ Variables:
       var sub = [p.facility_type, p.system_name]
         .filter(Boolean).map(escapeHtml).join(' &middot; ');
       var sampled = codes.length
-        ? '<div style="color:#8899aa;font-size:11px;margin-top:6px;">Sampled at ' +
+        ? '<div style="color:var(--color-text-secondary,#8899aa);font-size:11px;margin-top:6px;">Sampled at ' +
           escapeHtml(codes.join(', ')) + '</div>'
-        : '<div style="color:#8899aa;font-size:11px;margin-top:6px;">No sampling point recorded here</div>';
+        : '<div style="color:var(--color-text-secondary,#8899aa);font-size:11px;margin-top:6px;">No sampling point recorded here</div>';
 
       // One point at this facility gets a direct link to the inventory filtered
       // to it; more than one has no single page to go to, so the facility page
       // (which lists them all) is the honest destination.
       var pointLink = codes.length === 1
         ? '<a href="' + pointsUrl + '?q=' + encodeURIComponent(codes[0]) + '" ' +
-          'style="display:block;margin-top:4px;color:#38bdf8;text-decoration:none;font-size:11px;">' +
+          'style="display:block;margin-top:4px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">' +
           'Find this sampling point &rarr;</a>'
         : '';
 
       new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
         .setLngLat(lngLat)
         .setHTML(
-          '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+          '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#e8edf4);background:var(--color-elevated,#0e1219);padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
           '<div style="font-weight:600;font-size:13px;">' + escapeHtml(title) + '</div>' +
-          (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
+          (sub ? '<div style="color:var(--color-text-secondary,#8899aa);font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
           sampled +
           '<a href="' + facilityUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
-            'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View facility &rarr;</a>' +
+            'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View facility &rarr;</a>' +
           pointLink +
           '</div>'
         )
