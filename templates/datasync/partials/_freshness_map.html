@@ -51,18 +51,18 @@ Variables:
   var legend = document.createElement('div');
   legend.style.cssText =
     'position:absolute;bottom:10px;left:10px;z-index:1;' +
-    'background:var(--color-card,#080b10);border:1px solid var(--color-border,#1f2630);' +
+    'background:var(--color-card,#141E2A);border:1px solid var(--color-border,rgba(255,255,255,0.07));' +
     'border-radius:var(--radius-md,6px);padding:8px 10px;' +
     'font-family:var(--font-display,sans-serif);font-size:11px;' +
     'box-shadow:0 2px 8px rgba(0,0,0,0.35);';
   legend.innerHTML =
-    '<div style="color:var(--color-text-secondary,#8899aa);font-weight:600;text-transform:uppercase;' +
+    '<div style="color:var(--color-text-secondary,#8FA3AE);font-weight:600;text-transform:uppercase;' +
       'letter-spacing:0.04em;font-size:10px;margin-bottom:5px;">Station freshness</div>' +
     ['fresh', 'stale', 'dead'].map(function(k) {
       return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
         '<span style="width:9px;height:9px;border-radius:50%;flex:none;display:inline-block;' +
           'background:' + FRESH_META[k].color + ';"></span>' +
-        '<span style="color:var(--color-text-primary,#e8edf4);">' + FRESH_META[k].label + '</span></div>';
+        '<span style="color:var(--color-text-primary,#E7EEF2);">' + FRESH_META[k].label + '</span></div>';
     }).join('');
   el.appendChild(legend);
 
@@ -146,22 +146,22 @@ Variables:
             readingLine =
               '<div style="font-size:15px;font-weight:600;margin:2px 0 4px;">' +
               Number(p.latest_value).toLocaleString() + unit +
-              '<span style="color:var(--color-text-secondary,#8899aa);font-size:12px;font-weight:400;">' + param + '</span></div>';
+              '<span style="color:var(--color-text-secondary,#8FA3AE);font-size:12px;font-weight:400;">' + param + '</span></div>';
           } else {
-            readingLine = '<div style="color:var(--color-text-secondary,#8899aa);margin:2px 0 4px;">No published reading</div>';
+            readingLine = '<div style="color:var(--color-text-secondary,#8FA3AE);margin:2px 0 4px;">No published reading</div>';
           }
 
           new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
             .setLngLat(e.lngLat)
             .setHTML(
-              '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#e8edf4);background:var(--color-elevated,#0e1219);padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+              '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
               '<div style="font-weight:600;font-size:13px;">' + p.station_name + '</div>' +
-              '<div style="color:var(--color-text-secondary,#8899aa);font-size:11px;margin-bottom:4px;">' +
+              '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' +
                 (p.data_source_code || '').toUpperCase() + ' &middot; ' + p.external_station_id + '</div>' +
               readingLine +
               '<div style="display:flex;align-items:center;gap:6px;">' +
                 '<span style="width:8px;height:8px;border-radius:50%;background:' + freshMeta.color + ';display:inline-block;"></span>' +
-                '<span style="color:var(--color-text-secondary,#8899aa);">' + freshMeta.label + ' &middot; ' + age + '</span></div>' +
+                '<span style="color:var(--color-text-secondary,#8FA3AE);">' + freshMeta.label + ' &middot; ' + age + '</span></div>' +
               '<a href="/datasync/stations/' + p.pk + '/" ' +
                 'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View station &rarr;</a>' +
               '</div>'

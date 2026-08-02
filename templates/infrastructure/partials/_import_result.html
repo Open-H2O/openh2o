@@ -17,13 +17,13 @@ Outcome of an import. Three shapes:
     <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
   </div>
 
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     {{ created }} {{ infra_label|lower }} record{{ created|pluralize }} created.
     {% if skipped %}{{ skipped|length }} row{{ skipped|length|pluralize }} were skipped because of the problems below &mdash; fix them in your file and re-import just those.{% else %}Every row was valid.{% endif %}
   </p>
 
   {% if skipped %}
-  <table class="data-table" style="margin-top: var(--space-md);">
+  <table class="data-table mt-md">
     <thead>
       <tr>
         <th style="width: 6rem;">Row</th>

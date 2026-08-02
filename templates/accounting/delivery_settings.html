@@ -28,7 +28,7 @@
     shown, and the Learn-more link pointed at an explainer that 404s when the
     deployment does not run every domain it explains — a live dead link, found
     the moment this page got a `_PAGES` row. The predicate is the same one the
-    view and the sidebar read.{% endcomment %}{% explainer_available "surface_deliveries" as show_delivery_help %}<p class="text-secondary text-base" style="margin: 0;">These settings apply to every district. An analyst sets them once; a single district can differ from the default where it needs to (set that on the district's own page).{% if show_delivery_help %} <a href="{% url 'surface_deliveries' %}" class="text-sm" style="color: var(--color-accent);">Learn more &rarr;</a>{% endif %}</p>
+    view and the sidebar read.{% endcomment %}{% explainer_available "surface_deliveries" as show_delivery_help %}<p class="text-secondary text-base m-0">These settings apply to every district. An analyst sets them once; a single district can differ from the default where it needs to (set that on the district's own page).{% if show_delivery_help %} <a href="{% url 'surface_deliveries' %}" class="text-sm text-accent">Learn more &rarr;</a>{% endif %}</p>
   </div>
 
   <form method="post" class="page-stack">
@@ -54,7 +54,7 @@
           <span class="input-suffix-unit">%</span>
         </span>
       </div>
-      {% if form.efficiency_percent.errors %}<p class="text-sm text-furnace" style="margin-top: var(--space-sm);">{{ form.efficiency_percent.errors|striptags }}</p>{% endif %}
+      {% if form.efficiency_percent.errors %}<p class="text-sm text-furnace mt-sm">{{ form.efficiency_percent.errors|striptags }}</p>{% endif %}
     </div>
     {% endif %}
 
@@ -62,7 +62,7 @@
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ settings_total }} of {{ settings_total }}</span>
       <h2 class="section-header">{{ form.recovery_horizon.label }}</h2>
-      <div class="field-group" style="margin-top: var(--space-sm);">
+      <div class="field-group mt-sm">
         {% for radio in form.recovery_horizon %}
         <label class="radio-option">
           {{ radio.tag }}

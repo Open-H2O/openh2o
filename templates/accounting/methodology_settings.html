@@ -28,18 +28,18 @@
   <div class="card-raised">
     <h2 class="section-header mb-md">What is a methodology?</h2>
     <p class="text-secondary text-base">A <strong>methodology</strong> (or calculation plan) is the ordered, configurable chain of <strong>steps</strong> the platform applies to turn measurements into a defensible billable-groundwater figure for each use area: gross ET, minus effective precipitation, minus surface water deliveries, minus edge cases. Each step below is one operation in that chain &mdash; reorder it, enable or disable it, and tune its knobs, then preview a sample parcel to see the effect.</p>
-    <a href="{% url 'glossary' %}" class="text-sm" style="color: var(--color-accent);">Glossary &rarr;</a>
+    <a href="{% url 'glossary' %}" class="text-sm text-accent">Glossary &rarr;</a>
     <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
-    <a href="{% url 'getting_started' %}" class="text-sm" style="color: var(--color-accent);">Getting Started &rarr;</a>
+    <a href="{% url 'getting_started' %}" class="text-sm text-accent">Getting Started &rarr;</a>
     <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
-    <a href="https://github.com/Open-H2O/satellite-et-research" target="_blank" rel="noopener noreferrer" class="text-sm" style="color: var(--color-accent);">Why satellite ET? &rarr;</a>
+    <a href="https://github.com/Open-H2O/satellite-et-research" target="_blank" rel="noopener noreferrer" class="text-sm text-accent">Why satellite ET? &rarr;</a>
   </div>
 
   {% if plan is None %}
   <!-- Empty state: no active plan -->
   <div class="card-raised">
     <h2 class="section-header mb-md">No active methodology</h2>
-    <p class="text-secondary text-sm" style="margin: 0;">
+    <p class="text-secondary text-sm m-0">
       There is no active calculation plan to tune yet. Whoever operates your deployment
       can load the default methodology with the <code>seed_calculation_plan</code> setup
       command — then reload this page.
@@ -50,7 +50,7 @@
   <!-- Steps editor -->
   <div class="card-raised">
     <div class="row-between mb-md">
-      <h2 class="section-header" style="margin: 0;">{{ plan.name }}</h2>
+      <h2 class="section-header m-0">{{ plan.name }}</h2>
       <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }} — reorder, enable/disable, and edit each step's knobs</span>
     </div>
 

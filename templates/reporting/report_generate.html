@@ -40,7 +40,7 @@
     all-modules deployment renders byte-identically — not merely equivalently.
     That is also why `{% templatetag openblock %} endcomment %}` closes on this
     line rather than its own: the newline after a lone closing tag is emitted too.
-  {% endcomment %}{% if not family_unavailable %}<p class="text-secondary text-sm" style="margin: 0;">
+  {% endcomment %}{% if not family_unavailable %}<p class="text-secondary text-sm m-0">
     Select a report type and period. The system validates data quality before generating.
   </p>{% endif %}
 
@@ -59,7 +59,7 @@
     {% endfor %}
 
     {% if has_errors %}
-    <form method="post" style="margin-top: var(--space-sm);">
+    <form class="mt-sm" method="post">
       {% csrf_token %}
       <input type="hidden" name="report_template" value="{{ form.report_template.value }}">
       <input type="hidden" name="reporting_period" value="{{ form.reporting_period.value }}">

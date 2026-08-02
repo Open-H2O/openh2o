@@ -26,7 +26,7 @@
 <div id="facility-{{ facility.pk }}" class="card-raised card-inset facility-panel">
 
   <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
-    <h3 class="section-header" style="margin: 0;">
+    <h3 class="section-header m-0">
       {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}
       {% if facility.name and not facility.name_adds_nothing %}&mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %}
     </h3>
@@ -39,7 +39,7 @@
   </div>
 
   {% if facility.plain_type %}
-  <p class="text-base text-secondary" style="margin-top: var(--space-xs);">{{ facility.plain_type }}</p>
+  <p class="text-base text-secondary mt-xs">{{ facility.plain_type }}</p>
   {% endif %}
 
   {% comment %}
@@ -47,23 +47,23 @@
     it is the middle part of every code built here, so an operator who already
     knows a code can check it — but it is reference detail, not the headline.
   {% endcomment %}
-  <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">
+  <p class="text-sm text-tertiary mt-xs">
     Facility ID <span class="text-mono">{{ facility.facility_id }}</span>{% if facility.name and not facility.name_adds_nothing %} &middot; EPA records this as &ldquo;{{ facility.name }}&rdquo;{% endif %}.
     Codes here begin <span class="text-mono">{{ system.pwsid }}_{{ facility.facility_id }}_</span>
   </p>
 
   {% if error %}
-  <div class="alert-error" style="margin-top: var(--space-md);">{{ error }}</div>
+  <div class="alert-error mt-md">{{ error }}</div>
   {% endif %}
 
   {% if added %}
-  <div class="alert-success" style="margin-top: var(--space-md);">
+  <div class="alert-success mt-md">
     Added <span class="text-mono">{{ added.ps_code }}</span>{% if added.name %} &mdash; {{ added.name }}{% endif %}.
   </div>
   {% endif %}
 
   {% if duplicate %}
-  <div class="alert-warning" style="margin-top: var(--space-md);">
+  <div class="alert-warning mt-md">
     <span class="text-mono">{{ duplicate.ps_code }}</span> is already listed
     {% if duplicate.facility_id != facility.pk %}(on a different facility){% endif %}
     &mdash; nothing was changed. Coming back to a system you had partly finished
@@ -72,7 +72,7 @@
   {% endif %}
 
   {% if facility.sampling_points.all %}
-  <table class="data-table" style="margin-top: var(--space-md);">
+  <table class="data-table mt-md">
     <thead>
       <tr><th>Code a lab file would use</th><th>What it is</th><th>Kind of place</th></tr>
     </thead>
@@ -88,13 +88,12 @@
   </table>
   {% endif %}
 
-  <form
+  <form class="mt-md"
     method="post"
     action="{% url 'drinking:onboard_points_add' system.pwsid %}"
     hx-post="{% url 'drinking:onboard_points_add' system.pwsid %}"
     hx-target="#facility-{{ facility.pk }}"
-    hx-swap="outerHTML"
-    style="margin-top: var(--space-md);">
+    hx-swap="outerHTML">
     {% csrf_token %}
     <input type="hidden" name="facility" value="{{ facility.pk }}">
 

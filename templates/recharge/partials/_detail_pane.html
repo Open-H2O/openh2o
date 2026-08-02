@@ -62,7 +62,7 @@
           <div class="field-label">Filled by</div>
           <div class="field-value">
             {% for link in pod_links %}
-            <div{% if not forloop.first %} style="margin-top: var(--space-xs);"{% endif %}>
+            <div class="mt-xs"{% if not forloop.first %}{% endif %}>
               <a href="{% url 'surface:pod_detail' link.point_of_diversion.pk %}" class="data-table-link">{{ link.point_of_diversion.name }}</a>
               <span class="text-secondary">on {{ link.point_of_diversion.source_flowline.name|default:link.point_of_diversion.stream_name|blank }}</span>
             </div>

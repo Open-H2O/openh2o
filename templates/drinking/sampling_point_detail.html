@@ -107,7 +107,7 @@
 
     <h2 class="section-header" style="margin-top: 0;">{{ point.name|default:point.ps_code }} {% source_label "PS_CODE_COMPOSED" %}</h2>
 
-    <div class="form-grid-2col" style="margin-top: var(--space-md);">
+    <div class="form-grid-2col mt-md">
       <div class="field-group">
         <div class="field-label">PS Code</div>
         <div class="field-value-mono">{{ point.ps_code }}</div>
@@ -126,7 +126,7 @@
       </div>
     </div>
 
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Facility {% source_label "EPA_SDWIS" %}</h2>
+    <h2 class="section-header mt-lg">Facility {% source_label "EPA_SDWIS" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Facility</div>
@@ -165,7 +165,7 @@
       table below is the same file, immediately under this label, so it does not
       repeat it.
     {% endcomment %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Sampling history {% source_label "DDW_LAB" %}</h2>
+    <h2 class="section-header mt-lg">Sampling history {% source_label "DDW_LAB" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Results recorded</div>
@@ -190,7 +190,7 @@
       reader has to count the rows to discover the list is partial, the page has
       misled them.
     {% endcomment %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">
+    <h2 class="section-header mt-lg">
       {% if is_truncated %}The {{ shown_limit }} most recent of {{ result_count }} results{% else %}Results{% if result_count %} ({{ result_count }}){% endif %}{% endif %}
     </h2>
 
@@ -220,7 +220,7 @@
       </table>
     </div>
 
-    <p class="text-sm" style="margin-top: var(--space-sm);">
+    <p class="text-sm mt-sm">
       <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">See all {{ result_count }} result{{ result_count|pluralize }} for this point</a>
     </p>
     {% else %}

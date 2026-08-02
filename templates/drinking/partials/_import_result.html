@@ -27,7 +27,7 @@
     <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
   </div>
 
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     {% if counts.results %}
       Created {{ counts.results }} sample result{{ counts.results|pluralize }} across
       {{ counts.events }} sample event{{ counts.events|pluralize }}.
@@ -43,8 +43,8 @@
   </p>
 
   {% if skipped %}
-  <h3 class="text-base" style="margin-top: var(--space-lg);">Rows that were skipped</h3>
-  <table class="data-table" style="margin-top: var(--space-sm);">
+  <h3 class="text-base mt-lg">Rows that were skipped</h3>
+  <table class="data-table mt-sm">
     <thead>
       <tr>
         <th style="width: 5rem;">Row</th>
@@ -62,7 +62,7 @@
       {% endfor %}
     </tbody>
   </table>
-  <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+  <p class="text-tertiary text-sm mt-sm">
     Fix these rows in your file and import it again &mdash; the rows that
     already landed will be recognized and skipped.
   </p>

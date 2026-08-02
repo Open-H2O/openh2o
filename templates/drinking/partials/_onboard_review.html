@@ -23,7 +23,7 @@
     {% else %}Nothing to look up{% endif %}
   </h2>
 
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     {% if error_kind == "not_found" %}
       EPA's Envirofacts record has no water system with the identifier
       <span class="text-mono">{{ pwsid }}</span>. Check the ID against the
@@ -42,12 +42,12 @@
   </p>
 
   {% if error_kind == "service_error" or error_kind == "unavailable" %}
-  <div class="card-inset" style="margin-top: var(--space-md);">
-    <p class="text-sm text-secondary" style="margin: 0;">{{ error }}</p>
+  <div class="card-inset mt-md">
+    <p class="text-sm text-secondary m-0">{{ error }}</p>
   </div>
   {% endif %}
 
-  <div class="row-start" style="margin-top: var(--space-lg);">
+  <div class="row-start mt-lg">
     <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Try another PWSID</a>
   </div>
 </div>
@@ -76,7 +76,7 @@
     system</strong>. Close this page and nothing will have changed.
   </p>
 
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     {% if already_onboarded %}
       You already carry this system, with {{ existing_facility_count }}
       facilit{{ existing_facility_count|pluralize:"y,ies" }}. The button at the
@@ -117,7 +117,7 @@
     facilities below are missing the state-assigned ID that sample codes are
     built from, so no lab result could ever be filed against them.
   </p>
-  <table class="data-table" style="margin-top: var(--space-md);">
+  <table class="data-table mt-md">
     <thead>
       <tr><th>Which one, and why it cannot be saved</th></tr>
     </thead>
@@ -137,7 +137,7 @@
     Identity. Every value is the regulator's own published vocabulary, shown as
     published, matching the overview page.
   {% endcomment %}
-  <h3 class="section-header" style="margin-top: var(--space-lg);">{{ name|default:"(EPA sent no system name)" }}</h3>
+  <h3 class="section-header mt-lg">{{ name|default:"(EPA sent no system name)" }}</h3>
   <div class="form-grid-2col">
     <div class="field-group">
       <div class="field-label">PWSID</div>
@@ -171,17 +171,17 @@
     Colorado system whose state_code is "CA". Calling this the regulating state
     would be a fabricated fact on the face of the screen.
   {% endcomment %}
-  <h3 class="section-header" style="margin-top: var(--space-lg);">Mailing address</h3>
-  <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+  <h3 class="section-header mt-lg">Mailing address</h3>
+  <p class="text-base text-secondary mt-sm">
     {{ mailing.mailing_address_line1|blank }}{% if mailing.mailing_address_line2 %}, {{ mailing.mailing_address_line2 }}{% endif %}<br>
     {{ mailing.mailing_city }}{% if mailing.mailing_state %}, {{ mailing.mailing_state }}{% endif %} {{ mailing.mailing_zip }}
   </p>
-  <p class="text-tertiary text-sm" style="margin-top: var(--space-xs);">
+  <p class="text-tertiary text-sm mt-xs">
     This is the address EPA carries for the system's administrative contact. It
     is not a statement about which agency regulates the system.
   </p>
 
-  <h3 class="section-header" style="margin-top: var(--space-lg);">What EPA reports for size</h3>
+  <h3 class="section-header mt-lg">What EPA reports for size</h3>
   <div class="form-grid-2col">
     <div class="field-group">
       <div class="field-label">Population served (EPA total)</div>
@@ -192,7 +192,7 @@
       <div class="field-value-mono">{{ epa_service_connections|default_if_none:"—" }}</div>
     </div>
   </div>
-  <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+  <p class="text-tertiary text-sm mt-sm">
     Shown, not written. This platform records population across three categories
     and connections across five; EPA sends one total for each. Dividing a total
     into shares would be inventing numbers, so those fields stay empty until a
@@ -206,8 +206,8 @@
   {% endcomment %}
 
   {% if warnings %}
-  <h3 class="section-header" style="margin-top: var(--space-lg);">Notes on this record</h3>
-  <table class="data-table" style="margin-top: var(--space-sm);">
+  <h3 class="section-header mt-lg">Notes on this record</h3>
+  <table class="data-table mt-sm">
     <thead>
       <tr><th>Note</th></tr>
     </thead>
@@ -219,10 +219,10 @@
   </table>
   {% endif %}
 
-  <h3 class="section-header" style="margin-top: var(--space-lg);">Facilities to be written ({{ facility_count }})</h3>
+  <h3 class="section-header mt-lg">Facilities to be written ({{ facility_count }})</h3>
   {% if facilities %}
   <div class="table-scroll">
-    <table class="data-table" style="margin-top: var(--space-sm);">
+    <table class="data-table mt-sm">
       <thead>
         <tr>
           <th>Facility ID</th>
@@ -247,23 +247,22 @@
       </tbody>
     </table>
   </div>
-  <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+  <p class="text-tertiary text-sm mt-sm">
     Facility ID is the <strong>state's</strong> key, which is the segment a PS
     Code is built from. EPA's own key is kept alongside it for provenance.
   </p>
   {% else %}
-  <p class="text-secondary text-sm" style="margin-top: var(--space-sm);">
+  <p class="text-secondary text-sm mt-sm">
     EPA carries no writable facility for this system.
   </p>
   {% endif %}
 
-  <form
+  <form class="mt-lg"
     method="post"
     action="{% url 'drinking:onboard_commit' %}"
     hx-post="{% url 'drinking:onboard_commit' %}"
     hx-target="#onboard-area"
-    hx-indicator="#onboard-commit-spinner"
-    style="margin-top: var(--space-lg);">
+    hx-indicator="#onboard-commit-spinner">
     {% csrf_token %}
     <div class="row-start" style="gap: var(--space-sm);">
       <button type="submit" class="btn-primary">

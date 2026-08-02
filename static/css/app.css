@@ -2723,6 +2723,22 @@ div[id$="-map"] {
 .ml-sm { margin-left: var(--space-sm); }
 .mr-xs { margin-right: var(--space-xs); }
 
+/* The five most-repeated inline styles in the template tree, counted rather
+   than guessed: `margin: 0` appeared 81 times and the three `margin-top`
+   spacings 123 more between them. Every one was already writing a token, so
+   this is the same declaration with a name — and 240-odd `style=` attributes
+   fewer to read past when scanning a template for the markup that matters. */
+.m-0 { margin: 0; }
+.mt-xs { margin-top: var(--space-xs); }
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+
+/* Teal, meaning interactive — the accent contract's first rule. `.link-accent`
+   is the same colour plus link weight and hover; this is for the cases that are
+   emphasis inside a line rather than a link. */
+.text-accent { color: var(--color-accent); }
+
 /* -- Extra small button variant ------------------------------------------ */
 
 .btn-xs {

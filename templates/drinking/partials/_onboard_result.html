@@ -14,12 +14,12 @@
 {% if expired %}
 <div class="card-raised">
   <h2 class="card-header-ruled">Start again</h2>
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     This page no longer knows which system you were reviewing &mdash; the tab has
     been open a while, or the sign-in session rolled over. Nothing was written.
     Look the PWSID up again and the review will come back as it was.
   </p>
-  <div class="row-start" style="margin-top: var(--space-lg);">
+  <div class="row-start mt-lg">
     <a href="{% url 'drinking:onboard' %}" class="btn-primary">Look up a system</a>
   </div>
 </div>
@@ -30,7 +30,7 @@
     {% elif error_kind == "unavailable" %}EPA did not answer in time
     {% else %}EPA answered with an error{% endif %}
   </h2>
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     Nothing was written. The record for
     <span class="text-mono">{{ pwsid }}</span> could not be read again at the
     moment of committing.
@@ -39,11 +39,11 @@
     {% endif %}
   </p>
   {% if error %}
-  <div class="card-inset" style="margin-top: var(--space-md);">
-    <p class="text-sm text-secondary" style="margin: 0;">{{ error }}</p>
+  <div class="card-inset mt-md">
+    <p class="text-sm text-secondary m-0">{{ error }}</p>
   </div>
   {% endif %}
-  <div class="row-start" style="margin-top: var(--space-lg);">
+  <div class="row-start mt-lg">
     <a href="{% url 'drinking:onboard' %}" class="btn-secondary">Try again</a>
   </div>
 </div>
@@ -69,7 +69,7 @@
     {% if result.warnings %}<span class="badge badge-orange">{{ result.warnings|length }} note{{ result.warnings|length|pluralize }}</span>{% endif %}
   </div>
 
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     <strong>{{ result.system.name|default:pwsid }}</strong>
     (<span class="text-mono">{{ result.system.pwsid }}</span>)
     {% if result.created %}is now carried here{% else %}was already carried here and its EPA-derived fields were refreshed{% endif %}.
@@ -82,8 +82,8 @@
   </p>
 
   {% if result.skipped %}
-  <h3 class="section-header" style="margin-top: var(--space-lg);">Facilities that were not written</h3>
-  <table class="data-table" style="margin-top: var(--space-sm);">
+  <h3 class="section-header mt-lg">Facilities that were not written</h3>
+  <table class="data-table mt-sm">
     <thead>
       <tr><th>Why it was skipped</th></tr>
     </thead>
@@ -96,8 +96,8 @@
   {% endif %}
 
   {% if result.warnings %}
-  <h3 class="section-header" style="margin-top: var(--space-lg);">Notes on this record</h3>
-  <table class="data-table" style="margin-top: var(--space-sm);">
+  <h3 class="section-header mt-lg">Notes on this record</h3>
+  <table class="data-table mt-sm">
     <thead>
       <tr><th>Note</th></tr>
     </thead>
@@ -114,8 +114,8 @@
     sampling points looks finished and is not: the lab import matches rows on PS
     Code, and a PS Code lives on a sampling point.
   {% endcomment %}
-  <div class="card-inset" style="margin-top: var(--space-lg);">
-    <p class="text-base text-secondary" style="margin: 0;">
+  <div class="card-inset mt-lg">
+    <p class="text-base text-secondary m-0">
       <strong>Next: sampling points.</strong> This system now has its facilities,
       but no sampling points &mdash; and lab results cannot be imported until it
       has them, because every result row is matched to a monitoring location by

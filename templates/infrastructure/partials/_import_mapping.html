@@ -6,17 +6,16 @@ The parsed rows ride along as a hidden JSON field so commit needs no re-upload.
 {% endcomment %}
 <div class="card-raised">
   <h2 class="card-header-ruled">Match your columns &mdash; {{ infra_label }}</h2>
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     Found <strong>{{ row_count }}</strong> record{{ row_count|pluralize }} and
     <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}. Each field below is
     set to our best guess &mdash; change any that look wrong, then create the records.
   </p>
 
-  <form
+  <form class="mt-lg"
     hx-post="{% url 'infrastructure:import_commit' %}"
     hx-target="#import-area"
-    hx-indicator="#commit-spinner"
-    style="margin-top: var(--space-lg);">
+    hx-indicator="#commit-spinner">
     {% csrf_token %}
     <input type="hidden" name="infra_type" value="{{ infra_type }}">
     <input type="hidden" name="rows_json" value="{{ rows_json }}">
@@ -45,7 +44,7 @@ The parsed rows ride along as a hidden JSON field so commit needs no re-upload.
       </tbody>
     </table>
 
-    <div class="row-start pt-sm" style="margin-top: var(--space-lg);">
+    <div class="row-start pt-sm mt-lg">
       <button type="submit" class="btn-primary">Create {{ row_count }} record{{ row_count|pluralize }}</button>
       <span id="commit-spinner" class="htmx-indicator text-tertiary text-sm">Creating&hellip;</span>
     </div>

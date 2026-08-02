@@ -55,7 +55,7 @@
         <span class="text-secondary text-sm"><a href="{% url 'geography:zone_list' %}" class="link-accent">Define management zones</a> — the areas an allocation applies to</span>
       </div>
     </div>
-    <div class="form-footer" style="margin-top: var(--space-md);">
+    <div class="form-footer mt-md">
       <a href="{% url 'getting_started' %}" class="btn-primary">Open the Getting Started guide →</a>
     </div>
   </div>
@@ -85,7 +85,7 @@
           <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
           <div class="wizard-step-body">
             <div class="wizard-step-name">{{ step_label }}</div>
-            <div class="wizard-step-count" style="color: var(--color-accent);">{% if active_provider_label %}Checking {{ active_provider_label }}…{% else %}{{ step_desc }}{% endif %}</div>
+            <div class="wizard-step-count text-accent">{% if active_provider_label %}Checking {{ active_provider_label }}…{% else %}{{ step_desc }}{% endif %}</div>
           </div>
         </div>
       {% else %}
@@ -111,7 +111,7 @@
         <div class="wizard-step-icon"><span class="spinner-sm" style="width: 10px; height: 10px; border-width: 1.5px;"></span></div>
         <div class="wizard-step-body">
           <div class="wizard-step-name">{{ step_label }}</div>
-          <div class="wizard-step-count" style="color: var(--color-accent);">{{ step_desc }}</div>
+          <div class="wizard-step-count text-accent">{{ step_desc }}</div>
         </div>
       </div>
     {% else %}

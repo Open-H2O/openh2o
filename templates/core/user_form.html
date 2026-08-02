@@ -64,16 +64,16 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.password.id_for_label }}">Starting password</label>
         {{ form.password }}
-        <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">{{ form.password.help_text }}</p>
+        <p class="text-sm text-tertiary mt-xs">{{ form.password.help_text }}</p>
         {% if form.password.errors %}<p class="form-error-text">{{ form.password.errors|striptags }}</p>{% endif %}
       </div>
 
       <div class="form-group">
         <label class="row-start" style="gap: var(--space-sm); cursor: pointer;">
           {{ form.agency_admin }}
-          <span class="form-label" style="margin: 0;">Administrator</span>
+          <span class="form-label m-0">Administrator</span>
         </label>
-        <p class="text-sm text-tertiary" style="margin-top: var(--space-xs);">{{ form.agency_admin.help_text }}</p>
+        <p class="text-sm text-tertiary mt-xs">{{ form.agency_admin.help_text }}</p>
         {% if form.agency_admin.errors %}<p class="form-error-text">{{ form.agency_admin.errors|striptags }}</p>{% endif %}
       </div>
 

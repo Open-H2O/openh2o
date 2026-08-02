@@ -28,7 +28,7 @@
     {% if new_analytes %}<span class="badge badge-blue">{{ new_analytes|length }} new analyte{{ new_analytes|length|pluralize }}</span>{% endif %}
   </div>
 
-  <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+  <p class="text-base text-secondary mt-md">
     {% if committable %}
       Committing will create <strong>{{ committable }}</strong> result{{ committable|pluralize }}.
     {% else %}
@@ -49,7 +49,7 @@
     dead end rather than a diagnosis.
   {% endcomment %}
   {% if unknown_ps_codes %}
-  <div class="card-inset" style="margin-top: var(--space-md);">
+  <div class="card-inset mt-md">
     <p class="text-base text-secondary" style="margin: 0 0 var(--space-sm) 0;">
       <strong>{{ unknown_ps_codes|length }} PS Code{{ unknown_ps_codes|length|pluralize }} in this file
       {{ unknown_ps_codes|length|pluralize:"is,are" }} not carried here.</strong>
@@ -57,7 +57,7 @@
       to a monitoring location until the sampling point exists. Add the point and
       re-import &mdash; nothing about the file needs to change.
     </p>
-    <table class="data-table" style="margin-top: var(--space-sm);">
+    <table class="data-table mt-sm">
       <thead>
         <tr><th>PS Code</th><th>Where to add it</th></tr>
       </thead>
@@ -89,8 +89,8 @@
   {% endif %}
 
   {% if new_analytes %}
-  <div class="card-inset" style="margin-top: var(--space-md);">
-    <p class="text-sm text-secondary" style="margin: 0;">
+  <div class="card-inset mt-md">
+    <p class="text-sm text-secondary m-0">
       <strong>New analytes.</strong> These are named in your file but not yet in
       this system's vocabulary. Committing adds them, using the name and code
       the file itself carries:
@@ -100,9 +100,9 @@
   {% endif %}
 
   {% if recognised %}
-  <details style="margin-top: var(--space-md);">
+  <details class="mt-md">
     <summary class="text-sm text-tertiary">Columns recognized in your file ({{ recognised|length }})</summary>
-    <table class="data-table" style="margin-top: var(--space-sm);">
+    <table class="data-table mt-sm">
       <thead>
         <tr><th>Field</th><th>Your column</th></tr>
       </thead>
@@ -116,8 +116,8 @@
   {% endif %}
 
   {% if error_rows %}
-  <h3 class="text-base" style="margin-top: var(--space-lg);">Rows that cannot be imported</h3>
-  <table class="data-table" style="margin-top: var(--space-sm);">
+  <h3 class="text-base mt-lg">Rows that cannot be imported</h3>
+  <table class="data-table mt-sm">
     <thead>
       <tr>
         <th style="width: 5rem;">Row</th>
@@ -142,8 +142,8 @@
   {% endif %}
 
   {% if warning_rows %}
-  <h3 class="text-base" style="margin-top: var(--space-lg);">Rows to be aware of</h3>
-  <table class="data-table" style="margin-top: var(--space-sm);">
+  <h3 class="text-base mt-lg">Rows to be aware of</h3>
+  <table class="data-table mt-sm">
     <thead>
       <tr>
         <th style="width: 5rem;">Row</th>
@@ -167,8 +167,8 @@
   </table>
   {% endif %}
 
-  <h3 class="text-base" style="margin-top: var(--space-lg);">All rows{% if shown_count < row_count %} (first {{ shown_count }}){% endif %}</h3>
-  <table class="data-table" style="margin-top: var(--space-sm);">
+  <h3 class="text-base mt-lg">All rows{% if shown_count < row_count %} (first {{ shown_count }}){% endif %}</h3>
+  <table class="data-table mt-sm">
     <thead>
       <tr>
         <th style="width: 5rem;">Row</th>
@@ -199,13 +199,12 @@
     </tbody>
   </table>
 
-  <form
+  <form class="mt-lg"
     method="post"
     action="{% url 'drinking:import_commit' %}"
     hx-post="{% url 'drinking:import_commit' %}"
     hx-target="#import-area"
-    hx-indicator="#commit-spinner"
-    style="margin-top: var(--space-lg);">
+    hx-indicator="#commit-spinner">
     {% csrf_token %}
     <input type="hidden" name="rows_json" value="{{ rows_json }}">
     <div class="row-start" style="gap: var(--space-sm);">

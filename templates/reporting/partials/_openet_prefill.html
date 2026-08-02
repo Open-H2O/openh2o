@@ -2,7 +2,7 @@
 
 {% if saved %}
 <div class="card-raised" style="border-left: 3px solid var(--forest-400);">
-  <p class="text-secondary text-sm" style="margin: 0;">
+  <p class="text-secondary text-sm m-0">
     <strong style="color: var(--color-text-primary);">Saved.</strong>
     These are your reviewed figures for data entry. Nothing was written to the
     water-use ledger — you still type and certify your own numbers in the state portal.
@@ -21,7 +21,7 @@
     deliveries also feed a crop, so consumptive use and metered extraction rarely
     match. Review and adjust each value, then certify your own figures in the state portal.
   </p>
-  <p class="text-tertiary text-xs" style="margin: 0;">
+  <p class="text-tertiary text-xs m-0">
     Every value below: <em>{{ prefill.label }}</em>. Editing here saves to this
     report only — it never changes your water-use ledger.
   </p>
@@ -81,7 +81,7 @@
 </form>
 {% else %}
 <div class="card-raised">
-  <p class="text-secondary text-sm" style="margin: 0;">
+  <p class="text-secondary text-sm m-0">
     No OpenET evapotranspiration data is in the ledger for
     <strong style="color: var(--color-text-primary);">{{ submission.reporting_period.name }}</strong>.
     Run the OpenET sync for this period, then come back to pre-fill.

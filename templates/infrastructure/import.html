@@ -21,7 +21,7 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">Bulk import &mdash; {{ infra_label }}</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       Upload a <strong>CSV</strong>, <strong>shapefile (.zip)</strong>, <strong>GeoJSON</strong>, or <strong>KML</strong>
       containing many {{ infra_label|lower }} records. We'll detect your columns and let you
       match them to the right fields, show you a preview, then create every valid record.
@@ -29,7 +29,7 @@
       which creates one record at a time.
     </p>
 
-    <form
+    <form class="mt-lg"
       id="import-upload-form"
       method="post"
       action="{% url 'infrastructure:import_preview' %}"
@@ -37,8 +37,7 @@
       hx-post="{% url 'infrastructure:import_preview' %}"
       hx-target="#import-area"
       hx-encoding="multipart/form-data"
-      hx-indicator="#import-spinner"
-      style="margin-top: var(--space-lg);">
+      hx-indicator="#import-spinner">
       {% csrf_token %}
       <input type="hidden" name="infra_type" value="{{ infra_type }}">
 

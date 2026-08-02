@@ -36,7 +36,7 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">Look up a public water system</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       A <strong>PWSID</strong>, or Public Water System Identification number, is
       the identifier the regulator carries for a public water system &mdash;
       <span class="text-mono">CA1010001</span>, for example. Enter it and this
@@ -45,14 +45,13 @@
       back and confirm.
     </p>
 
-    <form
+    <form class="mt-lg"
       id="drinking-onboard-form"
       method="post"
       action="{% url 'drinking:onboard_lookup' %}"
       hx-post="{% url 'drinking:onboard_lookup' %}"
       hx-target="#onboard-area"
-      hx-indicator="#onboard-spinner"
-      style="margin-top: var(--space-lg);">
+      hx-indicator="#onboard-spinner">
       {% csrf_token %}
 
       <div class="form-group">
@@ -79,12 +78,12 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">What onboarding does and does not do</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       It creates the water system and its facilities from EPA's federal record,
       and re-running it against a system you already carry refreshes those same
       fields from EPA. That is the whole of it.
     </p>
-    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    <p class="text-base text-secondary mt-sm">
       It does <strong>not</strong> determine compliance. EPA's SDWIS extract is a
       federal copy, not the primacy agency's authoritative file, and nothing here
       compares a system against a requirement.
@@ -94,12 +93,12 @@
     row in the droppability harness's page table, which is why the gate stayed
     green through all three. A "does not do X" disclaimer about a join that
     cannot exist here is not reassurance, it is a claim that the platform meters
-    wells.{% endcomment %}{% if 'wells' in enabled_modules %}<p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    wells.{% endcomment %}{% if 'wells' in enabled_modules %}<p class="text-base text-secondary mt-sm">
       It does <strong>not</strong> link facilities to the wells this platform
       meters. That join is a deliberate operator act, made in the Django admin,
       and an onboarding refresh never touches a link you have already made.
     </p>{% endif %}
-    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    <p class="text-base text-secondary mt-sm">
       It does <strong>not</strong> fill in the population and service-connection
       breakdowns. EPA sends one total for each; splitting a total into
       residential, non-transient and transient shares would be inventing

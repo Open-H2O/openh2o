@@ -275,7 +275,7 @@
             <span>Link to parcel</span>
             <span class="text-sm text-tertiary" id="parcel-status">(optional)</span>
           </summary>
-          <div class="form-stack" style="margin-top: var(--space-md);">
+          <div class="form-stack mt-md">
             <div class="form-group">
               <label class="field-label">Search existing parcel</label>
               <input type="search" placeholder="Parcel number or owner name..."
@@ -291,7 +291,7 @@
               <button type="button" id="btn-parcel-draw" class="btn-secondary btn-sm">Draw new parcel</button>
             </div>
             <div id="parcel-draw-form" style="display: none;">
-              <div class="form-stack" style="margin-top: var(--space-sm);">
+              <div class="form-stack mt-sm">
                 <div class="form-group">
                   <label class="field-label" for="new-parcel-number">Parcel number</label>
                   <input type="text" id="new-parcel-number" class="form-input" placeholder="e.g. 123-456-789">
@@ -686,7 +686,7 @@
     var props = feat.properties;
     document.getElementById('parcel_id').value = props.pk;
     document.getElementById('parcel-status').textContent = '(' + props.parcel_number + ')';
-    var info = '<div class="inset-card" data-parcel-id="' + props.pk + '" style="margin-top: var(--space-sm);">';
+    var info = '<div class="inset-card mt-sm" data-parcel-id="' + props.pk + '">';
     info += '<span class="text-sm">Linked: <strong>' + props.parcel_number + '</strong></span>';
     if (props.owner_name) info += ' <span class="text-xs text-tertiary">(' + props.owner_name + ')</span>';
     info += '</div>';

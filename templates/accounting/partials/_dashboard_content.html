@@ -58,7 +58,7 @@
 
 <!-- Consumptive-use model explainer -->
 <div class="card-raised card-inset">
-  <p class="text-tertiary text-sm" style="margin: 0;">
+  <p class="text-tertiary text-sm m-0">
     <strong class="text-secondary">How this summary works:</strong>
     <span class="text-supply">Consumptive use</span> — the water crops actually consumed, estimated from satellite evapotranspiration (ET) — is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. The columns below show each area's consumptive use beside the supplies that met it; the balance is the supplies minus consumptive use.
   </p>
@@ -76,7 +76,7 @@
   nothing, it raises `ValueError: no active CalculationPlan`.
 {% endcomment %}
 <div class="card-raised" style="border-left: 3px solid var(--color-accent); padding: var(--space-md);">
-  <p class="text-secondary text-sm" style="margin: 0;">
+  <p class="text-secondary text-sm m-0">
     <strong class="text-primary">Consumptive use has not been calculated for this period.</strong>
     The figures above show the supplies on record; the water actually consumed has not been
     estimated yet, so the balance cannot be worked out. This is a missing step, not a finding &mdash;
@@ -97,7 +97,7 @@
 {% if not has_allocations %}
 <!-- Info banner: no allocations for this period -->
 <div class="card-raised" style="border-left: 3px solid var(--color-accent); padding: var(--space-md);">
-  <p class="text-secondary text-sm" style="margin: 0;">
+  <p class="text-secondary text-sm m-0">
     No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a> to enable allocation tracking.
   </p>
 </div>

@@ -36,17 +36,17 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">What this page is for</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       A laboratory tests water and sends back a file. Every line of that file
       says <em>where</em> the water was taken from &mdash; a particular well, or
       a particular tap out in the neighborhood. This page is where you tell the
       system what those places are, so the lab's results have somewhere to land.
     </p>
-    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    <p class="text-base text-secondary mt-sm">
       Until a place is listed here, a lab result naming it cannot be filed. The
       import will report it and skip it rather than guess.
     </p>
-    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    <p class="text-base text-secondary mt-sm">
       Each place gets a code, built from three parts: the water system's ID, the
       facility it belongs to, and a number or short label you choose. You supply
       only the last part &mdash; the rest is already known.
@@ -71,7 +71,7 @@
   {% if facilities_with_points %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Facilities that have sampling places ({{ facilities_with_points|length }})</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       Lab results naming any of the codes below will file correctly.
     </p>
   </div>
@@ -88,14 +88,14 @@
   {% if facilities_without_points %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Facilities with no sampling places yet ({{ facilities_without_points|length }})</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       These are on the system's record but no sample location has been listed for
       them. That is normal &mdash; most facilities in a water system are never
       sampled directly. Open this only if a lab file names one of them.
     </p>
-    <details style="margin-top: var(--space-md);">
+    <details class="mt-md">
       <summary class="text-base" style="cursor: pointer;">Show these {{ facilities_without_points|length }} facilities</summary>
-      <div class="page-stack" style="margin-top: var(--space-md);">
+      <div class="page-stack mt-md">
         {% for facility in facilities_without_points %}
           {% include "drinking/partials/_onboard_points.html" %}
         {% endfor %}
@@ -111,11 +111,11 @@
   {% if shorthand %}
   <div class="card-raised">
     <h2 class="card-header-ruled">What the abbreviations mean</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       These come from EPA's own records and are shown exactly as EPA writes them.
       Only the ones appearing on this page are listed.
     </p>
-    <table class="data-table" style="margin-top: var(--space-md);">
+    <table class="data-table mt-md">
       <thead>
         <tr><th style="width: 10rem;">Abbreviation</th><th>Meaning</th></tr>
       </thead>
@@ -133,7 +133,7 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">When you have listed the places you need</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       {% if point_count %}
         This system has {{ point_count }} sampling place{{ point_count|pluralize }} listed, so a lab
         file naming {{ point_count|pluralize:"it,any of them" }} will import. You do not have to

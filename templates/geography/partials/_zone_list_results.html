@@ -67,6 +67,6 @@
     </svg>
   </div>
   <p class="empty-state-text">No zones found{% if q %} matching "{{ q }}"{% endif %}{% if zone_type %} of type "{{ zone_type }}"{% endif %}.</p>
-  <a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm" style="margin-top: var(--space-sm);">+ Create first zone</a>
+  <a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm mt-sm">+ Create first zone</a>
 </div>
 {% endif %}

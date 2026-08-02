@@ -83,7 +83,7 @@
     imported by this deployment. See drinking/models.py on why both shapes live
     on one model.
     {% endcomment %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Population and service connections {% source_label "EPA_SDWIS" %}</h2>
+    <h2 class="section-header mt-lg">Population and service connections {% source_label "EPA_SDWIS" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Population served</div>
@@ -96,7 +96,7 @@
     </div>
 
     {% if system.has_population_splits %}
-    <div class="field-label" style="margin-top: var(--space-md);">Population by category</div>
+    <div class="field-label mt-md">Population by category</div>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Residential</div>
@@ -114,7 +114,7 @@
     {% endif %}
 
     {% if system.has_connection_splits %}
-    <div class="field-label" style="margin-top: var(--space-md);">Connections by use type</div>
+    <div class="field-label mt-md">Connections by use type</div>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Residential</div>
@@ -166,7 +166,7 @@
     sitting under two separated ones on the same page reads as an oversight.
     The dashboard card is a different surface and was left alone.
     {% endcomment %}
-    <div class="stat-grid-3col" style="margin-top: var(--space-lg);">
+    <div class="stat-grid-3col mt-lg">
       <div class="card-raised card-inset stat-card">
         <div class="stat-card-label">Facilities</div>
         <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ system.facility_count|intcomma }}</a></div>

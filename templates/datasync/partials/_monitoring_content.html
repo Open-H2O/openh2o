@@ -51,15 +51,15 @@
           {% if info.fresh %}&middot; <span style="color: var(--forest-400);">{{ info.fresh }} on schedule</span>{% endif %}
         </p>
         {% if info.status_code == "needs_key" %}
-        <p class="text-tertiary text-xs" style="margin: 0;">Add the API credential on the server to enable this source.</p>
+        <p class="text-tertiary text-xs m-0">Add the API credential on the server to enable this source.</p>
         {% elif info.status_code == "no_stations" %}
-        <p class="text-tertiary text-xs" style="margin: 0;">No stations wired yet &mdash; run station discovery for this source.</p>
+        <p class="text-tertiary text-xs m-0">No stations wired yet &mdash; run station discovery for this source.</p>
         {% elif info.status_code == "none_activated" %}
-        <p class="text-tertiary text-xs" style="margin: 0;">
+        <p class="text-tertiary text-xs m-0">
           {{ info.total }} station{{ info.total|pluralize }} known here, none switched on. Discovery adds stations dormant &mdash; open one and activate it to start syncing.
         </p>
         {% elif info.log %}
-        <p class="text-tertiary text-xs" style="margin: 0;">
+        <p class="text-tertiary text-xs m-0">
           Last sync: {{ info.log.started_at|timesince }} ago
           {% if info.log.records_published %}&middot; {{ info.log.records_published }} published{% endif %}
         </p>

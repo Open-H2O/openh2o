@@ -72,7 +72,7 @@
         </div>
       </div>
     </div>
-    {% explainer_available "water_balances" as show_water_balances %}<p class="text-tertiary text-sm" style="margin: 0;">No single clever formula &mdash; just honest bookkeeping, one supply at a time.{% if show_water_balances %} If &ldquo;estimated use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page picks up where that one leaves off and walks the actual arithmetic.{% endif %}</p>
+    {% explainer_available "water_balances" as show_water_balances %}<p class="text-tertiary text-sm m-0">No single clever formula &mdash; just honest bookkeeping, one supply at a time.{% if show_water_balances %} If &ldquo;estimated use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page picks up where that one leaves off and walks the actual arithmetic.{% endif %}</p>
   </div>
 
   <div class="card-raised">
@@ -129,11 +129,11 @@
     <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
       <div class="concept-panel concept-panel-use">
         <div class="concept-panel-title">Split it evenly <span class="badge badge-pill badge-red">the wrong way</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">Every field gets the same share, no matter what&rsquo;s growing. A fallow field is credited the same as a thirsty vineyard &mdash; so water lands on fields that never used it, and the fields that did go short.</p>
+        <p class="text-secondary text-base m-0">Every field gets the same share, no matter what&rsquo;s growing. A fallow field is credited the same as a thirsty vineyard &mdash; so water lands on fields that never used it, and the fields that did go short.</p>
       </div>
       <div class="concept-panel concept-panel-supply">
         <div class="concept-panel-title">Split by ET demand <span class="badge badge-pill badge-green">how it works</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">Each field&rsquo;s share tracks what its crop actually drank that month. The thirsty summer crop draws the larger share; the fallow field draws almost none. Each share is also capped, so no field is credited with using more than it physically could.</p>
+        <p class="text-secondary text-base m-0">Each field&rsquo;s share tracks what its crop actually drank that month. The thirsty summer crop draws the larger share; the fallow field draws almost none. Each share is also capped, so no field is credited with using more than it physically could.</p>
       </div>
     </div>
 
@@ -154,7 +154,7 @@
 
     <div class="callout-rule">
       <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">By demand, not by headcount</div>
-      <p class="text-secondary text-base" style="margin: 0;">A shared well serving a vineyard and an alfalfa field is apportioned by each field&rsquo;s estimated ET demand. If the vineyard consumed twice what the alfalfa did that month, it carries twice the share of the pumping. The total always reconciles back to what the well or headgate actually produced &mdash; the demand weights only decide how that known total is divided.</p>
+      <p class="text-secondary text-base m-0">A shared well serving a vineyard and an alfalfa field is apportioned by each field&rsquo;s estimated ET demand. If the vineyard consumed twice what the alfalfa did that month, it carries twice the share of the pumping. The total always reconciles back to what the well or headgate actually produced &mdash; the demand weights only decide how that known total is divided.</p>
     </div>
   </div>
 
@@ -163,16 +163,16 @@
     <p class="text-secondary text-base">The concept, the configuration, and the vocabulary &mdash; one click each.</p>
     <div class="card-grid">
       {% if show_water_balances %}<a href="{{ water_balances_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: estimated use vs. supplies.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">The one idea underneath all of this: estimated use vs. supplies.</p>
       </a>{% endif %}
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methodology Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Where the calculation chain above is reordered and tuned.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Where the calculation chain above is reordered and tuned.</p>
       </a>{% endif %}
       <a href="{{ glossary_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Plain-language definitions for every term used here.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Plain-language definitions for every term used here.</p>
       </a>
     </div>
   </div>

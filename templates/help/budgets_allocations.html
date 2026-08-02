@@ -35,11 +35,11 @@
     <div class="stat-grid-2col" style="margin: var(--space-md) 0 var(--space-xs);">
       <div class="concept-panel concept-panel-supply">
         <div class="concept-panel-title">Allocation ceiling <span class="badge badge-pill badge-green">you set this</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">The whole pie &mdash; the total volume assigned to a zone for a period. One policy ceiling for a whole area, set at the top.</p>
+        <p class="text-secondary text-base m-0">The whole pie &mdash; the total volume assigned to a zone for a period. One policy ceiling for a whole area, set at the top.</p>
       </div>
       <div class="concept-panel">
         <div class="concept-panel-title">Allocation <span class="badge badge-pill badge-grey">derived</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">One account&rsquo;s slice &mdash; the platform pro-rates the ceiling by how many use areas the account holds in the zone.</p>
+        <p class="text-secondary text-base m-0">One account&rsquo;s slice &mdash; the platform pro-rates the ceiling by how many use areas the account holds in the zone.</p>
       </div>
     </div>
   </div>
@@ -54,7 +54,7 @@
     <h2 class="section-header">Allocation &mdash; each account's share</h2>
     <p class="text-secondary text-base">A single landowner does not care about the zone&rsquo;s full 12,000 acre-feet &mdash; they care about <em>their</em> limit. The platform calculates each account&rsquo;s allocation by pro-rating the zone ceiling according to how many parcels (use areas) that account holds in the zone:</p>
     <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
-      <p class="text-primary text-base" style="margin: 0;">
+      <p class="text-primary text-base m-0">
         account allocation = zone ceiling &times; (account&rsquo;s parcels in zone &divide; total parcels in zone)
       </p>
     </div>
@@ -65,13 +65,13 @@
     <h2 class="section-header">A worked example</h2>
     <p class="text-secondary text-base">Say a zone has an allocation ceiling of <strong>12,000 acre-feet</strong> for the year, and contains <strong>600 parcels</strong> in total. Your account holds <strong>30</strong> of those parcels. Your allocation is:</p>
     <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
-      <p class="text-primary text-base" style="margin: 0;">
+      <p class="text-primary text-base m-0">
         12,000 &times; (30 &divide; 600) = <strong>600 acre-feet</strong>
       </p>
     </div>
     <p class="text-secondary text-base">The platform then subtracts what the account actually <strong>used</strong> &mdash; the sum of its ledger entries (every metered extraction, surface diversion, and recharge credit) &mdash; to show what is left:</p>
     <div style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin: var(--space-md) 0; text-align: center;">
-      <p class="text-primary text-base" style="margin: 0;">
+      <p class="text-primary text-base m-0">
         remaining = allocation &minus; usage
       </p>
     </div>
@@ -88,16 +88,16 @@
     <p class="text-secondary text-base">Set the numbers, or read the idea and arithmetic behind them &mdash; one click each.</p>
     <div class="card-grid">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:allocations_list' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Allocations</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The live page where a zone&rsquo;s ceiling is set and allocations are derived.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Allocations</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">The live page where a zone&rsquo;s ceiling is set and allocations are derived.</p>
       </a>{% endif %}
       {% explainer_available 'water_balances' as show_water_balances %}{% if show_water_balances %}<a href="{% url 'water_balances' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The one idea underneath all of this: estimated use vs. supplies.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>How Water Balances Work</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">The one idea underneath all of this: estimated use vs. supplies.</p>
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The calculation chain that produces each account&rsquo;s usage.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">The calculation chain that produces each account&rsquo;s usage.</p>
       </a>{% endif %}
     </div>
   </div>

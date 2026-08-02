@@ -54,7 +54,7 @@
         </div>
       </div>
     </div>
-    <p class="text-tertiary text-sm" style="margin: 0;">Read it left to right: line up the supplies, subtract the estimated use, and look at the leftover. In real life the books almost never net to zero &mdash; ET counts only the water truly consumed, while canals leak and some water drains back underground. A small, explainable gap is the goal; a perfect zero would be the surprise.</p>
+    <p class="text-tertiary text-sm m-0">Read it left to right: line up the supplies, subtract the estimated use, and look at the leftover. In real life the books almost never net to zero &mdash; ET counts only the water truly consumed, while canals leak and some water drains back underground. A small, explainable gap is the goal; a perfect zero would be the surprise.</p>
   </div>
 
   <div class="card-raised">
@@ -63,11 +63,11 @@
     <div class="stat-grid-2col">
       <div class="concept-panel concept-panel-use">
         <div class="concept-panel-title">The use <span class="badge badge-pill badge-grey">estimated</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">The water the crops consumed &mdash; evapotranspiration (ET), read from satellites. It&rsquo;s the demand side, and the one number we can get for every field without a meter. It&rsquo;s also the <em>floor</em>: it counts only what was consumed, not what leaked from a canal or drained past the roots.</p>
+        <p class="text-secondary text-base m-0">The water the crops consumed &mdash; evapotranspiration (ET), read from satellites. It&rsquo;s the demand side, and the one number we can get for every field without a meter. It&rsquo;s also the <em>floor</em>: it counts only what was consumed, not what leaked from a canal or drained past the roots.</p>
       </div>
       <div class="concept-panel concept-panel-supply">
         <div class="concept-panel-title">The supplies <span class="badge badge-pill badge-green">matched against it</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">Everything that could have covered that use:</p>
+        <p class="text-secondary text-base m-0">Everything that could have covered that use:</p>
         <ul class="concept-list text-secondary text-base">
           <li><strong>Surface water</strong> delivered through canals</li>
           <li><strong>Groundwater</strong> pumped from wells</li>
@@ -84,7 +84,7 @@
 
     <div class="callout-rule">
       <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">The rule that keeps it honest</div>
-      <p class="text-secondary text-base" style="margin: 0;">An unexplained leftover is booked as <strong>groundwater only where a well actually exists.</strong> On a field with no well, that same leftover is unmet demand &mdash; the crop wanted more than it got &mdash; or a surface number that&rsquo;s off. It is never phantom pumping. The platform refuses to invent groundwater out of a missing meter.</p>
+      <p class="text-secondary text-base m-0">An unexplained leftover is booked as <strong>groundwater only where a well actually exists.</strong> On a field with no well, that same leftover is unmet demand &mdash; the crop wanted more than it got &mdash; or a surface number that&rsquo;s off. It is never phantom pumping. The platform refuses to invent groundwater out of a missing meter.</p>
     </div>
 
     <p class="text-secondary text-base">And expect a gap. ET is the floor, so the water delivered will usually exceed the water consumed &mdash; some seeps from canals on the way (conveyance loss), some runs off, some sinks past the roots back into the aquifer. None of that is a failure of the accounting; it&rsquo;s how irrigation actually behaves. The job isn&rsquo;t to force the balance to zero &mdash; it&rsquo;s to make the remaining gap small enough to explain.</p>
@@ -97,9 +97,9 @@
     <p class="text-secondary text-base">All of this exists to solve one stubborn problem: most water diversions in California are not metered. Reporting is sparse, self-reported, and exempt below certain thresholds &mdash; so for the vast majority of fields, nobody knows how much water actually moved.</p>
     <p class="text-secondary text-base">Evapotranspiration estimated from space is the answer to that missing-meter problem. <a class="prose-link" href="https://openetdata.org/" target="_blank" rel="noopener">OpenET</a> &mdash; a public-private effort led by <a class="prose-link" href="https://www.nasa.gov/" target="_blank" rel="noopener">NASA</a>, the <a class="prose-link" href="https://www.dri.edu/" target="_blank" rel="noopener">Desert Research Institute</a>, the <a class="prose-link" href="https://www.edf.org/" target="_blank" rel="noopener">Environmental Defense Fund</a>, and <a class="prose-link" href="https://earthengine.google.com/" target="_blank" rel="noopener">Google Earth Engine</a> &mdash; turns satellite imagery into a consumptive-use figure for any field, no meter required. That is what makes a credible balance possible where one was never possible before.</p>
 
-    <div class="concept-panel" style="margin-top: var(--space-md);">
+    <div class="concept-panel mt-md">
       <div class="concept-panel-title">Go deeper</div>
-      <ul class="concept-list text-secondary text-base" style="margin-top: var(--space-sm);">
+      <ul class="concept-list text-secondary text-base mt-sm">
         <li><a class="prose-link" href="https://etdata.org/openet-data-explorer/" target="_blank" rel="noopener">OpenET Data Explorer</a> &mdash; pull ET for any field on an interactive map, no code required.</li>
         <li><a class="prose-link" href="https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle" target="_blank" rel="noopener">USGS: Evapotranspiration and the water cycle</a> &mdash; the underlying science, in plain terms.</li>
         <li><a class="prose-link" href="{% url 'glossary' %}">Platform Glossary</a> &mdash; every term used here, including OpenET, ET, and Use Area.</li>
@@ -112,12 +112,12 @@
     <p class="text-secondary text-base">Now that the idea is clear, here is where to watch it work and where to dig deeper.</p>
     <div class="card-grid">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:dashboard' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Dashboard</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Watch a real basin balance close, parcel by parcel, on live data.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Dashboard</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Watch a real basin balance close, parcel by parcel, on live data.</p>
       </a>{% endif %}
       <a href="{% url 'glossary' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Plain-language definitions for every term on this page.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Glossary</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Plain-language definitions for every term on this page.</p>
       </a>
       {% comment %}89-03: an explainer's related-reading card is a LIVE LINK to
       another explainer, and 89-02 made explainers 404 wherever the deployment
@@ -125,12 +125,12 @@
       reader a dead click — a 200 page linking a 404. Gate each card on the same
       predicate its target's view and nav link read. The full deployment serves
       every explainer, so nothing here changes there.{% endcomment %}{% explainer_available "methods" as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The step-by-step calculation, from satellite ET to a closing balance.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">The step-by-step calculation, from satellite ET to a closing balance.</p>
       </a>{% endif %}
       {% explainer_available "settings_explained" as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Every agency-wide knob that shapes these numbers &mdash; what it does and when to touch it.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Every agency-wide knob that shapes these numbers &mdash; what it does and when to touch it.</p>
       </a>{% endif %}
     </div>
   </div>

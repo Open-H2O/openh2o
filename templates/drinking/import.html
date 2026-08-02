@@ -32,7 +32,7 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">Import lab results</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       {% comment %}
         "or a CLIP lab submission" cut at the 101-02 checkpoint. CLIP is defined
         nowhere in this repository — the only other mention is a comment in
@@ -53,11 +53,11 @@
       upload time rather than warnings: an operator should learn the cap before
       waiting on a parse that is going to fail.
     {% endcomment %}
-    <p class="text-tertiary text-sm" style="margin-top: var(--space-sm);">
+    <p class="text-tertiary text-sm mt-sm">
       Up to {{ max_rows }} rows per file, 25 MB maximum.
     </p>
 
-    <form
+    <form class="mt-lg"
       id="drinking-import-form"
       method="post"
       action="{% url 'drinking:import_preview' %}"
@@ -65,8 +65,7 @@
       hx-post="{% url 'drinking:import_preview' %}"
       hx-target="#import-area"
       hx-encoding="multipart/form-data"
-      hx-indicator="#import-spinner"
-      style="margin-top: var(--space-lg);">
+      hx-indicator="#import-spinner">
       {% csrf_token %}
 
       <div class="form-group">
@@ -91,19 +90,19 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">What the import will and will not create</h2>
-    <p class="text-base text-secondary" style="margin-top: var(--space-md);">
+    <p class="text-base text-secondary mt-md">
       Sample events and results are created from the file. Analytes the file
       names but this system has never seen are added to the vocabulary, because
       the analyte list belongs to the regulator and the state's own file is the
       authority on it &mdash; the preview lists every one before you commit.
     </p>
-    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    <p class="text-base text-secondary mt-sm">
       Sampling points and facilities are <strong>never</strong> created. A PS
       Code this system does not carry is reported as a row error, so a mistyped
       code cannot silently invent a monitoring location. Add the facility and
       sampling point first, then re-import.
     </p>
-    <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
+    <p class="text-base text-secondary mt-sm">
       Re-importing a file you have already imported is safe. Results matching
       one already recorded are flagged as duplicates in the preview and skipped
       on commit.

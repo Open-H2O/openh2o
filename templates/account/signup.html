@@ -4,7 +4,7 @@
 <div class="card-raised w-full" style="max-width: 420px;">
     {# Accent contract: gold is for the primary CTA button only — page headings
    carry the teal identity accent, matching the login page. #}
-<h1 class="text-xl font-extrabold mb-sm" style="color: var(--color-accent);">Create account</h1>
+<h1 class="text-xl font-extrabold mb-sm text-accent">Create account</h1>
     <p class="text-sm mb-lg text-secondary">Set up your water-data access.</p>
     {% if form.errors %}
     <div class="form-error-box">
@@ -38,7 +38,7 @@
         Already have an account? <a href="{% url 'account_login' %}" class="link-accent">Log in</a>
     </p>
     {% if site_config and site_config.allow_google_oauth %}
-    <div class="border-separator pt-sm" style="margin-top: var(--space-md);">
+    <div class="border-separator pt-sm mt-md">
     {% load socialaccount %}
     {% load static %}
     <a href="{% provider_login_url 'google' %}" class="btn-secondary w-full" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><img src="{% static 'img/google-g.svg' %}" alt="" width="18" height="18">Continue with Google</a>

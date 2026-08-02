@@ -91,7 +91,7 @@
           <div class="field-value">
             <ul style="list-style: none; padding: 0; margin: 0;">
               {% for r in rediversions %}
-              <li{% if not forloop.first %} style="margin-top: var(--space-xs);"{% endif %}>
+              <li class="mt-xs"{% if not forloop.first %}{% endif %}>
                 <a href="{% url 'surface:pod_detail' r.pk %}" class="data-table-link">{{ r.name }}</a>
                 {% if r.stream_name %}
                 <span class="text-tertiary text-sm">&mdash; {{ r.stream_name }}</span>
@@ -119,7 +119,7 @@
             </svg>
             Compliance details
           </summary>
-          <div style="margin-top: var(--space-md);">
+          <div class="mt-md">
             {% if water_right %}
               <div class="field-group">
                 <div class="field-label">Right ID</div>
@@ -157,7 +157,7 @@
               <p class="text-secondary text-sm">Recharge diversion — water is taken during high-flow / storm events for managed aquifer recharge, which does not require a consumptive water right.</p>
             {% else %}
               <p class="text-secondary text-sm">No water right linked. This diversion point operates without a formal water right permit.</p>
-              <p class="text-tertiary text-xs" style="margin-top: var(--space-xs);">CalWATRS reports will flag this diversion as [INCOMPLETE].</p>
+              <p class="text-tertiary text-xs mt-xs">CalWATRS reports will flag this diversion as [INCOMPLETE].</p>
             {% endif %}
           </div>
         </details>
@@ -228,7 +228,7 @@
             {% endfor %}
           </tbody>
         </table>
-        <p class="text-tertiary text-xs" style="margin-top: var(--space-sm);">
+        <p class="text-tertiary text-xs mt-sm">
           This diversion fills the recharge area(s) above &mdash; for dual-purpose cropland, during storm events.
         </p>
       </div>

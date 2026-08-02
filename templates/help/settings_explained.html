@@ -54,12 +54,12 @@
       <h2 class="section-header" style="margin-bottom: 0;">The methodology / calculation plan</h2>
       <span class="badge badge-pill badge-blue">Administrator</span>
     </div>
-    <p class="text-secondary text-base" style="margin-top: var(--space-sm);">This is the ordered chain of subtractions the platform runs on every field &mdash; gross ET, minus effective rain, minus surface deliveries, minus any edge cases &mdash; to arrive at a billable groundwater figure. You can reorder the steps, switch any of them off, or tune how a step behaves (for example, how &ldquo;effective&rdquo; rainfall is estimated).</p>
+    <p class="text-secondary text-base mt-sm">This is the ordered chain of subtractions the platform runs on every field &mdash; gross ET, minus effective rain, minus surface deliveries, minus any edge cases &mdash; to arrive at a billable groundwater figure. You can reorder the steps, switch any of them off, or tune how a step behaves (for example, how &ldquo;effective&rdquo; rainfall is estimated).</p>
 
     <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
       <div class="concept-panel">
         <span class="concept-panel-label">Who sets it</span>
-        <p class="text-secondary text-base" style="margin: 0;">An administrator, on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} page.</p>
+        <p class="text-secondary text-base m-0">An administrator, on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ methodology_url }}">Methodology Settings</a>{% else %}Methodology Settings{% endif %} page.</p>
       </div>
       <div class="concept-panel">
         <span class="concept-panel-label">When to change it</span>
@@ -67,7 +67,7 @@
         at. `{% templatetag openblock %} url ... as var {% templatetag closeblock %}`
         yields "" rather than raising, so ungated this renders href="" — a dead
         click, not a crash, which is exactly why it survived three phases of
-        green gates.{% endcomment %}{% explainer_available "methods" as show_methods %}<p class="text-secondary text-base" style="margin: 0;">Rarely, and deliberately &mdash; every calculation flows through this chain, so a change re-shapes past and future numbers alike.{% if show_methods %} See the walkthrough on <a class="prose-link" href="{{ methods_url }}">Methods Behind the Numbers</a>.{% endif %}</p>
+        green gates.{% endcomment %}{% explainer_available "methods" as show_methods %}<p class="text-secondary text-base m-0">Rarely, and deliberately &mdash; every calculation flows through this chain, so a change re-shapes past and future numbers alike.{% if show_methods %} See the walkthrough on <a class="prose-link" href="{{ methods_url }}">Methods Behind the Numbers</a>.{% endif %}</p>
       </div>
     </div>
 
@@ -79,16 +79,16 @@
       <h2 class="section-header" style="margin-bottom: 0;">Surface delivery settings</h2>
       <span class="badge badge-pill badge-gold">Analyst</span>
     </div>
-    <p class="text-secondary text-base" style="margin-top: var(--space-sm);">Two agency-wide settings govern how canal deliveries are counted: <strong>how much of a delivery the crop actually consumes</strong> (the rest sinks past the roots and recharges the aquifer &mdash; typically around 75%), and <strong>what happens to a district&rsquo;s unused water at year-end</strong> (carry it forward as a credit, or let it expire). Together they decide how a district&rsquo;s total monthly delivery is split across its farms and what a leftover allotment is worth.</p>
+    <p class="text-secondary text-base mt-sm">Two agency-wide settings govern how canal deliveries are counted: <strong>how much of a delivery the crop actually consumes</strong> (the rest sinks past the roots and recharges the aquifer &mdash; typically around 75%), and <strong>what happens to a district&rsquo;s unused water at year-end</strong> (carry it forward as a credit, or let it expire). Together they decide how a district&rsquo;s total monthly delivery is split across its farms and what a leftover allotment is worth.</p>
 
     <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
       <div class="concept-panel">
         <span class="concept-panel-label">Who sets it</span>
-        <p class="text-secondary text-base" style="margin: 0;">The analyst, on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} page.</p>
+        <p class="text-secondary text-base m-0">The analyst, on the {% if 'accounting' in enabled_modules %}<a class="prose-link" href="{{ delivery_url }}">Delivery Settings</a>{% else %}Delivery Settings{% endif %} page.</p>
       </div>
       <div class="concept-panel">
         <span class="concept-panel-label">When to change it</span>
-        <p class="text-secondary text-base" style="margin: 0;">When the agency adopts a different efficiency assumption, or its board changes the year-end rule.</p>
+        <p class="text-secondary text-base m-0">When the agency adopts a different efficiency assumption, or its board changes the year-end rule.</p>
       </div>
     </div>
 
@@ -100,22 +100,22 @@
       <h2 class="section-header" style="margin-bottom: 0;">Recovery horizon</h2>
       <span class="badge badge-pill badge-gold">Analyst</span>
     </div>
-    <p class="text-secondary text-base" style="margin-top: var(--space-sm);">This is the <strong>per-district</strong> control over that year-end question: when a district doesn&rsquo;t use its full surface-water allotment, does the leftover <strong>carry forward</strong> as a credit it can draw on next year, or <strong>expire</strong> at year-end (use-it-or-lose-it)? The agency sets one default for everyone on the Delivery Settings page; the recovery horizon lets any single district depart from that default without affecting the rest.</p>
+    <p class="text-secondary text-base mt-sm">This is the <strong>per-district</strong> control over that year-end question: when a district doesn&rsquo;t use its full surface-water allotment, does the leftover <strong>carry forward</strong> as a credit it can draw on next year, or <strong>expire</strong> at year-end (use-it-or-lose-it)? The agency sets one default for everyone on the Delivery Settings page; the recovery horizon lets any single district depart from that default without affecting the rest.</p>
 
     <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
       <div class="concept-panel">
         <span class="concept-panel-label">Who sets it</span>
-        <p class="text-secondary text-base" style="margin: 0;">An analyst, on an individual district&rsquo;s page (under <a class="prose-link" href="{{ zones_url }}">Zones</a>), using the &ldquo;Year-end unused water&rdquo; control.</p>
+        <p class="text-secondary text-base m-0">An analyst, on an individual district&rsquo;s page (under <a class="prose-link" href="{{ zones_url }}">Zones</a>), using the &ldquo;Year-end unused water&rdquo; control.</p>
       </div>
       <div class="concept-panel">
         <span class="concept-panel-label">When to change it</span>
-        <p class="text-secondary text-base" style="margin: 0;">When one district&rsquo;s rules genuinely differ &mdash; otherwise leave it on &ldquo;Use agency default,&rdquo; so a later agency-wide change flows through automatically.</p>
+        <p class="text-secondary text-base m-0">When one district&rsquo;s rules genuinely differ &mdash; otherwise leave it on &ldquo;Use agency default,&rdquo; so a later agency-wide change flows through automatically.</p>
       </div>
     </div>
 
     <div class="callout-rule">
       <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">A debt always carries</div>
-      <p class="text-secondary text-base" style="margin: 0;">One thing this setting never changes: an <em>overdraw</em> &mdash; using more than the allotment &mdash; always carries forward as a debt. Only a surplus is governed by the carry-forward-or-expire choice.</p>
+      <p class="text-secondary text-base m-0">One thing this setting never changes: an <em>overdraw</em> &mdash; using more than the allotment &mdash; always carries forward as a debt. Only a surplus is governed by the carry-forward-or-expire choice.</p>
     </div>
   </div>
 
@@ -124,7 +124,7 @@
       <h2 class="section-header" style="margin-bottom: 0;">Access control</h2>
       <span class="badge badge-pill badge-grey">System &middot; off for the demo</span>
     </div>
-    <p class="text-secondary text-base" style="margin-top: var(--space-sm);">One system-level switch decides whether the platform&rsquo;s front door is open or locked. For this demonstration it is deliberately <strong>off</strong> &mdash; the front door is open so anyone can look around. Flipping it on is the &ldquo;go-live&rdquo; step a real agency takes when it&rsquo;s ready to restrict the platform to its own staff, and it&rsquo;s intentionally deferred until the demo has been evaluated. Most readers never need to touch this; the detail is below if you do.</p>
+    <p class="text-secondary text-base mt-sm">One system-level switch decides whether the platform&rsquo;s front door is open or locked. For this demonstration it is deliberately <strong>off</strong> &mdash; the front door is open so anyone can look around. Flipping it on is the &ldquo;go-live&rdquo; step a real agency takes when it&rsquo;s ready to restrict the platform to its own staff, and it&rsquo;s intentionally deferred until the demo has been evaluated. Most readers never need to touch this; the detail is below if you do.</p>
 
     {% include "partials/_deep_dive.html" with label="What flipping access control on actually does" body="<p>The switch is a single setting (<code>ACCESS_CONTROL_ENFORCED</code>). While it&rsquo;s <strong>off</strong>, public sign-up is open and the setup wizard is reachable &mdash; the right state for a demo anyone should be able to explore.</p><p>Turning it <strong>on</strong> closes public sign-up and limits the platform to provisioned users: new accounts must be created and verified by an administrator rather than self-registered, and the open setup paths close. This is the <strong>go-live cutover</strong> &mdash; the deliberate step from &ldquo;open demonstration&rdquo; to &ldquo;the agency&rsquo;s working system.&rdquo; It&rsquo;s held until the demonstration has survived real-world evaluation, because once it&rsquo;s on, the easy open-door access that makes the demo useful goes away by design.</p>" %}
   </div>
@@ -134,16 +134,16 @@
     <p class="text-secondary text-base">Each knob lives on its own live page &mdash; here are the ones described above.</p>
     <div class="card-grid">
       {% if 'accounting' in enabled_modules %}<a href="{{ methodology_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methodology Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Reorder and tune the calculation chain.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methodology Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Reorder and tune the calculation chain.</p>
       </a>
       <a href="{{ delivery_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Delivery Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Crop-use share and the agency year-end rule.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Crop-use share and the agency year-end rule.</p>
       </a>{% endif %}
       <a href="{{ zones_url }}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Zones</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Set a single district&rsquo;s recovery horizon.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Zones</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Set a single district&rsquo;s recovery horizon.</p>
       </a>
     </div>
   </div>

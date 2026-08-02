@@ -37,7 +37,7 @@
         <div class="text-tertiary text-sm">
           {% if parcel.owner_name %}{{ parcel.owner_name }} &middot; {% endif %}{{ parcel.area_acres|floatformat:2 }} acres
         </div>
-        <div class="text-tertiary text-sm" style="margin-top: var(--space-xs);">
+        <div class="text-tertiary text-sm mt-xs">
           Methodology: <span class="text-secondary">{{ methodology_plan_name|blank }}</span>
           ({{ config_hash|blank }})
         </div>
@@ -49,7 +49,7 @@
     </div>
 
     <!-- Honesty label (prominent, gold inset) -->
-    <div class="card-raised card-inset honesty-note" style="margin-top: var(--space-md);">
+    <div class="card-raised card-inset honesty-note mt-md">
       <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
         <strong>Derived extraction estimate — not measured pumping.</strong>
         This figure is computed from satellite evapotranspiration, not read from a meter. The steps below show every adjustment so the number can be checked.

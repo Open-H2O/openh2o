@@ -96,14 +96,23 @@ docker compose exec db psql -U openh2o -d openh2o
 
 ## Design System
 
-The VanderDev design system provides a dark-mode dashboard aesthetic with California state identity.
+The VanderDev design system provides a dark-mode dashboard aesthetic with California state identity. OpenH2O is on the Vadose **Deep Water** colorway (2026-07-05 overhaul).
 
-Design tokens live in `static/css/tokens.css`:
-- Surface colors: base (#040608), card (#080b10), elevated (#0e1219)
-- Accent: California Gold (#E4A317), Pacific Blue (#1B7FAF)
-- Text: primary (#e8edf4), secondary (#8899aa), tertiary (#4d5e6f)
+Design tokens live in `static/css/tokens.css`, which is the authority — the list
+below mirrors it and `DESIGN.md` explains the reasoning:
+- Surface ladder: base (#090E14), nav (#0B121B), tile (#111A24), card (#141E2A), inset (#0E1620), elevated (#1A2633), hover (#22303F)
+- Accent: **Water Teal (#46B3C4) leads** — logo, links, active states, everyday emphasis. **California Gold (#E0A446) acts** — primary CTAs only. Pacific Blue (#1B7FAF / bright #3DB4E0) is parcels and links out to water data.
+- Text: primary (#E7EEF2), secondary (#8FA3AE), tertiary (#7E93A4)
+- Status: supply green (#55B678), deficit burnt-orange (#D1742E), warning amber (#fbbf24), error red (#f87171) — a deficit is never alarm red
 - OKLCH tonal ramps for data visualization (furnace-orange, reservoir-blue, forest-teal)
 - Typography: Public Sans sitewide (one typeface; numeric columns use `tabular-nums`)
+
+**Never hardcode a colour.** The pre-Deep-Water values (`#040608`, `#080b10`,
+`#0e1219`, `#e8edf4`, `#8899aa`, `#4d5e6f`, gold `#E4A317`) were still being
+painted on live pages a month after the palette moved, because rules that held
+them literally could not follow it. `tests/test_template_hygiene.py` now fails
+the build on the old gold; the rest is on you. The one documented exception is
+`--color-entity-*` in tokens.css, the map layer identity palette.
 
 Tailwind config extends the default theme with these tokens. CSS is compiled by the Tailwind standalone binary during Docker build (no Node.js required).
 

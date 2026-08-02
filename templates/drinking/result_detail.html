@@ -94,7 +94,7 @@
     {% endcomment %}
     {% if result.less_than_rl %}
     <div class="card-raised" style="margin-top: var(--space-md); max-width: 75ch;">
-      <p class="text-base text-secondary" style="margin: 0;">
+      <p class="text-base text-secondary m-0">
         This is a <strong>non-detect</strong>. The laboratory did not measure a
         quantity{% if result.reporting_level is not None %}; it reported only that the true value is below its reporting level of {{ result.reporting_level|plain_decimal }}&nbsp;{{ result.unit }}{% else %}; it reported only that the true value is below its reporting level{% endif %}.
         That is a different claim from zero.
@@ -104,14 +104,14 @@
 
     {% if result.result_kind == "presence_absence" %}
     <div class="card-raised" style="margin-top: var(--space-md); max-width: 75ch;">
-      <p class="text-base text-secondary" style="margin: 0;">
+      <p class="text-base text-secondary m-0">
         This analyte is reported <strong>present or absent</strong>, never as a
         concentration. There is no number to show and none was measured.
       </p>
     </div>
     {% endif %}
 
-    <h2 class="section-header" style="margin-top: var(--space-lg);">The analysis {% source_label "DDW_LAB" %}</h2>
+    <h2 class="section-header mt-lg">The analysis {% source_label "DDW_LAB" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Analysis date</div>
@@ -138,7 +138,7 @@
       ELAP is California's Environmental Laboratory Accreditation Program — the certification a laboratory holds to run this analysis for regulatory purposes.
     </p>
 
-    <h2 class="section-header" style="margin-top: var(--space-lg);">The sample it came from {% source_label "DDW_LAB" %}</h2>
+    <h2 class="section-header mt-lg">The sample it came from {% source_label "DDW_LAB" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Sample date</div>
@@ -159,7 +159,7 @@
     </div>
 
     {% if event.chain_of_custody_note %}
-    <div class="field-group" style="margin-top: var(--space-md);">
+    <div class="field-group mt-md">
       <div class="field-label">Chain of custody</div>
       <div class="field-value">{{ event.chain_of_custody_note|linebreaksbr }}</div>
     </div>
@@ -173,7 +173,7 @@
       convention, so it carries its own row label rather than inheriting EPA's.
       Left inside the DDW section, one label claimed one publisher for three.
     {% endcomment %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">The record it belongs to {% source_label "EPA_SDWIS" %}</h2>
+    <h2 class="section-header mt-lg">The record it belongs to {% source_label "EPA_SDWIS" %}</h2>
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Sampling point {% source_label "PS_CODE_COMPOSED" %}</div>
@@ -213,7 +213,7 @@
       sample. Inheriting the page's publisher here would attribute the system's
       annual report to the regulator.
     {% endcomment %}
-    <h2 class="section-header" style="margin-top: var(--space-lg);">Published report {% source_label "CCR_SYSTEM" %}</h2>
+    <h2 class="section-header mt-lg">Published report {% source_label "CCR_SYSTEM" %}</h2>
     <p class="text-base text-secondary" style="max-width: 75ch;">
       <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>
       — the annual water-quality report this system published for the year this

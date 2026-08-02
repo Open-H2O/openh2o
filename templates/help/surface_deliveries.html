@@ -46,17 +46,17 @@
     <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
       <div class="concept-panel concept-panel-supply">
         <div class="concept-panel-title">Carry it forward <span class="badge badge-pill badge-green">default</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">The unused amount opens next year as a credit the district can draw on &mdash; a surplus banks instead of vanishing.</p>
+        <p class="text-secondary text-base m-0">The unused amount opens next year as a credit the district can draw on &mdash; a surplus banks instead of vanishing.</p>
       </div>
       <div class="concept-panel concept-panel-use">
         <div class="concept-panel-title">Let it expire <span class="badge badge-pill badge-grey">use-it-or-lose-it</span></div>
-        <p class="text-secondary text-base" style="margin: 0;">The leftover simply disappears at year-end; next year starts fresh with no bonus.</p>
+        <p class="text-secondary text-base m-0">The leftover simply disappears at year-end; next year starts fresh with no bonus.</p>
       </div>
     </div>
 
     <div class="callout-rule">
       <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">A debt always carries</div>
-      <p class="text-secondary text-base" style="margin: 0;">If a district <em>overdraws</em> &mdash; uses more than its allotment &mdash; that shortfall always carries into next year as an obligation, no matter which choice above is set. An overdraw is a real debt; only a surplus is governed by the carry-forward-or-expire choice.</p>
+      <p class="text-secondary text-base m-0">If a district <em>overdraws</em> &mdash; uses more than its allotment &mdash; that shortfall always carries into next year as an obligation, no matter which choice above is set. An overdraw is a real debt; only a surplus is governed by the carry-forward-or-expire choice.</p>
     </div>
   </div>
 
@@ -76,16 +76,16 @@
     <p class="text-secondary text-base">The live setting, the arithmetic it drives, and the full settings reference &mdash; one click each.</p>
     <div class="card-grid">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Delivery Settings</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">The live page where the crop-use share and year-end rule are set.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Delivery Settings</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">The live page where the crop-use share and year-end rule are set.</p>
       </a>{% endif %}
       {% explainer_available 'methods' as show_methods %}{% if show_methods %}<a href="{% url 'methods' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">How a district&rsquo;s delivery is shared fairly across many fields.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Methods Behind the Numbers</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">How a district&rsquo;s delivery is shared fairly across many fields.</p>
       </a>{% endif %}
       {% explainer_available 'settings_explained' as show_settings %}{% if show_settings %}<a href="{% url 'settings_explained' %}" class="card-raised card-link">
-        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings, explained</span><span style="color: var(--color-accent);">&rarr;</span></div>
-        <p class="text-secondary text-sm" style="margin: 0;">Every agency-wide knob in one reference.</p>
+        <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Configs &amp; Settings, explained</span><span class="text-accent">&rarr;</span></div>
+        <p class="text-secondary text-sm m-0">Every agency-wide knob in one reference.</p>
       </a>{% endif %}
     </div>
   </div>
