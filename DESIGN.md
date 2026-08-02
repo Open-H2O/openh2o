@@ -127,10 +127,15 @@ the same idea always looks the same. All live in `static/css/app.css`.
 ### Casing convention
 
 UI labels, eyebrows, section headers, and disclosure triggers are **sentence
-case**, not uppercase — "Account balance", not "ACCOUNT BALANCE". The two
-deliberate exceptions are data-table column headers (`.data-table th` is
-uppercased in CSS) and cartographic map/legend labels, which follow map
-convention.
+case**, not uppercase — "Account balance", not "ACCOUNT BALANCE".
+
+**This governs the text you write, not how a component chooses to set it.** Two
+components uppercase their own label in CSS — `.data-table th` and
+`.content-section-label`, the teal tracked-out eyebrow above a section — and the
+markup underneath still reads `Station freshness`. Write sentence case and let
+the component decide; do not hand-type `STATION FRESHNESS`, and do not "fix" the
+`text-transform` to match the rule. Cartographic map and legend labels follow
+map convention and are exempt outright.
 
 Two further exceptions, both measured across the whole template tree rather than
 chosen: a **breadcrumb crumb** and a **`← Back to …` link** name a destination
