@@ -69,6 +69,31 @@ The deployment is the first thing the agent does, not the only thing. [docs/AI-O
 
 ---
 
+## What it looks like
+
+All three are the live demo at [openh2o.com](https://openh2o.com), running the
+Merced Subbasin dataset. Rows marked *Demo* are invented sample data shown
+beside real published records — the platform labels which is which rather than
+blurring them.
+
+**The accounting dashboard** — supplies, consumptive use, and the balance
+between them for the selected water year, with what needs attention on top:
+
+![The OpenH2O accounting dashboard, showing supplies minus consumptive use for water year 2024-2025 and an attention strip listing stations down and accounts over budget](docs/screenshots/dashboard.png)
+
+**The map**, which is public on the demo — agency boundary, GSA zones, rivers
+and canals, parcels, wells, points of diversion, recharge sites and
+drinking-water facilities, each an independent layer:
+
+![The OpenH2O map over aerial imagery of the Merced Subbasin, with a layers panel listing administrative, surface water, land use, drinking water, infrastructure and monitoring layers](docs/screenshots/map.jpg)
+
+**The drinking-water module** — a public water system keyed to its EPA PWSID,
+with every figure carrying the source that published it:
+
+![The OpenH2O drinking-water overview for the City of Merced, showing PWSID, system type, owner type and population served, each labelled with its EPA Envirofacts source](docs/screenshots/drinking-water.png)
+
+---
+
 ## What it does
 
 - **Parcels and wells** with real spatial data (GeoDjango + PostGIS) — boundaries, points of diversion, well inventories.
