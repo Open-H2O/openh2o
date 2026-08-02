@@ -647,6 +647,22 @@ html { color-scheme: dark; }
     border-radius: 50%;
 }
 
+/* Generic status dot for cards outside the hero. The landing page's dot used
+   Tailwind w-2/h-2 utilities that the compiled sheet doesn't carry, so it
+   rendered 0x0 — invisible — while its inline color read fine in devtools. */
+.status-dot {
+    display: inline-block;
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-dot--ok {
+    background-color: var(--color-supply);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-supply) 14%, transparent);
+}
+
 .home-hero-dot--ok {
     background-color: var(--forest-500);
     box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.12);
