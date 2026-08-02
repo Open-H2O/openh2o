@@ -365,3 +365,41 @@ def test_every_nav_entry_is_rendered():
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"
         )
+
+
+def test_group_divider_renders_above_drinking_water_but_never_leads_a_section():
+    """The Water Data group break, and the one case where it must not draw.
+
+    A full deployment runs eleven Water Data links and the last five are all
+    drinking water, so `starts_group` on the Drinking Water entry splits them
+    into their own block. The fixtures pin where the rule lands; this pins the
+    two things a byte-diff cannot explain.
+
+    The second half is the reason the template guards on `forloop.first`. Drop
+    the accounting/parcels pair and five more sections go with it, leaving
+    drinking water alone at the top of Water Data — where an unguarded rule
+    would draw a line directly under the section label, separating the heading
+    from the links it names.
+    """
+    full = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
+                          access_enforced=False)
+    assert full.count('class="sidebar-divider"') == 1
+    before, _, after = full.partition('<hr class="sidebar-divider">')
+    assert ">Monitoring Stations</span>" in before
+    assert after.lstrip().startswith('<a href="/drinking/"')
+
+    from core.modules import ALL_MODULE_NAMES
+
+    from tests.test_droppability_acceptance import drop_closure
+
+    # Not a hand-written list: the closure is what the platform would really
+    # drop, so this keeps describing the drinking-water-utility flavor even if
+    # the dependency graph moves.
+    gone = drop_closure("accounting")
+    kept = [n for n in ALL_MODULE_NAMES if n not in gone]
+    assert "drinking" in kept
+
+    drinking_only = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
+                                   access_enforced=False, module_names=kept)
+    assert ">Drinking Water</span>" in drinking_only
+    assert "sidebar-divider" not in drinking_only
