@@ -20,7 +20,7 @@ just on one card. Guarding only the Use Areas link would leave "Water Data"
 standing over an empty grid in a deployment that runs none of these four. The
 guard shares a line with the markup because a tag alone on a line still emits
 that line's newline, and the milestone's deliverable is a byte-identical full
-render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules %}<h2 class="content-section-label">Water Data</h2>
+render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules %}<h2 class="content-section-label">Water data</h2>
 <div class="dashboard-grid">
     {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Use areas</div>
@@ -49,7 +49,7 @@ render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_
 </div>{% endif %}
 
 {% comment %}Phase 89: same treatment. Both cards in this section belong to
-modules a deployment can switch off, so the heading goes with them.{% endcomment %}{% if 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label" style="margin-top: var(--space-xl);">Accounting &amp; Monitoring</h2>
+modules a deployment can switch off, so the heading goes with them.{% endcomment %}{% if 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label" style="margin-top: var(--space-xl);">Accounting &amp; monitoring</h2>
 <div class="dashboard-grid">
     {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:accounts_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Water accounts</div>

@@ -1,5 +1,5 @@
 <div class="card-raised">
-  <h3 class="section-header-sm">Internal Status</h3>
+  <h3 class="section-header-sm">Internal status</h3>
   <p class="text-tertiary text-xs mb-md">
     These steps track your agency's own progress toward filing. None of them sends
     anything to the State Water Board — you file in the state portal yourself.
@@ -33,14 +33,14 @@
 
   {% if submission.state_confirmation_number %}
   <div class="mb-md">
-    <div class="field-label">State Confirmation Number</div>
+    <div class="field-label">State confirmation number</div>
     <div class="text-secondary text-sm">{{ submission.state_confirmation_number }}</div>
   </div>
   {% endif %}
 
   {% if submission.internal_notes %}
   <div class="mb-md">
-    <div class="field-label">Internal Approval Notes</div>
+    <div class="field-label">Internal approval notes</div>
     <div class="text-secondary text-sm" style="background: var(--color-elevated); padding: var(--space-sm); border-radius: var(--radius-sm);">
       {{ submission.internal_notes }}
     </div>
@@ -55,7 +55,7 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="approve_internal">
     <div class="form-group mb-0">
-      <label class="form-label" for="id_internal_notes">Internal Approval Notes (optional)</label>
+      <label class="form-label" for="id_internal_notes">Internal approval notes (optional)</label>
       <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs);">
         Your agency's sign-off before filing — not a State Water Board review.
       </p>
@@ -63,7 +63,7 @@
                 placeholder="Who approved this, and any internal notes (the state never sees this)..."></textarea>
     </div>
     <div>
-      <button type="submit" class="btn-primary btn-sm">Approve Internally</button>
+      <button type="submit" class="btn-primary btn-sm">Approve internally</button>
     </div>
   </form>
 
@@ -79,7 +79,7 @@
       to the state portal, mark it exported.
     </p>
     <div>
-      <button type="submit" class="btn-secondary btn-sm">Mark as Exported</button>
+      <button type="submit" class="btn-secondary btn-sm">Mark as exported</button>
     </div>
   </form>
 
@@ -91,7 +91,7 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="mark_filed">
     <div class="form-group mb-0">
-      <label class="form-label" for="id_state_confirmation_number">State Confirmation Number</label>
+      <label class="form-label" for="id_state_confirmation_number">State confirmation number</label>
       <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs);">
         After you upload/enter this in the state portal and certify under penalty of
         perjury, paste the confirmation number here for your records.
@@ -104,7 +104,7 @@
     </div>
     <div>
       <button type="submit" class="btn-primary btn-sm" style="background-color: var(--forest-400); color: var(--color-base);">
-        Record as Filed at State
+        Record as filed at state
       </button>
     </div>
   </form>

@@ -56,7 +56,7 @@
         <div class="stat-card-unit">square miles</div>
       </div>
       <div class="inset-card">
-        <div class="stat-card-label">Existing Data</div>
+        <div class="stat-card-label">Existing data</div>
         <div class="stat-card-value-sm">{{ existing_basins|add:existing_flowlines }}</div>
         <div class="stat-card-unit">basins + flowlines found</div>
       </div>
@@ -74,7 +74,7 @@
       {% csrf_token %}
       <div class="form-footer-ruled">
         <a href="{% url 'setup:wizard' %}" class="btn-secondary">← Back</a>
-        <button type="submit" class="btn-primary">Begin Population →</button>
+        <button type="submit" class="btn-primary">Begin population →</button>
       </div>
     </form>
   </div>

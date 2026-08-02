@@ -225,11 +225,11 @@ class TestRenderedPages:
         settings.OPENH2O_MODULES = NINE_MODULE_DRINKING
         body = admin_client.get("/help/getting-started/").content.decode()
 
-        assert "Onboard Your Water System" in body
+        assert "Onboard your water system" in body
         assert reverse("drinking:onboard") in body
         assert STEP_CARD.findall(body) == [
-            ("1", "Onboard Your Water System"),
-            ("2", "Define Management Zones"),
+            ("1", "Onboard your water system"),
+            ("2", "Define management zones"),
         ]
 
     def test_the_pwsid_card_is_gone_when_drinking_is_off(
@@ -247,11 +247,11 @@ class TestRenderedPages:
         body = admin_client.get("/help/getting-started/").content.decode()
 
         assert "PWSID" not in body
-        assert "Onboard Your Water System" not in body
+        assert "Onboard your water system" not in body
 
         numbered = STEP_CARD.findall(body)
         assert [int(n) for n, _ in numbered] == list(range(1, len(numbered) + 1))
-        assert numbered[0] == ("1", "Import Your Use Areas")
+        assert numbered[0] == ("1", "Import your use areas")
 
     def test_the_drinking_wizard_card_names_the_boundary(
         self, admin_client, settings

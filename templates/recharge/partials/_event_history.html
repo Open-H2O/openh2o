@@ -35,7 +35,7 @@
       hx-post="{% url 'recharge:event_create' site.pk %}"
       hx-target="#event-history" hx-swap="innerHTML">
   {% csrf_token %}
-  <h3 class="section-header text-sm mb-sm">Log Recharge Event</h3>
+  <h3 class="section-header text-sm mb-sm">Log recharge event</h3>
   {% for field in event_form %}
   <div class="form-group">
     <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
@@ -47,5 +47,5 @@
     {% endif %}
   </div>
   {% endfor %}
-  <button type="submit" class="btn-primary btn-sm">Log Event</button>
+  <button type="submit" class="btn-primary btn-sm">Log event</button>
 </form>

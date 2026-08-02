@@ -25,7 +25,7 @@
   <div class="card-raised">
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
       {% url 'methods' as methods_help_url %}
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water Balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's satellite-estimated consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's satellite-estimated consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
       {% if balance_period %}
       <span class="text-tertiary text-xs">{{ balance_period.name }}</span>
       {% endif %}
@@ -35,17 +35,17 @@
     <!-- ET has been computed: full consumptive-use + closing identity. -->
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
       <div class="inset-card">
-        <div class="stat-card-label">Consumptive Use (ET)</div>
+        <div class="stat-card-label">Consumptive use (ET)</div>
         <div class="stat-card-value-sm text-usage">{{ consumptive_balance.consumptive_use_gross|floatformat:2 }}</div>
         <div class="stat-card-unit">AF</div>
       </div>
       <div class="inset-card">
-        <div class="stat-card-label">Total Supplies</div>
+        <div class="stat-card-label">Total supplies</div>
         <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supply_total|floatformat:2 }}</div>
         <div class="stat-card-unit">AF</div>
       </div>
       <div class="inset-card">
-        <div class="stat-card-label">Supplies − Consumptive Use</div>
+        <div class="stat-card-label">Supplies − consumptive use</div>
         <div class="stat-card-value-sm {% if consumptive_balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ consumptive_balance.net_vs_supply|floatformat:2 }}</div>
         <div class="stat-card-unit">AF</div>
       </div>
@@ -76,7 +76,7 @@
       </div>
     </div>
 
-    <h3 class="section-header-sm">Supply vs. Use Summary</h3>
+    <h3 class="section-header-sm">Supply vs. use summary</h3>
     <table class="data-table text-sm">
       <thead>
         <tr>
@@ -168,11 +168,11 @@
       <!-- Parcel Info card -->
       <div class="card-raised">
         <h2 class="section-header">
-          Parcel Information {% include "partials/_demo_marker.html" %}
+          Parcel information {% include "partials/_demo_marker.html" %}
         </h2>
 
         <div class="field-group">
-          <div class="field-label">Parcel Number</div>
+          <div class="field-label">Parcel number</div>
           <div class="field-value">{{ parcel.parcel_number }}</div>
         </div>
 
@@ -217,7 +217,7 @@
 
       <!-- Zone Memberships card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Zone Memberships</h2>
+        <h2 class="section-header mb-md">Zone memberships</h2>
         {% if zone_memberships %}
           {% for pz in zone_memberships %}
           <div class="item-row row-start">
@@ -234,7 +234,7 @@
 
       {% if 'wells' in enabled_modules %}<!-- Related Wells card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Related Wells</h2>
+        <h2 class="section-header mb-md">Related wells</h2>
         {% if related_wells %}
           {% for wip in related_wells %}
           <div class="item-row row-between">
@@ -256,7 +256,7 @@
 
       <div class="card-raised">
         <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header-flush">Recent Ledger Entries</h2>
+          <h2 class="section-header-flush">Recent ledger entries</h2>
           <div class="row-start">
             <a href="{% url 'accounting:ledger_list' %}?q={{ parcel.parcel_number }}"
                class="text-tertiary back-link text-xs">
@@ -264,7 +264,7 @@
             </a>
             <a href="{% url 'accounting:ledger_create' %}?parcel={{ parcel.pk }}"
                class="btn-primary btn-sm">
-              + Add Entry
+              + Add entry
             </a>
           </div>
         </div>

@@ -1,6 +1,6 @@
 {% if form.errors %}
 <div class="card-raised" style="border-left: 3px solid var(--furnace-400);">
-  <h3 class="section-header-sm" style="color: var(--furnace-500);">Upload Error</h3>
+  <h3 class="section-header-sm" style="color: var(--furnace-500);">Upload error</h3>
   {% for field in form %}
     {% for err in field.errors %}
     <p class="text-base" style="margin: 0; color: var(--furnace-400);">{{ field.label }}: {{ err }}</p>
@@ -18,7 +18,7 @@
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
     <div class="inset-card">
       <div class="stat-card-label">
-        {% if dry_run %}Would Create{% else %}Created{% endif %}
+        {% if dry_run %}Would create{% else %}Created{% endif %}
       </div>
       <div class="stat-card-value-lg" style="color: var(--forest-500);">
         {{ results.created_count }}
@@ -63,7 +63,7 @@
   <!-- Errors table -->
   {% if results.errors %}
   <div class="card-raised">
-    <h3 class="section-header-sm" style="color: var(--furnace-500);">Validation Errors</h3>
+    <h3 class="section-header-sm" style="color: var(--furnace-500);">Validation errors</h3>
     <table class="data-table">
       <thead>
         <tr>

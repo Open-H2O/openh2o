@@ -28,7 +28,7 @@
       <!-- POD Info card -->
       <div class="card-raised">
         <h2 class="section-header">
-          Diversion Point Information {% include "partials/_demo_marker.html" %}
+          Diversion point information {% include "partials/_demo_marker.html" %}
         </h2>
 
         <div class="field-group">
@@ -43,7 +43,7 @@
 
         {% if pod.max_rate_cfs %}
         <div class="field-group">
-          <div class="field-label">Max Rate (CFS)</div>
+          <div class="field-label">Max rate (CFS)</div>
           <div class="field-value">{{ pod.max_rate_cfs|floatformat:2 }}</div>
         </div>
         {% endif %}
@@ -65,7 +65,7 @@
            re-diversion chain, so ordinary diversion points are unaffected. {% endcomment %}
       {% if rediverted_from or rediversions %}
       <div class="card-raised">
-        <h2 class="section-header mb-md">Water Journey</h2>
+        <h2 class="section-header mb-md">Water journey</h2>
         <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">
           Water taken at one point can be partly or fully returned to the stream and
           re-diverted further downstream. This traces the journey one hop at a time.
@@ -117,7 +117,7 @@
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-tertiary">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
-            Compliance Details
+            Compliance details
           </summary>
           <div style="margin-top: var(--space-md);">
             {% if water_right %}
@@ -134,18 +134,18 @@
                 <div class="field-value">{{ water_right.holder_name|blank }}</div>
               </div>
               <div class="field-group">
-                <div class="field-label">Right Type</div>
+                <div class="field-label">Right type</div>
                 <div class="field-value">{{ water_right.right_type|blank }}</div>
               </div>
               {% if water_right.priority_date %}
               <div class="field-group">
-                <div class="field-label">Priority Date</div>
+                <div class="field-label">Priority date</div>
                 <div class="field-value">{{ water_right.priority_date|date:"M d, Y" }}</div>
               </div>
               {% endif %}
               {% if water_right.face_value_acre_feet %}
               <div class="field-group">
-                <div class="field-label">Face Value (AF)</div>
+                <div class="field-label">Face value (AF)</div>
                 <div class="field-value">{{ water_right.face_value_acre_feet|floatformat:2 }}</div>
               </div>
               {% endif %}
@@ -170,7 +170,7 @@
 
       <!-- Linked Use Areas card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Linked Use Areas</h2>
+        <h2 class="section-header mb-md">Linked use areas</h2>
         {% if pod_parcels %}
         <table class="data-table text-sm">
           <thead>
@@ -207,7 +207,7 @@
       {# having remembered to pass an empty list. #}
       {% if basin_links and 'recharge' in enabled_modules %}
       <div class="card-raised">
-        <h2 class="section-header mb-md">Recharge Areas Filled</h2>
+        <h2 class="section-header mb-md">Recharge areas filled</h2>
         <table class="data-table text-sm">
           <thead>
             <tr>

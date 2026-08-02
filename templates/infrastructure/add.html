@@ -37,7 +37,7 @@
 
       <!-- Type selector -->
       <div class="card-raised">
-        <h2 class="card-header-ruled">Infrastructure Type</h2>
+        <h2 class="card-header-ruled">Infrastructure type</h2>
         <div class="infra-type-grid">
           {% if 'wells' in enabled_modules %}<label class="infra-type-card{% if preselect_type == 'well' %} active{% endif %}" data-type="well">
             <input type="radio" name="infra_type" value="well"{% if preselect_type == 'well' %} checked{% endif %}>
@@ -47,7 +47,7 @@
               <path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/>
               <path d="M2 12h4"/><path d="M18 12h4"/>
             </svg>
-            <span class="infra-type-label">Groundwater Well</span>
+            <span class="infra-type-label">Groundwater well</span>
             <span class="infra-type-desc">Production, monitoring, or domestic well</span>
           </label>{% endif %}
           {# Phase 87: each type card is guarded by the module that owns it. The #}
@@ -63,7 +63,7 @@
               <polyline points="14 2 14 8 20 8"/>
               <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
             </svg>
-            <span class="infra-type-label">Surface Water Diversion</span>
+            <span class="infra-type-label">Surface water diversion</span>
             <span class="infra-type-desc">Point of diversion from stream or canal</span>
           </label>
           {% endif %}
@@ -74,7 +74,7 @@
               <rect x="2" y="6" width="20" height="12" rx="2"/>
               <path d="M12 6v12"/><path d="M2 12h20"/>
             </svg>
-            <span class="infra-type-label">Storage Pond / Tank</span>
+            <span class="infra-type-label">Storage pond / tank</span>
             <span class="infra-type-desc">Surface water storage facility</span>
           </label>
           <label class="infra-type-card{% if preselect_type == 'recharge_site' %} active{% endif %}" data-type="recharge_site">
@@ -82,7 +82,7 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
             </svg>
-            <span class="infra-type-label">Recharge Site</span>
+            <span class="infra-type-label">Recharge site</span>
             <span class="infra-type-desc">Spreading basin, injection, or ASR well</span>
           </label>
           {% endif %}
@@ -114,7 +114,7 @@
 
       <!-- Type-specific fields -->
       {% if 'wells' in enabled_modules %}<div class="card-raised" id="fields-well"{% if preselect_type != 'well' %} style="display: none;"{% endif %}>
-        <h2 class="card-header-ruled">Well Details</h2>
+        <h2 class="card-header-ruled">Well details</h2>
         <div class="form-stack">
           <div class="form-row-2col">
             <div class="form-group">
@@ -127,18 +127,18 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="field-label" for="owner_name">Owner Name</label>
+            <label class="field-label" for="owner_name">Owner name</label>
             <input type="text" id="owner_name" name="owner_name" class="form-input" placeholder="Property or well owner" value="{{ submitted.owner_name|default:'' }}">
           </div>
 
           <!-- State reporting (SGMA / GEARS) -->
           <div class="form-row-2col">
             <div class="form-group">
-              <label class="field-label" for="year_pumping_began">Year Pumping Began</label>
+              <label class="field-label" for="year_pumping_began">Year pumping began</label>
               <input type="number" id="year_pumping_began" name="year_pumping_began" step="1" min="1850" max="2100" class="form-input" placeholder="e.g. 1998" value="{{ submitted.year_pumping_began|default:'' }}">
             </div>
             <div class="form-group">
-              <label class="field-label" for="measurement_method">Measurement Method</label>
+              <label class="field-label" for="measurement_method">Measurement method</label>
               <select id="measurement_method" name="measurement_method" class="form-select">
                 <option value="">—</option>
                 {% for val, label in measurement_method_choices %}
@@ -151,11 +151,11 @@
           <!-- Registry identifiers -->
           <div class="form-row-2col">
             <div class="form-group">
-              <label class="field-label" for="wcr_number">WCR Number</label>
+              <label class="field-label" for="wcr_number">WCR number</label>
               <input type="text" id="wcr_number" name="wcr_number" class="form-input" placeholder="DWR Well Completion Report #" value="{{ submitted.wcr_number|default:'' }}">
             </div>
             <div class="form-group">
-              <label class="field-label" for="state_well_number">State Well Number</label>
+              <label class="field-label" for="state_well_number">State well number</label>
               <input type="text" id="state_well_number" name="state_well_number" class="form-input" placeholder="e.g. 12N/13E-34Q01" value="{{ submitted.state_well_number|default:'' }}">
             </div>
           </div>
@@ -163,31 +163,31 @@
           <!-- Construction (DWR Well Completion Report) -->
           <div class="form-row-2col">
             <div class="form-group">
-              <label class="field-label" for="casing_diameter_in">Casing Diameter (in)</label>
+              <label class="field-label" for="casing_diameter_in">Casing diameter (in)</label>
               <input type="number" id="casing_diameter_in" name="casing_diameter_in" step="0.01" class="form-input" placeholder="e.g. 8" value="{{ submitted.casing_diameter_in|default:'' }}">
             </div>
             <div class="form-group">
-              <label class="field-label" for="casing_material">Casing Material</label>
+              <label class="field-label" for="casing_material">Casing material</label>
               <input type="text" id="casing_material" name="casing_material" class="form-input" placeholder="e.g. PVC, steel" value="{{ submitted.casing_material|default:'' }}">
             </div>
           </div>
           <div class="form-row-2col">
             <div class="form-group">
-              <label class="field-label" for="screen_top_ft">Screen Top (ft)</label>
+              <label class="field-label" for="screen_top_ft">Screen top (ft)</label>
               <input type="number" id="screen_top_ft" name="screen_top_ft" step="0.01" class="form-input" placeholder="depth to top of perforation" value="{{ submitted.screen_top_ft|default:'' }}">
             </div>
             <div class="form-group">
-              <label class="field-label" for="screen_bottom_ft">Screen Bottom (ft)</label>
+              <label class="field-label" for="screen_bottom_ft">Screen bottom (ft)</label>
               <input type="number" id="screen_bottom_ft" name="screen_bottom_ft" step="0.01" class="form-input" placeholder="depth to bottom of perforation" value="{{ submitted.screen_bottom_ft|default:'' }}">
             </div>
           </div>
           <div class="form-row-2col">
             <div class="form-group">
-              <label class="field-label" for="tested_yield_gpm">Tested Yield (gpm)</label>
+              <label class="field-label" for="tested_yield_gpm">Tested yield (gpm)</label>
               <input type="number" id="tested_yield_gpm" name="tested_yield_gpm" step="0.01" class="form-input" placeholder="WCR pump-test yield" value="{{ submitted.tested_yield_gpm|default:'' }}">
             </div>
             <div class="form-group">
-              <label class="field-label" for="pump_type">Pump Type</label>
+              <label class="field-label" for="pump_type">Pump type</label>
               <select id="pump_type" name="pump_type" class="form-select">
                 <option value="">—</option>
                 {% for val, label in pump_type_choices %}
@@ -201,14 +201,14 @@
 
       {% if 'surface' in enabled_modules %}
       <div class="card-raised" id="fields-diversion"{% if preselect_type != 'diversion' %} style="display: none;"{% endif %}>
-        <h2 class="card-header-ruled">Diversion Details</h2>
+        <h2 class="card-header-ruled">Diversion details</h2>
         <div class="form-stack">
           <div class="form-group">
-            <label class="field-label" for="stream_name">Stream Name</label>
+            <label class="field-label" for="stream_name">Stream name</label>
             <input type="text" id="stream_name" name="stream_name" class="form-input" placeholder="e.g. Cottonwood Creek" value="{{ submitted.stream_name|default:'' }}">
           </div>
           <div class="form-group">
-            <label class="field-label" for="max_rate_cfs">Max Rate (cfs)</label>
+            <label class="field-label" for="max_rate_cfs">Max rate (cfs)</label>
             <input type="number" id="max_rate_cfs" name="max_rate_cfs" step="0.0001" class="form-input" placeholder="e.g. 2.5" value="{{ submitted.max_rate_cfs|default:'' }}">
           </div>
         </div>
@@ -218,13 +218,13 @@
 
       {% if 'recharge' in enabled_modules %}
       <div class="card-raised" id="fields-storage"{% if preselect_type != 'storage' %} style="display: none;"{% endif %}>
-        <h2 class="card-header-ruled">Storage Details</h2>
+        <h2 class="card-header-ruled">Storage details</h2>
         <div class="form-stack">
           <div class="form-group">
-            <label class="field-label" for="storage_type">Storage Type</label>
+            <label class="field-label" for="storage_type">Storage type</label>
             <select id="storage_type" name="storage_type" class="form-select">
-              <option value="storage_pond">Storage Pond</option>
-              <option value="storage_tank">Storage Tank</option>
+              <option value="storage_pond">Storage pond</option>
+              <option value="storage_tank">Storage tank</option>
             </select>
           </div>
           <div class="form-group">
@@ -235,15 +235,15 @@
       </div>
 
       <div class="card-raised" id="fields-recharge_site"{% if preselect_type != 'recharge_site' %} style="display: none;"{% endif %}>
-        <h2 class="card-header-ruled">Recharge Site Details</h2>
+        <h2 class="card-header-ruled">Recharge site details</h2>
         <div class="form-stack">
           <div class="form-group">
-            <label class="field-label" for="site_type">Site Type</label>
+            <label class="field-label" for="site_type">Site type</label>
             <select id="site_type" name="site_type" class="form-select">
-              <option value="spreading_basin">Spreading Basin</option>
-              <option value="injection_well">Injection Well</option>
+              <option value="spreading_basin">Spreading basin</option>
+              <option value="injection_well">Injection well</option>
               <option value="streambed">Streambed</option>
-              <option value="asr_well">ASR Well</option>
+              <option value="asr_well">ASR well</option>
             </select>
           </div>
           <div class="form-row-2col">
@@ -272,7 +272,7 @@
       <div class="card-raised">
         <details class="parcel-link-section">
           <summary class="card-header-ruled" style="cursor: pointer; list-style: none;">
-            <span>Link to Parcel</span>
+            <span>Link to parcel</span>
             <span class="text-sm text-tertiary" id="parcel-status">(optional)</span>
           </summary>
           <div class="form-stack" style="margin-top: var(--space-md);">
@@ -293,15 +293,15 @@
             <div id="parcel-draw-form" style="display: none;">
               <div class="form-stack" style="margin-top: var(--space-sm);">
                 <div class="form-group">
-                  <label class="field-label" for="new-parcel-number">Parcel Number</label>
+                  <label class="field-label" for="new-parcel-number">Parcel number</label>
                   <input type="text" id="new-parcel-number" class="form-input" placeholder="e.g. 123-456-789">
                 </div>
                 <div class="form-group">
-                  <label class="field-label" for="new-parcel-owner">Owner Name</label>
+                  <label class="field-label" for="new-parcel-owner">Owner name</label>
                   <input type="text" id="new-parcel-owner" class="form-input" placeholder="Optional">
                 </div>
                 <div class="row-start" style="gap: var(--space-sm);">
-                  <button type="button" id="save-new-parcel" class="btn-primary btn-sm">Save Parcel</button>
+                  <button type="button" id="save-new-parcel" class="btn-primary btn-sm">Save parcel</button>
                   <button type="button" id="cancel-new-parcel" class="btn-secondary btn-sm">Cancel</button>
                 </div>
               </div>

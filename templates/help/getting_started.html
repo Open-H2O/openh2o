@@ -81,7 +81,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.pwsid }}</span>
-      <h2 class="section-header">Onboard Your Water System</h2>
+      <h2 class="section-header">Onboard your water system</h2>
       <p class="text-secondary text-base">Enter your PWSID &mdash; the identifier the regulator carries for a public water system &mdash; and OpenH2O looks it up in EPA&rsquo;s Envirofacts record: the regulatory details, the facilities, and the sampling points. Nothing is written until you review what came back and confirm.</p>
       <a href="{% url 'drinking:onboard' %}" class="text-sm" style="color: var(--color-accent);">Go to Onboard System &rarr;</a>
     </div>
@@ -103,7 +103,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.use_areas }} &middot; the Setup Wizard can do this for you</span>
-      <h2 class="section-header">Import Your Use Areas</h2>
+      <h2 class="section-header">Import your use areas</h2>
       <p class="text-secondary text-base">Upload use area boundaries from your county GIS department as GeoJSON or Shapefile. Navigate to Use Areas and use the import command. Each use area needs an Assessor Parcel Number (APN).</p>
       <a href="{% url 'parcels:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Use Areas &rarr;</a>
     </div>
@@ -123,7 +123,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.wells }} &middot; the Setup Wizard can do this for you</span>
-      <h2 class="section-header">Import Your Wells</h2>
+      <h2 class="section-header">Import your wells</h2>
       <p class="text-secondary text-base">Upload well locations from CSV or Shapefile. Each well needs coordinates and a state well number or local ID. Wells appear on the map and can be linked to use areas.</p>
       <a href="{% url 'wells:list' %}" class="text-sm" style="color: var(--color-accent);">Go to Wells &rarr;</a>
     </div>
@@ -139,7 +139,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.accounts }}</span>
-      <h2 class="section-header">Set Up Water Accounts</h2>
+      <h2 class="section-header">Set up water accounts</h2>
       <p class="text-secondary text-base">Create water accounts to group use areas for tracking. Go to Administration &gt; Accounts and create accounts for each management unit (farm, ranch, district zone).</p>
       <a href="{% url 'accounting:accounts_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Water Accounts &rarr;</a>
     </div>
@@ -156,7 +156,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.water_year }}</span>
-      <h2 class="section-header">Create a Water Year</h2>
+      <h2 class="section-header">Create a water year</h2>
       <p class="text-secondary text-base">Define the time window for accounting. Go to Compliance &gt; Water Years. Most agencies use the water year (October 1 through September 30).</p>
       <a href="{% url 'accounting:periods_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Water Years &rarr;</a>
     </div>
@@ -171,7 +171,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.zones }}</span>
-      <h2 class="section-header">Define Management Zones</h2>
+      <h2 class="section-header">Define management zones</h2>
       {% comment %}Phase 89: Step 5 belongs to `geography` and stays in every
       configuration, but two of its clauses name use areas. The clauses are
       GUARDED rather than the sentence rewritten — byte-identical wherever
@@ -203,7 +203,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.ceilings }}</span>
-      <h2 class="section-header">Set Allocation Ceilings</h2>
+      <h2 class="section-header">Set allocation ceilings</h2>
       <p class="text-secondary text-base">An allocation ceiling is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Set a ceiling for each zone, water type, and period. New to the difference between a ceiling and an account&rsquo;s allocation? See the short guide linked at the bottom of this page.</p>
       <a href="{% url 'accounting:allocations_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Allocations &rarr;</a>
     </div>
@@ -221,7 +221,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.ledger }}</span>
-      <h2 class="section-header">Enter Use Ledger Data</h2>
+      <h2 class="section-header">Enter use ledger data</h2>
       <p class="text-secondary text-base">Record water supply (positive) and usage (negative) for each use area. Enter manually or import via CSV. Usage can also be derived from satellite evapotranspiration (ET) &mdash; how that calculation works is configured on your Methodology page. The use ledger is the core record of your water data.</p>
       <a href="{% url 'accounting:ledger_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Use Ledger &rarr;</a>
       <span class="text-tertiary text-sm" style="margin: 0 var(--space-xs);">|</span>
@@ -245,7 +245,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.stations }} &middot; the Setup Wizard can do this for you</span>
-      <h2 class="section-header">Connect Monitoring Stations</h2>
+      <h2 class="section-header">Connect monitoring stations</h2>
       <p class="text-secondary text-base">Link external data sources (CDEC stream gauges, USGS groundwater sites, CIMIS weather stations) to automatically pull measurements. Go to Monitoring Stations &gt; Add Station.</p>
       <a href="{% url 'datasync:station_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Monitoring Stations &rarr;</a>
     </div>
@@ -271,11 +271,11 @@
       {# diversion onboarding.                                                     #}
       {% if 'recharge' in enabled_modules %}
       <span class="step-eyebrow">Step {{ steps.surface }} &middot; the Setup Wizard imports recharge basins for you</span>
-      <h2 class="section-header">Add Surface Diversions and Recharge Areas</h2>
+      <h2 class="section-header">Add surface diversions and recharge areas</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion. Track managed aquifer recharge events at spreading basins or injection sites.</p>
       {% else %}
       <span class="step-eyebrow">Step {{ steps.surface }}</span>
-      <h2 class="section-header">Add Surface Diversions</h2>
+      <h2 class="section-header">Add surface diversions</h2>
       <p class="text-secondary text-base">Record surface water rights with their points of diversion.</p>
       {% endif %}
       <a href="{% url 'surface:pod_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Surface Diversions &rarr;</a>
@@ -313,7 +313,7 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.reports }}</span>
-      <h2 class="section-header">Generate State Reports</h2>
+      <h2 class="section-header">Generate state reports</h2>
       <p class="text-secondary text-base">When your reporting period is complete, generate {% module_nouns "wells:GEARS CSV (per-well or by-ET extraction)" "surface:CalWATRS CSV (surface diversions)" %} for submission to the Water Board. Go to Reports &gt; Generate.</p>
       <a href="{% url 'reporting:report_list' %}" class="text-sm" style="color: var(--color-accent);">Go to Reports &rarr;</a>
     </div>

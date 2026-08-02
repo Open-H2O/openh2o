@@ -2,14 +2,14 @@
 {% block title %}Confirm Email - Open Water Accounting Platform{% endblock %}
 {% block content %}
 <div class="card-raised w-full text-center" style="max-width: 420px;">
-    <h1 class="text-xl font-extrabold mb-sm" style="color: var(--color-accent);">Confirm Email</h1>
+    <h1 class="text-xl font-extrabold mb-sm" style="color: var(--color-accent);">Confirm email</h1>
     {% if confirmation %}
     <p class="text-sm mb-lg" style="color: var(--color-text-secondary);">
         Please confirm that <strong style="color: var(--color-text-primary);">{{ confirmation.email_address.email }}</strong> is your email address.
     </p>
     <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
         {% csrf_token %}
-        <button type="submit" class="btn-primary w-full">Confirm Email</button>
+        <button type="submit" class="btn-primary w-full">Confirm email</button>
     </form>
     {% else %}
     <p class="text-sm mb-lg" style="color: var(--furnace-500);">This confirmation link is invalid or has expired.</p>

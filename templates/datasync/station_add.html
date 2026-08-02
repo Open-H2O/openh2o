@@ -32,7 +32,7 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">
-      Station Details
+      Station details
     </h2>
 
     <form method="post" class="page-stack">
@@ -40,7 +40,7 @@
 
       <!-- Data Source -->
       <div class="form-group">
-        <label class="form-label" for="id_data_source">Data Source <span class="required-mark">*</span></label>
+        <label class="form-label" for="id_data_source">Data source <span class="required-mark">*</span></label>
         <select id="id_data_source" name="data_source" required class="form-select">
           <option value="">Select a data source...</option>
           {% for ds in data_sources %}
@@ -53,7 +53,7 @@
 
       <!-- External Station ID -->
       <div class="form-group">
-        <label class="form-label" for="id_external_station_id">External Station ID <span class="required-mark">*</span></label>
+        <label class="form-label" for="id_external_station_id">External station ID <span class="required-mark">*</span></label>
         <input
           type="text"
           id="id_external_station_id" name="external_station_id"
@@ -67,7 +67,7 @@
 
       <!-- Station Name -->
       <div class="form-group">
-        <label class="form-label" for="id_station_name">Station Name <span class="required-mark">*</span></label>
+        <label class="form-label" for="id_station_name">Station name <span class="required-mark">*</span></label>
         <input
           type="text"
           id="id_station_name" name="station_name"
@@ -112,7 +112,7 @@
 
       <!-- Submit -->
       <div class="form-footer-ruled">
-        <button type="submit" class="btn-primary">Add Station</button>
+        <button type="submit" class="btn-primary">Add station</button>
         <a href="{% url 'datasync:station_list' %}" class="back-link" style="margin: 0;">Cancel</a>
       </div>
     </form>

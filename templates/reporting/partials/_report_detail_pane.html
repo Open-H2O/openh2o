@@ -60,7 +60,7 @@
   <div class="card-raised">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--space-sm) var(--space-lg);">
       <div class="field-group mb-0">
-        <div class="field-label">Report Type</div>
+        <div class="field-label">Report type</div>
         <div class="field-value-sm">{{ submission.report_template.name }}</div>
       </div>
       <div class="field-group mb-0">
@@ -91,7 +91,7 @@
   <!-- Validation Warnings -->
   {% if submission.validation_warnings %}
   <div class="card-raised">
-    <h3 class="section-header-sm">Validation Warnings</h3>
+    <h3 class="section-header-sm">Validation warnings</h3>
     <div class="page-stack" style="gap: var(--space-xs);">
       {% for w in submission.validation_warnings %}
       {% if w.level == "error" %}

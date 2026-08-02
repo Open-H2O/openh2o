@@ -67,7 +67,7 @@
     <!-- Station Info card -->
     <div class="card-raised">
       <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-        <h2 class="section-header-flush">Station Information</h2>
+        <h2 class="section-header-flush">Station information</h2>
         <div id="toggle-cell" class="row-start">
           {% comment %} "Syncing", not "Active" (ISS-108): this switch is the wiring
                axis, and the freshness dot a few lines up is the other one. The
@@ -80,7 +80,7 @@
 
       <div class="field-group">
         <div class="field-label field-row">
-          Data Source
+          Data source
           {% include "partials/_help_tooltip.html" with label="Source" text="The external data provider (CDEC, USGS, CIMIS, etc.) this station syncs from." %}
         </div>
         <div class="row-start">
@@ -91,7 +91,7 @@
 
       <div class="field-group">
         <div class="field-label field-row">
-          External Station ID
+          External station ID
           {% include "partials/_help_tooltip.html" with label="Station ID" text="The identifier used by the external data source to reference this station." %}
         </div>
         <div class="field-value-mono">{{ station.external_station_id }}</div>
@@ -122,7 +122,7 @@
       </div>
 
       <div class="field-group">
-        <div class="field-label">Last Data</div>
+        <div class="field-label">Last data</div>
         <div class="field-value">
           {% if station.last_data_at %}{{ station.last_data_at|date:"M d, Y H:i" }}{% else %}<span class="text-tertiary">No data yet</span>{% endif %}
         </div>
@@ -145,7 +145,7 @@
     <!-- Current Readings card (always rendered so the row stays balanced) -->
     <div class="card-raised">
       <div class="row-between mb-md">
-        <h2 class="section-header-flush">Current Readings</h2>
+        <h2 class="section-header-flush">Current readings</h2>
         <span class="text-tertiary text-xs">Latest published value per sensor</span>
       </div>
       {% if latest_readings %}
@@ -172,7 +172,7 @@
 
     <!-- Recent Sync Logs card -->
     <div class="card-raised">
-      <h2 class="section-header mb-md">Recent Sync Logs</h2>
+      <h2 class="section-header mb-md">Recent sync logs</h2>
       {% if recent_logs %}
       <div class="table-scroll">
       <table class="data-table text-sm">
@@ -216,7 +216,7 @@
     <!-- Recent Data Records card -->
     <div class="card-raised">
       <div class="row-between mb-md">
-        <h2 class="section-header-flush">Recent Data Records</h2>
+        <h2 class="section-header-flush">Recent data records</h2>
         {% if recent_records|length >= 10 %}
         <span class="text-tertiary text-xs">Showing 10 most recent</span>
         {% endif %}

@@ -74,14 +74,14 @@
 
         <!-- Static field: well_type -->
         <div class="field-group">
-          <div class="field-label">Well Type</div>
+          <div class="field-label">Well type</div>
           <div class="field-value">{{ well.well_type|blank }}</div>
         </div>
 
         {% include "wells/partials/_editable_field.html" with ef=ef.owner_name %}
 
         <!-- ── State Reporting (GEARS) ── -->
-        <h2 class="section-header" style="margin-top: var(--space-lg);">State Reporting (GEARS)</h2>
+        <h2 class="section-header" style="margin-top: var(--space-lg);">State reporting (GEARS)</h2>
         <p class="text-tertiary text-xs" style="margin-bottom: var(--space-sm);">
           These fields feed a GEARS extraction filing.
         </p>
@@ -118,7 +118,7 @@
 
       <!-- Current Meters card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Current Meters</h2>
+        <h2 class="section-header mb-md">Current meters</h2>
         {% if current_meters %}
           {% for wm in current_meters %}
           <div class="item-row">
@@ -135,7 +135,7 @@
 
       <!-- Irrigated Parcels card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Irrigated Parcels</h2>
+        <h2 class="section-header mb-md">Irrigated parcels</h2>
         {% if irrigated_parcels %}
           {% for wip in irrigated_parcels %}
           <div class="item-row row-between">
@@ -158,7 +158,7 @@
       <!-- Monitoring Data card -->
       {% if monitoring %}
       <div class="card-raised">
-        <h2 class="section-header mb-md">Monitoring Data</h2>
+        <h2 class="section-header mb-md">Monitoring data</h2>
         <div class="page-stack" style="gap: var(--space-sm);">
           {% if monitoring.monitoring_agency %}
           <div class="field-group mb-0">
@@ -174,7 +174,7 @@
           {% endif %}
           {% if monitoring.reference_elevation_ft %}
           <div class="field-group mb-0">
-            <span class="field-label">Reference Elevation</span>
+            <span class="field-label">Reference elevation</span>
             <div class="field-value-sm">{{ monitoring.reference_elevation_ft|floatformat:1 }} ft</div>
           </div>
           {% endif %}

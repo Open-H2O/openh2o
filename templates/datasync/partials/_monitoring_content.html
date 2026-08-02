@@ -2,7 +2,7 @@
 
   <!-- Freshness Map (top): the whole network at a glance. -->
   <div>
-    <h2 class="content-section-label">Station Freshness</h2>
+    <h2 class="content-section-label">Station freshness</h2>
     <div class="card-raised" style="padding: 0; overflow: hidden;">
       <div id="monitoring-freshness-map" style="height: 320px; width: 100%;"></div>
     </div>
@@ -11,22 +11,22 @@
   <!-- Stat Cards -->
   <div class="stat-grid-4col">
     <div class="card-raised stat-card stat-card-accent-supply">
-      <div class="stat-card-label">Active Stations</div>
+      <div class="stat-card-label">Active stations</div>
       <div class="stat-card-value text-supply">{{ total_active }}</div>
       <div class="stat-card-unit">total linked to sources</div>
     </div>
     <div class="card-raised stat-card" style="border-top: 3px solid var(--forest-400);">
-      <div class="stat-card-label">On Schedule</div>
+      <div class="stat-card-label">On schedule</div>
       <div class="stat-card-value" style="color: var(--forest-400);">{{ fresh_count }}</div>
       <div class="stat-card-unit">reporting on their normal cadence</div>
     </div>
     <div class="card-raised stat-card" style="border-top: 3px solid var(--furnace-400);">
-      <div class="stat-card-label">Behind Schedule</div>
+      <div class="stat-card-label">Behind schedule</div>
       <div class="stat-card-value" style="color: var(--furnace-400);">{{ stale_count }}</div>
       <div class="stat-card-unit">overdue vs. their expected cadence</div>
     </div>
     <div class="card-raised stat-card" style="border-top: 3px solid var(--reservoir-400);">
-      <div class="stat-card-label">OpenET Queries</div>
+      <div class="stat-card-label">OpenET queries</div>
       <div class="stat-card-value" style="color: var(--reservoir-400);">{{ openet_used }}</div>
       <div class="stat-card-unit">of {{ openet_limit }} monthly budget used</div>
     </div>
@@ -34,7 +34,7 @@
 
   <!-- Source Status -->
   <div>
-    <h2 class="content-section-label">Source Status</h2>
+    <h2 class="content-section-label">Source status</h2>
     {% if source_status_list %}
     <div class="health-grid">
       {% for info in source_status_list %}
@@ -76,7 +76,7 @@
 
   <!-- Active Stations -->
   <div>
-    <h2 class="content-section-label">Active Stations</h2>
+    <h2 class="content-section-label">Active stations</h2>
     {% if station_list %}
     <div class="station-card-grid">
       {% for item in station_list %}

@@ -38,19 +38,19 @@
                 {{ form.phone }}
                 {% if form.phone.errors %}<p class="text-sm text-furnace">{{ form.phone.errors|striptags }}</p>{% endif %}
             </div>
-            <button type="submit" class="btn-primary">Save Changes</button>
+            <button type="submit" class="btn-primary">Save changes</button>
         </form>
     </div>
 
     <div class="card-raised" style="margin-top: var(--space-lg);">
-        <h2 class="section-header">Sign-in &amp; Security</h2>
+        <h2 class="section-header">Sign-in &amp; security</h2>
         <p class="text-sm text-secondary mb-md">
             Your email address and password are managed on their own pages so
             sign-in stays consistent.
         </p>
         <div class="row-start" style="gap: var(--space-sm); flex-wrap: wrap;">
-            <a href="{% url 'account_email' %}" class="btn-secondary">Manage Email</a>
-            <a href="{% url 'account_change_password' %}" class="btn-secondary">Change Password</a>
+            <a href="{% url 'account_email' %}" class="btn-secondary">Manage email</a>
+            <a href="{% url 'account_change_password' %}" class="btn-secondary">Change password</a>
         </div>
     </div>
 

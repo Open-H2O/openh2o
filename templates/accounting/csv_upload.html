@@ -25,9 +25,9 @@
   <!-- Upload card -->
   <div class="card-raised">
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <h2 class="section-header-flush">Import Entries from CSV</h2>
+      <h2 class="section-header-flush">Import entries from CSV</h2>
       <a href="{% url 'accounting:csv_template' %}" class="btn-secondary btn-sm">
-        Download CSV Template
+        Download CSV template
       </a>
     </div>
 
@@ -43,7 +43,7 @@
 
       <!-- File input (styled control; the real widget is visually hidden) -->
       <div class="form-group">
-        <label class="form-label" for="{{ form.file.id_for_label }}">CSV File <span class="required-mark">*</span></label>
+        <label class="form-label" for="{{ form.file.id_for_label }}">CSV file <span class="required-mark">*</span></label>
         <div class="file-picker">
           <label class="btn-secondary file-picker-button">
             Choose file
@@ -58,7 +58,7 @@
 
       <!-- Reporting Period -->
       <div class="form-group">
-        <label class="form-label" for="{{ form.reporting_period.id_for_label }}">Reporting Period</label>
+        <label class="form-label" for="{{ form.reporting_period.id_for_label }}">Reporting period</label>
         {{ form.reporting_period }}
         {% if form.reporting_period.errors %}
         <div class="form-help text-furnace">{{ form.reporting_period.errors|join:", " }}</div>
@@ -76,7 +76,7 @@
 
       <!-- Submit -->
       <div class="row-start pt-sm">
-        <button type="submit" class="btn-primary">Upload &amp; Import</button>
+        <button type="submit" class="btn-primary">Upload &amp; import</button>
         <span id="upload-spinner" class="htmx-indicator text-tertiary text-sm">
           Processing...
         </span>

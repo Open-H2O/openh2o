@@ -44,11 +44,11 @@
   <div class="card-raised">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-md);">
       <div class="field-group mb-0">
-        <div class="field-label">Point of Diversion</div>
+        <div class="field-label">Point of diversion</div>
         <div class="field-value-sm">{{ block.pod_name }}{% if block.stream_name %} <span class="text-tertiary">({{ block.stream_name }})</span>{% endif %}</div>
       </div>
       <div class="field-group mb-0">
-        <div class="field-label">Water Right</div>
+        <div class="field-label">Water right</div>
         <div class="field-value-sm">
           {% if block.has_water_right %}{{ block.right_id }}{% else %}<span style="color: var(--color-error);">No linked water right</span>{% endif %}
         </div>
@@ -58,7 +58,7 @@
         <div class="field-value-sm">{{ block.holder_name|blank }}</div>
       </div>
       <div class="field-group mb-0">
-        <div class="field-label">Right Type</div>
+        <div class="field-label">Right type</div>
         <div class="field-value-sm">{{ block.right_type|blank }}</div>
       </div>
       <div class="field-group mb-0">

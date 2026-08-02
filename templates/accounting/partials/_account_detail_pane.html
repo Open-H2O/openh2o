@@ -51,11 +51,11 @@
 
       <div class="card-raised">
         <h2 class="section-header">
-          Account Information {% include "partials/_demo_marker.html" %}
+          Account information {% include "partials/_demo_marker.html" %}
         </h2>
 
         <div class="field-group">
-          <div class="field-label">Account Number</div>
+          <div class="field-label">Account number</div>
           <div class="field-value">{{ account.account_number }}</div>
         </div>
 
@@ -80,12 +80,12 @@
         </div>
 
         <div class="field-group">
-          <div class="field-label">Contact Name</div>
+          <div class="field-label">Contact name</div>
           <div class="field-value">{{ account.contact_name|blank }}</div>
         </div>
 
         <div class="field-group">
-          <div class="field-label">Contact Email</div>
+          <div class="field-label">Contact email</div>
           <div class="field-value">{{ account.contact_email|blank }}</div>
         </div>
 
@@ -110,7 +110,7 @@
       <!-- Balance card with period selector -->
       <div class="card-raised">
         <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header-flush">Account Balance</h2>
+          <h2 class="section-header-flush">Account balance</h2>
           <select name="period"
                   hx-get="{% url 'accounting:account_detail' account.pk %}"
                   hx-target="#balance-section"
@@ -130,7 +130,7 @@
 
       <!-- Use Area Assignment card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Assigned Use Areas</h2>
+        <h2 class="section-header mb-md">Assigned use areas</h2>
 
         <div id="parcel-assignments">
           {% include "accounting/partials/_parcel_assignment.html" %}
@@ -139,7 +139,7 @@
 
       <!-- Assign Use Area search card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Assign Use Area</h2>
+        <h2 class="section-header mb-md">Assign use area</h2>
 
         <div class="field-group">
           <input

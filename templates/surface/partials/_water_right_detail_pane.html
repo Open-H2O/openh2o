@@ -28,7 +28,7 @@
 
       <!-- Right Info card -->
       <div class="card-raised">
-        <h2 class="section-header">Right Information</h2>
+        <h2 class="section-header">Right information</h2>
 
         <div class="field-group">
           <div class="field-label">Right ID</div>
@@ -36,7 +36,7 @@
         </div>
 
         <div class="field-group">
-          <div class="field-label">Right Type</div>
+          <div class="field-label">Right type</div>
           <div class="field-value">{{ water_right.right_type|blank }}</div>
         </div>
 
@@ -47,7 +47,7 @@
 
         <div class="field-group">
           <div class="field-label field-row">
-            Priority Date
+            Priority date
             {% include "partials/_help_tooltip.html" with label="Priority Date" text="The date establishing seniority. Earlier dates have higher priority during shortages." %}
           </div>
           <div class="field-value">
@@ -57,7 +57,7 @@
 
         <div class="field-group">
           <div class="field-label field-row">
-            Face Value (AF)
+            Face value (AF)
             {% include "partials/_help_tooltip.html" with label="Face Value" text="The maximum amount of water authorized by the right, in acre-feet per year." %}
           </div>
           <div class="field-value">
@@ -98,7 +98,7 @@
 
       <!-- Points of Diversion card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Points of Diversion</h2>
+        <h2 class="section-header mb-md">Points of diversion</h2>
         {% if pods %}
           {% for pod in pods %}
           <div class="item-row">
@@ -123,7 +123,7 @@
       {% if active_curtailments %}
       <div class="card-raised">
         <h2 class="section-header mb-md" style="color: var(--color-accent);">
-          Active Curtailments Affecting This Right
+          Active curtailments affecting this right
           {% include "partials/_demo_marker.html" %}
         </h2>
         {% if site_config.demonstration_mode %}
@@ -155,7 +155,7 @@
 
       <!-- Recent Diversion Records card -->
       <div class="card-raised">
-        <h2 class="section-header mb-md">Recent Diversion Records</h2>
+        <h2 class="section-header mb-md">Recent diversion records</h2>
         {% if recent_diversions %}
         <table class="data-table text-sm">
           <thead>

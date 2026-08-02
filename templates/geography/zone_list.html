@@ -30,7 +30,7 @@
   on a full deployment; the boundary is always there, so the list never empties
   out.{% endcomment %}<p class="page-description">Management zones divide your district into areas{% if 'accounting' in enabled_modules %} with separate allocations{% endif %}. The map shows every zone boundary at once; pick a zone from the map or the list to open its {% module_nouns "geography:boundary" "parcels:assigned use areas" "accounting:allocation-vs-use" %}.</p>
   <div class="row-end" style="margin-top: var(--space-sm); gap: var(--space-sm);">
-    <a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add Zone</a>
+    <a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add zone</a>
   </div>
 </div>
 {% endblock %}

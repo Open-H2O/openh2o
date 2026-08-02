@@ -658,7 +658,7 @@ class TestAccountingPages:
         assert response.status_code == 200
         body = response.content.decode()
         # The pane is pre-rendered: account header + its interactive workflows.
-        assert "Account Balance" in body
+        assert "Account balance" in body
         assert 'id="parcel-assignments"' in body
         assert "Open full page" in body
 
@@ -672,7 +672,7 @@ class TestAccountingPages:
         )
         assert response.status_code == 200
         body = response.content.decode()
-        assert "Account Balance" in body
+        assert "Account balance" in body
         # Fragment, not a full document: no <html> shell from base.html.
         assert "<html" not in body.lower()
 

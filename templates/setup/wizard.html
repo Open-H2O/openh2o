@@ -54,12 +54,12 @@
   <!-- Select Existing Boundary -->
   {% if boundaries %}
   <div class="card-raised">
-    <h2 class="card-header-ruled">Select Existing Boundary</h2>
+    <h2 class="card-header-ruled">Select existing boundary</h2>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <input type="hidden" name="action" value="select">
       <div class="form-group">
-        <label class="form-label" for="boundary_id">District Boundary</label>
+        <label class="form-label" for="boundary_id">District boundary</label>
         <select name="boundary_id" id="boundary_id" class="form-select">
           <option value="">— Choose a boundary —</option>
           {% for b in boundaries %}
@@ -70,7 +70,7 @@
       </div>
       <div class="form-footer">
         <button type="submit" class="btn-primary" id="btn-select">
-          Use This Boundary →
+          Use this boundary →
         </button>
       </div>
     </form>
@@ -85,13 +85,13 @@
 
   <!-- Upload GeoJSON -->
   <div class="card-raised">
-    <h2 class="card-header-ruled">Upload GeoJSON Boundary</h2>
+    <h2 class="card-header-ruled">Upload GeoJSON boundary</h2>
     <form method="post" enctype="multipart/form-data" id="upload-form">
       {% csrf_token %}
       <input type="hidden" name="action" value="upload">
 
       <div class="form-group">
-        <label class="form-label" for="geojson_file">GeoJSON File</label>
+        <label class="form-label" for="geojson_file">GeoJSON file</label>
         <div
           class="upload-zone"
           id="upload-zone"
@@ -122,7 +122,7 @@
 
       <div class="form-footer">
         <button type="submit" class="btn-primary" id="btn-upload">
-          Upload &amp; Continue →
+          Upload &amp; continue →
         </button>
       </div>
     </form>
