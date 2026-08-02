@@ -1,3 +1,4 @@
+{% load humanize %}
 {% if period_auto_defaulted %}
 <p class="text-tertiary text-sm" style="margin: 0 0 var(--space-sm);">
   Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong> &mdash;
@@ -73,7 +74,7 @@
           </a>
         </td>
         <td class="td-num-bold {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">
-          {{ entry.amount_acre_feet|floatformat:2 }}
+          {{ entry.amount_acre_feet|floatformat:2|intcomma }}
         </td>
         <td>
           {% include "accounting/partials/_source_badge.html" with source_type=entry.source_type %}
@@ -110,11 +111,11 @@
           All {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
         </td>
         <td class="th-right td-num-bold {% if ledger_total_net >= 0 %}text-supply{% endif %}" style="white-space: nowrap;">
-          {{ ledger_total_net|floatformat:2 }}
+          {{ ledger_total_net|floatformat:2|intcomma }}
         </td>
         <td colspan="3" class="text-tertiary text-xs" style="white-space: nowrap;">
-          <span class="text-supply">+{{ ledger_total_credits|floatformat:2 }}</span> credits
-          &middot; {{ ledger_total_debits|floatformat:2 }} debits &middot; net AF
+          <span class="text-supply">+{{ ledger_total_credits|floatformat:2|intcomma }}</span> credits
+          &middot; {{ ledger_total_debits|floatformat:2|intcomma }} debits &middot; net AF
         </td>
       </tr>
     </tfoot>

@@ -1,3 +1,4 @@
+{% load humanize %}
 <!-- Count badge -->
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
@@ -30,7 +31,7 @@
           </a>
         </td>
         <td class="td-num">
-          {{ alloc.allocation_acre_feet|floatformat:2 }}
+          {{ alloc.allocation_acre_feet|floatformat:2|intcomma }}
         </td>
       </tr>
       {% endfor %}
@@ -46,7 +47,7 @@
           All {{ total_count }} allocation{{ total_count|pluralize }}
         </td>
         <td class="th-right td-num-bold" style="white-space: nowrap;">
-          {{ allocation_total|floatformat:2 }} AF
+          {{ allocation_total|floatformat:2|intcomma }} AF
         </td>
       </tr>
     </tfoot>

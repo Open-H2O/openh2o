@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Overview - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Overview{% endblock %}
+{% block title %}Dashboard — OpenH2O, the open water accounting platform{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Dashboard</span>
   </nav>
-  <p class="page-description">Summary of your district's water data for the selected period — recorded supplies and uses by account and zone, with satellite ET shown as one estimated input.</p>
+  <p class="page-description">Summary of your district's water data for the selected period — recorded supplies and uses by account and zone, with satellite-estimated crop water use (evapotranspiration, or ET) shown as one estimated input.</p>
 </div>
 {% endblock %}
 
@@ -50,7 +50,7 @@
     <div class="onboarding-steps">
       <div class="onboarding-step">
         <span class="step-badge step-badge-active">1</span>
-        <span class="text-sm"><a href="{% url 'accounting:period_create' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Create a reporting period</a> (e.g., Water Year 2024-2025)</span>
+        <span class="text-sm"><a href="{% url 'accounting:period_create' %}" class="link-accent">Create a reporting period</a> (e.g., Water Year 2024-2025)</span>
       </div>
       <div class="onboarding-step">
         <span class="step-badge">2</span>

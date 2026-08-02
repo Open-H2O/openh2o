@@ -1,8 +1,10 @@
 {% extends "base_auth.html" %}
-{% block title %}Create Account — Open Water{% endblock %}
+{% block title %}Create account — OpenH2O{% endblock %}
 {% block content %}
 <div class="card-raised w-full" style="max-width: 420px;">
-    <h1 class="text-xl font-extrabold mb-sm text-gold">Create Account</h1>
+    {# Accent contract: gold is for the primary CTA button only — page headings
+   carry the teal identity accent, matching the login page. #}
+<h1 class="text-xl font-extrabold mb-sm" style="color: var(--color-accent);">Create account</h1>
     <p class="text-sm mb-lg text-secondary">Set up your water-data access.</p>
     {% if form.errors %}
     <div class="form-error-box">
@@ -30,7 +32,7 @@
             <label class="block text-sm mb-xs text-secondary">Confirm Password</label>
             <input type="password" name="password2" required class="form-input">
         </div>
-        <button type="submit" class="btn-primary w-full mb-md">Create Account</button>
+        <button type="submit" class="btn-primary w-full mb-md">Create account</button>
     </form>
     <p class="text-sm text-center text-secondary">
         Already have an account? <a href="{% url 'account_login' %}" class="link-accent">Log in</a>

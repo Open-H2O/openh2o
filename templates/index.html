@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% load prose %}
 
-{% block title %}Dashboard - Open Water Accounting Platform{% endblock %}
+{% block title %}Home — OpenH2O, the open water accounting platform{% endblock %}
 
-{% block page_title %}Dashboard{% endblock %}
+{% block page_title %}Home{% endblock %}
 
 {% block content %}
 {% comment %}Phase 89-02: the second sentence is a promise about the page it
@@ -13,7 +13,7 @@ which carries no count and links nowhere. Promising counts and management pages
 over a page that has neither is the ISS-082 class in its quietest form: no
 forbidden noun appears, so no word list can see it. This is the PUBLIC landing
 page, which is the half of `/` the harness could not read at all before
-88-01.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">Overview of your water data.{% if has_entity_cards %} Cards show entity counts and link to their management pages.{% endif %}</p>
+88-01.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">Overview of your water data.{% if has_entity_cards %} Each card counts one kind of record and links to where you manage it.{% endif %}</p>
 
 {% comment %}Phase 89: the section heading is gated on its whole membership, not
 just on one card. Guarding only the Use Areas link would leave "Water Data"
@@ -23,7 +23,7 @@ that line's newline, and the milestone's deliverable is a byte-identical full
 render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules %}<h2 class="content-section-label">Water Data</h2>
 <div class="dashboard-grid">
     {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Use Areas</div>
+        <div class="dashboard-card-label">Use areas</div>
         <div class="dashboard-card-value">{{ parcel_count }}</div>
         <div class="dashboard-card-sublabel">View all use areas</div>
     </a>{% endif %}
@@ -34,14 +34,14 @@ render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_
     </a>{% endif %}
     {% if 'surface' in enabled_modules %}
     <a href="{% url 'surface:pod_list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Surface Diversions</div>
+        <div class="dashboard-card-label">Surface diversions</div>
         <div class="dashboard-card-value">{{ diversion_count }}</div>
         <div class="dashboard-card-sublabel">View surface diversions</div>
     </a>
     {% endif %}
     {% if 'recharge' in enabled_modules %}
     <a href="{% url 'recharge:list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Recharge Sites</div>
+        <div class="dashboard-card-label">Recharge sites</div>
         <div class="dashboard-card-value">{{ recharge_site_count }}</div>
         <div class="dashboard-card-sublabel">View recharge sites</div>
     </a>
@@ -52,18 +52,18 @@ render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_
 modules a deployment can switch off, so the heading goes with them.{% endcomment %}{% if 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label" style="margin-top: var(--space-xl);">Accounting &amp; Monitoring</h2>
 <div class="dashboard-grid">
     {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:accounts_list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Water Accounts</div>
+        <div class="dashboard-card-label">Water accounts</div>
         <div class="dashboard-card-value">{{ water_account_count }}</div>
         <div class="dashboard-card-sublabel">View accounts</div>
     </a>{% endif %}
     {% if 'datasync' in enabled_modules %}<a href="{% url 'datasync:station_list' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Monitoring Stations</div>
+        <div class="dashboard-card-label">Monitoring stations</div>
         <div class="dashboard-card-value">{{ station_count }}</div>
         <div class="dashboard-card-sublabel">View stations</div>
     </a>{% endif %}
     {% if 'accounting' in enabled_modules and request.user.is_staff %}
     <a href="{% url 'accounting:methodology_settings' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Methodology Settings</div>
+        <div class="dashboard-card-label">Methodology settings</div>
         <div class="dashboard-card-value">&#9881;</div>
         <div class="dashboard-card-sublabel">Configure how usage is derived from your data sources</div>
     </a>
@@ -73,9 +73,9 @@ modules a deployment can switch off, so the heading goes with them.{% endcomment
 <h2 class="content-section-label" style="margin-top: var(--space-xl);">System</h2>
 <div class="dashboard-grid">
     <div class="dashboard-card dashboard-card-wide">
-        <div class="dashboard-card-label">System Status</div>
+        <div class="dashboard-card-label">System status</div>
         <div class="flex items-center gap-2 mt-sm">
-            <span class="inline-block w-2 h-2 rounded-full" style="background: var(--color-accent);"></span>
+            <span class="inline-block w-2 h-2 rounded-full" style="background: var(--color-supply);"></span>
             <span class="text-sm" style="color: var(--color-text-secondary);">
                 System running
             </span>

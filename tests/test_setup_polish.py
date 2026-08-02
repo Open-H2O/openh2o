@@ -114,7 +114,7 @@ def test_cta_is_a_banner_not_a_wall(db):
     assert resp.status_code == 200
     body = resp.content.decode()
     assert "Start here" in body            # CTA shows (no boundary yet)
-    assert "Active Water Accounts" in body  # but the dashboard renders too
+    assert "Active water accounts" in body  # but the dashboard renders too
 
 
 @override_settings(ACCESS_CONTROL_ENFORCED=True)

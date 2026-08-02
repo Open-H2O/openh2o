@@ -36,7 +36,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
             </span>
             <span class="home-task-body">
-                <span class="home-task-label">Log Water Use</span>
+                <span class="home-task-label">Log water use</span>
                 <span class="home-task-sublabel">Record a new measurement or ledger entry</span>
             </span>
         </a>
@@ -45,7 +45,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </span>
             <span class="home-task-body">
-                <span class="home-task-label">Water Balance</span>
+                <span class="home-task-label">Water balance</span>
                 <span class="home-task-sublabel">See supplies against uses by account and zone</span>
             </span>
         </a>{% endif %}
@@ -55,7 +55,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </span>
             <span class="home-task-body">
-                <span class="home-task-label">Run a Report</span>
+                <span class="home-task-label">Run a report</span>
                 {% comment %}
                   A fourth ISS-082 site, found by measuring the surface-less
                   render rather than by reading the plan's list — this card
@@ -75,7 +75,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
             </span>
             <span class="home-task-body">
-                <span class="home-task-label">Explore the Map</span>
+                <span class="home-task-label">Explore the map</span>
                 {% comment %}
                   Module-neutral on purpose (ISS-082). This used to enumerate
                   "every well, parcel, and diversion", which is a promise a
@@ -95,7 +95,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </span>
             <span class="home-task-body">
-                <span class="home-task-label">Set Up &amp; Import Data</span>
+                <span class="home-task-label">Set up &amp; import data</span>
                 <span class="home-task-sublabel">Boundaries, zones, and bringing your data in</span>
             </span>
         </a>
@@ -105,7 +105,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </span>
             <span class="home-task-body">
-                <span class="home-task-label">Get Help</span>
+                <span class="home-task-label">Get help</span>
                 {% comment %}Phase 89-03: "methods" names the Methods explainer,
                 which 89-02 HIDES (404) wherever the deployment does not run
                 every domain it explains. Naming it unconditionally promises a
@@ -125,7 +125,7 @@
     <div class="home-stat-bar">
         {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:list' %}" class="home-stat">
             <span class="home-stat-value">{{ parcel_count }}</span>
-            <span class="home-stat-label">Use Areas</span>
+            <span class="home-stat-label">Use areas</span>
         </a>{% endif %}
         {% if 'wells' in enabled_modules %}<a href="{% url 'wells:list' %}" class="home-stat">
             <span class="home-stat-value">{{ well_count }}</span>
@@ -134,18 +134,18 @@
         {% if 'surface' in enabled_modules %}
         <a href="{% url 'surface:pod_list' %}" class="home-stat">
             <span class="home-stat-value">{{ diversion_count }}</span>
-            <span class="home-stat-label">Surface Diversions</span>
+            <span class="home-stat-label">Surface diversions</span>
         </a>
         {% endif %}
         {% if 'recharge' in enabled_modules %}
         <a href="{% url 'recharge:list' %}" class="home-stat">
             <span class="home-stat-value">{{ recharge_site_count }}</span>
-            <span class="home-stat-label">Recharge Sites</span>
+            <span class="home-stat-label">Recharge sites</span>
         </a>
         {% endif %}
         {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:accounts_list' %}" class="home-stat">
             <span class="home-stat-value">{{ water_account_count }}</span>
-            <span class="home-stat-label">Water Accounts</span>
+            <span class="home-stat-label">Water accounts</span>
         </a>{% endif %}
         {# Monitoring Stations intentionally omitted here — the hero already #}
         {# reports live station health ("37 of 42 reporting"); a raw total below it just confused the two. #}

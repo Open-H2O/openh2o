@@ -1,3 +1,4 @@
+{% load humanize %}
 {% url 'water_balances' as wb_help_url %}
 <!-- Balance as the house budget-panel: supplies − consumptive use = balance,
      the same equation skin as the dashboard, with the supply breakdown in the
@@ -7,23 +8,23 @@
   <div class="budget-panel-row">
     <div class="budget-seg">
       <div class="budget-seg-label">Supplies</div>
-      <div class="budget-seg-value text-supply">{{ balance.supply_total|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+      <div class="budget-seg-value text-supply">{{ balance.supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
     </div>
     <div class="budget-op">&minus;</div>
     <div class="budget-seg">
       <div class="budget-seg-label">Consumptive use</div>
-      <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+      <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
     </div>
     <div class="budget-op">&equals;</div>
     <div class="budget-seg">
       <div class="budget-seg-label" style="display: flex; align-items: center; justify-content: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use is the water the crops actually drank (estimated ET). Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
-      <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2 }}<span class="budget-seg-unit">AF</span></div>
+      <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
     </div>
   </div>
   <div class="budget-panel-foot">
-    <span>Surface <b>{{ balance.supplies.surface|floatformat:2 }}</b></span>
-    <span>Groundwater <b>{{ balance.supplies.groundwater|floatformat:2 }}</b></span>
-    <span>Rain <b>{{ balance.supplies.precip|floatformat:2 }}</b></span>
+    <span>Surface <b>{{ balance.supplies.surface|floatformat:2|intcomma }}</b></span>
+    <span>Groundwater <b>{{ balance.supplies.groundwater|floatformat:2|intcomma }}</b></span>
+    <span>Rain <b>{{ balance.supplies.precip|floatformat:2|intcomma }}</b></span>
   </div>
 </div>
 
@@ -52,22 +53,22 @@
         </a>
       </td>
       <td class="td-num text-usage">
-        {{ pb.consumptive_use_gross|floatformat:2 }}
+        {{ pb.consumptive_use_gross|floatformat:2|intcomma }}
       </td>
       <td class="td-num text-supply">
-        {{ pb.surface|floatformat:2 }}
+        {{ pb.surface|floatformat:2|intcomma }}
       </td>
       <td class="td-num text-supply">
-        {{ pb.groundwater|floatformat:2 }}
+        {{ pb.groundwater|floatformat:2|intcomma }}
       </td>
       <td class="td-num text-supply">
-        {{ pb.precip|floatformat:2 }}
+        {{ pb.precip|floatformat:2|intcomma }}
       </td>
       <td class="td-num-bold text-supply">
-        {{ pb.supply_total|floatformat:2 }}
+        {{ pb.supply_total|floatformat:2|intcomma }}
       </td>
       <td class="td-num-bold {% if pb.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-        {{ pb.net_vs_supply|floatformat:2 }}
+        {{ pb.net_vs_supply|floatformat:2|intcomma }}
       </td>
     </tr>
     {% endfor %}

@@ -4,7 +4,7 @@
 <div class="empty-state">
   <p class="empty-state-text text-secondary">No reporting periods found. Create your first period to see your data.</p>
   <a href="{% url 'accounting:period_create' %}" class="btn-primary">
-    + Create Reporting Period
+    + Create a reporting period
   </a>
 </div>
 {% else %}
@@ -83,11 +83,11 @@
     it does not mean nothing was consumed.
     {% if not has_calculation_plan %}
     Start by setting up a calculation method on the
-    <a href="{% url 'accounting:methodology_settings' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Methodology</a>
+    <a href="{% url 'accounting:methodology_settings' %}" class="link-accent">Methodology</a>
     page, then run the calculation engine.
     {% else %}
     A calculation method is set up on the
-    <a href="{% url 'accounting:methodology_settings' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Methodology</a>
+    <a href="{% url 'accounting:methodology_settings' %}" class="link-accent">Methodology</a>
     page; the engine has not been run against it yet.
     {% endif %}
   </p>
@@ -98,7 +98,7 @@
 <!-- Info banner: no allocations for this period -->
 <div class="card-raised" style="border-left: 3px solid var(--color-accent); padding: var(--space-md);">
   <p class="text-secondary text-sm" style="margin: 0;">
-    No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="text-gold" style="text-decoration: none; font-weight: 600;">Create an allocation</a> to enable allocation tracking.
+    No allocations set for this period. <a href="{% url 'accounting:allocation_create' %}" class="link-accent">Create an allocation</a> to enable allocation tracking.
   </p>
 </div>
 {% endif %}
@@ -106,7 +106,7 @@
 <h2 class="content-section-label" id="active-accounts">Account Details</h2>
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-    <h2 class="section-header-flush">Active Water Accounts</h2>
+    <h2 class="section-header-flush">Active water accounts</h2>
     <span class="text-tertiary text-xs">Active accounts only — each groups parcels under one water user; zone totals below cover all parcels</span>
   </div>
   {% if account_summaries %}
@@ -180,7 +180,7 @@
   </div>
   {% else %}
   <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
-  <a href="{% url 'accounting:account_create' %}" class="text-gold text-sm font-semibold" style="text-decoration: none;">+ Create a water account</a>
+  <a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ Create a water account</a>
   {% endif %}
 </div>
 
