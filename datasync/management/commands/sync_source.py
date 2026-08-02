@@ -137,13 +137,25 @@ class Command(BaseCommand):
             )
             return
 
-        # Parse dates
-        end_date = date.today()
-        start_date = end_date - timedelta(days=default_window_days(code))
+        # Resolve the END first, then measure the window back from it.
+        #
+        # The order is the whole point. This used to compute start_date from
+        # date.today() and only afterwards let --end move the far edge, so
+        # `--end 2026-08-01` on 2026-08-02 asked for 2025-12-05 → 2026-08-01:
+        # a window one day short of the one the source needs, silently, and
+        # drifting further the older the requested --end. The window must be
+        # measured from the end the caller actually asked for.
+        #
+        # It hid because it is invisible on the day you run it — start and end
+        # agree when --end IS today — and cron never passes --end at all.
+        # tests/test_sync_window.py caught it by failing overnight on 2026-08-02
+        # having passed on 2026-08-01, which is exactly the shape of a
+        # date-dependent bug: green until the calendar turns over.
+        end_date = date.fromisoformat(options["end"]) if options["end"] else date.today()
         if options["start"]:
             start_date = date.fromisoformat(options["start"])
-        if options["end"]:
-            end_date = date.fromisoformat(options["end"])
+        else:
+            start_date = end_date - timedelta(days=default_window_days(code))
 
         stations = MonitoredStation.objects.filter(
             data_source=data_source, is_active=True
