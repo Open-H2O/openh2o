@@ -154,13 +154,15 @@ water right types, data source definitions, and report templates):
 docker compose exec web python manage.py seed_data
 ```
 
-This runs all six seed commands in order:
+This runs the seed commands in order (module-gated — a command whose module is
+switched off is skipped):
 - `seed_roles` (admin, manager, viewer)
 - `seed_water_types` (Groundwater, Surface Water, Recycled Water, etc.)
 - `seed_water_right_types` (Appropriative, Pre-1914, Riparian, etc.)
 - `seed_well_types` (Agricultural, Municipal, Monitoring, etc.)
 - `seed_data_sources` (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR, NOAA)
 - `seed_report_templates` (GEARS CSV, CalWATRS CSV)
+- `seed_drinking` (federal MCL reference limits for the drinking-water module)
 
 To run any seed command individually:
 
@@ -262,7 +264,7 @@ The jobs in `crontab.txt`:
 | Job | Schedule | Purpose |
 |-----|----------|---------|
 | `run-sync.sh cdec usgs` | Hourly | Live stream / reservoir telemetry (near-real-time flow & stage) |
-| `run-sync.sh cimis cnrfc dwr_wdl dwr_sgma noaa openet` | Daily 2:00 AM | Slower sources — ET, groundwater, river forecasts, climate |
+| `run-sync.sh dwr_wdl dwr_sgma noaa` | Daily 2:00 AM | Slower sources — groundwater, climate (cimis/cnrfc/openet ship deactivated; add them here if you enable those sources) |
 | `run_health_checks` | Every 6 hours | Check database, disk, SSL, migrations, sync freshness |
 | `prune_old_data --confirm` | 1st of month 3:00 AM | Delete old staging records and sync logs |
 

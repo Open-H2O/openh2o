@@ -6,7 +6,7 @@
 
 **A production-ready water-data management platform that a California water agency can stand up on a $15/month server — with an AI agent doing the deployment.**
 
-OpenH2O helps a water agency manage its own water data — the measurements, deliveries, wells, diversions, and recharge that make up an agency's records — so the agency owns and understands its own basin. Satellite evapotranspiration (ET) is one of those data feeds, not the centerpiece. For agencies that also file with the state, it can prepare the reports (GEARS and CalWATRS), but reporting is an optional add-on, not the reason the platform exists. It is built on a fully open stack so that any agency — or any engineering firm working on their behalf — can run it, read it, and improve it.
+OpenH2O helps a water agency manage its own water data — the measurements, deliveries, wells, diversions, recharge, and drinking-water quality records that make up an agency's files — so the agency owns and understands its own basin. Satellite evapotranspiration (ET) is one of those data feeds, not the centerpiece. For agencies that also file with the state, it can prepare the reports (GEARS and CalWATRS), but reporting is an optional add-on, not the reason the platform exists. It is built on a fully open stack so that any agency — or any engineering firm working on their behalf — can run it, read it, and improve it.
 
 > **Live demo:** [openh2o.com](https://openh2o.com) · **License:** [AGPL-3.0-or-later](#license) · **Deploy guide:** [DEPLOY.md](DEPLOY.md) · **Deploy it with an AI:** [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md)
 
@@ -50,9 +50,10 @@ docker compose up -d --build         # start db + web + caddy
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data      # reference data
 docker compose exec web python manage.py seed_merced    # the Merced Subbasin demonstration
+docker compose exec web python manage.py createsuperuser   # your login for the trial
 ```
 
-Open `http://localhost`. You'll land on the **Merced Subbasin** demonstration — a real California basin, the same one running at [openh2o.com](https://openh2o.com). The seed pulls live hydrography and monitoring stations from public APIs (a few-minute fetch, no key required); add an OpenET key later for real satellite-ET figures, otherwise the demo uses representative values. Run `make help` for all shortcuts. For a real deployment with HTTPS, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
+Open `http://localhost` and log in with the superuser you just created — most pages sit behind a login, and self-signup is closed by default on a fresh install (that's the `ACCESS_CONTROL_ENFORCED` setting; the public demo at openh2o.com runs with it off). You'll land on the **Merced Subbasin** demonstration — a real California basin, the same one running at [openh2o.com](https://openh2o.com). The seed pulls live hydrography and monitoring stations from public APIs (a few-minute fetch, no key required); add an OpenET key later for real satellite-ET figures, otherwise the demo uses representative values. Run `make help` for all shortcuts. For a real deployment with HTTPS, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
 
 ---
 
@@ -74,7 +75,8 @@ The deployment is the first thing the agent does, not the only thing. [docs/AI-O
 - **A water-data ledger** that records supply, usage, and allocations by water type and zone, so every entry is traceable.
 - **Surface-water rights** with points of diversion and diversion records, including curtailment.
 - **Managed aquifer recharge** site and event tracking.
-- **External data sync** from seven public sources — USGS, CDEC, DWR (Water Data Library and SGMA portal), CIMIS, NOAA, CNRFC — plus OpenET satellite evapotranspiration, all crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)).
+- **Drinking-water quality** — water systems, facilities, and sampling points keyed to their EPA PWSID, a lab-results importer for California DDW exports, and a PWSID-driven onboarding wizard that prefills a system from public records. Quality and quantity live side by side in one instance.
+- **External data sync** from public sources — USGS, CDEC, DWR (Water Data Library and SGMA portal), and NOAA active out of the box; CIMIS, CNRFC, and OpenET satellite evapotranspiration ship ready to enable (CIMIS and OpenET need a free API key). Everything is crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)).
 - **State report preparation** — GEARS (by-well and by-ET) and CalWATRS (direct-use and to-storage) as ready-to-file CSV.
 - **Standards-based publishing** — the data model is built to publish out as OGC SensorThings, Frictionless Data Packages, and WaDE 2.0 (see below).
 - **Health monitoring** dashboard with source-aware freshness, plus interactive dark-mode maps via MapLibre GL JS.
@@ -124,8 +126,10 @@ openh2o/
   accounting/    Water accounts, allocations, reporting periods
   surface/       Surface-water rights, points of diversion, diversions
   recharge/      Managed aquifer recharge sites and events
+  drinking/      Drinking-water systems, facilities, sampling points, lab results
   infrastructure/ Unified CRUD for wells, PODs, recharge sites
   datasync/      External data adapters (7 sources + OpenET)
+  setup/         First-run setup wizard (watershed, sources, imports)
   reporting/     GEARS and CalWATRS report generators
   standards/     Canonical vocabulary, crosswalk, conformance gate
   health/        System health checks and data pruning

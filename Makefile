@@ -81,7 +81,7 @@ export OPENH2O_NTFY_URL
 # live database it had just restored — a closed loop, and the mechanism that let
 # production's demonstration content drift out of reach of the repository for
 # eight weeks. The repository is the source of truth now.
-deploy: ## Ship origin/main (or REF=<ref>) to THIS checkout: rebuild the demo from the repository, gate it, promote it, THEN ship the code
+deploy: ## DEMO-HOST ONLY — resets code to origin/main and RESTORES THE DEMO SNAPSHOT OVER THE LIVE DATABASE. An agency running real data upgrades via DEPLOY.md §11, never this target
 	git fetch origin
 	git reset --hard $(REF)
 	@echo ""

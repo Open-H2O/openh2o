@@ -7,13 +7,16 @@ Inherits the VanderDev design token system. Dark mode only, OKLCH color ramps.
 ## Colors
 
 ### Surfaces
-The surfaces are OKLCH (a slightly blue-grey 260 hue), not flat hex — they read
-as a tonal stack rather than near-black. Values from `static/css/tokens.css`:
-- Base: #040608 (page background)
-- Card: oklch(0.17 0.012 260) — ~#1a1e27 (card/panel backgrounds)
-- Inset: oklch(0.12 0.010 260) — ~#12151b (recessed areas)
-- Elevated: oklch(0.21 0.012 260) — ~#242a33 (raised elements, dropdowns)
-- Hover: oklch(0.24 0.012 260) — ~#2c333d (hover states)
+The Deep Water elevation ladder — values match vadosehq.com's brand tokens
+exactly, with inset/hover steps derived for app use. Authoritative values live
+in `static/css/tokens.css`; this list mirrors them:
+- Base: #090E14 (page ground)
+- Nav: #0B121B (sidebar ground, one step below base)
+- Tile: #111A24 (low-lift tiles, nav active)
+- Card: #141E2A (panels and cards)
+- Inset: #0E1620 (recessed: fields, wells for content)
+- Elevated: #1A2633 (raised chips, hover-lit surfaces)
+- Hover: #22303F (topmost interactive lift)
 
 ### Accent
 
@@ -29,9 +32,9 @@ distinct job — authoritative values live in `static/css/tokens.css`:
   (hover `#EAB25E`, muted `rgba(224,164,70,0.10)`). Reserved for "gold acts" —
   primary call-to-action buttons and the single figure a page produces
   (`.result-card`). Do **not** use gold as a general-purpose emphasis or callout
-  color; that is the mistake that makes a page look off-brand. (Note: some older
-  components such as `.callout-rule` still hardcode the pre-Deep-Water gold
-  `#E4A317` — treat that as legacy, not as the pattern to copy.)
+  color; that is the mistake that makes a page look off-brand. (The pre-Deep-Water
+  gold `#E4A317` that older rules hardcoded was migrated to `var(--color-gold)`
+  color-mixes in 2026-08; if you see a raw gold hex in a diff, it is a regression.)
 - **Pacific Blue — data affordances.** `--color-blue: #1B7FAF` (bright
   `#3DB4E0`). Parcels, map elements, and links that point out to water data.
 
@@ -42,13 +45,14 @@ colored left-stripe. A colored stripe or filled accent box around a lone
 paragraph reads as a generic AI callout, not this design system.
 
 ### Text
-- Primary: #e8edf4 (body text, headings)
-- Secondary: #8899aa (labels, descriptions, metadata)
-- Tertiary: #4d5e6f (subtle text, placeholders)
+- Primary: #E7EEF2 (body text, headings)
+- Secondary: #8FA3AE (labels, descriptions, metadata)
+- Tertiary: #7E93A4 (subtle text, placeholders — dimmest ink that still clears WCAG AA on the worst surface)
 
 ### Borders
-- Default: rgba(100, 140, 180, 0.07)
-- Hover: rgba(100, 140, 180, 0.13)
+- Default: rgba(255, 255, 255, 0.07) (hairline)
+- Hover: rgba(255, 255, 255, 0.13)
+- Interactive controls: rgba(125, 165, 205, 0.6) (a ≥3:1 perceivable boundary)
 
 ### Data Visualization
 Three OKLCH tonal ramps (8 stops each, 100-800):
@@ -58,8 +62,8 @@ Three OKLCH tonal ramps (8 stops each, 100-800):
 
 ## Typography
 
-- Display: Public Sans (system-like, government identity)
-- Monospace: JetBrains Mono (data tables, code, IDs)
+- One typeface: Public Sans sitewide (system-like, government identity);
+  numeric columns use `tabular-nums`, not a separate monospace face
 - Body line length: 65-75ch max
 
 ## Elevation

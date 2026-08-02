@@ -22,5 +22,7 @@ unsafe, that is in scope and we want to hear about it.
 
 ## Supported versions
 
-This is a young project; security fixes land on `main`. Run a recent `main`, or
-the latest tag, to stay current.
+This is a young project; security fixes land on `main`, and `main` is what the
+live demo at openh2o.com runs (a clean-install check gates every push). Run a
+recent `main` to stay current — tags mark milestones, not security baselines,
+and may lag `main` by several weeks.
