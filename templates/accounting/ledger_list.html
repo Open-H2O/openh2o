@@ -45,19 +45,19 @@
     </p>
   </div>
 
-  <!-- Filters form (single source of truth: every control submits the whole
+  {% comment %} Filters form (single source of truth: every control submits the whole
        filter+sort+paging state via hx-include="#ledger-filters", so adding a
        facet never means editing every other control's include list). The form
        pins on scroll (.ledger-filters-sticky); onsubmit is neutralized so an
-       Enter keypress fires the HTMX refresh, not a full-page GET reload. -->
+       Enter keypress fires the HTMX refresh, not a full-page GET reload. {% endcomment %}
   <form id="ledger-filters" class="ledger-filters-sticky" onsubmit="return false;">
     <div class="card-raised">
-      <!-- Preset filter chips — one-click shortcuts for the two filters an
+      {% comment %} Preset filter chips — one-click shortcuts for the two filters an
            infrequent user reaches for most (USWDS recognition-over-recall). Each
            chip just drives an existing control: "This Period" sets the period
            select and fires its change; "Active Use Areas" toggles a hidden input
            that carries its own HTMX trigger. Both ride the whole filter/sort/
-           paging state via hx-include and keep the URL shareable. -->
+           paging state via hx-include and keep the URL shareable. {% endcomment %}
       <div class="filter-chip-row">
         <span class="filter-chip-label">Quick filters</span>
         <button type="button" id="chip-this-period"
@@ -72,8 +72,8 @@
           Active Use Areas
         </button>
       </div>
-      <!-- Hidden carrier for the Active-Use-Areas toggle; the chip flips its
-           value and dispatches change, which fires this element's HTMX GET. -->
+      {% comment %} Hidden carrier for the Active-Use-Areas toggle; the chip flips its
+           value and dispatches change, which fires this element's HTMX GET. {% endcomment %}
       <input type="hidden" name="active_areas" id="filter-active-areas"
              value="{{ active_areas }}"
              hx-get="{% url 'accounting:ledger_list' %}"
@@ -203,8 +203,8 @@
         </div>
       </div>
 
-      <!-- Results controls: page size + jump-to-page (form-scoped, so they
-           ride along on every filter/sort change and persist) -->
+      {% comment %} Results controls: page size + jump-to-page (form-scoped, so they
+           ride along on every filter/sort change and persist) {% endcomment %}
       <div class="toolbar-row pt-md" style="align-items: flex-end;">
         <div style="min-width: 140px;">
           <label class="form-label" for="filter-page-size">Rows per page</label>

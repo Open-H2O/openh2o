@@ -61,8 +61,8 @@
         {% endif %}
       </div>
 
-      <!-- Water Journey card (Phase 67-03) — only when this POD is part of a
-           re-diversion chain, so ordinary diversion points are unaffected. -->
+      {% comment %} Water Journey card (Phase 67-03) — only when this POD is part of a
+           re-diversion chain, so ordinary diversion points are unaffected. {% endcomment %}
       {% if rediverted_from or rediversions %}
       <div class="card-raised">
         <h2 class="section-header mb-md">Water Journey</h2>

@@ -80,7 +80,7 @@
           <span class="text-tertiary text-xs">--</span>
           {% endif %}
         </td>
-        <!-- ISS-109. The control to switch a station on was NOT missing — it
+        {% comment %} ISS-109. The control to switch a station on was NOT missing — it
              has always been on the station detail page, posting to
              datasync:station_toggle. What was missing was any way to reach it:
              this list defaults to syncing-only, so a dormant discovered station
@@ -88,7 +88,7 @@
              separate page visits. Filter to "Not syncing" and they are all here
              with a switch each. Same partial, same endpoint, no new view.
              onclick:stopPropagation keeps the row's navigate-on-click from
-             firing when the operator means to hit the switch. -->
+             firing when the operator means to hit the switch. {% endcomment %}
         <td onclick="event.stopPropagation();" style="cursor: default;">
           {% include "datasync/partials/_station_toggle.html" with station=item.station %}
         </td>

@@ -34,15 +34,15 @@
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
 
-  <!-- Recharge-site map (overview): every site at once. Basins draw as polygons,
+  {% comment %} Recharge-site map (overview): every site at once. Basins draw as polygons,
        single-point sites as markers. Clicking a feature opens its detail page;
-       the list below is the type-to-find path to the same. -->
+       the list below is the type-to-find path to the same. {% endcomment %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     <div id="recharge-overview-map" style="height: 380px; width: 100%;"></div>
   </div>
 
-  <!-- Toolbar: search + type filter. Recharge sites are bounded and few, so the
-       whole list is on one page and search is a live filter, not paging. -->
+  {% comment %} Toolbar: search + type filter. Recharge sites are bounded and few, so the
+       whole list is on one page and search is a live filter, not paging. {% endcomment %}
   <div class="card-raised toolbar-row">
     <div style="flex: 1; min-width: 200px;">
       <label class="form-label" for="filter-search">Search</label>

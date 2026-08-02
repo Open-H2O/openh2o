@@ -40,8 +40,8 @@
     </div>
   </section>
 
-  <!-- Detail pane: persistent map (built once, re-pointed per switch) + a body
-       that swaps in place on row click. -->
+  {% comment %} Detail pane: persistent map (built once, re-pointed per switch) + a body
+       that swaps in place on row click. {% endcomment %}
   <section class="detail-pane">
     <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; margin-bottom: var(--space-md); display: none;">
       <div id="detail-map" class="map-embed" style="height: 320px; position: relative; overflow: hidden; background: var(--color-base);"></div>
@@ -55,8 +55,8 @@
 {% endblock %}
 
 {% block map_scripts %}
-<!-- Loaded once for the whole workspace so every swapped-in detail body has the
-     map toolkit ready (each pane's guarded init waits for these). -->
+{% comment %} Loaded once for the whole workspace so every swapped-in detail body has the
+     map toolkit ready (each pane's guarded init waits for these). {% endcomment %}
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="{% static 'js/map-core.js' %}"></script>
 {% endblock %}

@@ -85,8 +85,8 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    <!-- Accessibility: the first focusable element jumps a keyboard / screen-reader
-         user straight past the sidebar and header to the page body (E3). -->
+    {% comment %} Accessibility: the first focusable element jumps a keyboard / screen-reader
+         user straight past the sidebar and header to the page body (E3). {% endcomment %}
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
     <div id="toast-container" class="toast-container"></div>

@@ -32,14 +32,14 @@
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
 
-  <!-- Network freshness map (overview): all stations, colored by recency. The
-       legend lives inside the map; clicking a point opens that station. -->
+  {% comment %} Network freshness map (overview): all stations, colored by recency. The
+       legend lives inside the map; clicking a point opens that station. {% endcomment %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     <div id="stations-overview-map" style="height: 380px; width: 100%;"></div>
   </div>
 
-  <!-- Toolbar: search + filters. With <=50 stations the whole list is on one
-       page, so search is a live filter rather than a way to escape pagination. -->
+  {% comment %} Toolbar: search + filters. With <=50 stations the whole list is on one
+       page, so search is a live filter rather than a way to escape pagination. {% endcomment %}
   <div class="card-raised toolbar-row">
     <div style="flex: 1; min-width: 200px;">
       <label class="form-label" for="filter-search">Search</label>
@@ -72,14 +72,14 @@
         {% endfor %}
       </select>
     </div>
-    <!-- Two filters, two axes, and deliberately NO word in common (ISS-108).
+    {% comment %} Two filters, two axes, and deliberately NO word in common (ISS-108).
          This one is about wiring: do we pull from the station at all. It used
          to be labelled "Status / Active / Inactive", which read as the opposite
          of the "Dormant" dots in the rows below it — and those dots are the
          other axis entirely. Brent, at the 104-02 checkpoint: "the filter says
          active but a bunch of dormant stations are present — this doesn't make
          sense." It was not the data contradicting itself; it was the
-         vocabulary. -->
+         vocabulary. {% endcomment %}
     <div>
       <label class="form-label" for="filter-active">Syncing</label>
       <select
@@ -96,8 +96,8 @@
         <option value="all" {% if active == "all" %}selected{% endif %}>All</option>
       </select>
     </div>
-    <!-- And this one is about freshness, in the same three words the map
-         legend and the row dots already use. -->
+    {% comment %} And this one is about freshness, in the same three words the map
+         legend and the row dots already use. {% endcomment %}
     <div>
       <label class="form-label" for="filter-reporting">Reporting</label>
       <select

@@ -1,9 +1,9 @@
 {% load humanize %}
 {% url 'water_balances' as wb_help_url %}
-<!-- Balance as the house budget-panel: supplies − consumptive use = balance,
+{% comment %} Balance as the house budget-panel: supplies − consumptive use = balance,
      the same equation skin as the dashboard, with the supply breakdown in the
      foot. Head-less because the card already titles it + carries the period
-     selector. -->
+     selector. {% endcomment %}
 <div class="budget-panel" style="margin-bottom: var(--space-md);">
   <div class="budget-panel-row">
     <div class="budget-seg">

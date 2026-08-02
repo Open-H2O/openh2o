@@ -24,10 +24,10 @@
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
 
-  <!-- Toolbar: search + status filter. Water rights are bounded and few, so the
+  {% comment %} Toolbar: search + status filter. Water rights are bounded and few, so the
        whole list is on one page and search is a live filter, not paging. There is
        no overview map here — a water right has no geometry of its own; its
-       spatial footprint lives on its detail page. -->
+       spatial footprint lives on its detail page. {% endcomment %}
   <div class="card-raised toolbar-row">
     <div style="flex: 1; min-width: 200px;">
       <label class="form-label" for="filter-search">Search</label>

@@ -40,9 +40,9 @@
     </div>
     {% endif %}
 
-    <!-- Setting 1: efficiency. `surface` owns it (see DeliverySettingsForm) and
+    {% comment %} Setting 1: efficiency. `surface` owns it (see DeliverySettingsForm) and
          the numbering follows the fields that are actually shown — the 88-03
-         defect was a step eyebrow that kept counting a step nobody could see. -->
+         defect was a step eyebrow that kept counting a step nobody could see. {% endcomment %}
     {% if form.shows_efficiency %}
     <div class="card-raised">
       <span class="step-eyebrow">Setting 1 of {{ settings_total }}</span>

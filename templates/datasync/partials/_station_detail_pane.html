@@ -25,8 +25,8 @@
 
 <div class="pane-stack">
 
-  <!-- Telemetry chart, full width, directly under the map — the trend over time
-       is the thing people open a station to see, so it leads. -->
+  {% comment %} Telemetry chart, full width, directly under the map — the trend over time
+       is the thing people open a station to see, so it leads. {% endcomment %}
   <div class="card-raised">
     <div class="row-between mb-md" style="flex-wrap: wrap; gap: var(--space-sm);">
       <h2 id="chart-title" class="section-header-flush">Telemetry</h2>
@@ -59,9 +59,9 @@
     <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">No published data for this period.</p>
   </div>
 
-  <!-- Identity (left) + current readings (right). minmax(0,1fr) so the columns
+  {% comment %} Identity (left) + current readings (right). minmax(0,1fr) so the columns
        share the width evenly; the tables further down scroll inside their own
-       .table-scroll cards rather than forcing a column wide. -->
+       .table-scroll cards rather than forcing a column wide. {% endcomment %}
   <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
 
     <!-- Station Info card -->
@@ -69,10 +69,10 @@
       <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
         <h2 class="section-header-flush">Station Information</h2>
         <div id="toggle-cell" class="row-start">
-          <!-- "Syncing", not "Active" (ISS-108): this switch is the wiring
+          {% comment %} "Syncing", not "Active" (ISS-108): this switch is the wiring
                axis, and the freshness dot a few lines up is the other one. The
                station list's filter now uses these same words, so the two
-               screens cannot disagree about what the switch means. -->
+               screens cannot disagree about what the switch means. {% endcomment %}
           <span class="text-tertiary text-xs" style="margin-right: var(--space-xs);" title="Whether this station is wired up for scheduled data pulls. Switch it off and syncs skip it. Nothing to do with how recently it published — that is the freshness dot.">Syncing</span>
           {% include "datasync/partials/_station_toggle.html" %}
         </div>

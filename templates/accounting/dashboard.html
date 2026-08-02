@@ -22,10 +22,10 @@
   {% endif %}
 
   {% if needs_setup %}
-  <!-- First run: no watershed configured yet. Point an admin straight at the
+  {% comment %} First run: no watershed configured yet. Point an admin straight at the
        Setup Wizard (which auto-populates parcels, basins, flowlines, and
        stations) before the manual accounting onboarding below. Gated by the
-       needs_setup context flag, which only fires for viewers who can run setup. -->
+       needs_setup context flag, which only fires for viewers who can run setup. {% endcomment %}
   <div class="card-raised empty-state">
     <h2 class="section-header-flush mb-sm">Start here — set up your watershed</h2>
     <p class="empty-state-text" style="max-width: 540px; margin-left: auto; margin-right: auto;">

@@ -35,15 +35,15 @@
 {% block content %}
 <div class="page-stack" style="max-width: 1400px;">
 
-  <!-- Start a filing: the heavy things you kick off from this screen, given room
-       to breathe as a responsive card grid (Bucket 3). -->
+  {% comment %} Start a filing: the heavy things you kick off from this screen, given room
+       to breathe as a responsive card grid (Bucket 3). {% endcomment %}
   <section>
     <h2 class="section-header">Start a filing</h2>
     {% include "reporting/partials/_report_actions.html" %}
   </section>
 
-  <!-- Report history: a full-width finder. Search / status filter swap just the
-       #results table below; rows link out to each submission's own detail page. -->
+  {% comment %} Report history: a full-width finder. Search / status filter swap just the
+       #results table below; rows link out to each submission's own detail page. {% endcomment %}
   <section>
     <h2 class="section-header">Report history</h2>
 

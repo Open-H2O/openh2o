@@ -34,9 +34,9 @@
     </div>
   </div>
 
-  <!-- Import notes: things the importer decided, which must never be silent.
+  {% comment %} Import notes: things the importer decided, which must never be silent.
        Sign normalization is a judgement about the file (usage debits, supply
-       credits); duplicate skipping is why a re-upload creates nothing. -->
+       credits); duplicate skipping is why a re-upload creates nothing. {% endcomment %}
   {% if results.sign_normalized or results.skipped_duplicate %}
   <div class="card-raised">
     <h3 class="section-header-sm">Import notes</h3>
