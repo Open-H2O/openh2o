@@ -285,6 +285,20 @@ if [ "$fb_saved" = "1" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Repopulate the Site Health page. The golden is built in a scratch stack, so
+# it carries no health-check results — every restore wiped the last cron run's
+# rows and left the admin health page reading "No health checks have been run
+# yet" until the next 6-hour tick (observed on prod 2026-08-01 after a deploy;
+# nightly resets did the same between 03:15 and 06:00). Non-fatal on purpose:
+# a failed health CHECK must never fail the RESET that just succeeded.
+# ---------------------------------------------------------------------------
+if docker compose exec -T web python manage.py run_health_checks >>"$LOG" 2>&1; then
+  log "reset-demo: health checks repopulated after restore."
+else
+  log "reset-demo: run_health_checks failed (non-fatal) — health page stays empty until the next cron tick. Check $LOG."
+fi
+
+# ---------------------------------------------------------------------------
 # Data-loss backstop: report what changed, pre vs post. On a normal night this
 # shows visitor junk being cleared (counts shrink to the golden canonical). An
 # unexpected drop in the post numbers is the signal that the golden itself lost
