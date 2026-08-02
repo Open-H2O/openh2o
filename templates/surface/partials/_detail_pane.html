@@ -1,4 +1,4 @@
-{% comment %}
+{% load placeholders %}{% comment %}
   Per-POD detail BODY, swapped into #detail-body on row click (and reused by the
   standalone pod_detail.html page). The map itself is NOT here — it lives as a
   persistent element (#detail-map) in the pane shell so it is built ONCE and
@@ -12,7 +12,7 @@
 <div class="pane-header">
   <div>
     <div class="pane-header-title">{{ pod.name }}</div>
-    <div class="pane-header-sub">{{ pod.stream_name|default:"—" }}</div>
+    <div class="pane-header-sub">{{ pod.stream_name|blank }}</div>
   </div>
   <div class="pane-header-meta">
     {% include "surface/partials/_status_badge.html" with status=pod.status %}
@@ -38,7 +38,7 @@
 
         <div class="field-group">
           <div class="field-label">Stream</div>
-          <div class="field-value">{{ pod.stream_name|default:"—" }}</div>
+          <div class="field-value">{{ pod.stream_name|blank }}</div>
         </div>
 
         {% if pod.max_rate_cfs %}
@@ -131,11 +131,11 @@
               </div>
               <div class="field-group">
                 <div class="field-label">Holder</div>
-                <div class="field-value">{{ water_right.holder_name|default:"—" }}</div>
+                <div class="field-value">{{ water_right.holder_name|blank }}</div>
               </div>
               <div class="field-group">
                 <div class="field-label">Right Type</div>
-                <div class="field-value">{{ water_right.right_type|default:"—" }}</div>
+                <div class="field-value">{{ water_right.right_type|blank }}</div>
               </div>
               {% if water_right.priority_date %}
               <div class="field-group">
@@ -188,7 +188,7 @@
                   {{ pp.parcel.parcel_number }}
                 </a>
               </td>
-              <td class="text-secondary">{{ pp.parcel.owner_name|default:"—" }}</td>
+              <td class="text-secondary">{{ pp.parcel.owner_name|blank }}</td>
               <td class="td-num text-secondary">{{ pp.fraction }}</td>
             </tr>
             {% endfor %}

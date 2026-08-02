@@ -1,4 +1,4 @@
-{% load drinking_display %}{% comment %}
+{% load drinking_display placeholders %}{% comment %}
   The drinking domain's dashboard card — the first real user of 77-02's
   `dashboard_cards` hook.
 
@@ -37,7 +37,7 @@
     </div>
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Most recent sample</div>
-      <div class="stat-card-value-sm">{{ summary.latest_sample_date|date:"Y-m-d"|default:"—" }}</div>
+      <div class="stat-card-value-sm">{{ summary.latest_sample_date|date:"Y-m-d"|blank }}</div>
     </div>
   </div>
 

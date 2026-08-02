@@ -1,4 +1,4 @@
-{% comment %}
+{% load placeholders %}{% comment %}
   The review: everything EPA's federal record holds for this PWSID, and exactly
   what a commit would write, before anything is written.
 
@@ -145,23 +145,23 @@
     </div>
     <div class="field-group">
       <div class="field-label">Status</div>
-      <div class="field-value">{{ activity_status|default:"—" }}</div>
+      <div class="field-value">{{ activity_status|blank }}</div>
     </div>
     <div class="field-group">
       <div class="field-label">System type</div>
-      <div class="field-value">{{ pws_type|default:"—" }}</div>
+      <div class="field-value">{{ pws_type|blank }}</div>
     </div>
     <div class="field-group">
       <div class="field-label">Owner type</div>
-      <div class="field-value">{{ owner_type|default:"—" }}</div>
+      <div class="field-value">{{ owner_type|blank }}</div>
     </div>
     <div class="field-group">
       <div class="field-label">Primary source</div>
-      <div class="field-value">{{ primary_source|default:"—" }}</div>
+      <div class="field-value">{{ primary_source|blank }}</div>
     </div>
     <div class="field-group">
       <div class="field-label">County served</div>
-      <div class="field-value">{{ geography.county_served|default:"—" }}</div>
+      <div class="field-value">{{ geography.county_served|blank }}</div>
     </div>
   </div>
 
@@ -173,7 +173,7 @@
   {% endcomment %}
   <h3 class="section-header" style="margin-top: var(--space-lg);">Mailing address</h3>
   <p class="text-base text-secondary" style="margin-top: var(--space-sm);">
-    {{ mailing.mailing_address_line1|default:"—" }}{% if mailing.mailing_address_line2 %}, {{ mailing.mailing_address_line2 }}{% endif %}<br>
+    {{ mailing.mailing_address_line1|blank }}{% if mailing.mailing_address_line2 %}, {{ mailing.mailing_address_line2 }}{% endif %}<br>
     {{ mailing.mailing_city }}{% if mailing.mailing_state %}, {{ mailing.mailing_state }}{% endif %} {{ mailing.mailing_zip }}
   </p>
   <p class="text-tertiary text-sm" style="margin-top: var(--space-xs);">
@@ -237,10 +237,10 @@
         {% for facility in facilities %}
         <tr>
           <td class="text-mono">{{ facility.facility_id }}</td>
-          <td class="text-mono text-tertiary">{{ facility.epa_facility_id|default:"—" }}</td>
-          <td>{{ facility.name|default:"—" }}</td>
-          <td class="text-secondary text-sm">{{ facility.facility_type|default:"—" }}</td>
-          <td class="text-secondary text-sm">{{ facility.water_type|default:"—" }}</td>
+          <td class="text-mono text-tertiary">{{ facility.epa_facility_id|blank }}</td>
+          <td>{{ facility.name|blank }}</td>
+          <td class="text-secondary text-sm">{{ facility.facility_type|blank }}</td>
+          <td class="text-secondary text-sm">{{ facility.water_type|blank }}</td>
           <td class="text-secondary text-sm">{% if facility.is_source %}Yes{% else %}&mdash;{% endif %}</td>
         </tr>
         {% endfor %}

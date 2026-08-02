@@ -2091,6 +2091,13 @@ html { color-scheme: dark; }
     font-variant-numeric: tabular-nums;
 }
 
+/* An empty field, wherever one renders. Emitted by the `blank` template filter
+   (core/templatetags/placeholders.py) so that "Not recorded" is visibly quieter
+   than a real value and the whole platform's empty styling lives here. */
+.value-empty {
+    color: var(--color-text-tertiary);
+}
+
 .border-separator {
     margin-top: var(--space-lg);
     padding-top: var(--space-sm);

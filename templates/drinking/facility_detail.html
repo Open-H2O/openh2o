@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static placeholders %}
 {% load drinking_display %}
 
 {% comment %}
@@ -128,23 +128,23 @@
       </div>
       <div class="field-group">
         <div class="field-label">Name on record</div>
-        <div class="field-value">{{ facility.name|default:"—" }}</div>
+        <div class="field-value">{{ facility.name|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Type</div>
-        <div class="field-value">{{ facility.get_facility_type_display|default:"—" }}</div>
+        <div class="field-value">{{ facility.get_facility_type_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Status</div>
-        <div class="field-value">{{ facility.get_activity_status_display|default:"—" }}</div>
+        <div class="field-value">{{ facility.get_activity_status_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Water type</div>
-        <div class="field-value">{{ facility.get_water_type_display|default:"—" }}</div>
+        <div class="field-value">{{ facility.get_water_type_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Availability</div>
-        <div class="field-value">{{ facility.get_availability_display|default:"—" }}</div>
+        <div class="field-value">{{ facility.get_availability_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Source facility</div>
@@ -211,9 +211,9 @@
           {% for point in points %}
           <tr>
             <td class="text-mono"><a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link">{{ point.ps_code }}</a></td>
-            <td>{{ point.name|default:"—" }}</td>
-            <td class="text-secondary text-sm">{{ point.get_point_type_display|default:"—" }}</td>
-            <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|default:"—" }}</td>
+            <td>{{ point.name|blank }}</td>
+            <td class="text-secondary text-sm">{{ point.get_point_type_display|blank }}</td>
+            <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|blank }}</td>
             <td class="text-secondary text-sm tabular-nums">
               {% if point.result_count %}
                 <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">{{ point.result_count }}</a>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static placeholders %}
 {% load drinking_display %}
 
 {% comment %}
@@ -114,11 +114,11 @@
       </div>
       <div class="field-group">
         <div class="field-label">Name</div>
-        <div class="field-value">{{ point.name|default:"—" }}</div>
+        <div class="field-value">{{ point.name|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Point type</div>
-        <div class="field-value">{{ point.get_point_type_display|default:"—" }}</div>
+        <div class="field-value">{{ point.get_point_type_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Water system</div>
@@ -136,7 +136,7 @@
       </div>
       <div class="field-group">
         <div class="field-label">Facility type</div>
-        <div class="field-value">{{ point.facility.get_facility_type_display|default:"—" }}</div>
+        <div class="field-value">{{ point.facility.get_facility_type_display|blank }}</div>
       </div>
       {% comment %}
         Module-guarded exactly as the overview and the facility page are:
@@ -177,11 +177,11 @@
       </div>
       <div class="field-group">
         <div class="field-label">Earliest sample</div>
-        <div class="field-value-mono">{{ first_sample|date:"Y-m-d"|default:"—" }}</div>
+        <div class="field-value-mono">{{ first_sample|date:"Y-m-d"|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Latest sample</div>
-        <div class="field-value-mono">{{ latest_sample|date:"Y-m-d"|default:"—" }}</div>
+        <div class="field-value-mono">{{ latest_sample|date:"Y-m-d"|blank }}</div>
       </div>
     </div>
 
@@ -212,8 +212,8 @@
             <td class="text-secondary text-sm tabular-nums">{{ result.event.sample_date|date:"Y-m-d" }}</td>
             <td><a href="{% url 'drinking:result_detail' result.pk %}" class="data-table-link">{{ result.analyte.name }}</a></td>
             <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
-            <td class="text-secondary text-sm">{{ result.method|default:"—" }}</td>
-            <td class="text-secondary text-sm">{{ result.lab_name|default:"—" }}</td>
+            <td class="text-secondary text-sm">{{ result.method|blank }}</td>
+            <td class="text-secondary text-sm">{{ result.lab_name|blank }}</td>
           </tr>
           {% endfor %}
         </tbody>

@@ -1,4 +1,4 @@
-{% comment %}
+{% load placeholders %}{% comment %}
   Per-well detail BODY, swapped into #detail-body on row click (and reused by the
   standalone detail.html page). The map itself is NOT here — it lives as a
   persistent element (#detail-map) in the pane shell so it is built ONCE and
@@ -11,7 +11,7 @@
 <div class="pane-header">
   <div>
     <div class="pane-header-title">{{ well.name }}</div>
-    <div class="pane-header-sub">{{ well.well_registration_id|default:"—" }}</div>
+    <div class="pane-header-sub">{{ well.well_registration_id|blank }}</div>
   </div>
   <div class="pane-header-meta">
     {% include "wells/partials/_status_badge.html" with status=well.status %}
@@ -66,7 +66,7 @@
             {% endcomment %}
             {% if published_source %}{% include "partials/_source_label.html" with source=local_registry_source %}{% endif %}
           </div>
-          <div class="field-value-mono">{{ well.well_registration_id|default:"—" }}</div>
+          <div class="field-value-mono">{{ well.well_registration_id|blank }}</div>
         </div>
 
         {% include "wells/partials/_editable_field.html" with ef=ef.wcr_number %}
@@ -75,7 +75,7 @@
         <!-- Static field: well_type -->
         <div class="field-group">
           <div class="field-label">Well Type</div>
-          <div class="field-value">{{ well.well_type|default:"—" }}</div>
+          <div class="field-value">{{ well.well_type|blank }}</div>
         </div>
 
         {% include "wells/partials/_editable_field.html" with ef=ef.owner_name %}

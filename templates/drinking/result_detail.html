@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load drinking_display %}
+{% load drinking_display placeholders %}
 
 {% comment %}
   One sample result, whole — the Bucket-3 detail page
@@ -55,7 +55,7 @@
       </div>
       <div class="field-group">
         <div class="field-label">State analyte code</div>
-        <div class="field-value-mono">{{ result.analyte.ddw_code|default:"—" }}</div>
+        <div class="field-value-mono">{{ result.analyte.ddw_code|blank }}</div>
       </div>
       {% comment %}
         Rendered through _result_value.html, the single place the platform
@@ -68,7 +68,7 @@
       </div>
       <div class="field-group">
         <div class="field-label">Unit</div>
-        <div class="field-value">{{ result.unit|default:"—" }}</div>
+        <div class="field-value">{{ result.unit|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Result type</div>
@@ -115,15 +115,15 @@
     <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Analysis date</div>
-        <div class="field-value-mono">{{ result.analysis_date|date:"Y-m-d"|default:"—" }}</div>
+        <div class="field-value-mono">{{ result.analysis_date|date:"Y-m-d"|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Method</div>
-        <div class="field-value">{{ result.method|default:"—" }}</div>
+        <div class="field-value">{{ result.method|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Laboratory</div>
-        <div class="field-value">{{ result.lab_name|default:"—" }}</div>
+        <div class="field-value">{{ result.lab_name|blank }}</div>
       </div>
       {% comment %}
         Labelled as ELAP rather than shown as a bare number: a certification
@@ -131,7 +131,7 @@
       {% endcomment %}
       <div class="field-group">
         <div class="field-label">ELAP certification</div>
-        <div class="field-value-mono">{{ result.lab_cert_no|default:"—" }}</div>
+        <div class="field-value-mono">{{ result.lab_cert_no|blank }}</div>
       </div>
     </div>
     <p class="text-sm text-tertiary" style="margin-top: var(--space-xs); max-width: 75ch;">
@@ -146,15 +146,15 @@
       </div>
       <div class="field-group">
         <div class="field-label">Sample time</div>
-        <div class="field-value-mono">{{ event.sample_time|time:"H:i"|default:"—" }}</div>
+        <div class="field-value-mono">{{ event.sample_time|time:"H:i"|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Sample type</div>
-        <div class="field-value">{{ event.get_sample_type_display|default:"—" }}</div>
+        <div class="field-value">{{ event.get_sample_type_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Collector</div>
-        <div class="field-value">{{ event.collector|default:"—" }}</div>
+        <div class="field-value">{{ event.collector|blank }}</div>
       </div>
     </div>
 

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 
+{% load placeholders %}
 {% block title %}How {{ parcel.parcel_number }} {{ period }} was calculated - Open Water Accounting Platform{% endblock %}
 {% block page_title %}How was this calculated?{% endblock %}
 
@@ -37,8 +38,8 @@
           {% if parcel.owner_name %}{{ parcel.owner_name }} &middot; {% endif %}{{ parcel.area_acres|floatformat:2 }} acres
         </div>
         <div class="text-tertiary text-sm" style="margin-top: var(--space-xs);">
-          Methodology: <span class="text-secondary">{{ methodology_plan_name|default:"—" }}</span>
-          ({{ config_hash|default:"—" }})
+          Methodology: <span class="text-secondary">{{ methodology_plan_name|blank }}</span>
+          ({{ config_hash|blank }})
         </div>
       </div>
       <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">

@@ -7,13 +7,13 @@
   OH2O.detailPaneMap frames the map across all of them and the onMapLoad hook lays
   the river/canal flowlines substrate beneath the points.
 {% endcomment %}
-{% load static %}
+{% load static placeholders %}
 
 <!-- Detail header: which water right you're looking at. -->
 <div class="pane-header">
   <div>
     <div class="pane-header-title text-mono">{{ water_right.right_id }}</div>
-    <div class="pane-header-sub">{{ water_right.holder_name|default:"—" }}</div>
+    <div class="pane-header-sub">{{ water_right.holder_name|blank }}</div>
   </div>
   <div class="pane-header-meta">
     {% include "surface/partials/_status_badge.html" with status=water_right.status %}
@@ -37,12 +37,12 @@
 
         <div class="field-group">
           <div class="field-label">Right Type</div>
-          <div class="field-value">{{ water_right.right_type|default:"—" }}</div>
+          <div class="field-value">{{ water_right.right_type|blank }}</div>
         </div>
 
         <div class="field-group">
           <div class="field-label">Holder</div>
-          <div class="field-value">{{ water_right.holder_name|default:"—" }}</div>
+          <div class="field-value">{{ water_right.holder_name|blank }}</div>
         </div>
 
         <div class="field-group">
@@ -67,7 +67,7 @@
 
         <div class="field-group">
           <div class="field-label">Source</div>
-          <div class="field-value">{{ water_right.source_name|default:"—" }}</div>
+          <div class="field-value">{{ water_right.source_name|blank }}</div>
         </div>
 
         <div class="field-group">

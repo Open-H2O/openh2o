@@ -1,4 +1,4 @@
-<!-- Count badge -->
+{% load placeholders %}<!-- Count badge -->
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
@@ -26,7 +26,7 @@
             {{ right.right_id }}
           </a>
         </td>
-        <td class="text-secondary text-sm">{{ right.holder_name|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ right.holder_name|blank }}</td>
         <td class="text-secondary text-sm tabular-nums">{% if right.face_value_acre_feet %}{{ right.face_value_acre_feet|floatformat:0 }} AF{% else %}—{% endif %}</td>
         <td>{% include "surface/partials/_status_badge.html" with status=right.status %}</td>
       </tr>

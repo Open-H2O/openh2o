@@ -1,4 +1,4 @@
-<!-- Count badge -->
+{% load placeholders %}<!-- Count badge -->
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
@@ -26,7 +26,7 @@
             {{ pod.name }}
           </a>
         </td>
-        <td class="text-secondary text-sm">{{ pod.stream_name|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ pod.stream_name|blank }}</td>
         <td>{% include "surface/partials/_status_badge.html" with status=pod.status %}</td>
         <td class="text-secondary text-sm">{{ pod.diversion_count }} record{{ pod.diversion_count|pluralize }}</td>
       </tr>

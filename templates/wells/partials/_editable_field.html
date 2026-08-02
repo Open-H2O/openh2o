@@ -1,4 +1,4 @@
-{% comment %}
+{% load placeholders %}{% comment %}
 Renders one inline-editable well field for the detail tile.
 Expects: well, ef (dict with name, label, type, choices, integer, value).
 Keeps the HTMX inline-edit pattern (pencil -> _field_edit.html -> _field_value.html).
@@ -23,7 +23,7 @@ Keeps the HTMX inline-edit pattern (pencil -> _field_edit.html -> _field_value.h
       {% elif ef.type == "number" %}
         {% if ef.value is not None %}{% if ef.integer %}{{ ef.value|floatformat:"0" }}{% else %}{{ ef.value|floatformat:2 }}{% endif %}{% else %}—{% endif %}
       {% else %}
-        {{ ef.value|default:"—" }}
+        {{ ef.value|blank }}
       {% endif %}
     </span>
     <button

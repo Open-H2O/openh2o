@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 
+{% load placeholders %}
 {% block title %}CalWATRS Worksheet - Open Water Accounting Platform{% endblock %}
 {% block page_title %}CalWATRS Transcription Worksheet{% endblock %}
 
@@ -54,11 +55,11 @@
       </div>
       <div class="field-group mb-0">
         <div class="field-label">Holder</div>
-        <div class="field-value-sm">{{ block.holder_name|default:"—" }}</div>
+        <div class="field-value-sm">{{ block.holder_name|blank }}</div>
       </div>
       <div class="field-group mb-0">
         <div class="field-label">Right Type</div>
-        <div class="field-value-sm">{{ block.right_type|default:"—" }}</div>
+        <div class="field-value-sm">{{ block.right_type|blank }}</div>
       </div>
       <div class="field-group mb-0">
         <div class="field-label">CalWATRS PIN</div>

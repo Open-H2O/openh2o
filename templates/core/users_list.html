@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load prose %}
+{% load prose placeholders %}
 
 {% block title %}Users - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Users{% endblock %}
@@ -54,7 +54,7 @@
       <tbody>
         {% for u in users %}
         <tr>
-          <td>{{ u.get_full_name|default:"—" }}{% if u.title %}<br><span class="text-secondary text-sm">{{ u.title }}</span>{% endif %}</td>
+          <td>{{ u.get_full_name|blank }}{% if u.title %}<br><span class="text-secondary text-sm">{{ u.title }}</span>{% endif %}</td>
           <td class="text-secondary">{{ u.email|default:u.username }}</td>
           <td>
             {% if u.is_administrator %}

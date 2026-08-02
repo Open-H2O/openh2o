@@ -1,4 +1,4 @@
-<div class="result-count-bar">
+{% load placeholders %}<div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
     sampling point{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
@@ -22,10 +22,10 @@
       {% for point in page_obj %}
       <tr>
         <td class="text-mono"><a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link">{{ point.ps_code }}</a></td>
-        <td>{{ point.name|default:"—" }}</td>
+        <td>{{ point.name|blank }}</td>
         <td class="text-secondary text-sm">{{ point.facility.facility_id }}{% if point.facility.name %} — {{ point.facility.name }}{% endif %}</td>
-        <td class="text-secondary text-sm">{{ point.get_point_type_display|default:"—" }}</td>
-        <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ point.get_point_type_display|blank }}</td>
+        <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|blank }}</td>
         <td class="text-secondary text-sm tabular-nums">
           {% if point.result_count %}
             <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">{{ point.result_count }}</a>

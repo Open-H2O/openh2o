@@ -1,4 +1,4 @@
-{% comment %}
+{% load placeholders %}{% comment %}
   Per-account detail BODY, swapped into #detail-body on a row click in the
   accounts workspace (and reused by the standalone account_detail.html page), so
   the in-pane view and the full page never drift. Bucket 1 — a heavy, interactive
@@ -81,12 +81,12 @@
 
         <div class="field-group">
           <div class="field-label">Contact Name</div>
-          <div class="field-value">{{ account.contact_name|default:"—" }}</div>
+          <div class="field-value">{{ account.contact_name|blank }}</div>
         </div>
 
         <div class="field-group">
           <div class="field-label">Contact Email</div>
-          <div class="field-value">{{ account.contact_email|default:"—" }}</div>
+          <div class="field-value">{{ account.contact_email|blank }}</div>
         </div>
 
         {% if account.notes %}

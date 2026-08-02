@@ -1,4 +1,4 @@
-<!-- Count badge -->
+{% load placeholders %}<!-- Count badge -->
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
@@ -25,7 +25,7 @@
             {{ zone.name }}
           </a>
         </td>
-        <td class="text-secondary text-sm">{{ zone.get_zone_type_display|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ zone.get_zone_type_display|blank }}</td>
         {% if 'parcels' in enabled_modules %}<td class="text-secondary text-sm">{{ zone.parcel_count }} use area{{ zone.parcel_count|pluralize }}</td>{% endif %}
       </tr>
       {% endfor %}

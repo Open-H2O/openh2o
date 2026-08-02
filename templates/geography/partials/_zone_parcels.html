@@ -1,4 +1,4 @@
-{% comment %}
+{% load placeholders %}{% comment %}
   Phase 89. The guard is belt AND braces on purpose. Without `parcels` the
   ParcelZone rows cannot exist — the parcels tables are schema-resident and
   empty — so `parcel_zones` is already falsy and the loop would never reverse
@@ -25,7 +25,7 @@
           {{ pz.parcel.parcel_number }}
         </a>
       </td>
-      <td class="text-secondary">{{ pz.parcel.owner_name|default:"—" }}</td>
+      <td class="text-secondary">{{ pz.parcel.owner_name|blank }}</td>
       <td class="td-num text-secondary">
         {% if pz.parcel.area_acres %}{{ pz.parcel.area_acres|floatformat:2 }}{% else %}—{% endif %}
       </td>

@@ -1,4 +1,4 @@
-<div class="result-count-bar">
+{% load placeholders %}<div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
     facilit{{ total_count|pluralize:"y,ies" }} found{% if q %} matching "{{ q }}"{% endif %}
@@ -23,10 +23,10 @@
       {% for facility in page_obj %}
       <tr>
         <td class="text-mono"><a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a></td>
-        <td>{{ facility.name|default:"—" }}</td>
-        <td class="text-secondary text-sm">{{ facility.get_facility_type_display|default:"—" }}</td>
-        <td class="text-secondary text-sm">{{ facility.get_activity_status_display|default:"—" }}</td>
-        <td class="text-secondary text-sm">{{ facility.get_water_type_display|default:"—" }}</td>
+        <td>{{ facility.name|blank }}</td>
+        <td class="text-secondary text-sm">{{ facility.get_facility_type_display|blank }}</td>
+        <td class="text-secondary text-sm">{{ facility.get_activity_status_display|blank }}</td>
+        <td class="text-secondary text-sm">{{ facility.get_water_type_display|blank }}</td>
         {% comment %}
           A plain count, not a link. The sampling-point list filters on `q` and
           `point_type` only — it carries no `facility` filter — so a link here

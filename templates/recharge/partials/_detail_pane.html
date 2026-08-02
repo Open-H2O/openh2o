@@ -7,7 +7,7 @@
   point; OH2O.detailPaneMap auto-detects which from the GeoJSON and draws fill +
   outline for polygons or glow + marker for points — the same call serves both.
 {% endcomment %}
-{% load static %}
+{% load static placeholders %}
 
 <!-- Pane header: which recharge site you're looking at. -->
 <div class="pane-header">
@@ -54,7 +54,7 @@
 
         <div class="field-group">
           <div class="field-label">Operator</div>
-          <div class="field-value">{{ site.operator|default:"—" }}</div>
+          <div class="field-value">{{ site.operator|blank }}</div>
         </div>
 
         {% if pod_links %}
@@ -64,7 +64,7 @@
             {% for link in pod_links %}
             <div{% if not forloop.first %} style="margin-top: var(--space-xs);"{% endif %}>
               <a href="{% url 'surface:pod_detail' link.point_of_diversion.pk %}" class="data-table-link">{{ link.point_of_diversion.name }}</a>
-              <span class="text-secondary">on {{ link.point_of_diversion.source_flowline.name|default:link.point_of_diversion.stream_name|default:"—" }}</span>
+              <span class="text-secondary">on {{ link.point_of_diversion.source_flowline.name|default:link.point_of_diversion.stream_name|blank }}</span>
             </div>
             {% endfor %}
           </div>

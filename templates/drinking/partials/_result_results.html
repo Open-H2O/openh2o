@@ -1,4 +1,4 @@
-<div class="result-count-bar">
+{% load placeholders %}<div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
     sample result{{ total_count|pluralize }} found
@@ -30,8 +30,8 @@
           concentrations (total coliform is "% positive samples").
         {% endcomment %}
         <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
-        <td class="text-secondary text-sm">{{ result.method|default:"—" }}</td>
-        <td class="text-secondary text-sm">{{ result.lab_name|default:"—" }}</td>
+        <td class="text-secondary text-sm">{{ result.method|blank }}</td>
+        <td class="text-secondary text-sm">{{ result.lab_name|blank }}</td>
       </tr>
       {% endfor %}
     </tbody>

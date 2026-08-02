@@ -1,4 +1,4 @@
-<!-- Count badge -->
+{% load placeholders %}<!-- Count badge -->
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
@@ -26,7 +26,7 @@
       {% include "wells/partials/_status_badge.html" with status=well.status %}
     </div>
     <div class="master-row-sub">
-      <span class="master-row-owner">{{ well.well_registration_id|default:"—" }}</span>
+      <span class="master-row-owner">{{ well.well_registration_id|blank }}</span>
       {% if well.depth_ft %}<span class="master-row-acres">{{ well.depth_ft }} ft</span>{% endif %}
     </div>
   </div>

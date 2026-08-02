@@ -1,4 +1,4 @@
-{% comment %}
+{% load placeholders %}{% comment %}
   Per-parcel detail BODY, swapped into #detail-body on row click (and reused by
   the standalone detail.html page). The map itself is NOT here — it lives as a
   persistent element (#detail-map) in the pane shell so it is built ONCE and
@@ -11,7 +11,7 @@
 <div class="pane-header">
   <div>
     <div class="pane-header-title">{{ parcel.parcel_number }}</div>
-    <div class="pane-header-sub">{{ parcel.owner_name|default:"—" }}</div>
+    <div class="pane-header-sub">{{ parcel.owner_name|blank }}</div>
   </div>
   <div class="pane-header-meta">
     {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
@@ -193,7 +193,7 @@
               {% elif ef.type == "number" %}
                 {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
               {% else %}
-                {{ ef.value|default:"—" }}
+                {{ ef.value|blank }}
               {% endif %}
             </span>
             <button

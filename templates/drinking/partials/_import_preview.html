@@ -1,4 +1,4 @@
-{% comment %}
+{% load placeholders %}{% comment %}
   The preview: what a commit WOULD do, before anything is written.
 
   The whole point of this screen is that an operator can see the consequences
@@ -130,8 +130,8 @@
       {% for row in error_rows %}
       <tr>
         <td class="text-mono">{{ row.index }}</td>
-        <td class="text-mono">{{ row.ps_code|default:"—" }}</td>
-        <td>{{ row.analyte|default:"—" }}</td>
+        <td class="text-mono">{{ row.ps_code|blank }}</td>
+        <td>{{ row.analyte|blank }}</td>
         <td>
           {% for err in row.errors %}<div class="text-furnace">{{ err }}</div>{% endfor %}
         </td>
@@ -156,8 +156,8 @@
       {% for row in warning_rows %}
       <tr>
         <td class="text-mono">{{ row.index }}</td>
-        <td class="text-mono">{{ row.ps_code|default:"—" }}</td>
-        <td>{{ row.analyte|default:"—" }}</td>
+        <td class="text-mono">{{ row.ps_code|blank }}</td>
+        <td>{{ row.analyte|blank }}</td>
         <td>
           {% for warn in row.warnings %}<div class="text-secondary">{{ warn }}</div>{% endfor %}
         </td>
@@ -184,11 +184,11 @@
       {% for row in preview_rows %}
       <tr>
         <td class="text-mono">{{ row.index }}</td>
-        <td class="text-mono">{{ row.ps_code|default:"—" }}</td>
-        <td>{{ row.sample_date|default:"—" }}</td>
-        <td>{{ row.analyte|default:"—" }}</td>
-        <td class="text-mono">{{ row.result|default:"—" }}</td>
-        <td>{{ row.unit|default:"—" }}</td>
+        <td class="text-mono">{{ row.ps_code|blank }}</td>
+        <td>{{ row.sample_date|blank }}</td>
+        <td>{{ row.analyte|blank }}</td>
+        <td class="text-mono">{{ row.result|blank }}</td>
+        <td>{{ row.unit|blank }}</td>
         <td>
           {% if row.errors %}<span class="badge badge-orange">Error</span>
           {% elif row.warnings %}<span class="badge badge-blue">Note</span>

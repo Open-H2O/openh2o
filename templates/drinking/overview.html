@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load humanize %}
+{% load humanize placeholders %}
 {% load drinking_display %}
 
 {% block title %}Drinking Water - Open Water Accounting Platform{% endblock %}
@@ -45,27 +45,27 @@
       </div>
       <div class="field-group">
         <div class="field-label">Status</div>
-        <div class="field-value">{{ system.get_activity_status_display|default:"—" }}</div>
+        <div class="field-value">{{ system.get_activity_status_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">System type</div>
-        <div class="field-value">{{ system.get_pws_type_display|default:"—" }}</div>
+        <div class="field-value">{{ system.get_pws_type_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">State classification</div>
-        <div class="field-value">{{ system.get_state_classification_display|default:"—" }}</div>
+        <div class="field-value">{{ system.get_state_classification_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Owner type</div>
-        <div class="field-value">{{ system.get_owner_type_display|default:"—" }}</div>
+        <div class="field-value">{{ system.get_owner_type_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Primary source</div>
-        <div class="field-value">{{ system.get_primary_source_code_display|default:"—" }}</div>
+        <div class="field-value">{{ system.get_primary_source_code_display|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Regulating agency</div>
-        <div class="field-value">{{ system.regulating_agency|default:"—" }}</div>
+        <div class="field-value">{{ system.regulating_agency|blank }}</div>
       </div>
       {% if system.seller_pwsid %}
       <div class="field-group">
