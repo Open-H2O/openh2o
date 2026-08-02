@@ -52,6 +52,17 @@ WINDOW_INTERVAL_MULTIPLIER = 2
 # before can fetch less now.
 MINIMUM_WINDOW_DAYS = 7
 
+# How many back-to-back all-stations-failed runs before this command exits
+# non-zero and lets `run-sync.sh` raise a high-priority alert.
+#
+# Three, from measurement. Simultaneous probes from Butler and an off-LAN VPS on
+# 2026-08-02 caught a USGS outage lasting ~40 seconds, identical on both
+# networks — far shorter than the hourly cadence, and the 7-day pull window
+# means the following run recovers everything the failed one missed. One failed
+# run is therefore normal weather. Three in a row is not: for an hourly source
+# that is three hours of silence, and for the daily ones three days.
+CONSECUTIVE_FAILURES_BEFORE_ALERT = 3
+
 
 def default_window_days(source_code):
     """How many days back to pull for a source that was given no --start.
@@ -216,11 +227,77 @@ class Command(BaseCommand):
         data_source.last_sync_at = timezone.now()
         data_source.save()
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Done: {sync_log.records_fetched} fetched, "
-                f"{sync_log.records_staged} staged, "
-                f"{sync_log.records_published} published "
-                f"({sync_log.duration_seconds:.1f}s)"
-            )
+        summary = (
+            f"Done: {sync_log.records_fetched} fetched, "
+            f"{sync_log.records_staged} staged, "
+            f"{sync_log.records_published} published "
+            f"({sync_log.duration_seconds:.1f}s)"
         )
+
+        # Say what happened, in the colour it actually deserves. Until
+        # 2026-08-02 this line printed in SUCCESS green whatever the outcome,
+        # so a run where every station errored still signed off "Done:" — and
+        # `run-sync.sh` keys off the EXIT STATUS, which was always 0, so cron
+        # logged "all sources OK" on top of it. USGS failed 5 of 5 stations
+        # repeatedly across 2026-08-01/02 and nothing said a word.
+        if sync_log.status == "failed":
+            self.stdout.write(self.style.ERROR(f"{summary} — SOURCE FAILED"))
+        elif sync_log.status == "partial":
+            self.stdout.write(self.style.WARNING(f"{summary} — PARTIAL"))
+        else:
+            self.stdout.write(self.style.SUCCESS(summary))
+
+        # Exit non-zero only when the failure has PERSISTED, and the threshold
+        # is set from measurement rather than taste.
+        #
+        # `run-sync.sh` alerts at ntfy Priority: high on any non-zero exit, and
+        # a high alert means "broken now", not "broken briefly". Measured
+        # 2026-08-02 with simultaneous probes from Butler and an off-LAN VPS:
+        # USGS's outages are ~40 SECONDS long, hit both networks in the same
+        # wall-clock window, and are gone by the next hourly run. Because the
+        # pull window is 7 days, the next run refetches everything the failed
+        # one missed — no data is lost, and nobody needs waking.
+        #
+        # So a single failed run is reported and tolerated; a source that has
+        # failed CONSECUTIVE_FAILURES_BEFORE_ALERT runs in a row is not having
+        # an episode, it is down, and that is worth an alarm.
+        if sync_log.status == "failed":
+            consecutive = self._consecutive_failures(data_source)
+            if consecutive >= CONSECUTIVE_FAILURES_BEFORE_ALERT:
+                raise CommandError(
+                    f"{data_source.name} has failed {consecutive} consecutive "
+                    f"syncs — every station errored on each. This is past a "
+                    f"transient upstream outage; check the adapter, the "
+                    f"credential and the provider's status page."
+                )
+            self.stdout.write(
+                self.style.WARNING(
+                    f"  Failure {consecutive} of "
+                    f"{CONSECUTIVE_FAILURES_BEFORE_ALERT} before this alerts. "
+                    "A short upstream outage is expected to clear on the next "
+                    "run, which refetches the whole window."
+                )
+            )
+
+    @staticmethod
+    def _consecutive_failures(data_source):
+        """How many of this source's most recent runs failed, back to back.
+
+        Counts backwards from the newest log and stops at the first run that
+        was not a failure, so a single success resets the streak. Only "failed"
+        breaks the streak — "partial" means some stations DID return data,
+        which is not a source being down.
+        """
+        recent = (
+            DataSyncLog.objects
+            .filter(data_source=data_source)
+            .exclude(status="running")
+            .order_by("-started_at")
+            .values_list("status", flat=True)[:CONSECUTIVE_FAILURES_BEFORE_ALERT]
+        )
+        streak = 0
+        for status in recent:
+            if status != "failed":
+                break
+            streak += 1
+        return streak
