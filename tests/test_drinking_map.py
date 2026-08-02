@@ -24,7 +24,9 @@ import json
 import factory
 import pytest
 from django.contrib.auth.hashers import make_password
-from django.test import Client
+from django.db import connection
+from django.test import Client, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from core import modules as mod
@@ -122,7 +124,17 @@ def _geojson(client):
 
 
 class TestFacilitiesGeoJSON:
+    @override_settings(ACCESS_CONTROL_ENFORCED=True)
     def test_anonymous_is_redirected_to_login(self, client, mapped_system):
+        """An AGENCY deployment gates this layer, and the setting says so here.
+
+        `public_in_open_demo` (1758b84) serves the map's GeoJSON layers to
+        anonymous visitors when ACCESS_CONTROL_ENFORCED is False — the
+        documented open-demo posture, and what the staging container runs. A
+        test asserting the gated direction has to state the posture rather than
+        inherit whichever one the container happens to have, or it passes in CI
+        and fails on staging while both are behaving exactly as designed.
+        """
         response = client.get(reverse("drinking:facilities_geojson"))
         assert response.status_code == 302
 
@@ -191,14 +203,28 @@ class TestFacilitiesGeoJSON:
                     )
 
         build("CA9999998", 4)
-        with django_assert_num_queries(3):
+        with CaptureQueriesContext(connection) as at_four:
             small = client_in.get(reverse("drinking:facilities_geojson"))
         assert len(json.loads(small.content.decode())["features"]) == 4
 
         build("CA9999999", 12)
-        with django_assert_num_queries(3):
+        with CaptureQueriesContext(connection) as at_sixteen:
             large = client_in.get(reverse("drinking:facilities_geojson"))
         assert len(json.loads(large.content.decode())["features"]) == 16
+
+        # Compared against each other, not against a magic number. The
+        # docstring above always claimed this was a shape assertion; it then
+        # pinned `3` twice, which is a magic number wearing a shape's clothes.
+        # That absolute count moved when `public_in_open_demo` replaced
+        # `login_required` (1758b84) — a change with no bearing whatever on
+        # whether the view walks its rows — and the test went red for a reason
+        # it was never meant to be sensitive to. Same defect as ISS-104,
+        # same fix.
+        assert len(at_sixteen) == len(at_four), (
+            f"the layer cost {len(at_four)} queries at four facilities and "
+            f"{len(at_sixteen)} at sixteen — it is walking the inventory:\n  "
+            + "\n  ".join(q["sql"][:160] for q in at_sixteen.captured_queries)
+        )
 
 
 # -- 2. Prepare, never determine, reaches the map ----------------------------

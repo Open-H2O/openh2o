@@ -2495,6 +2495,17 @@ div[id$="-map"] {
     letter-spacing: 0.04em;
 }
 
+/* A group break INSIDE a section — quieter than .sidebar-section above, which
+   introduces a new heading. Same hairline colour, inset from both edges and
+   given less vertical room, so it reads as "these belong together" rather than
+   as the start of another labelled section. Today's only user is the drinking
+   water block at the foot of Water Data. */
+.sidebar-divider {
+    margin: var(--space-sm) var(--space-sm);
+    border: 0;
+    border-top: 1px solid var(--color-border);
+}
+
 /* -- Collapsible sidebar group (Help) ----------------------------------- */
 /* Native <details>/<summary>: collapsed by default so the long Help list does
    not pad out the nav. The summary is restyled to read as a section header with

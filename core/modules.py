@@ -214,6 +214,15 @@ class NavEntry:
     are what prove that rather than assert it.
 
     `icon` is a short stable key that `_nav_icon.html` maps to an icon partial.
+
+    `starts_group` draws a hairline rule ABOVE this entry, splitting the tail of
+    a section into its own visual block without giving it a second heading. It
+    is a property of the ENTRY, not of the section, precisely so the rule
+    belongs to the module that owns the entry and disappears with it: a
+    deployment without `drinking` gets no orphaned line where its links used to
+    be. The sidebar suppresses the rule when the entry lands first in its
+    section, so dropping everything above it cannot leave a line hanging
+    directly under the section label.
     """
 
     url_name: str
@@ -224,6 +233,7 @@ class NavEntry:
     active_match: str
     active_excludes: tuple = ()
     visibility: str = VISIBILITY_ALWAYS
+    starts_group: bool = False
 
     def is_active(self, path: str) -> bool:
         """Whether this entry should render as the active link for `path`.
@@ -806,6 +816,11 @@ MODULE_REGISTRY: dict = {
                     "/drinking/results",
                     "/drinking/onboard",
                 ),
+                # Water Data runs to eleven links on a full deployment, and the
+                # last five of them are all drinking water. The rule splits them
+                # off as their own block so a utility reading the sidebar sees
+                # its own domain rather than the tail of somebody else's list.
+                starts_group=True,
             ),
             NavEntry(
                 url_name="drinking:facilities",

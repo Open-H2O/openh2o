@@ -25,7 +25,7 @@ import pytest
 from django.contrib.auth.hashers import make_password
 from django.contrib.gis.geos import MultiLineString, LineString
 from django.core.cache import cache
-from django.test import Client
+from django.test import Client, override_settings
 from django.urls import reverse
 
 from geography.models import Flowline
@@ -69,7 +69,17 @@ def auth_client(db):
 
 
 @pytest.mark.django_db
+@override_settings(ACCESS_CONTROL_ENFORCED=True)
 def test_flowlines_geojson_anonymous_redirects(client):
+    """An AGENCY deployment gates this layer, and the setting says so here.
+
+    `public_in_open_demo` (1758b84) serves the map's GeoJSON layers to
+    anonymous visitors when ACCESS_CONTROL_ENFORCED is False — the documented
+    open-demo posture, which is what the staging container runs. This test
+    asserts the gated direction, so it has to state that posture rather than
+    inherit whichever one the container happens to have; otherwise it passes in
+    CI and fails on staging while both are behaving correctly.
+    """
     FlowlineFactory()
     resp = client.get(reverse("geography:flowlines_geojson"))
     assert resp.status_code == 302

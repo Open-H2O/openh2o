@@ -22,22 +22,37 @@
     </span>
   </div>
 
+  {% comment %}
+    Each count links to the page that holds the rows behind it, in the same
+    shape drinking/overview.html already uses: the VALUE is the link, styled
+    `.data-table-link`, and the label above it stays plain. A count that names a
+    page the operator cannot get to from it is a dead end, and this card is the
+    first drinking-water thing most people see.
+
+    The date links to Sample results too — the same destination as the count
+    beside it, because the question "which sample was that?" is answered by the
+    same list — but only when there IS a date. With none, `|blank` renders "Not
+    recorded", and wrapping that in a link would advertise a record to open.
+
+    No `|intcomma` here, unlike the overview page: that difference is deliberate
+    and its reasoning is recorded in drinking/overview.html.
+  {% endcomment %}
   <div class="stat-grid-4col">
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Facilities</div>
-      <div class="stat-card-value-sm">{{ summary.facility_count }}</div>
+      <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ summary.facility_count }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Sampling points</div>
-      <div class="stat-card-value-sm">{{ summary.sampling_point_count }}</div>
+      <div class="stat-card-value-sm"><a href="{% url 'drinking:sampling_points' %}" class="data-table-link">{{ summary.sampling_point_count }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Sample results</div>
-      <div class="stat-card-value-sm">{{ summary.result_count }}</div>
+      <div class="stat-card-value-sm"><a href="{% url 'drinking:results' %}" class="data-table-link">{{ summary.result_count }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
       <div class="stat-card-label">Most recent sample</div>
-      <div class="stat-card-value-sm">{{ summary.latest_sample_date|date:"Y-m-d"|blank }}</div>
+      <div class="stat-card-value-sm">{% if summary.latest_sample_date %}<a href="{% url 'drinking:results' %}" class="data-table-link">{{ summary.latest_sample_date|date:"Y-m-d" }}</a>{% else %}{{ summary.latest_sample_date|blank }}{% endif %}</div>
     </div>
   </div>
 

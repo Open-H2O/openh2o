@@ -22,6 +22,11 @@
   toggle, the mobile-collapse script — is not module-owned and stays written out
   longhand.
 
+  The hairline `<hr>` inside a section comes from the same place: an entry
+  carrying `starts_group` opens a new visual block. It is suppressed on the
+  first entry of a section so a reduced deployment cannot end up with a rule
+  sitting directly under the section label.
+
   Two gates, deliberately at different levels. A section carrying
   `requires_admin_mode` is hidden wholesale in Operations mode — that is the
   Administration block. An entry's own `visibility` is an ADDITIONAL predicate
@@ -51,7 +56,8 @@
         <!-- {{ section.label|upper }}{% if section.requires_admin_mode %} (Admin view only){% endif %} -->{% endif %}{% if not section.requires_admin_mode or nav_mode == 'admin' %}{% if section.label %}
         <div class="sidebar-section">
             <span class="sidebar-link-text sidebar-section-label">{{ section.label }}</span>
-        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% else %}
+        </div>{% endif %}{% for entry in section.entries %}{% if entry.visibility == 'agency_admin' and not user_is_admin %}{% elif entry.visibility == 'setup_gate' and access_enforced and not user_is_admin %}{% else %}{% if entry.starts_group and not forloop.first %}
+        <hr class="sidebar-divider">{% endif %}
         <a href="{% url entry.url_name %}"
            class="sidebar-link{% if entry|nav_active:request.path %} active{% endif %}">
             {% include "partials/_nav_icon.html" with icon_key=entry.icon %}
