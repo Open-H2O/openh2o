@@ -2,8 +2,9 @@
 """Umbrella management command that runs every reference-data seed command.
 
 An operator runs it once during setup to load all baseline lookup tables in
-order (roles, water types, water-right types, well types, data sources, report
-templates); each underlying command is idempotent, so re-running is safe.
+order (roles, the observed-property crosswalk, water types, water-right types,
+well types, data sources, report templates); each underlying command is
+idempotent, so re-running is safe.
 """
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -12,6 +13,20 @@ from core.modules import is_enabled
 
 SEED_COMMANDS = [
     "seed_roles",
+    # The standards crosswalk — the "born-compliant" claim the README makes, and
+    # until now the one seed nothing ran. Not `seed_data`, not `seed_merced`, not
+    # the Makefile, not DEPLOY.md: only the test suite called it. An adopter who
+    # followed the documented quick start got an empty ObservedProperty registry,
+    # and `check_conformance` passed by having nothing to check — a gate reporting
+    # PASS on a vocabulary that was never loaded.
+    #
+    # Ungated rather than in OPTIONAL_SEED_COMMANDS because `standards` is
+    # `required=True` and `schema_resident=True` in core/modules.py: it is the
+    # vocabulary other modules FK into, so it can never be the module that is
+    # missing. Kept out of `MODULE_REGISTRY["standards"].seed_commands`, which
+    # `tests/droppability/checks.py` requires to stay empty for a schema-resident
+    # module.
+    "seed_observed_properties",
 ]
 
 #: Seed commands owned by a module a deployment can switch off. Gated rather

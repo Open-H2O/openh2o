@@ -147,8 +147,9 @@ Follow the prompts for username, email, and password.
 
 ## 8. Seed Reference Data
 
-These commands load required lookup tables (roles, water types, well types,
-water right types, data source definitions, and report templates):
+These commands load required lookup tables (roles, the observed-property
+crosswalk, water types, well types, water right types, data source
+definitions, and report templates):
 
 ```bash
 docker compose exec web python manage.py seed_data
@@ -157,6 +158,9 @@ docker compose exec web python manage.py seed_data
 This runs the seed commands in order (module-gated — a command whose module is
 switched off is skipped):
 - `seed_roles` (admin, manager, viewer)
+- `seed_observed_properties` (the standards crosswalk: every adapter's native
+  parameter code mapped to a canonical concept, which is what makes
+  `check_conformance` able to check anything)
 - `seed_water_types` (Groundwater, Surface Water, Recycled Water, etc.)
 - `seed_water_right_types` (Appropriative, Pre-1914, Riparian, etc.)
 - `seed_well_types` (Agricultural, Municipal, Monitoring, etc.)

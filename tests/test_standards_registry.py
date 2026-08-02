@@ -40,6 +40,30 @@ class TestIsPublishable:
         assert op.is_publishable() is False
 
 
+class TestTheDocumentedSetupPathLoadsTheCrosswalk:
+    """The registry is only worth having if the documented setup loads it.
+
+    Every test below this class called ``seed_observed_properties`` by name, so
+    the suite proved the command worked and never noticed that nothing ran it:
+    not the ``seed_data`` umbrella, not ``seed_merced``, not the Makefile, not
+    DEPLOY.md. An adopter following the quick start got an empty
+    ``ObservedProperty`` table, and ``check_conformance`` — the gate the README
+    sells as "born compliant" — passed by having no rows to check.
+
+    That is the worst shape a gate can take: green because it is empty. This
+    test is the one that fails if the command is ever unwired again, and it
+    deliberately goes through ``seed_data`` rather than the command itself.
+    """
+
+    def test_seed_data_populates_the_observed_property_registry(self):
+        call_command("seed_data", stdout=StringIO(), stderr=StringIO())
+        assert ObservedProperty.objects.exists(), (
+            "`seed_data` left the standards crosswalk empty — check_conformance "
+            "would pass vacuously on a deployment set up as DEPLOY.md describes"
+        )
+        assert SourceParameter.objects.exists()
+
+
 class TestSeedCommand:
     def test_seed_creates_registry(self):
         call_command("seed_observed_properties", stdout=StringIO(), stderr=StringIO())

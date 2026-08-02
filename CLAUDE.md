@@ -143,45 +143,31 @@ it — do not eyeball a new look.
    gold — treat it as legacy, not the pattern to copy.
 4. **Casing:** section headers, eyebrows, and labels are sentence case (the two
    exceptions are data-table column headers and map/legend labels).
-5. **Preview on staging and screenshot before calling it done** — Tailscale-only
-   at **`https://butler.tail7ae369.ts.net`** (HTTPS, no port number). Compare
-   against the surrounding page, not in isolation.
+5. **Preview it running and screenshot before calling it done.** Compare against
+   the surrounding page, not in isolation.
 
-   **Use that URL, not `http://…:8081`.** 8081 is the internal Caddy port; the
-   canonical URL is `tailscale serve` terminating real Let's Encrypt TLS on 443
-   and proxying to it. Django's production settings force
-   `SECURE_SSL_REDIRECT` / `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`, so
-   over plain `http://…:8081` the browser drops the secure cookies and **login
-   fails with a CSRF 403** — pages you can reach without logging in will render,
-   which makes the port URL look like it works right up until it doesn't.
-   Full rationale: `~/dotfiles/docs/INFRASTRUCTURE.md` (OpenH2O staging).
+   Reach your instance over **HTTPS on 443**, not over the container's internal
+   Caddy port. Django's production settings force `SECURE_SSL_REDIRECT` /
+   `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`, so over plain HTTP the browser
+   drops the secure cookies and **login fails with a CSRF 403** — pages you can
+   reach without logging in still render, which makes the plain-HTTP URL look
+   like it works right up until it doesn't.
 
-## Staging & production access (READ before authenticating to either)
+   The maintainer's staging host and its URL are in
+   [MAINTAINER.md](MAINTAINER.md).
 
-**Staging login is standing, documented, and NON-SECRET by design.**
-`admin@staging.local` / `staging-demo-2026`, applied by `ensure_superuser` from
-`~/openh2o-staging/.env` on every container boot (so it survives rebuilds and
-`make fresh`). It is intentionally shareable in plain text — the Tailscale
-network is the real gate, exactly like AgenticOS/VanderOps. Do **not** treat it
-as a secret, do **not** store it in Bitwarden, and do **not** mirror it on prod.
+## Staging & production access
 
-- **Never invent access.** If a login does not work, the answer is in this file
-  or `~/dotfiles/docs/INFRASTRUCTURE.md` (line ~193) — read it. Never create an
-  account, generate a password, or hand-build identity in a shared environment:
-  staging's whole value is that its state is reproducible from config. A
-  hand-made account is undocumented drift in the one place that must have none.
-  (Incident 2026-07-20: post-mortem in
-  `~/Documents/Infrastructure/Claude-Tooling/staging-environment-mutation-postmortem-2026-07-20.md`.)
-- **Two deployments on Butler.** `~/openh2o` = PRODUCTION (openh2o.com);
-  `~/openh2o-staging` = STAGING. Confirm which with
-  `docker ps --format '{{.Names}}\t{{.Label "com.docker.compose.project.working_dir"}}'`
-  before touching anything.
-- **Staging deploy** = git checkout on Butler: `git fetch && git reset --hard
-  origin/main`, then `docker compose up -d --build web` (code is baked into the
-  image, not bind-mounted — a sync alone changes nothing the container serves).
-  Never rsync with `--delete`. **Production deploy is Brent's separate, explicit
-  call** — `deploy.sh` / `make deploy` in the prod checkout, never run as a side
-  effect.
+The maintainer's own deployments (openh2o.com and its staging twin) are
+documented in [MAINTAINER.md](MAINTAINER.md) — standing staging login, which
+checkout is which on the host, and how each is deployed. It is separated out
+because none of it applies to anyone running their own instance; for that,
+[DEPLOY.md](DEPLOY.md) is the whole story.
+
+**Never invent access to a shared environment.** If a login does not work the
+answer is written down — read it. Creating an account or generating a password
+by hand is undocumented drift in the one place whose value is being reproducible
+from config.
 
 ## Testing
 
