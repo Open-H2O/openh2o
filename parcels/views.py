@@ -18,6 +18,7 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
+from core.access import public_in_open_demo
 
 from accounting.models import ReportingPeriod
 from accounting.services import (
@@ -270,7 +271,7 @@ def parcel_edit_field(request, pk):
 
 
 
-@login_required
+@public_in_open_demo
 def parcels_geojson(request):
     """Return all parcels as a GeoJSON FeatureCollection."""
     raw = serialize(

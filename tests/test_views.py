@@ -10,6 +10,7 @@ import pytest
 import factory
 from django.contrib.auth.hashers import make_password
 from django.test import Client
+from django.test.utils import override_settings
 from django.urls import reverse
 
 from tests.factories import (
@@ -101,10 +102,15 @@ class TestHelpPages:
         response = auth_client.get(reverse("glossary"))
         assert response.status_code == 200
 
+    # Help pages are login-gated on an ENFORCED deployment only; the open demo
+    # serves them to anonymous prospects (core.access.public_in_open_demo —
+    # both directions pinned in tests/test_public_demo_access.py).
+    @override_settings(ACCESS_CONTROL_ENFORCED=True)
     def test_getting_started_redirects_anonymous(self, client):
         response = client.get(reverse("getting_started"))
         assert response.status_code == 302
 
+    @override_settings(ACCESS_CONTROL_ENFORCED=True)
     def test_glossary_redirects_anonymous(self, client):
         response = client.get(reverse("glossary"))
         assert response.status_code == 302
@@ -451,7 +457,7 @@ class TestDashboardActiveAccountScope:
         )
         response = auth_client.get(reverse("accounting:dashboard"))
         assert response.status_code == 200
-        assert b"Active Water Accounts" in response.content
+        assert b"Active water accounts" in response.content
 
 
 class TestDashboardAttentionStrip:

@@ -37,6 +37,31 @@ def is_administrator(user):
     )
 
 
+def public_in_open_demo(view_func):
+    """``login_required``, except when this deployment is an open demonstration.
+
+    ``ACCESS_CONTROL_ENFORCED=False`` is the documented open-demo posture (the
+    live openh2o.com instance): a visitor evaluating the platform may browse
+    without an account. On an agency deployment — the default, ``True`` —
+    these views require login exactly as they always did.
+
+    Apply this ONLY to read-only surfaces a prospect needs in order to
+    evaluate the platform: the Help explainers, the glossary, the map page
+    and the GeoJSON layers that draw it. Never apply it to a view that
+    writes, or that exposes per-user data.
+    """
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        if not settings.ACCESS_CONTROL_ENFORCED:
+            return view_func(request, *args, **kwargs)
+        user = request.user
+        if getattr(user, "is_authenticated", False) and user.is_active:
+            return view_func(request, *args, **kwargs)
+        return redirect_to_login(request.get_full_path())
+
+    return _wrapped
+
+
 def admin_required(view_func):
     """Gate a view behind the two-tier administrator rule, switch-aware.
 

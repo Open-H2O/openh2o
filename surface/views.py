@@ -17,6 +17,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from core.access import public_in_open_demo
 
 from accounting.models import ReportingPeriod
 from core.modules import is_enabled
@@ -367,7 +368,7 @@ def water_right_detail(request, pk):
     )
 
 
-@login_required
+@public_in_open_demo
 def pods_geojson(request):
     """Return all points of diversion as a GeoJSON FeatureCollection."""
     raw = serialize(

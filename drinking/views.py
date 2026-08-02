@@ -25,6 +25,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
+from core.access import public_in_open_demo
 
 from core.workspace import list_response
 from drinking import envirofacts, envirofacts_mapping, glossary, importer
@@ -424,7 +425,7 @@ def _facility_geojson(facility, extra_properties=None):
     }
 
 
-@login_required
+@public_in_open_demo
 def facilities_geojson(request):
     """Every located facility as a plain GeoJSON FeatureCollection.
 

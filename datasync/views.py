@@ -22,6 +22,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from core.access import public_in_open_demo
 
 from core.workspace import list_response
 from datasync import freshness
@@ -694,7 +695,7 @@ def stations_freshness_geojson(request):
     return HttpResponse(json.dumps(data), content_type="application/json")
 
 
-@login_required
+@public_in_open_demo
 def stations_geojson(request):
     """Return all active monitored stations as a GeoJSON FeatureCollection."""
     stations = MonitoredStation.objects.filter(

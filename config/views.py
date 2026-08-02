@@ -9,6 +9,7 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from core.access import public_in_open_demo
 
 from datasync import freshness
 from datasync.models import DataSyncLog, MonitoredStation
@@ -378,7 +379,7 @@ def _getting_started_numbering():
     }
 
 
-@login_required
+@public_in_open_demo
 def getting_started(request):
     """Getting Started walkthrough for new GSA administrators."""
     return render(request, "help/getting_started.html", _getting_started_numbering())
@@ -437,31 +438,31 @@ def _explainer(request, name, template):
     return render(request, template)
 
 
-@login_required
+@public_in_open_demo
 def budgets_allocations(request):
     """Explainer: how a zone allocation ceiling becomes each account's allocation."""
     return _explainer(request, "budgets_allocations", "help/budgets_allocations.html")
 
 
-@login_required
+@public_in_open_demo
 def surface_deliveries(request):
     """Explainer: the two agency delivery settings, in plain language."""
     return _explainer(request, "surface_deliveries", "help/surface_deliveries.html")
 
 
-@login_required
+@public_in_open_demo
 def water_balances(request):
     """Conceptual explainer: ET as estimated use, supplies reconciled against it."""
     return _explainer(request, "water_balances", "help/water_balances.html")
 
 
-@login_required
+@public_in_open_demo
 def methods(request):
     """Explainer: the calculation chain and the two ET-demand allocation services."""
     return _explainer(request, "methods", "help/methods.html")
 
 
-@login_required
+@public_in_open_demo
 def settings_explained(request):
     """Explainer: every agency-wide configuration knob, what it does and when to change it."""
     return _explainer(request, "settings_explained", "help/settings_explained.html")
@@ -503,7 +504,7 @@ def _without_unavailable_help_pointers(definition):
     return definition
 
 
-@login_required
+@public_in_open_demo
 def glossary(request):
     """Glossary of water accounting terms used throughout the platform."""
     terms = {

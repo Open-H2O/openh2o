@@ -18,6 +18,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from core.access import public_in_open_demo
 
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from core.workspace import detail_response, list_response
@@ -308,7 +309,7 @@ def well_edit_field(request, pk):
     return render(request, "wells/partials/_field_value.html", context)
 
 
-@login_required
+@public_in_open_demo
 def wells_geojson(request):
     """Return all wells as a GeoJSON FeatureCollection."""
     raw = serialize(

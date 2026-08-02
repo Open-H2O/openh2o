@@ -13,6 +13,7 @@ import factory
 import pytest
 from django.contrib.auth.hashers import make_password
 from django.test import Client
+from django.test.utils import override_settings
 from django.urls import reverse
 
 from health.models import HealthCheckResult
@@ -50,12 +51,17 @@ def auth_client(db):
 
 @pytest.mark.django_db
 class TestGeoJsonRequiresAuth:
+    # GeoJSON layers are login-gated on an ENFORCED deployment only; the open
+    # demo serves them so the public map can draw (core.access.public_in_open_demo
+    # — both directions pinned in tests/test_public_demo_access.py).
+    @override_settings(ACCESS_CONTROL_ENFORCED=True)
     def test_boundaries_geojson_anonymous_redirects(self, client):
         BoundaryFactory()
         resp = client.get(reverse("geography:boundaries_geojson"))
         assert resp.status_code == 302
         assert "/accounts/login/" in resp.url
 
+    @override_settings(ACCESS_CONTROL_ENFORCED=True)
     def test_zones_geojson_anonymous_redirects(self, client):
         ZoneFactory()
         resp = client.get(reverse("geography:zones_geojson"))

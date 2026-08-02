@@ -23,7 +23,7 @@ from django.views.decorators.http import require_POST
 
 from accounting.models import AllocationPlan
 from accounting.services import billable_ledger
-from core.access import admin_required
+from core.access import admin_required, public_in_open_demo
 from core.constants import RECOVERY_HORIZON_CHOICES
 from core.models import SiteConfig
 from core.modules import is_enabled
@@ -39,7 +39,7 @@ from wells.models import WellIrrigatedParcel
 # ---------------------------------------------------------------------------
 
 
-@login_required
+@public_in_open_demo
 def map_view(request):
     """Interactive map with all spatial layers. Uses map-engine.js."""
     center_lng = -119.5
@@ -502,7 +502,7 @@ def zone_geojson_single(request, pk):
 # ---------------------------------------------------------------------------
 
 
-@login_required
+@public_in_open_demo
 def tie_lines_geojson(request):
     """Return GeoJSON FeatureCollection of LineString tie lines connecting wells/PODs to parcel centroids."""
     features = []
@@ -625,7 +625,7 @@ def _geojson_response(cache_key, build, *, max_age=3600, mutate=None):
     return response
 
 
-@login_required
+@public_in_open_demo
 def boundaries_geojson(request):
     """Return all boundaries as a GeoJSON FeatureCollection."""
     qs = Boundary.objects.filter(geometry__isnull=False)
@@ -638,7 +638,7 @@ def boundaries_geojson(request):
     )
 
 
-@login_required
+@public_in_open_demo
 def flowlines_geojson(request):
     """Return the significant flowlines (named waterways + all canals) as GeoJSON.
 
@@ -671,7 +671,7 @@ def flowlines_geojson(request):
     )
 
 
-@login_required
+@public_in_open_demo
 def zones_geojson(request):
     """Return all zones as a GeoJSON FeatureCollection."""
     qs = Zone.objects.filter(geometry__isnull=False)
@@ -722,7 +722,7 @@ def zone_overview_geojson(request):
     )
 
 
-@login_required
+@public_in_open_demo
 def zone_labels_geojson(request):
     """One label point per zone (point_on_surface).
 

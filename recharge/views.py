@@ -16,6 +16,7 @@ from django.core.serializers import serialize
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from core.access import public_in_open_demo
 
 from core.workspace import detail_response, list_response
 from recharge.forms import RechargeEventForm
@@ -208,7 +209,7 @@ def recharge_event_create(request, pk):
     return render(request, "recharge/partials/_event_history.html", context)
 
 
-@login_required
+@public_in_open_demo
 def recharge_sites_geojson(request):
     """Return all recharge sites as GeoJSON, preferring polygon geometry."""
     features = []
