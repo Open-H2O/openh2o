@@ -13,7 +13,28 @@
 
 # Optional: set OPENH2O_NTFY_URL to an ntfy topic URL to receive alerts
 # (e.g. http://192.168.0.114:8080/vander-infra). Unset = alerting disabled.
+#
+# **Falling back to the checkout's .env is what makes the DEPLOY path able to
+# alert at all, and that was measured, not assumed.** The cron entries set this
+# variable inline on their own command lines, so reset-demo has always alerted.
+# promote-golden never runs from cron — the only thing that invokes it is
+# `make deploy`, typed by a person — and a human shell does not export it. So
+# every refused promotion was silent, including the real one on 2026-08-01
+# 17:01 PDT, which was the first live exercise of the ISS-106 alert path
+# shipped that same morning. The code was correct and unreachable: `refuse()`
+# called demo_ntfy, demo_ntfy read an empty URL and returned.
+#
+# Read ONE key, never the whole file: .env also holds the database password and
+# SECRET_KEY, and sourcing it to get an alert URL would put both into this
+# shell for no reason.
 NTFY_URL="${OPENH2O_NTFY_URL:-}"
+if [ -z "$NTFY_URL" ]; then
+  _demo_env_file="${OPENH2O_DIR:-$PWD}/.env"
+  if [ -f "$_demo_env_file" ]; then
+    NTFY_URL="$(sed -n 's/^OPENH2O_NTFY_URL=//p' "$_demo_env_file" | tail -1)"
+  fi
+  unset _demo_env_file
+fi
 
 # Which compose project these helpers talk to. Defaults to the caller's own
 # project (snapshot-demo.sh and reset-demo.sh, which run inside the deployment
