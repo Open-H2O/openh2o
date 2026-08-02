@@ -47,6 +47,23 @@ DEMO_WEB="${DEMO_WEB:-exec -T web}"
 # transient race that only appears under load is exactly the failure that will
 # appear in production and nowhere else.
 #
+# **AND IT DID. 2026-08-01 17:01 PDT, the v2.9 production deploy refused with
+# exactly that FATAL, from inside this function's own caller** — with the
+# staging test suite running beside it, precisely as the paragraph above
+# predicted. The guard was right about the disease and wrong about the cure: it
+# probed over the UNIX SOCKET, which is the one transport the temporary server
+# does answer, so its first success could be that server and the race simply
+# moved one step later. Staging had passed the identical script minutes earlier
+# on a quieter box.
+#
+# **The discriminator is TCP, and it is exact rather than probabilistic.** The
+# postgres image's `docker_temp_server_start` appends `-c listen_addresses=''`,
+# so the initdb server listens on the socket and CANNOT accept a TCP connection
+# at all. A query answered on 127.0.0.1 is therefore the real server by
+# construction — not "probably ready", not "ready long enough". No amount of
+# extra polling on the socket could have given that guarantee, which is why
+# this is a transport change and not a longer timeout.
+#
 #   demo_wait_for_db [seconds]      (default 90)
 demo_wait_for_db() {
   local deadline
@@ -56,8 +73,13 @@ demo_wait_for_db() {
     # SC2086: DEMO_COMPOSE is a multi-word command and must word-split.
     # SC2016: POSTGRES_USER must expand inside the db container, from its own
     # env, not on this host — the same idiom snapshot-demo.sh uses.
+    # -h 127.0.0.1 is load-bearing, NOT tidiness. See the note above: without
+    # it this function can return while the temporary initdb server is still
+    # up, and the caller's next statement dies on "the database system is
+    # shutting down".
     if $DEMO_COMPOSE exec -T db sh -c \
-         'psql -tAqc "SELECT 1" -U "$POSTGRES_USER" -d postgres' >/dev/null 2>&1; then
+         'psql -h 127.0.0.1 -tAqc "SELECT 1" -U "$POSTGRES_USER" -d postgres' \
+         >/dev/null 2>&1; then
       return 0
     fi
     sleep 2

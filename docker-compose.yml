@@ -9,7 +9,16 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-openh2o}"]
+      # -h 127.0.0.1 is load-bearing. Without it pg_isready probes the unix
+      # socket, which the postgres image's TEMPORARY initdb server answers —
+      # so on a fresh volume the container reports healthy, `--wait` and
+      # `depends_on: service_healthy` release, and the next statement hits
+      # "FATAL: the database system is shutting down" as the temp server hands
+      # over to the real one. That server is started with `listen_addresses=''`
+      # and cannot accept TCP at all, so a TCP probe answers only when the real
+      # server is up. Refused the v2.9 production deploy on 2026-08-01; see the
+      # note on demo_wait_for_db in scripts/_demo-lib.sh.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-openh2o}"]
       interval: 5s
       timeout: 5s
       retries: 5
