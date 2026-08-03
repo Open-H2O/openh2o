@@ -6,6 +6,38 @@
 :80 {
     encode gzip
 
+    # Content-Security-Policy — the one security header Django's SecurityMiddleware
+    # does not set. Django 5 gives us HSTS, X-Frame-Options, X-Content-Type-Options
+    # and Referrer-Policy from config/settings/production.py; CSP has no built-in
+    # setting there, so it lives here rather than pulling in django-csp for one line.
+    # Set at site level so it covers static files and app responses alike.
+    #
+    # Every origin below is one this platform actually loads (verified against the
+    # templates and a live page fetch, 2026-08-03). Keep this list in step with what
+    # base.html and static/js/map-core.js reference — a CSP that silently drifts out
+    # of date breaks the map rather than protecting anything:
+    #
+    #   unpkg.com          HTMX and MapLibre GL (JS + CSS) — see "No Node.js" in CLAUDE.md
+    #   cdn.jsdelivr.net   Chart.js
+    #   fonts.googleapis   Public Sans stylesheet; fonts.gstatic.com serves the files
+    #   tiles.openfreemap  basemap tiles, sprites and glyphs (map-core.js)
+    #   server.arcgisonline satellite imagery and the boundaries/places overlay
+    #   analytics.vanderdev.net  Umami, and ONLY when UMAMI_WEBSITE_ID is set. Running
+    #                      your own instance with a different analytics host? Change
+    #                      this origin to yours, or the tag is blocked silently.
+    #
+    # 'unsafe-inline' is deliberate, not an oversight: 29 templates carry inline
+    # <script> blocks (the diagnostics buffer in base.html loads first by design) and
+    # inline style attributes are used throughout. Moving to nonces means touching
+    # every one of them — worth doing, but it is a refactor, not a header change.
+    #
+    # worker-src/child-src blob: is what MapLibre GL needs. It spawns its tile workers
+    # from blob URLs, and without these two the map fails to render at all while every
+    # other page looks perfectly fine — the classic way this header gets shipped broken.
+    header {
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://analytics.vanderdev.net; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org https://server.arcgisonline.com; connect-src 'self' https://tiles.openfreemap.org https://server.arcgisonline.com https://analytics.vanderdev.net; worker-src 'self' blob:; child-src 'self' blob:"
+    }
+
     # Serve static files directly
     handle /static/* {
         header Cache-Control "public, max-age=0, must-revalidate"
