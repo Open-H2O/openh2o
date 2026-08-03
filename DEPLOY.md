@@ -555,8 +555,8 @@ nightly reset either, by design.
 | `EMAIL_USE_TLS` | No | `True` | Use TLS for SMTP |
 | `EMAIL_HOST_USER` | No | empty | SMTP username |
 | `EMAIL_HOST_PASSWORD` | No | empty | SMTP password |
-| `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google OAuth client secret |
+| `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID (see the note below — the keys alone do not show the button) |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google OAuth client secret (see the note below) |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use mock data for external sync adapters instead of live APIs |
 | `FEEDBACK_ENABLED` | No | `False` | Render the in-app feedback widget. Off by default; set `True` to turn it on (e.g. on a hosted/managed deployment with someone to read the reports) |
 | `FEEDBACK_ENDPOINT` | No | empty | Optional URL to also POST each stored report to (e.g. an n8n triage pipeline); blank = store-only |
@@ -565,6 +565,14 @@ nightly reset either, by design.
 | `FEEDBACK_MAX_MESSAGE_CHARS` | No | `5000` | Max characters in a feedback message |
 | `FEEDBACK_MAX_DIAGNOSTICS_BYTES` | No | `65536` | Max size of the auto-captured diagnostics blob (bytes; default 64 KB) |
 | `FEEDBACK_RATE_LIMIT_PER_HOUR` | No | `20` | Max submissions accepted per client per hour |
+
+**Google sign-in takes two steps, not one.** Setting `GOOGLE_OAUTH_CLIENT_ID`
+and `GOOGLE_OAUTH_CLIENT_SECRET` makes Google sign-in *possible* and changes
+nothing anyone can see. The **"Continue with Google"** button only appears on the
+login and sign-up pages once the per-agency database flag `allow_google_oauth` is
+switched on — it ships off. Turn it on at **Django admin → Core → Site configs →
+(your agency)**, tick **Allow google oauth**, and save. Set the keys first: the
+button will fail if it is on with no credentials behind it.
 
 ---
 
