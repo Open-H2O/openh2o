@@ -44,7 +44,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--purge-inactive", action="store_true",
             help="Also DELETE every currently-inactive station (the wide discovery net). "
-                 "Inactive stations carry no published data, so this loses nothing but the roster clutter.",
+                 "Inactive stations carry no published data, so this loses nothing but the roster clutter "
+                 "— but ONLY once the stations you want to keep have been activated: on a freshly "
+                 "discovered basin every station is still inactive, and this deletes all of them.",
         )
 
     def handle(self, *args, **options):

@@ -140,7 +140,28 @@ on the map, the district's monitoring view reads as a field of dead red markers
 and looks broken. So **analyse what actually reports, then prune the rest** before
 handover.
 
-1. **Sync every active source with the right window.** Daily gauges (cdec, usgs)
+1. **Activate the stations you intend to keep.** Discovery creates every station
+   **inactive**, and `sync_source` only pulls data for active ones — with none
+   on it stops and prints *"No active stations for CDEC. Run discover_stations
+   first."*, which is misleading advice: discovery is what created those
+   inactive rows. Activation, not more discovery, is what it needs. So nothing
+   below works until this step has run.
+
+   In a browser: open the Setup Wizard at `/setup/` (Phase 3) and use its enable
+   step, which turns on every station inside the boundary you chose.
+
+   Headless, over SSH:
+   ```bash
+   docker compose exec web python manage.py activate_stations --boundary-name "Their Basin" --dry-run
+   docker compose exec web python manage.py activate_stations --boundary-name "Their Basin"
+   ```
+   `--dry-run` first: it prints the count and a sample and changes nothing. Add
+   `--source cdec` to activate one source at a time. Omit `--boundary-name` and
+   it falls back to the first boundary and says which one it used, so you can see
+   the scope you got. `--all-boundaries` is the only way to activate everywhere,
+   and it has to be typed on purpose.
+
+2. **Sync every active source with the right window.** Daily gauges (cdec, usgs)
    are fine on the default 7-day window, but periodic groundwater (`dwr_wdl`,
    `dwr_sgma`) and lagging climate (`noaa`) report only every few months — sync
    them with a multi-year `--start` so each station lands a real history, not a
@@ -155,17 +176,22 @@ handover.
    Note any gauge whose source returns nothing — that station is dead at the
    source, not misconfigured.
 
-2. **Eliminate the stations that carry no usable data.** This deletes (not just
-   hides) any active station without enough readings to chart, plus the entire
-   inactive discovery net (which carries no data by definition):
+3. **Eliminate the stations that carry no usable data.** This deletes (not just
+   hides) any active station without enough readings to chart, plus — with
+   `--purge-inactive` — **every station that is still switched off**:
    ```bash
    docker compose exec web python manage.py prune_dataless_stations --delete --purge-inactive --dry-run
    docker compose exec web python manage.py prune_dataless_stations --delete --purge-inactive
    ```
+   ⚠️ **`--purge-inactive` deletes the whole inactive discovery net, and it cannot
+   tell a dead gauge from one you simply have not activated yet.** It is only
+   correct *after* step 1 — once the stations you want to keep are active. Run it
+   on a freshly discovered basin and you delete everything discovery just found.
+
    `--dry-run` first to see what goes. The default keeps any station with ≥2
    published readings; raise `--min-records` if you want a leaner map. Re-run this
-   any time after a from-scratch re-seed — discovery re-creates the wide net, and
-   one command clears it again.
+   any time after a from-scratch re-seed — discovery re-creates the wide net, so
+   activate the keepers again first, then clear the rest.
 
 ✋ **Checkpoint:** the monitoring map is mostly green/amber (stations with recent
 data), not a field of red, and every visible marker has a real reading behind it.
