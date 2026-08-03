@@ -71,6 +71,24 @@ This is the phase an AI must not skip. The platform's production settings **refu
 
 **Decide first: does the agency have their own data ready, or do they want to explore the demo first?**
 
+### If you have a browser: use the Setup Wizard at `/setup/`
+
+For a **real basin**, prefer the wizard over the command line. It is a guided
+first-run flow that does the whole load in one pass: pick or upload the agency's
+boundary as a GeoJSON file, confirm it on a map, run `auto_populate` step by step
+with progress on screen, and then **enable the monitoring stations inside that
+boundary** — the step that is otherwise easy to miss, because discovery creates
+every station switched off.
+
+Find it in the left sidebar under **Administration → Setup Wizard**, or go
+straight to `https://theirdomain/setup/`. It is visible to an admin (and on an
+instance that has not turned access control on yet, to anyone), so log in as the
+admin user from Phase 2 first.
+
+The command-line path below is the alternative for a **headless deployment** —
+no browser, SSH only. It reaches the same end state; it just asks you to run each
+step yourself.
+
 ### Option A — Demo data (always do this first)
 ```bash
 docker compose exec web python manage.py seed_merced   # the Merced Subbasin demonstration

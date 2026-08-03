@@ -251,6 +251,24 @@ docker compose logs web --tail=50
 
 ## 11. Ongoing Operations
 
+### The Setup Wizard (`/setup/`)
+
+The platform ships a guided first-run flow at `https://yourdomain/setup/`. It is
+the browser equivalent of the load-data commands: pick or **upload a basin
+boundary as a GeoJSON file**, confirm it on a map, run the `auto_populate`
+discovery steps with progress on screen, and enable the monitoring stations that
+were found.
+
+- **Where it is:** left sidebar, **Administration → Setup Wizard**.
+- **Who can see it:** an admin user — and, on an instance that has not enabled
+  access control yet, any visitor. Set up your admin account (§7) before you
+  expose the site.
+- **What its last step does:** `setup/activate-stations/` bulk-enables **every
+  inactive station inside the chosen boundary** in one action. Station discovery
+  creates stations switched off, and syncing only pulls data for active ones, so
+  a basin stays empty until something turns them on. Over SSH the equivalent is
+  `python manage.py activate_stations --boundary-name "<basin>"`.
+
 ### Upgrades
 
 ```bash
