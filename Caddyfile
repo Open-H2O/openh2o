@@ -34,8 +34,13 @@
     # worker-src/child-src blob: is what MapLibre GL needs. It spawns its tile workers
     # from blob URLs, and without these two the map fails to render at all while every
     # other page looks perfectly fine — the classic way this header gets shipped broken.
+    #
+    # The CDNs appear in connect-src as well as script-src because the browser fetches
+    # their .js.map source maps over that directive. Only devtools triggers it, so the
+    # site works either way — but leaving it blocked means anyone who opens devtools on
+    # a page here is greeted by a red CSP error that has nothing to do with their bug.
     header {
-        Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://analytics.vanderdev.net; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org https://server.arcgisonline.com; connect-src 'self' https://tiles.openfreemap.org https://server.arcgisonline.com https://analytics.vanderdev.net; worker-src 'self' blob:; child-src 'self' blob:"
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://analytics.vanderdev.net; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://tiles.openfreemap.org https://server.arcgisonline.com; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://tiles.openfreemap.org https://server.arcgisonline.com https://analytics.vanderdev.net; worker-src 'self' blob:; child-src 'self' blob:"
     }
 
     # Serve static files directly
