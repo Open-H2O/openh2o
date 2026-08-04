@@ -316,6 +316,6 @@ Then walk them through the first loop: log in → confirm their boundary → rev
 
 - **Never** commit the agency's `.env`, API keys, or `secrets/` directory. They are gitignored for a reason.
 - **Never** run `make fresh` on a populated instance — it destroys the database volume. Use `make up` for routine rebuilds.
-- **Never** flip `ACCOUNT_EMAIL_VERIFICATION` to require email before SMTP is configured, or signups will 500.
+- **Don't** set `ACCOUNT_EMAIL_VERIFICATION=mandatory` on an instance with no mail server. Nothing crashes — signup still succeeds — but the confirmation link is written to the container log instead of an inbox, so nobody except whoever can read that log is able to finish signing up. Leave it unset and it follows `EMAIL_HOST` on its own: confirmation required where SMTP is configured, off where it isn't.
 - **Don't** weaken the production security guard to "make it boot." If it's complaining, fix the password or hosts — that's the bug it's catching.
 - **Do** keep the in-app "Source code" link pointing at wherever you publish your modified source. The AGPL (Section 13) requires it once the agency runs the platform for users. See [NOTICE](../NOTICE).

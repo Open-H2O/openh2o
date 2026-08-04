@@ -383,6 +383,36 @@ Verify by triggering a reset and watching the log:
 docker compose exec web python manage.py sendtestemail you@example.com
 ```
 
+#### Signup email verification
+
+The same SMTP settings also drive signup confirmation — whether a new account
+must click a link in an email before it can log in. It is controlled by
+`ACCOUNT_EMAIL_VERIFICATION`, which takes `none`, `optional` or `mandatory`.
+
+You normally do not set it. Left alone it follows `EMAIL_HOST` above: configure
+a mail server and new signups must confirm (`mandatory`); leave `EMAIL_HOST`
+empty and they are let straight in (`none`). **An instance with no mail server
+therefore never creates an account that can never be confirmed** — which matters
+if you are running this on a single office computer.
+
+Two cases where you should set it explicitly:
+
+- **A public demo with SMTP configured** wants `none`, so a visitor looking
+  around is not asked to confirm an address.
+- **An agency that wants confirmation before its mail server exists** can set
+  `mandatory` now and configure SMTP later — but until SMTP is real, the
+  confirmation goes to the container log instead of an inbox, and nobody but
+  you can complete a signup.
+
+A value that is not one of the three stops the container at boot with an error
+naming what you typed. That is deliberate: a silent fallback would read as
+"verification is on" while nothing was ever sent.
+
+Note that this only matters where signup is open at all. With
+`ACCESS_CONTROL_ENFORCED` at its default (`True`), public self-registration is
+closed and an administrator creates accounts directly, so verification never
+comes into play.
+
 ### Health Checks
 
 Run manually at any time:
@@ -564,6 +594,7 @@ nightly reset either, by design.
 | `EMAIL_USE_TLS` | No | `True` | Use TLS for SMTP |
 | `EMAIL_HOST_USER` | No | empty | SMTP username |
 | `EMAIL_HOST_PASSWORD` | No | empty | SMTP password |
+| `ACCOUNT_EMAIL_VERIFICATION` | No | **derived from `EMAIL_HOST`:** `mandatory` when a mail server is set, `none` when it is empty | Whether a new signup must confirm its email address before it can log in. `none` = let them straight in; `optional` = send the email but don't block; `mandatory` = block login until confirmed. The derivation means an install with no mail server can never lock out its own operator, while an agency that has configured SMTP gets confirmation without asking for it. Set it explicitly to override — an open demo with SMTP configured wants `none`. An unrecognised value stops the container at boot rather than falling back silently |
 | `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID (see the note below — the keys alone do not show the button) |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google OAuth client secret (see the note below) |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use mock data for external sync adapters instead of live APIs |
