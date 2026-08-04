@@ -65,6 +65,22 @@ This is the phase an AI must not skip. The platform's production settings **refu
 
 ✋ **Checkpoint:** the site loads over `https://theirdomain`, and you can log in as the admin. Confirm the human has the admin password stored somewhere safe (a password manager).
 
+**Verify login works (no browser).** Don't test login with plain-HTTP `curl` —
+the POST will return 403 no matter what you send, and that is correct behaviour,
+not a bug: production settings default `SESSION_COOKIE_SECURE` and
+`CSRF_COOKIE_SECURE` to on (`config/settings/production.py`), and a `Secure`
+cookie is never sent back over `http://`, so the CSRF check cannot pass. Verify
+from inside the container instead:
+
+```bash
+docker compose exec web python manage.py shell -c "
+from django.test import Client
+c = Client(SERVER_NAME='theirdomain', secure=True)   # a host from ALLOWED_HOSTS
+r = c.post('/accounts/login/', {'login': 'ADMIN_EMAIL', 'password': 'ADMIN_PASSWORD'})
+print(r.status_code)   # 302 = login works; 200 = form re-rendered (wrong credentials)
+"
+```
+
 ---
 
 ## Phase 3 — Load data

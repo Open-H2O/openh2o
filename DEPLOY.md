@@ -17,6 +17,7 @@ an AI or operator deploying on a fresh VPS with zero prior knowledge.
 | Docker Engine | 24+ |
 | Docker Compose | v2 |
 | Git | any recent version |
+| make | any recent version (`sudo apt-get install -y make`) |
 | Domain | Required for production HTTPS |
 
 Verify Docker is installed:
@@ -238,6 +239,11 @@ Visit `http://<server-ip>/health/` in a browser.
 **Django admin:**
 
 Visit `http://<server-ip>/admin/` and log in with your superuser credentials.
+
+No browser? A plain-HTTP `curl` login will 403 by design
+(`SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`) — use the headless check in
+[docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) ("Verify login works
+(no browser)").
 
 **No errors in logs:**
 
