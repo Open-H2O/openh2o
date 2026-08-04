@@ -18,7 +18,7 @@ an AI or operator deploying on a fresh VPS with zero prior knowledge.
 | Docker Compose | v2 |
 | Git | any recent version |
 | make | any recent version (`sudo apt-get install -y make`) |
-| Domain | Required for production HTTPS |
+| Domain | Only if the instance must be reachable from outside its own machine or network. A single-computer or office-network deployment needs none — see [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 |
 
 Verify Docker is installed:
 
@@ -191,8 +191,11 @@ district zones, water rights and points of diversion, hand-selected place-of-use
 parcels, cropland, recharge basins, and a year of ledger activity. One step does
 a live fetch of flowlines and monitoring stations from public APIs (a few
 minutes, no key required). For real satellite-ET figures, set an OpenET key (see
-section 11) and run the ET sync; without it the demo uses representative
-face-value figures and is still internally coherent.
+section 11) and run the ET sync. Without a key the demo's face-value figures —
+water rights, deliveries, parcels, ledger activity — are all seeded and
+internally coherent, but **consumptive use is computed from satellite ET and has
+no fallback**: `run_calculations` reports every parcel as skipped ("no ET data")
+and those figures stay empty until a key is supplied.
 
 Each sub-step is idempotent, so re-running is safe — with one deliberate
 exception. The operations step deletes and regenerates parcel and well geometry,
@@ -273,7 +276,7 @@ were found.
   inactive station inside the chosen boundary** in one action. Station discovery
   creates stations switched off, and syncing only pulls data for active ones, so
   a basin stays empty until something turns them on. Over SSH the equivalent is
-  `python manage.py activate_stations --boundary-name "<basin>"`.
+  `docker compose exec web python manage.py activate_stations --boundary-name "<basin>"`.
 
 ### Upgrades
 
@@ -549,7 +552,7 @@ nightly reset either, by design.
 | `POSTGRES_DB` | No | `openh2o` | PostgreSQL database name |
 | `POSTGRES_USER` | No | `openh2o` | PostgreSQL username |
 | `POSTGRES_PASSWORD` | No | `openh2o` | PostgreSQL password (change in production) |
-| `DJANGO_SETTINGS_MODULE` | No | `config.settings.local` | Use `config.settings.production` for prod |
+| `DJANGO_SETTINGS_MODULE` | **Yes — set it explicitly** | **split by entry point:** `manage.py` defaults to `config.settings.production`; `config/wsgi.py` and `config/asgi.py` default to `config.settings.local` | Always set `config.settings.production` for a real deployment, on any hardware. ⚠ This file is read by Docker Compose, not by Django — running `manage.py` from a host shell needs the variables exported into the shell first (`set -a`, source this file, `set +a`), or it will load whatever its own default is |
 | `ALLOWED_HOSTS` | Yes (prod) | `[]` | Comma-separated list of allowed hostnames |
 | `CSRF_TRUSTED_ORIGINS` | Yes (prod) | `[]` | Comma-separated HTTPS origins |
 | `ACCESS_CONTROL_ENFORCED` | No | `True` | Two-tier access model. On (default) closes public self-signup and gates admin-only screens — the right posture for a real agency. Set `False` only for an open demo where anyone should be able to self-register. Your superuser is always an administrator, so you can't lock yourself out |

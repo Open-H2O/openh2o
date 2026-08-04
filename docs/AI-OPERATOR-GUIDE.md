@@ -12,13 +12,38 @@ Work through the five phases in order. Stop at each ✋ checkpoint and confirm w
 
 ## What you need before you start
 
-Ask the agency staffer for these. You cannot proceed without the first two.
+**Where this runs is the agency's choice, not this platform's.** OpenH2O is
+meant to run the same way on an office computer, on a $15/month rented server,
+and on a government data centre. None of those is a lesser deployment, and this
+guide must never refuse one of them. What changes between them is **who can
+reach the instance**, and that — not the price of the hardware — is what
+decides the security settings in Phase 2.
 
-1. **A fresh Linux server** with SSH access and Docker installed (a 2–4 GB virtual server is plenty). Ubuntu LTS is the safe default.
-2. **A domain or subdomain** they control, with DNS pointed at the server's IP (e.g. `water.theirdistrict.org`). HTTPS depends on this.
+Ask the agency staffer for these.
+
+1. **A computer to run it on**, with Docker installed. Any of these is fine:
+   their own machine (Windows, macOS or Linux, with Docker Desktop or OrbStack),
+   a rented virtual server, or agency-managed infrastructure. 2–4 GB of memory
+   is plenty. **Check Docker works before anything else: `docker run
+   hello-world`.** If that fails mentioning "cgroup" or "bpf", the machine's own
+   host is blocking containers and no setting inside it will fix that — ask
+   whoever provisioned it.
+2. **How the agency needs to reach it.** Ask directly, and write the answer
+   down; every later choice follows from it:
+   - *Only from this one computer* — no domain needed. Bind the service to
+     loopback (`127.0.0.1`) so nothing else on their network can reach it.
+   - *From other computers in their office* — no domain needed, but the
+     instance is now exposed to their local network. Say so out loud.
+   - *From outside — a board member, a consultant, the public* — **this is the
+     only case that needs a domain and HTTPS.** They will need a domain or
+     subdomain they control, with DNS pointed at the machine's address.
 3. *(Optional, can be added later)* API keys for OpenET, CIMIS, and NOAA, and SMTP credentials for password-reset email. The platform runs fine without them; those features simply stay dark until provided.
 
-If they don't have a server or domain yet, help them get a virtual server from any provider and register a domain first. Don't try to deploy to `localhost` for a real agency — they need a URL their board can reach.
+If the agency wants public reach and has no server or domain yet, help them get
+a virtual server from any provider and register a domain. **If they do not want
+public reach, do not talk them into it** — a single-computer or office-network
+deployment is a supported way to run this platform, not a trial version of a
+real one.
 
 ---
 
@@ -58,12 +83,55 @@ docker compose exec web python manage.py seed_data   # reference tables (idempot
 
 This is the phase an AI must not skip. The platform's production settings **refuse to boot** with a weak database password or an empty `ALLOWED_HOSTS` — that guard is your friend; let it enforce the basics.
 
-1. **Strong database password.** Set `POSTGRES_PASSWORD` in `.env` to a long random value. The dev default (`openh2o`) is rejected in production by design.
-2. **Real `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`.** Set them to the agency's domain.
-3. **HTTPS.** Caddy issues a certificate automatically *once DNS points at the server*. Confirm the domain resolves to the server before expecting `https://` to work. (See DEPLOY.md's Caddyfile section.)
-4. **Create the admin user.** Either `docker compose exec web python manage.py createsuperuser`, or set `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` in `.env` and let `ensure_superuser` create it on startup.
+**Always use `config.settings.production`, wherever this is running.** The
+development settings module (`config.settings.local`) turns `DEBUG` on, which
+prints the site's internals — stack traces, settings, SQL — to whoever is looking
+at a broken page, and it forces `ALLOWED_HOSTS` to `*` no matter what you
+configured. It is for working on the code, not for an agency's data. Django's
+own `manage.py check --deploy` will tell you so; do not wave that away.
 
-✋ **Checkpoint:** the site loads over `https://theirdomain`, and you can log in as the admin. Confirm the human has the admin password stored somewhere safe (a password manager).
+1. **Strong database password.** Set `POSTGRES_PASSWORD` in `.env` to a long random value. The dev default (`openh2o`) is rejected in production by design.
+2. **`ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`** — set from the answer you wrote down in "What you need before you start":
+
+   | How they reach it | `ALLOWED_HOSTS` | `CSRF_TRUSTED_ORIGINS` |
+   |---|---|---|
+   | Only this computer | `localhost,127.0.0.1` | leave empty |
+   | Their office network | the machine's LAN address, e.g. `192.168.1.40` | leave empty |
+   | From outside | the agency's domain | `https://theirdomain` |
+
+3. **Encryption in transit — and the setting that bites if you skip this.**
+   Production settings assume HTTPS: `SECURE_SSL_REDIRECT`,
+   `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` all default **on**. A
+   browser never sends a `Secure` cookie over plain `http://`, so on a
+   deployment without HTTPS **every login returns 403 while unauthenticated
+   pages render perfectly** — which makes it look like the site works right up
+   until someone tries to log in.
+
+   | How they reach it | What to do |
+   |---|---|
+   | **From outside (public internet)** | Point DNS at the machine and let Caddy issue a certificate automatically. **Never turn the three settings below off on a publicly reachable instance.** (See DEPLOY.md's Caddyfile section.) |
+   | **Only this computer, or their office network** | There is no certificate to get and no HTTPS to redirect to. Set all three `False` in `.env` — this is a supported, documented posture, not a workaround: <br>`SECURE_SSL_REDIRECT=False`<br>`SESSION_COOKIE_SECURE=False`<br>`CSRF_COOKIE_SECURE=False` |
+
+   Either way you keep `DEBUG=False`, a real `ALLOWED_HOSTS`, a strong database
+   password and the closed-signup default — which is the whole point: the
+   security posture follows from **who can reach the instance**, not from where
+   it happens to be running.
+
+4. **Limit who can reach it, at the network.** If the answer was *"only this
+   computer,"* bind the published port to loopback so nothing else on their
+   network can connect — in `docker-compose.yml`, publish `127.0.0.1:80:80`
+   rather than `80:80`. Confirm it: from another machine, the address should
+   refuse the connection.
+5. **Create the admin user.** Either `docker compose exec web python manage.py createsuperuser`, or set `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` in `.env` and let `ensure_superuser` create it on startup.
+
+✋ **Checkpoint:** the site loads at the address the agency will actually use —
+`https://theirdomain` for a public deployment, `http://localhost` for a
+single-computer one — and you can log in as the admin. Run
+`docker compose exec web python manage.py check --deploy` and read what it says:
+on a non-public deployment the HTTPS warnings are expected and the reason is
+above, but **any warning about `DEBUG` means you are on the wrong settings
+module.** Confirm the human has the admin password stored somewhere safe (a
+password manager).
 
 **Verify login works (no browser).** Don't test login with plain-HTTP `curl` —
 the POST will return 403 no matter what you send, and that is correct behaviour,
@@ -76,6 +144,9 @@ from inside the container instead:
 docker compose exec web python manage.py shell -c "
 from django.test import Client
 c = Client(SERVER_NAME='theirdomain', secure=True)   # a host from ALLOWED_HOSTS
+                                                    # non-public deployment: use
+                                                    # SERVER_NAME='localhost' and
+                                                    # drop secure=True
 r = c.post('/accounts/login/', {'login': 'ADMIN_EMAIL', 'password': 'ADMIN_PASSWORD'})
 print(r.status_code)   # 302 = login works; 200 = form re-rendered (wrong credentials)
 "

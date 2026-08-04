@@ -4,7 +4,7 @@
 
 # OpenH2O — Open Water Accounting Platform
 
-**A production-ready water-data management platform that a California water agency can stand up on a $15/month server — with an AI agent doing the deployment.**
+**A production-ready water-data management platform that a California water agency can stand up wherever it already has a computer — an office machine, a $15/month rented server, or agency infrastructure — with an AI agent doing the deployment.**
 
 OpenH2O helps a water agency manage its own water data — the measurements, deliveries, wells, diversions, recharge, and drinking-water quality records that make up an agency's files — so the agency owns and understands its own basin. Satellite evapotranspiration (ET) is one of those data feeds, not the centerpiece. For agencies that also file with the state, it can prepare the reports (GEARS and CalWATRS), but reporting is an optional add-on, not the reason the platform exists. It is built on a fully open stack so that any agency — or any engineering firm working on their behalf — can run it, read it, and improve it.
 
@@ -35,17 +35,27 @@ It is designed for a single agency per deployment (single-tenant), and it works 
 |------|--------------|------------|
 | **AI-operated** | An agency with no software staff, using a frontier AI agent | [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) |
 | **Manual deploy** | An ops person or consultant on a fresh Linux server | [DEPLOY.md](DEPLOY.md) |
-| **Local trial** | Anyone who wants to see it running on their laptop first | [Quick start](#quick-start-local-trial) below |
+| **Single computer** | An agency running it on one office machine or a laptop — a supported deployment, not a preview | [Quick start](#quick-start-single-computer) below |
 
-### Quick start (local trial)
+**None of these is a lesser deployment.** What changes between them is who needs
+to reach the instance: only the machine it runs on, an office network, or the
+public internet. Only the last needs a domain and HTTPS.
+
+### Quick start (single computer)
 
 ```bash
 git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
 cp .env.example .env
-# For a local trial, set these two lines in .env:
+# For a quick look on your own machine, set these two lines in .env:
 #   SECRET_KEY=<any-random-string>             # base settings require it, no default
-#   DJANGO_SETTINGS_MODULE=config.settings.local   # local mode: no HTTPS redirect, dev DB password is fine
+#   DJANGO_SETTINGS_MODULE=config.settings.local   # dev mode: DEBUG on, dev DB password is fine
+#
+# WARNING: config.settings.local is for LOOKING AT IT, not for holding an
+# agency's real records. DEBUG=True prints the site's internals on any error
+# page, and it forces ALLOWED_HOSTS to "*" whatever you configure. To actually
+# run your agency on one computer, use production settings with the three
+# plain-HTTP flips - see docs/AI-OPERATOR-GUIDE.md Phase 2.
 docker compose up -d --build         # start db + web + caddy
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data      # reference data
@@ -53,7 +63,7 @@ docker compose exec web python manage.py seed_merced    # the Merced Subbasin de
 docker compose exec web python manage.py createsuperuser   # your login for the trial
 ```
 
-Open `http://localhost` and log in with the superuser you just created — most pages sit behind a login, and self-signup is closed by default on a fresh install (that's the `ACCESS_CONTROL_ENFORCED` setting; the public demo at openh2o.com runs with it off). You'll land on the **Merced Subbasin** demonstration — a real California basin, the same one running at [openh2o.com](https://openh2o.com). The seed pulls live hydrography and monitoring stations from public APIs (a few-minute fetch, no key required); add an OpenET key later for real satellite-ET figures, otherwise the demo uses representative values. Run `make help` for all shortcuts. For a real deployment with HTTPS, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
+Open `http://localhost` and log in with the superuser you just created — most pages sit behind a login, and self-signup is closed by default on a fresh install (that's the `ACCESS_CONTROL_ENFORCED` setting; the public demo at openh2o.com runs with it off). You'll land on the **Merced Subbasin** demonstration — a real California basin, the same one running at [openh2o.com](https://openh2o.com). The seed pulls live hydrography and monitoring stations from public APIs (a few-minute fetch, no key required); the demo's water rights, deliveries, parcels and ledger activity are all seeded and internally coherent without any key. **Consumptive-use figures are the exception: they are computed from satellite ET, so without an OpenET key `run_calculations` skips every parcel ("no ET data") and those numbers stay empty.** Add an OpenET key to fill them in. Run `make help` for all shortcuts. For a real deployment with HTTPS, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
 
 ---
 

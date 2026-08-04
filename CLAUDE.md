@@ -4,7 +4,19 @@
 
 A water-data management platform for California Groundwater Sustainability Agencies (GSAs) and water districts. It manages an agency's water data — measurements, deliveries, wells, surface diversions, mixed-use accounting, and managed aquifer recharge. When an agency files with the state, it can generate the data for the required reports (GEARS CSV, CalWATRS CSV); reporting is an optional feature, not the platform's purpose.
 
-The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and a $15/mo VPS and have the AI stand the platform up — and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
+The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and have the AI stand the platform up — and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
+
+**Where it runs must not matter (BLOCKING).** The same code, the same
+documentation and the same deployment path must serve an office computer, a
+$15/mo rented server, and government-scale infrastructure alike. **A $15/mo VPS
+is an illustration of how low the floor goes, never a specification of the
+target** — nothing in this repository may refuse, downgrade or treat as a "trial"
+a deployment because of the hardware it sits on. The variable that legitimately
+changes the configuration is **who can reach the instance** (one computer / a
+local network / the public internet), and that is what `docs/AI-OPERATOR-GUIDE.md`
+Phase 2 branches on. Recorded 2026-08-04 after `docs/AI-OPERATOR-GUIDE.md` was
+found refusing single-computer deployment outright, and after Phase 108 was
+scoped as though such a deployment were off-thesis.
 
 ## Tech Stack
 
