@@ -1,14 +1,20 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """allauth account adapter wired to the access-control master switch (ISS-021).
 
-Public self-registration is open by default because the live demo wants it. At
-go-live we flip ``ACCESS_CONTROL_ENFORCED`` to True and this adapter closes
+``ACCESS_CONTROL_ENFORCED`` defaults to True (since Phase 41), so public
+self-registration is CLOSED by default. With the switch on, this adapter closes
 signup at allauth's own gate -- the signup view stops serving the form and
-refuses to create accounts -- so no separate template surgery is needed.
+refuses to create accounts -- so no separate template surgery is needed. The
+open demo is the deployment that turns the switch OFF; a real agency leaves it
+alone.
 
-We leave ``ACCOUNT_EMAIL_VERIFICATION`` as-is: closing signup entirely
-supersedes the missing-verification gap for this single-tenant tool. Re-enabling
-verification for any future open-signup mode is tracked under ISS-015.
+``ACCOUNT_EMAIL_VERIFICATION`` is a real setting as of ISS-015 (closed
+2026-08-04, Phase 109-01) rather than the hardcoded ``"none"`` it used to be.
+Unset, it derives from ``EMAIL_HOST``: "mandatory" where a mail server is
+configured, "none" where there is not one, so an install that cannot send mail
+can never lock its operator out. It governs the open-signup posture -- when the
+switch above is ON, this adapter refuses the signup before verification is ever
+reached. See ``config/settings/base.py`` under "-- Signup email verification".
 """
 from allauth.account.adapter import DefaultAccountAdapter
 from django.conf import settings

@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 from core.modules import (
     ALL_MODULE_NAMES,
@@ -235,7 +236,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
-ACCOUNT_EMAIL_VERIFICATION = "none"
+# ACCOUNT_EMAIL_VERIFICATION is set below, under "-- Email", because it is
+# derived from EMAIL_HOST and must be read after it (ISS-015).
 # Closes public signup when ACCESS_CONTROL_ENFORCED is ON (the default); set it
 # OFF only on an open demo where self-registration should stay open. See
 # core.adapters / ISS-021.
@@ -269,6 +271,67 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+
+# -- Signup email verification (ISS-015) -------------------------------------
+# What allauth does with each value, and which deployment wants which:
+#   "none"      = create the account and sign the user straight in. The only
+#       posture that works with no mail server, so it is what a single office
+#       computer running the console email backend gets.
+#   "optional"  = send the confirmation email, but let the user in without it.
+#   "mandatory" = block login until the address is confirmed. The safe posture
+#       for a public agency deployment, and the one ISS-015 was filed to make
+#       reachable at all -- before this, the value was a hardcoded "none" that
+#       no operator could change without editing Python.
+#
+# DERIVED when the operator sets nothing, keyed on EMAIL_HOST: a deployment that
+# has configured a mail server gets "mandatory" for free, and one that has not
+# gets "none" and so can never lock its own operator out of an instance that is
+# physically unable to send the confirmation. That is the platform's core value
+# -- where OpenH2O runs must not matter -- expressed in one setting.
+#
+# Keyed on EMAIL_HOST and NOT on EMAIL_BACKEND on purpose: production sets the
+# SMTP backend unconditionally, so EMAIL_BACKEND cannot tell "mail is
+# configured" apart from "mail is merely intended".
+#
+# An explicitly set ACCOUNT_EMAIL_VERIFICATION always wins over the derivation,
+# in either direction. openh2o.com and its staging twin pin "none" for exactly
+# that reason: they have mail configured and open self-registration, and a
+# public demo must never ask a casual visitor to confirm an address.
+#
+# An unrecognised value is refused at boot rather than silently falling back,
+# because a silent fallback to "none" would present to the operator as
+# "verification is on" while sending nothing at all.
+
+ACCOUNT_EMAIL_VERIFICATION_CHOICES = ("none", "optional", "mandatory")
+
+
+def resolve_email_verification(raw, email_host):
+    """Resolve ACCOUNT_EMAIL_VERIFICATION (ISS-015).
+
+    `raw` is the operator's explicit value ("" or None when unset); `email_host`
+    is the resolved EMAIL_HOST. Returns one of
+    ACCOUNT_EMAIL_VERIFICATION_CHOICES, or raises ImproperlyConfigured naming
+    the bad value and the legal ones.
+    """
+    if raw is None or not str(raw).strip():
+        return "mandatory" if str(email_host).strip() else "none"
+
+    value = str(raw).strip().lower()
+    if value not in ACCOUNT_EMAIL_VERIFICATION_CHOICES:
+        legal = ", ".join(repr(c) for c in ACCOUNT_EMAIL_VERIFICATION_CHOICES)
+        raise ImproperlyConfigured(
+            f"ACCOUNT_EMAIL_VERIFICATION is set to {raw!r}, which is not a "
+            f"value django-allauth understands. Legal values are: {legal}. "
+            f"Leave it unset to derive it from EMAIL_HOST -- 'mandatory' when a "
+            f"mail server is configured, 'none' when there is not one."
+        )
+    return value
+
+
+ACCOUNT_EMAIL_VERIFICATION = resolve_email_verification(
+    env("ACCOUNT_EMAIL_VERIFICATION", default=""),
+    EMAIL_HOST,
+)
 
 # -- Google OAuth (optional) -------------------------------------------------
 
