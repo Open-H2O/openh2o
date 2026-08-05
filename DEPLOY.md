@@ -458,6 +458,38 @@ docker compose logs web --tail=50
 # No tracebacks or errors
 ```
 
+**Who can actually reach it:**
+
+Everything above proves the deployment answers. None of it proves that the
+people who can reach it are the people you intended in §4 — a site can answer
+perfectly and still be answering the whole internet. So confirm which network
+addresses can reach this machine's port 80.
+
+There is no one tool to check that with, and this guide will not pretend
+otherwise. A plain Ubuntu server usually has `ufw`; other Linux machines have
+`firewalld` or bare `iptables`; and on a rented server the rule that actually
+decides often is not on the machine at all but in the provider's control panel,
+under a name like "security group", "cloud firewall" or "networking". Check
+whichever one your machine has. On a machine using `ufw` it is:
+
+```bash
+sudo ufw status verbose
+```
+
+Then hold the answer against the branch you chose in §4:
+
+| §4 branch | Who should reach port 80 | What a wrong answer looks like |
+|---|---|---|
+| **Branch A** (`no-public-access`) | This computer only, or the office network only | Somebody outside the office can open the site |
+| **Branch B** (`own-certificate`) | The whole internet, on **both** port 80 and port 443 | Port 80 is blocked — the certificate check arrives there, so the site never comes up at all |
+| **Branch C** (`upstream-terminator`) | Only the thing in front of it — the tunnel, proxy or load balancer | The whole internet reaches port 80 directly, going around the very thing that was meant to guard it |
+
+A mismatch here is worth settling before handover rather than after. On
+**Branch C** in particular, if the machine answers on its own address as well as
+through the proxy, then `ALLOWED_HOSTS` is the only thing left between this
+deployment and the open internet — which it is built to do, but not built to do
+alone.
+
 ---
 
 ## 11. Ongoing Operations
@@ -499,6 +531,44 @@ the maintainer's public demonstration site: it discards every local change in th
 checkout and then replaces the live database with the canned demonstration
 snapshot. It refuses to run unless the checkout carries a `.demo-host` marker
 file, which only that one demonstration host has.
+
+### Protecting a Live Installation (`.production-lock`)
+
+Once this deployment holds the agency's real records, a single careless command
+can destroy them. `make up`, `make down`, `make build` and `make fresh` all
+rebuild or reset the stack, and `fresh` deletes the database outright — and
+`fresh` is exactly the name somebody reaches for when they want a clean start.
+
+The repository ships a guard against that, and it is opt-in: put an empty file
+named `.production-lock` in the checkout, and all four of those commands refuse
+to run.
+
+```bash
+touch .production-lock
+```
+
+That is the whole mechanism. Nothing ever reads the file's contents, only
+whether it is there; the `guard-prod` target in the `Makefile` is what checks,
+and it prints what it refused and why. The file is listed in `.gitignore`, so a
+fresh clone never arrives carrying one — **every deployment that wants this
+protection has to create its own, and nothing prompts you to.** Do it as soon as
+real data lands.
+
+To run one of those commands deliberately, take the marker off, run it, and put
+it back:
+
+```bash
+rm .production-lock
+make down
+touch .production-lock
+```
+
+⚠ **`.production-lock` and `.demo-host` mean opposite things — they are not a
+pair of related switches.** `.production-lock` says *"this checkout is protected,
+refuse anything destructive."* `.demo-host` says the reverse: *"this checkout is
+the public demonstration and its database is disposable"*, which is precisely
+what lets `make deploy` overwrite it. Creating the wrong one arms the wrong
+behaviour on the wrong machine.
 
 ### Scheduled Jobs
 
