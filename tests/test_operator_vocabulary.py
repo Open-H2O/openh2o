@@ -25,6 +25,12 @@ suite BREAKS the moment this starts passing, which forces the marker's removal
 in Phase 114 rather than letting a passing gate sit disguised as a failing one
 forever.
 
+**Why one of the four documents sits at a baseline of zero.** Three of them
+predate the vocabulary list and carry legacy wording that Phase 114 rewrites.
+``docs/INSTALL-WITHOUT-DOCKER.md`` does not: 112-02 wrote it with the list
+already in hand, so it started clean and stays clean. Its zero is a strict
+ratchet, not an unmeasured default.
+
 **Why the two fixture tests exist.** A scorer that never fails is not a
 measurement. One plants a violation and demands it be reported; the other proves
 the scanner stays silent both on a correct definition and on a term that appears
@@ -46,9 +52,17 @@ from core.operator_vocabulary import COMPILED, TERMS
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-#: The three documents an operator reads to stand this platform up. Phases
-#: 111-114 rewrite them; this is the set they are rewritten against.
-DOCUMENTS: tuple = ("README.md", "DEPLOY.md", "docs/AI-OPERATOR-GUIDE.md")
+#: The four documents an operator reads to stand this platform up. Phases
+#: 111-114 rewrite the first three; this is the set they are rewritten against.
+#: The fourth was WRITTEN against this list rather than rewritten to satisfy it
+#: — 112-02 created it with the thirty-four terms already in hand — which is why
+#: it is the only one whose baseline below is zero.
+DOCUMENTS: tuple = (
+    "README.md",
+    "DEPLOY.md",
+    "docs/AI-OPERATOR-GUIDE.md",
+    "docs/INSTALL-WITHOUT-DOCKER.md",
+)
 
 #: ``<!-- defines: dns -->``. Case-insensitive on the keyword, but the slug must
 #: match ``core.operator_vocabulary`` exactly, so a typo un-defines the term
@@ -167,10 +181,21 @@ def test_every_operator_term_is_defined_before_first_use():
 #: Measured 2026-08-04 by 110-01 and recorded verbatim in 110-01-EVIDENCE.md.
 #: Green at its own baseline; it exists to catch Phases 111-113 introducing NEW
 #: undefined vocabulary while the strict gate above is parked.
+#:
+#: ``docs/INSTALL-WITHOUT-DOCKER.md`` sits at **0**, and that is deliberate, not
+#: an oversight. 112-02 wrote it from scratch with the thirty-four-term list
+#: already in hand, so it had no legacy vocabulary to carry; the other three
+#: predate the list. At zero this entry is a STRICT ratchet: any term added to
+#: that document later without a ``<!-- defines: -->`` marker fails the build
+#: immediately. That is the point, and it is a stronger guarantee than the other
+#: three have. Do not "fix" it upward — a raised baseline here would be a
+#: silently weakened gate, and lowering a baseline stays the only legitimate
+#: edit to this table.
 BASELINE_OFFENDERS: dict = {
     "README.md": 14,
     "DEPLOY.md": 25,
     "docs/AI-OPERATOR-GUIDE.md": 17,
+    "docs/INSTALL-WITHOUT-DOCKER.md": 0,
 }
 
 
