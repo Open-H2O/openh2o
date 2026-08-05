@@ -20,10 +20,14 @@ blocked workflow.
 
 from django.conf import settings
 from django.core.checks import Warning as CheckWarning
+from django.db import DatabaseError
 
 #: Stable id. Django reserves ``security.*``, ``models.*`` and friends for
 #: itself, so project checks live under the project's own namespace.
 DEBUG_WARNING_ID = "openh2o.W001"
+
+#: The site-identity placeholder warning (ISS-125).
+SITE_IDENTITY_WARNING_ID = "openh2o.W002"
 
 
 def check_development_settings_in_use(app_configs, **kwargs):
@@ -50,5 +54,50 @@ def check_development_settings_in_use(app_configs, **kwargs):
                 "Phase 2 ('Secure it'), step 3."
             ),
             id=DEBUG_WARNING_ID,
+        )
+    ]
+
+
+def check_site_identity_is_set(app_configs, **kwargs):
+    """Warn while the platform is still introducing itself as ``example.com``.
+
+    ``DEPLOY.md`` §10 already tells every operator to run ``manage.py check``,
+    which makes this the last place the platform can catch the defect before a
+    recipient does. The message therefore names the consequence — the subject
+    line of outbound mail — rather than the database row.
+
+    Reading a row inside a system check is deliberate but guarded: ``check``
+    runs on a fresh clone before ``migrate`` has created a single table, and a
+    check that crashes there would block the very command that reports it.
+    """
+    from core.site_identity import PLACEHOLDER
+
+    try:
+        from django.contrib.sites.models import Site
+
+        site = Site.objects.filter(pk=settings.SITE_ID).first()
+    except DatabaseError:
+        # No database yet, or no sites table yet. Nothing to report and
+        # nothing worth failing over.
+        return []
+
+    if site is None or PLACEHOLDER not in (site.name, site.domain):
+        return []
+
+    return [
+        CheckWarning(
+            "This deployment is still introducing itself as 'example.com'. "
+            "Every email it sends — including every password reset — goes out "
+            f"with '[{PLACEHOLDER}]' at the front of the subject line, to "
+            "whoever asked for it.",
+            hint=(
+                "The name and web address are worked out from settings this "
+                "platform already holds: the agency name from the Setup "
+                "Wizard, and the web address from ALLOWED_HOSTS in .env. Fill "
+                "in whichever is still blank, then run "
+                "'docker compose exec web python manage.py migrate' — that is "
+                "what applies it. See DEPLOY.md, section 10."
+            ),
+            id=SITE_IDENTITY_WARNING_ID,
         )
     ]
