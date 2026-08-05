@@ -39,16 +39,13 @@ Ask the agency staffer for these.
    Docker on their machine.
 2. **How the agency needs to reach it.** Ask directly, and write the answer
    down; every later choice follows from it:
-   <!-- defines: localhost -->
-   - *Only from this one computer* — no domain needed. Bind the service to
+   - *Only from this one computer* <!-- defines: localhost --> — no domain needed. Bind the service to
      loopback — `127.0.0.1`, which along with the word `localhost` means "this
      same computer" and nothing anyone else could type — so nothing else on
      their network can reach it.
    - *From other computers in their office* — no domain needed, but the
      instance is now exposed to their local network. Say so out loud.
-   <!-- defines: tls_https -->
-   <!-- defines: dns -->
-   - *From outside — a board member, a consultant, the public* — **this is the
+   - *From outside — a board member, a consultant, the public* <!-- defines: tls_https --><!-- defines: dns --> — **this is the
      only case that needs a domain name and HTTPS.** *HTTPS* is the
      padlock-icon, encrypted version of a web address; the padlock rests on a
      *certificate*, a file proving the address really is itself. They will need
@@ -57,9 +54,7 @@ Ask the agency staffer for these.
      address of one specific computer. Pointing a domain at a machine means
      editing one entry in that phone book, called an *A record*, wherever the
      domain was bought.
-   <!-- defines: api_key -->
-   <!-- defines: smtp -->
-3. *(Optional, can be added later)* API keys for OpenET, CIMIS, and NOAA, and SMTP credentials for password-reset email. An *API key* is a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers — treat it as a secret, exactly like a password. *SMTP* is the agreed method for handing an outgoing email to a mail provider, so the site can send "you forgot your password" messages instead of pretending to be its own mail server; the credentials are the login for that provider. The platform runs fine without any of them; those features simply stay dark until provided.
+3. *(Optional, can be added later)* <!-- defines: api_key --><!-- defines: smtp --> API keys for OpenET, CIMIS, and NOAA, and SMTP credentials for password-reset email. An *API key* is a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers — treat it as a secret, exactly like a password. *SMTP* is the agreed method for handing an outgoing email to a mail provider, so the site can send "you forgot your password" messages instead of pretending to be its own mail server; the credentials are the login for that provider. The platform runs fine without any of them; those features simply stay dark until provided.
 
 If the agency wants public reach and has no server or domain yet, help them get
 a virtual server from any provider and register a domain. **If they do not want
@@ -199,8 +194,7 @@ own `manage.py check --deploy` will tell you so; do not wave that away.
    security posture follows from **who can reach the instance**, not from where
    it happens to be running.
 
-<!-- defines: port -->
-4. **Limit who can reach it, at the network.** A *port* is a numbered door on
+4. **Limit who can reach it, at the network.** <!-- defines: port --> A *port* is a numbered door on
    the computer that one particular kind of traffic knocks on: port 80 is the
    plain, unencrypted web door, the one a browser uses when nobody types a
    number at all, and port 443 is the encrypted one. If the answer was *"only
@@ -208,8 +202,7 @@ own `manage.py check --deploy` will tell you so; do not wave that away.
    network can connect — in `docker-compose.yml`, publish `127.0.0.1:80:80`
    rather than `80:80`. Confirm it: from another machine, the address should
    refuse the connection.
-   <!-- defines: superuser -->
-5. **Create the admin user** — in this software a *superuser*, the one account
+5. **Create the admin user** <!-- defines: superuser --> — in this software a *superuser*, the one account
    that can do anything: add other staff accounts, change settings, see
    everything. It is separate from and unrelated to any login for the computer
    itself, and it has to be created by hand before anyone can sign in at all;
