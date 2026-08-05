@@ -27,10 +27,14 @@ is not re-litigated:
   already tells every operator to run, and again on every upgrade. So the
   derivation gets a second chance the day the agency name is finally filled in.
 
-**It never overwrites an operator.** The only row this writes to is one still
-holding Django's untouched placeholder. A value that is anything else is the
-operator's — including a value this code itself wrote on an earlier run, which
-is what makes running it twice a no-op.
+**It never overwrites an operator.** Each of the two fields is written only
+while it still holds Django's untouched placeholder. A value that is anything
+else is the operator's — including a value this code itself wrote on an earlier
+run, which is what makes running it twice a no-op. The two are guarded
+separately on purpose: ``scripts/rebuild-golden.sh`` runs ``migrate`` on an
+empty database and seeds afterwards, so the first firing can know the web
+address and not yet the agency name, and a single shared guard would strand the
+name — the half that reaches the subject line — at ``example.com`` for good.
 """
 
 from dataclasses import dataclass
@@ -116,19 +120,22 @@ def apply_site_identity(**kwargs) -> bool:
     from django.contrib.sites.models import Site
 
     site = Site.objects.filter(pk=settings.SITE_ID).first()
-    if site is None or site.domain != PLACEHOLDER:
-        # No row at all, or a row somebody has already set. Either way this
-        # code has nothing to say about it.
+    if site is None:
         return False
 
     identity = resolve_site_identity()
     changed = []
 
-    if identity.domain:
+    # Each field is guarded on ITS OWN placeholder, not on the pair. That is
+    # what the real deployment sequence requires: `scripts/rebuild-golden.sh`
+    # runs `migrate` on an empty database and only then seeds, so the first
+    # firing can fill in the address (ALLOWED_HOSTS is already known) but not
+    # the name (no SiteConfig row exists yet). Guarding both on the domain
+    # would leave the name stuck at the placeholder forever — and the name is
+    # the half that shows up in the subject line.
+    if identity.domain and site.domain == PLACEHOLDER:
         site.domain = identity.domain
         changed.append("domain")
-    # The name is protected separately: an operator who typed a name and left
-    # the address alone still owns that name.
     if identity.name and site.name == PLACEHOLDER:
         site.name = identity.name
         changed.append("name")

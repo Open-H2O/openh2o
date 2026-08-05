@@ -132,6 +132,25 @@ class TestApplyingIt:
         site = Site.objects.get(pk=1)
         assert (site.name, site.domain) == (AGENCY, REAL_HOST)
 
+    @override_settings(ALLOWED_HOSTS=[REAL_HOST])
+    def test_the_real_deployment_sequence_fills_in_both_halves(
+        self, placeholder_site
+    ):
+        # scripts/rebuild-golden.sh runs `migrate` on an empty database and
+        # seeds afterwards, so the first firing knows the web address and not
+        # yet the agency name. A guard shared between the two fields would
+        # strand the name at example.com for the life of the deployment — and
+        # the name is the half that reaches the subject line.
+        assert apply_site_identity() is True
+
+        site = Site.objects.get(pk=1)
+        assert (site.domain, site.name) == (REAL_HOST, PLACEHOLDER)
+
+        SiteConfig.objects.create(agency_name=AGENCY)
+
+        assert apply_site_identity() is True
+        assert Site.objects.get(pk=1).name == AGENCY
+
     @override_settings(ALLOWED_HOSTS=["*"])
     def test_it_does_not_raise_when_nothing_can_be_derived(
         self, placeholder_site
