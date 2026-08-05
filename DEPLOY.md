@@ -18,6 +18,7 @@ an AI or operator deploying on a fresh VPS with zero prior knowledge.
 | Docker Compose | v2 |
 | Git | any recent version |
 | make | any recent version (`sudo apt-get install -y make`) |
+| cron | any recent version (`sudo apt-get install -y cron`). <!-- defines: cron --> This is Linux's built-in scheduler: the thing that runs a command on a repeating clock — "every night at 2am" — with nobody there to press a button. Section 11 installs jobs into it to fetch new stream and weather readings and to check the platform's own health. A bare server does not always have it, and `make install-cron` has nothing to install into if it is missing |
 | Domain | Only if the instance must be reachable from outside its own machine or network. A single-computer or office-network deployment needs none — see [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 |
 
 Verify Docker is installed:
@@ -35,8 +36,31 @@ If Docker is not installed:
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
-# Log out and back in, then verify with: docker run hello-world
 ```
+
+**That second command does not take effect in the terminal you typed it in.**
+Linux decides which groups you belong to when a login session begins, so the
+session you are already sitting in still holds the old list. The very next
+`docker` command will fail with a flat `permission denied` that says nothing
+about groups at all — it reads exactly like a broken install or a mistyped
+password, and it is neither. Log out, log back in, and it works. If logging out
+is awkward, put `sudo` in front of each `docker` command until you next do.
+
+Then confirm Docker can actually run something:
+
+```bash
+docker run hello-world
+```
+
+**If that fails and the error mentions "cgroup" or "bpf", stop here.** Some
+machines you rent are not a whole computer but a slice of one, walled off using
+the very technology Docker itself needs, and that wall is enforced by the
+machine's own host — one level up, outside anything you can see or change from
+inside. No Docker setting, reinstall or version will get past it. There are two
+real answers, and neither of them is more Docker: ask whoever provisioned the
+machine to allow containers, or install the platform without Docker at all.
+This test takes five seconds and is worth running before anything else, because
+the alternative is hours spent on Docker fixes that cannot work.
 
 ---
 
