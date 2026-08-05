@@ -411,6 +411,26 @@ flag. To rebuild the demo on purpose:
 docker compose exec web python manage.py seed_merced --allow-prod-clobber
 ```
 
+**The bundled station catalog.** The seed above finds the basin's monitoring
+stations by calling the agencies that publish them, and it creates every one of
+them switched **off** — so a freshly seeded demonstration reports "0 of 0
+stations reporting" until somebody turns them on, and it needs a working
+connection to those agencies to find them at all. The demonstration's own list
+of stations also ships with the platform — 335 of them, 42 switched on, each
+carrying the real date it last published a reading — and one command loads it:
+
+```bash
+docker compose exec web python manage.py load_station_fixture
+```
+
+That is the set openh2o.com shows. It calls nobody, so it works on a machine
+with no way out to the internet, and running it twice changes nothing. Run it
+after the reference data in §8, which is what creates the list of upstream
+services it names; it stops with a plain message rather than half-writing if
+that list is missing. `seed_merced` deliberately does not run it, and that is
+the reason this step exists as a step: a real agency standing this platform up
+against its own basin wants its **own** stations discovered, not Merced's.
+
 **Once the agency's own records are loaded** — by this route, by the setup
 wizard (§11), or through [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md) — run the
 platform's two self-checks over the new data:
@@ -480,6 +500,26 @@ docker compose logs web --tail=50
 # Look for: "Listening at: http://0.0.0.0:8000"
 # No tracebacks or errors
 ```
+
+**The name this deployment sends mail under:**
+
+Every email this platform sends — password resets above all — carries the
+deployment's own name at the front of the subject line, where the person
+receiving it will read it before anything else. Nothing has to be configured for
+that: the platform works the name out for itself from the agency name typed into
+the Setup Wizard (§11) and the web address already in `ALLOWED_HOSTS`, and
+writes it down when §6's migration step runs. It is still worth one look, because
+a deployment that has been told neither introduces itself as `example.com`.
+
+```bash
+docker compose exec web python manage.py shell -c "from django.contrib.sites.models import Site; s = Site.objects.get_current(); print(s.name, '|', s.domain)"
+```
+
+Expect the agency's name and this deployment's own web address. If either still
+reads `example.com`, fill in whichever of the two is blank and run §6's
+migration step again — that is what applies it, and re-running it changes
+nothing else. `docker compose exec web python manage.py check` reports the same
+thing as `openh2o.W002` if you would rather be told than look.
 
 **Who can actually reach it:**
 

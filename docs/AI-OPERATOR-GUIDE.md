@@ -185,6 +185,14 @@ docker compose exec web python manage.py seed_merced   # the Merced Subbasin dem
 ```
 This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — a fully populated example the agency can click through while you gather their real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed); for real satellite-ET numbers, add an OpenET key and run the ET sync (Phase 4). Each sub-step is idempotent, so re-running is safe.
 
+**Then load the bundled station catalog.** The seed finds the basin's monitoring stations by calling the agencies that publish them, and creates every one of them switched **off** — so a freshly seeded demonstration reports "0 of 0 stations reporting" until somebody turns them on. The demonstration's own list of stations ships with the platform — 335 of them, 42 switched on, each carrying the real date it last published a reading — and one command loads it:
+
+```bash
+docker compose exec web python manage.py load_station_fixture   # the stations openh2o.com shows
+```
+
+It calls nobody, so it works on a machine with no way out to the internet, and running it twice changes nothing. `seed_merced` deliberately leaves it to you: a real agency standing this up against its own basin wants its **own** stations found, not Merced's — which is what the curation step in Phase 4 is for.
+
 If you need to **rebuild** the demo later on this same server, add `--allow-prod-clobber`. The operations step regenerates parcel and well geometry, so it refuses a second run over demo rows that already exist unless you say so explicitly. The first run above needs no flag.
 
 ### Option B — Their real data
@@ -297,6 +305,14 @@ The platform has three roles. Set expectations before handing over:
 - **Viewer** — read-only; for board members and outside agencies.
 
 Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. If the agency files with the state, show the optional reporting step too: open the reporting page → generate a draft GEARS or CalWATRS CSV, making clear that OpenH2O *prepares* the filing; a certifying official reviews and submits it in the state portal.
+
+**Before the first password reset, check what name the mail goes out under.** Every email the platform sends carries this deployment's own name at the front of the subject line — the first thing the recipient reads. The platform works that name out for itself, from the agency name typed into the Setup Wizard and the web address already in `ALLOWED_HOSTS`, and writes it down when the migration step runs. Confirm it landed:
+
+```bash
+docker compose exec web python manage.py shell -c "from django.contrib.sites.models import Site; s = Site.objects.get_current(); print(s.name, '|', s.domain)"
+```
+
+Expect the agency's name and their web address. If either still reads `example.com`, fill in whichever is blank — the agency name in the Setup Wizard, the address in `.env` — then run `docker compose exec web python manage.py migrate` and look again. `manage.py check` will also say so, as `openh2o.W002`.
 
 ✋ **Done when:** an agency staffer can log in and see and manage their own basin data without you — and, if they report to the state, produce a draft report.
 
