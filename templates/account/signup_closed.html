@@ -8,18 +8,16 @@
    Accent contract: gold is for the primary CTA button only — page headings
    carry the teal identity accent, matching the login and signup pages.
 {% endcomment %}
-{% block title %}Accounts are created by your administrator - Open Water Accounting Platform{% endblock %}
+{% block title %}Ask your agency for an account - Open Water Accounting Platform{% endblock %}
 {% block content %}
 <div class="card-raised w-full" style="max-width: 420px;">
-    <h1 class="text-xl font-extrabold mb-sm text-accent">Accounts are created for you</h1>
+    <h1 class="text-xl font-extrabold mb-sm text-accent">Ask your agency for an account</h1>
     <p class="text-sm mb-md text-secondary">
-        This platform holds one agency's water records, so accounts are not
-        opened by signing up. The person who runs this site for your agency
-        creates them, which is how only the right people get in.
+        You cannot sign yourself up here. This site holds one agency's water
+        records, so accounts are made one at a time by whoever runs it.
     </p>
     <p class="text-sm mb-lg text-secondary">
-        Ask them to add you, and they will send you the details you need to log
-        in. If you already have an account, go straight to the login page.
+        Ask that person to add you. They will send you what you need to log in.
     </p>
     <a href="{% url 'account_login' %}" class="btn-primary w-full" style="display: block; text-align: center;">Go to login</a>
     <p class="text-sm text-center text-secondary pt-md">

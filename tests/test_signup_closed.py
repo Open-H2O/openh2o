@@ -70,8 +70,8 @@ class TestTheRefusalPage:
             "the refusal page does not offer the password reset, which is what "
             "most people who land here actually need"
         )
-        assert "administrator" in body.lower() or "runs this site" in body, (
-            "the refusal page does not say who creates accounts, so it answers "
+        assert "runs it" in body and "add you" in body, (
+            "the refusal page does not name a person to ask, so it answers "
             "'no' without answering 'then what'"
         )
         assert "sign up is currently closed" not in body, (
