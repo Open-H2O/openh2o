@@ -404,6 +404,22 @@ flag. To rebuild the demo on purpose:
 docker compose exec web python manage.py seed_merced --allow-prod-clobber
 ```
 
+**Once the agency's own records are loaded** — by this route, by the setup
+wizard (§11), or through [docs/DATA-IMPORT.md](docs/DATA-IMPORT.md) — run the
+platform's two self-checks over the new data:
+
+```bash
+docker compose exec web python manage.py check_conformance
+docker compose exec web python manage.py run_health_checks
+```
+
+The first reports whether every kind of measurement now in the database is
+mapped to a known concept with a real unit — a reading with no unit behind it is
+a number nobody can file. The second reports on the deployment underneath it:
+database, disk, certificate, migrations, and whether the live data feeds are
+current. Both are covered in §11; this is simply the moment to run them, because
+new data is what changes their answers.
+
 ---
 
 ## 10. Verify Deployment
@@ -580,6 +596,20 @@ The jobs in `crontab.txt`:
 | `run-sync.sh dwr_wdl dwr_sgma noaa` | Daily 2:00 AM | Slower sources — groundwater, climate (cimis/cnrfc/openet ship deactivated; add them here if you enable those sources) |
 | `run_health_checks` | Every 6 hours | Check database, disk, SSL, migrations, sync freshness |
 | `prune_old_data --confirm` | 1st of month 3:00 AM | Delete old staging records and sync logs |
+
+**`check_conformance` is deliberately not on that schedule, and that is a
+decision rather than an oversight.** It answers "is every measurement in here
+mapped to a known concept with a real unit?", and that answer only moves when
+somebody loads data or switches on a new source — so a clock is the wrong
+trigger. Run it by hand at the two moments it matters: right after the agency's
+own records are loaded (§9), and before a filing deadline rather than during
+one.
+
+```bash
+docker compose exec web python manage.py check_conformance
+```
+
+It exits non-zero when it finds a real gap, so it can also gate a script.
 
 `scripts/run-sync.sh` is a resilient wrapper: it runs `docker compose up -d`
 first (a no-op if the stack is already running, but it revives the container if
