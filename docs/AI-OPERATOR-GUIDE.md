@@ -150,20 +150,20 @@ tables inside its database to match what this version of the software expects.
 Routine and expected after every install and every update; skip it and you are
 left with an empty, unusable database.
 
-✋ **Checkpoint:** `docker compose ps` shows `db`, `web`, and `caddy` all healthy, and the site responds. Don't move on until it does.
+✋ **Checkpoint:** `docker compose ps` shows `db` and `web` as `Up (healthy)`, `caddy` as `Up`, and the site responds. Don't move on until it does. Caddy's image defines no health check of its own, so a plain `Up` is the right and only reading for that row — do not wait for it to say healthy.
 
 ---
 
 ## Phase 2 — Secure it (do this before anyone logs in)
 
 <!-- defines: allowed_hosts -->
-This is the phase an AI must not skip. The platform's production settings **refuse to boot** with a weak database password or an empty `ALLOWED_HOSTS` — that guard is your friend; let it enforce the basics. `ALLOWED_HOSTS` and its companion `CSRF_TRUSTED_ORIGINS` are two safety lists in the program's settings: the program refuses to answer unless the web address in the request matches one of them, which stops a stranger tricking it into behaving as a different website. They have to carry the agency's real address exactly, or the site turns every visitor away.
+This is the phase an AI must not skip. The platform's production settings **refuse to boot** on an empty database password, or on any of four well-known defaults including the development one, or with an empty `ALLOWED_HOSTS` — that guard is your friend; let it enforce the basics. (It checks that short list of known-bad passwords, not password strength, so it is a floor and not a substitute for choosing a real one.) `ALLOWED_HOSTS` and its companion `CSRF_TRUSTED_ORIGINS` are two safety lists in the program's settings: the program refuses to answer unless the web address in the request matches one of them, which stops a stranger tricking it into behaving as a different website. They have to carry the agency's real address exactly, or the site turns every visitor away.
 
 **Always use `config.settings.production`, wherever this is running.** The
 development settings module (`config.settings.local`) turns `DEBUG` on, which
 prints the site's internals — stack traces, settings, SQL — to whoever is looking
-at a broken page, and it forces `ALLOWED_HOSTS` to `*` no matter what you
-configured. It is for working on the code, not for an agency's data. Django's
+at a broken page, and it falls back to an `ALLOWED_HOSTS` of `*` if you have set
+none. It is for working on the code, not for an agency's data. Django's
 own `manage.py check --deploy` will tell you so; do not wave that away.
 
 <!-- defines: env_file -->
@@ -186,7 +186,7 @@ own `manage.py check --deploy` will tell you so; do not wave that away.
 
    | How they reach it | What to do |
    |---|---|
-   | **From outside (public internet)** | Point DNS at the machine and let Caddy issue a certificate automatically. **Never turn the three settings below off on a publicly reachable instance.** (See DEPLOY.md's Caddyfile section.) |
+   | **From outside (public internet)** | Point DNS at the machine, then pick one of two shapes: either this server obtains its own certificate, which means editing the `Caddyfile` to name the domain, or something in front of it — a tunnel, the agency's proxy, a load balancer — already handles the encryption and the `Caddyfile` stays as shipped. **DEPLOY.md §4 has both, and you must read it: pointing DNS alone does not produce a certificate, because the shipped file names no domain.** Never turn the three settings below off on a publicly reachable instance. |
    | **Only this computer, or their office network** | There is no certificate to get and no HTTPS to redirect to. Set all three `False` in `.env` — this is a supported, documented posture, not a workaround: <br>`SECURE_SSL_REDIRECT=False`<br>`SESSION_COOKIE_SECURE=False`<br>`CSRF_COOKIE_SECURE=False` |
 
    Either way you keep `DEBUG=False`, a real `ALLOWED_HOSTS`, a strong database
@@ -217,12 +217,14 @@ above, but **any warning about `DEBUG` means you are on the wrong settings
 module.** Confirm the human has the admin password stored somewhere safe (a
 password manager).
 
-**Verify login works (no browser).** Don't test login with plain-HTTP `curl` —
-the POST will return 403 no matter what you send, and that is correct behaviour,
-not a bug: production settings default `SESSION_COOKIE_SECURE` and
-`CSRF_COOKIE_SECURE` to on (`config/settings/production.py`), and a `Secure`
-cookie is never sent back over `http://`, so the CSRF check cannot pass. Verify
-from inside the container instead:
+**Verify login works (no browser).** Don't test login with plain-HTTP `curl`
+wherever `CSRF_COOKIE_SECURE` is left on — which is its default and the right
+setting for any instance reached over HTTPS. There the POST returns 403 whatever
+you send, and that is correct behaviour, not a bug: a cookie marked `Secure` is
+never sent back over `http://`, so the browser-safety check cannot pass. (On a
+single-computer instance, where step 3 above turns that setting off on purpose,
+a plain-HTTP login can succeed — so a passing `curl` there proves less than it
+looks.) Verify from inside the container instead, which works on every shape:
 
 ```bash
 docker compose exec web python manage.py shell -c "
@@ -262,10 +264,13 @@ with progress on screen, and then **enable the monitoring stations inside that
 boundary** — the step that is otherwise easy to miss, because discovery creates
 every station switched off.
 
-Find it in the left sidebar under **Administration → Setup Wizard**, or go
-straight to `https://theirdomain/setup/`. It is visible to an admin (and on an
-instance that has not turned access control on yet, to anyone), so log in as the
-admin user from Phase 2 first.
+Find it in the left sidebar under **Administration → Setup Wizard** — that whole
+block is hidden until you switch the sidebar out of its everyday view, using the
+two-button toggle at the **bottom of the left sidebar** marked **Operations** and
+**Admin**; click **Admin**. Not having clicked it is the usual reason someone
+cannot find the wizard. Or go straight to `https://theirdomain/setup/`. You have to be signed
+in either way: an anonymous visitor is sent to the login page whatever else is
+configured. So log in as the admin user from Phase 2 first.
 
 The command-line path below is the alternative for a **headless deployment** —
 no browser, SSH only. It reaches the same end state; it just asks you to run each
@@ -277,7 +282,7 @@ docker compose exec web python manage.py seed_merced   # the Merced Subbasin dem
 ```
 This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — a fully populated example the agency can click through while you gather their real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed); for real satellite-ET numbers, add an OpenET key and run the ET sync (Phase 4). Each sub-step is *idempotent* <!-- defines: idempotent --> — running it five times ends up the same as running it once, because it notices what is already done and skips it rather than duplicating or breaking anything — which is why re-running one after an interruption is safe.
 
-**Then load the bundled station catalog.** The seed finds the basin's monitoring stations by calling the agencies that publish them, and creates every one of them switched **off** — so a freshly seeded demonstration reports "0 of 0 stations reporting" until somebody turns them on. The demonstration's own list of stations ships with the platform — 335 of them, 42 switched on, each carrying the real date it last published a reading — and one command loads it:
+**Then load the bundled station catalog.** The seed finds the basin's monitoring stations by calling the agencies that publish them, and creates every one of them switched **off** — so a freshly seeded demonstration reports "0 of 0 stations reporting" until somebody turns them on. The demonstration's own list of stations ships with the platform — 335 of them, 42 switched on, and 50 of the 335 (all 42 of the active ones, plus 8 others) carrying the real date they last published a reading — and one command loads it:
 
 ```bash
 docker compose exec web python manage.py load_station_fixture   # the stations openh2o.com shows
@@ -285,7 +290,7 @@ docker compose exec web python manage.py load_station_fixture   # the stations o
 
 It calls nobody, so it works on a machine with no way out to the internet, and running it twice changes nothing. `seed_merced` deliberately leaves it to you: a real agency standing this up against its own basin wants its **own** stations found, not Merced's — which is what the curation step in Phase 4 is for.
 
-If you need to **rebuild** the demo later on this same server, add `--allow-prod-clobber`. The operations step regenerates parcel and well geometry, so it refuses a second run over demo rows that already exist unless you say so explicitly. The first run above needs no flag.
+If you need to **rebuild** the demo later on this same server, add `--allow-prod-clobber`. The operations step regenerates parcel and well geometry, so on a production instance (`DEBUG=False`, which is what Phase 2 sets) it refuses a second run over demo rows that already exist unless you say so explicitly. ⚠ Under development settings that guard does not fire at all — a second run there rebuilds the geometry silently, hand-adjusted boundaries and all. The first run above needs no flag either way.
 
 ### Option B — Their real data
 Three import routes, in rough order of preference:
@@ -297,7 +302,7 @@ Three import routes, in rough order of preference:
 | Historical ledger entries as CSV | `import_ledger_csv` | For bringing records over from a prior system |
 | Only a basin boundary | `auto_populate` | Queries DWR and USGS to pull parcels, boundaries, and flowlines automatically |
 
-What still has to be entered by hand (no public source exists): **water rights**, **water accounts**, and **allocations**. The web UI has forms for these under the Infrastructure section.
+What still has to be entered by hand (no public source exists): **water rights**, **water accounts**, and **allocations**. They are not all in one place. Accounts and allocations each have a create form on the accounting pages. **Water rights have no create form in the app at all** — they are added through the Django admin at `/admin/`, which is worth knowing before you promise an agency a screen that does not exist.
 
 ✋ **Checkpoint:** confirm with the human which parcels are theirs and that the boundary looks right on the map before building accounts on top of it.
 
@@ -422,11 +427,20 @@ data), not a field of red, and every visible marker has a real reading behind it
 
 ## Phase 5 — Onboard the humans
 
-The platform has three roles. Set expectations before handing over:
+**What the platform actually enforces is two tiers, not three.** A user is
+either an administrator or is not. Administrators reach the admin-only screens;
+everyone else is turned away from those and works normally everywhere else. That
+is the whole of it, and it is what the closed-signup default rests on.
 
-- **Admin** — manages users, data, and reports (usually one person).
-- **Manager** — edits the ledger, creates accounts, runs reports (one or two people).
-- **Viewer** — read-only; for board members and outside agencies.
+The reference data does create three named roles — admin, manager, viewer — and
+they are visible in the admin. **Assigning one changes nothing about what a
+person can do.** They are left over from an earlier design, kept only so that
+removing them would not require a destructive database change. Do not build a
+handover around them and do not promise an agency that "viewer" is read-only,
+because it is not.
+
+Set expectations on the two tiers instead: who needs to administer this, and who
+just uses it.
 
 Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. If the agency files with the state, show the optional reporting step too: open the reporting page → generate a draft GEARS or CalWATRS CSV, making clear that OpenH2O *prepares* the filing; a certifying official reviews and submits it in the state portal.
 
@@ -466,7 +480,7 @@ build problem rather than something to configure.
 ## Guardrails — what NOT to do
 
 - **Never** commit the agency's `.env`, API keys, or `secrets/` directory. They are gitignored for a reason.
-- **Never** run `make fresh` on a populated instance — it destroys the database volume. Use `make up` for routine rebuilds.
+- **Never** run `make fresh` on a populated instance — it destroys the database volume. Use `docker compose up -d --build` for routine rebuilds. `make up` is not the answer here: on a checkout that has created the `.production-lock` marker (which DEPLOY.md §11 tells a live deployment to do), `make up`, `make down`, `make build` and `make fresh` all refuse to run. That refusal is the guard working.
 - **Don't** set `ACCOUNT_EMAIL_VERIFICATION=mandatory` on an instance with no mail server. Nothing crashes — signup still succeeds — but the confirmation link is written to the container log instead of an inbox, so nobody except whoever can read that log is able to finish signing up. Leave it unset and it follows `EMAIL_HOST` on its own: confirmation required where SMTP is configured, off where it isn't.
 - **Don't** weaken the production security guard to "make it boot." If it's complaining, fix the password or hosts — that's the bug it's catching.
 - **Do** keep the in-app "Source code" link pointing at wherever you publish your modified source. The AGPL (Section 13) requires it once the agency runs the platform for users. See [NOTICE](../NOTICE).

@@ -78,8 +78,9 @@ real answers, and neither of them is more Docker: ask whoever provisioned the
 machine to allow containers, or install the platform without Docker at all —
 [docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md) is that path,
 written out end to end.
-This test takes five seconds and is worth running before anything else, because
-the alternative is hours spent on Docker fixes that cannot work.
+The test itself is quick — the first run also downloads a small image — and it
+is worth doing before anything else, because the alternative is hours spent on
+Docker fixes that cannot work.
 
 **That path is also there if you simply do not want Docker on this machine.** It
 is not only the answer to a failure; an agency with a policy about what may be
@@ -215,6 +216,13 @@ This is the same question [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md)
 Phase 2 branches on. If the two ever seem to disagree, Phase 2 is the authority
 for the `.env` settings and this section is the authority for the `Caddyfile`.
 
+⚠ **The `Caddyfile` examples in the branches below are cut down to the lines
+that differ between branches.** The shipped file carries more than they show — a
+security header, tuned retry timings for the moment after a restart, and a
+branded page for when the site is down — each with a comment saying why. Edit
+the shipped file rather than replacing it with one of these blocks, or you will
+quietly drop all three.
+
 <!-- branch: no-public-access -->
 
 ### Branch A — Only this computer, or the office network
@@ -237,8 +245,23 @@ tries to log in. The reason is that a browser never sends a `Secure` cookie over
 plain `http://`, and production settings mark the login cookies `Secure` by
 default. This is a supported, documented posture, not a workaround;
 [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 step 3 carries the
-full table. You still keep `DEBUG=False`, a real `ALLOWED_HOSTS`, a strong
-database password and the closed-signup default.
+full table. You still keep `DEBUG=False`, a real `ALLOWED_HOSTS`, a database
+password that is not one of the rejected defaults, and the closed-signup default.
+
+⚠ **Nothing above narrows who can reach the machine, and this branch is the one
+where that matters.** <!-- defines: port --> A *port* is a numbered door on the
+computer that one particular kind of traffic knocks on: port 80 is the plain,
+unencrypted web door — the one a browser uses when nobody types a number at all
+— and port 443 is the encrypted one. As shipped, `docker-compose.yml` opens both
+of those doors on every network the machine is attached to, so the site is
+reachable by anything that can reach the machine.
+
+If the answer was *"only this computer,"* change the two lines in
+`docker-compose.yml` that open them, from `80:80` and `443:443` to
+`127.0.0.1:80:80` and `127.0.0.1:443:443`, then confirm from a second machine
+that the address refuses the connection. If the answer was *"the office
+network,"* leave them and rely on the office network itself — but say so out
+loud to the agency rather than letting it be an accident.
 
 <!-- branch: own-certificate -->
 
@@ -246,7 +269,9 @@ database password and the closed-signup default.
 
 Replace `:80` with your domain written as a **bare address — no `http://` and no
 `https://` in front of it**. The bare form is exactly what tells Caddy to obtain
-a certificate for that name automatically, from Let's Encrypt, at no cost.
+a certificate for that name automatically, at no cost. Caddy tries two issuers
+by default — Let's Encrypt first, then ZeroSSL if that fails — so a certificate
+arriving from the second name is normal, not a sign anything went wrong.
 
 ```caddy
 your-domain.com {
@@ -263,8 +288,8 @@ your-domain.com {
 }
 ```
 
-**Two things must already be true before you start the containers**, or the
-certificate request fails and the site never comes up:
+**Two things should already be true before you start the containers.** The first
+is a hard requirement; the second is strongly advised:
 
 1. **The DNS A record for that name must already point at this server's public <!-- defines: dns -->
    IP.** *DNS* is the internet's phone book: it turns a web address into the
@@ -273,13 +298,13 @@ certificate request fails and the site never comes up:
    entry wherever the domain was bought. Certificates are issued to a name only
    after the issuer confirms the name really does lead to this machine, so the
    phone-book entry has to be in place first, not afterwards.
-2. **Both port 80 and port 443 must reach this server from the internet.** <!-- defines: port --> A
-   *port* is a numbered door on the computer that one particular kind of traffic
-   knocks on — port 80 is the plain, unencrypted web door, the one a browser uses
-   when nobody types a number at all, and port 443 is the encrypted one. Port
-   443 is where the finished site is served; port 80 is where the issuer's
-   check arrives. Blocking 80 because "everything is HTTPS anyway" is the common
-   way this fails.
+2. **Open both port 80 and port 443 to the internet** — the two doors Branch A
+   describes above. Port 443 is where the finished site is served. The issuer's
+   check can arrive at either door: Caddy enables both check methods by default
+   and picks between them, so a certificate can still be issued with port 80
+   closed. Opening both removes a variable rather than being strictly required.
+   Note that closing 80 also means anyone who types the address without
+   `https://` reaches nothing.
 
 Keep `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE`
 switched **on** for this branch — they are on by default and they are correct
@@ -289,9 +314,9 @@ here.
 > never once exercised it. Every machine we own is either behind a Cloudflare
 > Tunnel — which terminates the encryption itself, so Caddy never runs its own
 > certificate request — or is a rented server whose ports 80 and 443 are already
-> taken by something else. The instructions above follow Caddy's own
-> documentation and the shipped `Caddyfile`'s own header comment; they have not
-> been watched working end to end. If you are the first to run this branch and it
+> taken by something else. The instructions above follow Caddy's own published
+> documentation; they have not been watched working end to end. If you are the
+> first to run this branch and it
 > misbehaves, that is worth reporting: it is a genuine gap in what has been
 > tested, not something we checked and got wrong.
 
@@ -325,10 +350,17 @@ http://your-domain.com {
 ```
 
 The `http://` prefix is the whole mechanism: it is what tells Caddy to serve that
-name as-is and order no certificate. (Caddy's documentation, Caddyfile →
-Concepts → Addresses. The global `auto_https off` option is **not** a substitute —
-it stops the automation but does not change the address, and the address is what
-decides.)
+name as-is, over plain HTTP, and order no certificate. (Caddy's documentation,
+Caddyfile → Concepts → Addresses.)
+
+**The global `auto_https off` option is not a substitute, and it is worth
+knowing why.** It does switch the certificate automation off — that much is
+real — but it is a blunt instrument here. It is global, so it also turns off the
+plain-to-encrypted redirect for *every* site in the file, and by Caddy's own
+documentation it does not change the protocol a site is served on: an address
+written as a bare domain still gets served over HTTPS, now with no certificate
+behind it. Changing the address is what actually changes what is served, which
+is why the `http://` prefix is the instruction here.
 
 <!-- defines: x_forwarded_proto -->
 Keep the `header_up X-Forwarded-Proto https` line. When the thing in front strips
@@ -337,10 +369,11 @@ sent it"; `X-Forwarded-Proto` is that note, and Django is configured to trust it
 rather than insisting on seeing encryption that will never reach it.
 
 **The trap, in one sentence:** a bare domain here makes Caddy order a certificate
-through a check that arrives on a port nothing outside can reach, while Django is
+through a check that has to reach this server from outside, while Django is
 simultaneously redirecting every plain request to HTTPS — and the request loops
-until it dies. The shipped `Caddyfile`'s first five lines say exactly this, and
-they are worth reading before you edit the file.
+until it dies. The shipped `Caddyfile`'s own opening comment describes the
+second half of that, the redirect loop, and why the `X-Forwarded-Proto` line
+below prevents it. It is worth reading before you edit the file.
 
 ---
 
@@ -350,20 +383,27 @@ they are worth reading before you edit the file.
 docker compose up -d --build
 ```
 
-Wait for the database health check to pass (takes 10-15 seconds):
+The three containers start in sequence, not together: the database has to report
+healthy before the web container starts, and the web container then does its own
+first-boot work — gathering up the site's styling and images, and building its
+database tables — before it reports healthy in turn and Caddy starts. Give it a
+minute or two on a first build, and check with:
 
 ```bash
 docker compose ps
 ```
 
-Expected output showing all 3 services running:
+Expected output once all three are up:
 
 ```
 NAME              IMAGE                    STATUS                    PORTS
 openh2o-caddy-1   caddy:2-alpine          Up                        0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
 openh2o-db-1      postgis/postgis:16-3.4  Up (healthy)              5432/tcp
-openh2o-web-1     openh2o-web             Up                        8000/tcp
+openh2o-web-1     openh2o-web             Up (healthy)              8000/tcp
 ```
+
+Only `db` and `web` report `(healthy)` — the Caddy image defines no health check
+of its own, so a bare `Up` is the correct and only reading for that row.
 
 ---
 
@@ -413,8 +453,9 @@ python3 -c "import secrets; print(secrets.token_urlsafe(18))"
 Then get it to the agency through a channel they already trust — the password
 manager they use, or handed over in person. Not a chat message, not left sitting
 in a file on the server. (§3's database password is under the same rule for the
-same reason: the platform refuses to start in its secure mode with a weak one,
-and that refusal is deliberate.)
+same reason: the platform refuses to start in its secure mode if that one is
+left empty or set to any of four well-known defaults, and that refusal is
+deliberate.)
 
 **The email address you type at that prompt is probably not a mailbox anyone
 reads.** If you invent one — `admin@` the agency's own address is the usual
@@ -446,18 +487,21 @@ definitions, and report templates):
 docker compose exec web python manage.py seed_data
 ```
 
-This runs the seed commands in order (module-gated — a command whose module is
-switched off is skipped):
+This runs the seed commands in the order below on a deployment that has every
+module switched on. The first two always run; the rest belong to modules a
+deployment can switch off, and one whose module is off is skipped and said so in
+the output.
+
 - `seed_roles` (admin, manager, viewer)
 - `seed_observed_properties` (the standards crosswalk: every adapter's native
   parameter code mapped to a canonical concept, which is what makes
   `check_conformance` able to check anything)
 - `seed_water_types` (Groundwater, Surface Water, Recycled Water, etc.)
-- `seed_water_right_types` (Appropriative, Pre-1914, Riparian, etc.)
-- `seed_well_types` (Agricultural, Municipal, Monitoring, etc.)
+- `seed_well_types` (Production, Monitoring, Injection, Observation)
 - `seed_data_sources` (CDEC, USGS, OpenET, CIMIS, CNRFC, DWR, NOAA)
-- `seed_report_templates` (GEARS CSV, CalWATRS CSV)
 - `seed_drinking` (federal MCL reference limits for the drinking-water module)
+- `seed_water_right_types` (Appropriative, Pre-1914, Riparian, etc.)
+- `seed_report_templates` (GEARS CSV, CalWATRS CSV)
 
 To run any seed command individually:
 
@@ -484,8 +528,16 @@ minutes, no key required). For real satellite-ET figures, set an OpenET key (see
 section 11) and run the ET sync. Without a key the demo's face-value figures —
 water rights, deliveries, parcels, ledger activity — are all seeded and
 internally coherent, but **consumptive use is computed from satellite ET and has
-no fallback**: `run_calculations` reports every parcel as skipped ("no ET data")
-and those figures stay empty until a key is supplied.
+no fallback**, so those figures stay empty until a key is supplied.
+
+⚠ **`run_calculations` needs one more thing that no seed command runs for you.**
+It will not start at all until an active calculation method exists, and the
+command that creates one — `seed_calculation_plan` — is run by neither
+`seed_data` nor `seed_merced`. Without it the command stops with an error naming
+exactly that. `seed_merced` prints a list of what is still missing when it
+finishes, and this is on it; that list is the authority, not this paragraph.
+With the method in place but no ET data behind it, `run_calculations` then
+reports every parcel as skipped ("no ET data").
 
 <!-- defines: idempotent -->
 Each sub-step is *idempotent* — running it five times ends up the same as
@@ -507,8 +559,9 @@ stations by calling the agencies that publish them, and it creates every one of
 them switched **off** — so a freshly seeded demonstration reports "0 of 0
 stations reporting" until somebody turns them on, and it needs a working
 connection to those agencies to find them at all. The demonstration's own list
-of stations also ships with the platform — 335 of them, 42 switched on, each
-carrying the real date it last published a reading — and one command loads it:
+of stations also ships with the platform — 335 of them, 42 switched on, and 50
+of the 335 (all 42 of the active ones, plus 8 others) carrying the real date
+they last published a reading — and one command loads it:
 
 ```bash
 docker compose exec web python manage.py load_station_fixture
@@ -557,6 +610,12 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost
 # Expected: 200
 ```
 
+⚠ **That `200` is the expected answer on Branch A and Branch C only.** Both
+leave the `Caddyfile` answering on `:80` for any address, which is what makes
+`localhost` work. **Branch B** names one domain in that file, so a request
+arriving as `localhost` matches nothing and is refused — correctly. On Branch B,
+run this check against the real domain over `https://` instead.
+
 <!-- defines: postgis -->
 **PostGIS loaded.** *PostgreSQL* is the database program that stores every
 record the site shows, and *PostGIS* is an add-on that teaches it to understand
@@ -584,10 +643,14 @@ Visit `/health/` in a browser, at the address from the top of this section.
 
 Visit `/admin/` at that same address and log in with your superuser credentials.
 
-No browser? A plain-HTTP `curl` login will 403 by design
-(`SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`) — use the headless check in
+No browser? On **Branch B** and **Branch C**, where `CSRF_COOKIE_SECURE` stays
+on, a login sent over plain `http://` returns 403 by design: the browser-safety
+cookie is marked so that it travels only over an encrypted connection, so it
+never comes back and the check fails. That is correct behaviour, not a fault. On
+**Branch A** the three flags are deliberately off, so a plain-HTTP login can
+succeed. Either way, the headless check in
 [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) ("Verify login works
-(no browser)").
+(no browser)") works on every branch and is the one to use.
 
 **No errors in logs:**
 
@@ -611,11 +674,19 @@ a deployment that has been told neither introduces itself as `example.com`.
 docker compose exec web python manage.py shell -c "from django.contrib.sites.models import Site; s = Site.objects.get_current(); print(s.name, '|', s.domain)"
 ```
 
-Expect the agency's name and this deployment's own web address. If either still
-reads `example.com`, fill in whichever of the two is blank and run §6's
-migration step again — that is what applies it, and re-running it changes
-nothing else. `docker compose exec web python manage.py check` reports the same
-thing as `openh2o.W002` if you would rather be told than look.
+Expect the agency's name and this deployment's own web address.
+`docker compose exec web python manage.py check` reports the same thing as
+`openh2o.W002` if you would rather be told than look.
+
+If the name is missing, it is because nobody has typed the agency's name into
+the Setup Wizard (§11) yet; do that and run §6's migration step again, which is
+what applies it and which changes nothing else.
+
+**On Branch A the address will stay `example.com`, and that is expected.** The
+platform deliberately refuses to treat `localhost` or `127.0.0.1` as a public
+web address, so a single-computer deployment has none to derive and the warning
+stays. Nothing is broken and there is no value to fill in; on an instance that
+sends no outside email it changes nothing anyone sees.
 
 **Who can actually reach it:**
 
@@ -640,7 +711,7 @@ Then hold the answer against the branch you chose in §4:
 | §4 branch | Who should reach port 80 | What a wrong answer looks like |
 |---|---|---|
 | **Branch A** (`no-public-access`) | This computer only, or the office network only | Somebody outside the office can open the site |
-| **Branch B** (`own-certificate`) | The whole internet, on **both** port 80 and port 443 | Port 80 is blocked — the certificate check arrives there, so the site never comes up at all |
+| **Branch B** (`own-certificate`) | The whole internet, on port 443, and port 80 as well unless you have a reason not to | Nothing outside can reach the machine on either door, so the certificate is never issued and the site never comes up |
 | **Branch C** (`upstream-terminator`) | Only the thing in front of it — the tunnel, proxy or load balancer | The whole internet reaches port 80 directly, going around the very thing that was meant to guard it |
 
 A mismatch here is worth settling before handover rather than after. On
@@ -668,10 +739,17 @@ a shape drawn on a map, along with a few labelled facts about it such as a name
 and an area. It is non-proprietary and widely supported, which is why a GIS
 contractor can hand over one file and expect any capable program to read it.
 
-- **Where it is:** left sidebar, **Administration → Setup Wizard**.
-- **Who can see it:** an admin user — and, on an instance that has not enabled
-  access control yet, any visitor. Set up your admin account (§7) before you
-  expose the site.
+- **Where it is:** left sidebar, **Administration → Setup Wizard** — but the
+  whole Administration block is hidden until you switch the sidebar out of its
+  everyday view. The switch is a two-button toggle at the **bottom of the left
+  sidebar**, marked **Operations** and **Admin**; click **Admin**. A fresh
+  install opens on Operations, so an operator hunting for the wizard and not
+  finding it has almost always not clicked that yet.
+- **Who can see it:** you have to be signed in — an anonymous visitor is sent to
+  the login page whatever else is configured. Beyond that, an administrator can
+  always open it, and on an instance that has switched access control off, so
+  can any signed-in user. Set up your admin account (§7) before you expose the
+  site.
 - **What its last step does:** `setup/activate-stations/` bulk-enables **every
   inactive station inside the chosen boundary** in one action. Station discovery
   creates stations switched off, and syncing only pulls data for active ones, so
@@ -742,7 +820,7 @@ The jobs in `crontab.txt`:
 | Job | Schedule | Purpose |
 |-----|----------|---------|
 | `run-sync.sh cdec usgs` | Hourly | Live stream / reservoir telemetry (near-real-time flow & stage) |
-| `run-sync.sh dwr_wdl dwr_sgma noaa` | Daily 2:00 AM | Slower sources — groundwater, climate (cimis/cnrfc/openet ship deactivated; add them here if you enable those sources) |
+| `run-sync.sh dwr_wdl dwr_sgma noaa` | Daily 2:00 AM | Slower sources — groundwater, climate. CNRFC and OpenET ship switched off; add them here if you turn them on. CIMIS ships switched **on** but syncs nothing until its key is set |
 | `run_health_checks` | Every 6 hours | Check database, disk, SSL, migrations, sync freshness |
 | `prune_old_data --confirm` | 1st of month 3:00 AM | Delete old staging records and sync logs |
 
@@ -826,8 +904,9 @@ provider, so a website can send messages — "you forgot your password" above al
 — instead of pretending to be its own mail server. The settings below are the
 login for whichever provider the district uses.
 
-Logged-in users can change their password with no setup — the **Change Password**
-link in the header works out of the box. The **"Forgot password?"** flow on the
+Logged-in users can change their password with no setup — the **Change password**
+button on their own profile page (reached by clicking their email address in the
+header) works out of the box. The **"Forgot password?"** flow on the
 login page, however, emails a reset link, so it needs an outgoing mail server.
 Until SMTP is configured, that flow silently fails (no email is sent).
 
@@ -998,10 +1077,11 @@ checkout at `~/openh2o` uses `~/openh2o-demo-snapshot` and a checkout at
 project that `rebuild-golden` and `verify-candidate` build in is derived the same
 way (`<checkout>-rebuild`). **Two deployments on one host therefore get two
 snapshot directories and two scratch projects, and neither can write or tear down
-the other's.** That separation is not cosmetic: `promote-golden` is the one script
-that writes `golden.dump`, and before this derivation existed a deploy run in a
-staging checkout would have installed a staging-built database as production's
-golden. Each script echoes its resolved directory on startup, so the path that was
+the other's.** That separation is not cosmetic: `promote-golden` is the only step
+inside a deploy that writes `golden.dump` — `make snapshot-demo` writes one too,
+by hand, as the escape hatch described above — and before this derivation existed
+a deploy run in a staging checkout would have installed a staging-built database
+as production's golden. Each script echoes its resolved directory on startup, so the path that was
 actually used is in the log of the run that used it. Set `OPENH2O_SNAPSHOT_DIR`, or
 pass a path argument, to override.
 
@@ -1074,10 +1154,10 @@ Two of those names carry ideas the table has no room to explain:
 | `SECRET_KEY` | Yes | none | Django secret key for signing |
 | `POSTGRES_DB` | No | `openh2o` | PostgreSQL database name |
 | `POSTGRES_USER` | No | `openh2o` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | No | `openh2o` | PostgreSQL password (change in production) |
-| `DJANGO_SETTINGS_MODULE` | **Yes — set it explicitly** | **split by entry point:** `manage.py` defaults to `config.settings.production`; `config/wsgi.py` and `config/asgi.py` default to `config.settings.local` | Always set `config.settings.production` for a real deployment, on any hardware. ⚠ This file is read by Docker Compose, not by Django — running `manage.py` from a host shell needs the variables exported into the shell first (`set -a`, source this file, `set +a`), or it will load whatever its own default is |
+| `POSTGRES_PASSWORD` | **Yes (prod)** | `openh2o` | PostgreSQL password. Production settings refuse to boot if it is left empty or set to any of four known-insecure defaults — `openh2o`, `postgres`, `password`, `changeme` — so a real deployment must set it. The check is that blocklist, not a strength test: it will accept a short password that is merely unusual |
+| `DJANGO_SETTINGS_MODULE` | **Yes — set it explicitly** | **split by entry point:** `manage.py` defaults to `config.settings.production`; `config/wsgi.py` and `config/asgi.py` default to `config.settings.local` | Always set `config.settings.production` for a real deployment, on any hardware. ⚠ This one variable is read before Django loads its settings, so unlike the rest of the file it is not picked up from `.env` on a host shell — running `manage.py` outside the container needs it exported into the shell first (`set -a`, source this file, `set +a`), or `manage.py` loads its own default instead |
 | `ALLOWED_HOSTS` | Yes (prod) | `[]` | Comma-separated list of allowed hostnames |
-| `CSRF_TRUSTED_ORIGINS` | Yes (prod) | `[]` | Comma-separated HTTPS origins |
+| `CSRF_TRUSTED_ORIGINS` | No (but set it with a public domain) | `[]` | Comma-separated HTTPS origins. Nothing refuses to boot without it, and §3 tells single-computer and office-network deployments to leave it empty; a deployment served over HTTPS at a domain needs it, or logins from that domain are rejected |
 | `ACCESS_CONTROL_ENFORCED` | No | `True` | Two-tier access model. On (default) closes public self-signup and gates admin-only screens — the right posture for a real agency. Set `False` only for an open demo where anyone should be able to self-register. Your superuser is always an administrator, so you can't lock yourself out |
 | `TIME_ZONE` | No | `America/Los_Angeles` | Django timezone |
 | `DEFAULT_FROM_EMAIL` | No | `noreply@openh2o.com` | Sender address for emails |
@@ -1151,10 +1231,9 @@ site's web address — is somebody attacking us?** By itself, that is not eviden
 of one. Every computer on a network also has a numeric address, and some ranges
 of those numbers — `192.168.…` and the like — only work inside one building or
 one provider's private network and mean nothing at all on the open internet.
-Being addressed by number rather than by name is ordinary background traffic for
-a machine that is switched on, and plenty of routine things do it. This document
-cannot tell you what is sending yours; what it can tell you is that the log
-lines themselves are not a sign of trouble.
+This document cannot tell you what is sending yours, and will not guess. What it
+can tell you is that a request being addressed by number is not, on its own,
+evidence of anything: the log lines themselves are not a sign of trouble.
 
 The rejection is `ALLOWED_HOSTS` doing precisely its job. A request whose
 address is not on that safety list is refused, and Django writes a line about a

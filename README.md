@@ -81,7 +81,7 @@ cp .env.example .env
 #
 # WARNING: config.settings.local is for LOOKING AT IT, not for holding an
 # agency's real records. DEBUG=True prints the site's internals on any error
-# page, and it forces ALLOWED_HOSTS to "*" whatever you configure. To actually
+# page, and it defaults ALLOWED_HOSTS to "*" if you set none. To actually
 # run your agency on one computer, use production settings with the three
 # plain-HTTP flips - see docs/AI-OPERATOR-GUIDE.md Phase 2.
 docker compose up -d --build         # start db + web + caddy
@@ -114,7 +114,7 @@ services (a few-minute wait, no key required), and the demonstration's water
 rights, deliveries, parcels and ledger activity are all seeded and internally
 coherent without any key.
 
-**Consumptive-use figures are the exception: they are computed from satellite ET, so without an OpenET key `run_calculations` skips every parcel ("no ET data") and those numbers stay empty.** Add an OpenET key to fill them in. Run `make help` for all shortcuts. For a real deployment with encryption, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
+**Consumptive-use figures are the exception: they are computed from satellite ET, so without an OpenET key those numbers stay empty.** Add an OpenET key to fill them in. `run_calculations` also needs a calculation method in place first, which `seed_calculation_plan` creates and no other seed command runs for you — the demonstration seed ends by listing whatever is still missing, and that list is the thing to follow. Run `make help` for all shortcuts. For a real deployment with encryption, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
 
 ---
 
@@ -163,10 +163,10 @@ with every figure carrying the source that published it:
 - **Surface-water rights** with points of diversion and diversion records, including curtailment.
 - **Managed aquifer recharge** site and event tracking.
 - **Drinking-water quality** — water systems, facilities, and sampling points keyed to their EPA PWSID, a lab-results importer for California DDW exports, and a PWSID-driven onboarding wizard that prefills a system from public records. Quality and quantity live side by side in one instance.
-- **External data sync** from public sources — USGS, CDEC, DWR (Water Data Library and SGMA portal), and NOAA active out of the box; CIMIS, CNRFC, and OpenET satellite evapotranspiration ship ready to enable (CIMIS and OpenET need a free API key — a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers, and treated as a secret exactly like a password). Everything is crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)). <!-- defines: api_key -->
+- **External data sync** from public sources. USGS, CDEC and DWR (Water Data Library and SGMA portal) are switched on and need no credentials. CIMIS and NOAA are switched on too but stay idle until you supply a free API key — a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers, treated as a secret exactly like a password. CNRFC and OpenET satellite evapotranspiration ship switched off, ready to enable; OpenET also needs a key. Everything is crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)). <!-- defines: api_key -->
 - **State report preparation** — GEARS (by-well and by-ET) and CalWATRS (direct-use and to-storage) as ready-to-file CSV.
 - **Standards-based publishing** — the data model is built to publish out as OGC SensorThings, Frictionless Data Packages, and WaDE 2.0 (see below).
-- **Health monitoring** dashboard with source-aware freshness, plus interactive dark-mode maps via MapLibre GL JS.
+- **Health monitoring** dashboard with source-aware freshness, plus interactive maps via MapLibre GL JS — aerial imagery by default, with a dark basemap a click away.
 - **In-app feedback (optional, off by default)** — a built-in widget can let users file bugs, ideas, and questions (with screenshots and automatic diagnostics) without leaving the app; reports are stored locally and can optionally forward to a triage pipeline. Enable it with `FEEDBACK_ENABLED=True` on a deployment that has someone to read the reports.
 
 ---
@@ -178,7 +178,7 @@ This is the part most worth a careful look. OpenH2O is **born-compliant** — st
 - A **canonical ObservedProperty registry** maps every measured concept (stream discharge, depth-to-groundwater, ET, reservoir storage, …) to its **USGS parameter code**, **EPA WQX characteristic name**, and **UCUM unit**.
 - A **SourceParameter crosswalk** maps each external source's native parameter codes onto that canonical vocabulary, so USGS code `00060`, CDEC code `20`, and a CNRFC streamflow forecast all resolve to the same `discharge` concept.
 - Measurements carry **quality flags** (provisional / approved / estimated) and groundwater wells carry a **vertical datum** (NAVD88 / NGVD29), both following OGC SensorThings conventions.
-- A **conformance gate** (`check_conformance`) refuses to let incomplete data reach a publish path.
+- A **conformance audit** (`check_conformance`) reports every measurement that is not fully publishable — a missing unit, a missing crosswalk entry — and exits non-zero when it finds one, so a script can gate on it. It is run by hand; nothing calls it automatically, and there is no live publish path for it to sit in front of yet.
 
 The full crosswalk, the standards roadmap (OGC SensorThings API, Frictionless, WaDE 2.0), and a machine-readable export live in **[docs/DATA-STANDARDS.md](docs/DATA-STANDARDS.md)**. If you run another district's system, this is the part you can reuse directly.
 
@@ -267,7 +267,7 @@ make test     # pytest, pinned to local settings
 ```
 
 <!-- defines: allowed_hosts -->
-The suite uses pytest + pytest-django + factory_boy and lives in [tests/](tests/). Production settings intentionally refuse to boot without a strong database password and a real `ALLOWED_HOSTS` — the safety list of web addresses the site will answer to, which stops a stranger tricking it into behaving as a different website. That refusal is deliberate, and it is why the test target pins `--ds=config.settings.local`.
+The suite uses pytest + pytest-django + factory_boy and lives in [tests/](tests/). Production settings intentionally refuse to boot on an empty or well-known-default database password, or without a real `ALLOWED_HOSTS` — the safety list of web addresses the site will answer to, which stops a stranger tricking it into behaving as a different website. That refusal is deliberate, and it is why the test target pins `--ds=config.settings.local`.
 
 ## Contributing
 
