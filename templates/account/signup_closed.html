@@ -1,11 +1,13 @@
 {% extends "base_auth.html" %}
-{# allauth ships its own version of this page. It answers "We are sorry, but the
-   sign up is currently closed" and carries no links at all, so anyone who
-   reached it was told no and given nowhere to go (ISS-126). This override says
-   why, and who to ask.
+{% comment %}
+   allauth ships its own version of this page. It answers "We are sorry, but the
+   sign up is currently closed" and offers nothing but a logo link home, so
+   anyone who reached it was told no and given nowhere to go (ISS-126). This
+   override says why, and who to ask.
 
    Accent contract: gold is for the primary CTA button only — page headings
-   carry the teal identity accent, matching the login and signup pages. #}
+   carry the teal identity accent, matching the login and signup pages.
+{% endcomment %}
 {% block title %}Accounts are created by your administrator - Open Water Accounting Platform{% endblock %}
 {% block content %}
 <div class="card-raised w-full" style="max-width: 420px;">

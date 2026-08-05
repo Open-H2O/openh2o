@@ -33,11 +33,13 @@
         </div>
         <button type="submit" class="btn-primary" style="width: 100%;">Log in</button>
     </form>
-    {# Only offer an account that can actually be created. With
+    {% comment %}
+       Only offer an account that can actually be created. With
        ACCESS_CONTROL_ENFORCED on — the shipped default for a real agency —
        self-signup is closed at core/adapters.py, so this invitation led to a
        refusal page (ISS-126). `access_enforced` is put here by
-       core/context_processors.py::access_flags, on every template. #}
+       core/context_processors.py::access_flags, on every template.
+    {% endcomment %}
     {% if not access_enforced %}
     <p class="text-sm text-secondary pt-md" style="text-align: center;">
         No account yet? <a href="{% url 'account_signup' %}" class="link-accent">Create one</a>

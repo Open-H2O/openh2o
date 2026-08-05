@@ -2,8 +2,10 @@
 {% block title %}Create account - Open Water Accounting Platform{% endblock %}
 {% block content %}
 <div class="card-raised w-full" style="max-width: 420px;">
-    {# Accent contract: gold is for the primary CTA button only — page headings
-   carry the teal identity accent, matching the login page. #}
+    {% comment %}
+   Accent contract: gold is for the primary CTA button only — page headings
+   carry the teal identity accent, matching the login page.
+    {% endcomment %}
 <h1 class="text-xl font-extrabold mb-sm text-accent">Create account</h1>
     <p class="text-sm mb-lg text-secondary">Set up your water-data access.</p>
     {% if form.errors %}

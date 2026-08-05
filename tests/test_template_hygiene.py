@@ -60,6 +60,30 @@ class TestDeveloperNotesStayOutOfThePage:
             f"{{% comment %}} instead: {offenders}"
         )
 
+    def test_no_template_ships_a_multi_line_django_comment(self):
+        """``{# #}`` cannot span lines, and the overflow becomes body text.
+
+        Worse than the HTML-comment case above, because it is not hidden in the
+        source: everything after the first newline renders as visible prose on
+        the page. `templates/account/signup.html` shipped that way to
+        openh2o.com — a note about the accent palette printed under the "Create
+        account" button, in the page, for every visitor. Found 2026-08-05 by
+        screenshotting the page rather than reading the template. Multi-line
+        needs ``{% comment %}``.
+        """
+        offenders = []
+        for path in _templates():
+            text = path.read_text()
+            for match in re.finditer(r"\{#.*?#\}", text, re.S):
+                if "\n" in match.group(0):
+                    line = text[: match.start()].count("\n") + 1
+                    offenders.append(f"{path.relative_to(TEMPLATES_DIR.parent)}:{line}")
+        assert not offenders, (
+            "Django's {# #} comment is single-line only — everything after the "
+            "first newline renders as visible text on the page. Use "
+            f"{{% comment %}}...{{% endcomment %}}: {offenders}"
+        )
+
 
 class TestOneBadgeSystem:
     """There is one badge vocabulary, and it is ``.badge``.
