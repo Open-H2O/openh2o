@@ -68,10 +68,41 @@ Edit `.env` and set these values at minimum:
 ```bash
 SECRET_KEY=<paste-generated-key-here>
 POSTGRES_PASSWORD=<choose-a-strong-password>
-ALLOWED_HOSTS=your-domain.com,www.your-domain.com
-CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://www.your-domain.com
 DJANGO_SETTINGS_MODULE=config.settings.production
 ```
+
+The last two settings — `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` — depend on
+**who can reach this instance**. That is the same question §4 and
+[docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 branch on, and
+Phase 2 step 2 carries the authoritative table. The two shapes are:
+
+**Reachable from the public internet, at a domain:**
+
+```bash
+ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://www.your-domain.com
+```
+
+<!-- defines: localhost -->
+**Only this computer, or the office network.** `localhost` and `127.0.0.1` both
+mean "this same computer", as opposed to an address anyone else could type — so
+an instance nobody outside reaches names those, or names the machine's address
+on the office network. There is no public domain, so `CSRF_TRUSTED_ORIGINS`
+stays empty:
+
+```bash
+# only this computer
+ALLOWED_HOSTS=localhost,127.0.0.1
+CSRF_TRUSTED_ORIGINS=
+
+# or, on the office network, the machine's address on that network
+ALLOWED_HOSTS=192.168.1.40
+CSRF_TRUSTED_ORIGINS=
+```
+
+Neither shape is a lesser deployment. `ALLOWED_HOSTS` is a safety list the
+program checks against the address in each request; it simply has to hold the
+address people will actually type, whatever that is.
 
 See `.env.example` for all available variables with documentation.
 
@@ -79,7 +110,54 @@ See `.env.example` for all available variables with documentation.
 
 ## 4. Caddy / HTTPS Configuration
 
-Edit `Caddyfile` to replace `:80` with your domain for automatic HTTPS:
+`Caddyfile` configures Caddy, the middleman program that receives web traffic and
+passes it inward to OpenH2O. What you do with it follows from exactly one
+question: **who can reach this instance?** Not how big the machine is, not
+whether it is a rented server or a computer in the office — only who can reach
+it.
+
+| Who can reach this instance | What to do with the `Caddyfile` | Follow |
+|---|---|---|
+| Only this computer, or the office network | Leave it exactly as shipped | **Branch A** |
+| The public internet, and this server obtains its own certificate | Replace `:80` with your bare domain | **Branch B** |
+| The public internet, but something in front already handles the encryption | Leave `:80` as shipped, or write `http://your-domain.com` | **Branch C** |
+
+This is the same question [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md)
+Phase 2 branches on. If the two ever seem to disagree, Phase 2 is the authority
+for the `.env` settings and this section is the authority for the `Caddyfile`.
+
+<!-- branch: no-public-access -->
+
+### Branch A — Only this computer, or the office network
+
+Leave the `Caddyfile` exactly as it ships. There is no domain to name and no
+certificate to obtain, so there is nothing in this file to change. You will reach
+the site at `http://localhost` or at the machine's address on the office network.
+
+Then set these three in `.env`:
+
+```bash
+SECURE_SSL_REDIRECT=False
+SESSION_COOKIE_SECURE=False
+CSRF_COOKIE_SECURE=False
+```
+
+Without them, **every login returns 403 while unauthenticated pages render
+perfectly** — which makes the site look like it works right up until someone
+tries to log in. The reason is that a browser never sends a `Secure` cookie over
+plain `http://`, and production settings mark the login cookies `Secure` by
+default. This is a supported, documented posture, not a workaround;
+[docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 step 3 carries the
+full table. You still keep `DEBUG=False`, a real `ALLOWED_HOSTS`, a strong
+database password and the closed-signup default.
+
+<!-- branch: own-certificate -->
+
+### Branch B — Public internet, and this server obtains its own certificate
+
+Replace `:80` with your domain written as a **bare address — no `http://` and no
+`https://` in front of it**. The bare form is exactly what tells Caddy to obtain
+a certificate for that name automatically, from Let's Encrypt, at no cost.
 
 ```caddy
 your-domain.com {
@@ -96,10 +174,78 @@ your-domain.com {
 }
 ```
 
-Caddy obtains TLS certificates from Let's Encrypt automatically. Your
-domain's DNS A record must point to the server's public IP before starting.
+**Two things must already be true before you start the containers**, or the
+certificate request fails and the site never comes up:
 
-For local/development use, keep the default `:80` configuration.
+1. **The DNS A record for that name must already point at this server's public
+   IP.** Certificates are issued to a name only after the issuer confirms the
+   name really does lead to this machine, so the phone-book entry has to be in
+   place first, not afterwards.
+2. **Both port 80 and port 443 must reach this server from the internet.** Port
+   443 is where the finished site is served; port 80 is where the issuer's
+   check arrives. Blocking 80 because "everything is HTTPS anyway" is the common
+   way this fails.
+
+Keep `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE`
+switched **on** for this branch — they are on by default and they are correct
+here.
+
+> **Say plainly what this branch is: reasoned, not proven.** This project has
+> never once exercised it. Every machine we own is either behind a Cloudflare
+> Tunnel — which terminates the encryption itself, so Caddy never runs its own
+> certificate request — or is a rented server whose ports 80 and 443 are already
+> taken by something else. The instructions above follow Caddy's own
+> documentation and the shipped `Caddyfile`'s own header comment; they have not
+> been watched working end to end. If you are the first to run this branch and it
+> misbehaves, that is worth reporting: it is a genuine gap in what has been
+> tested, not something we checked and got wrong.
+
+<!-- branch: upstream-terminator -->
+
+### Branch C — Public internet, but something in front already handles the encryption
+
+This is the branch for a Cloudflare Tunnel, an agency's existing proxy, or a load
+balancer — anything that receives the encrypted traffic, unwraps it, and forwards
+plain traffic on to this server. openh2o.com itself runs this way.
+
+**Do not put a bare domain in the `Caddyfile` on this branch.** Either leave `:80`
+exactly as shipped, or, if the name genuinely has to appear, write it with the
+`http://` prefix:
+
+```caddy
+http://your-domain.com {
+    encode gzip
+
+    handle /static/* {
+        root * /srv
+        file_server
+    }
+
+    handle {
+        reverse_proxy web:8000 {
+            header_up X-Forwarded-Proto https
+        }
+    }
+}
+```
+
+The `http://` prefix is the whole mechanism: it is what tells Caddy to serve that
+name as-is and order no certificate. (Caddy's documentation, Caddyfile →
+Concepts → Addresses. The global `auto_https off` option is **not** a substitute —
+it stops the automation but does not change the address, and the address is what
+decides.)
+
+<!-- defines: x_forwarded_proto -->
+Keep the `header_up X-Forwarded-Proto https` line. When the thing in front strips
+the encryption, it can attach a note saying "this was encrypted when the visitor
+sent it"; `X-Forwarded-Proto` is that note, and Django is configured to trust it
+rather than insisting on seeing encryption that will never reach it.
+
+**The trap, in one sentence:** a bare domain here makes Caddy order a certificate
+through a check that arrives on a port nothing outside can reach, while Django is
+simultaneously redirecting every plain request to HTTPS — and the request loops
+until it dies. The shipped `Caddyfile`'s first five lines say exactly this, and
+they are worth reading before you edit the file.
 
 ---
 
@@ -212,6 +358,12 @@ docker compose exec web python manage.py seed_merced --allow-prod-clobber
 
 ## 10. Verify Deployment
 
+**Do the last two checks at the address the agency will actually use**, not only
+at `http://localhost`. A site that answers on the machine itself and nowhere else
+looks identical to a working one from here. Per §4's branches, that address is:
+`http://localhost` or the machine's office-network address for **Branch A**, and
+`https://your-domain.com` for **Branch B** and **Branch C**.
+
 Run these checks in order:
 
 **HTTP response through Caddy:**
@@ -237,11 +389,11 @@ curl -s http://localhost/health/api/ | python3 -m json.tool
 
 **Health dashboard:**
 
-Visit `http://<server-ip>/health/` in a browser.
+Visit `/health/` in a browser, at the address from the top of this section.
 
 **Django admin:**
 
-Visit `http://<server-ip>/admin/` and log in with your superuser credentials.
+Visit `/admin/` at that same address and log in with your superuser credentials.
 
 No browser? A plain-HTTP `curl` login will 403 by design
 (`SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE`) — use the headless check in
@@ -262,7 +414,8 @@ docker compose logs web --tail=50
 
 ### The Setup Wizard (`/setup/`)
 
-The platform ships a guided first-run flow at `https://yourdomain/setup/`. It is
+The platform ships a guided first-run flow at `/setup/`, reached at whatever
+address §4's branch gave you for this instance. It is
 the browser equivalent of the load-data commands: pick or **upload a basin
 boundary as a GeoJSON file**, confirm it on a map, run the `auto_populate`
 discovery steps with progress on screen, and enable the monitoring stations that
