@@ -280,6 +280,9 @@ were found.
 
 ### Upgrades
 
+**This block is the upgrade path for an agency running real data.** It updates
+the code and the database structure and leaves your records untouched.
+
 ```bash
 cd /path/to/openh2o
 git pull origin main
@@ -287,6 +290,12 @@ docker compose up -d --build
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py collectstatic --noinput
 ```
+
+`make deploy` is **not** an upgrade path and must not be used here. It belongs to
+the maintainer's public demonstration site: it discards every local change in the
+checkout and then replaces the live database with the canned demonstration
+snapshot. It refuses to run unless the checkout carries a `.demo-host` marker
+file, which only that one demonstration host has.
 
 ### Scheduled Jobs
 

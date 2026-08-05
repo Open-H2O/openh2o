@@ -43,6 +43,12 @@ media/
 # committed. The Makefile's destructive targets refuse to run when this exists.
 .production-lock
 
+# Demonstration-host opt-in marker — the OPPOSITE claim to .production-lock, and
+# present only on the maintainer's public demo checkout, never committed.
+# `make deploy` replaces the live database with the demonstration snapshot, so it
+# refuses to run unless this file says the database here is disposable.
+.demo-host
+
 # Internal planning / build scaffolding (not for public repo)
 .planning/
 .env.*

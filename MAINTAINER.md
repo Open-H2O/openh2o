@@ -38,3 +38,12 @@ as a secret, do **not** store it in Bitwarden, and do **not** mirror it on prod.
   Never rsync with `--delete`. **Production deploy is Brent's separate, explicit
   call** — `deploy.sh` / `make deploy` in the prod checkout, never run as a side
   effect.
+- **`make deploy` requires a `.demo-host` marker file in the checkout and
+  refuses without one.** openh2o.com's production checkout (`~/openh2o`) has it;
+  it is gitignored, so it survives `git reset --hard` but does not survive a
+  fresh clone — recreate it with `touch .demo-host` if that checkout is ever
+  rebuilt. **Staging gets no marker**: it deploys by `git reset --hard
+  origin/main` plus `docker compose up -d --build`, never by `make deploy`. The
+  marker means "this checkout is the public demonstration and its database is
+  disposable", which is the opposite claim to `.production-lock` ("this checkout
+  is protected") — both live on the prod checkout and neither replaces the other.

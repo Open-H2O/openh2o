@@ -15,7 +15,7 @@ export APP_VERSION = $(VERSION)
         createsuperuser collectstatic seed seed-roles seed-water-types \
         seed-data-sources seed-report-templates seed-water-right-types \
         seed-well-types demo flush-demo merced teardown-demo \
-        check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod deploy rebuild-golden \
+        check test test-droppable guard-fresh fresh snapshot-demo reset-demo calc-rebuild verify-clean install-cron show-cron sync guard-prod guard-demo-host deploy rebuild-golden \
         verify-candidate promote-golden
 
 help: ## Show this help message
@@ -81,7 +81,51 @@ export OPENH2O_NTFY_URL
 # live database it had just restored — a closed loop, and the mechanism that let
 # production's demonstration content drift out of reach of the repository for
 # eight weeks. The repository is the source of truth now.
-deploy: ## DEMO-HOST ONLY — resets code to origin/main and RESTORES THE DEMO SNAPSHOT OVER THE LIVE DATABASE. An agency running real data upgrades via DEPLOY.md §11, never this target
+# THE MARKER IS A POSITIVE OPT-IN, AND THAT DIRECTION IS THE WHOLE POINT.
+#
+# `deploy` is the maintainer's own path for the public canned demonstration. It
+# is destructive to everybody else: `git reset --hard` discards an operator's
+# edited Caddyfile and every other local change, and reset-demo.sh restores the
+# demonstration snapshot OVER the live database. `make help` lists it beside
+# `up` and `down`, and its name is exactly what a new operator reaches for.
+#
+# So the guard refuses by DEFAULT and only the demo host opts in, rather than
+# trying to detect "is this production" — a detector is wrong the one time it
+# matters. `.demo-host` means "this checkout IS the public demonstration and its
+# database is disposable"; it is gitignored and lives on the demo host alone.
+#
+# ⚠ DO NOT reuse `.production-lock` for this. It means "this checkout is
+# PROTECTED" — the opposite claim — and an agency running real data might very
+# reasonably create one after reading guard-prod below, which would arm this
+# trap on the exact deployment that must never fire it. Both markers belong on
+# the demo host, and they mean opposite things.
+guard-demo-host:
+	@if [ ! -f .demo-host ]; then \
+		echo ""; \
+		echo "  REFUSING: 'make deploy' is the demonstration host's target, not an upgrade path."; \
+		echo ""; \
+		echo "  If it had run here it would have thrown away every local change in this"; \
+		echo "  checkout (git reset --hard), rebuilt the canned demonstration database, and"; \
+		echo "  RESTORED THAT OVER YOUR LIVE DATABASE — replacing your agency's records with"; \
+		echo "  demonstration data. That is correct on the public demo site and catastrophic"; \
+		echo "  anywhere else, which is why this checkout has to opt in by name."; \
+		echo ""; \
+		echo "  TO UPGRADE AN AGENCY DEPLOYMENT, run these four instead — they update the"; \
+		echo "  code and the database structure and leave your data alone:"; \
+		echo "      git pull origin main"; \
+		echo "      docker compose up -d --build"; \
+		echo "      docker compose exec web python manage.py migrate"; \
+		echo "      docker compose exec web python manage.py collectstatic --noinput"; \
+		echo "  They are written out with their explanations in DEPLOY.md, section 11"; \
+		echo "  ('Ongoing Operations' -> 'Upgrades')."; \
+		echo ""; \
+		echo "  If this genuinely IS the public demonstration host, create the marker file"; \
+		echo "  once: touch .demo-host"; \
+		echo ""; \
+		exit 1; \
+	fi
+
+deploy: guard-demo-host ## REFUSES unless this checkout is the demo host (.demo-host) — it resets code to origin/main and REPLACES THE LIVE DATABASE with the demonstration snapshot; agencies upgrade via DEPLOY.md §11
 	git fetch origin
 	git reset --hard $(REF)
 	@echo ""
