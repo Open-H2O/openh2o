@@ -314,6 +314,32 @@ docker compose exec web python manage.py createsuperuser
 
 Follow the prompts for username, email, and password.
 
+**Nobody hands you this password.** An agency's paperwork supplies the things
+only the agency can know — their web address, their data keys — and not this
+one, because this account does not exist until you create it here. So invent it
+properly: not blank, not reused from somewhere else, not something memorable.
+Generate it the same way §3 generates `SECRET_KEY`:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(18))"
+```
+
+Then get it to the agency through a channel they already trust — the password
+manager they use, or handed over in person. Not a chat message, not left sitting
+in a file on the server. (§3's database password is under the same rule for the
+same reason: the platform refuses to start in its secure mode with a weak one,
+and that refusal is deliberate.)
+
+**The email address you type at that prompt is probably not a mailbox anyone
+reads.** If you invent one — `admin@` the agency's own address is the usual
+guess — then the **"Forgot password?"** link on the login page sends its reset
+to an inbox that does not exist, and whoever is locked out simply never receives
+anything. Put a real, monitored address on the account before the agency starts
+depending on this deployment: **Django admin → Core → Users → (the account) →
+Personal info → Email address**. Then check §11's *Email / Password Reset* section for whether
+outgoing email is configured at all — until it is, that flow sends nothing no
+matter whose address is on the account.
+
 ---
 
 ## 8. Seed Reference Data
