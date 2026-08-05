@@ -121,6 +121,11 @@ class Command(BaseCommand):
                 defaults={
                     "geometry": parcel.geometry,
                     "et_data": row["et_data"],
+                    # Loading the fixture spends no OpenET request, so these rows
+                    # must not count toward the monthly allowance. Because this is
+                    # an upsert on the uniqueness tuple, a re-run also corrects
+                    # rows that predate the origin field (ISS-128).
+                    "origin": "fixture",
                 },
             )
             if created:

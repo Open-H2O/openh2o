@@ -282,3 +282,165 @@ class TestOpenETBudgetReservation:
 
         mock_fetch.assert_called_once()  # pending row is invisible to cache reads
         assert result is not None
+
+
+@pytest.mark.django_db
+class TestRowOriginIsNotCountedAsSpend:
+    """ISS-128, second half: a loaded demonstration is not a spent allowance.
+
+    monthly_query_count() is what the budget guard compares against. Before
+    these tests it counted every cache row, so seeding the Merced demonstration
+    from its committed fixture — 380 rows, zero requests — read as 380 of the
+    allowance gone.
+    """
+
+    def _row(self, parcel, geometry, origin, day):
+        from datetime import date
+
+        return OpenETCache.objects.create(
+            parcel=parcel,
+            geometry=geometry,
+            start_date=date(2024, 1, day),
+            end_date=date(2024, 12, 31),
+            variable="ET",
+            model_name=f"Ensemble-{origin}-{day}",
+            et_data=[],
+            origin=origin,
+        )
+
+    def test_fixture_rows_do_not_count(self, parcel, sample_geometry):
+        for day in range(1, 6):
+            self._row(parcel, sample_geometry, "fixture", day)
+        assert OpenETCache.objects.count() == 5
+        assert OpenETCache.monthly_query_count() == 0
+
+    def test_api_rows_count(self, parcel, sample_geometry):
+        self._row(parcel, sample_geometry, "api", 1)
+        assert OpenETCache.monthly_query_count() == 1
+
+    def test_unknown_rows_still_count(self, parcel, sample_geometry):
+        """Pre-existing rows count. A guard must err toward LESS allowance."""
+        self._row(parcel, sample_geometry, "unknown", 1)
+        assert OpenETCache.monthly_query_count() == 1
+
+    def test_default_origin_is_unknown(self, cache_entry):
+        assert cache_entry.origin == "unknown"
+
+    def test_a_mixed_month_counts_only_what_was_spent(self, parcel, sample_geometry):
+        for day in range(1, 4):
+            self._row(parcel, sample_geometry, "fixture", day)
+        self._row(parcel, sample_geometry, "api", 10)
+        self._row(parcel, sample_geometry, "unknown", 11)
+        assert OpenETCache.objects.count() == 5
+        assert OpenETCache.monthly_query_count() == 2
+
+    def test_reserve_query_slot_stamps_api(self, parcel, sample_geometry):
+        from datetime import date
+
+        row = OpenETCache.reserve_query_slot(
+            parcel, sample_geometry, date(2024, 1, 1), date(2024, 12, 31), budget=5
+        )
+        assert row is not None
+        assert row.origin == "api"
+        assert OpenETCache.monthly_query_count() == 1
+
+    def test_fixture_rows_do_not_eat_the_budget(self, parcel, sample_geometry, settings):
+        """The guard must still fire for real calls, and only for real calls."""
+        settings.OPENET_MONTHLY_BUDGET = 2
+        for day in range(1, 6):
+            self._row(parcel, sample_geometry, "fixture", day)
+        ok, used, limit = OpenETCache.check_budget()
+        assert (ok, used, limit) == (True, 0, 2)
+
+    def test_loading_the_fixture_reports_zero_spend(self, sample_geometry, tmp_path):
+        """End to end through the command an operator actually runs.
+
+        A hand-built two-row fixture rather than data/merced/openet_cache.json:
+        the point is the origin the loader writes, and 380 real rows would make
+        the assertion no clearer while coupling the test to seeded parcels.
+        """
+        import json
+
+        from django.core.management import call_command
+        from parcels.models import Parcel
+
+        for number in ("MER-9001", "MER-9002"):
+            Parcel.objects.create(
+                parcel_number=number, geometry=sample_geometry, status="active"
+            )
+        fixture = tmp_path / "openet_cache.json"
+        fixture.write_text(
+            json.dumps(
+                {
+                    "meta": {"row_count": 2},
+                    "rows": [
+                        {
+                            "parcel_number": number,
+                            "start_date": "2024-01-01",
+                            "end_date": "2024-12-31",
+                            "variable": "ET",
+                            "model_name": "Ensemble",
+                            "et_data": [{"date": "2024-06", "et": 55.0}],
+                        }
+                        for number in ("MER-9001", "MER-9002")
+                    ],
+                }
+            )
+        )
+
+        call_command("load_openet_fixture", "--fixture", str(fixture))
+
+        assert OpenETCache.objects.count() == 2
+        assert OpenETCache.monthly_query_count() == 0
+
+    def test_reloading_corrects_rows_that_predate_the_origin_field(
+        self, sample_geometry, tmp_path
+    ):
+        """Why "unknown" is safe as the migration default.
+
+        The loader upserts on the uniqueness tuple, so a second run restamps the
+        rows it owns — including ones the migration left "unknown".
+        """
+        import json
+        from datetime import date
+
+        from django.core.management import call_command
+        from parcels.models import Parcel
+
+        parcel = Parcel.objects.create(
+            parcel_number="MER-9003", geometry=sample_geometry, status="active"
+        )
+        OpenETCache.objects.create(
+            parcel=parcel,
+            geometry=sample_geometry,
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 12, 31),
+            variable="ET",
+            model_name="Ensemble",
+            et_data=[],
+            origin="unknown",
+        )
+        assert OpenETCache.monthly_query_count() == 1
+
+        fixture = tmp_path / "openet_cache.json"
+        fixture.write_text(
+            json.dumps(
+                {
+                    "meta": {"row_count": 1},
+                    "rows": [
+                        {
+                            "parcel_number": "MER-9003",
+                            "start_date": "2024-01-01",
+                            "end_date": "2024-12-31",
+                            "variable": "ET",
+                            "model_name": "Ensemble",
+                            "et_data": [{"date": "2024-06", "et": 55.0}],
+                        }
+                    ],
+                }
+            )
+        )
+        call_command("load_openet_fixture", "--fixture", str(fixture))
+
+        assert OpenETCache.objects.count() == 1
+        assert OpenETCache.monthly_query_count() == 0

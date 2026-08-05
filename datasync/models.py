@@ -158,6 +158,22 @@ class OpenETCache(models.Model):
     model_name = models.CharField(max_length=50, default="Ensemble")
     et_data = models.JSONField(help_text="Monthly ET values from API response")
     queried_at = models.DateTimeField(auto_now_add=True)
+    # How this row came to exist. monthly_query_count() is the monthly-allowance
+    # figure the budget guard compares against, and rows arrive two ways: a real
+    # API call charged through reserve_query_slot, and a bulk load from the
+    # committed fixture that spends nothing. Recorded at the moment it is known
+    # rather than inferred later — inferring it from row timing is exactly what
+    # made a freshly-seeded demonstration read as 380 requests spent (ISS-128).
+    origin = models.CharField(
+        max_length=10,
+        choices=[
+            ("api", "OpenET API call"),
+            ("fixture", "Loaded from a committed fixture"),
+            ("unknown", "Origin not recorded"),
+        ],
+        default="unknown",
+        help_text="Whether this row cost an OpenET request",
+    )
 
     class Meta:
         indexes = [
@@ -199,12 +215,27 @@ class OpenETCache(models.Model):
 
     @classmethod
     def monthly_query_count(cls):
+        """Rows written this calendar month that actually cost an OpenET request.
+
+        Fixture rows are excluded and NOTHING ELSE IS. "unknown" — every row
+        predating the origin field — still counts, so the guard stays
+        conservative on a database whose history we cannot see. Back-filling
+        those to "fixture" would fabricate history in the direction that
+        UNDER-reports spend, which is the dangerous direction for a guard.
+        load_openet_fixture upserts on the uniqueness tuple, so its next run
+        stamps origin="fixture" on exactly the rows it owns, pre-existing ones
+        included, and a demonstration corrects itself.
+        """
         from django.utils import timezone
 
         month_start = timezone.now().replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
         )
-        return cls.objects.filter(queried_at__gte=month_start).count()
+        return (
+            cls.objects.filter(queried_at__gte=month_start)
+            .exclude(origin="fixture")
+            .count()
+        )
 
     @classmethod
     def check_budget(cls, budget=None):
@@ -247,4 +278,7 @@ class OpenETCache(models.Model):
                 variable=variable,
                 model_name=cls.PENDING_MARKER,
                 et_data=[],
+                # The single point where an OpenET request is charged, so the
+                # single place origin="api" is set.
+                origin="api",
             )
