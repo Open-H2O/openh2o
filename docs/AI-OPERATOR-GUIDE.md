@@ -21,26 +21,45 @@ decides the security settings in Phase 2.
 
 Ask the agency staffer for these.
 
-1. **A computer to run it on**, with Docker installed. Any of these is fine:
+<!-- defines: docker -->
+1. **A computer to run it on**, with Docker installed. OpenH2O ships as three
+   *containers*. A container is a sealed, pre-packed box holding one piece of
+   the program plus everything it needs to run, so it behaves the same on any
+   computer; Docker is the software that builds and runs those boxes; and this
+   platform's three hold the web pages, the database, and the piece that manages
+   the address and the encryption. Any of these machines is fine:
    their own machine (Windows, macOS or Linux, with Docker Desktop or OrbStack),
    a rented virtual server, or agency-managed infrastructure. 2–4 GB of memory
    is plenty. **Check Docker works before anything else: `docker run
    hello-world`.** If that fails mentioning "cgroup" or "bpf", the machine's own
-   host is blocking containers and no setting inside it will fix that — ask
+   host is blocking those boxes and no setting inside it will fix that — ask
    whoever provisioned it, or take the documented path that needs no Docker at
    all, [INSTALL-WITHOUT-DOCKER.md](INSTALL-WITHOUT-DOCKER.md). That path is
    equally the right answer when the agency would simply rather not install
    Docker on their machine.
 2. **How the agency needs to reach it.** Ask directly, and write the answer
    down; every later choice follows from it:
+   <!-- defines: localhost -->
    - *Only from this one computer* — no domain needed. Bind the service to
-     loopback (`127.0.0.1`) so nothing else on their network can reach it.
+     loopback — `127.0.0.1`, which along with the word `localhost` means "this
+     same computer" and nothing anyone else could type — so nothing else on
+     their network can reach it.
    - *From other computers in their office* — no domain needed, but the
      instance is now exposed to their local network. Say so out loud.
+   <!-- defines: tls_https -->
+   <!-- defines: dns -->
    - *From outside — a board member, a consultant, the public* — **this is the
-     only case that needs a domain and HTTPS.** They will need a domain or
-     subdomain they control, with DNS pointed at the machine's address.
-3. *(Optional, can be added later)* API keys for OpenET, CIMIS, and NOAA, and SMTP credentials for password-reset email. The platform runs fine without them; those features simply stay dark until provided.
+     only case that needs a domain name and HTTPS.** *HTTPS* is the
+     padlock-icon, encrypted version of a web address; the padlock rests on a
+     *certificate*, a file proving the address really is itself. They will need
+     a domain or subdomain they control, pointed at this machine through *DNS* —
+     the internet's phone book, which turns a web address into the numeric
+     address of one specific computer. Pointing a domain at a machine means
+     editing one entry in that phone book, called an *A record*, wherever the
+     domain was bought.
+   <!-- defines: api_key -->
+   <!-- defines: smtp -->
+3. *(Optional, can be added later)* API keys for OpenET, CIMIS, and NOAA, and SMTP credentials for password-reset email. An *API key* is a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers — treat it as a secret, exactly like a password. *SMTP* is the agreed method for handing an outgoing email to a mail provider, so the site can send "you forgot your password" messages instead of pretending to be its own mail server; the credentials are the login for that provider. The platform runs fine without any of them; those features simply stay dark until provided.
 
 If the agency wants public reach and has no server or domain yet, help them get
 a virtual server from any provider and register a domain. **If they do not want
@@ -60,7 +79,42 @@ Phase 4  Connect live data sources    → API keys + scheduled sync
 Phase 5  Onboard the humans           → roles, a walkthrough, the first report
 ```
 
-A first-time deployment to a running, secured, demo-populated instance is a single working session. Loading an agency's *real* data is the part that takes back-and-forth, because it depends on what data they have.
+A first-time deployment to a running, secured, demonstration-populated instance is a single working session. Loading an agency's *real* data is the part that takes back-and-forth, because it depends on what data they have.
+
+### Roughly how long it takes, and which steps run long on purpose
+
+Four independent agents have each stood this platform up from nothing and
+written down their own timings. **Their figures for reaching a working, secured,
+populated instance an administrator could log into run from about 40 minutes to
+about an hour**, and the one that also priced out a large parcel import put its
+whole session at about an hour and three quarters. Read that as a range and
+nothing more: they ran on different hardware, took different routes (one
+installed without Docker at all), and one spent most of its clock waiting on a
+slow government data service. Do not average them or subtract one from another —
+they did not measure the same job.
+
+Loading the agency's *own* records afterwards is a separate, open-ended task.
+How long that takes depends entirely on what shape the agency's existing files
+are in, and no honest estimate exists in advance.
+
+Several steps take minutes and print a great deal of unfamiliar-looking output
+while they work. **That is the step working, not failing** — as long as it
+finishes and says so. The ones that legitimately run long:
+
+- **The first build of the program.** A few minutes, once.
+- **Loading the demonstration basin.** A few minutes, because part of it fetches
+  live hydrography and monitoring stations from public government services
+  rather than reading a bundled file.
+- **Pulling history from the slower public sources**, once the monitoring
+  stations are switched on. In the run that measured it, about 30 minutes across
+  all sources, of which the weather-station history from NOAA alone was roughly
+  24 minutes for that one source. Almost all of it is unattended waiting on
+  someone else's computers, so start it and do other work alongside.
+- **A full property-parcel import for a large area.** In the run that priced it,
+  a 1,485-square-mile watershed resolved to more than 150,000 parcels and the
+  agency declined the import on those grounds. A small service area is minutes;
+  a large multi-county one is several hours unattended, and you should budget
+  for having to restart it at least once.
 
 ---
 
@@ -78,13 +132,37 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data   # reference tables (idempotent)
 ```
 
+Three names in that sequence are worth knowing before you explain them to
+anybody.
+
+<!-- defines: docker_compose -->
+**Docker Compose** is a helper tool, installed alongside Docker, that starts,
+stops and rebuilds all three boxes together from a single instruction file
+(`docker-compose.yml`) instead of handling each one by hand. Every `docker
+compose …` line in this guide is that tool.
+
+<!-- defines: reverse_proxy -->
+**Caddy** is a *reverse proxy* — a middleman program that receives the traffic
+arriving from outside and relays it inward to the real program — and it is also
+what obtains the encryption certificate, by itself, with almost no
+configuration. An agency that already runs a proxy of their own ends up with two
+in a row: theirs, outside your control, in front of this machine, and Caddy
+inside Docker in front of OpenH2O. That is a normal arrangement, not a fault.
+
+<!-- defines: migrations -->
+**Migrations** are the step where the program builds or updates the actual
+tables inside its database to match what this version of the software expects.
+Routine and expected after every install and every update; skip it and you are
+left with an empty, unusable database.
+
 ✋ **Checkpoint:** `docker compose ps` shows `db`, `web`, and `caddy` all healthy, and the site responds. Don't move on until it does.
 
 ---
 
 ## Phase 2 — Secure it (do this before anyone logs in)
 
-This is the phase an AI must not skip. The platform's production settings **refuse to boot** with a weak database password or an empty `ALLOWED_HOSTS` — that guard is your friend; let it enforce the basics.
+<!-- defines: allowed_hosts -->
+This is the phase an AI must not skip. The platform's production settings **refuse to boot** with a weak database password or an empty `ALLOWED_HOSTS` — that guard is your friend; let it enforce the basics. `ALLOWED_HOSTS` and its companion `CSRF_TRUSTED_ORIGINS` are two safety lists in the program's settings: the program refuses to answer unless the web address in the request matches one of them, which stops a stranger tricking it into behaving as a different website. They have to carry the agency's real address exactly, or the site turns every visitor away.
 
 **Always use `config.settings.production`, wherever this is running.** The
 development settings module (`config.settings.local`) turns `DEBUG` on, which
@@ -93,7 +171,8 @@ at a broken page, and it forces `ALLOWED_HOSTS` to `*` no matter what you
 configured. It is for working on the code, not for an agency's data. Django's
 own `manage.py check --deploy` will tell you so; do not wave that away.
 
-1. **Strong database password.** Set `POSTGRES_PASSWORD` in `.env` to a long random value. The dev default (`openh2o`) is rejected in production by design.
+<!-- defines: env_file -->
+1. **Strong database password.** Set `POSTGRES_PASSWORD` in `.env` to a long random value. The dev default (`openh2o`) is rejected in production by design. (The `.env` file is a plain text file of NAME=value lines holding this deployment's settings and passwords. It is the one file that makes this installation *this agency's* rather than a generic copy, and it is deliberately kept out of the published copy of the program precisely because it holds secrets.)
 2. **`ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`** — set from the answer you wrote down in "What you need before you start":
 
    | How they reach it | `ALLOWED_HOSTS` | `CSRF_TRUSTED_ORIGINS` |
@@ -120,12 +199,21 @@ own `manage.py check --deploy` will tell you so; do not wave that away.
    security posture follows from **who can reach the instance**, not from where
    it happens to be running.
 
-4. **Limit who can reach it, at the network.** If the answer was *"only this
-   computer,"* bind the published port to loopback so nothing else on their
+<!-- defines: port -->
+4. **Limit who can reach it, at the network.** A *port* is a numbered door on
+   the computer that one particular kind of traffic knocks on: port 80 is the
+   plain, unencrypted web door, the one a browser uses when nobody types a
+   number at all, and port 443 is the encrypted one. If the answer was *"only
+   this computer,"* bind the published port to loopback so nothing else on their
    network can connect — in `docker-compose.yml`, publish `127.0.0.1:80:80`
    rather than `80:80`. Confirm it: from another machine, the address should
    refuse the connection.
-5. **Create the admin user.** Either `docker compose exec web python manage.py createsuperuser`, or set `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` in `.env` and let `ensure_superuser` create it on startup.
+   <!-- defines: superuser -->
+5. **Create the admin user** — in this software a *superuser*, the one account
+   that can do anything: add other staff accounts, change settings, see
+   everything. It is separate from and unrelated to any login for the computer
+   itself, and it has to be created by hand before anyone can sign in at all;
+   there is no "first visitor becomes the administrator" magic. Either `docker compose exec web python manage.py createsuperuser`, or set `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` in `.env` and let `ensure_superuser` create it on startup.
 
 ✋ **Checkpoint:** the site loads at the address the agency will actually use —
 `https://theirdomain` for a public deployment, `http://localhost` for a
@@ -159,13 +247,24 @@ print(r.status_code)   # 302 = login works; 200 = form re-rendered (wrong creden
 
 ## Phase 3 — Load data
 
-**Decide first: does the agency have their own data ready, or do they want to explore the demo first?**
+**Decide first: does the agency have their own data ready, or do they want to explore the demonstration first?**
+
+<!-- defines: seed_data -->
+Either way the first thing that happens is *seeding* — loading a starting set of
+data into an empty database. That covers two different things here: the small
+reference lists such as units and categories that every deployment needs, and a
+whole demonstration dataset, which exists so there is something to look at
+before the agency's own records arrive.
 
 ### If you have a browser: use the Setup Wizard at `/setup/`
 
+<!-- defines: geojson -->
 For a **real basin**, prefer the wizard over the command line. It is a guided
 first-run flow that does the whole load in one pass: pick or upload the agency's
-boundary as a GeoJSON file, confirm it on a map, run `auto_populate` step by step
+boundary as a *GeoJSON* file — a plain-text format for describing a shape drawn
+on a map, along with a few labelled facts about it such as a name and an area,
+and non-proprietary enough that a GIS contractor can hand over one file and
+expect any capable program to read it — confirm it on a map, run `auto_populate` step by step
 with progress on screen, and then **enable the monitoring stations inside that
 boundary** — the step that is otherwise easy to miss, because discovery creates
 every station switched off.
@@ -183,7 +282,7 @@ step yourself.
 ```bash
 docker compose exec web python manage.py seed_merced   # the Merced Subbasin demonstration
 ```
-This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — a fully populated example the agency can click through while you gather their real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed); for real satellite-ET numbers, add an OpenET key and run the ET sync (Phase 4). Each sub-step is idempotent, so re-running is safe.
+This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — a fully populated example the agency can click through while you gather their real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed); for real satellite-ET numbers, add an OpenET key and run the ET sync (Phase 4). Each sub-step is *idempotent* <!-- defines: idempotent --> — running it five times ends up the same as running it once, because it notices what is already done and skips it rather than duplicating or breaking anything — which is why re-running one after an interruption is safe.
 
 **Then load the bundled station catalog.** The seed finds the basin's monitoring stations by calling the agencies that publish them, and creates every one of them switched **off** — so a freshly seeded demonstration reports "0 of 0 stations reporting" until somebody turns them on. The demonstration's own list of stations ships with the platform — 335 of them, 42 switched on, each carrying the real date it last published a reading — and one command loads it:
 
@@ -202,7 +301,7 @@ Three import routes, in rough order of preference:
 |---|---|---|
 | Parcel boundaries as GeoJSON/Shapefile | `import_parcels` | Required foundation — everything hangs off parcels |
 | A well list as CSV | `import_wells` | Optional but valuable |
-| Historical ledger entries as CSV | `import_ledger_csv` | For migrating from a prior system |
+| Historical ledger entries as CSV | `import_ledger_csv` | For bringing records over from a prior system |
 | Only a basin boundary | `auto_populate` | Queries DWR and USGS to pull parcels, boundaries, and flowlines automatically |
 
 What still has to be entered by hand (no public source exists): **water rights**, **water accounts**, and **allocations**. The web UI has forms for these under the Infrastructure section.
@@ -212,6 +311,38 @@ What still has to be entered by hand (no public source exists): **water rights**
 ---
 
 ## Phase 4 — Connect live data sources
+
+### Before you spend the agency's satellite-data allowance — stop and ask
+
+**The OpenET key an agency hands you does not buy unlimited data.** It carries a
+fixed number of requests per month, the count resets on the first, and the
+number is smaller than most people assume. The allowance belongs to the
+*account*, not to this deployment, so it is shared: anything spent here is gone
+from anything else using the same key, which may be a colleague's work or
+another instance entirely. It is not a spending limit in money — going over
+costs nothing and simply stops working until the month turns over — but it is
+hard-capped, and there is no buying your way past it mid-month.
+
+That makes the first satellite-ET run a judgment call, and **it is a judgment
+the software does not make for you.** Running it against the Merced
+demonstration produces consumptive-use figures for a basin this agency does not
+manage, and spends part of the month's allowance to do it. Running it against
+the agency's own basin produces the numbers they actually need. Three of the
+four independent agents who deployed this platform reached that fork on their
+own and all three left the satellite feed switched off until real data was
+loaded — and not one of them was prompted to think about it by these documents,
+which is why the prompt is here now.
+
+**So: load the agency's own parcels first, then turn on satellite ET.** If
+somebody does want to see the demonstration's consumptive-use figures filled in,
+say out loud what it will take from the month's allowance before you run it, and
+let the agency decide. You do not have to guess at the figure: OpenH2O asks
+OpenET for the account's own numbers rather than assuming them, and the
+monitoring dashboard shows how many requests have gone this month out of the
+allowance — with a line on the card saying whether that count came from OpenET
+itself or is this platform's own estimate because OpenET did not answer.
+
+### Keys, then the schedule
 
 The free public sources (USGS, CDEC, DWR, CNRFC) work with no keys. CIMIS, NOAA, and OpenET need keys; add them to `.env` and restart (`docker compose up -d`). Then install the scheduled sync:
 
@@ -319,6 +450,14 @@ Expect the agency's name and their web address. If either still reads `example.c
 ---
 
 ## Troubleshooting by symptom
+
+<!-- defines: geospatial_libraries -->
+One row below names **GDAL, GEOS and PROJ**: widely-used open-source code
+libraries that do the actual geometry and map arithmetic — parcel boundaries,
+well locations, distances on a curved earth. Nobody ever interacts with them
+directly; the software simply will not start without them, and inside Docker
+they install themselves as part of the build, which is why a failure there is a
+build problem rather than something to configure.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
