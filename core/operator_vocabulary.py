@@ -201,8 +201,12 @@ TERMS: tuple = (
     OperatorTerm(
         slug="tls_https",
         label="TLS / HTTPS / certificate",
-        patterns=(r"\bHTTPS\b", r"\bTLS\b", r"\bSSL\b", r"\bcertificates?\b",
-                  r"\bterminates? upstream\b"),
+        # `\bHTTPS\b(?!://)` — a link target like `https://openh2o.com` is not
+        # the document using the word "HTTPS"; it is an address. Matching it
+        # would report the badge line at the top of README.md, which says
+        # nothing about encryption at all.
+        patterns=(r"\bHTTPS\b(?!://)", r"\bTLS\b", r"\bSSL\b",
+                  r"\bcertificates?\b", r"\bterminates? upstream\b"),
         reported_by=(RUN_001, RUN_002, RUN_003),
         # Run 003's wording, which is the one that also names the failure mode.
         plain_english=(
