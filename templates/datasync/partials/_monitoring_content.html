@@ -25,10 +25,25 @@
       <div class="stat-card-value" style="color: var(--furnace-400);">{{ stale_count }}</div>
       <div class="stat-card-unit">overdue vs. their expected cadence</div>
     </div>
-    <div class="card-raised stat-card" style="border-top: 3px solid var(--reservoir-400);">
-      <div class="stat-card-label">OpenET queries</div>
-      <div class="stat-card-value" style="color: var(--reservoir-400);">{{ openet_used }}</div>
-      <div class="stat-card-unit">of {{ openet_limit }} monthly budget used</div>
+    {% comment %}
+      ISS-128: this card used to read "N of 400 monthly budget used" where the
+      account's real allowance was 100, and N counted cached rows rather than
+      requests made — so a freshly-rebuilt demonstration reported 380 spent
+      having spent nothing. Both numbers are now real, and the card says which
+      of two sources it is reading, because a figure whose provenance a reader
+      cannot see is a figure they cannot act on.
+    {% endcomment %}
+    <div class="card-raised stat-card" style="border-top: 3px solid {% if openet_low %}var(--color-deficit){% else %}var(--reservoir-400){% endif %};">
+      <div class="stat-card-label">Satellite data requests</div>
+      <div class="stat-card-value{% if openet_low %} text-deficit{% endif %}"{% if not openet_low %} style="color: var(--reservoir-400);"{% endif %}>{{ openet_used }}</div>
+      <div class="stat-card-unit">of {{ openet_limit }} used this month &middot; resets on the 1st</div>
+      <div class="stat-card-note">
+        {% if openet_source == "provider" %}
+          Counted by OpenET{% if openet_tier %}, tier {{ openet_tier }}{% endif %}
+        {% else %}
+          Counted here, not by OpenET &mdash; {{ openet_fallback_reason }}
+        {% endif %}
+      </div>
     </div>
   </div>
 

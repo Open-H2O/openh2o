@@ -2121,6 +2121,19 @@ html { color-scheme: dark; }
     margin-top: 4px;
 }
 
+/* Where a stat-card's figure came from. A number the reader cannot trace to a
+   source is a number they cannot act on (ISS-128), so provenance gets its own
+   line — quieter than the unit line, separated by a rule so it reads as a note
+   about the figure rather than more of the figure. */
+.stat-card-note {
+    font-size: 0.7rem;
+    line-height: 1.35;
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-xs);
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--color-border);
+}
+
 .inset-card {
     text-align: center;
     padding: var(--space-md);

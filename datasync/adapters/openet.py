@@ -135,7 +135,7 @@ class OpenETAdapter(BaseAdapter):
 
         key = self._get_api_key()
         if not key:
-            return _fallback("no OPENET_API_KEY is set")
+            return _fallback("this deployment has no OpenET key set up")
 
         try:
             # Short timeout and a single attempt: this sits behind a page
@@ -151,21 +151,21 @@ class OpenETAdapter(BaseAdapter):
         except Exception as exc:  # requests raises several unrelated types
             # exc, never the response body: a 401/500 page could echo the key.
             logger.warning("openet: account status unavailable (%s)", type(exc).__name__)
-            return _fallback(f"the provider could not be reached ({type(exc).__name__})")
+            return _fallback("OpenET could not be reached")
 
         try:
             payload = resp.json()
         except ValueError:
             logger.warning("openet: account status returned a non-JSON body")
-            return _fallback("the provider's reply was not readable")
+            return _fallback("OpenET's reply could not be read")
 
         if not isinstance(payload, dict):
-            return _fallback("the provider's reply was not readable")
+            return _fallback("OpenET's reply could not be read")
 
         match = _MONTHLY_REQUESTS_RE.search(str(payload.get("Monthly Requests", "")))
         if not match:
             logger.warning("openet: account status carried no monthly-request figure")
-            return _fallback("the provider's reply carried no allowance figure")
+            return _fallback("OpenET's reply did not include an allowance")
 
         used, limit = int(match.group(1)), int(match.group(2))
         tier = payload.get("Tier")

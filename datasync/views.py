@@ -493,8 +493,28 @@ def monitoring_dashboard(request):
             "latest_tooltip": latest_tooltip,
         })
 
-    # OpenET budget
-    _, openet_used, openet_limit = OpenETCache.check_budget()
+    # OpenET allowance. Two numbers with two different meanings, and the screen
+    # has to say which one it is showing (ISS-128).
+    #
+    # When OpenET answers, its own figures win: it counts requests across the
+    # whole account, including any spent outside this deployment, and it is the
+    # only thing that can answer the allowance question at all. When it does
+    # not answer, we fall back to the local count of rows this platform charged
+    # itself for, against the configured allowance — an honest estimate, and
+    # labelled as one rather than dressed up as the provider's word.
+    #
+    # No outbound call happens here: account_status() is served from the
+    # day-long cache on every render but the first.
+    from datasync.adapters.openet import OpenETAdapter
+
+    openet_status = OpenETAdapter().account_status()
+    _, local_used, local_limit = OpenETCache.check_budget()
+    if openet_status["source"] == "provider":
+        openet_used = openet_status["used"]
+        openet_limit = openet_status["limit"]
+    else:
+        openet_used = local_used
+        openet_limit = local_limit
 
     context = {
         "source_status_list": source_status_list,
@@ -504,6 +524,14 @@ def monitoring_dashboard(request):
         "station_list": station_list,
         "openet_used": openet_used,
         "openet_limit": openet_limit,
+        "openet_source": openet_status["source"],
+        "openet_tier": openet_status["tier"],
+        "openet_fallback_reason": openet_status["reason"],
+        "openet_remaining": max(openet_limit - openet_used, 0),
+        # Burnt orange at four-fifths spent, because the allowance does not
+        # refill until the 1st and there is nothing to do about it afterwards.
+        # Never alarm red: running low is a budget state, not a hard error.
+        "openet_low": bool(openet_limit) and openet_used >= 0.8 * openet_limit,
         "boundary_name": boundary.name if boundary else None,
     }
 

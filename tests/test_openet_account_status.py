@@ -122,7 +122,7 @@ class TestEveryFailureFallsBackAndSaysSo:
         assert status["source"] == "fallback"
         assert status["limit"] == 100
         assert status["used"] is None
-        assert "OPENET_API_KEY" in status["reason"]
+        assert "no OpenET key" in status["reason"]
 
     def test_http_500_the_bogus_key_case_the_provider_actually_returns(
         self, adapter, settings
@@ -140,7 +140,7 @@ class TestEveryFailureFallsBackAndSaysSo:
         with patch.object(adapter, "_request", side_effect=requests.Timeout("slow")):
             status = adapter.account_status()
         assert status["source"] == "fallback"
-        assert "Timeout" in status["reason"]
+        assert "could not be reached" in status["reason"]
 
     def test_connection_error(self, adapter, settings):
         settings.OPENET_MONTHLY_BUDGET = 100
