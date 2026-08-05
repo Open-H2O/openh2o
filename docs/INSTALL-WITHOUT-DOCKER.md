@@ -41,8 +41,8 @@ from inside. No Docker setting, reinstall or version gets past it. You have two
 real answers: ask whoever provisioned the machine to allow containers, or follow
 this document.
 
-This is not hypothetical. It is what happened on the fourth of this project's
-clean-room deployments, and the whole shape of this document comes from it.
+This is not hypothetical. It is what happened when we last tested this platform
+on a rented machine, and the whole shape of this document comes from it.
 
 ### You simply do not want Docker on this computer
 
@@ -601,8 +601,8 @@ reach.
 
 It costs you one thing worth knowing about: **there is no record of who visited
 what.** Caddy would have written one; gunicorn writes none unless told to. That
-gap is filed as ISS-121 in this project, and rather than inherit it, add the flag
-to the unit file's `ExecStart` line:
+is a known gap in this platform, and it is worth closing here rather than
+inheriting. Add this flag to the unit file's `ExecStart` line:
 
 ```
 --access-logfile /var/log/openh2o/access.log
@@ -624,31 +624,31 @@ Then `sudo systemctl daemon-reload && sudo systemctl restart openh2o`.
 This section exists because a document that quietly presents reasoning as
 experience is worse than one that admits the difference.
 
-**Proven.** The fourth of this project's clean-room deployments reached a
-working, seeded, login-verified instance on an ARM Ubuntu machine through this
-overall shape — the same database, the same isolated Python environment, the same
-styling build, the same background service, the same port-80 permission, the same
-loopback binding. That happened on 2026-08-04 and its evidence is in this
-repository's planning records.
+**Proven.** We have watched this overall shape work, once. On 2026-08-04 an
+installation on an Ubuntu machine whose host would not allow containers at all
+reached a working site, with data loaded and a login confirmed — the same
+database, the same isolated Python package set, the same styling build, the same
+background service, the same port-80 permission, the same loopback binding as
+above.
 
-**Measured separately.** Three specific claims here were tested in throwaway
-machines rather than reasoned: that the map and geometry libraries load from
+**Measured separately.** Three specific claims here were tested on throwaway
+machines rather than reasoned out: that the map and geometry libraries load from
 `gdal-bin` alone; that `requirements.lock` installs under `--require-hashes` with
 no compiler present; and that Ubuntu 24.04 supplies PostgreSQL 16 with PostGIS
 3.4.2 while Debian 12 supplies neither.
 
 **Reasoned, not exercised.** The package list above is derived from the
 `Dockerfile` line by line rather than watched installing on a fresh machine as
-one continuous run, and it is deliberately shorter than the list run 004 used —
-six packages the container needs only in order to build itself have been left
-out. A test in this repository re-checks the list against the `Dockerfile` on
-every change, so the two cannot silently drift, but a test is not the same as a
-fresh machine.
+one continuous run, and it is deliberately shorter than the list that
+installation used — six packages the container needs only in order to build
+itself have been left out. A test in this repository re-checks the list against
+the `Dockerfile` on every change, so the two cannot silently drift, but a test is
+not the same as a fresh machine.
 
-**Also not covered.** The settings posture in section 10 was not the one run 004
-produced; it is the one this project's own documents prescribe everywhere else,
-applied here. And nothing on this path has been exercised with a second staff
-member, a browser session or a real agency's records.
+**Also not covered.** The settings posture in section 10 is not the one that
+installation ended on; it is the one this platform's other documents prescribe
+everywhere else, applied here. And nothing on this path has been exercised with a
+second staff member, a browser session or a real agency's records.
 
 If you are the first to walk this end to end and something here is wrong, that is
 worth reporting. It is a genuine gap in what has been tested, not something
