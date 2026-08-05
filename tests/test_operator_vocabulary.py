@@ -17,19 +17,21 @@ and a marker is a claim by whoever wrote the line, not evidence. Phase 114
 pairs this gate with a human read for exactly that reason, and nothing here
 should ever be quoted as saying the documents are comprehensible.
 
-**Why the strict gate is parked as xfail.** It is red today by design: the
-recorded red run is ``110-01-EVIDENCE.md``, and Phase 114's definition of done
-is that run reaching zero. Roughly 1,900 tests run on every change, and one
-permanently red test teaches the team to ignore red. ``strict=True`` means the
-suite BREAKS the moment this starts passing, which forces the marker's removal
-in Phase 114 rather than letting a passing gate sit disguised as a failing one
-forever.
+**The gate is green.** It was red at **55** — 14 in ``README.md``, 17 in
+``docs/AI-OPERATOR-GUIDE.md`` and 24 in ``DEPLOY.md`` — and the recorded red run
+is ``.planning/phases/110-comprehension-gate/110-01-EVIDENCE.md``. Phase 114 took
+it to zero: 114-01 rewrote the two front-door documents, 114-02 rewrote
+``DEPLOY.md``. It ran under ``@pytest.mark.xfail(strict=True)`` from Phase 110
+until that moment, so that a passing gate could not sit disguised as a failing
+one; ``strict=True`` broke the suite the instant the last document reached zero,
+the marker was deleted in 114-02, and this is now an ordinary test that must
+stay green.
 
-**Why one of the four documents sits at a baseline of zero.** Three of them
-predate the vocabulary list and carry legacy wording that Phase 114 rewrites.
-``docs/INSTALL-WITHOUT-DOCKER.md`` does not: 112-02 wrote it with the list
-already in hand, so it started clean and stays clean. Its zero is a strict
-ratchet, not an unmeasured default.
+**Why all four documents sit at a baseline of zero.** Three of them predate the
+vocabulary list and carried legacy wording that Phase 114 rewrote away.
+``docs/INSTALL-WITHOUT-DOCKER.md`` never did: 112-02 wrote it with the list
+already in hand, so it started clean and stayed clean. All four zeros are now
+strict ratchets, not unmeasured defaults.
 
 **Why the two fixture tests exist.** A scorer that never fails is not a
 measurement. One plants a violation and demands it be reported; the other proves
@@ -45,8 +47,6 @@ from the gate proves nothing.
 import re
 from dataclasses import dataclass
 from pathlib import Path
-
-import pytest
 
 from core.operator_vocabulary import COMPILED, TERMS
 
@@ -154,15 +154,6 @@ def _scan_document(relative_path: str):
 # -- The gate ----------------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "RED until Phase 114's rewrite; the recorded red run is "
-        ".planning/phases/110-comprehension-gate/110-01-EVIDENCE.md. When this "
-        "starts passing, DELETE this marker — strict=True breaks the build "
-        "here so that removal cannot be forgotten."
-    ),
-)
 def test_every_operator_term_is_defined_before_first_use():
     offenders = []
     for document in DOCUMENTS:
@@ -178,38 +169,31 @@ def test_every_operator_term_is_defined_before_first_use():
 
 # -- The ratchet -------------------------------------------------------------
 
-#: Measured 2026-08-04 by 110-01 and recorded verbatim in 110-01-EVIDENCE.md.
-#: Green at its own baseline; it exists to catch Phases 111-113 introducing NEW
-#: undefined vocabulary while the strict gate above is parked.
+#: **ALL FOUR ARE STRICT RATCHETS as of 114-02.** Every operator document now
+#: defines every term on the list before it uses it, so a baseline of zero is a
+#: measured reading rather than a ceiling: the next undefined operator term added
+#: to any of these four fails the build on the next run, immediately, instead of
+#: waiting for a human to notice.
 #:
-#: ``docs/INSTALL-WITHOUT-DOCKER.md`` sits at **0**, and that is deliberate, not
-#: an oversight. 112-02 wrote it from scratch with the thirty-four-term list
-#: already in hand, so it had no legacy vocabulary to carry; the other three
-#: predate the list. At zero this entry is a STRICT ratchet: any term added to
-#: that document later without a ``<!-- defines: -->`` marker fails the build
-#: immediately. That is the point, and it is a stronger guarantee than the other
-#: three have. Do not "fix" it upward — a raised baseline here would be a
-#: silently weakened gate, and lowering a baseline stays the only legitimate
-#: edit to this table.
+#: How each entry got here. 110-01 measured the original ceilings on 2026-08-04
+#: and recorded them verbatim in ``110-01-EVIDENCE.md`` —
+#: ``docs/INSTALL-WITHOUT-DOCKER.md`` at 0 because 112-02 wrote it from scratch
+#: with the thirty-four-term list already in hand, and the other three carrying
+#: legacy vocabulary that predated the list. 114-01 took ``README.md`` (14 → 0)
+#: and ``docs/AI-OPERATOR-GUIDE.md`` (17 → 0); 114-02 took ``DEPLOY.md`` (24 → 0,
+#: from an entry that read 25 — a ceiling, never a reading).
 #:
-#: **THREE of the four are strict ratchets as of 114-01.** ``README.md`` (14 → 0)
-#: and ``docs/AI-OPERATOR-GUIDE.md`` (17 → 0) were rewritten against this list
-#: and now define every term they use, so they earn the same strict guarantee for
-#: the same reason — a term added to either without a marker fails the build on
-#: the next run rather than waiting for a human to notice. Both were lowered
-#: AFTER the rewrite, never before: a baseline of 0 against a document that still
-#: has offenders fails ``test_the_undefined_term_count_never_climbs`` immediately,
+#: **The ordering is load-bearing.** Each baseline was lowered only AFTER its
+#: document was clean. A baseline of 0 against a document that still has
+#: offenders fails ``test_the_undefined_term_count_never_climbs`` immediately,
 #: which is the correct behaviour and the reason for the ordering.
 #:
-#: ``DEPLOY.md`` is the one document still carrying legacy vocabulary, and its
-#: entry is left exactly as 110-01 recorded it. **It reads 25 and the document
-#: measures 24** — that is not an error to tidy up. This entry is a CEILING, not
-#: a reading; the ratchet passes either way; and 114-02 takes the document to 0.
-#: An unexplained edit to that line here would look, in the git history, exactly
-#: like the forbidden raise.
+#: Do not "fix" any of these upward. A raised baseline is a silently weakened
+#: gate, and lowering a baseline remains the only legitimate edit to this table —
+#: which, at zero, leaves no legitimate edit at all short of adding a document.
 BASELINE_OFFENDERS: dict = {
     "README.md": 0,
-    "DEPLOY.md": 25,
+    "DEPLOY.md": 0,
     "docs/AI-OPERATOR-GUIDE.md": 0,
     "docs/INSTALL-WITHOUT-DOCKER.md": 0,
 }
