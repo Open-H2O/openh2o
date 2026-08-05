@@ -18,7 +18,8 @@ California's **Sustainable Groundwater Management Act (SGMA)** requires hundreds
 
 OpenH2O exists to change the cost structure. The core idea is simple:
 
-> **The goal is to lower the cost and access barrier.** An under-resourced agency can stand the platform up itself — point a frontier-AI agent at this repository and a cheap virtual server, and the agent does the deployment, with no procurement cycle to wait on. An engineering firm or consultant can run it just as well, and for many agencies that is the sensible path; the point is that self-deployment is now a real option, not a vendor contract by default.
+<!-- defines: repository -->
+> **The goal is to lower the cost and access barrier.** An under-resourced agency can stand the platform up itself — point a frontier-AI agent at this *repository* (a folder holding all of the program's files, kept on a website called GitHub with a complete history of every change ever made to it) and at a cheap rented computer, and the agent does the deployment, with no procurement cycle to wait on. An engineering firm or consultant can run it just as well, and for many agencies that is the sensible path; the point is that self-deployment is now a real option, not a vendor contract by default.
 
 It is designed for a single agency per deployment (single-tenant), and it works whether your basin is surface-water, groundwater, mixed-use, or doing active recharge.
 
@@ -39,12 +40,34 @@ It is designed for a single agency per deployment (single-tenant), and it works 
 
 **None of these is a lesser deployment.** What changes between them is who needs
 to reach the instance: only the machine it runs on, an office network, or the
-public internet. Only the last needs a domain and HTTPS.
+public internet. Only the last needs a domain name and encryption.
 
-**All three assume Docker, and you do not have to.** Any of them can instead be
-installed directly onto the machine — a legitimate first choice, and the only
-option when the machine's own host will not allow containers at all. The whole
-path is in [docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md).
+<!-- defines: tls_https -->
+*HTTPS* is the padlock-icon, encrypted version of a web address, and the padlock
+rests on a *certificate* — a file that proves the address really is itself. A
+deployment nobody outside the building can reach has no address to prove and
+needs neither, and going without is a supported posture here rather than a
+corner cut.
+
+<!-- defines: docker -->
+**All three assume Docker, and you do not have to.** OpenH2O normally ships as
+three *containers*: a container is a sealed, pre-packed box holding one piece of
+the program plus everything it needs to run, so it behaves the same on any
+computer, and Docker is the software that builds and runs those boxes. Any of
+the three paths can instead install the pieces directly onto the machine — a
+legitimate first choice, and the only option when the machine's own host will
+not allow those boxes at all. The whole path is in
+[docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md).
+
+**What a brand-new installation contains, and what it does not.** It holds none
+of your agency's own water records, and that is what the setup guide expects,
+not a step that went wrong. A fresh install starts empty and the first thing
+anyone loads into it is the Merced Subbasin demonstration — a real, published
+California basin, labelled as the demonstration everywhere it appears, there so
+that the platform has something to show while you work out how to get your own
+records in. Replacing it with your agency's own basin is the normal next step.
+So if a brand-new install shows you Merced's wells, canals and parcels, nothing
+has failed: you are looking at exactly what a brand-new install holds.
 
 ### Quick start (single computer)
 
@@ -68,7 +91,30 @@ docker compose exec web python manage.py seed_merced    # the Merced Subbasin de
 docker compose exec web python manage.py createsuperuser   # your login for the trial
 ```
 
-Open `http://localhost` and log in with the superuser you just created — most pages sit behind a login, and self-signup is closed by default on a fresh install (that's the `ACCESS_CONTROL_ENFORCED` setting; the public demo at openh2o.com runs with it off). You'll land on the **Merced Subbasin** demonstration — a real California basin, the same one running at [openh2o.com](https://openh2o.com). The seed pulls live hydrography and monitoring stations from public APIs (a few-minute fetch, no key required); the demo's water rights, deliveries, parcels and ledger activity are all seeded and internally coherent without any key. **Consumptive-use figures are the exception: they are computed from satellite ET, so without an OpenET key `run_calculations` skips every parcel ("no ET data") and those numbers stay empty.** Add an OpenET key to fill them in. Run `make help` for all shortcuts. For a real deployment with HTTPS, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
+<!-- defines: localhost -->
+<!-- defines: superuser -->
+Open `http://localhost` — that word and `127.0.0.1` both mean "this same
+computer," as opposed to an address anyone else could type — and log in with the
+*superuser* you just created. A superuser is the one account inside OpenH2O that
+can do anything: add other staff accounts, change settings, see everything. It
+is separate from and unrelated to any login for the computer itself, it has to
+be created by hand before anyone can sign in at all, and there is no "first
+visitor becomes the administrator" magic. Most pages sit behind a login, and
+self-signup is closed by default on a fresh install (that's the
+`ACCESS_CONTROL_ENFORCED` setting; the public demo at openh2o.com runs with it
+off).
+
+<!-- defines: seed_data -->
+You'll land on the **Merced Subbasin** demonstration — a real California basin,
+the same one running at [openh2o.com](https://openh2o.com). *Seeding* means
+loading a starting set of data into the empty database, either small reference
+lists such as units and categories or a whole demonstration dataset. The seed
+here fetches live hydrography and monitoring stations from public government
+services (a few-minute wait, no key required), and the demonstration's water
+rights, deliveries, parcels and ledger activity are all seeded and internally
+coherent without any key.
+
+**Consumptive-use figures are the exception: they are computed from satellite ET, so without an OpenET key `run_calculations` skips every parcel ("no ET data") and those numbers stay empty.** Add an OpenET key to fill them in. Run `make help` for all shortcuts. For a real deployment with encryption, a domain, scheduled data sync, and production hardening, follow [DEPLOY.md](DEPLOY.md).
 
 ---
 
@@ -111,12 +157,13 @@ with every figure carrying the source that published it:
 
 ## What it does
 
-- **Parcels and wells** with real spatial data (GeoDjango + PostGIS) — boundaries, points of diversion, well inventories.
+<!-- defines: postgis -->
+- **Parcels and wells** with real spatial data — boundaries, points of diversion, well inventories. All of it lives in *PostgreSQL*, the database program that stores every record the site shows, with the *PostGIS* add-on that teaches it to understand maps, boundaries and points on a map.
 - **A water-data ledger** that records supply, usage, and allocations by water type and zone, so every entry is traceable.
 - **Surface-water rights** with points of diversion and diversion records, including curtailment.
 - **Managed aquifer recharge** site and event tracking.
 - **Drinking-water quality** — water systems, facilities, and sampling points keyed to their EPA PWSID, a lab-results importer for California DDW exports, and a PWSID-driven onboarding wizard that prefills a system from public records. Quality and quantity live side by side in one instance.
-- **External data sync** from public sources — USGS, CDEC, DWR (Water Data Library and SGMA portal), and NOAA active out of the box; CIMIS, CNRFC, and OpenET satellite evapotranspiration ship ready to enable (CIMIS and OpenET need a free API key). Everything is crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)).
+- **External data sync** from public sources — USGS, CDEC, DWR (Water Data Library and SGMA portal), and NOAA active out of the box; CIMIS, CNRFC, and OpenET satellite evapotranspiration ship ready to enable (CIMIS and OpenET need a free API key — a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers, and treated as a secret exactly like a password). Everything is crosswalked to a single canonical vocabulary (see [Data standards](#data-standards--interoperability)). <!-- defines: api_key -->
 - **State report preparation** — GEARS (by-well and by-ET) and CalWATRS (direct-use and to-storage) as ready-to-file CSV.
 - **Standards-based publishing** — the data model is built to publish out as OGC SensorThings, Frictionless Data Packages, and WaDE 2.0 (see below).
 - **Health monitoring** dashboard with source-aware freshness, plus interactive dark-mode maps via MapLibre GL JS.
@@ -138,6 +185,19 @@ The full crosswalk, the standards roadmap (OGC SensorThings API, Frictionless, W
 ---
 
 ## Tech stack
+
+<!-- defines: reverse_proxy -->
+<!-- defines: cron -->
+<!-- defines: docker_compose -->
+Three of the names in this table are pieces an operator actually meets, so they
+are worth a sentence each. **Caddy** is a *reverse proxy* — a middleman program
+that receives the traffic arriving from outside and relays it inward to the real
+program — and here it also obtains the encryption certificate by itself.
+***cron*** is Linux's built-in scheduler: "run this command every night at 2am,"
+a task the computer performs on a repeating clock with nobody there to click a
+button. **Docker Compose** is a helper tool, installed alongside Docker, that
+starts, stops and rebuilds all three boxes together from one instruction file
+(`docker-compose.yml`) instead of doing each by hand.
 
 | Component | Technology | Why |
 |-----------|------------|-----|
@@ -182,6 +242,16 @@ openh2o/
 
 ## Cost to run
 
+<!-- defines: google_earth_engine -->
+<!-- defines: smtp -->
+Two rows below name something that is not obvious. **Google Earth Engine** is a
+separate, heavier-duty Google service for processing satellite imagery at large
+scale; an agency may hold a key for it without ever needing it at their size.
+**Transactional email** is the plumbing that lets a website send outgoing mail —
+here, "you forgot your password" messages — through an outside mail provider
+instead of pretending to be its own mail server, and **SMTP** is simply the
+agreed method for handing each message over.
+
 | Item | Typical cost |
 |------|--------------|
 | Virtual server (2–4 GB RAM) | $15–30 / month |
@@ -196,7 +266,8 @@ openh2o/
 make test     # pytest, pinned to local settings
 ```
 
-The suite uses pytest + pytest-django + factory_boy and lives in [tests/](tests/). Production settings intentionally refuse to boot without a strong database password and a real `ALLOWED_HOSTS`, which is why the test target pins `--ds=config.settings.local`.
+<!-- defines: allowed_hosts -->
+The suite uses pytest + pytest-django + factory_boy and lives in [tests/](tests/). Production settings intentionally refuse to boot without a strong database password and a real `ALLOWED_HOSTS` — the safety list of web addresses the site will answer to, which stops a stranger tricking it into behaving as a different website. That refusal is deliberate, and it is why the test target pins `--ds=config.settings.local`.
 
 ## Contributing
 
