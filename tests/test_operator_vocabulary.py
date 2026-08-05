@@ -191,10 +191,26 @@ def test_every_operator_term_is_defined_before_first_use():
 #: three have. Do not "fix" it upward — a raised baseline here would be a
 #: silently weakened gate, and lowering a baseline stays the only legitimate
 #: edit to this table.
+#:
+#: **THREE of the four are strict ratchets as of 114-01.** ``README.md`` (14 → 0)
+#: and ``docs/AI-OPERATOR-GUIDE.md`` (17 → 0) were rewritten against this list
+#: and now define every term they use, so they earn the same strict guarantee for
+#: the same reason — a term added to either without a marker fails the build on
+#: the next run rather than waiting for a human to notice. Both were lowered
+#: AFTER the rewrite, never before: a baseline of 0 against a document that still
+#: has offenders fails ``test_the_undefined_term_count_never_climbs`` immediately,
+#: which is the correct behaviour and the reason for the ordering.
+#:
+#: ``DEPLOY.md`` is the one document still carrying legacy vocabulary, and its
+#: entry is left exactly as 110-01 recorded it. **It reads 25 and the document
+#: measures 24** — that is not an error to tidy up. This entry is a CEILING, not
+#: a reading; the ratchet passes either way; and 114-02 takes the document to 0.
+#: An unexplained edit to that line here would look, in the git history, exactly
+#: like the forbidden raise.
 BASELINE_OFFENDERS: dict = {
-    "README.md": 14,
+    "README.md": 0,
     "DEPLOY.md": 25,
-    "docs/AI-OPERATOR-GUIDE.md": 17,
+    "docs/AI-OPERATOR-GUIDE.md": 0,
     "docs/INSTALL-WITHOUT-DOCKER.md": 0,
 }
 
