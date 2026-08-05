@@ -557,7 +557,12 @@ curl -s -o /dev/null -w '%{http_code}' http://localhost
 # Expected: 200
 ```
 
-**PostGIS loaded:**
+<!-- defines: postgis -->
+**PostGIS loaded.** *PostgreSQL* is the database program that stores every
+record the site shows, and *PostGIS* is an add-on that teaches it to understand
+maps, boundaries and points on a map. This check asks the database to say which
+version of that add-on it is running, which is the quickest way to prove it is
+switched on at all:
 
 ```bash
 docker compose exec db psql -U openh2o -d openh2o -c "SELECT PostGIS_Version();"
@@ -652,10 +657,16 @@ alone.
 
 The platform ships a guided first-run flow at `/setup/`, reached at whatever
 address §4's branch gave you for this instance. It is
-the browser equivalent of the load-data commands: pick or **upload a basin
-boundary as a GeoJSON file**, confirm it on a map, run the `auto_populate`
-discovery steps with progress on screen, and enable the monitoring stations that
-were found.
+the browser equivalent of the load-data commands: pick or **upload a map file
+holding the outline of the district's service area**, confirm it on a map, run
+the `auto_populate` discovery steps with progress on screen, and enable the
+monitoring stations that were found.
+
+<!-- defines: geojson -->
+That map file has to be in the *GeoJSON* format — a plain-text way of describing
+a shape drawn on a map, along with a few labelled facts about it such as a name
+and an area. It is non-proprietary and widely supported, which is why a GIS
+contractor can hand over one file and expect any capable program to read it.
 
 - **Where it is:** left sidebar, **Administration → Setup Wizard**.
 - **Who can see it:** an admin user — and, on an instance that has not enabled
@@ -769,7 +780,13 @@ Edit `crontab.txt` to set `OPENH2O_DIR` (where you cloned the repo) and
 `OPENH2O_LOG_DIR` (a writable log directory) to match your deployment. The
 defaults are `/opt/openh2o` and `/opt/openh2o-logs`.
 
+<!-- defines: api_key -->
+
 ### External Data API Keys
+
+An *API key* is a long, password-like string that lets this program — rather
+than a person — fetch data automatically from another organisation's computers,
+without anybody logging in each time. Treat one exactly as you would a password.
 
 CDEC, USGS, CNRFC and the DWR sources are public and need no credentials. Three
 sources require a key, set in `.env` (then `docker compose up -d` to reload):
@@ -800,7 +817,14 @@ layers (parcels, wells, diversions, boundaries — served as GeoJSON from this
 deployment) still render on top. An operator who needs offline or self-hosted
 maps would have to stand up their own tile server and repoint `static/js/map-core.js`.
 
+<!-- defines: smtp -->
+
 ### Email / Password Reset (SMTP)
+
+*SMTP* is the agreed method for handing an outgoing email over to a mail
+provider, so a website can send messages — "you forgot your password" above all
+— instead of pretending to be its own mail server. The settings below are the
+login for whichever provider the district uses.
 
 Logged-in users can change their password with no setup — the **Change Password**
 link in the header works out of the box. The **"Forgot password?"** flow on the
@@ -1024,7 +1048,26 @@ nightly reset either, by design.
 
 ---
 
+<!-- defines: environment_variable -->
+<!-- defines: wsgi_gunicorn -->
+<!-- defines: oauth -->
+
 ## 12. Environment Variables Reference
+
+An *environment variable* is a named value the operating system hands to a
+program as that program starts. The `.env` file from §3 is simply a convenient
+place to write a whole list of them down, and every name in the table below is
+one of them.
+
+Two of those names carry ideas the table has no room to explain:
+
+- **Gunicorn** is the program that actually listens for browser visits and hands
+  each one to the site's own code; *WSGI* is the agreed shape of that handover,
+  which is why one of the files named below is called `wsgi.py`.
+- **OAuth** is a way for staff to sign in with an existing Google account
+  instead of a separate OpenH2O password, by having Google vouch for who they
+  are. The *client ID* and *client secret* are the two values Google issues so
+  that it recognises this particular installation.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -1056,13 +1099,32 @@ nightly reset either, by design.
 | `FEEDBACK_MAX_DIAGNOSTICS_BYTES` | No | `65536` | Max size of the auto-captured diagnostics blob (bytes; default 64 KB) |
 | `FEEDBACK_RATE_LIMIT_PER_HOUR` | No | `20` | Max submissions accepted per client per hour |
 
-**Google sign-in takes two steps, not one.** Setting `GOOGLE_OAUTH_CLIENT_ID`
-and `GOOGLE_OAUTH_CLIENT_SECRET` makes Google sign-in *possible* and changes
-nothing anyone can see. The **"Continue with Google"** button only appears on the
-login and sign-up pages once the per-agency database flag `allow_google_oauth` is
-switched on — it ships off. Turn it on at **Django admin → Core → Site configs →
-(your agency)**, tick **Allow google oauth**, and save. Set the keys first: the
-button will fail if it is on with no credentials behind it.
+**Google sign-in is configured in two separate places, and this file is only one
+of them.** Putting `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` in
+`.env` is half of it. The other half happens inside the Google account that
+issued those two values: that account's own control panel has to be told which
+web addresses are allowed to use them, and this deployment's address has to be
+one of the addresses on that list. **Expect that second login to belong to
+somebody else** — a district's Google account is usually held by whoever
+administers their email, not by the person standing this platform up. Find out
+who that is before you start, rather than halfway through.
+
+**A half-finished setup does not look broken, and that is the expensive part.**
+With the two values set here and this deployment's address never added on
+Google's side, the sign-in button appears exactly as it should and behaves
+normally right up until somebody clicks it. Google then refuses, with an error
+about a "redirect" that means nothing at all to a reader who is not a web
+developer. If you cannot complete both halves, leave the feature switched off: a
+login page with no Google button is obviously a login page with no Google
+button, and a broken one is not obviously anything.
+
+**A third switch decides whether the button is shown at all.** Setting the two
+keys makes Google sign-in *possible* and changes nothing anyone can see. The
+**"Continue with Google"** button only appears on the login and sign-up pages
+once the per-agency database flag `allow_google_oauth` is switched on — it ships
+off. Turn it on at **Django admin → Core → Site configs → (your agency)**, tick
+**Allow google oauth**, and save. Set the keys first: the button will fail if it
+is on with no credentials behind it.
 
 ---
 
@@ -1083,10 +1145,35 @@ docker compose ps
 # If not: docker compose logs db
 ```
 
+<!-- defines: private_ip -->
+**The log is full of rejected requests addressed by number instead of by the
+site's web address — is somebody attacking us?** By itself, that is not evidence
+of one. Every computer on a network also has a numeric address, and some ranges
+of those numbers — `192.168.…` and the like — only work inside one building or
+one provider's private network and mean nothing at all on the open internet.
+Being addressed by number rather than by name is ordinary background traffic for
+a machine that is switched on, and plenty of routine things do it. This document
+cannot tell you what is sending yours; what it can tell you is that the log
+lines themselves are not a sign of trouble.
+
+The rejection is `ALLOWED_HOSTS` doing precisely its job. A request whose
+address is not on that safety list is refused, and Django writes a line about a
+disallowed host into the log every time. That is the guard working, not the
+guard being defeated, and nothing needs fixing on account of it. If you would
+rather the checks succeed than be turned away — a monitoring tool you run
+yourself, say — add the number it uses to `ALLOWED_HOSTS` in `.env` and
+`docker compose up -d` to reload. Do not add it just to quieten the log.
+
+<!-- defines: geospatial_libraries -->
 **"GDAL library not found" or GeoDjango errors:**
 
-The Dockerfile installs GDAL, GEOS, and PROJ. If building locally without
-Docker, install system packages:
+GDAL, GEOS and PROJ are widely-used open-source code libraries that do the
+actual geometry and map arithmetic — parcel boundaries, well locations,
+distances on a curved earth. Nobody ever interacts with them directly; the
+software simply will not start without them. The Dockerfile installs all three,
+which is why an error here is a build problem rather than something to
+configure. If building locally without Docker, install the system packages
+yourself:
 
 ```bash
 # Ubuntu/Debian
@@ -1106,7 +1193,14 @@ sudo lsof -i :80
 docker compose exec web python manage.py migrate --fake-initial
 ```
 
+<!-- defines: collectstatic -->
 **Static files not loading (404 on /static/):**
+
+The site's images, fonts, styling and scripts are its *static files*, and they
+have to be gathered into one folder before they can be served. `collectstatic`
+is the step that gathers them, and a piece of code called WhiteNoise is what
+then hands them to a visitor's browser. A page that loads with no styling at all
+usually means that gathering step has not run:
 
 ```bash
 docker compose exec web python manage.py collectstatic --noinput
