@@ -96,6 +96,11 @@ The rule is encoded as `ObservedProperty.is_publishable()`: publishable only whe
 
 OpenH2O prepares the two filings California agencies owe, as ready-to-submit CSV. It does **not** auto-submit: the state has no submission API, and the filings are certified under penalty of perjury, so a human reviews and files them.
 
+⚠ **These two are layouts, not a filing path.** OpenH2O writes its figures out to
+match these specifications. It does not submit them, and neither GEARS nor
+CalWATRS can currently accept a file produced here — each would need work on the
+state's own side first, and that work has not been done.
+
 - **GEARS** — two modes: *by-well* (monthly metered extraction) and *by-ET* (monthly consumptive use from OpenET). Unit: acre-feet.
 - **CalWATRS** — *Direct Use* and *To Storage* templates, by point of diversion. Units: acre-feet and CFS. Flags parcels with both groundwater and surface-water sources as combined-use, and marks missing water rights as `[INCOMPLETE]`.
 

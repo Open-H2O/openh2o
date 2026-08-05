@@ -4,6 +4,8 @@
 
 A water-data management platform for California Groundwater Sustainability Agencies (GSAs) and water districts. It manages an agency's water data — measurements, deliveries, wells, surface diversions, mixed-use accounting, and managed aquifer recharge. When an agency files with the state, it can generate the data for the required reports (GEARS CSV, CalWATRS CSV); reporting is an optional feature, not the platform's purpose.
 
+⚠ **There is NO working filing path, and no document or screen may imply one (Brent, 2026-08-05).** GEARS and CalWATRS are large state platforms that would each need work on their own side before they could accept data from this system, and that work has not been done. OpenH2O calculates the figures and writes them out in those systems' layouts; it cannot submit them, and neither system can currently take a file it produces. "Ready-to-file", "prepares the filing" and any upload instruction are all overclaims — every reader-facing mention must say plainly that the capability is wanted and not built.
+
 The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and have the AI stand the platform up — and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
 
 **Where it runs must not matter (BLOCKING).** The same code, the same

@@ -1,9 +1,17 @@
 {% if is_gears %}
 <div class="card-raised">
-  <h3 class="section-header-sm">How to file this in GEARS</h3>
+  <h3 class="section-header-sm">Filing this in GEARS</h3>
+  <div class="alert-warning text-sm mb-md" style="border: none;">
+    <strong>There is no working path from this file into GEARS today.</strong>
+    OpenH2O does not connect to GEARS, and GEARS cannot currently take a file
+    produced here — accepting it would need work on the state's side that has
+    not been done. Treat what follows as your own numbers, ready for whatever
+    route the state gives you, not as a filing you can complete from here.
+  </div>
   <p class="text-tertiary text-xs mb-md">
-    GEARS accepts a bulk CSV upload. Download the file below, upload it in the portal,
-    and certify there. OpenH2O does not connect to GEARS.
+    The download below carries the monthly extraction figures this platform
+    calculated, laid out to the GEARS data specification. It is useful for
+    checking your own numbers and for keeping your own copy of what you reported.
   </p>
 
   <div class="mb-md">
@@ -22,27 +30,33 @@
 
   <ol class="text-secondary text-sm" style="margin: 0; padding-left: 1.25rem; display: grid; gap: var(--space-xs);">
     <li>
-      Download the GEARS CSV:
+      Download the file:
       {% if submission.generated_file %}
       <a href="{% url 'reporting:report_download' pk=submission.pk %}"
          style="color: var(--color-accent); text-decoration: none; font-weight: 600;">Download file</a>
       {% else %}<span class="text-tertiary">(no file generated yet)</span>{% endif %}
     </li>
-    <li>Log into GEARS with your Correspondence ID.</li>
-    <li>Go to <strong>Bulk Volume Upload</strong>, choose the water year, and upload the CSV.</li>
-    <li>Review GEARS' validation results and fix anything it rejects.</li>
-    <li>Certify the filing in GEARS under penalty of perjury.</li>
+    <li>Check the figures against your own records before they go anywhere.</li>
+    <li>File with the state by whatever route they have given your agency. That
+      route is between you and the Board; this platform has no part in it, and
+      whoever certifies the filing does so under penalty of perjury.</li>
     <li>Come back here and <strong>Record as Filed</strong> with the confirmation number.</li>
   </ol>
 </div>
 
 {% elif is_calwatrs %}
 <div class="card-raised">
-  <h3 class="section-header-sm">How to file this in CalWATRS</h3>
+  <h3 class="section-header-sm">Filing this in CalWATRS</h3>
+  <div class="alert-warning text-sm mb-md" style="border: none;">
+    <strong>Nothing here is submitted for you.</strong> OpenH2O does not connect
+    to CalWATRS, and CalWATRS cannot currently take a file produced here.
+    Everything below is transcription by hand.
+  </div>
   <p class="text-tertiary text-xs mb-md">
-    CalWATRS has no file upload — it's a web form. You enter each Point of Diversion's
-    monthly values by hand. The worksheet lays them out in transcription order, with
-    each water right's CalWATRS PIN beside it.
+    You enter each Point of Diversion's monthly values into the state's own web
+    form yourself. The worksheet lays them out in transcription order, with each
+    water right's CalWATRS PIN beside it, so you are reading down one page
+    instead of hunting through the platform.
   </p>
 
   <ol class="text-secondary text-sm" style="margin: 0 0 var(--space-md); padding-left: 1.25rem; display: grid; gap: var(--space-xs);">

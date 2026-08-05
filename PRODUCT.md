@@ -2,7 +2,7 @@
 
 ## Users
 
-GSA (Groundwater Sustainability Agency) staff, water district managers, and drinking-water utility operators in California. Typically 1-3 people per agency, many non-technical. They manage their agency's water data — measurements, deliveries, wells, surface diversions, recharge events, and drinking-water lab results — and, when they file with the state, generate the data for the required reports (GEARS, CalWATRS). They work with the platform year-round, not only during reporting seasons.
+GSA (Groundwater Sustainability Agency) staff, water district managers, and drinking-water utility operators in California. Typically 1-3 people per agency, many non-technical. They manage their agency's water data — measurements, deliveries, wells, surface diversions, recharge events, and drinking-water lab results — and, when they file with the state, work out the figures the required reports need (GEARS, CalWATRS) — though the platform cannot submit them and neither state system can currently accept a file it produces. They work with the platform year-round, not only during reporting seasons.
 
 ## Brand
 

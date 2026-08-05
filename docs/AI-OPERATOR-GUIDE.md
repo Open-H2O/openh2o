@@ -442,7 +442,7 @@ because it is not.
 Set expectations on the two tiers instead: who needs to administer this, and who
 just uses it.
 
-Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. If the agency files with the state, show the optional reporting step too: open the reporting page → generate a draft GEARS or CalWATRS CSV, making clear that OpenH2O *prepares* the filing; a certifying official reviews and submits it in the state portal.
+Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. If the agency files with the state, show the optional reporting step too: open the reporting page → generate a draft GEARS or CalWATRS CSV. **Be blunt about what that is and is not.** It is the agency's own figures, laid out the way those state systems lay theirs out, useful for checking the numbers and keeping their own copy. It is **not** a filing. OpenH2O cannot submit to either system, and neither system can currently accept a file it produces — both would need work on the state's side first, and that work has not been done. An agency that hears "it does the state reports" and plans around it will be caught out, so say the limit out loud at handover rather than letting them find it at a deadline.
 
 **Before the first password reset, check what name the mail goes out under.** Every email the platform sends carries this deployment's own name at the front of the subject line — the first thing the recipient reads. The platform works that name out for itself, from the agency name typed into the Setup Wizard and the web address already in `ALLOWED_HOSTS`, and writes it down when the migration step runs. Confirm it landed:
 

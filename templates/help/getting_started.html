@@ -313,8 +313,9 @@
     </span>
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.reports }}</span>
-      <h2 class="section-header">Generate state reports</h2>
-      <p class="text-secondary text-base">When your reporting period is complete, generate {% module_nouns "wells:GEARS CSV (per-well or by-ET extraction)" "surface:CalWATRS CSV (surface diversions)" %} for submission to the Water Board. Go to Reports &gt; Generate.</p>
+      <h2 class="section-header">Work out your state report figures</h2>
+      <p class="text-secondary text-base">When your reporting period is complete, generate {% module_nouns "wells:GEARS CSV (per-well or by-ET extraction)" "surface:CalWATRS CSV (surface diversions)" %} to check your own numbers. Go to Reports &gt; Generate.</p>
+      <p class="text-tertiary text-sm">This platform does not submit anything to the Water Board, and neither of those state systems can currently accept a file produced here. Filing is still yours to do, by whatever route the Board has given your agency.</p>
       <a href="{% url 'reporting:report_list' %}" class="text-sm text-accent">Go to Reports &rarr;</a>
     </div>
   </div>{% endif %}

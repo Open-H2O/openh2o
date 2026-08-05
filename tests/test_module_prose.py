@@ -178,7 +178,7 @@ class TestRenderedPages:
         )
         assert (
             "generate GEARS CSV (per-well or by-ET extraction) and "
-            "CalWATRS CSV (surface diversions) for submission" in body
+            "CalWATRS CSV (surface diversions) to check your own numbers" in body
         )
 
     def test_the_home_map_sublabel_no_longer_enumerates(self, admin_client):
@@ -190,7 +190,7 @@ class TestRenderedPages:
         self, admin_client
     ):
         body = admin_client.get("/").content.decode()
-        assert "Generate GEARS and CalWATRS exports" in body
+        assert "Work out your GEARS and CalWATRS figures" in body
 
     def test_the_home_report_card_drops_calwatrs_when_surface_is_off(
         self, admin_client, settings
@@ -198,7 +198,7 @@ class TestRenderedPages:
         """The fourth site, found by measuring rather than from the plan's list."""
         settings.OPENH2O_MODULES = WITHOUT_SURFACE
         body = admin_client.get("/").content.decode()
-        assert "Generate GEARS exports" in body
+        assert "Work out your GEARS figures" in body
         assert "CalWATRS" not in body
 
     def test_getting_started_drops_surface_nouns_when_surface_is_off(

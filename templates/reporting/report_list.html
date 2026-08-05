@@ -28,7 +28,7 @@
     right. With every module enabled this renders "Start a GEARS or CalWATRS
     report below" exactly as it always has — byte-identically, which is why the
     closing tag shares this line with the paragraph instead of taking its own.
-  {% endcomment %}<p class="page-description">Prepare your state filings. {% if filing_families %}Start a {% for key, label in filing_families %}{% if not forloop.first %} or {% endif %}{{ label }}{% endfor %} report below, then pick any past report to review its status and download.{% else %}Pick any past report to review its status and download.{% endif %}</p>
+  {% endcomment %}<p class="page-description">Work out the figures your state filings need. {% if filing_families %}Start a {% for key, label in filing_families %}{% if not forloop.first %} or {% endif %}{{ label }}{% endfor %} report below, then pick any past report to review its status and download.{% else %}Pick any past report to review its status and download.{% endif %} Nothing here is submitted to the state — see each report for what you still have to do yourself.</p>
 </div>
 {% endblock %}
 
