@@ -9,6 +9,23 @@ an AI or operator deploying on a fresh VPS with zero prior knowledge.
 
 ## 1. Server Requirements
 
+<!-- defines: docker -->
+<!-- defines: docker_compose -->
+<!-- defines: sudo -->
+Three of the names in the table below are pieces an operator actually meets, so
+they are worth a sentence each first. OpenH2O normally ships as three
+*containers* — a container is a sealed, pre-packed box holding one piece of the
+program plus everything it needs to run, so it behaves the same on any computer
+— and **Docker** is the software that builds and runs those boxes. This
+platform's three hold the web pages, the database, and the piece that manages
+the address and the encryption. **Docker Compose** is a helper tool, installed
+alongside Docker, that starts, stops and rebuilds all three boxes together from
+one instruction file (`docker-compose.yml`) instead of handling each by hand;
+every `docker compose …` line in this guide is that tool. And **`sudo`** in
+front of a command is Linux for "do the next thing with full administrator
+power" — needed for anything that changes the server itself, such as installing
+software, as opposed to changes that stay inside OpenH2O.
+
 | Requirement | Minimum |
 |-------------|---------|
 | OS | Ubuntu 22.04+ (tested on 24.04) |
@@ -71,7 +88,14 @@ instead.
 
 ---
 
+<!-- defines: repository -->
+
 ## 2. Clone the Repository
+
+Copy the whole program onto this server. A *repository* is a folder holding all
+of the program's files, kept on a website called GitHub with a complete history
+of every change ever made to it; *cloning* it means copying that folder down to
+this machine so it can be built and run here.
 
 ```bash
 git clone https://github.com/Open-H2O/openh2o.git
@@ -82,13 +106,21 @@ cd openh2o
 
 ## 3. Environment Configuration
 
-Copy the example environment file:
+<!-- defines: env_file -->
+This section fills in one file. `.env` is a plain text file of NAME=value lines
+holding this deployment's settings and passwords — the one file that makes this
+installation *this district's* rather than a generic copy, and one deliberately
+kept out of the published copy of the program precisely because it holds
+secrets. The repository ships an example of it to start from:
 
 ```bash
 cp .env.example .env
 ```
 
-Generate a secret key:
+<!-- defines: secret_key -->
+Generate a `SECRET_KEY`. That is an internal password the software makes up for
+itself and uses to scramble things like login session cookies; nobody ever types
+it, it simply has to exist and stay private:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(50))"
@@ -102,7 +134,14 @@ POSTGRES_PASSWORD=<choose-a-strong-password>
 DJANGO_SETTINGS_MODULE=config.settings.production
 ```
 
-The last two settings — `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` — depend on
+<!-- defines: allowed_hosts -->
+The last two settings — `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` — are two
+safety lists. The program refuses to answer unless the web address in the
+request matches one of them, which is what stops a stranger tricking it into
+behaving as a different website; they have to carry this district's real address
+exactly, or the site turns every visitor away. (`CSRF` is the attack that second
+list exists to stop — somebody else's page quietly submitting a form to yours in
+a logged-in visitor's name.) What you put in them depends on
 **who can reach this instance**. That is the same question §4 and
 [docs/AI-OPERATOR-GUIDE.md](docs/AI-OPERATOR-GUIDE.md) Phase 2 branch on, and
 Phase 2 step 2 carries the authoritative table. The two shapes are:
@@ -139,13 +178,32 @@ See `.env.example` for all available variables with documentation.
 
 ---
 
+<!-- defines: reverse_proxy -->
+<!-- defines: tls_https -->
+
 ## 4. Caddy / HTTPS Configuration
 
-`Caddyfile` configures Caddy, the middleman program that receives web traffic and
-passes it inward to OpenH2O. What you do with it follows from exactly one
-question: **who can reach this instance?** Not how big the machine is, not
-whether it is a rented server or a computer in the office — only who can reach
-it.
+Two pieces sit between a visitor and this platform, and this section is about
+both of them.
+
+The first is a **traffic router** — a middleman program that receives everything
+arriving from outside and relays it inward to the real program. The name for
+that arrangement is a *reverse proxy*, and the one shipped here is a program
+called **Caddy**, configured by the file named `Caddyfile`. A district that
+already runs a proxy of its own ends up with two in a row: theirs, outside your
+control, in front of this machine, and Caddy inside Docker in front of OpenH2O.
+That is a normal arrangement, not a fault to fix.
+
+The second is the **lock on the connection**. *HTTPS* is the padlock-icon,
+encrypted version of a web address; *TLS* is the encryption technology behind
+that padlock; and a *certificate* is the file that proves the address really is
+itself. A connection has to be unlocked somewhere before any program can read
+what it carries, and *where* that unlocking happens is what the rest of this
+section turns on.
+
+So: what you do with the `Caddyfile` follows from exactly one question, **who
+can reach this instance?** Not how big the machine is, not whether it is a
+rented server or a computer in the office — only who can reach it.
 
 | Who can reach this instance | What to do with the `Caddyfile` | Follow |
 |---|---|---|
@@ -208,11 +266,17 @@ your-domain.com {
 **Two things must already be true before you start the containers**, or the
 certificate request fails and the site never comes up:
 
-1. **The DNS A record for that name must already point at this server's public
-   IP.** Certificates are issued to a name only after the issuer confirms the
-   name really does lead to this machine, so the phone-book entry has to be in
-   place first, not afterwards.
-2. **Both port 80 and port 443 must reach this server from the internet.** Port
+1. **The DNS A record for that name must already point at this server's public <!-- defines: dns -->
+   IP.** *DNS* is the internet's phone book: it turns a web address into the
+   numeric address of one specific computer, and an *A record* is one entry in
+   that book, so "pointing the domain at this machine" means editing that one
+   entry wherever the domain was bought. Certificates are issued to a name only
+   after the issuer confirms the name really does lead to this machine, so the
+   phone-book entry has to be in place first, not afterwards.
+2. **Both port 80 and port 443 must reach this server from the internet.** <!-- defines: port --> A
+   *port* is a numbered door on the computer that one particular kind of traffic
+   knocks on — port 80 is the plain, unencrypted web door, the one a browser uses
+   when nobody types a number at all, and port 443 is the encrypted one. Port
    443 is where the finished site is served; port 80 is where the issuer's
    check arrives. Blocking 80 because "everything is HTTPS anyway" is the common
    way this fails.
@@ -303,7 +367,14 @@ openh2o-web-1     openh2o-web             Up                        8000/tcp
 
 ---
 
+<!-- defines: migrations -->
+
 ## 6. Run Migrations
+
+*Migrations* are the step where the program builds or updates the actual tables
+inside its database to match what this version of the software expects. Routine
+and expected after every install and every update; skip it and you are left with
+an empty, unusable database.
 
 ```bash
 docker compose exec web python manage.py migrate
@@ -313,7 +384,15 @@ Expected: a list of applied migrations ending with `OK`.
 
 ---
 
+<!-- defines: superuser -->
+
 ## 7. Create Superuser
+
+A *superuser* is the one account inside OpenH2O that can do anything: add other
+staff accounts, change settings, see everything. It is separate from and
+unrelated to any login for the server itself, and it has to be created by hand
+before anyone can sign in at all — there is no "first visitor becomes the
+administrator" magic.
 
 ```bash
 docker compose exec web python manage.py createsuperuser
@@ -349,7 +428,15 @@ matter whose address is on the account.
 
 ---
 
+<!-- defines: seed_data -->
+
 ## 8. Seed Reference Data
+
+*Seeding* means loading a starting set of data into a database that is otherwise
+empty. It covers two different things here: the small reference lists such as
+units and categories that every deployment needs, which is this section, and a
+whole demonstration dataset so there is something to look at before the
+district's own records arrive, which is §9.
 
 These commands load required lookup tables (roles, the observed-property
 crosswalk, water types, well types, water right types, data source
@@ -400,7 +487,11 @@ internally coherent, but **consumptive use is computed from satellite ET and has
 no fallback**: `run_calculations` reports every parcel as skipped ("no ET data")
 and those figures stay empty until a key is supplied.
 
-Each sub-step is idempotent, so re-running is safe — with one deliberate
+<!-- defines: idempotent -->
+Each sub-step is *idempotent* — running it five times ends up the same as
+running it once, because it notices what is already done and skips it rather
+than duplicating or breaking anything — so re-running after an interruption is
+safe, with one deliberate
 exception. The operations step deletes and regenerates parcel and well geometry,
 so on a production instance (`DEBUG=False`) it refuses to run a *second* time
 over demo rows that already exist, rather than silently destroying hand-adjusted
