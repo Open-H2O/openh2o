@@ -16,6 +16,7 @@ discover_stations returns an empty list.
 
 import logging
 import os
+import re
 
 from datasync.adapters import register_adapter
 from datasync.adapters.base import BaseAdapter
@@ -24,6 +25,30 @@ logger = logging.getLogger(__name__)
 
 POINT_URL = "https://openet-api.org/raster/timeseries/point"
 POLYGON_URL = "https://openet-api.org/raster/timeseries/polygon"
+
+# The provider's own quota read — what OpenET's OpenAPI spec calls "Current
+# Quota". Measured against the live endpoint 2026-08-05, this account:
+#
+#   {"Name": …, "Tier": 1, "Monthly Requests": "0 used of 100",
+#    "Max Area Acres": 200000, "Max Polygons": 400, "Max Field IDS": 400, …}
+#
+# Two things about that response drove the code below. The allowance is inside a
+# PROSE STRING, not a number field, so it is parsed rather than read. And the
+# three other 400s are per-request SHAPE limits — the acreage, polygon and
+# field-id caps on a single call — which is how "400" came to be written into
+# this platform as a monthly call budget in the first place (ISS-128).
+#
+# A status read does NOT spend the allowance: this account read "0 used of 100"
+# on 2026-08-04 and again on 2026-08-05 with a status call in between.
+ACCOUNT_STATUS_URL = "https://openet-api.org/account/status"
+
+# An allowance does not change minute to minute, and the monitoring dashboard
+# must never make an outbound HTTP call while rendering a page.
+ACCOUNT_STATUS_CACHE_KEY = "openet:account_status"
+ACCOUNT_STATUS_CACHE_SECONDS = 86400
+
+# "0 used of 100" — the only two numbers in the string, in that order.
+_MONTHLY_REQUESTS_RE = re.compile(r"(\d+)\s+used\s+of\s+(\d+)", re.IGNORECASE)
 
 # Ensemble spread. OpenET's "Ensemble" is NOT a plain average of the six member
 # models (DisALEXI, eeMETRIC, geeSEBAL, PT-JPL, SIMS, SSEBop): it drops outliers
@@ -63,6 +88,96 @@ class OpenETAdapter(BaseAdapter):
             "Authorization": self._get_api_key(),
             "Content-Type": "application/json",
         }
+
+    def account_status(self, use_cache=True):
+        """What the PROVIDER says this account's monthly allowance is.
+
+        Returns a dict that always answers, and always says where the answer
+        came from::
+
+            {"source": "provider"|"fallback", "limit": int,
+             "used": int|None, "tier": int|None, "reason": str}
+
+        ``source`` is not decoration. A guessed allowance presented as an
+        authoritative one is the whole of ISS-128: the code said 400, the
+        account was 100, and nothing on any screen distinguished a figure the
+        provider had confirmed from a constant somebody typed. Every caller
+        must be able to tell them apart, so failure is a labelled result rather
+        than an exception or a silent default.
+
+        Falls back to ``settings.OPENET_MONTHLY_BUDGET`` on a missing key, a
+        network error, a non-200, or a body it cannot parse.
+
+        NOT called from ``check_budget()``. That runs under a Postgres advisory
+        lock inside ``reserve_query_slot``'s transaction, and an outbound HTTP
+        call there would hold a database lock across network latency.
+        """
+        from django.conf import settings as django_settings
+        from django.core.cache import cache
+
+        if use_cache:
+            cached = cache.get(ACCOUNT_STATUS_CACHE_KEY)
+            if cached is not None:
+                return cached
+
+        fallback_limit = getattr(django_settings, "OPENET_MONTHLY_BUDGET", 100)
+
+        def _fallback(reason):
+            # Deliberately NOT cached: a fallback is the absence of an answer,
+            # and caching it would keep a reachable provider unread for a day.
+            return {
+                "source": "fallback",
+                "limit": fallback_limit,
+                "used": None,
+                "tier": None,
+                "reason": reason,
+            }
+
+        key = self._get_api_key()
+        if not key:
+            return _fallback("no OPENET_API_KEY is set")
+
+        try:
+            # Short timeout and a single attempt: this sits behind a page
+            # render, so a slow provider must degrade to the fallback rather
+            # than sit on a gunicorn worker.
+            resp = self._request(
+                "GET",
+                ACCOUNT_STATUS_URL,
+                headers=self._headers(),
+                timeout=self.discovery_timeout,
+                max_retries=1,
+            )
+        except Exception as exc:  # requests raises several unrelated types
+            # exc, never the response body: a 401/500 page could echo the key.
+            logger.warning("openet: account status unavailable (%s)", type(exc).__name__)
+            return _fallback(f"the provider could not be reached ({type(exc).__name__})")
+
+        try:
+            payload = resp.json()
+        except ValueError:
+            logger.warning("openet: account status returned a non-JSON body")
+            return _fallback("the provider's reply was not readable")
+
+        if not isinstance(payload, dict):
+            return _fallback("the provider's reply was not readable")
+
+        match = _MONTHLY_REQUESTS_RE.search(str(payload.get("Monthly Requests", "")))
+        if not match:
+            logger.warning("openet: account status carried no monthly-request figure")
+            return _fallback("the provider's reply carried no allowance figure")
+
+        used, limit = int(match.group(1)), int(match.group(2))
+        tier = payload.get("Tier")
+        result = {
+            "source": "provider",
+            "limit": limit,
+            "used": used,
+            "tier": tier if isinstance(tier, int) else None,
+            "reason": "",
+        }
+        cache.set(ACCOUNT_STATUS_CACHE_KEY, result, ACCOUNT_STATUS_CACHE_SECONDS)
+        return result
 
     def fetch(self, station, start_date, end_date):
         """Fetch monthly ET for a station's point location.

@@ -241,7 +241,14 @@ class OpenETCache(models.Model):
     def check_budget(cls, budget=None):
         from django.conf import settings as django_settings
 
-        limit = budget or getattr(django_settings, "OPENET_MONTHLY_BUDGET", 400)
+        # 100 is Tier 1, what a new OpenET account gets, and it must match
+        # config/settings/base.py's default. A guard's fallback errs toward the
+        # SMALLER allowance — erring high is not a bigger budget, it is a
+        # disabled guard (ISS-128). The live figure comes from
+        # OpenETAdapter.account_status(); it is deliberately not read here,
+        # because this method runs under an advisory lock inside
+        # reserve_query_slot's transaction and must not make an HTTP call.
+        limit = budget or getattr(django_settings, "OPENET_MONTHLY_BUDGET", 100)
         used = cls.monthly_query_count()
         return used < limit, used, limit
 

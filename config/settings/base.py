@@ -342,22 +342,30 @@ _google_client_secret = env("GOOGLE_OAUTH_CLIENT_SECRET", default="")
 
 DATASYNC_MOCK_MODE = env.bool("DATASYNC_MOCK_MODE", default=False)
 OPENET_CACHE_DAYS = int(os.environ.get("OPENET_CACHE_DAYS", "30"))
-# 400 mirrors OpenET's OWN Tier 2 monthly query limit (Tier 1 is 100; Tier 2,
-# which requires linking an Earth Engine account, is 400). This is not a
-# spending cap — OpenET does not bill per call — it is a scarce fixed allowance
-# that resets on the 1st.
+# THIS IS THE FALLBACK, NOT THE ANSWER. The allowance is read from OpenET
+# itself — `OpenETAdapter.account_status()` calls the provider's own quota
+# endpoint and the monitoring dashboard shows which of the two figures it is
+# displaying. This number is what that read falls back to when there is no key,
+# no network, or an unreadable reply.
 #
-# Therefore this number must NEVER be set above the tier the deployment actually
-# holds. Its whole job is to stop us before OpenET does, so that we fail in a
-# place we control (a logged budget_blocked skip) rather than as opaque API
-# errors mid-sync. A value above the real quota is not a bigger budget, it is a
-# disabled guard.
+# 100 is Tier 1: what a new account gets, and what this platform's own account
+# turned out to hold. It used to be 400, which is Tier 2 (that tier requires
+# linking an Earth Engine account) — so every Tier 1 deployment ran a guard set
+# to four times the allowance it was guarding, and it could not fire until the
+# operator had already spent twice what they had. Corrected 2026-08-05, ISS-128.
+#
+# A fallback must fail toward the SMALLER allowance. This is not a spending cap
+# — OpenET does not bill per call — it is a scarce fixed allowance that resets
+# on the 1st, so guessing high does not risk money, it risks arriving at the
+# 20th of the month with nothing left and no warning having fired. A value above
+# the real quota is not a bigger budget, it is a disabled guard.
 #
 # Ensemble-spread collection costs up to 4 calls per parcel-window instead of 1
 # (one variable per call), so it is opt-in rather than automatic: at 76 parcels
-# it consumes ~304 of the 400 available. Deployments on Tier 1 should lower this
-# to 100.
-OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "400"))
+# it consumes ~304 calls, which OVERSPENDS a Tier 1 allowance three times over.
+# A Tier 2 deployment should raise this to 400 — from the provider's own
+# `/account/status`, not from memory.
+OPENET_MONTHLY_BUDGET = int(os.environ.get("OPENET_MONTHLY_BUDGET", "100"))
 
 # OpenET source selection: "api" = OpenET REST API (default, the live path);
 # "gee" = pull the same OpenET Ensemble collection directly from Google Earth
