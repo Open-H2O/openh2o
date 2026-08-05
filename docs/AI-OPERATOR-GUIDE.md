@@ -27,7 +27,10 @@ Ask the agency staffer for these.
    is plenty. **Check Docker works before anything else: `docker run
    hello-world`.** If that fails mentioning "cgroup" or "bpf", the machine's own
    host is blocking containers and no setting inside it will fix that — ask
-   whoever provisioned it.
+   whoever provisioned it, or take the documented path that needs no Docker at
+   all, [INSTALL-WITHOUT-DOCKER.md](INSTALL-WITHOUT-DOCKER.md). That path is
+   equally the right answer when the agency would simply rather not install
+   Docker on their machine.
 2. **How the agency needs to reach it.** Ask directly, and write the answer
    down; every later choice follows from it:
    - *Only from this one computer* — no domain needed. Bind the service to

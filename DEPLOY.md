@@ -58,9 +58,16 @@ the very technology Docker itself needs, and that wall is enforced by the
 machine's own host — one level up, outside anything you can see or change from
 inside. No Docker setting, reinstall or version will get past it. There are two
 real answers, and neither of them is more Docker: ask whoever provisioned the
-machine to allow containers, or install the platform without Docker at all.
+machine to allow containers, or install the platform without Docker at all —
+[docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md) is that path,
+written out end to end.
 This test takes five seconds and is worth running before anything else, because
 the alternative is hours spent on Docker fixes that cannot work.
+
+**That path is also there if you simply do not want Docker on this machine.** It
+is not only the answer to a failure; an agency with a policy about what may be
+installed, or a preference for managing the pieces directly, can start there
+instead.
 
 ---
 

@@ -41,6 +41,11 @@ It is designed for a single agency per deployment (single-tenant), and it works 
 to reach the instance: only the machine it runs on, an office network, or the
 public internet. Only the last needs a domain and HTTPS.
 
+**All three assume Docker, and you do not have to.** Any of them can instead be
+installed directly onto the machine — a legitimate first choice, and the only
+option when the machine's own host will not allow containers at all. The whole
+path is in [docs/INSTALL-WITHOUT-DOCKER.md](docs/INSTALL-WITHOUT-DOCKER.md).
+
 ### Quick start (single computer)
 
 ```bash
