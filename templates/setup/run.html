@@ -56,7 +56,8 @@
   <div class="card-raised card-inset">
     <p class="text-tertiary text-sm m-0">
       Each step calls a public API to fetch geographic data within your boundary.
-      Steps are idempotent — re-running won't create duplicates.
+      Re-running a step is safe: it notices what is already here and skips it, so
+      nothing is duplicated.
     </p>
   </div>
 

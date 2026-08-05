@@ -85,13 +85,13 @@
 
   <!-- Upload GeoJSON -->
   <div class="card-raised">
-    <h2 class="card-header-ruled">Upload GeoJSON boundary</h2>
+    <h2 class="card-header-ruled">Upload the district's service-area boundary</h2>
     <form method="post" enctype="multipart/form-data" id="upload-form">
       {% csrf_token %}
       <input type="hidden" name="action" value="upload">
 
       <div class="form-group">
-        <label class="form-label" for="geojson_file">GeoJSON file</label>
+        <label class="form-label" for="geojson_file">Boundary map file (GeoJSON)</label>
         <div
           class="upload-zone"
           id="upload-zone"
@@ -117,7 +117,8 @@
           style="display: none;"
           onchange="updateZoneLabel(this.files[0])"
         >
-        <p class="form-help">Accepts GeoJSON Feature or FeatureCollection with Polygon or MultiPolygon geometry in WGS84 (EPSG:4326).</p>
+        <p class="form-help">This is one shape drawn on a map: the outline of the area this deployment covers. A GIS consultant, or whoever handles the district's mapping, can export one — and if a file is rejected here, they are the people to send it back to.</p>
+        <p class="form-help">For whoever prepares the file: a GeoJSON Feature or FeatureCollection whose geometry is a Polygon or MultiPolygon, in WGS84 (EPSG:4326).</p>
       </div>
 
       <div class="form-footer">
