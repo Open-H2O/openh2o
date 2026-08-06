@@ -14,6 +14,9 @@ Locks the four first-run smoothing behaviors:
 Pinned to config.settings.local (prod settings 301-redirect the test client).
 """
 import json
+import re
+
+import pytest
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -418,3 +421,168 @@ def test_completion_panel_routes_to_next_steps(db):
     assert reverse("geography:zone_list") in html
     # The old single-link dead-end to the station list is gone from the panel.
     assert "Go to Stations" not in html
+
+
+# --------------------------------------------------------------------------
+# Phase 116 — the confirmation screen shows what the uploaded file said
+# --------------------------------------------------------------------------
+#
+# ISS-120: the upload branch built a Boundary from name and geometry alone and
+# threw away the area and watershed code the operator's own file carried, so
+# the confirmation screen rendered an em-dash for the area on every upload.
+# The area assertions here are deliberately made against the RENDERED PAGE as
+# well as the database row — a database-only assertion would have passed
+# throughout the life of the defect, because the context wiring was never the
+# broken part.
+
+CONFIRM_URL = reverse("setup:confirm")
+
+# The one place the empty-area copy is pinned. Asserted here and nowhere else,
+# so rewording it later breaks one test rather than seven.
+EMPTY_AREA_COPY = "Not in your file"
+
+
+def _feature(properties, name="Uploaded Watershed"):
+    """A one-feature FeatureCollection with a valid polygon and given properties."""
+    props = {"name": name}
+    props.update(properties)
+    return json.dumps({
+        "type": "FeatureCollection",
+        "features": [{
+            "type": "Feature",
+            "properties": props,
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [-123.0, 38.5], [-122.5, 38.5],
+                    [-122.5, 39.0], [-123.0, 39.0], [-123.0, 38.5],
+                ]],
+            },
+        }],
+    }).encode()
+
+
+def _stat_values(html):
+    """The text inside every stats-card value slot on the confirmation screen.
+
+    Asserted against instead of the whole page: the site's nav ships an em-dash
+    inside an HTML comment, so a page-wide dash assertion would fail on
+    scenery rather than on the cell under test.
+    """
+    return [
+        value.strip()
+        for value in re.findall(
+            r'<div class="stat-card-value-sm">(.*?)</div>', html, re.S
+        )
+    ]
+
+
+def _upload_and_confirm(client, payload):
+    """Upload, assert the wizard redirected, and return the confirmation HTML."""
+    resp = _upload(client, payload)
+    assert resp.status_code == 302, "upload did not redirect — the wizard errored"
+    assert resp.url == CONFIRM_URL
+    return client.get(CONFIRM_URL).content.decode()
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_upload_keeps_area_and_watershed_code_from_the_file(db):
+    client = Client()
+    client.force_login(_admin())
+    resp = _upload(client, _feature({"areasqmi": 1484.9, "huc8": "18010110"}))
+    assert resp.status_code == 302
+    boundary = Boundary.objects.get()
+    assert boundary.area_sq_miles == pytest.approx(1484.9)
+    assert boundary.huc == "18010110"
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_confirmation_screen_shows_the_area_not_a_dash(db):
+    client = Client()
+    client.force_login(_admin())
+    html = _upload_and_confirm(client, _feature({"areasqmi": 1484.9, "huc8": "18010110"}))
+    values = _stat_values(html)
+    assert "1484.9" in values
+    assert "—" not in values
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_square_kilometres_convert_when_square_miles_are_absent(db):
+    client = Client()
+    client.force_login(_admin())
+    resp = _upload(client, _feature({"areasqkm": 3845.97}))
+    assert resp.status_code == 302
+    boundary = Boundary.objects.get()
+    # The file's own figure, converted — never an area derived from the polygon.
+    assert boundary.area_sq_miles == pytest.approx(1484.9, abs=0.1)
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_uppercase_property_keys_resolve_identically(db):
+    client = Client()
+    client.force_login(_admin())
+    resp = _upload(client, _feature({"AREASQMI": 1484.9, "HUC8": "18010110"}))
+    assert resp.status_code == 302
+    boundary = Boundary.objects.get()
+    assert boundary.area_sq_miles == pytest.approx(1484.9)
+    assert boundary.huc == "18010110"
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_file_without_an_area_uploads_and_says_so_in_words(db):
+    client = Client()
+    client.force_login(_admin())
+    html = _upload_and_confirm(client, _feature({}))
+    boundary = Boundary.objects.get()
+    assert boundary.area_sq_miles is None
+    values = _stat_values(html)
+    assert EMPTY_AREA_COPY in values
+    assert "—" not in values
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+def test_watershed_cell_appears_only_when_the_file_carried_a_code(db):
+    client = Client()
+    client.force_login(_admin())
+    with_code = _upload_and_confirm(client, _feature({"huc8": "18010110"}))
+    assert "Watershed code" in with_code
+    assert "18010110" in with_code
+
+    Boundary.objects.all().delete()
+    fresh = Client()
+    fresh.force_login(_admin(username="admin2", email="admin2@example.com"))
+    without_code = _upload_and_confirm(fresh, _feature({}))
+    assert "Watershed code" not in without_code
+
+
+HOSTILE_VALUES = [
+    "N/A",
+    True,
+    False,
+    -5,
+    0,
+    [],
+    {},
+    None,
+    "x" * 500,
+]
+
+
+@override_settings(ACCESS_CONTROL_ENFORCED=False)
+@pytest.mark.parametrize("value", HOSTILE_VALUES, ids=lambda v: repr(v)[:12])
+def test_hostile_property_values_never_break_the_upload(db, value):
+    """An operator-supplied file is unvalidated input.
+
+    A property that is a dict, a list, a boolean, a negative number or 400 KB
+    of text must leave the field empty and let the upload succeed — never turn
+    a working upload into a traceback.
+    """
+    client = Client()
+    client.force_login(_admin())
+    resp = _upload(client, _feature({"areasqmi": value, "huc8": value}))
+    assert resp.status_code == 302, f"{value!r} broke the upload"
+    boundary = Boundary.objects.get()
+    assert boundary.area_sq_miles is None
+    # A code is text, so a hostile *string* is a legitimate (if useless) code;
+    # what must never happen is an exception or an over-length value on save.
+    assert len(boundary.huc) <= 20
