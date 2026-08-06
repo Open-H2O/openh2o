@@ -3551,14 +3551,21 @@ div[id$="-map"] {
 
 /* -- Drinking onboarding: sampling-point builder (ISS-078) --------------- */
 
-/* Each facility is a contained inset panel, aligned with the page's other
-   cards. The builder previously used `.card-inset` alone — which sets only a
-   background, no padding — so the panels rendered flush-left and broke the
-   card rhythm. `.card-raised .card-inset` is the house pattern used everywhere
-   else; `.facility-panel` only scopes the density tweaks below. */
+/* Each facility is a contained inset panel. It carried `.card-raised
+   .card-inset` until 117-01, when both render paths moved inside a
+   `.card-raised` section — and a raised card nested in a raised card draws the
+   border and the pop shadow twice. The root is now `.card-inset` alone, which
+   supplies only the darker background, so the padding and radius `.card-raised`
+   used to give it are supplied here instead. Horizontal padding is `--space-lg`
+   to match `.card-raised`; vertical stays `--space-md` for the tighter builder
+   rhythm this block already set. No border: the inset background against the
+   section's card background is what separates one panel from the next. */
 .facility-panel {
+    border-radius: var(--radius-lg);
     padding-top: var(--space-md);
     padding-bottom: var(--space-md);
+    padding-left: var(--space-lg);
+    padding-right: var(--space-lg);
 }
 
 /* Tighter table rhythm inside a facility panel — the listed-points and any

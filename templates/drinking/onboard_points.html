@@ -34,25 +34,12 @@
 
   <a href="{% url 'drinking:onboard' %}" class="back-link">&larr; Back to Onboard</a>
 
-  <div class="card-raised">
-    <h2 class="card-header-ruled">What this page is for</h2>
-    <p class="text-base text-secondary mt-md">
-      A laboratory tests water and sends back a file. Every line of that file
-      says <em>where</em> the water was taken from &mdash; a particular well, or
-      a particular tap out in the neighborhood. This page is where you tell the
-      system what those places are, so the lab's results have somewhere to land.
-    </p>
-    <p class="text-base text-secondary mt-sm">
-      Until a place is listed here, a lab result naming it cannot be filed. The
-      import will report it and skip it rather than guess.
-    </p>
-    <p class="text-base text-secondary mt-sm">
-      Each place gets a code, built from three parts: the water system's ID, the
-      facility it belongs to, and a number or short label you choose. You supply
-      only the last part &mdash; the rest is already known.
-    </p>
-  </div>
-
+  {% comment %}
+    The operator's own system comes first. Landing on three paragraphs of
+    explanation before the name of the system you are working on gives the
+    teaching prose the same rank as the thing it teaches about; the identity
+    strip is what tells you at a glance where you are and how far along you are.
+  {% endcomment %}
   <div class="card-raised">
     <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
       <h2 class="card-header-ruled" style="margin: 0; border: 0;">{{ system.name|default:system.pwsid }}</h2>
@@ -65,19 +52,52 @@
   </div>
 
   {% comment %}
+    Body prose caps at 75ch (DESIGN.md copy rule 6), inline as the six sibling
+    drinking templates do it. The container stays at 1400px because the facility
+    panels and their four-column add form need that width — only the prose was
+    over-wide, measured at 127ch on staging before this pass.
+  {% endcomment %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">What this page is for</h2>
+    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
+      A laboratory tests water and sends back a file. Every line of that file
+      says <em>where</em> the water was taken from &mdash; a particular well, or
+      a particular tap out in the neighborhood. This page is where you tell the
+      system what those places are, so the lab's results have somewhere to land.
+    </p>
+    <p class="text-base text-secondary mt-sm" style="max-width: 75ch;">
+      Until a place is listed here, a lab result naming it cannot be filed. The
+      import will report it and skip it rather than guess.
+    </p>
+    <p class="text-base text-secondary mt-sm" style="max-width: 75ch;">
+      Each place gets a code, built from three parts: the water system's ID, the
+      facility it belongs to, and a number or short label you choose. You supply
+      only the last part &mdash; the rest is already known.
+    </p>
+  </div>
+
+  {% comment %}
     Facilities that already have sampling places, first and open. These are the
     ones an operator is actually working with.
   {% endcomment %}
   {% if facilities_with_points %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Facilities that have sampling places ({{ facilities_with_points|length }})</h2>
-    <p class="text-base text-secondary mt-md">
+    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
       Lab results naming any of the codes below will file correctly.
     </p>
+    {% comment %}
+      The panels live INSIDE the card that names them. They used to render as
+      siblings after it, so the heading closed its own card and then floated
+      above 23 unattached boxes — while the collapsed section below already
+      contained its panels this way. The two paths now match.
+    {% endcomment %}
+    <div class="page-stack mt-md">
+      {% for facility in facilities_with_points %}
+        {% include "drinking/partials/_onboard_points.html" %}
+      {% endfor %}
+    </div>
   </div>
-  {% for facility in facilities_with_points %}
-    {% include "drinking/partials/_onboard_points.html" %}
-  {% endfor %}
   {% endif %}
 
   {% comment %}
@@ -88,7 +108,7 @@
   {% if facilities_without_points %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Facilities with no sampling places yet ({{ facilities_without_points|length }})</h2>
-    <p class="text-base text-secondary mt-md">
+    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
       These are on the system's record but no sample location has been listed for
       them. That is normal &mdash; most facilities in a water system are never
       sampled directly. Open this only if a lab file names one of them.
@@ -111,7 +131,7 @@
   {% if shorthand %}
   <div class="card-raised">
     <h2 class="card-header-ruled">What the abbreviations mean</h2>
-    <p class="text-base text-secondary mt-md">
+    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
       These come from EPA's own records and are shown exactly as EPA writes them.
       Only the ones appearing on this page are listed.
     </p>
@@ -133,7 +153,7 @@
 
   <div class="card-raised">
     <h2 class="card-header-ruled">When you have listed the places you need</h2>
-    <p class="text-base text-secondary mt-md">
+    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
       {% if point_count %}
         This system has {{ point_count }} sampling place{{ point_count|pluralize }} listed, so a lab
         file naming {{ point_count|pluralize:"it,any of them" }} will import. You do not have to

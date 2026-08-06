@@ -19,11 +19,19 @@
   degrades to the bare alert below. Rendering the panel anyway would reach
   `{% url ... system.pwsid %}` with nothing in context and raise NoReverseMatch,
   taking the whole screen down over one malformed field.
+
+  2026-08-06 (117-01): the root dropped `.card-raised`. Both render paths now sit
+  INSIDE a `.card-raised` section, and a raised card nested in a raised card
+  draws the frame twice. `.card-inset` keeps the darker well; the padding and
+  radius `.card-raised` used to supply now come from `.facility-panel` in
+  app.css. This root element is also the HTMX swap target — the same classes
+  must appear here on both the initial render and the post-add swap, or a panel
+  changes frame after every add.
 {% endcomment %}
 {% if not facility %}
 <div class="alert-error">{{ error|default:"That request could not be read." }}</div>
 {% else %}
-<div id="facility-{{ facility.pk }}" class="card-raised card-inset facility-panel">
+<div id="facility-{{ facility.pk }}" class="card-inset facility-panel">
 
   <div class="row-between" style="align-items: baseline; flex-wrap: wrap; gap: var(--space-sm);">
     <h3 class="section-header m-0">
