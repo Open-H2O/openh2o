@@ -301,6 +301,16 @@ the thing.** `GAC` → "granular activated carbon" is the platform doing its job
 "— a filter that removes organic chemicals" is the platform explaining
 treatment to the person who runs the treatment.
 
+**No exception for a clause about the filing.** Brent ruled on this directly on
+2026-08-06, against the measured list in
+`.planning/phases/118-screens-stop-explaining-water/118-01-EVIDENCE.md`. The
+case put to him was `LCR`, whose clause — "Lead and Copper Rule — samples taken
+at customer taps to check for lead" — describes what the regulation makes a
+district collect rather than describing water, and so had a real claim to stay.
+The ruling is **decode only, with no exceptions**: one rule anyone can follow
+and a test can hold beats a per-entry judgment a later contributor re-derives
+differently. Do not reopen this as though it were an oversight.
+
 **The worked example, because it is the clearest statement of the rule that
 exists.** `FACILITY_TYPE_CHOICES` in `drinking/models.py` already carries EPA's
 own label for all 22 codes, and the facility panel already renders "Well" from
