@@ -10,6 +10,38 @@
 document.title = MAP_CONFIG.title;
 var OH2O = window.OH2O || { switchBasemap: function(){}, basemapStyle: function(){ return { version:8, sources:{}, layers:[] }; } };
 
+// ── How many features does THIS layer actually draw? ──
+// The only place feature-counting arithmetic lives. Both the panel's count badge
+// and the legend's include/exclude rule read it, so the two can never disagree
+// with each other or with the map.
+//
+// Counting the whole SOURCE is wrong wherever two layers split one source:
+// flowlines-rivers and flowlines-canals both read 'flowlines', and the sw/gw
+// tie-line pair both read 'tie-lines'. `countFilter` narrows the source the same
+// way each layer's MapLibre `filter` does, so mirror the layer's filter when you
+// declare one — never invent a different rule.
+//
+//   { prop, val }         strict equality (the original form)
+//   { prop, contains }    substring of the property's string value
+//   { prop, notContains } NOT a substring of it
+//
+// A missing or null property is treated as the empty string, matching the
+// ['coalesce', ['get', prop], ''] the flowline filters use: a river with no
+// feature_type is not a canal, and it is not equal to anything either.
+function countFeatures(layer, sourceCounts) {
+    var feats = sourceCounts[layer.source || MAP_CONFIG.sourceId];
+    if (!feats) return 0;
+    var f = layer.countFilter;
+    if (!f) return feats.length;
+    return feats.filter(function(ft) {
+        var raw = (ft.properties || {})[f.prop];
+        var text = (raw === null || raw === undefined) ? '' : String(raw);
+        if (f.contains !== undefined) return text.indexOf(f.contains) !== -1;
+        if (f.notContains !== undefined) return text.indexOf(f.notContains) === -1;
+        return raw === f.val;
+    }).length;
+}
+
 // ── Build layer panel (header + body) from MAP_CONFIG.layers ──
 (function buildLayerPanel() {
     var panel = document.getElementById('controls');
@@ -96,7 +128,10 @@ var OH2O = window.OH2O || { switchBasemap: function(){}, basemapStyle: function(
             var count = document.createElement('span');
             count.className = 'layer-count';
             count.dataset.countSource = srcId;
-            if (layer.countFilter) count.dataset.countFilter = JSON.stringify(layer.countFilter);
+            // The layer id is the handle back to the layer object, so the count
+            // reads `layer.countFilter` directly instead of round-tripping the
+            // filter through JSON in the DOM.
+            count.dataset.layerId = layer.id;
             count.textContent = '·';
             label.appendChild(count);
         }
@@ -171,12 +206,74 @@ var OH2O = window.OH2O || { switchBasemap: function(){}, basemapStyle: function(
     });
 })();
 
-// ── Build legend from MAP_CONFIG.legend ──
-(function buildLegend() {
+// ── Legend ──
+// The one swatch builder the legend uses, for BOTH the explicit sections and the
+// derived ones, so a colour can never render one way in the top half of the box
+// and another way in the bottom half.
+function buildSwatch(swatchType, color, swatchStyle) {
+    var sw = document.createElement('span');
+    var st = swatchType || 'dot';
+    if (st === 'dot') { sw.className = 'swatch-dot'; sw.style.background = color; sw.style.color = color; }
+    else if (st === 'square' || st === 'fill') { sw.className = 'swatch-fill'; if (swatchStyle) sw.style.cssText = swatchStyle; else sw.style.background = color; }
+    else if (st === 'line') { sw.className = 'swatch-line'; sw.style.borderColor = color; }
+    else if (st === 'line-dash') { sw.className = 'swatch-line swatch-line-dash'; sw.style.borderColor = color; }
+    return sw;
+}
+
+// Build the legend from what the deployment actually HAS.
+//
+// This runs after the GeoJSON has been fetched, not at script-load, because the
+// inclusion rule is "this layer carries at least one feature" and nothing can
+// know that before the data arrives. Run 003 drew 206 monitoring stations under
+// a legend whose only row read "Drinking Water Facilities" — a layer with zero
+// features — so the red dots read as drinking-water facilities (ISS-116).
+//
+// Deliberately NOT wired to the Layers panel's visibility checkboxes: the legend
+// reports what the deployment has, not what is switched on this second, and
+// making the operator's own toggling erase the key they are consulting would be
+// a worse map.
+function buildLegend(sourceCounts) {
     var legendEl = document.getElementById('legend');
     if (!legendEl) return;
-    if (!MAP_CONFIG.legend || MAP_CONFIG.legend.length === 0) { legendEl.style.display = 'none'; return; }
-    MAP_CONFIG.legend.forEach(function(section, i) {
+    var sections = [];
+
+    // 1. Explicit sections first — today that is the per-zone-name colour
+    //    breakdown, ONE layer split into many named colours. No per-layer rule
+    //    can reproduce a categorical split, so it stays declared in the config.
+    (MAP_CONFIG.legend || []).forEach(function(section) {
+        if (!section.items || !section.items.length) return;
+        sections.push({ title: section.title, items: section.items.map(function(item) {
+            return { label: item.label, swatch: item.swatch, color: item.color, swatchStyle: item.swatchStyle };
+        })});
+    });
+
+    // 2. Derived sections — one row per layer that actually carries features,
+    //    grouped by the same section headings the panel uses.
+    var groupsSeen = {}, order = [], bySection = {};
+    MAP_CONFIG.layers.forEach(function(layer) {
+        // A nameless layer is a casing or a label layer, not a legend entry.
+        if (!layer.label) return;
+        if (layer.panelHidden || layer.groupHidden) return;
+        // Same group dedupe the panel does: the parcels fill/outline pair is one
+        // legend row, not two.
+        if (layer.group) {
+            if (groupsSeen[layer.group]) return;
+            groupsSeen[layer.group] = true;
+        }
+        if (countFeatures(layer, sourceCounts) <= 0) return;
+        var name = layer.section || 'Other';
+        if (!bySection[name]) { bySection[name] = []; order.push(name); }
+        // No count number on the row: the Layers panel already carries counts,
+        // and repeating them here makes the legend a second, competing panel.
+        bySection[name].push({ label: layer.label, swatch: layer.swatch,
+                               color: layer.swatchColor, swatchStyle: layer.swatchStyle });
+    });
+    order.forEach(function(name) { sections.push({ title: name, items: bySection[name] }); });
+
+    // A brand-new instance with no data shows an ABSENT legend, not an empty box.
+    if (!sections.length) { legendEl.style.display = 'none'; return; }
+
+    sections.forEach(function(section, i) {
         var h4 = document.createElement('h4');
         if (i > 0) h4.style.marginTop = '12px';
         h4.textContent = section.title;
@@ -184,18 +281,12 @@ var OH2O = window.OH2O || { switchBasemap: function(){}, basemapStyle: function(
         section.items.forEach(function(item) {
             var row = document.createElement('div');
             row.className = 'legend-row';
-            var sw = document.createElement('span');
-            var st = item.swatch || 'dot';
-            if (st === 'dot') { sw.className = 'swatch-dot'; sw.style.background = item.color; sw.style.color = item.color; }
-            else if (st === 'square' || st === 'fill') { sw.className = 'swatch-fill'; if (item.swatchStyle) sw.style.cssText = item.swatchStyle; else sw.style.background = item.color; }
-            else if (st === 'line') { sw.className = 'swatch-line'; sw.style.borderColor = item.color; }
-            else if (st === 'line-dash') { sw.className = 'swatch-line swatch-line-dash'; sw.style.borderColor = item.color; }
-            row.appendChild(sw);
+            row.appendChild(buildSwatch(item.swatch, item.color, item.swatchStyle));
             row.appendChild(document.createTextNode(item.label));
             legendEl.appendChild(row);
         });
     });
-})();
+}
 
 var currentBase = MAP_CONFIG.basemap || 'aerial';
 
@@ -340,18 +431,18 @@ map.on('load', function() {
         });
 
         // Populate feature-count badges
+        var layersById = {};
+        MAP_CONFIG.layers.forEach(function(l) { layersById[l.id] = l; });
         document.querySelectorAll('.layer-count').forEach(function(badge) {
-            var feats = sourceCounts[badge.dataset.countSource];
-            if (!feats) { badge.textContent = ''; return; }
-            var n = feats.length;
-            if (badge.dataset.countFilter) {
-                try {
-                    var f = JSON.parse(badge.dataset.countFilter);
-                    n = feats.filter(function(ft) { return ft.properties && ft.properties[f.prop] === f.val; }).length;
-                } catch(e) {}
-            }
-            badge.textContent = n;
+            var layer = layersById[badge.dataset.layerId];
+            // A source that was never fetched (an inline source, say) has no
+            // feature array to count, and blank is more honest there than 0.
+            if (!layer || !sourceCounts[badge.dataset.countSource]) { badge.textContent = ''; return; }
+            badge.textContent = countFeatures(layer, sourceCounts);
         });
+
+        // Legend last: it needs both the counts and the added layers.
+        buildLegend(sourceCounts);
 
         // ── Popups (single instance) ──
         var _activePopup = null;

@@ -165,6 +165,14 @@
     border-radius:var(--radius-md, 10px);
     padding:12px 16px 13px;
     min-width:194px;
+    /* The legend used to hold at most a handful of hardcoded rows; it now holds
+       a per-zone breakdown plus one row per populated layer — about ten on the
+       Merced demonstration and more on an instance with many management areas.
+       Bound it against the map area (its own 10px offset, the scale bar beneath
+       it, and the header/breadcrumb above) rather than a magic number, so it can
+       never grow off the top of the viewport. */
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
     backdrop-filter:blur(14px) saturate(1.1);
     -webkit-backdrop-filter:blur(14px) saturate(1.1);
     box-shadow:var(--shadow-pop-sm, 0 4px 16px rgba(0,0,0,0.4));

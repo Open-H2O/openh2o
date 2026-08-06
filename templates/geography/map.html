@@ -181,7 +181,12 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
 {% for z in gsa_zones %}                '{{ z.name|escapejs }}', '{{ z.color }}',
 {% endfor %}                '#3a7d5c'
             ]{% else %}'#3a7d5c'{% endif %}, 'fill-opacity': 0.16 },
-            swatch: 'fill', swatchColor: '#40916c'
+            // The swatch follows the PAINT above, both branches. On a real-basin
+            // deployment the zones are `zone_type='subbasin'`, `gsa_zones` comes
+            // back empty and the fill is the flat fallback — a swatch fixed at
+            // the match-expression colour showed the panel and legend a colour
+            // the map never painted.
+            swatch: 'fill', swatchColor: {% if gsa_zones %}'#40916c'{% else %}'#3a7d5c'{% endif %}
         },
         {
             id: 'zones-outline', type: 'line', source: 'zones',
@@ -209,6 +214,10 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             // Natural 3DHP types ("Channel Line", "Waterbody Connector", …) do
             // not contain "Canal", so they fall through to rivers here.
             filter: ['!', ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']]],
+            // Mirrors the filter directly above. Without it the count badge and
+            // the legend read the whole 'flowlines' source, so rivers and canals
+            // reported the SAME number (ISS-116 measured 4,672 twice).
+            countFilter: { prop: 'feature_type', notContains: 'Canal' },
             paint: { 'line-color': OH2O.colors.river,
                      'line-width': ['interpolate', ['linear'], ['zoom'],
                          9,  ['interpolate', ['linear'], ['coalesce', ['get', 'stream_order'], 1], 1, 0.6, 6, 2.0],
@@ -231,6 +240,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             id: 'flowlines-canals', type: 'line', source: 'flowlines',
             label: 'Canals & Ditches', section: 'Surface Water', group: 'flowlines-canals',
             filter: ['in', 'Canal', ['coalesce', ['get', 'feature_type'], '']],
+            countFilter: { prop: 'feature_type', contains: 'Canal' },
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: { 'line-color': OH2O.colors.canal,
                      'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.0, 13, 1.8, 16, 2.5],
@@ -321,6 +331,9 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             id: 'sw-tie-lines', type: 'line', source: 'tie-lines',
             label: 'SW Allocation Links', group: 'sw-tie-lines', section: 'Surface Water',
             filter: ['==', ['get', 'source_type'], 'sw'],
+            // The sw and gw links share the 'tie-lines' source; without these
+            // two the panel reports every link twice over.
+            countFilter: { prop: 'source_type', val: 'sw' },
             paint: { 'line-color': OH2O.colors.teal, 'line-width': 1.5, 'line-opacity': 0.55, 'line-dasharray': [6, 3] },
             swatch: 'line-dash', swatchColor: OH2O.colors.teal
         },
@@ -339,6 +352,7 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             id: 'gw-tie-lines', type: 'line', source: 'tie-lines',
             label: 'GW Allocation Links', group: 'gw-tie-lines', section: 'Infrastructure',
             filter: ['==', ['get', 'source_type'], 'gw'],
+            countFilter: { prop: 'source_type', val: 'gw' },
             paint: { 'line-color': OH2O.colors.gold, 'line-width': 1.5, 'line-opacity': 0.55, 'line-dasharray': [6, 3] },
             swatch: 'line-dash', swatchColor: OH2O.colors.gold
         },
@@ -470,13 +484,17 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
                    '<a href="/datasync/stations/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         }{% endif %}
     },
+    // EXPLICIT legend sections only, and there is exactly one: the per-zone-name
+    // colour breakdown, which is ONE layer split into many named colours and so
+    // cannot be derived from a per-layer rule. Every other row in the legend is
+    // now derived in the browser from the live feature counts (map-engine.js
+    // buildLegend), which is why the hardcoded Drinking Water pair is gone —
+    // `drinking-points` already carries its own label and swatch, and it earns a
+    // row when and only when this deployment has facilities.
     legend: [
 {% if gsa_zones %}        { title: 'GSA Zones', items: [
 {% for z in gsa_zones %}            { label: '{{ z.name|escapejs }}', swatch: 'fill', color: '{{ z.color }}' }{% if not forloop.last %},{% endif %}
-{% endfor %}        ]}{% if 'drinking' in enabled_modules %},{% endif %}
-{% endif %}{% if 'drinking' in enabled_modules %}        { title: 'Drinking Water', items: [
-            { label: 'Drinking Water Facilities', swatch: 'dot', color: OH2O.colors.blueBright }
-        ]}
+{% endfor %}        ]}
 {% endif %}    ]
 };
 </script>
