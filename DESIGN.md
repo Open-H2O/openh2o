@@ -266,3 +266,61 @@ A message written to serve both ends up serving the one who is not reading it.
 Not `<!-- -->`, which ships to the browser, and not `{# #}`, which closes at end
 of line and renders its second line onward as page text — the defect
 `test_no_template_syntax_leaks_into_the_page` was written to catch.
+
+### 11. Explain the software and the data conventions, never the water
+
+**The rule, in one sentence: explain the software and the data conventions;
+never explain the water.**
+
+**Who is reading.** Water district engineers and operators. There is no more
+expert audience on earth on the question of what a well is, what a canal does,
+or what evapotranspiration means — many of them have spent thirty years on it.
+A sentence telling that reader what a well is does not merely waste a line; it
+tells them the product does not know who they are.
+
+**The axis is ownership, not difficulty.** This rule is not "no jargon" and not
+"keep it short" — both of those readings are what produced the defect it
+corrects. A hard software word gets explained. An easy water word does not. The
+only question is *whose domain the word belongs to*.
+
+**Three things are explainable, and stay explainable:**
+
+1. **This platform's own coined concepts** — an Allocation Ceiling, a Use Area,
+   a Water Account, a Zone, a Ledger Entry, a Closing Balance, a Recovery
+   Horizon, a Methodology / Calculation Plan, a Health Check, a Monitoring
+   Station, an ET-Demand Allocation. The operator cannot possibly know these:
+   they are software, invented here, and the platform owes a definition.
+2. **Agency and program names** — GEARS, CalWATRS, SGMA, GSA, GSP, CDEC, CIMIS,
+   USGS, OpenET, EPA, DDW. These are filing conventions, not hydrology.
+3. **Codes and abbreviations inside data the platform did not author** — EPA's
+   `STBY`, `DST`, `RAW`, `GAC`, `IX`, `NO3`, and DDW's analyte codes. A federal
+   record is shown verbatim, so the reader needs the key to it.
+
+**The operational form of the rule for codes: expand the code, never describe
+the thing.** `GAC` → "granular activated carbon" is the platform doing its job.
+"— a filter that removes organic chemicals" is the platform explaining
+treatment to the person who runs the treatment.
+
+**The worked example, because it is the clearest statement of the rule that
+exists.** `FACILITY_TYPE_CHOICES` in `drinking/models.py` already carries EPA's
+own label for all 22 codes, and the facility panel already renders "Well" from
+it. Stacked beneath that heading, a second line read:
+
+> **Well**
+> A drilled well. Water comes up out of the ground here.
+
+The first line is the data convention and is correct. The second is the defect —
+and the fix is a deletion, not a rewrite, because the professional-reader
+version already ships two lines above it.
+
+**A test may never mandate a domain description.** The failure this rule ends
+was not 41 bad strings; it was that three tests asserted the strings had to be
+there, so every correction made by hand was reverted by the suite on the next
+run. The guard for this rule is `tests/test_domain_vocabulary.py`, and the term
+list it scans against is `core/domain_vocabulary.py`.
+
+**Its mirror image is `tests/test_operator_vocabulary.py`, and the two must not
+be confused.** That gate says *you must define an infrastructure term before you
+use it*; this one says *you must not define a water term at all*. Both are true
+at once, and holding only one of them is how the platform ended up lecturing
+hydrologists about hydrology while assuming they knew what DNS was.

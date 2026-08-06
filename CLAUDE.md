@@ -6,6 +6,22 @@ A water-data management platform for California Groundwater Sustainability Agenc
 
 ⚠ **There is NO working filing path, and no document or screen may imply one (Brent, 2026-08-05).** GEARS and CalWATRS are large state platforms that would each need work on their own side before they could accept data from this system, and that work has not been done. OpenH2O calculates the figures and writes them out in those systems' layouts; it cannot submit them, and neither system can currently take a file it produces. "Ready-to-file", "prepares the filing" and any upload instruction are all overclaims — every reader-facing mention must say plainly that the capability is wanted and not built.
 
+⚠ **Explain the software and the data conventions; never explain the water
+(BLOCKING).** The reader is a water district engineer or operator — there is no
+more expert audience alive on what a well is. This platform's own coined
+concepts (Allocation Ceiling, Use Area, Ledger Entry), agency and program names
+(GEARS, SGMA, CDEC), and codes inside data it did not author (EPA's `STBY`,
+`GAC`, `DST`) all get explained, because none of those are hydrology. Water and
+hydrology terms never do: for a code, expand it and stop — "granular activated
+carbon", not "a filter that removes organic chemicals". The full statement,
+with the worked example, is copy rule 11 in `DESIGN.md`; the guard is
+`tests/test_domain_vocabulary.py` against the term list in
+`core/domain_vocabulary.py`. **A test may never mandate a domain description** —
+that, and not the wording itself, is the failure mode this rule exists to end:
+three tests in `tests/test_drinking_readability.py` asserted the water lectures
+had to be present, so every correction made by hand was reverted by the suite
+on the next run (ISS-129, 2026-08-06).
+
 The core goal is to lower the cost and access barrier for under-resourced agencies. A poorly-funded agency can point a frontier AI subscription at this repo and have the AI stand the platform up — and an engineering firm or consultant can run it just as well. Self-deployment is meant to be a real option, not a vendor contract by default.
 
 **Where it runs must not matter (BLOCKING).** The same code, the same
