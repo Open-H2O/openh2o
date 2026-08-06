@@ -1,27 +1,36 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The district map's legend: what the rendered MAP_CONFIG has to declare.
+"""The district map's key: what the rendered MAP_CONFIG has to declare.
 
-**Be clear about what this file can and cannot see.** The legend is assembled in
-the BROWSER, from the GeoJSON the map fetches, because the inclusion rule is
-"this layer carries at least one feature" and nothing on the server knows that.
-This repository has a hard "No Node.js" constraint, so no Python test here can
-assert on the finished `.legend-row` elements — the count > 0 half of the rule is
-proved in a real browser at the phase's checkpoint and recorded in the summary.
+**Which surface names the layers, and why it matters here.** The map's key is the
+LAYERS PANEL — it names every layer, shows its colour swatch, and carries a live
+feature count, and it is always on screen. The small legend box in the
+bottom-left carries only the per-zone-name colour breakdown, the one thing the
+panel structurally cannot show (a single layer painted in many named colours).
 
-What pytest CAN prove is the other half, and it is the half that broke:
+That division was settled on 2026-08-05 after the first pass at ISS-116 gave the
+legend one row per populated layer and produced a second panel repeating the
+first, heading for heading. The defect ISS-116 reported was a legend naming
+*Drinking Water Facilities* over a layer with ZERO features while 206 unlabelled
+red monitoring-station dots went unnamed — so the natural reading was that the
+red dots were drinking-water facilities. Deleting that hardcoded row is the fix.
+
+What this file therefore pins:
 
 * **Every layer that can be drawn can also be keyed.** A layer with a `label` and
-  no `swatch`/colour is a layer the legend cannot name, which is the exact shape
-  of ISS-116. Run 003's live instance drew 206 unlabelled red monitoring-station
-  dots under a single legend row reading *Drinking Water Facilities* — a layer
-  with zero features — so the natural reading was that the red dots WERE
-  drinking-water facilities.
-* **The hardcoded legend pair is gone.** `MAP_CONFIG.legend` now holds only the
-  per-zone-name colour breakdown, which is one layer split into many named
-  colours and so cannot be derived from a per-layer rule.
-* **The count filters are declared.** The legend's gate is a per-LAYER count, so
-  two layers sharing one source have to narrow it the same way their MapLibre
-  filters do, or a layer that draws nothing still earns a row.
+  no `swatch`/colour is a layer no surface can name — the exact shape of the
+  defect, and it would be silent.
+* **The hardcoded legend pair is gone**, and `MAP_CONFIG.legend` holds only the
+  zone breakdown, so the misleading row cannot come back unnoticed.
+* **The count filters are declared.** Two layers sharing one source have to
+  narrow it the way their MapLibre filters do, or the panel reports the same
+  number twice (measured at 4,672 for both rivers and canals).
+
+**Be clear about what pytest cannot see here.** The panel and the legend are both
+assembled in the BROWSER, and this repository has a hard "No Node.js" constraint,
+so nothing below asserts on finished `.layer-toggle` or `.legend-row` elements.
+Those were verified in a real browser on staging at the phase's checkpoint and
+the measurements are recorded in the summary. What this file proves is that the
+configuration handed to the browser DECLARES everything those surfaces need.
 
 Everything is read from the RENDERED response rather than the template source,
 so the `{% if ... in enabled_modules %}` guards are resolved before we look.
@@ -208,9 +217,10 @@ class TestEveryNamedLayerCanBeKeyed:
     ):
         """A layer that can be drawn but cannot be keyed is the defect itself.
 
-        The legend takes its swatch straight off the layer object, so a `label`
-        with no `swatch` would emit a row with an invisible marker, and a
-        `swatch` with no colour would emit a marker with no identity.
+        The Layers panel takes its swatch straight off the layer object, so a
+        `label` with no `swatch` would render a row with an invisible marker,
+        and a `swatch` with no colour a marker with no identity — a layer on the
+        map that nothing on the page can name.
         """
         layers = _labelled_layers(_rendered(client_in))
         assert layers, "the rendered map declares no named layers at all"
@@ -238,11 +248,12 @@ class TestTheExplicitLegendHoldsOnlyTheZoneBreakdown:
     def test_there_is_no_hardcoded_drinking_water_section(
         self, client_in, two_populated_modules
     ):
-        """The row is now earned from the live count, not written down.
+        """The misleading row is deleted, not replaced.
 
         Before this phase the legend named Drinking Water Facilities whether or
         not the deployment had any — on run 003 it had none — while naming no
-        other layer at all.
+        other layer at all. Naming the layers is the Layers panel's job, and it
+        does it from live counts.
         """
         legend = _array(_rendered(client_in), "legend")
         assert "title: 'Drinking Water'" not in legend, (
@@ -252,7 +263,11 @@ class TestTheExplicitLegendHoldsOnlyTheZoneBreakdown:
     def test_the_zone_breakdown_is_the_only_explicit_section(
         self, client_in, two_populated_modules, management_areas
     ):
-        """One layer split into many named colours — no per-layer rule reaches it."""
+        """One layer split into many named colours — the panel cannot show it.
+
+        This is the whole reason the legend box still exists. Anything else that
+        appears here is duplicating the Layers panel.
+        """
         legend = _array(_rendered(client_in), "legend")
         titles = re.findall(r"title:\s*'([^']+)'", legend)
         assert titles == ["GSA Zones"], (
@@ -263,10 +278,13 @@ class TestTheExplicitLegendHoldsOnlyTheZoneBreakdown:
                 f"{zone.name} is missing from the per-zone colour breakdown"
             )
 
-    def test_with_no_management_areas_the_explicit_legend_is_empty(
+    def test_with_no_management_areas_the_legend_box_has_nothing_to_show(
         self, client_in, two_populated_modules
     ):
-        """Then every row in the box is derived, and that is the intended state."""
+        """The box then hides itself rather than sitting there empty.
+
+        Nothing is lost: the Layers panel still names every layer on the map.
+        """
         assert not re.findall(
             r"title:\s*'([^']+)'", _array(_rendered(client_in), "legend")
         )
@@ -289,10 +307,9 @@ class TestBothPopulatedModulesAreReachable:
     ):
         """The regression, stated directly.
 
-        Run 003 drew 206 stations the legend had no row for. Whether the row
-        actually appears depends on the browser's feature count, which this
-        suite cannot see; what it can see is that both layers arrive at the
-        browser fully described.
+        Run 003 drew 206 stations that nothing on the page named. Whether the
+        panel row actually renders is a browser matter this suite cannot see;
+        what it can see is that both layers arrive fully described.
         """
         names = dict(_labelled_layers(_rendered(client_in)))
         assert "Monitoring Stations" in names, "the map cannot name its stations"
@@ -324,8 +341,8 @@ class TestSharedSourcesAreNarrowedPerLayer:
     """Two layers on one source must count their own features, not the source's.
 
     Without these the Layers panel reported Rivers & Streams and Canals & Ditches
-    at the same number (ISS-116 measured 4,672 twice), and the legend's count > 0
-    gate would let a layer that draws nothing earn a row.
+    at the same number (ISS-116 measured 4,672 twice) — and since the panel is
+    the map's key, a wrong count there is a wrong statement about the map.
     """
 
     @pytest.mark.parametrize(

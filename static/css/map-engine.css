@@ -165,9 +165,8 @@
     border-radius:var(--radius-md, 10px);
     padding:12px 16px 13px;
     min-width:194px;
-    /* The legend used to hold at most a handful of hardcoded rows; it now holds
-       a per-zone breakdown plus one row per populated layer, so it needs a
-       ceiling or it grows off the top of the map.
+    /* The legend holds one row per management-area zone, and an agency can have
+       many, so it needs a ceiling or it grows off the top of the map.
 
        Bound against the MAP BOX (`100%` of #map-wrapper), never the viewport.
        `100vh` measures the whole browser window, but this box is absolutely

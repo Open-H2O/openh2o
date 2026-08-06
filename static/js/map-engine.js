@@ -207,9 +207,7 @@ function countFeatures(layer, sourceCounts) {
 })();
 
 // ── Legend ──
-// The one swatch builder the legend uses, for BOTH the explicit sections and the
-// derived ones, so a colour can never render one way in the top half of the box
-// and another way in the bottom half.
+// The one swatch builder the legend uses.
 function buildSwatch(swatchType, color, swatchStyle) {
     var sw = document.createElement('span');
     var st = swatchType || 'dot';
@@ -220,57 +218,35 @@ function buildSwatch(swatchType, color, swatchStyle) {
     return sw;
 }
 
-// Build the legend from what the deployment actually HAS.
+// The legend carries ONLY what the Layers panel structurally cannot show.
 //
-// This runs after the GeoJSON has been fetched, not at script-load, because the
-// inclusion rule is "this layer carries at least one feature" and nothing can
-// know that before the data arrives. Run 003 drew 206 monitoring stations under
-// a legend whose only row read "Drinking Water Facilities" — a layer with zero
-// features — so the red dots read as drinking-water facilities (ISS-116).
+// Today that is exactly one thing: the per-zone-name colour breakdown, where a
+// single layer is painted in many named colours. The panel can give that layer
+// one row and one swatch; it cannot name the five greens inside it.
 //
-// Deliberately NOT wired to the Layers panel's visibility checkboxes: the legend
-// reports what the deployment has, not what is switched on this second, and
-// making the operator's own toggling erase the key they are consulting would be
-// a worse map.
-function buildLegend(sourceCounts) {
+// It deliberately does NOT list one row per layer. An earlier pass at ISS-116
+// did, and the result was a second panel saying what the first already said —
+// same section headings, same names, same swatches, minus the feature counts
+// (Brent, 2026-08-05, looking at it on staging). The Layers panel is the map's
+// key: it names every layer, shows its colour, AND says how many of each there
+// are, and it is always on screen. The defect ISS-116 actually reported — a
+// legend naming "Drinking Water Facilities" over a layer with zero features
+// while 206 unlabelled red dots went unnamed — is fixed by DELETING that
+// hardcoded row, not by adding eleven more beside it.
+//
+// So this runs at script-load and depends on no fetched data: with no per-layer
+// count gating anything, making it wait on the GeoJSON would imply a dependency
+// that does not exist.
+function buildLegend() {
     var legendEl = document.getElementById('legend');
     if (!legendEl) return;
-    var sections = [];
 
-    // 1. Explicit sections first — today that is the per-zone-name colour
-    //    breakdown, ONE layer split into many named colours. No per-layer rule
-    //    can reproduce a categorical split, so it stays declared in the config.
-    (MAP_CONFIG.legend || []).forEach(function(section) {
-        if (!section.items || !section.items.length) return;
-        sections.push({ title: section.title, items: section.items.map(function(item) {
-            return { label: item.label, swatch: item.swatch, color: item.color, swatchStyle: item.swatchStyle };
-        })});
+    var sections = (MAP_CONFIG.legend || []).filter(function(section) {
+        return section.items && section.items.length;
     });
 
-    // 2. Derived sections — one row per layer that actually carries features,
-    //    grouped by the same section headings the panel uses.
-    var groupsSeen = {}, order = [], bySection = {};
-    MAP_CONFIG.layers.forEach(function(layer) {
-        // A nameless layer is a casing or a label layer, not a legend entry.
-        if (!layer.label) return;
-        if (layer.panelHidden || layer.groupHidden) return;
-        // Same group dedupe the panel does: the parcels fill/outline pair is one
-        // legend row, not two.
-        if (layer.group) {
-            if (groupsSeen[layer.group]) return;
-            groupsSeen[layer.group] = true;
-        }
-        if (countFeatures(layer, sourceCounts) <= 0) return;
-        var name = layer.section || 'Other';
-        if (!bySection[name]) { bySection[name] = []; order.push(name); }
-        // No count number on the row: the Layers panel already carries counts,
-        // and repeating them here makes the legend a second, competing panel.
-        bySection[name].push({ label: layer.label, swatch: layer.swatch,
-                               color: layer.swatchColor, swatchStyle: layer.swatchStyle });
-    });
-    order.forEach(function(name) { sections.push({ title: name, items: bySection[name] }); });
-
-    // A brand-new instance with no data shows an ABSENT legend, not an empty box.
+    // An instance with no management-area zones shows an ABSENT legend, not an
+    // empty box — every layer is still keyed by the Layers panel.
     if (!sections.length) { legendEl.style.display = 'none'; return; }
 
     sections.forEach(function(section, i) {
@@ -287,6 +263,7 @@ function buildLegend(sourceCounts) {
         });
     });
 }
+buildLegend();
 
 var currentBase = MAP_CONFIG.basemap || 'aerial';
 
@@ -440,9 +417,6 @@ map.on('load', function() {
             if (!layer || !sourceCounts[badge.dataset.countSource]) { badge.textContent = ''; return; }
             badge.textContent = countFeatures(layer, sourceCounts);
         });
-
-        // Legend last: it needs both the counts and the added layers.
-        buildLegend(sourceCounts);
 
         // ── Popups (single instance) ──
         var _activePopup = null;

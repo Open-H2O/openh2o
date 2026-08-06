@@ -484,13 +484,16 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
                    '<a href="/datasync/stations/' + p.pk + '/" style="color:'+OH2O.colors.gold+'">View details →</a>';
         }{% endif %}
     },
-    // EXPLICIT legend sections only, and there is exactly one: the per-zone-name
-    // colour breakdown, which is ONE layer split into many named colours and so
-    // cannot be derived from a per-layer rule. Every other row in the legend is
-    // now derived in the browser from the live feature counts (map-engine.js
-    // buildLegend), which is why the hardcoded Drinking Water pair is gone —
-    // `drinking-points` already carries its own label and swatch, and it earns a
-    // row when and only when this deployment has facilities.
+    // The legend box carries ONE thing: the per-zone-name colour breakdown, a
+    // single layer painted in many named colours, which the Layers panel can
+    // only ever give one row and one swatch.
+    //
+    // Naming the LAYERS is the Layers panel's job — it lists every one with its
+    // swatch and a live feature count, and it is always on screen. The hardcoded
+    // Drinking Water section that used to sit here named a layer with zero
+    // features while 206 red monitoring-station dots went unnamed (ISS-116), and
+    // deleting it is the fix. Do not add per-layer rows back here; that was
+    // tried on 2026-08-05 and produced a second panel echoing the first.
     legend: [
 {% if gsa_zones %}        { title: 'GSA Zones', items: [
 {% for z in gsa_zones %}            { label: '{{ z.name|escapejs }}', swatch: 'fill', color: '{{ z.color }}' }{% if not forloop.last %},{% endif %}
