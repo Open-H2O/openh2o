@@ -518,3 +518,36 @@ class TestCopyRules:
                 "a link to the Sampling Points page is labelled with a word that "
                 f"page does not use: {visible_text(label).strip()!r}"
             )
+
+    def test_the_builder_caps_its_prose_measure(self):
+        """Rule 6. Body prose caps at 75ch, and this page is the one that broke it.
+
+        Measured on staging 2026-08-06, before 117-01: the opening paragraph
+        rendered 1085px wide at a 1440px window — 127 characters to the line,
+        against a rule of 75 and against six sibling drinking templates that
+        already cap at 70–75ch. The template held exactly one ``max-width``, the
+        1400px page container, and none on any paragraph.
+
+        Source-level and ``ch``-based on purpose. The suite has no browser, and
+        the rule DESIGN.md writes is a ``ch`` rule rather than a pixel one — a
+        pixel assertion would pass or fail on the viewport a headless run
+        happened to pick. The page container deliberately stays at 1400px: the
+        facility panels and their four-column add form need that width. Only the
+        prose was over-wide.
+        """
+        source = (
+            Path(settings.BASE_DIR)
+            / "templates"
+            / "drinking"
+            / "onboard_points.html"
+        ).read_text()
+        uncapped = []
+        for tag in re.findall(r"<p\s[^>]*>", source, re.S):
+            if "text-base" not in tag or "text-secondary" not in tag:
+                continue
+            if not re.search(r"max-width:\s*\d+(?:\.\d+)?ch", tag):
+                uncapped.append(" ".join(tag.split()))
+        assert uncapped == [], (
+            "body prose on the sampling-point builder carries no ch measure — "
+            f"DESIGN.md copy rule 6 caps it at 75ch: {uncapped}"
+        )
