@@ -49,10 +49,16 @@
   <!-- Stats card -->
   <div class="card-raised">
     <h2 class="card-header-ruled">{{ boundary.name }}</h2>
-    <div class="stat-grid-2col" style="margin-bottom: var(--space-lg);">
+    {% comment %}
+      Every figure here is the district's own: it comes from the uploaded
+      file's properties, never from a calculation over the geometry. When the
+      file carries no area, the cell says so in words. A bare dash reads as
+      "OpenH2O could not work it out", which is not what happened.
+    {% endcomment %}
+    <div class="{% if boundary.huc %}stat-grid-3col{% else %}stat-grid-2col{% endif %}" style="margin-bottom: var(--space-lg);">
       <div class="inset-card">
         <div class="stat-card-label">Area</div>
-        <div class="stat-card-value-sm">{% if area_sq_miles %}{{ area_sq_miles|floatformat:1 }}{% else %}—{% endif %}</div>
+        <div class="stat-card-value-sm">{% if area_sq_miles %}{{ area_sq_miles|floatformat:1 }}{% else %}Not in your file{% endif %}</div>
         <div class="stat-card-unit">square miles</div>
       </div>
       <div class="inset-card">
@@ -60,6 +66,13 @@
         <div class="stat-card-value-sm">{{ existing_basins|add:existing_flowlines }}</div>
         <div class="stat-card-unit">basins + flowlines found</div>
       </div>
+      {% if boundary.huc %}
+      <div class="inset-card">
+        <div class="stat-card-label">Watershed code</div>
+        <div class="stat-card-value-sm">{{ boundary.huc }}</div>
+        <div class="stat-card-unit">USGS hydrologic unit code (HUC)</div>
+      </div>
+      {% endif %}
     </div>
 
     <div class="card-raised card-inset" style="margin-bottom: var(--space-lg);">
