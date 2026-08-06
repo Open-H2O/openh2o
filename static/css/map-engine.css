@@ -166,12 +166,19 @@
     padding:12px 16px 13px;
     min-width:194px;
     /* The legend used to hold at most a handful of hardcoded rows; it now holds
-       a per-zone breakdown plus one row per populated layer — about ten on the
-       Merced demonstration and more on an instance with many management areas.
-       Bound it against the map area (its own 10px offset, the scale bar beneath
-       it, and the header/breadcrumb above) rather than a magic number, so it can
-       never grow off the top of the viewport. */
-    max-height: calc(100vh - 220px);
+       a per-zone breakdown plus one row per populated layer, so it needs a
+       ceiling or it grows off the top of the map.
+
+       Bound against the MAP BOX (`100%` of #map-wrapper), never the viewport.
+       `100vh` measures the whole browser window, but this box is absolutely
+       positioned inside #map-wrapper, which is shorter than the window by the
+       header, the breadcrumb, the demo banner and the footer — so a vh-based cap
+       simply never bites. Measured on staging before the fix: the legend's top
+       edge sat at -40px, hanging over the toolbar and the coordinate readout.
+
+       190px = the zoom/compass control's bottom edge (175px into the box) plus
+       this element's own 10px offset and a little air. */
+    max-height: calc(100% - 190px);
     overflow-y: auto;
     backdrop-filter:blur(14px) saturate(1.1);
     -webkit-backdrop-filter:blur(14px) saturate(1.1);
