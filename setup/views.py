@@ -11,6 +11,7 @@ Setup wizard views.
 
 import json
 import logging
+import math
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
@@ -83,14 +84,16 @@ def setup_wizard(request):
                     raw = uploaded.read().decode("utf-8")
                     geojson = json.loads(raw)
                     geom = _parse_geojson_boundary(geojson)
+                    properties = _feature_properties(geojson)
                     name = (
                         geojson.get("name")
-                        or (geojson.get("features", [{}])[0].get("properties", {}) or {}).get("name")
+                        or properties.get("name")
                         or uploaded.name.rsplit(".", 1)[0]
                     )
                     boundary = Boundary.objects.create(
                         name=name or "Uploaded Boundary",
                         geometry=geom,
+                        **_boundary_attrs_from_properties(properties),
                     )
                     request.session[SESSION_KEY_BOUNDARY] = boundary.pk
                     return redirect("setup:confirm")
@@ -288,6 +291,139 @@ def setup_activate_stations(request):
 # --------------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------------
+
+# Property keys that real exports use for the same figure, in priority order.
+# The USGS Watershed Boundary Dataset writes them lowercase, ArcGIS exports
+# frequently write them uppercase, and hand-built files use underscores — so
+# every key is reduced to its letters and digits before it is looked up.
+_AREA_SQ_MI_KEYS = ("areasqmi", "areasqmiles", "sqmi")
+_AREA_SQ_KM_KEYS = ("areasqkm", "areasqkilometers", "sqkm")
+_HUC_KEYS = ("huc8", "huc", "huc12", "huccode")
+_BASIN_CODE_KEYS = ("basincode", "basin")
+
+SQ_KM_TO_SQ_MI = 0.386102158542
+
+# Boundary.huc and Boundary.basin_code are both CharField(max_length=20).
+_CODE_MAX_LENGTH = 20
+
+
+def _feature_properties(geojson) -> dict:
+    """
+    The properties dict for whichever shape ``_parse_geojson_boundary`` accepted.
+
+    FeatureCollection → the first feature's properties (the same feature whose
+    geometry becomes the boundary); Feature → its own; a raw geometry carries
+    none. Anything that isn't a dict is treated as no properties at all.
+    """
+    if not isinstance(geojson, dict):
+        return {}
+
+    gtype = geojson.get("type")
+    if gtype == "FeatureCollection":
+        features = geojson.get("features") or []
+        first = features[0] if features else None
+        properties = first.get("properties") if isinstance(first, dict) else None
+    elif gtype == "Feature":
+        properties = geojson.get("properties")
+    else:
+        properties = None
+
+    return properties if isinstance(properties, dict) else {}
+
+
+def _normalise_property_keys(properties: dict) -> dict:
+    """Re-key ``properties`` by lowercase letters-and-digits, first key wins."""
+    normalised = {}
+    for key, value in properties.items():
+        if not isinstance(key, str):
+            continue
+        slug = "".join(char for char in key.lower() if char.isalnum())
+        if slug and slug not in normalised:
+            normalised[slug] = value
+    return normalised
+
+
+def _positive_number(value):
+    """
+    ``value`` as a positive finite float, or None if it is anything else.
+
+    The file is operator-supplied and unvalidated, so a property may be a dict,
+    a list, "N/A", or a boolean. ``bool`` is rejected explicitly because
+    ``isinstance(True, int)`` is True in Python and True must never become an
+    area of 1.0.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(number) or number <= 0:
+        return None
+    return number
+
+
+def _short_code(value):
+    """
+    ``value`` as a stripped code string, or None if it is unusable.
+
+    An integer is accepted because a HUC read as a number is still a HUC (it
+    has merely lost any leading zero, which is not this function's to restore).
+    The result is truncated to the column width so an absurd value leaves the
+    field short rather than raising on save.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        value = str(value)
+    if not isinstance(value, str):
+        return None
+    code = value.strip()
+    return code[:_CODE_MAX_LENGTH] if code else None
+
+
+def _boundary_attrs_from_properties(properties: dict) -> dict:
+    """
+    Boundary field values the uploaded file's own properties can supply.
+
+    Returns only the keys it could actually resolve, so an unreadable file
+    yields ``{}`` and ``Boundary.objects.create`` behaves exactly as it would
+    with no properties at all.
+
+    The square-kilometre fallback is in scope and the geometry is not:
+    converting the file's own km² figure still displays the district's number,
+    whereas an area computed from the polygon would be a number OpenH2O
+    invented (decided 2026-08-05).
+    """
+    if not isinstance(properties, dict):
+        return {}
+
+    values = _normalise_property_keys(properties)
+    attrs = {}
+
+    area = None
+    for key in _AREA_SQ_MI_KEYS:
+        area = _positive_number(values.get(key))
+        if area is not None:
+            break
+    if area is None:
+        for key in _AREA_SQ_KM_KEYS:
+            square_km = _positive_number(values.get(key))
+            if square_km is not None:
+                area = square_km * SQ_KM_TO_SQ_MI
+                break
+    if area is not None:
+        attrs["area_sq_miles"] = area
+
+    for field, keys in (("huc", _HUC_KEYS), ("basin_code", _BASIN_CODE_KEYS)):
+        for key in keys:
+            code = _short_code(values.get(key))
+            if code is not None:
+                attrs[field] = code
+                break
+
+    return attrs
+
 
 def _parse_geojson_boundary(geojson: dict):
     """
