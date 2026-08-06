@@ -25,7 +25,7 @@ from ``config/settings/base.py``, so it must never touch the app registry —
 doing so deadlocks app loading. This file needs the live registry, so it can
 only ever live on this side of the line.
 
-The eight tolerated violations are ``core.modules.SCHEMA_EXCEPTIONS``. A ninth
+The nine tolerated violations are ``core.modules.SCHEMA_EXCEPTIONS``. A tenth
 fails here. So does an exception record that no longer describes real code: the
 allowlist can never quietly outlive the thing it excused.
 """
