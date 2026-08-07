@@ -154,7 +154,7 @@
                 <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
               </div>
             {% elif basin_links %}
-              <p class="text-secondary text-sm">Recharge diversion — water is taken during high-flow / storm events for managed aquifer recharge, which does not require a consumptive water right.</p>
+              <p class="text-secondary text-sm">Recharge diversion. It feeds a recharge basin rather than a consumptive use, and no water right is linked.</p>
             {% else %}
               <p class="text-secondary text-sm">No water right linked. This diversion point operates without a formal water right permit.</p>
               <p class="text-tertiary text-xs mt-xs">CalWATRS reports will flag this diversion as [INCOMPLETE].</p>

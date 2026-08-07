@@ -15,7 +15,7 @@
 {% url 'budgets_allocations' as budgets_help_url %}
 <div class="budget-panel">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. use{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use — the water crops actually drank, estimated from satellite evapotranspiration — is the demand. Surface deliveries, groundwater, and rainfall are the supplies that meet it. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. use{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use, estimated here from satellite evapotranspiration, is the demand. Surface deliveries, groundwater, and rainfall are the supplies counted against it. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
     <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
   <div class="budget-panel-row">
@@ -60,7 +60,7 @@
 <div class="card-raised card-inset">
   <p class="text-tertiary text-sm m-0">
     <strong class="text-secondary">How this summary works:</strong>
-    <span class="text-supply">Consumptive use</span> — the water crops actually consumed, estimated from satellite evapotranspiration (ET) — is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. The columns below show each area's consumptive use beside the supplies that met it; the balance is the supplies minus consumptive use.
+    <span class="text-supply">Consumptive use</span>, estimated here from satellite evapotranspiration (ET), is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. Each area's consumptive use is shown below beside the supplies that met it; the balance is the supplies minus consumptive use.
   </p>
 </div>
 

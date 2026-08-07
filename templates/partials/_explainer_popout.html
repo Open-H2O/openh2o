@@ -8,7 +8,16 @@ two of explanation; the terse "?" tooltip (_help_tooltip.html) stays for short
 field hints.
 
 Usage:
-  {% include "partials/_explainer_popout.html" with title="Net consumptive use" text="The water the crops actually drank, estimated from satellites." link="/help/water-balances/" link_label="How water balances work" %}
+  {% include "partials/_explainer_popout.html" with title="Net consumptive use" text="Estimated from satellites, then reduced by rainfall and surface deliveries." link="/help/water-balances/" link_label="How water balances work" %}
+
+**`text` explains the SOFTWARE, never the water (DESIGN.md copy rule 11).** The
+reader is a water district engineer. Say what this platform holds, computes or
+shows; never say what a well, ET or a diversion is. The usage line above used to
+read "The water the crops actually drank, estimated from satellites" and was the
+model half a dozen popouts copied. **`tests/test_domain_vocabulary.py` cannot see
+this text** — the gate strips `{% %}` before scanning, so an `{% include %}`
+argument is invisible to it. That makes this comment the only guard on this
+surface.
 
 Context variables:
   title       (required) — bold heading inside the panel; also the button's aria-label.
