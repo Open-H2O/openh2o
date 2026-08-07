@@ -506,7 +506,28 @@ def _without_unavailable_help_pointers(definition):
 
 @public_in_open_demo
 def glossary(request):
-    """Glossary of water accounting terms used throughout the platform."""
+    """Glossary of the terms this platform uses, for the operator running it.
+
+    **This is a software glossary, not a hydrology one (DESIGN.md copy rule 11).**
+    The reader is a water district engineer or operator, so an entry answers
+    *what does this platform mean by X and what does it hold against one* — never
+    *what is X*. Rewritten on that axis 2026-08-06 (ISS-129): "Well" used to read
+    "A borehole used to draw groundwater", which told a thirty-year groundwater
+    professional what a well is. It now names the record and its fields.
+
+    Three things stay explainable forever and are the legitimate half of the
+    boundary: agency and program names with their expansions (CalWATRS, CDEC,
+    CIMIS, GEARS, GSA, GSP, OpenET, SGMA, USGS), codes inside data this platform
+    did not author, and this platform's own coined concepts (Allocation Ceiling,
+    Use Area, Ledger Entry).
+
+    **Membership never changes, only wording (ISS-085, decided).** 36 entries in
+    and 36 entries out; a reduced deployment narrows the *pointers*, not the
+    dictionary. And the ``See Help > X.`` sentences are matched byte-for-byte by
+    ``_without_unavailable_help_pointers`` above — reword one and it stops being
+    stripped, which sends a reduced-deployment reader at a 404 (the defect Plan
+    89-02 fixed; ``tests/test_help_explainers.py`` guards it).
+    """
     terms = {
         "Allocation Ceiling": "The total volume of water assigned to a zone for a reporting period, set per zone, water type, and period. It is the policy ceiling for a whole area. The platform divides it into per-account Allocations. See Help > Allocations & Ceilings.",
         "Allocation": "A single account's share of a zone's Allocation Ceiling, pro-rated by how many parcels the account holds in the zone. Allocation minus usage gives the account's remaining water; a negative remaining is an overdraft. See Help > Allocations & Ceilings.",
@@ -514,14 +535,14 @@ def glossary(request):
         "Usage": "Water consumed via extraction (well meters) or evapotranspiration (ET estimates), recorded as negative ledger entries.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System: the State Water Board's surface-diversion reporting system (replaced eWRIMS).",
         "CDEC": "California Data Exchange Center, real-time hydrologic data from DWR.",
-        "CFS (Cubic Feet per Second)": "A rate of flow used for surface water diversions; a point of diversion popup shows a rate like \"50.00 cfs.\" One CFS is about 1.9835 acre-feet per day.",
+        "CFS (Cubic Feet per Second)": "Rates on a point of diversion popup read like \"50.00 cfs.\" One CFS is about 1.9835 acre-feet per day.",
         "CIMIS": "California Irrigation Management Information System, weather station data for agriculture.",
         "Closing Balance": "The reconciliation of a use area's supplies (surface, precipitation, recovered groundwater) against its uses (ET, recharge, runoff, and net banked/drawn credits) for a period. A small leftover residual is normal — real books rarely close to exactly zero. See Help > How Water Balances Work.",
-        "Consumptive Use": "The water a crop actually consumes, estimated from satellite evapotranspiration (ET), regardless of whether it came from a canal, a well, or rain. It is one input among many; district measurements are the primary record. Gross consumptive use is total ET; net consumptive use subtracts effective precipitation. See Help > How Water Balances Work.",
-        "Curtailment": "A State Water Board order to reduce or stop diverting under a water right, usually during drought. A right's curtailment status appears on its water-right detail card.",
+        "Consumptive Use": "Estimated here from satellite ET, and treated as one input among many — district measurements are the primary record. Gross is total ET; net subtracts effective precipitation. See Help > How Water Balances Work.",
+        "Curtailment": "Held as an order — ID, title, effective date, priority-date cutoff — from the State Water Board. Each affected right shows its status on its own detail card.",
         "Delivery Settings": "Two agency-wide settings that shape how surface-water deliveries are counted: how much of a delivery the crop actually uses (the rest recharges the aquifer), and what happens to a district's unused water at year-end (carry it forward or let it expire). Set by the analyst on the Delivery Settings page. See Help > Surface Delivery Settings.",
         "Data Source": "An external agency or API that provides hydrologic measurements.",
-        "ET (Evapotranspiration)": "The water consumed by crops — evaporation from the soil plus transpiration through the plants. Where meters are sparse, the methodology can use ET as one optional way to estimate groundwater use. (OpenET is the satellite data source; ET is the quantity it measures.)",
+        "ET (Evapotranspiration)": "Where meters are sparse, the methodology can use ET as one optional way to estimate groundwater use. (OpenET is the satellite data source; ET is the quantity it measures.)",
         "Effective Precipitation": "The portion of rainfall that crops actually use, rather than running off or percolating away. The methodology subtracts it from gross ET to find the net consumptive demand that supplies must meet. See Help > Methods Behind the Numbers.",
         "ET-Demand Allocation": "How a single recorded district delivery is split across the many fields one headgate serves — weighted by each field's estimated ET demand, not divided evenly, and capped at each field's demand divided by irrigation efficiency. See Help > Methods Behind the Numbers.",
         "GEARS": "Groundwater Extraction Annual Reporting System, the State Water Board reporting format for per-well extraction.",
@@ -529,20 +550,20 @@ def glossary(request):
         "GSP": "Groundwater Sustainability Plan, the 20-year plan each GSA must adopt.",
         "Health Check": "Automated system diagnostic covering data freshness, connectivity, and configuration.",
         "Ledger Entry": "A double-entry record: supply amounts are positive, usage amounts are negative.",
-        "Managed Aquifer Recharge (MAR)": "Intentionally adding water to an aquifer through spreading basins or injection wells.",
+        "Managed Aquifer Recharge (MAR)": "One record per site, holding its capacity in acre-feet, its zone, its geometry on the map and the points of diversion feeding it. Each event dated, with a volume and a water type.",
         "Methodology / Calculation Plan": "The ordered, configurable chain of steps — gross ET, minus effective precipitation, minus surface water deliveries, minus edge cases — that the platform applies to turn measurements into a defensible billable groundwater figure for each use area. Tune it on the Methodology Settings page.",
         "Monitoring Station": "A curated external sensor (stream gauge, weather station, groundwater well) linked to a data source.",
         "OpenET": "Satellite-based evapotranspiration estimates, used to calculate crop water use.",
         "Use Area": "A plot of land identified by an Assessor Parcel Number (APN), the basic unit of water accounting.",
-        "Point of Diversion (POD)": "The physical location where water is diverted from a stream or river.",
+        "Point of Diversion (POD)": "One record per POD, holding its location, the right it draws under, the stream or flowline it sits on, its maximum rate in CFS, and the parcels it serves. Monthly records of what came through it hang off it.",
         "Recovery Horizon": "A per-district setting for what happens to a district's unused surface water at year-end: carry it forward to next year, or let it expire. A debt (an overdraw) always carries regardless. Set on the Delivery Settings page. See Help > Configs & Settings, explained.",
         "Water Year": "A time window (usually October 1 through September 30) for water accounting and reporting.",
         "SGMA": "Sustainable Groundwater Management Act (2014), the California law requiring groundwater management.",
         "USGS": "United States Geological Survey, provides stream gauge and groundwater level data.",
         "Water Account": "Groups use areas for accounting purposes, tracks supply and usage.",
-        "Water Right": "A legal entitlement to divert surface water, issued by the State Water Board.",
+        "Water Right": "One record per right, holding its state ID, type, holder, priority date, face value in acre-feet, CalWATRS PIN and status, plus the parcels it covers. Issued by the State Water Board; the platform only keeps the record.",
         "Zone / Management Zone": "A sub-area of the district that carries its own Allocation Ceiling. Each use area belongs to a zone, and a zone must exist before an Allocation Ceiling can be set for it. See Help > Allocations & Ceilings.",
-        "Well": "A borehole used to draw groundwater, identified by state well number or local ID.",
+        "Well": "One record per well, holding its state well number, WCR number and local ID, the meters attached to it, and the parcels it irrigates. Depth, casing and screen intervals sit here too.",
     }
     sorted_terms = sorted(
         (term, _without_unavailable_help_pointers(definition))
