@@ -47,6 +47,13 @@ from dataclasses import dataclass
 #: Where a term was found being explained. Provenance is the point: it is what
 #: makes this a measurement of this repository rather than an opinion about
 #: hydrology.
+#:
+#: ``FACILITY_PLAIN`` names a dictionary that **no longer exists** — 118-02
+#: deleted it whole on 2026-08-06 (ISS-129). The constant stays because these
+#: are historical provenance, not live pointers: a term earned its place on this
+#: list by having been caught somewhere, and erasing where would turn a
+#: measurement back into an opinion. ``tests/test_domain_vocabulary.py`` no
+#: longer scans it as a surface and guards its deletion instead.
 FACILITY_PLAIN = "drinking/glossary.py::FACILITY_TYPE_PLAIN"
 SHORTHAND = "drinking/glossary.py::SHORTHAND"
 PLATFORM_GLOSSARY = "config/views.py::glossary"

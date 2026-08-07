@@ -29,6 +29,29 @@ every screen in the drinking module and belongs there. A gate on term *presence*
 would be unfixable noise, would be switched off within a week, and would earn
 exactly the fate of the tests it replaces.
 
+**What 118-02 did to the numbers, and what it deliberately left alone.** The
+gate opened at six surfaces carrying 49 flagged locations. One surface —
+``drinking/glossary.py::FACILITY_TYPE_PLAIN``, 22 entries — was deleted whole
+rather than swept, so it is now a *deletion guard* below rather than a baseline.
+``SHORTHAND`` walked 7 → **strict 0**: every value in it is now a decoding and
+nothing more. The other four surfaces walked 28 → 18, and **stopped there on
+purpose**. All 18 survivors are enumerated in ``118-01-EVIDENCE.md`` Part two as
+false positives or recorded judgment calls — a page heading, an agency-name
+expansion, a worked example, a sentence about a number the platform computed.
+Rewording those to reach a cosmetic zero would be the gate bending the product
+rather than measuring it. The per-surface table sits with ``BASELINE``.
+
+**One measured gap this sweep found and could not close.** ``_scannable_prose``
+strips ``{% %}`` before scanning, so the ``text="…"`` argument of every
+``{% include "partials/_explainer_popout.html" %}`` is **invisible to this gate**
+— and 118-02 found water definitions living in exactly there, on the accounting
+dashboard and the water-balances explainer, none of which any baseline ever
+counted. They were corrected by hand and ``templates/partials/_explainer_popout.html``
+now carries the rule in its own usage comment, which is the only guard that
+surface has. Stripping template syntax is still right — it removed 20 of 32
+flags on the template surface — but it is a real blind spot, not a rounding
+error.
+
 **Why the fixture controls exist.** A scorer that never fails is not a
 measurement. One plants a water definition and demands it be reported. The other
 proves the scanner stays silent on all three legitimate constructions — an
@@ -151,13 +174,16 @@ def scan(text: str) -> list:
 
 
 def _drinking_glossary_entries(name: str) -> list:
-    """``(key, string)`` for one of ``drinking/glossary.py``'s two dictionaries.
+    """``(key, string)`` for a dictionary in ``drinking/glossary.py``.
 
-    Read through the module rather than by parsing, because both dictionaries
-    are what actually renders: ``FACILITY_TYPE_PLAIN`` into the onboarding
-    builder's facility panels, ``SHORTHAND`` into its abbreviation legend. The
-    shape of this helper follows ``_glossary_strings()`` in
-    ``tests/test_drinking_readability.py``, which pins the same two dicts.
+    Read through the module rather than by parsing, because the dictionary is
+    what actually renders: ``SHORTHAND`` into the onboarding builder's
+    abbreviation legend. The shape of this helper follows
+    ``_glossary_strings()`` in ``tests/test_drinking_readability.py``, which
+    pins the same dictionary.
+
+    It took a ``name`` argument because there used to be two. See
+    ``test_the_facility_description_dictionary_stays_deleted`` below.
     """
     from drinking import glossary
 
@@ -265,10 +291,7 @@ def _scan_surface(name: str) -> list:
     """``(location, string, offences)`` for every flagged string on a surface."""
     flagged = []
 
-    if name == "drinking/glossary.py::FACILITY_TYPE_PLAIN":
-        entries = [(key, value)
-                   for key, value in _drinking_glossary_entries("FACILITY_TYPE_PLAIN")]
-    elif name == "drinking/glossary.py::SHORTHAND":
+    if name == "drinking/glossary.py::SHORTHAND":
         entries = [(key, value)
                    for key, value in _drinking_glossary_entries("SHORTHAND")]
     elif name == "config/views.py::glossary":
@@ -293,7 +316,6 @@ def _scan_surface(name: str) -> list:
 
 
 SURFACES: tuple = (
-    "drinking/glossary.py::FACILITY_TYPE_PLAIN",
     "drinking/glossary.py::SHORTHAND",
     "config/views.py::glossary",
     "templates/help/*.html",
@@ -304,39 +326,99 @@ SURFACES: tuple = (
 
 # -- The ratchet -------------------------------------------------------------
 
-#: **Measured on 2026-08-06, red, before any correction.** Every number here is
-#: what the scanner actually reported on the tree at the head of Phase 117, and
-#: the strings behind them are listed verbatim in ``118-01-EVIDENCE.md``. Plan
-#: 118-02 walks them down; this table is what makes that progress legible and
-#: what stops one surface's improvement from masking another's regression —
-#: the same reason ``BASELINE_OFFENDERS`` in the operator gate is keyed by
-#: document.
+#: **The walk-down, per surface. 118-01 measured these red; 118-02 swept them.**
+#: Every number in the "after" column below was re-measured on 2026-08-06 in a
+#: container rebuilt from the working tree, and the strings behind the 118-01
+#: column are listed verbatim in ``118-01-EVIDENCE.md``.
 #:
-#: The gate is deliberately NOT ``xfail``. It is green from its first run
-#: because these baselines are honest, and it bites the moment a count climbs.
+#: ==============================================  ======  =====  ==============
+#: Surface                                         118-01  now    kind
+#: ==============================================  ======  =====  ==============
+#: ``drinking/glossary.py::FACILITY_TYPE_PLAIN``        14  gone   deleted whole
+#: ``drinking/glossary.py::SHORTHAND``                   7      0  reading
+#: ``config/views.py::glossary``                         8      2  ceiling
+#: ``templates/help/*.html``                             2      2  ceiling
+#: ``templates/**/*.html``                              14     10  ceiling
+#: ``help_text=``                                        4      4  ceiling
+#: ==============================================  ======  =====  ==============
 #:
+#: **Only one surface reaches a strict zero, and that is the honest outcome, not
+#: an unfinished sweep.** All 18 locations still flagged are enumerated in
+#: ``118-01-EVIDENCE.md`` Part two as false positives or recorded judgment calls,
+#: and 118-02's instructions forbid changing them. Rewording legitimate copy to
+#: reach a cosmetic zero would be the gate bending the product instead of
+#: measuring it — the exact failure that made the three mandating tests in
+#: ``tests/test_drinking_readability.py`` a defect rather than a guard.
+#:
+#: **Reading versus ceiling.** ``SHORTHAND`` and the platform glossary are
+#: strings that exist in order to define something, so a flag on them is a real
+#: finding and the number is a reading — ``SHORTHAND`` is now a **strict 0**.
+#: The two template surfaces and ``help_text=`` are free prose, where the same
+#: constructions occur innocently ("— set up your watershed" is a heading, not a
+#: lecture), so those are ceilings. The platform glossary is recorded as a
+#: ceiling **now** rather than a reading, because its two survivors are the
+#: Apportionment worked example and the Effective Precipitation entry, both of
+#: which ``118-01-EVIDENCE.md`` records as legitimate. The operator gate has the
+#: same distinction in its own history: ``DEPLOY.md`` sat at "25 — a ceiling,
+#: never a reading" until Phase 114 measured it at 24.
+#:
+#: The gate is deliberately NOT ``xfail``. It bites the moment a count climbs.
 #: Lowering a baseline is the only legitimate edit. Raising one is a silently
 #: weakened gate.
-#: **Two of these six are readings; four are ceilings, and the difference is
-#: recorded rather than hidden.** The three definition-shaped surfaces — both
-#: ``drinking/glossary.py`` dictionaries and the platform glossary — are strings
-#: that exist to define something, so every flag on them is a real finding and
-#: the number is a reading. The two template surfaces and ``help_text=`` are
-#: free prose, where the same constructions also occur innocently ("— set up
-#: your watershed" is a heading, not a lecture), so those numbers are ceilings
-#: with known false positives enumerated in ``118-01-EVIDENCE.md``. The operator
-#: gate has the same distinction in its own history: ``DEPLOY.md`` sat at "25 —
-#: a ceiling, never a reading" until Phase 114 measured it at 24.
 BASELINE: dict = {
-    # Readings — every flag is a real finding.
-    "drinking/glossary.py::FACILITY_TYPE_PLAIN": 14,
-    "drinking/glossary.py::SHORTHAND": 7,
-    "config/views.py::glossary": 8,
-    # Ceilings — carry known false positives; see 118-01-EVIDENCE.md.
+    # Reading — strict, and it stays strict. Every value in this dictionary is a
+    # decoding: "GAC" -> "Granular activated carbon." and nothing after it.
+    "drinking/glossary.py::SHORTHAND": 0,
+    # Ceilings — every survivor is named in 118-01-EVIDENCE.md Part two.
+    #   glossary   : Apportionment (worked example), Effective Precipitation
+    #   help pages : methods.html (shared-well worked example),
+    #                water_balances.html (unmetered-diversions fact, a USGS
+    #                publication title, a statement of platform behaviour)
+    #   templates  : the 10 enumerated false positives — headings, page
+    #                descriptions, computed-number explanations, agency-name
+    #                expansions
+    #   help_text= : 3 false positives naming a relation or a foreign key, plus
+    #                core/forms.py:160, which explains what a SETTING means
+    "config/views.py::glossary": 2,
     "templates/help/*.html": 2,
-    "templates/**/*.html": 14,
+    "templates/**/*.html": 10,
     "help_text=": 4,
 }
+
+
+def test_the_facility_description_dictionary_stays_deleted():
+    """``FACILITY_TYPE_PLAIN`` was a whole surface. It is not coming back.
+
+    118-01 measured it at 14 flags of 22 entries, and read the other 8 by eye as
+    the same defect in a shape none of the three constructions cover — so the
+    disposition was the whole dictionary, not 14 rewrites. It gave all 22 EPA
+    facility codes a sentence saying what the thing physically is ("A drilled
+    well. Water comes up out of the ground here."), stacked directly under a
+    panel heading that already rendered EPA's own label from
+    ``FACILITY_TYPE_CHOICES``. Its only added content was the water lecture.
+
+    This is a guard and not a leftover. **The mechanism that made ISS-129 recur
+    was a refill, not an edit**: three tests in
+    ``tests/test_drinking_readability.py`` mandated the descriptions, so hand
+    corrections were reverted by the suite on the next run. A dictionary with
+    this name reappearing — or the accessor, or a stub returning ``""`` — is that
+    mechanism restarting. There is no baseline to lower here and no surface to
+    scan; the correct count is that the names do not exist.
+    """
+    from drinking import glossary
+
+    resurrected = [
+        name for name in ("FACILITY_TYPE_PLAIN", "facility_type_plain")
+        if hasattr(glossary, name)
+    ]
+    assert resurrected == [], (
+        f"drinking/glossary.py has regrown {resurrected}. That dictionary gave "
+        "every EPA facility code a sentence describing what the thing physically "
+        "is, to a reader who is a water district engineer, and the facility panel "
+        "heading already carries EPA's own label. Deleted by ISS-129 on "
+        "2026-08-06 — DESIGN.md copy rule 11. Do not restore it, and do not "
+        "leave a stub with a live name."
+    )
 
 
 def test_no_surface_gains_a_water_definition():
