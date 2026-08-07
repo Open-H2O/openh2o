@@ -15,6 +15,18 @@ these assert the explanations are actually present.
 They are deliberately assertions about *plain language being present*, not about
 exact wording — the copy should be free to improve without breaking the suite.
 
+**And they stop at the boundary, because this file once crossed it (ISS-129,
+2026-08-06).** "Readable to a non-specialist" was applied to the water itself,
+and three tests here ended up MANDATING that the screens explain what a well, a
+treatment plant and a distribution system physically are — to water district
+engineers. Because the tests held those sentences up, every correction made by
+hand was reverted by the suite on the next run; the mechanism, not the wording,
+was the defect. All three are gone, replaced by
+`test_the_panel_names_its_facility_type_and_never_describes_it`, which forbids
+what they required. **A test in this file may never mandate a description of a
+water term.** The rule is `DESIGN.md` copy rule 11 and the gate that measures it
+is `tests/test_domain_vocabulary.py`.
+
 **Phase 101-02 extended this file rather than starting another one.** The copy
 and formatting pass wrote nine house rules into DESIGN.md's *Copy rules*
 section; `TestCopyRules` at the foot of this file pins the half of them a
@@ -90,20 +102,6 @@ def system(db):
 
 
 class TestGlossary:
-    def test_distribution_system_is_explained_as_pipes(self):
-        text = glossary.facility_type_plain("DS")
-        assert "pipes" in text.lower()
-
-    def test_every_facility_type_choice_has_a_plain_description(self):
-        """A code with no translation is the defect this module exists to fix."""
-        from drinking.models import FACILITY_TYPE_CHOICES
-
-        missing = [
-            code for code, _ in FACILITY_TYPE_CHOICES
-            if not glossary.facility_type_plain(code)
-        ]
-        assert missing == [], f"facility types with no plain description: {missing}"
-
     def test_shorthand_returns_only_terms_actually_present(self):
         """A full glossary on every page is just another wall."""
         found = dict(glossary.shorthand_in_use(["WELL 10 - RAW"]))
@@ -128,14 +126,49 @@ class TestBuilderReadsToAHuman:
         assert "What this page is for" in body
         assert "laborator" in body.lower()
 
-    def test_distribution_system_is_explained_not_just_abbreviated(
+    def test_the_panel_names_its_facility_type_and_never_describes_it(
         self, client_logged_in, system
     ):
-        """"What does DST stand for?" must be answerable from the page."""
+        """ISS-129 / DESIGN.md copy rule 11. This one test replaced three.
+
+        **What was here before, and why it had to go.** Three tests in this file
+        *mandated* a physical description for the facility panel — one demanded
+        the word "pipes" on the rendered page, one demanded a sentence for all 22
+        EPA codes, one demanded ``glossary.facility_type_plain("DS")`` say what a
+        distribution system is. The reader is a water district engineer or
+        operator, so every one of those sentences told an expert what a well is;
+        and because the tests held them up, every correction made by hand was
+        reverted by the suite on the next run. That mechanism, not the wording,
+        is the defect ISS-129 was filed over.
+
+        The panel heading renders EPA's own label from ``FACILITY_TYPE_CHOICES``
+        and that is the whole job. **A shorter panel here is deliberate.** If you
+        are reading this because a panel looks bare, the missing sentence was
+        removed on purpose and may not be restored.
+        """
         body = client_logged_in.get(
             reverse("drinking:onboard_points", args=[PWSID])
         ).content.decode()
-        assert "pipes that carry treated water" in body
+
+        # EPA's own label still names each kind of facility — the data
+        # convention is the legitimate half of the boundary and stays.
+        assert "Distribution System" in body
+        assert "Well" in body
+
+        # Nothing beneath that heading says what the thing physically is. These
+        # are the exact strings the deleted dictionary put on this page.
+        for lecture in (
+            "pipes that carry treated water",
+            "A drilled well",
+            "Water comes up out of the ground",
+            "taken out in the neighborhood",
+            "where water is filtered or treated",
+        ):
+            assert lecture not in body, (
+                "the facility panel is explaining water to a water operator: "
+                f"{lecture!r}. DESIGN.md copy rule 11 — explain the software and "
+                "the data conventions, never the water (ISS-129)."
+            )
 
     def test_abbreviations_appearing_on_the_page_are_defined(
         self, client_logged_in, system
@@ -285,17 +318,17 @@ def template_prose(path):
 
 
 def _glossary_strings():
-    """Every sentence `drinking/glossary.py` can put in front of a reader.
+    """Every string `drinking/glossary.py` can put in front of a reader.
 
-    Both dicts, because both render: `FACILITY_TYPE_PLAIN` into the onboarding
-    builder's facility panels and `SHORTHAND` into its abbreviation legend. The
-    legend only lists terms that actually appear in the names on screen, so
-    which of these a given page shows depends on the DATA — which is exactly how
+    `SHORTHAND` renders into the onboarding builder's abbreviation legend, and
+    the legend only lists terms that actually appear in the names on screen — so
+    which of these a given page shows depends on the DATA, which is exactly how
     a defect in one of them survives a fixture that never triggers it.
+
+    This read both dictionaries until 2026-08-06. `FACILITY_TYPE_PLAIN` was
+    deleted whole by ISS-129 and there is no second dictionary to read.
     """
-    return list(glossary.FACILITY_TYPE_PLAIN.values()) + list(
-        glossary.SHORTHAND.values()
-    )
+    return list(glossary.SHORTHAND.values())
 
 
 @pytest.fixture

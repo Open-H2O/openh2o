@@ -1,19 +1,25 @@
 {% comment %}
-  One facility's panel: what this facility physically is, the sampling places
-  already listed on it, and the form to add another.
+  One facility's panel: which facility this is, the sampling places already
+  listed on it, and the form to add another.
 
   This partial is both the initial render (looped by onboard_points.html) and the
   HTMX swap target after an add, so the form and the list stay in one place and
   cannot drift apart.
 
-  Caller supplies `facility` (with `.plain_type` set by views._describe) +
+  Caller supplies `facility` (with `.name_adds_nothing` set by views._describe) +
   `system` + `point_type_choices`, optionally one of `added` / `duplicate` /
   `error`.
 
   Rewritten 2026-07-20: the heading used to read "DST — DISTRIBUTION SYSTEM",
-  which is two codes side by side and explains nothing. It now leads with what
-  the facility IS in a sentence, and treats the id and EPA's name as reference
-  detail rather than as the headline.
+  which is two codes side by side and explains nothing. It now leads with EPA's
+  own label for the type and treats the id and EPA's raw name as reference detail
+  rather than as the headline.
+
+  2026-08-06 (118-02, ISS-129): a second line under that heading used to say what
+  the facility physically IS — "A drilled well. Water comes up out of the ground
+  here." The reader is a water district operator, so it was deleted rather than
+  rewritten; the heading above it already carries EPA's own label. Do not add a
+  description back. DESIGN.md copy rule 11.
 
   A request that names no facility this system owns has no panel to render, so it
   degrades to the bare alert below. Rendering the panel anyway would reach
@@ -45,10 +51,6 @@
       </span>
     </div>
   </div>
-
-  {% if facility.plain_type %}
-  <p class="text-base text-secondary mt-xs">{{ facility.plain_type }}</p>
-  {% endif %}
 
   {% comment %}
     The id and EPA's raw name, labelled as what they are. The id matters because

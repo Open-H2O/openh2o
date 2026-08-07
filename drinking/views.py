@@ -1153,13 +1153,17 @@ def _facility_panels(system):
 
 
 def _describe(facility):
-    """Attach the plain-English sentence for what this facility physically is.
+    """Flag whether EPA's name for this facility repeats its type label.
 
-    Set on the instance rather than resolved in the template so the same
-    description is available whether the panel is rendered by the page or
-    swapped in by an add.
+    Set on the instance rather than resolved in the template so the same answer
+    is available whether the panel is rendered by the page or swapped in by an
+    add.
+
+    This used to also attach a sentence saying what the facility physically is
+    ("A drilled well. Water comes up out of the ground here."). Deleted
+    2026-08-06 (ISS-129): the reader is a water district operator and the panel
+    heading already carries EPA's own label. DESIGN.md copy rule 11.
     """
-    facility.plain_type = glossary.facility_type_plain(facility.facility_type)
     # EPA's name is often just the type again ("DISTRIBUTION SYSTEM" on a
     # facility already typed Distribution System). Showing both produced the
     # heading "Distribution System — DISTRIBUTION SYSTEM", which is the exact
