@@ -11,10 +11,8 @@ Setup wizard views.
 
 import json
 import logging
-import math
 
 from django.contrib.auth.decorators import login_required
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
@@ -22,6 +20,7 @@ from core.access import admin_required
 from core.modules import is_enabled
 from datasync.models import MonitoredStation
 from geography.models import Boundary
+from setup.boundaries import boundary_from_geojson_text
 from setup.services import (
     STATION_PROVIDERS,
     build_station_review,
@@ -81,19 +80,14 @@ def setup_wizard(request):
                 errors.append("Please choose a GeoJSON file to upload.")
             else:
                 try:
-                    raw = uploaded.read().decode("utf-8")
-                    geojson = json.loads(raw)
-                    geom = _parse_geojson_boundary(geojson)
-                    properties = _feature_properties(geojson)
-                    name = (
-                        geojson.get("name")
-                        or properties.get("name")
-                        or uploaded.name.rsplit(".", 1)[0]
+                    name, geom, attrs = boundary_from_geojson_text(
+                        uploaded.read(),
+                        fallback_name=uploaded.name.rsplit(".", 1)[0],
                     )
                     boundary = Boundary.objects.create(
-                        name=name or "Uploaded Boundary",
+                        name=name,
                         geometry=geom,
-                        **_boundary_attrs_from_properties(properties),
+                        **attrs,
                     )
                     request.session[SESSION_KEY_BOUNDARY] = boundary.pk
                     return redirect("setup:confirm")
@@ -110,7 +104,7 @@ def setup_wizard(request):
                         "shapefile, KML, or zip)."
                     )
                 except ValueError as exc:
-                    # Specific, plain-language reason from _parse_geojson_boundary.
+                    # Specific, plain-language reason from parse_geojson_boundary.
                     errors.append(str(exc))
                 except Exception as exc:
                     logger.exception("GeoJSON upload failed")
@@ -286,203 +280,3 @@ def setup_activate_stations(request):
     context = build_station_review(boundary)
     context["boundary"] = boundary
     return render(request, "setup/partials/_station_review.html", context)
-
-
-# --------------------------------------------------------------------------
-# Helpers
-# --------------------------------------------------------------------------
-
-# Property keys that real exports use for the same figure, in priority order.
-# The USGS Watershed Boundary Dataset writes them lowercase, ArcGIS exports
-# frequently write them uppercase, and hand-built files use underscores — so
-# every key is reduced to its letters and digits before it is looked up.
-_AREA_SQ_MI_KEYS = ("areasqmi", "areasqmiles", "sqmi")
-_AREA_SQ_KM_KEYS = ("areasqkm", "areasqkilometers", "sqkm")
-_HUC_KEYS = ("huc8", "huc", "huc12", "huccode")
-_BASIN_CODE_KEYS = ("basincode", "basin")
-
-SQ_KM_TO_SQ_MI = 0.386102158542
-
-# Boundary.huc and Boundary.basin_code are both CharField(max_length=20).
-_CODE_MAX_LENGTH = 20
-
-
-def _feature_properties(geojson) -> dict:
-    """
-    The properties dict for whichever shape ``_parse_geojson_boundary`` accepted.
-
-    FeatureCollection → the first feature's properties (the same feature whose
-    geometry becomes the boundary); Feature → its own; a raw geometry carries
-    none. Anything that isn't a dict is treated as no properties at all.
-    """
-    if not isinstance(geojson, dict):
-        return {}
-
-    gtype = geojson.get("type")
-    if gtype == "FeatureCollection":
-        features = geojson.get("features") or []
-        first = features[0] if features else None
-        properties = first.get("properties") if isinstance(first, dict) else None
-    elif gtype == "Feature":
-        properties = geojson.get("properties")
-    else:
-        properties = None
-
-    return properties if isinstance(properties, dict) else {}
-
-
-def _normalise_property_keys(properties: dict) -> dict:
-    """Re-key ``properties`` by lowercase letters-and-digits, first key wins."""
-    normalised = {}
-    for key, value in properties.items():
-        if not isinstance(key, str):
-            continue
-        slug = "".join(char for char in key.lower() if char.isalnum())
-        if slug and slug not in normalised:
-            normalised[slug] = value
-    return normalised
-
-
-def _positive_number(value):
-    """
-    ``value`` as a positive finite float, or None if it is anything else.
-
-    The file is operator-supplied and unvalidated, so a property may be a dict,
-    a list, "N/A", or a boolean. ``bool`` is rejected explicitly because
-    ``isinstance(True, int)`` is True in Python and True must never become an
-    area of 1.0.
-    """
-    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
-        return None
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    if not math.isfinite(number) or number <= 0:
-        return None
-    return number
-
-
-def _short_code(value):
-    """
-    ``value`` as a stripped code string, or None if it is unusable.
-
-    An integer is accepted because a HUC read as a number is still a HUC (it
-    has merely lost any leading zero, which is not this function's to restore).
-    The result is truncated to the column width so an absurd value leaves the
-    field short rather than raising on save.
-    """
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int):
-        value = str(value)
-    if not isinstance(value, str):
-        return None
-    code = value.strip()
-    return code[:_CODE_MAX_LENGTH] if code else None
-
-
-def _boundary_attrs_from_properties(properties: dict) -> dict:
-    """
-    Boundary field values the uploaded file's own properties can supply.
-
-    Returns only the keys it could actually resolve, so an unreadable file
-    yields ``{}`` and ``Boundary.objects.create`` behaves exactly as it would
-    with no properties at all.
-
-    The square-kilometre fallback is in scope and the geometry is not:
-    converting the file's own km² figure still displays the district's number,
-    whereas an area computed from the polygon would be a number OpenH2O
-    invented (decided 2026-08-05).
-    """
-    if not isinstance(properties, dict):
-        return {}
-
-    values = _normalise_property_keys(properties)
-    attrs = {}
-
-    area = None
-    for key in _AREA_SQ_MI_KEYS:
-        area = _positive_number(values.get(key))
-        if area is not None:
-            break
-    if area is None:
-        for key in _AREA_SQ_KM_KEYS:
-            square_km = _positive_number(values.get(key))
-            if square_km is not None:
-                area = square_km * SQ_KM_TO_SQ_MI
-                break
-    if area is not None:
-        attrs["area_sq_miles"] = area
-
-    for field, keys in (("huc", _HUC_KEYS), ("basin_code", _BASIN_CODE_KEYS)):
-        for key in keys:
-            code = _short_code(values.get(key))
-            if code is not None:
-                attrs[field] = code
-                break
-
-    return attrs
-
-
-def _parse_geojson_boundary(geojson: dict):
-    """
-    Extract a MultiPolygon GEOSGeometry from a GeoJSON dict.
-    Accepts Feature, FeatureCollection (first feature), or raw geometry.
-
-    Raises ``ValueError`` with a specific, plain-language reason when no valid
-    polygon can be extracted, so the wizard can tell the operator exactly what
-    was wrong (empty collection vs. wrong geometry type vs. unreadable
-    coordinates) instead of one generic failure.
-    """
-    if not isinstance(geojson, dict):
-        raise ValueError(
-            "That file isn't a GeoJSON object — expected a Feature, "
-            "FeatureCollection, or geometry."
-        )
-
-    gtype = geojson.get("type")
-    if gtype == "FeatureCollection":
-        features = geojson.get("features", [])
-        if not features:
-            raise ValueError(
-                "The GeoJSON FeatureCollection is empty — it has no features to "
-                "use as a boundary."
-            )
-        geom_dict = features[0].get("geometry")
-    elif gtype == "Feature":
-        geom_dict = geojson.get("geometry")
-    else:
-        geom_dict = geojson  # raw geometry
-
-    if geom_dict is None:
-        raise ValueError(
-            "No geometry found in the file. Provide a GeoJSON Feature or "
-            "FeatureCollection whose feature has Polygon or MultiPolygon geometry."
-        )
-
-    geom_type = geom_dict.get("type", "")
-    if geom_type not in ("Polygon", "MultiPolygon"):
-        raise ValueError(
-            f"The boundary geometry is a {geom_type or 'unknown type'}, but a "
-            "Polygon or MultiPolygon is required — upload an area outline (your "
-            "district), not a point or line."
-        )
-
-    try:
-        geos = GEOSGeometry(json.dumps(geom_dict), srid=4326)
-    except Exception:
-        logger.exception("GEOSGeometry parse failed")
-        raise ValueError(
-            "The geometry couldn't be read as a valid polygon. Check the "
-            "coordinates are WGS84 longitude/latitude pairs (EPSG:4326)."
-        )
-
-    if isinstance(geos, Polygon):
-        return MultiPolygon(geos, srid=4326)
-    if isinstance(geos, MultiPolygon):
-        return geos
-    raise ValueError(
-        f"The geometry parsed as {geos.geom_type}, but a Polygon or "
-        "MultiPolygon is required."
-    )

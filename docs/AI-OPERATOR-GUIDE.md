@@ -274,7 +274,9 @@ configured. So log in as the admin user from Phase 2 first.
 
 The command-line path below is the alternative for a **headless deployment** —
 no browser, SSH only. It reaches the same end state; it just asks you to run each
-step yourself.
+step yourself — `import_boundary` (Option B below) is the headless equivalent of
+the wizard's own boundary upload, turning the agency's GeoJSON file into the
+same starting boundary the wizard would have made from it.
 
 ### Option A — Demo data (always do this first)
 ```bash
@@ -300,7 +302,7 @@ Three import routes, in rough order of preference:
 | Parcel boundaries as GeoJSON/Shapefile | `import_parcels` | Required foundation — everything hangs off parcels |
 | A well list as CSV | `import_wells` | Optional but valuable |
 | Historical ledger entries as CSV | `import_ledger_csv` | For bringing records over from a prior system |
-| Only a basin boundary | `auto_populate` | Queries DWR and USGS to pull parcels, boundaries, and flowlines automatically |
+| Only a basin boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads the agency's own GeoJSON boundary file first — `auto_populate` only fills an *existing* boundary in, it cannot create one from a file — then `auto_populate` queries DWR and USGS to pull parcels, hydrography, and flowlines automatically |
 
 What still has to be entered by hand (no public source exists): **water rights**, **water accounts**, and **allocations**. They are not all in one place. Accounts and allocations each have a create form on the accounting pages. **Water rights have no create form in the app at all** — they are added through the Django admin at `/admin/`, which is worth knowing before you promise an agency a screen that does not exist.
 
