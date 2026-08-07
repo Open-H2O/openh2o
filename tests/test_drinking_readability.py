@@ -1,31 +1,58 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-The onboarding screens must read to a non-specialist.
+The onboarding screens must be usable by the operator who runs the system.
+
+**Read this before adding a test here. The sentence above used to read "must
+read to a non-specialist," and that one word did more damage than any string in
+this repository.**
 
 Written 2026-07-20 after review. The screens were correct and unreadable: they
 showed ``DST``, ``LCR`` and ``WELL 08 - AFT_GAC & PARTIAL FLW-IX_NO3`` and
 assumed the reader knew the vocabulary. The reviewer's verdict was "it's just a
 bunch of random letters and acronyms — it doesn't read to a human at all."
 
+**That verdict was about EPA's codes, and only about EPA's codes.** The fix it
+called for was a key to a federal record. What got written down instead was
+*assume the reader is a non-specialist*, and it has governed this screen ever
+since. It produced two distinct defects, a month apart, and they are separate
+failures that this file must now guard against in both directions.
+
+1. **It explained the domain to the domain expert (ISS-129, 2026-08-06).** Three
+   tests here MANDATED that the screens say what a well, a treatment plant and a
+   distribution system physically are — to water district engineers. Because the
+   tests held those sentences up, every correction made by hand was reverted by
+   the suite on the next run; the mechanism, not the wording, was the defect. All
+   three are gone, replaced by
+   `test_the_panel_names_its_facility_type_and_never_describes_it`. **A test in
+   this file may never mandate a description of a water term.** The rule is
+   `DESIGN.md` copy rule 11; the gate is `tests/test_domain_vocabulary.py`.
+
+2. **It wrote the screen in a register nobody would use with a colleague
+   (2026-08-06, raised by Brent looking at the live builder).** "For people to
+   read. Anything that identifies the spot." · "Kind of place" · "Add this
+   place" · "Whatever the state uses for this spot." That is not explaining
+   water, so copy rule 11 passes it clean — a different axis, and the reason a
+   gate did not catch it. Rule 11 asks *whose domain does this word belong to*;
+   this asks *what register am I writing in*. The reader is a state water-system
+   operator entering a state record, so the screen uses **the state's own
+   vocabulary** — sampling point, PS Code, facility, point type — and form help
+   says what goes in the field rather than reassuring anyone. Phase 80-03's
+   "sampling place", invented to be gentler than the state's "sampling point",
+   was reversed here along with the test that pinned it.
+
+**The distinction that keeps both fixed.** The reader does not know *this
+software*, and owes nothing for learning it — so the platform explains its own
+screens, its own concepts, and codes inside records it did not author. The reader
+knows *water* better than we ever will. Explain the software; use their words for
+everything else.
+
 These tests exist because that class of defect is invisible to every other test
 in the suite. A page can render, return 200, carry correct data, and still be
-useless to the person who has to act on it. Correctness tests cannot catch that;
-these assert the explanations are actually present.
+useless to the person who has to act on it.
 
-They are deliberately assertions about *plain language being present*, not about
-exact wording — the copy should be free to improve without breaking the suite.
-
-**And they stop at the boundary, because this file once crossed it (ISS-129,
-2026-08-06).** "Readable to a non-specialist" was applied to the water itself,
-and three tests here ended up MANDATING that the screens explain what a well, a
-treatment plant and a distribution system physically are — to water district
-engineers. Because the tests held those sentences up, every correction made by
-hand was reverted by the suite on the next run; the mechanism, not the wording,
-was the defect. All three are gone, replaced by
-`test_the_panel_names_its_facility_type_and_never_describes_it`, which forbids
-what they required. **A test in this file may never mandate a description of a
-water term.** The rule is `DESIGN.md` copy rule 11 and the gate that measures it
-is `tests/test_domain_vocabulary.py`.
+They are deliberately assertions about *a rule* — a casing, a spelling, a proper
+name, a term's presence or absence — never about a sentence. The copy stays free
+to improve without breaking the suite.
 
 **Phase 101-02 extended this file rather than starting another one.** The copy
 and formatting pass wrote nine house rules into DESIGN.md's *Copy rules*
@@ -117,14 +144,19 @@ class TestGlossary:
             assert term in found, f"{term} not extracted from a real EPA name"
 
 
-class TestBuilderReadsToAHuman:
+class TestBuilderIsUsable:
     def test_page_says_what_it_is_for(self, client_logged_in, system):
-        """The reviewer could not tell what the screen was for."""
+        """The reviewer could not tell what the screen was for.
+
+        Asserts the page names the thing it exists to serve — a lab file and the
+        PS Code it carries — never the sentence that names them.
+        """
         body = client_logged_in.get(
             reverse("drinking:onboard_points", args=[PWSID])
         ).content.decode()
         assert "What this page is for" in body
-        assert "laborator" in body.lower()
+        assert "lab file" in body.lower()
+        assert "PS Code" in body
 
     def test_the_panel_names_its_facility_type_and_never_describes_it(
         self, client_logged_in, system
@@ -188,8 +220,8 @@ class TestBuilderReadsToAHuman:
         body = client_logged_in.get(
             reverse("drinking:onboard_points", args=[PWSID])
         ).content.decode()
-        assert "Facilities that have sampling places (2)" in body
-        assert "Facilities with no sampling places yet (5)" in body
+        assert "Facilities with sampling points (2)" in body
+        assert "Facilities with no sampling points yet (5)" in body
         # Behind a disclosure control, still reachable.
         assert "<details" in body
 
@@ -534,22 +566,89 @@ class TestCopyRules:
             f"breadcrumbs not rooted at Water Data / Drinking Water: {offenders}"
         )
 
+    #: Words this screen invented to be gentler than the state's own, and the
+    #: state's word that replaces each. Phase 80-03 coined "sampling place"
+    #: deliberately, as a "plain-English rewrite", and a test in this file used
+    #: to pin the split in place. Both were reversed on 2026-08-06.
+    #:
+    #: **Why a rewrite that was trying to help made the screen worse.** The
+    #: operator does not read "sampling place" and feel comforted; they read it
+    #: and wonder whether it is the same thing as the sampling point on the state
+    #: form in front of them. Softening a term the reader already owns adds a
+    #: translation step and takes away the word they would search for. The state
+    #: writes PS Code, sampling point, facility — so this screen does.
+    INVENTED_VOCABULARY = {
+        "sampling place": "sampling point",
+        "kind of place": "point type",
+        "add this place": "add sampling point",
+        "for people to read": "say what goes in the field",
+        "whatever the state uses for this spot": "the last segment of the PS Code",
+        "code a lab file would use": "PS Code",
+        "water comes from here": "Source",
+    }
+
+    def test_the_builder_uses_the_states_vocabulary_not_a_softer_one(
+        self, client_logged_in, unlocated
+    ):
+        """The register rule, and the second defect this file's old thesis caused.
+
+        Copy rule 11 does not catch this and is not supposed to: "For people to
+        read" defines no water term, so the vocabulary gate passes it clean. That
+        rule asks *whose domain does a word belong to*; this asks *what register
+        am I writing in*. Two different axes, and this screen failed the second
+        one for six weeks while passing the first.
+
+        Raised by Brent on 2026-08-06 against the live builder, on the help text
+        under the Description field: *"'For people to read' ?? — this is
+        ridiculous, why would that be helpful?"* He was looking at a form for
+        entering a state record, written as though he might not know what a
+        description was for.
+        """
+        text = visible_text(
+            client_logged_in.get(
+                reverse("drinking:onboard_points", args=[PWSID])
+            ).content.decode()
+        ).lower()
+
+        found = {
+            invented: instead
+            for invented, instead in self.INVENTED_VOCABULARY.items()
+            if invented in text
+        }
+        assert found == {}, (
+            "the sampling-point builder is writing down to a state water-system "
+            "operator instead of using the state's own words: "
+            + "; ".join(f"{k!r} -> say {v!r}" for k, v in found.items())
+        )
+
+        # And the state's vocabulary is actually present, so this cannot be
+        # satisfied by deleting the words rather than correcting them.
+        for required in ("ps code", "sampling point"):
+            assert required in text, (
+                f"the builder no longer uses the state's term {required!r}"
+            )
+
     def test_a_control_names_the_page_it_opens(self, client_logged_in, unlocated):
-        """Rule 4. The builder's teaching prose says "sampling place" on purpose
-        (80-03's plain-English rewrite, kept) — but the button that lands on the
-        Sampling Points page may not, because a reader who clicks "places" and
-        arrives at "points" has been told there are two things.
+        """Rule 4. A control that navigates to a named page carries that page's
+        name, so the button landing on Sampling Points says "sampling points".
+
+        This used to exist to police a split vocabulary — the builder said
+        "place", the destination said "point", and the button had to bridge them.
+        The split is gone (see ``INVENTED_VOCABULARY`` above); the rule it
+        enforces is not, because it applies to every control on the platform.
         """
         html = client_logged_in.get(
             reverse("drinking:onboard_points", args=[PWSID])
         ).content.decode()
         target = reverse("drinking:sampling_points")
-        for label in re.findall(
+        labels = re.findall(
             rf'<a href="{re.escape(target)}"[^>]*>(.*?)</a>', html, re.S
-        ):
-            assert "place" not in visible_text(label).lower(), (
-                "a link to the Sampling Points page is labelled with a word that "
-                f"page does not use: {visible_text(label).strip()!r}"
+        )
+        assert labels, "no control on the builder links to the Sampling Points page"
+        for label in labels:
+            assert "sampling point" in visible_text(label).lower(), (
+                "a control that opens the Sampling Points page does not name it: "
+                f"{visible_text(label).strip()!r}"
             )
 
     def test_the_builder_caps_its_prose_measure(self):

@@ -1,5 +1,5 @@
 {% comment %}
-  One facility's panel: which facility this is, the sampling places already
+  One facility's panel: which facility this is, the sampling points already
   listed on it, and the form to add another.
 
   This partial is both the initial render (looped by onboard_points.html) and the
@@ -45,9 +45,9 @@
       {% if facility.name and not facility.name_adds_nothing %}&mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %}
     </h3>
     <div class="row-start" style="gap: var(--space-xs); flex-wrap: wrap;">
-      {% if facility.is_source %}<span class="badge badge-blue">Water comes from here</span>{% endif %}
+      {% if facility.is_source %}<span class="badge badge-blue">Source</span>{% endif %}
       <span class="badge {% if facility.sampling_points.all %}badge-green{% else %}badge-grey{% endif %}">
-        {{ facility.sampling_points.all|length }} sampling place{{ facility.sampling_points.all|length|pluralize }}
+        {{ facility.sampling_points.all|length }} sampling point{{ facility.sampling_points.all|length|pluralize }}
       </span>
     </div>
   </div>
@@ -84,7 +84,7 @@
   {% if facility.sampling_points.all %}
   <table class="data-table mt-md">
     <thead>
-      <tr><th>Code a lab file would use</th><th>What it is</th><th>Kind of place</th></tr>
+      <tr><th>PS Code</th><th>Name</th><th>Point type</th></tr>
     </thead>
     <tbody>
       {% for point in facility.sampling_points.all %}
@@ -117,28 +117,28 @@
     <div class="sp-add-form">
 
       <div class="form-group">
-        <label class="form-label" for="point-number-{{ facility.pk }}">Number or label <span class="required-mark">*</span></label>
+        <label class="form-label" for="point-number-{{ facility.pk }}">Point number or label <span class="required-mark">*</span></label>
         {% comment %}
           type="text", never type="number". Real labels include LCR and 900 — a
           number input silently refuses letters and would drop every lead-testing
-          and disinfection-byproduct place.
+          and disinfection-byproduct point.
         {% endcomment %}
         <input type="text" id="point-number-{{ facility.pk }}" name="point_number" required
                class="form-input" autocomplete="off" spellcheck="false"
                placeholder="{% if facility.is_source %}{{ facility.facility_id }}{% else %}LCR{% endif %}">
-        <div class="form-help">Whatever the state uses for this spot. Letters are fine &mdash; <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are both real.</div>
+        <div class="form-help">The last segment of the PS Code. Letters are fine &mdash; <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are both real.</div>
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="point-name-{{ facility.pk }}">Description</label>
+        <label class="form-label" for="point-name-{{ facility.pk }}">Name</label>
         <input type="text" id="point-name-{{ facility.pk }}" name="name"
                class="form-input" autocomplete="off"
                placeholder="e.g. Lead testing tap">
-        <div class="form-help">For people to read. Anything that identifies the spot.</div>
+        <div class="form-help">Optional. Shown beside the PS Code wherever this point is listed.</div>
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="point-type-{{ facility.pk }}">Kind of place</label>
+        <label class="form-label" for="point-type-{{ facility.pk }}">Point type</label>
         <select id="point-type-{{ facility.pk }}" name="point_type" class="form-input">
           <option value="">&mdash;</option>
           {% for value, label in point_type_choices %}
@@ -149,7 +149,7 @@
 
       <div class="form-group sp-add-submit">
         <span class="form-label" aria-hidden="true">&nbsp;</span>
-        <button type="submit" class="btn-secondary">Add this place</button>
+        <button type="submit" class="btn-secondary">Add sampling point</button>
       </div>
 
     </div>

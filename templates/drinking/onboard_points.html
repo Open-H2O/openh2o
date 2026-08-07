@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Sampling Points - {{ system.pwsid }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Tell the system where samples are taken{% endblock %}
+{% block page_title %}Sampling points{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -14,7 +14,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Sampling Points</span>
   </nav>
-  <p class="page-description">List the places {{ system.name|default:system.pwsid }} draws water samples from, so lab results have somewhere to file themselves.</p>
+  <p class="page-description">List the sampling points {{ system.name|default:system.pwsid }} reports against, so lab results can be matched to them on import.</p>
 </div>
 {% endblock %}
 
@@ -46,7 +46,7 @@
       <div class="row-start" style="gap: var(--space-xs); flex-wrap: wrap;">
         <span class="badge badge-blue text-mono">{{ system.pwsid }}</span>
         <span class="badge badge-grey">{{ facilities|length }} facilit{{ facilities|length|pluralize:"y,ies" }} on record</span>
-        <span class="badge {% if point_count %}badge-green{% else %}badge-orange{% endif %}">{{ point_count }} sampling place{{ point_count|pluralize }} listed</span>
+        <span class="badge {% if point_count %}badge-green{% else %}badge-orange{% endif %}">{{ point_count }} sampling point{{ point_count|pluralize }} listed</span>
       </div>
     </div>
   </div>
@@ -60,31 +60,29 @@
   <div class="card-raised">
     <h2 class="card-header-ruled">What this page is for</h2>
     <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
-      A laboratory tests water and sends back a file. Every line of that file
-      says <em>where</em> the water was taken from &mdash; a particular well, or
-      a particular tap out in the neighborhood. This page is where you tell the
-      system what those places are, so the lab's results have somewhere to land.
+      A lab file names a PS Code on every line. The importer matches that code
+      against the sampling points listed here.
     </p>
     <p class="text-base text-secondary mt-sm" style="max-width: 75ch;">
-      Until a place is listed here, a lab result naming it cannot be filed. The
-      import will report it and skip it rather than guess.
+      A row naming a code you have not listed is reported and skipped, never
+      guessed at.
     </p>
     <p class="text-base text-secondary mt-sm" style="max-width: 75ch;">
-      Each place gets a code, built from three parts: the water system's ID, the
-      facility it belongs to, and a number or short label you choose. You supply
-      only the last part &mdash; the rest is already known.
+      A PS Code is three parts &mdash; PWSID, facility ID, and a number or short
+      label. You supply only the last part; the first two come from the system
+      and the facility.
     </p>
   </div>
 
   {% comment %}
-    Facilities that already have sampling places, first and open. These are the
+    Facilities that already have sampling points, first and open. These are the
     ones an operator is actually working with.
   {% endcomment %}
   {% if facilities_with_points %}
   <div class="card-raised">
-    <h2 class="card-header-ruled">Facilities that have sampling places ({{ facilities_with_points|length }})</h2>
+    <h2 class="card-header-ruled">Facilities with sampling points ({{ facilities_with_points|length }})</h2>
     <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
-      Lab results naming any of the codes below will file correctly.
+      Lab results naming any of the PS Codes below will match on import.
     </p>
     {% comment %}
       The panels live INSIDE the card that names them. They used to render as
@@ -107,11 +105,10 @@
   {% endcomment %}
   {% if facilities_without_points %}
   <div class="card-raised">
-    <h2 class="card-header-ruled">Facilities with no sampling places yet ({{ facilities_without_points|length }})</h2>
+    <h2 class="card-header-ruled">Facilities with no sampling points yet ({{ facilities_without_points|length }})</h2>
     <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
-      These are on the system's record but no sample location has been listed for
-      them. That is normal &mdash; most facilities in a water system are never
-      sampled directly. Open this only if a lab file names one of them.
+      On the system's record with no sampling point listed. Most facilities are
+      never sampled directly. Open this only if a lab file names one of them.
     </p>
     <details class="mt-md">
       <summary class="text-base" style="cursor: pointer;">Show these {{ facilities_without_points|length }} facilities</summary>
@@ -152,16 +149,16 @@
   {% endif %}
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">When you have listed the places you need</h2>
+    <h2 class="card-header-ruled">Before importing</h2>
     <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
       {% if point_count %}
-        This system has {{ point_count }} sampling place{{ point_count|pluralize }} listed, so a lab
-        file naming {{ point_count|pluralize:"it,any of them" }} will import. You do not have to
-        list every place first &mdash; results naming a place you have not added
-        are reported and skipped, and you can come back and add them.
+        {{ point_count }} sampling point{{ point_count|pluralize }} listed. A lab file naming
+        {{ point_count|pluralize:"it,any of them" }} will import. The list does not have to be
+        complete first &mdash; unmatched rows are reported and skipped, and you
+        can add the points afterwards.
       {% else %}
-        No sampling places are listed yet, so every line of a lab file would come
-        back unmatched. Add at least the places your file names before importing.
+        No sampling points are listed yet, so every row of a lab file would come
+        back unmatched. Add at least the points your file names before importing.
       {% endif %}
     </p>
     <div class="row-start" style="margin-top: var(--space-lg); gap: var(--space-sm);">
