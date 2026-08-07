@@ -137,6 +137,18 @@ run_step() {
 }
 
 run_step migrate --noinput
+# The database cache table is NOT created by a migration — `createcachetable`
+# makes it, and the only place that ran was entrypoint.sh's no-argument boot
+# chain, which this script deliberately bypasses (see above: ensure_superuser
+# would bake an admin row into the candidate). Skipping the boot chain to avoid
+# the user row silently took the cache table with it, and a candidate without it
+# 500s the moment a page reads the cache: `datasync/views.py::monitoring_dashboard`
+# calls `OpenETAdapter().account_status()`, which begins with `cache.get(...)`.
+# Caught by gate 4 on 2026-08-07 — 1 page of 1,952, `relation "feedback_cache"
+# does not exist` — on the first deploy attempted after Phase 113-02 introduced
+# that read, so the defect never reached production. Creating a TABLE adds no
+# user rows, so this does not weaken the zero-user-rows rule it sits beside.
+run_step createcachetable
 run_step seed_data
 # NOT part of the seed_data umbrella, deliberately — core/modules.py records why
 # (listing it in the registry would change behaviour for anyone composing
