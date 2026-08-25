@@ -7,7 +7,20 @@ depends on *why* it's empty:
   * configured instance, list just empty → the screen's own Add + Import;
   * empty because of a search/filter → plain "no matches", not an onboarding CTA.
 
-Exercised on the Wells list; all four list screens share the same partial.
+**Exercised on the Wells list, and on the Wells list only.** The sentence that
+stood here until Phase 119 said "all four list screens share the same partial",
+and that half-truth is what let two defects ship. They do share the partial;
+they do not share its ARGUMENTS. Use Areas included it with ``type_param=""``,
+so both of its buttons reached ``infrastructure:add`` with no ``?type=`` and the
+fallback at ``infrastructure/views.py::_supported_type`` opened the Add Well
+form — on a screen that lists neither wells nor anything the add form creates.
+Nothing here could see that, because every assertion below is about the Wells
+render.
+
+Where each screen's buttons actually LAND is the different question, and
+``tests/test_page_offers_what_it_lists.py`` is the test that answers it: it
+declares the one entity each list page may offer to create and fetches every
+page twice, once for the toolbar and once for the empty state.
 """
 
 import factory

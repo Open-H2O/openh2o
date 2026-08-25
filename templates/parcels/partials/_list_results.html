@@ -70,7 +70,38 @@
   {% if q or status %}
   <p class="empty-state-text">No parcels found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
   {% else %}
-  {% include "partials/_empty_onboarding.html" with what="Use Areas are the parcels you account for. Each one's water use is reconciled against the supplies that serve it." add_label="+ Add Use Area" type_param="" %}
+  {% comment %}
+    Deliberately NOT the shared actionable empty state in `templates/partials/`,
+    which was included here until Phase 119. That partial's own contract is
+    "this screen's own Add + Import actions (the same links its toolbar
+    offers)", and this screen now offers neither: `ADD_TYPE_ORDER` in
+    `infrastructure/views.py` has no parcel type, so both of its links resolved
+    through the blank-type fallback and opened another module's form. Shaped
+    after `drinking/partials/_empty_drinking.html`, which is this codebase's
+    shipped answer to the same problem.
+
+    The wrapper and the glyph stay in the caller above, so each screen keeps its
+    own icon — the same division the replaced partial used.
+  {% endcomment %}
+  <p class="empty-state-text" style="max-width: 460px; margin-left: auto; margin-right: auto;">Use Areas are the parcels you account for. Each one's water use is reconciled against the supplies that serve it.</p>
+  {% if 'setup' in enabled_modules %}
+  <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
+    The Setup Wizard fills this list for you: it reads the district boundary you
+    give it and writes a use area for every parcel inside. There is no add form
+    here on purpose &mdash; each row carries the boundary its acreage is measured
+    from, and no screen in this platform draws one.
+  </p>
+  <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
+    <a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed &rarr;</a>
+  </div>
+  {% else %}
+  <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
+    This list is filled from your district boundary when the platform is stood
+    up. There is no add form here on purpose &mdash; each row carries the
+    boundary its acreage is measured from, and no screen in this platform draws
+    one.
+  </p>
+  {% endif %}
   {% endif %}
 </div>
 {% endif %}

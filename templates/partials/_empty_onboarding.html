@@ -11,8 +11,17 @@
 
   Caller supplies: `what` (one-line plain-English description of the entity),
   `add_label` (e.g. "+ Add Well"), and `type_param` (the infrastructure ?type=
-  value; blank for Use Areas, which the add form keys differently). The entity
-  icon stays in the caller so each screen keeps its own glyph.
+  value). The entity icon stays in the caller so each screen keeps its own glyph.
+
+  **`type_param` is REQUIRED and must name a type in
+  `infrastructure.views.ADD_TYPE_ORDER`.** This comment used to say it could be
+  "blank for Use Areas, which the add form keys differently", and that sentence
+  was false: there is no parcel type, so a blank one fell through
+  `_supported_type` to `ADD_TYPE_ORDER[0]` and both buttons opened the Add Well
+  form on a screen listing use areas. Phase 119 removed that include and the
+  Water Rights one. Only wells and recharge include this partial now, and
+  `tests/test_page_offers_what_it_lists.py` fails any page that includes it with
+  a type its list does not carry.
 {% endcomment %}
 <p class="empty-state-text" style="max-width: 460px; margin-left: auto; margin-right: auto;">{{ what }}</p>
 {% if needs_setup %}

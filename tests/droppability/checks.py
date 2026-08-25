@@ -219,10 +219,46 @@ LIST_PAGES = tuple(
 #: ``/wells/`` and the run is unchanged. Note this is NOT ``LIST_PAGES`` — the
 #: datasync station list has its own empty state and never includes the shared
 #: onboarding partial, so it cannot answer this question.
+#:
+#: **Phase 119 removed two of the four rows, and only one of them was made
+#: untrue by that phase.**
+#:
+#: ``/parcels/`` was true until 119-01 and is not any more. Use Areas rendered
+#: the Add/Import branch with ``type_param=""``, which the blank-type fallback
+#: at ``infrastructure/views.py::_supported_type`` resolved to
+#: ``ADD_TYPE_ORDER[0]`` — so the branch this table claimed as coverage was
+#: opening another module's form. 119-01 removed the include, and the row had to
+#: go with it: leaving it would fail
+#: ``test_both_empty_state_branches_are_actually_reached`` in the wells-dropped
+#: configuration, where ``ONBOARDING_PAGES[0]`` becomes ``/parcels/`` and the
+#: ``/infrastructure/`` assertion has nothing left to find.
+#:
+#: ``/surface/`` was **already wrong before Phase 119 and no run could see it**.
+#: ``/surface/`` renders ``surface/partials/_pod_list_results.html``
+#: (``pod_list.html:81``), which has never included the onboarding partial; the
+#: surface module's only include was on Water Rights at ``/surface/rights/``,
+#: which this table never listed. The row was dormant rather than failing
+#: because no configuration this harness runs puts ``/surface/`` at
+#: ``ONBOARDING_PAGES[0]`` — ``/wells/`` or ``/parcels/`` always preceded it.
+#: **That is the failure mode this whole file is built against**: a row that
+#: passes because it is never reached looks exactly like a row that passes
+#: because the page is correct. The generated constraint register missed it too,
+#: for a related reason recorded in ``119-01-SUMMARY.md``: it counts onboarding
+#: includes per MODULE rather than per PAGE, so ``surface`` printed "1" on the
+#: strength of a page this table does not name.
+#:
+#: ``/surface/rights/`` is deliberately NOT added in its place. After 119-01 it
+#: renders no Add/Import branch either — a water right is issued by the State
+#: Water Board and nothing in this product creates one.
+#:
+#: The two survivors are honest: ``wells/partials/_list_results.html:77`` and
+#: ``recharge/partials/_list_results.html:73`` both include the partial with a
+#: ``type_param`` that names the entity their page lists. In the wells-dropped
+#: run the probe becomes ``/recharge/`` and the assertion holds; in the
+#: all-dropped run the tuple empties and the test's own ``pytest.skip`` handles
+#: it.
 _ONBOARDING_PAGES = (
     ("/wells/", "wells"),
-    ("/parcels/", "parcels"),
-    ("/surface/", "surface"),
     ("/recharge/", "recharge"),
 )
 
