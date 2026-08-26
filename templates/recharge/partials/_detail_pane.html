@@ -1,6 +1,16 @@
 {% comment %}
-  Per-site detail BODY, swapped into #detail-body on row click (and reused by the
-  standalone site_detail.html page). The map itself is NOT here — it lives as a
+  Per-site detail BODY for the standalone site_detail.html page, which includes
+  it. recharge_site_detail() also hands it to detail_response() as the
+  pane_template, so an HTMX request for a site would get this fragment on its own
+  — but no page makes one. Measured 2026-08-26: nothing in templates/recharge/
+  points a row click at the shared workspace detail target, and every hx-get in
+  this module is list search, filter or pagination against #results. A row click
+  on the recharge list opens the standalone page.
+
+  This comment claimed a row-click swap until 2026-08-26. Three modules really do
+  swap (wells, parcels, accounting); this is not one of them.
+
+  The map itself is NOT here — it lives as a
   persistent element (#detail-map) in the pane shell so it is built ONCE and
   merely re-pointed at the new site's geometry on each switch (no teardown, so no
   startup flash). A recharge site is usually a POLYGON basin, occasionally a

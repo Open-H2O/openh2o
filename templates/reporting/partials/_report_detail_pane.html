@@ -1,7 +1,17 @@
 {% comment %}
-  Per-submission detail BODY, swapped into #detail-body on a row click in the
-  reports workspace (and reused by the standalone report_detail.html page), so
-  the in-pane view and the full page never drift. Bucket 3 — a heavy, interactive
+  Per-submission detail BODY for the standalone report_detail.html page, which
+  includes it. report_detail() also renders it on its own for an HTMX request, so
+  the fragment and the full page can never drift — but no page makes that
+  request. Measured 2026-08-26: nothing in templates/reporting/ points a row
+  click at the shared workspace detail target, and every hx-get in this module is
+  list pagination against #results or an in-page status action. A row click in
+  the reports list opens the standalone page.
+
+  This comment claimed a row-click swap into a reports workspace until
+  2026-08-26. Three modules really do swap (wells, parcels, accounting); this is
+  not one of them, and there is no reports workspace.
+
+  Bucket 3 — a heavy, interactive
   detail (a filing with a workflow), so it keeps an "open full page" escape
   (docs/2.0-UX-PATTERN-SPEC.md).
 
