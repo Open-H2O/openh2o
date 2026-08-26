@@ -326,7 +326,10 @@ function fmtDist(m) {
     var km = m/1000, mi = km*0.621371;
     return km < 1 ? m.toFixed(0)+' m' : km.toFixed(2)+' km ('+mi.toFixed(2)+' mi)';
 }
-var GOLD = (OH2O.colors && OH2O.colors.gold) || '#E4A317';
+// No literal fallback. geography/map.html is the only template that loads this
+// file, and it loads map-core.js 370 lines above in the same map_scripts block;
+// both are plain synchronous script tags, so the palette is always there.
+var GOLD = OH2O.colors.gold;
 map.on('click', function(e) {
     if (!_measureActive) return;
     var pt = [e.lngLat.lng, e.lngLat.lat];

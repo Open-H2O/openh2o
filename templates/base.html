@@ -143,8 +143,20 @@
       into being the shorter of two — which it had. It was missing `green`,
       `river`, `canal` and `hydroCasing`, and it carried the pre-Deep-Water gold.
 
-      map-core.js is the one JS declaration; it mirrors the `--color-entity-*`
-      tokens in static/css/tokens.css, which are the authority.
+      map-core.js is the one JS declaration. It and the `--color-entity-*` tokens
+      in static/css/tokens.css hold the same eleven names at the same eleven
+      values, and tests/test_map_palette_single_source.py fails the build if they
+      ever disagree about a name or a value.
+
+      That sentence used to read "the tokens are the authority", which was a
+      promise rather than a fact: measured 2026-08-26, the token block held 5 of
+      the 11 keys, no CSS rule referenced any of them, and nothing checked the
+      two files against each other. Phase 121 added the missing six at exactly
+      the values map-core.js already painted and wrote the test. Neither file
+      outranks the other now — they are pinned equal, and the test says so.
+
+      The same guard also stops map-engine.js re-declaring a palette colour as a
+      literal, which it did until 2026-08-26.
     {% endcomment %}
     {% block map_scripts %}{% endblock %}
     {% block chart_scripts %}{% endblock %}

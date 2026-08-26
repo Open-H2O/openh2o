@@ -136,12 +136,36 @@
     --duration-fast: 150ms;
     --duration-base: 250ms;
 
-    /* -- Entity colors (map layer identity, unchanged) -------------------- */
+    /* -- Entity colors (map layer identity) -------------------------------
+       These eleven ARE the map palette. `OH2O.colors` in static/js/map-core.js
+       holds the same eleven names and the same eleven values, and that is not a
+       convention anyone has to remember: tests/test_map_palette_single_source.py
+       fails the build if the two files disagree on a name or a value.
+
+       Until 2026-08-26 only the first five had a token and nothing checked even
+       those, so the "tokens are the authority" note in base.html covered 5 of
+       11 keys. The other six are added here at EXACTLY the value map-core.js
+       already paints — this block gained names, never a new colour.
+
+       No CSS rule uses var(--color-entity-*); every consumer is the JS. They
+       live here so one file names the palette and one test keeps them equal. */
     --color-entity-gold: #E4A317;      /* Wells, Boundary outline */
     --color-entity-teal: #4ECDC4;      /* Points of Diversion */
     --color-entity-purple: #7B68EE;    /* Recharge Sites */
     --color-entity-red: #FF6B6B;       /* Monitoring Stations */
     --color-entity-blue: #1B7FAF;      /* Parcels, Zones */
+    --color-entity-blue-bright: #3DB4E0;  /* Drinking-water facilities */
+    --color-entity-boundary: #E4A317;  /* District outline — same value as gold */
+    /* GSA zone fills. This is NOT --color-supply (#55B678); the two differ by a
+       few points and no record says why. Pinned at the value the map paints
+       today because changing a zone fill is a visible map change and Phase 121's
+       charter is "no intended visual change". Filed as ISS-131 for the design
+       pass to reconcile or to justify keeping both. */
+    --color-entity-green: #52b788;
+    /* Hydrography strokes — GIS hydrology house style, not the app palette. */
+    --color-entity-river: #45d0e8;     /* Natural channels */
+    --color-entity-canal: #7ee8a0;     /* Man-made canals */
+    --color-entity-hydro-casing: #06140e;  /* Dark casing under the canal */
 
     /* -- Border radius --------------------------------------------------- */
     --radius-sm: 6px;
