@@ -61,7 +61,12 @@
 {% endif %}
 
 {% else %}
-<div class="card-raised empty-state">
+{% comment %}
+  119-01: see the matching note on the Use Areas partial — `.empty-state`
+  centres (app.css:1808), which wedges a multi-line paragraph in a narrow
+  column. Left-aligned for the whole panel.
+{% endcomment %}
+<div class="card-raised empty-state" style="text-align: left;">
   <div class="empty-state-icon">
     <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -82,10 +87,10 @@
     different screen. Shaped after `drinking/partials/_empty_drinking.html`, the
     shipped precedent for an empty state whose honest answer is the admin.
   {% endcomment %}
-  <p class="empty-state-text" style="max-width: 460px; margin-left: auto; margin-right: auto;">Every right recorded here opens the points of diversion it serves, the diversion records logged against it, and any curtailment that reaches it.</p>
-  <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
-    Add one in the Django admin. Nothing on this screen creates a right &mdash;
-    the State Water Board issues them, and this platform records what it issued.
+  <p class="empty-state-text" style="max-width: 460px;">Each record here carries a right's face value, priority date and status, and links the points of diversion that serve it.</p>
+  <p class="text-tertiary text-sm" style="max-width: 460px; margin-top: var(--space-sm);">
+    The State Water Board issues rights; this platform records them. Add one in
+    the Django admin.
   </p>
   {% endif %}
 </div>
