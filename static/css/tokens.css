@@ -81,7 +81,33 @@
     --ambient: radial-gradient(110% 78% at 50% -14%,
         rgba(70, 179, 196, 0.07), transparent 62%);
 
-    /* -- OKLCH data viz ramps (unchanged) ----------------------------------- */
+    /* -- OKLCH data viz ramps ----------------------------------------------
+       Three ramps, 8 stops each, 100-800 — the arrangement DESIGN.md describes
+       under "Data Visualization". All 24 are defined; 5 are consumed today:
+
+           furnace-400  furnace-500  reservoir-400  forest-400  forest-500
+
+       Measured 2026-08-26 from the repository root. Any name appearing more
+       than once has a consumer beyond its own definition here:
+
+           git grep -oh -E -- '--(furnace|reservoir|forest)-[0-9]{3}' \
+             -- '*.css' '*.js' '*.html' '*.py' \
+             | sort | uniq -c | awk '$1 > 1 {print $2}'
+
+       5 consumed, 19 reserved. `.text-furnace` and `.text-forest` in app.css are
+       the only two that reach a stop through a class; every other consumer is an
+       inline style="color: var(--ramp-step)" in a template. No code builds a
+       ramp name dynamically — checked, because a grep-based unused-token claim
+       is worthless if it does. (`rampLo`/`rampHi` in map-core.js are circle-
+       radius zoom interpolation and have nothing to do with these.)
+
+       THE OTHER 19 ARE NOT DEAD CODE AND ARE NOT TO BE DELETED. A tonal ramp is
+       a documented range; a design system publishes the whole scale and reaches
+       for a stop when a chart needs one. Deleting the unused stops would leave
+       this file contradicting DESIGN.md's "8 stops each", which is the exact
+       class of defect the 2026-08-26 pass existed to remove. That is a different
+       thing from a selector no element matches or a partial nothing includes —
+       those were deleted in the same pass, because nothing documents them. */
 
     /* Furnace Orange */
     --furnace-100: oklch(0.15 0.03 50);
