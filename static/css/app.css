@@ -3490,6 +3490,13 @@ div[id$="-map"] {
     font-size: var(--text-xs);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
+    /* Explicitly transparent, and it has to be said out loud: this is a <button>,
+       so deleting the (dead) fill declaration on 2026-08-26 would have let the
+       browser's own default button grey through. Measured on staging: the button
+       went from rgba(0,0,0,0) to rgb(107,107,107) until this line was added. An
+       invalid declaration and no declaration are NOT the same thing on an element
+       the user agent styles. */
+    background: transparent;
     color: var(--color-text-secondary);
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
@@ -3543,6 +3550,9 @@ div[id$="-map"] {
     padding: var(--space-xs) var(--space-sm);
     border: none;
     border-radius: var(--radius-sm);
+    /* Explicitly transparent for the same reason as .draw-btn above: this is a
+       <button>, and no declaration at all would show the browser's default grey. */
+    background: transparent;
     cursor: pointer;
     text-align: left;
     width: 100%;
