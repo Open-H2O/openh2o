@@ -89,7 +89,11 @@ html { color-scheme: dark; }
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-pop-sm);
     padding: var(--space-lg);
-    transition: border-color 200ms, box-shadow 200ms, transform 200ms;
+    /* Lists only what the hover below actually changes; a third entry that
+       animated nothing was dropped 2026-08-26 (Phase 121). The hover's
+       background-color is knowingly still absent and still snaps — see
+       ISS-130, which holds that ruling for the design pass. */
+    transition: border-color 200ms, box-shadow 200ms;
 }
 
 .card-raised:hover {
