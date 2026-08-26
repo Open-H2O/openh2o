@@ -3276,21 +3276,46 @@ div[id$="-map"] {
 
 /* -- Upload zone --------------------------------------------------------- */
 
+/* One rule set, consolidated from two near-duplicates 2026-08-26 (Phase 121).
+   The values below are the ones that WON the old cascade, measured in a browser
+   on staging rather than read off the page — padding and transition came from
+   the second block, colour from the first. That block also carried a second,
+   hyphenated spelling of the drag class; no element in this repository is ever
+   given it, so it matched nothing and is gone.
+
+   Hover and drag do NOT share a background, and that is not a tidiness failure.
+   Only `.dragover` ever reached the accent tint: the deleted block's combined
+   hover-and-drag selector spelled the drag class the other way, so it never
+   matched a drag and never overrode this tint. Both measured values are
+   preserved verbatim below. */
+
 .upload-zone {
     border: 2px dashed var(--color-border);
     border-radius: var(--radius-md);
-    padding: var(--space-xl);
+    padding: var(--space-lg);
     text-align: center;
     color: var(--color-text-tertiary);
-    transition: border-color 150ms, background 150ms;
+    transition: border-color 0.15s, background 0.15s;
     cursor: pointer;
 }
 
 .upload-zone:hover,
 .upload-zone.dragover {
     border-color: var(--color-accent);
-    background: var(--color-accent-muted);
     color: var(--color-text-secondary);
+}
+
+.upload-zone.dragover {
+    background: var(--color-accent-muted);
+}
+
+/* PHASE 121 TASK 7 DECIDES THIS ONE LINE. `--color-surface-elevated` is defined
+   nowhere, so this declaration is invalid and hover paints no fill at all. Left
+   verbatim so the computed value does not move before the ruling. Must stay
+   AFTER the .dragover background above: that order is what makes a hovered drag
+   read transparent today. */
+.upload-zone:hover {
+    background: var(--color-surface-elevated);
 }
 
 /* -- Responsive: stat-grid-4col ----------------------------------------- */
@@ -3488,20 +3513,8 @@ div[id$="-map"] {
     min-height: 28px;
 }
 
-.upload-zone {
-    border: 2px dashed var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-lg);
-    text-align: center;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-}
-
-.upload-zone:hover,
-.upload-zone.drag-over {
-    border-color: var(--color-accent);
-    background: var(--color-surface-elevated);
-}
+/* The second .upload-zone rule set stood here until 2026-08-26 (Phase 121). It
+   is folded into the single rule set beside the first one, above. */
 
 .upload-zone-content {
     display: flex;
