@@ -66,11 +66,31 @@ def modules(request):
     from core.modules import dashboard_cards_for, enabled_modules, nav_sections_for
 
     specs = enabled_modules()
+    sections = nav_sections_for(specs)
     return {
         "enabled_modules": [spec.name for spec in specs],
-        "nav_sections": nav_sections_for(specs),
+        "nav_sections": sections,
         "module_dashboard_cards": dashboard_cards_for(specs),
+        "page_section": _page_section(sections, request.path),
     }
+
+
+def _page_section(sections, path):
+    """The nav section key this path belongs to, or "" when it belongs to none.
+
+    Walks the sections the deployment actually composed — not the static
+    registry — so a dropped module can never name a section that has no sidebar.
+    First match wins; pure string work, no reverse() and no query.
+
+    Visibility predicates are applied in the template, not here, so an entry
+    hidden from THIS viewer still matches. That is deliberate: the value
+    describes the page, not the sidebar the viewer happens to see.
+    """
+    for section in sections:
+        for entry in section.entries:
+            if entry.is_active(path):
+                return entry.section
+    return ""
 
 
 def setup_status(request):
