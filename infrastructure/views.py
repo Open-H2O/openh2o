@@ -41,7 +41,10 @@ ADD_TYPE_BACK = {
 ADD_TYPE_LABEL = {
     "well": "Well",
     "diversion": "Diversion",
-    "storage": "Storage",
+    # "Storage" alone made the breadcrumb read "Add Storage" beside a sentence
+    # saying "a storage pond or tank" — the same self-contradiction ISS-134 was
+    # filed about, one line smaller.
+    "storage": "Storage Pond",
     "recharge_site": "Recharge Site",
 }
 
