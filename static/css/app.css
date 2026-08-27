@@ -2918,6 +2918,7 @@ div[id$="-map"] {
 
 .page-narrow { max-width: 640px; margin-inline: auto; }
 .page-medium { max-width: 800px; margin-inline: auto; }
+.page-wide   { max-width: 1400px; margin-inline: auto; }
 
 /* -- Utility: toolbar flex row ------------------------------------------ */
 
