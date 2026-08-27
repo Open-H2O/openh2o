@@ -3436,10 +3436,6 @@ div[id$="-map"] {
     .map-form-layout {
         grid-template-columns: 1fr;
     }
-
-    .infra-type-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* Infrastructure form */
@@ -3450,53 +3446,11 @@ div[id$="-map"] {
     align-items: start;
 }
 
-.infra-type-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-sm);
-}
-
-.infra-type-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: var(--space-md);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    text-align: center;
-    /* No `background` entry: this card's fill declaration was deleted 2026-08-26
-       with the other nine dead ones, so there is no fill left to fade. */
-    transition: border-color 0.15s;
-}
-
-.infra-type-card input[type="radio"] {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.infra-type-card:hover {
-    border-color: var(--color-accent);
-}
-
-.infra-type-card.active {
-    border-color: var(--color-accent);
-    box-shadow: 0 0 0 1px var(--color-accent);
-}
-
-.infra-type-label {
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--color-text-primary);
-}
-
-.infra-type-desc {
-    font-size: var(--text-xs);
-    color: var(--color-text-tertiary);
-}
+/* The `.infra-type-*` four-card picker stood here. It was deleted 2026-08-27
+   with the markup it styled (ISS-134): the Add page asked which kind of
+   infrastructure you were adding when the URL had already said, and its
+   subtitle contradicted its own heading. The type now arrives in the query
+   string and is switched by a link in the page header. */
 
 .draw-toolbar {
     display: flex;

@@ -49,14 +49,23 @@ from django.urls import reverse
 
 from tests.factories import BoundaryFactory
 
-#: (path, the ONE ``?type=`` this page may offer, or None for "may offer neither")
+#: (path, the ``?type=`` values this page may offer, or None for "may offer neither")
+#:
+#: The rule is *offer only what you list*, so the allowed set is whatever the
+#: page's own queryset can return — not "one type per page", which is what this
+#: table said until 2026-08-27 and which was only ever true by accident.
 _PAGE_MAY_OFFER = (
-    # Lists wells; the add form's "well" card creates one.
-    ("/wells/", "well"),
+    # Lists wells; "well" creates one.
+    ("/wells/", {"well"}),
     # Lists points of diversion; "diversion" creates one.
-    ("/surface/", "diversion"),
-    # Lists recharge sites; "recharge_site" creates one.
-    ("/recharge/", "recharge_site"),
+    ("/surface/", {"diversion"}),
+    # Lists recharge sites AND storage ponds/tanks: both are RechargeSite rows
+    # distinguished only by `site_type`, and `recharge_sites_list` filters on
+    # nothing, so every one of them appears here. `storage` had no add button
+    # anywhere in the product until 2026-08-27 — the Add page's four-card picker
+    # was its only route in, so removing that picker (ISS-134) required giving
+    # the type a front door on the page that already lists it.
+    ("/recharge/", {"recharge_site", "storage"}),
     # No parcel type exists in ``infrastructure.views.ADD_TYPE_ORDER``, and the
     # web importer reduces every polygon to a centroid
     # (``infrastructure/importer.py:453``) while a Use Area is a polygon whose
@@ -154,8 +163,8 @@ def test_page_offers_only_what_it_lists(path, may_offer, render):
             f"type to ADD_TYPE_ORDER[0], so this button opens whichever form "
             f"happens to be first — not {may_offer!r}."
         )
-        assert offered[0] == may_offer, (
-            f"{path} ({render}) lists {may_offer!r} but offers to create "
+        assert offered[0] in may_offer, (
+            f"{path} ({render}) lists {sorted(may_offer)!r} but offers to create "
             f"{offered[0]!r}: {href}"
         )
 

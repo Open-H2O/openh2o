@@ -25,6 +25,12 @@
   <div class="row-end" style="margin-top: var(--space-sm);">
     {% if 'infrastructure' in enabled_modules %}
     <a href="{% url 'infrastructure:import' %}?type=recharge_site" class="btn-secondary btn-sm">Import</a>
+    {% comment %}A storage pond or tank is a RechargeSite row and already appears in the
+       list below, but until 2026-08-27 nothing anywhere linked to `?type=storage`
+       — the Add page's four-card picker was its only route into the app, so
+       removing that picker (ISS-134) would have left the type unreachable.
+       Secondary, because a recharge site is what this page is mostly for.{% endcomment %}
+    <a href="{% url 'infrastructure:add' %}?type=storage" class="btn-secondary btn-sm">+ Add storage pond</a>
     <a href="{% url 'infrastructure:add' %}?type=recharge_site" class="btn-primary btn-sm">+ Add recharge site</a>
     {% endif %}
   </div>

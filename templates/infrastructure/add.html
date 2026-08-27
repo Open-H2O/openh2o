@@ -16,7 +16,14 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Add {{ preselect_label }}</span>
   </nav>
-  <p class="page-description">Add a single well, diversion, storage, or recharge site with map placement.</p>
+  <p class="page-description">Add a {{ preselect_long_label }} and place it on the map.</p>
+  {% if other_add_types %}
+  {% comment %}The button that got here already said which kind of thing it adds, so this
+     page does not ask again. It still has to offer a way across: `storage` has
+     no "+ Add" button of its own anywhere, and before this line the four-card
+     picker was its only route into the app.{% endcomment %}
+  <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0 0;">Adding something else? {% for t in other_add_types %}<a href="?type={{ t.value }}">{{ t.label|capfirst }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+  {% endif %}
 </div>
 {% endblock %}
 
@@ -35,59 +42,13 @@
     <!-- LEFT: Form fields -->
     <div class="page-stack">
 
-      <!-- Type selector -->
-      <div class="card-raised">
-        <h2 class="card-header-ruled">Infrastructure type</h2>
-        <div class="infra-type-grid">
-          {% if 'wells' in enabled_modules %}<label class="infra-type-card{% if preselect_type == 'well' %} active{% endif %}" data-type="well">
-            <input type="radio" name="infra_type" value="well"{% if preselect_type == 'well' %} checked{% endif %}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M12 2v4"/><path d="M12 18v4"/>
-              <path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/>
-              <path d="M2 12h4"/><path d="M18 12h4"/>
-            </svg>
-            <span class="infra-type-label">Groundwater well</span>
-            <span class="infra-type-desc">Production, monitoring, or domestic well</span>
-          </label>{% endif %}
-          {# Phase 87: each type card is guarded by the module that owns it. The #}
-          {# POST branch below creates that module's model, and _add_context     #}
-          {# reverses its list route — offering a card for a dropped module is a #}
-          {# NoReverseMatch 500, not a dead link. `storage` belongs to recharge  #}
-          {# because it creates a RechargeSite.                                  #}
-          {% if 'surface' in enabled_modules %}
-          <label class="infra-type-card{% if preselect_type == 'diversion' %} active{% endif %}" data-type="diversion">
-            <input type="radio" name="infra_type" value="diversion"{% if preselect_type == 'diversion' %} checked{% endif %}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            <span class="infra-type-label">Surface water diversion</span>
-            <span class="infra-type-desc">Point of diversion from stream or canal</span>
-          </label>
-          {% endif %}
-          {% if 'recharge' in enabled_modules %}
-          <label class="infra-type-card{% if preselect_type == 'storage' %} active{% endif %}" data-type="storage">
-            <input type="radio" name="infra_type" value="storage"{% if preselect_type == 'storage' %} checked{% endif %}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="6" width="20" height="12" rx="2"/>
-              <path d="M12 6v12"/><path d="M2 12h20"/>
-            </svg>
-            <span class="infra-type-label">Storage pond / tank</span>
-            <span class="infra-type-desc">Surface water storage facility</span>
-          </label>
-          <label class="infra-type-card{% if preselect_type == 'recharge_site' %} active{% endif %}" data-type="recharge_site">
-            <input type="radio" name="infra_type" value="recharge_site"{% if preselect_type == 'recharge_site' %} checked{% endif %}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-            </svg>
-            <span class="infra-type-label">Recharge site</span>
-            <span class="infra-type-desc">Spreading basin, injection, or ASR well</span>
-          </label>
-          {% endif %}
-        </div>
-      </div>
+      {% comment %}The type is decided before arrival (?type=, defaulted by _supported_type)
+         and is switched by the link in the page header, which reloads the page.
+         A hidden input rather than a radio group: the four-card picker asked a
+         question the URL had already answered, and its subtitle contradicted the
+         page's own heading (ISS-134). The JS below reads this input, so it must
+         keep the name `infra_type`.{% endcomment %}
+      <input type="hidden" name="infra_type" value="{{ preselect_type }}">
 
       <!-- Common fields -->
       <div class="card-raised">
@@ -362,8 +323,11 @@
 <script src="{% static 'js/map-core.js' %}"></script>
 <script>
 (function() {
-  var checkedTypeRadio = document.querySelector('input[name="infra_type"]:checked');
-  var currentType = checkedTypeRadio ? checkedTypeRadio.value : 'well';
+  // `infra_type` is a hidden input since ISS-134 — NOT a checked radio. Querying
+  // for `:checked` here would match nothing and silently fall back to 'well',
+  // which on a wells-less deployment is a type that does not exist.
+  var typeInput = document.querySelector('input[name="infra_type"]');
+  var currentType = typeInput ? typeInput.value : 'well';
   var drawMode = 'point';
   var marker = null;
   var vertices = [];
@@ -379,32 +343,17 @@
     recharge_site: document.getElementById('fields-recharge_site'),
   };
 
-  var typeRadios = document.querySelectorAll('input[name="infra_type"]');
-  typeRadios.forEach(function(radio) {
-    radio.addEventListener('change', function() {
-      currentType = this.value;
-      Object.keys(typeFields).forEach(function(k) {
-        // A type whose module is dropped has no panel in the markup, so the
-        // lookup above is null. Phase 87 guarded the panels but not this loop,
-        // which made a surface-less Add page throw on the first type change.
-        if (!typeFields[k]) return;
-        typeFields[k].style.display = k === currentType ? '' : 'none';
-      });
-      updateDrawModeForType();
-      var names = { well: 'Well', diversion: 'Diversion', storage: 'Storage', recharge_site: 'Recharge Site' };
-      document.getElementById('submit-btn').textContent = 'Create ' + names[currentType];
-      document.querySelectorAll('.infra-type-card').forEach(function(card) {
-        card.classList.toggle('active', card.dataset.type === currentType);
-      });
-    });
-  });
-  // Sync visible fields / active tile / submit label to the preselected type on load
+  // The type no longer changes without a page load, so there is no change
+  // handler here and no selected-card state to keep in sync — both went with the
+  // picker (ISS-134). This runs once, for the type the URL already decided.
+  // NB: this is a JS comment, so it SHIPS to the browser. Naming the deleted
+  // class here would defeat the very grep that proves it is gone (Phase 121 hit
+  // that three times); the archaeology belongs in ISSUES.md, not in this file.
   Object.keys(typeFields).forEach(function(k) {
+    // A type whose module is dropped has no panel in the markup, so the lookup
+    // above is null (Phase 87).
     if (!typeFields[k]) return;
     typeFields[k].style.display = k === currentType ? '' : 'none';
-  });
-  document.querySelectorAll('.infra-type-card').forEach(function(card) {
-    card.classList.toggle('active', card.dataset.type === currentType);
   });
   (function() {
     var initNames = { well: 'Well', diversion: 'Diversion', storage: 'Storage', recharge_site: 'Recharge Site' };

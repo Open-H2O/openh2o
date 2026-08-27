@@ -45,6 +45,16 @@ ADD_TYPE_LABEL = {
     "recharge_site": "Recharge Site",
 }
 
+#: The full name of each type, as the operator reads it on the page. ADD_TYPE_LABEL
+#: above is the terse breadcrumb/button form ("Add Well", "Create Well"); these are
+#: what a sentence calls the thing.
+ADD_TYPE_LONG_LABEL = {
+    "well": "groundwater well",
+    "diversion": "surface water diversion",
+    "storage": "storage pond or tank",
+    "recharge_site": "recharge site",
+}
+
 #: The module that owns each add/import type. Phase 87: every ADD_TYPE_BACK value
 #: is fed to `reverse()`, and `surface:pod_list` / `recharge:list` do not resolve
 #: when their module is omitted — so an unfiltered `?type=diversion` was a
@@ -106,6 +116,17 @@ def _add_context(infra_type, **extra):
     context = {
         "preselect_type": infra_type,
         "preselect_label": ADD_TYPE_LABEL[infra_type],
+        "preselect_long_label": ADD_TYPE_LONG_LABEL[infra_type],
+        # The OTHER types this deployment can serve, so the page can offer a way
+        # out without asking the question it already has the answer to. Built
+        # from supported_add_types() rather than the full list, for the same
+        # reason the type cards were guarded in Phase 87: offering a type whose
+        # module is dropped is a NoReverseMatch 500, not a dead link.
+        "other_add_types": [
+            {"value": t, "label": ADD_TYPE_LONG_LABEL[t]}
+            for t in supported_add_types()
+            if t != infra_type
+        ],
         "back_url": reverse(back_name),
         "back_label": back_label,
         "measurement_method_choices": MEASUREMENT_METHOD_CHOICES,
