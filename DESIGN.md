@@ -88,8 +88,16 @@ Three OKLCH tonal ramps (8 stops each, 100-800):
   Add `.card-inset` for a quieter, recessed variant (references, secondary aids).
 - Form inputs: .form-input, .form-select, .form-textarea utility classes
 - Tables: .table-scroll wrapper for horizontal overflow
-- Toolbar: .toolbar-row for action bars above tables
-- Layout: .page-narrow (max-width 640px), .page-medium (max-width 960px)
+- Toolbar: `.toolbar-row` for the filter bar above a table — bottom-aligns its
+  controls with a 16px gap. `.row-end` is the other one: it right-aligns a row of
+  action buttons with an 8px gap. Same flex row, opposite jobs — filters pack to
+  the start and line up on their baselines, actions pack to the end.
+- Layout: `.page-narrow` (max-width 640px), `.page-medium` (max-width 800px),
+  `.page-wide` (max-width 1400px). All three centre with `margin-inline: auto`.
+- Layout, full-bleed: the workspace pages (`/wells/`, `/accounting/accounts/`) are
+  a different population. Their `<main>` runs at `max-width: none` and the content
+  is a `.workspace-split` grid, so they take **no** page-width class at all —
+  giving one to a workspace page would cap a layout designed uncapped.
 - Responsive: tablet 1023px, mobile 767px breakpoints
 - Empty states: SVG inline icons with secondary text
 - Toasts: HTMX-driven notifications

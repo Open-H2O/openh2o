@@ -33,14 +33,7 @@
     utility over the data, and burying the only write path in it would read as
     another control on the view rather than the way results get here.
   {% endcomment %}
-  {% comment %}
-    Explicit flex rather than the `.row-end` class used elsewhere in this file:
-    `.row-end` has no rule in app.css (it is used in five templates and defined
-    in none), so it lays out nothing and every existing use is carried by its
-    inline style. Pre-existing and out of scope to fix here, but not something
-    to build a new alignment on.
-  {% endcomment %}
-  <div style="display: flex; justify-content: flex-end;">
+  <div class="row-end">
     <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
   </div>
 
