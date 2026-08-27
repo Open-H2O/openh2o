@@ -2928,6 +2928,13 @@ div[id$="-map"] {
     align-items: flex-end;
 }
 
+.row-end {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+}
+
 /* The `.health-status-badge-*` system lived here. It was a second, parallel
    badge vocabulary for one semantic — a coloured status chip — differing from
    `.badge` only by a leading dot and a `text-transform: capitalize` that was
