@@ -210,6 +210,24 @@ html { color-scheme: dark; }
     transition: width 200ms ease, transform 200ms ease;
     overflow: hidden;
     z-index: 40;
+    /* One viewport tall, and it stays put while the page scrolls.
+       `.app-shell` is a flex ROW, so without a definite height this column
+       stretches to its own content and drags the whole document taller than the
+       viewport. `.app-main` is a separate child capped at one viewport with the
+       footer at ITS bottom, so those extra pixels became scrollable emptiness
+       with the footer stranded in the middle of it — on every page except the
+       map, which locks the shell itself. In Admin mode the nav is 33 links and
+       1276px tall against a 900px viewport; in Operations mode it is 23 links
+       and fits exactly, which is why this only ever showed one way round.
+       `.sidebar-nav` already carries `flex: 1; overflow-y: auto` and has since
+       it was written — it simply never had a bounded height to scroll against.
+       Giving it one is the whole fix; the mobile rule below has always done
+       this, so desktop was the odd one out. `align-self` keeps the flex row
+       from overriding the height with a stretch. */
+    height: 100dvh;
+    align-self: flex-start;
+    position: sticky;
+    top: 0;
 }
 
 .sidebar[data-collapsed="true"] {
