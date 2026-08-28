@@ -1070,15 +1070,22 @@ than a date. To pull just what was asked for:
 docker compose exec caddy grep -o '"uri":"[^"]*"' /var/log/caddy/access.log | tail -50
 ```
 
-**How much is kept.** The file holds ten megabytes, and when it fills, it is set
-aside and compressed and a fresh one started; five of those older copies are
-kept. That bounds the whole record at roughly fifty megabytes of text and needs
-nothing installed or scheduled. How long that lasts depends entirely on how busy
-the instance is, so read yours rather than guessing:
+**How much is kept, and it is less than it sounds.** The file holds ten
+megabytes; when it fills, it is set aside and compressed and a fresh one
+started, and five of those older copies are kept. That bounds the whole record
+at roughly fifty megabytes and needs nothing installed or scheduled. But each
+request costs about two kilobytes here — measured at 1,979 bytes on 2026-08-28,
+most of it the security header being written out again on every line — so fifty
+megabytes is on the order of **thirty thousand requests**, not millions. A busy
+public instance can turn that over in days. Read yours rather than guessing:
 
 ```bash
 docker compose exec caddy ls -lh /var/log/caddy/
 ```
+
+If you need to keep visits for longer than that, copy the file somewhere else on
+a schedule (section 11 covers scheduling) rather than raising the limit here —
+the cap is what stops a quiet instance filling its own disk unattended.
 
 **What is deliberately not in there.** The platform checks its own health every
 few seconds, and that check never passes through Caddy — it is asked and
