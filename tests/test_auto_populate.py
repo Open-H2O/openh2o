@@ -10,6 +10,7 @@ from io import StringIO
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -17,6 +18,8 @@ from django.core.management.base import CommandError
 from datasync.models import DataSource, MonitoredStation
 from geography.models import Boundary, Flowline, Zone
 from geography.services.arcgis import (
+    MAX_ATTEMPTS,
+    ArcGISTraversalError,
     esri_polygon_to_geos,
     esri_polyline_to_geos,
     geos_to_esri_geometry,
@@ -37,16 +40,53 @@ def boundary():
     )
 
 
-def _make_mock_response(features, exceeded=False):
-    """Build a mock requests.Response with ArcGIS JSON payload."""
+def _make_mock_response(features, exceeded=False, error=None):
+    """Build a mock requests.Response with ArcGIS JSON payload.
+
+    Pass ``error`` for the failure this API actually produces: HTTP 200, a
+    raise_for_status() that does nothing, and an ``error`` object in the parsed
+    body. That combination is the whole point of ISS-118 — a status-code retry
+    cannot see it.
+    """
     mock_resp = MagicMock()
     mock_resp.status_code = 200
     mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {
-        "features": features,
-        "exceededTransferLimit": exceeded,
-    }
+    if error is not None:
+        mock_resp.json.return_value = {"error": error}
+    else:
+        mock_resp.json.return_value = {
+            "features": features,
+            "exceededTransferLimit": exceeded,
+        }
     return mock_resp
+
+
+def _make_error_response(code, message="Error performing query operation"):
+    """The measured live failure shape (2026-08-28): HTTP 200 + in-body error."""
+    return _make_mock_response(
+        [], error={"code": code, "message": message, "details": []}
+    )
+
+
+def _features_with_oids(oids):
+    """Parcel-shaped features carrying an OBJECTID, for resume-key tests."""
+    return [
+        {
+            "attributes": {"OBJECTID": oid, "PARCEL_APN": f"APN-{oid}"},
+            "geometry": {
+                "rings": [
+                    [
+                        [-119.5, 36.0],
+                        [-119.0, 36.0],
+                        [-119.0, 36.5],
+                        [-119.5, 36.5],
+                        [-119.5, 36.0],
+                    ]
+                ]
+            },
+        }
+        for oid in oids
+    ]
 
 
 def _b118_features():
@@ -1154,3 +1194,211 @@ class TestAutoPopulateFailureReporting:
                 stdout=StringIO(),
                 stderr=StringIO(),
             )
+
+
+# ---------------------------------------------------------------------------
+# ISS-118: the retry sees the failure this API actually produces, and a failed
+# traversal hands back a resume key.
+#
+# Every one of these mocks the transport. NEVER call the live service from a
+# test — it has a measured 26.7% failure rate (2026-08-28), so a live test would
+# be flaky by construction and would sometimes take nine seconds. The
+# measurements justify the constants; they are not fixtures.
+# ---------------------------------------------------------------------------
+
+QUERY_URL = "https://example.test/MapServer/0/query"
+
+
+class TestArcGISRetrySeesTheBody:
+    """The success condition is "parsed AND no error object".
+
+    Regression for ISS-118: the old loop broke out on raise_for_status() passing,
+    and every failure this API produces is an HTTP 200 carrying
+    {"error": {"code": 500, ...}} in the JSON body. The retry could not see it,
+    so a ~104-page traversal discarded itself on the first hiccup.
+    """
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_transient_in_body_error_is_retried_and_traversal_continues(
+        self, mock_post, mock_sleep
+    ):
+        mock_post.side_effect = [
+            _make_error_response(500),
+            _make_mock_response(_b118_features()),
+        ]
+
+        pages = list(query_feature_server(QUERY_URL))
+
+        assert len(pages) == 1, "the page must arrive after the retry"
+        assert len(pages[0]) == 2
+        assert mock_post.call_count == 2
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_budget_is_exactly_max_attempts_and_the_message_names_it(
+        self, mock_post, mock_sleep
+    ):
+        # Deliberately offers more responses than the budget: the assertion is
+        # that the client stops at MAX_ATTEMPTS, not that it runs out of mocks.
+        mock_post.side_effect = [_make_error_response(500)] * 20
+
+        with pytest.raises(ArcGISTraversalError, match="after 6 attempts"):
+            list(query_feature_server(QUERY_URL))
+
+        assert MAX_ATTEMPTS == 6, "the measured budget is 6; see arcgis.py"
+        assert mock_post.call_count == MAX_ATTEMPTS
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_non_retryable_code_raises_first_time_with_no_sleep(
+        self, mock_post, mock_sleep
+    ):
+        """A bad field name is ours, not the network's — fail fast and legibly.
+
+        This is the guard that catches an over-broad fix: an
+        `except Exception: retry` passes every other test in this class and
+        fails this one.
+        """
+        mock_post.side_effect = [
+            _make_error_response(400, "Invalid field: NO_SUCH_FIELD")
+        ] * 6
+
+        with pytest.raises(ArcGISTraversalError, match="not retryable"):
+            list(query_feature_server(QUERY_URL))
+
+        assert mock_post.call_count == 1
+        mock_sleep.assert_not_called()
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_backoff_is_jittered_not_bare_powers_of_two(self, mock_post, mock_sleep):
+        """Without jitter every page of a stalled traversal retries in lockstep."""
+        mock_post.side_effect = [_make_error_response(500)] * 20
+
+        with pytest.raises(ArcGISTraversalError):
+            list(query_feature_server(QUERY_URL))
+
+        waits = [call.args[0] for call in mock_sleep.call_args_list]
+        assert len(waits) == MAX_ATTEMPTS - 1, "no sleep after the final attempt"
+        assert not all(
+            wait == float(2 ** i) for i, wait in enumerate(waits)
+        ), "every wait was a bare power of two — the jitter is missing"
+        for i, wait in enumerate(waits):
+            assert 2 ** i <= wait < 2 ** i + 1, (
+                f"wait {i} ({wait}) is outside its jittered band"
+            )
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_transport_exception_is_still_retried(self, mock_post, mock_sleep):
+        """Today's behaviour must not regress while the in-body case is added."""
+        mock_post.side_effect = [
+            requests.ConnectionError("connection reset"),
+            _make_mock_response(_b118_features()),
+        ]
+
+        pages = list(query_feature_server(QUERY_URL))
+
+        assert len(pages) == 1
+        assert mock_post.call_count == 2
+
+
+class TestArcGISResumeKey:
+    """`resume_from` composes onto the caller's `where`; it never replaces it."""
+
+    @patch("geography.services.arcgis.requests.post")
+    def test_resume_from_composes_onto_an_existing_where(self, mock_post):
+        # load_counties.py:58's real call shape — it passes its own `where`.
+        mock_post.return_value = _make_mock_response(_b118_features())
+
+        list(
+            query_feature_server(
+                QUERY_URL, where="STATE='06'", resume_from=1234
+            )
+        )
+
+        posted = mock_post.call_args.kwargs["data"]
+        assert "STATE='06'" in posted["where"], "the caller's clause was dropped"
+        assert "OBJECTID > 1234" in posted["where"]
+        assert posted["orderByFields"] == "OBJECTID ASC"
+
+    @patch("geography.services.arcgis.requests.post")
+    def test_no_resume_leaves_where_and_ordering_untouched(self, mock_post):
+        mock_post.return_value = _make_mock_response(_b118_features())
+
+        list(query_feature_server(QUERY_URL, where="STATE='06'"))
+
+        posted = mock_post.call_args.kwargs["data"]
+        assert posted["where"] == "STATE='06'"
+        assert "orderByFields" not in posted
+
+    @patch("geography.services.arcgis.requests.post")
+    def test_non_integer_resume_from_is_refused_before_any_request(self, mock_post):
+        """It is interpolated into a `where` sent to a remote service."""
+        with pytest.raises(ValueError, match="integer OBJECTID"):
+            list(query_feature_server(QUERY_URL, resume_from="1234; DROP TABLE"))
+
+        mock_post.assert_not_called()
+
+    @patch("geography.services.arcgis.requests.post")
+    def test_the_oid_field_is_added_to_a_specific_out_fields_list(self, mock_post):
+        """A failure can only name a resume key if the OID was requested."""
+        mock_post.return_value = _make_mock_response(_b118_features())
+
+        list(query_feature_server(QUERY_URL, out_fields="PARCEL_APN,SITE_ADDR"))
+
+        posted = mock_post.call_args.kwargs["data"]
+        assert "PARCEL_APN" in posted["outFields"]
+        assert "OBJECTID" in posted["outFields"]
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_failure_message_carries_a_paste_ready_resume_from(
+        self, mock_post, mock_sleep
+    ):
+        mock_post.side_effect = [
+            _make_mock_response(_features_with_oids([11, 22, 33]), exceeded=True),
+        ] + [_make_error_response(500)] * MAX_ATTEMPTS
+
+        with pytest.raises(ArcGISTraversalError) as exc_info:
+            list(query_feature_server(QUERY_URL))
+
+        assert exc_info.value.last_oid == 33
+        assert "--resume-from 33" in str(exc_info.value)
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_a_page_with_no_oid_degrades_to_no_hint_not_a_crash(
+        self, mock_post, mock_sleep
+    ):
+        # _b118_features() carries no OBJECTID key at all.
+        mock_post.side_effect = [
+            _make_mock_response(_b118_features(), exceeded=True),
+        ] + [_make_error_response(500)] * MAX_ATTEMPTS
+
+        with pytest.raises(ArcGISTraversalError) as exc_info:
+            list(query_feature_server(QUERY_URL))
+
+        assert exc_info.value.last_oid is None
+        assert "--resume-from" not in str(exc_info.value)
+
+
+class TestAutoPopulateResumeFrom:
+    @patch("geography.services.arcgis.requests.post")
+    def test_resume_from_across_two_steps_is_refused_with_no_request(
+        self, mock_post, boundary
+    ):
+        """An OBJECTID belongs to one layer; spanning steps would SKIP rows."""
+        with pytest.raises(CommandError, match="exactly one resumable step"):
+            call_command(
+                "auto_populate",
+                boundary=str(boundary.pk),
+                steps="parcels,flowlines",
+                resume_from=5,
+                dry_run=True,
+                stdout=StringIO(),
+                stderr=StringIO(),
+            )
+
+        mock_post.assert_not_called()
