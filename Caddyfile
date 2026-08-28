@@ -3,8 +3,63 @@
 # so we assert X-Forwarded-Proto=https to the app. Django's production settings
 # trust that header (SECURE_PROXY_SSL_HEADER); without it SECURE_SSL_REDIRECT
 # would bounce every request to https and loop through the tunnel forever.
+
+# Half two of the request record (ISS-121). The site below sends its access log
+# to a file; this sends the SAME entries to stderr as well, which is what
+# `docker compose logs caddy` reads and therefore what the control that found
+# ISS-121 measures. Both halves are needed and neither is decoration: stderr
+# alone dies with the container on every deploy, and a file alone would leave
+# `docker compose logs caddy` still answering "has anyone opened this page" with
+# nothing.
+#
+# **Why this is up here and not beside the other one.** Two sibling `log` blocks
+# inside the site do NOT give you two outputs. `caddy validate` accepts that
+# arrangement and prints "Valid configuration", and it then logs to the file
+# only — the adapter sets the site's `default_logger_name` to the last named
+# block and every access entry goes to that one logger. Measured on
+# caddy:2-alpine 2.11.3 on 2026-08-28: the file had the request, stderr had
+# zero. A second sink that `include`s the site's logger by name is what actually
+# fans the entries out, and `include` is only valid here in the global options.
+#
+# The name below must stay in step with the site's `log access_file` block: the
+# logger is named after it, so renaming one and not the other silently returns
+# `docker compose logs caddy` to reading nothing.
+{
+	log access_stderr {
+		output stderr
+		format console
+		include http.log.access.access_file
+	}
+}
 :80 {
     encode gzip
+
+    # The record of who asked for what (ISS-121), half one of two. Before this
+    # block a deployment built from this repository's own documentation logged
+    # not one request: `docker compose logs caddy` carried 102 lines and none of
+    # them named a path, so an operator asked "has anyone opened this page", "is
+    # anyone using the map" or "when did that request come in" had nothing to
+    # read. For a public agency that record is also what answers a records
+    # request about the agency's own system.
+    #
+    # This half is the copy that SURVIVES A DEPLOY. /var/log/caddy is the
+    # caddy_logs named volume (docker-compose.yml), so it outlives the
+    # `docker compose up -d --build` that recreates this container and discards
+    # everything `docker compose logs caddy` was holding. roll_size/roll_keep
+    # bound it at roughly 50 MB (10 MB live, five rolled copies, gzipped by
+    # Caddy itself) so the volume cannot grow without limit and nothing external
+    # needs installing or scheduling.
+    #
+    # The other half — the same lines on stderr, so `docker compose logs caddy`
+    # answers the question too — is the `log access_stderr` block in the global
+    # options at the top of this file, and it is up there for a reason recorded
+    # in its own comment. Read that before changing either.
+    log access_file {
+        output file /var/log/caddy/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
 
     # Content-Security-Policy — the one security header Django's SecurityMiddleware
     # does not set. Django 5 gives us HSTS, X-Frame-Options, X-Content-Type-Options

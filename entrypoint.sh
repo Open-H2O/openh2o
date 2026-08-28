@@ -37,9 +37,28 @@ chown -R app:app /app/media /app/staticfiles /app/logs 2>/dev/null || true
 # while views wait on the DB or an external API (OpenET/CIMIS), so a press spike
 # does not saturate a tiny fixed worker pool. Tune per host via .env; the default
 # (3 workers x 4 threads = 12 concurrent) is safe on a 2-4GB VPS.
+#
+# --access-logfile turns on the record of who asked for what (ISS-121). Before
+# this flag a deployment built from this repository's own documentation logged
+# not one request, on either shape, and "has anyone opened this page" had no
+# answer. For a public agency that record is also what answers a records request
+# about the agency's own system.
+#
+# Why `-` (stdout) and not a path. A file here would need its own rotation, and
+# /app/logs already belongs to the Django rotating handler in
+# config/settings/production.py — a second writer with no rotation of its own is
+# the thing that fills a disk. stdout is what `docker compose logs web` reads,
+# and it is also what makes this ONE flag correct on both deployment shapes: the
+# systemd unit in docs/INSTALL-WITHOUT-DOCKER.md carries the same flag pointed at
+# a real path, because that shape has no container log to read.
+#
+# The /health/live/ healthcheck (Dockerfile) probes every 15s and will be most of
+# this log's volume. That is accepted: it is an in-container curl to 127.0.0.1,
+# so Caddy never sees it, and the Caddy log below is the clean visitor record.
 exec gosu app gunicorn config.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers "${GUNICORN_WORKERS:-3}" \
     --threads "${GUNICORN_THREADS:-4}" \
     --worker-class gthread \
-    --timeout "${GUNICORN_TIMEOUT:-60}"
+    --timeout "${GUNICORN_TIMEOUT:-60}" \
+    --access-logfile -

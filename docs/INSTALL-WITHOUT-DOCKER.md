@@ -455,13 +455,23 @@ WorkingDirectory=<the checkout>
 EnvironmentFile=<the checkout>/.env
 ExecStart=<the checkout>/.venv/bin/gunicorn config.wsgi:application \
     --bind 127.0.0.1:80 --workers 3 --threads 4 \
-    --worker-class gthread --timeout 60
+    --worker-class gthread --timeout 60 \
+    --access-logfile /var/log/openh2o/access.log
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 Restart=on-failure
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
+```
+
+**Make the folder on the last line first.** The service will not start if it
+names a folder that is not there, and the error it gives says nothing about
+folders:
+
+```bash
+sudo mkdir -p /var/log/openh2o
+sudo chown "$USER" /var/log/openh2o
 ```
 
 Then:
@@ -472,7 +482,7 @@ sudo systemctl enable --now openh2o
 sudo systemctl status openh2o
 ```
 
-Four lines in that file are doing real work.
+Five lines in that file are doing real work.
 
 **`EnvironmentFile=` is the section 7 gotcha, solved.** systemd reads the `.env`
 file and hands every value to the program as it starts, so the service gets
@@ -496,6 +506,14 @@ all. If `systemctl status openh2o` shows a permission failure, this line is the
 first thing to check.
 
 **`--bind 127.0.0.1` is a decision, not a default.** Section 9.
+
+**`--access-logfile` is the record of who visited what.** Every page request
+lands in that file as one line: when it arrived, what was asked for, what was
+sent back. Without it the site serves visitors and remembers nothing about
+having done so, which leaves an ordinary question — *has anyone opened this
+page yet?* — with no way to answer it. Section 11 is about that file: where it
+is, what a line means, and the one thing it needs from you. It has no size
+limit of its own, which is the one thing section 11 asks you to attend to.
 
 **`Restart=on-failure` and `WantedBy=multi-user.target`** are what make it
 survive: the first restarts the program if it crashes, the second starts it again
@@ -589,33 +607,68 @@ On this path the HTTPS-related warnings are expected and section 7 is the reason
 
 ---
 
-## 11. No traffic-router on this path
+## 11. No traffic-router on this path, and where the visit record lives
 
 <!-- defines: reverse_proxy -->
 The Docker path runs Caddy in front — a middleman program that receives web
 traffic and relays it inward to the real program. **This path has no such
-middleman.** Gunicorn serves the site directly and WhiteNoise, a piece of code
-inside the program itself, hands the styling and images to visitors' browsers.
-That is a complete and correct arrangement for an instance nobody outside can
-reach.
+middleman.** The web server serves the site directly and WhiteNoise, a piece of
+code inside the program itself, hands the styling and images to visitors'
+browsers. That is a complete and correct arrangement for an instance nobody
+outside can reach.
 
-It costs you one thing worth knowing about: **there is no record of who visited
-what.** Caddy would have written one; gunicorn writes none unless told to. That
-is a known gap in this platform, and it is worth closing here rather than
-inheriting. Add this flag to the unit file's `ExecStart` line:
+**The record of who visited what is written here by the web server itself.** The
+unit file in section 8 already carries the line that does it, so there is nothing
+to turn on:
 
 ```
---access-logfile /var/log/openh2o/access.log
+/var/log/openh2o/access.log
 ```
 
-Create the folder first and let the service account write to it:
+Read the most recent visits, or watch them arrive as they happen:
 
 ```bash
-sudo mkdir -p /var/log/openh2o
-sudo chown "$USER" /var/log/openh2o
+tail -n 50 /var/log/openh2o/access.log
+tail -f /var/log/openh2o/access.log
 ```
 
-Then `sudo systemctl daemon-reload && sudo systemctl restart openh2o`.
+**One line per request**, in the order they arrived: the address the request came
+from, the date and time, what was asked for, and the three-digit code saying how
+it went — `200` served, `302` sent somewhere else, `404` not found, `500` the
+program failed. Requests for styling and images are in there too, so one person
+opening one page writes several lines.
+
+**This path records one thing the Docker path cannot.** With no middleman in
+front, the address at the start of each line is the visiting machine's own. On
+the Docker path every line carries the middleman's address instead, because that
+is genuinely who handed the request over, and recovering the visitor's own takes
+a second step. Here it is simply there.
+
+**The one thing this file needs from you: it has no size limit.** It grows for as
+long as the site is up and nothing trims it. A quiet office instance will take
+years to become a nuisance and a busy public one will not, so hand it to the
+tool the machine already has for this. Write `/etc/logrotate.d/openh2o`:
+
+```
+/var/log/openh2o/access.log {
+    weekly
+    rotate 8
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
+```
+
+That keeps eight weeks and compresses the older ones. `copytruncate` is the line
+that matters: it copies the file aside and empties the original in place, so the
+running program keeps writing to the same file it opened at boot and needs no
+restart. Check the file you just wrote without waiting a week — this reads it and
+reports what it would do, and changes nothing:
+
+```bash
+sudo logrotate --debug /etc/logrotate.d/openh2o
+```
 
 ---
 
@@ -631,11 +684,14 @@ database, the same isolated Python package set, the same styling build, the same
 background service, the same port-80 permission, the same loopback binding as
 above.
 
-**Measured separately.** Three specific claims here were tested on throwaway
+**Measured separately.** Four specific claims here were tested on throwaway
 machines rather than reasoned out: that the map and geometry libraries load from
 `gdal-bin` alone; that `requirements.lock` installs under `--require-hashes` with
-no compiler present; and that Ubuntu 24.04 supplies PostgreSQL 16 with PostGIS
-3.4.2 while Debian 12 supplies neither.
+no compiler present; that Ubuntu 24.04 supplies PostgreSQL 16 with PostGIS 3.4.2
+while Debian 12 supplies neither; and that section 11's rotation file does what
+it says — run on a throwaway Ubuntu 24.04 machine on 2026-08-28, it compressed
+the old visits into `access.log.1.gz` and left the original in place at zero
+bytes, which is the behaviour `copytruncate` is there for.
 
 **Reasoned, not exercised.** The package list above is derived from the
 `Dockerfile` line by line rather than watched installing on a fresh machine as

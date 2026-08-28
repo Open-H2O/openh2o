@@ -36,6 +36,19 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Bound the Docker log file. The json-file driver is UNCAPPED by default —
+    # verified, not assumed: `docker inspect` on both containers returns
+    # `json-file map[]`, an empty options map, and this host has no
+    # /etc/docker/daemon.json setting a default. Until now that was harmless
+    # because these logs were nearly silent (642 lines in 12 hours). Turning on
+    # the gunicorn access log (entrypoint.sh) is precisely the change that makes
+    # an uncapped log file matter, so the cap ships in the same commit rather
+    # than waiting for a full disk to ask for it. 10 MB x 5 files = ~50 MB.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     volumes:
       - static_files:/app/staticfiles
       # User-uploaded media (feedback screenshots) — persists across rebuilds so
@@ -69,6 +82,18 @@ services:
       - ./error-pages:/srv/error:ro
       - caddy_data:/data
       - caddy_config:/config
+      # The request record the Caddyfile's `log access_file` block writes. A
+      # named volume, not a bind mount, and that is the whole point: it survives
+      # `docker compose up -d --build`, which recreates the container and throws
+      # away everything `docker compose logs caddy` was holding. This is the copy
+      # that is still there after a deploy.
+      - caddy_logs:/var/log/caddy
+    # Same uncapped-driver finding as `web` above; see that comment.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     depends_on:
       # Wait for the web container's HEALTHCHECK to pass before starting Caddy,
       # so a cold boot never forwards to a web process that is not yet listening
@@ -83,3 +108,4 @@ volumes:
   logs_data:
   caddy_data:
   caddy_config:
+  caddy_logs:

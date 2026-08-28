@@ -1039,6 +1039,53 @@ docker compose logs caddy        # Caddy reverse proxy
 docker compose logs -f web       # Follow logs in real time
 ```
 
+Those four answer *is it broken*. The two below answer a different question —
+*has anyone opened this page, and when* — which for a public agency is also the
+record that answers a request about the agency's own system:
+
+```bash
+docker compose logs caddy | grep 'handled request'       # what visitors asked for, readable
+docker compose exec caddy cat /var/log/caddy/access.log  # the copy that survives a deploy
+```
+
+**Why the same visits are written down twice, and why you need both.** The first
+command reads what the container has said since it last started, and a deploy
+(`docker compose up -d --build`) replaces that container and throws all of it
+away. The second reads a file kept on a storage area of its own, outside the
+container, so it is still there tomorrow and still there after the next deploy.
+The first is how you watch traffic arriving now and is the easier of the two to
+read; the second is the record you keep.
+
+**Reading a line.** One line per request, in the order they arrived: the time,
+the address the request came from, what was asked for, and the three-digit code
+saying how it went — `200` served, `302` sent somewhere else, `404` not found,
+`500` the program failed. One person opening one page writes several lines,
+because the styling, the fonts and the map tiles are each their own request.
+
+The kept copy is written as one machine-readable record per line, which is
+thorough but dense to read by eye, and its time is a count of seconds rather
+than a date. To pull just what was asked for:
+
+```bash
+docker compose exec caddy grep -o '"uri":"[^"]*"' /var/log/caddy/access.log | tail -50
+```
+
+**How much is kept.** The file holds ten megabytes, and when it fills, it is set
+aside and compressed and a fresh one started; five of those older copies are
+kept. That bounds the whole record at roughly fifty megabytes of text and needs
+nothing installed or scheduled. How long that lasts depends entirely on how busy
+the instance is, so read yours rather than guessing:
+
+```bash
+docker compose exec caddy ls -lh /var/log/caddy/
+```
+
+**What is deliberately not in there.** The platform checks its own health every
+few seconds, and that check never passes through Caddy — it is asked and
+answered inside the app container — so it does not bury the real visits here. It
+does appear in `docker compose logs web`, which is why that one is much noisier
+and this one is the cleaner record of who actually came to the site.
+
 ### Public Demo Reset (golden snapshot)
 
 A **public** demo is single-tenant: one shared database, open self-signup, no
