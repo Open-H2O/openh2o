@@ -395,14 +395,33 @@ class TestReachable:
         assert "Onboard a water system" in body
         assert reverse("drinking:onboard") in body
 
-    def test_the_empty_sampling_point_page_does_not_offer_onboarding(self, client_in):
-        """Onboarding creates a system and facilities, never a sampling point.
+    def test_the_empty_sampling_point_page_offers_onboarding_only_with_no_system(
+        self, client_in
+    ):
+        """SUPERSEDED BY 123-02, and the original reasoning was half right.
 
-        Offering it here would be a dead end wearing a helpful coat — the same
-        reason this partial does not link the Setup Wizard.
+        It said: onboarding creates a system and facilities, never a sampling
+        point, so offering it here is a dead end wearing a helpful coat. True —
+        but the alternative it left in place was "add it in the Django admin",
+        which is a worse dead end and one most operators cannot even reach.
+
+        The ruled answer is the point builder, which takes a PWSID in its path.
+        So this is a two-branch condition, not a flag flip: with a system there
+        IS a PWSID and the builder is the door; with none there is nothing to
+        build on, and onboarding is the honest first step. This test pins both
+        directions of that condition.
         """
-        body = client_in.get(reverse("drinking:sampling_points")).content.decode()
-        assert "Onboard a water system" not in body
+        no_system = client_in.get(
+            reverse("drinking:sampling_points")
+        ).content.decode()
+        assert "Onboard a water system" in no_system
+
+        WaterSystem.objects.create(pwsid=PWSID, name="Bakman Water Company")
+        with_system = client_in.get(
+            reverse("drinking:sampling_points")
+        ).content.decode()
+        assert "Build sampling points" in with_system
+        assert "Onboard a water system" not in with_system
 
     def test_the_wizard_has_a_nav_entry(self):
         from core.modules import MODULE_REGISTRY

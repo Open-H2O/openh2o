@@ -91,9 +91,16 @@
 
 {% else %}
 {% comment %}
-  Neither `import_link` nor `onboard_link`: importing a lab file cannot create a
-  facility, and onboarding is offered on the overview, which is where an
-  operator with no system at all lands.
+  123-02: `onboard_link`, where before this include passed neither flag and fell
+  through to the Django-admin dead end — a screen that is not the answer and
+  that most operators cannot reach. The superseded reason was that onboarding is
+  offered on the overview, "which is where an operator with no system at all
+  lands"; an operator who followed the Facilities link and found nothing has
+  already left that page, and telling them to go back is not a door.
+
+  Onboarding IS the right door here: it writes the system AND its facilities
+  from EPA's record. Still no `import_link` — a lab file creates results, never
+  structure.
 {% endcomment %}
-{% include "drinking/partials/_empty_drinking.html" with what="A facility is a physical part of the water system — a source, a treatment plant or a distribution point — as the federal record enumerates it." %}
+{% include "drinking/partials/_empty_drinking.html" with what="A facility is a physical part of the water system — a source, a treatment plant or a distribution point — as the federal record enumerates it." onboard_link=True %}
 {% endif %}

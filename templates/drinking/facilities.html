@@ -1,8 +1,27 @@
 {% extends "base.html" %}
+{% load humanize %}
+{% load static %}
 {% load drinking_display %}
 
 {% block title %}Facilities - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Facilities{% endblock %}
+
+{% comment %}
+123-02: this page loads no map library today, and that is the real cost of
+putting a map here. Both blocks are copied from
+templates/drinking/sampling_points.html:8-16 — same versions, same order —
+because two Bucket-3 maps loading two different MapLibre builds is a drift
+nobody would notice until one of them broke.
+{% endcomment %}
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -82,9 +101,69 @@
     </div>
   </div>
 
+  {% comment %}
+  The Bucket-3 overview map, and an honest sentence about how much of the
+  inventory it can show. Both counts are computed in drinking/views.py on every
+  render — never written down here — because the Merced demonstration's numbers
+  are not any other system's, and an operator who onboards through the
+  Envirofacts flow starts with none at all.
+
+  OUTSIDE #results, and that is load-bearing on THIS page more than on any
+  other: four controls above swap #results wholesale (search keyup, both
+  selects, and pagination), so a map inside it would be torn down and rebuilt
+  on every keystroke.
+
+  UNFILTERED, by ruling and not by omission. `drinking:facilities_geojson`
+  takes no parameters and is not being given any: filtering it would make this
+  the only one of five Bucket-3 maps to behave that way, and it would not even
+  make the two numbers agree — under `q=WELL 01` the list matched 6 facilities
+  and only 2 of those carry a coordinate. The sentence has to name the
+  divergence either way, so the cheaper and more consistent answer wins. The
+  divergence clause below is that naming.
+
+  A `{# #}` comment would NOT work here: Django's inline comment closes at the
+  end of its line, so a multi-line one renders its second line onward as page
+  text. That has shipped to openh2o.com once, and
+  `test_no_template_ships_a_multi_line_django_comment` now guards it.
+  {% endcomment %}
+  {% if mapped_facility_count %}
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    <div id="drinking-facilities-map" style="height: 380px; width: 100%;"></div>
+  </div>
+  <p class="page-description">
+    The map shows {{ mapped_facility_count|intcomma }} of the
+    {{ total_facility_count|intcomma }} facilit{{ total_facility_count|pluralize:"y,ies" }}
+    in this inventory. Coordinates are published by the state&rsquo;s Groundwater
+    Ambient Monitoring and Assessment Program (GAMA) for groundwater sources
+    only, so distribution-system and treatment-plant facilities carry none and
+    cannot be placed on a map.{% if q or facility_type or activity_status %}
+    It is not filtered: the list below is showing {{ total_count|intcomma }}
+    facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
+    and the map is still drawing every located facility.{% endif %}
+  </p>
+  {% else %}
+  <p class="page-description">
+    No facility in this inventory has a published location, so there is no map
+    of it yet. Coordinates are published by the state&rsquo;s Groundwater Ambient
+    Monitoring and Assessment Program (GAMA) for groundwater sources only &mdash;
+    EPA&rsquo;s Envirofacts record, which onboarding builds a system from, carries
+    none &mdash; so a newly onboarded system starts unmapped and gains
+    coordinates as its sources are located.
+  </p>
+  {% endif %}
+
   <div id="results">
     {% include "drinking/partials/_facility_results.html" %}
   </div>
 
 </div>
+
+{% comment %}
+`map_id` MUST be `drinking-facilities-map`. tests/test_drinking_map.py:329
+asserts `drinking-overview-map` is ABSENT and :371 asserts it is PRESENT, both
+scoped to drinking:sampling_points — reusing that id would break the pair in
+opposite directions. The partial already parameterises the host, the source and
+both layers, so a second map costs no new JavaScript.
+{% endcomment %}
+{% include "drinking/partials/_drinking_overview_map.html" with map_id="drinking-facilities-map" %}
 {% endblock %}

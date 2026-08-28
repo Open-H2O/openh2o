@@ -1,6 +1,15 @@
 {% comment %}
-Drinking-water overview map: every LOCATED facility at once, on the
-drinking:sampling_points inventory page.
+Drinking-water overview map: every LOCATED facility at once.
+
+TWO pages now include this, and the caller names its own host: the
+drinking:sampling_points inventory (host `drinking-overview-map`) and, since
+123-02, the drinking:facilities inventory (host `drinking-facilities-map`). The
+two ids are NOT interchangeable — tests/test_drinking_map.py asserts
+`drinking-overview-map` present on one page and absent on the other, so reusing
+it here would break that pair in opposite directions. Everything below is
+already parameterised on `map_id` (the host, the source `{{ map_id }}-source`
+and both layers `-glow` / `-dots`), which is why the second page cost no new
+JavaScript.
 
 The Bucket-3 overview map (docs/2.0-UX-PATTERN-SPEC.md) for the drinking-water
 screen — the fourth of its kind, after Zones, Surface Diversions and Recharge.

@@ -167,19 +167,90 @@
     the dashboard card was left alone as out of scope; on 2026-08-02 the same
     argument was accepted there too, so the two surfaces now agree.
     {% endcomment %}
+    {% comment %}
+    123-02: the whole tile is the anchor, not just the digits. The page has
+    always advertised the affordance — `.card-raised:hover` (app.css:98-102)
+    lights the entire tile — while only the number was clickable, so the target
+    was 40% of what the hover promised. Measured pixel-identical at 1024 (0.0%,
+    max channel delta 0); no CSS was added and none is needed.
+
+    The inner element is a `<span class="data-table-link">`, NOT an `<a>`. An
+    anchor nested inside an anchor is invalid HTML: browsers reparent the inner
+    one out of the outer, and the tile-wide target silently shrinks back to the
+    digits with nothing visibly wrong. The class is kept because it is what
+    gives the number its colour.
+    {% endcomment %}
     <div class="stat-grid-3col mt-lg">
-      <div class="card-raised card-inset stat-card">
+      <a class="card-raised card-inset stat-card" href="{% url 'drinking:facilities' %}">
         <div class="stat-card-label">Facilities</div>
-        <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ system.facility_count|intcomma }}</a></div>
-      </div>
-      <div class="card-raised card-inset stat-card">
+        <div class="stat-card-value-sm"><span class="data-table-link">{{ system.facility_count|intcomma }}</span></div>
+      </a>
+      <a class="card-raised card-inset stat-card" href="{% url 'drinking:sampling_points' %}">
         <div class="stat-card-label">Sampling points</div>
-        <div class="stat-card-value-sm"><a href="{% url 'drinking:sampling_points' %}" class="data-table-link">{{ system.sampling_point_count|intcomma }}</a></div>
-      </div>
-      <div class="card-raised card-inset stat-card">
+        <div class="stat-card-value-sm"><span class="data-table-link">{{ system.sampling_point_count|intcomma }}</span></div>
+      </a>
+      <a class="card-raised card-inset stat-card" href="{% url 'drinking:results' %}">
         <div class="stat-card-label">Sample results</div>
-        <div class="stat-card-value-sm"><a href="{% url 'drinking:results' %}" class="data-table-link">{{ system.result_count|intcomma }}</a></div>
-      </div>
+        <div class="stat-card-value-sm"><span class="data-table-link">{{ system.result_count|intcomma }}</span></div>
+      </a>
+    </div>
+  </div>
+
+  {% comment %}
+  123-02: what to DO, in order. The page above says what this system IS; three
+  counts route to three lists and nothing on it named a next step. The three
+  cards below are the same `.step-card` idiom the Help page has shipped since
+  Phase 92 (templates/help/getting_started.html:78-88) — badge holds an ICON,
+  the numeral lives in the eyebrow — reused exactly, with no CSS added and no
+  new component invented. `.step-card` carries no accent stripe (app.css:1519
+  records it as removed decoration), so the 2026-07-17 stripe rejection does
+  not arise here.
+
+  Siblings of the identity card, not children of it: a card inside a card reads
+  as one panel with a nested box, and `.page-stack` already spaces siblings.
+
+  Every eyebrow's state comes from `drinking/views.py::overview` — see the
+  comment there on why no numeral is typed into this file. Step 2's link takes
+  the PWSID of the system being rendered in this loop iteration, so a
+  deployment carrying a wholesaler alongside its own system links each card to
+  its own system rather than to whichever one happened to be first.
+
+  No fourth stat tile and no separate action row: Step 3 IS the import link,
+  and adding either would name one action twice on one page.
+  {% endcomment %}
+  <div class="card-raised step-card">
+    <span class="step-number">
+      {% include "partials/icons/_onboard.html" %}
+    </span>
+    <div class="step-body">
+      <span class="step-eyebrow">Step 1 &middot; done{% if system.facility_count %} &mdash; {{ system.facility_count|intcomma }} facilit{{ system.facility_count|pluralize:"y,ies" }}{% endif %}</span>
+      <h2 class="section-header">Onboard a water system</h2>
+      <p class="text-secondary text-base">Enter a PWSID and OpenH2O looks the system up in EPA&rsquo;s Envirofacts record &mdash; the regulatory details and the facilities. Nothing is written until you have reviewed what came back. Run it again to add a second system this agency operates.</p>
+      <a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Onboard another system &rarr;</a>
+    </div>
+  </div>
+
+  <div class="card-raised step-card">
+    <span class="step-number">
+      {% include "partials/icons/_sampling-point.html" %}
+    </span>
+    <div class="step-body">
+      <span class="step-eyebrow">Step 2 &middot; {% if system.step_points_done %}done &mdash; {{ system.sampling_point_count|intcomma }} point{{ system.sampling_point_count|pluralize }}{% else %}not yet{% endif %}</span>
+      <h2 class="section-header">Build its sampling points</h2>
+      <p class="text-secondary text-base">Envirofacts carries the facilities but not the points beneath them, so onboarding deliberately creates none &mdash; inventing them would let one federal record decide the structure a lab file is matched against. The builder composes each PS Code in the state&rsquo;s published format, one per facility you choose.</p>
+      <a href="{% url 'drinking:onboard_points' system.pwsid %}" class="text-sm text-accent">Go to the point builder &rarr;</a>
+    </div>
+  </div>
+
+  <div class="card-raised step-card">
+    <span class="step-number">
+      {% include "partials/icons/_sample-result.html" %}
+    </span>
+    <div class="step-body">
+      <span class="step-eyebrow">Step 3 &middot; {% if system.step_results_done %}done &mdash; {{ system.result_count|intcomma }} result{{ system.result_count|pluralize }}{% else %}not yet{% endif %}</span>
+      <h2 class="section-header">Import lab results</h2>
+      <p class="text-secondary text-base">Upload a laboratory file in the state&rsquo;s own SDWIS.CSV layout. Each row is matched to one of your sampling points by its PS Code, and you see a preview of what matched and what did not before anything is written.</p>
+      <a href="{% url 'drinking:import' %}" class="text-sm text-accent">Go to lab import &rarr;</a>
     </div>
   </div>
   {% empty %}

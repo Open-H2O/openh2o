@@ -164,14 +164,23 @@ class TestPagesRender:
         # the promise is gone and the results page carries the real link.
         #
         # 80-02 gives the SYSTEM page its own real way in — the onboarding
-        # wizard — so that page no longer sends an operator to the admin. The
-        # other two still do, because onboarding creates a system and its
-        # facilities and deliberately never creates a sampling point.
+        # wizard — so that page no longer sends an operator to the admin.
+        #
+        # 123-02 closes the sampling-point page's admin dead end too. Onboarding
+        # still never creates a sampling point, so the ruled door there is the
+        # point builder — and with NO system, which is this fixture's state,
+        # there is no PWSID to build on and the honest first step is onboarding.
+        # Both drinking pages that an operator can reach with an empty inventory
+        # now name something that opens.
+        #
+        # The results page is deliberately unchanged: importing a lab file into
+        # a system with no sampling points produces a page of row errors, so its
+        # empty state still says what it says.
         text = _squash(response.content.decode())
-        if url_name == "drinking:overview":
-            assert "Onboard a water system" in text
-        else:
+        if url_name == "drinking:results":
             assert "Django admin" in text
+        else:
+            assert "Onboard a water system" in text
         assert "next update" not in text, (
             "The empty state still promises an import that has already shipped"
         )

@@ -20,10 +20,29 @@
   pages still do not: onboarding creates a system and its facilities and
   deliberately never creates a sampling point.
 
+  123-02 adds the third door, and closes the two wrong ones. The `{% else %}`
+  branch below sends an operator to the Django admin — a screen that is not the
+  answer and that most operators cannot reach — and BOTH the facilities page and
+  the sampling-points page were landing on it. The facilities page is a flag
+  flip: onboarding is what writes a system AND its facilities, so it gets
+  `onboard_link`.
+
+  The sampling-points page is not, which is why it needed a branch of its own.
+  Onboarding creates facilities and deliberately never creates a sampling point,
+  so the right door there is the point builder — and the builder takes a PWSID
+  in its path. When no system exists there is no PWSID to give, and the honest
+  destination is onboarding: build the system first, then its points. That is
+  the fallback, and it is a real state rather than a defensive `if` — a fresh
+  deployment has no system and an empty sampling-point list at the same moment.
+
   Caller supplies:
     `what`         — one plain-English line about the missing entity
     `import_link`  — truthy only on the results page, where import is the answer
     `onboard_link` — truthy only on the system page, where onboarding is
+    `points_link`  — truthy only on the sampling-point page, where the point
+                     builder is; pair it with `points_pwsid`
+    `points_pwsid` — the system the builder should open on. Empty when no system
+                     exists yet, which routes this branch to onboarding instead.
 {% endcomment %}
 <div class="card-raised empty-state">
   <div class="empty-state-icon">
@@ -51,6 +70,26 @@
   <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
     <a href="{% url 'drinking:onboard' %}" class="btn-primary">Onboard a water system</a>
   </div>
+  {% elif points_link %}
+    {% if points_pwsid %}
+  <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
+    Build them for this system: choose one of its facilities and OpenH2O composes
+    the PS Code in the state&rsquo;s published format. Onboarding writes the
+    facilities and deliberately stops there, so this is its own step.
+  </p>
+  <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
+    <a href="{% url 'drinking:onboard_points' points_pwsid %}" class="btn-primary">Build sampling points</a>
+  </div>
+    {% else %}
+  <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
+    There is no water system to build these on yet. Onboard one from EPA&rsquo;s
+    federal record first &mdash; the builder opens on the system that creates,
+    and on its facilities.
+  </p>
+  <div class="form-footer" style="justify-content: center; margin-top: var(--space-md);">
+    <a href="{% url 'drinking:onboard' %}" class="btn-primary">Onboard a water system</a>
+  </div>
+    {% endif %}
   {% else %}
   <p class="text-tertiary text-sm" style="max-width: 460px; margin: var(--space-sm) auto 0 auto;">
     Add it in the Django admin. The lab-file import creates sample events and

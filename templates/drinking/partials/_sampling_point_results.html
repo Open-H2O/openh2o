@@ -73,5 +73,13 @@
 </div>
 
 {% else %}
-{% include "drinking/partials/_empty_drinking.html" with what="A sampling point is where a sample is physically drawn — a source, an entry point, a distribution location or a tap — identified by its state-published PS Code." %}
+{% comment %}
+  123-02: `points_link`, not `onboard_link`. Onboarding creates facilities and
+  deliberately never creates a sampling point, so it is the wrong door here even
+  though it is the right one on the facilities page. `points_pwsid` comes from
+  drinking/views.py::sampling_points and is empty when no system exists, which
+  routes the partial's own fallback to onboarding. Before this, both branches
+  landed on the Django-admin dead end.
+{% endcomment %}
+{% include "drinking/partials/_empty_drinking.html" with what="A sampling point is where a sample is physically drawn — a source, an entry point, a distribution location or a tap — identified by its state-published PS Code." points_link=True points_pwsid=points_pwsid %}
 {% endif %}

@@ -166,6 +166,31 @@ _PAGES = (
     ("/drinking/sampling-points/", "drinking"),
     ("/drinking/results/", "drinking"),
     ("/drinking/onboard/", "drinking"),
+    # 123-02: the last two drinking pages with no row, and `/drinking/facilities/`
+    # is the one that mattered. It has never had one, so no assertion here has
+    # ever opened it — PROVEN, not asserted: a word `_FORBIDDEN_VOCABULARY`
+    # rejects was injected into that page and `make test-droppable` stayed green
+    # at 30, byte-identical to baseline, while the same word on
+    # `/drinking/sampling-points/` (which does have a row) turned it red at 2
+    # failed. Phase 123 then put a map and several paragraphs of new prose on
+    # that page, which is exactly the kind of change this gate exists to read.
+    #
+    # ⚠ ADDING A ROW HERE DOES NOT CHANGE THE DROPPABLE TEST COUNT, and 123-02
+    # was planned expecting it would. `test_droppability_acceptance.py`
+    # parameterises on the dropped-module CASES, not on this table — every row
+    # is walked inside one test — so the count is 30 before and after, and
+    # "still 30" is NOT evidence the row went unread. The only honest check is
+    # the injection above: with `/drinking/facilities/` in this table, putting
+    # `monitoring station` into a branch of that page the crawl actually reaches
+    # turns `-k datasync` red at 2 failed. Done 2026-08-27 and reverted.
+    #
+    # "A branch the crawl actually reaches" is the other half. The droppability
+    # fixture seeds NO drinking rows (ISS-097), so the map and its coverage
+    # sentence never render under the crawl — the first injection went into that
+    # sentence and stayed green, which looks exactly like a missing row and is
+    # not one.
+    ("/drinking/facilities/", "drinking"),
+    ("/drinking/import/", "drinking"),
 )
 
 

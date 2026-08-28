@@ -205,12 +205,23 @@ class TestBothEmptyStates:
     def test_nothing_onboarded_offers_the_domain_explainer(self, client_in):
         html = client_in.get(reverse("drinking:facilities")).content.decode()
         assert "A facility is a physical part" in html
-        # Importing a lab file cannot create a facility, and onboarding belongs
-        # to the overview — so neither call to action appears here. Asserted on
-        # the BUTTON LABELS, not on the URLs: the sidebar links /drinking/onboard
-        # on every page, so a URL assertion would be about the nav rather than
-        # about this empty state.
-        assert "Onboard a water system" not in html
+        # 123-02 REVERSES the onboarding half of this assertion, and the reason
+        # the old one gave is the reason it had to go: "onboarding belongs to
+        # the overview" is true of where the link lives and false of where the
+        # operator is. Someone who followed the Facilities link and found
+        # nothing has already left the overview; telling them to go back to a
+        # page they came from is not a door. Onboarding writes the system AND
+        # its facilities, so it is the right one here.
+        #
+        # The import half stands unchanged: a lab file creates results, never
+        # structure, so offering it here would still be a dead end.
+        #
+        # Still asserted on the BUTTON LABELS, not the URLs — the sidebar links
+        # /drinking/onboard on every page, so a URL assertion would be about the
+        # nav rather than about this empty state. (The same trap caught three
+        # assertions in tests/test_drinking_module_shows_what_to_do.py during
+        # its red run; that file scopes by CSS class instead.)
+        assert "Onboard a water system" in html
         assert "Import lab results" not in html
 
 

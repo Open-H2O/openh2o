@@ -112,6 +112,19 @@ def overview(request):
         system.has_connection_splits = any(
             getattr(system, name) is not None for name in _CONNECTION_SPLIT_FIELDS
         )
+        # 123-02: the state each step of the sequence is in, computed here and
+        # NEVER written into the template. The demonstration happens to hold 61
+        # facilities, 27 points and 22,367 results; an onboarded system holds
+        # none of those, and a numeral typed into the eyebrow would be a
+        # sentence that is right on exactly one deployment.
+        #
+        # Derived from the three counts already gathered above — no fourth
+        # aggregate query. Step 1 is done by definition inside the loop: this
+        # system exists, so it was onboarded (or admin-created, which is the
+        # same evidence).
+        system.step_onboard_done = True
+        system.step_points_done = system.sampling_point_count > 0
+        system.step_results_done = system.result_count > 0
 
     return render(request, "drinking/overview.html", {"systems": systems})
 
@@ -198,6 +211,23 @@ def facilities(request):
                 "activity_status", ACTIVITY_STATUS_CHOICES
             ),
             "has_any": SystemFacility.objects.exists(),
+            # 123-02: the coverage counts for the sentence under the map, the
+            # same pair `sampling_points` computes below and for the same
+            # reason — the Merced demonstration's figures are not any other
+            # system's, and an Envirofacts-onboarded system starts at zero
+            # because EPA publishes no coordinates at all.
+            #
+            # Deliberately UNFILTERED by `q` / `facility_type` /
+            # `activity_status`. This sentence is about what the platform
+            # HOLDS, not about what the current search matched; the map is
+            # unfiltered too (see `facilities_geojson`, which takes no
+            # parameters), and the sentence gains a clause naming the
+            # divergence when a filter is on rather than quietly disagreeing
+            # with the table.
+            "total_facility_count": SystemFacility.objects.count(),
+            "mapped_facility_count": SystemFacility.objects.filter(
+                location__isnull=False
+            ).count(),
         },
     )
 
@@ -236,6 +266,26 @@ def sampling_points(request):
     paginator = Paginator(queryset, 50)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
+    # 123-02: the PWSID the empty state's "Build sampling points" button opens
+    # on. Onboarding writes facilities and deliberately never writes a point, so
+    # the right door from an empty inventory is the builder — and the builder
+    # takes a PWSID in its path.
+    #
+    # Computed ONLY when the list is empty, which is the only render that can
+    # show the empty state. A populated page issues exactly the queries it did
+    # before this line existed.
+    #
+    # Exactly one system, or nothing: with two systems there is no honest
+    # default, and picking the first would send an operator to the wrong one
+    # with no way to tell. `[:2]` asks the database that question in one slice
+    # rather than fetching a table to count it.
+    has_any_point = SamplingPoint.objects.exists()
+    points_pwsid = ""
+    if not has_any_point:
+        pwsids = list(WaterSystem.objects.values_list("pwsid", flat=True)[:2])
+        if len(pwsids) == 1:
+            points_pwsid = pwsids[0]
+
     # The coverage counts for the sentence under the map. Computed here, every
     # render, and NEVER written into the template as literals: the Merced
     # demonstration happens to be 21 of 27 points and 21 of 61 facilities, and an
@@ -256,7 +306,8 @@ def sampling_points(request):
             "q": q,
             "point_type": point_type,
             "point_type_choices": POINT_TYPE_CHOICES,
-            "has_any": SamplingPoint.objects.exists(),
+            "has_any": has_any_point,
+            "points_pwsid": points_pwsid,
             "point_total_count": SamplingPoint.objects.count(),
             "mapped_point_count": SamplingPoint.objects.filter(
                 facility__location__isnull=False
