@@ -1304,6 +1304,56 @@ class TestArcGISRetrySeesTheBody:
         assert mock_post.call_count == 2
 
 
+class TestArcGISEmptyPageIsNotAlwaysTheEnd:
+    """An empty page ends the traversal only if the service agrees it does.
+
+    Measured live 2026-08-28: the degraded LightBox service answered a query
+    that returnCountOnly put at 57,290 rows with ZERO features and
+    exceededTransferLimit still true. The old `if not features: break` reported
+    that as "Done. 0 record(s)" and exit 0 — a silent undercount.
+    """
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_empty_page_still_claiming_more_is_retried_not_treated_as_the_end(
+        self, mock_post, mock_sleep
+    ):
+        mock_post.side_effect = [
+            _make_mock_response([], exceeded=True),
+            _make_mock_response(_b118_features(), exceeded=False),
+        ]
+
+        pages = list(query_feature_server(QUERY_URL))
+
+        assert len(pages) == 1, "the retry must recover the page, not stop short"
+        assert mock_post.call_count == 2
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_a_persistently_empty_page_fails_loudly_rather_than_reporting_done(
+        self, mock_post, mock_sleep
+    ):
+        mock_post.side_effect = [_make_mock_response([], exceeded=True)] * 20
+
+        with pytest.raises(ArcGISTraversalError, match="after 6 attempts"):
+            list(query_feature_server(QUERY_URL))
+
+        assert mock_post.call_count == MAX_ATTEMPTS
+
+    @patch("geography.services.arcgis.time.sleep")
+    @patch("geography.services.arcgis.requests.post")
+    def test_an_honestly_empty_page_still_ends_the_traversal(
+        self, mock_post, mock_sleep
+    ):
+        """The normal terminator must not become a six-attempt stall."""
+        mock_post.return_value = _make_mock_response([], exceeded=False)
+
+        pages = list(query_feature_server(QUERY_URL))
+
+        assert pages == []
+        assert mock_post.call_count == 1
+
+
 class TestArcGISResumeKey:
     """`resume_from` composes onto the caller's `where`; it never replaces it."""
 

@@ -144,6 +144,11 @@ def query_feature_server(
     raises ArcGISTraversalError naming it, carrying the last OBJECTID yielded so
     the traversal can be restarted from there rather than from zero.
 
+    An empty page ends the traversal only when the service also stops setting
+    ``exceededTransferLimit``. An empty page that still claims there is more is
+    treated as a retryable failure, because taking it at face value silently
+    truncates the import and reports success.
+
     ``resume_from`` is an OBJECTID to start after. It is COMPOSED onto any
     existing ``where`` (never replacing it) as ``(<where>) AND <oid_field> >
     <resume_from>``, and the results are ordered by the OID field ascending so
@@ -250,7 +255,36 @@ def query_feature_server(
             else:
                 error = data.get("error")
                 if error is None:
-                    break  # the only success path
+                    if data.get("features") or not data.get(
+                        "exceededTransferLimit", False
+                    ):
+                        break  # the only success path
+
+                    # An empty page is the traversal's terminator ONLY when the
+                    # service also agrees there is nothing more. Measured
+                    # 2026-08-28 against the live LightBox service: while it was
+                    # degraded it answered this query with ZERO features and
+                    # exceededTransferLimit STILL TRUE, on a where-clause that
+                    # returnCountOnly put at 57,290 rows. Taking that as the end
+                    # of the traversal is how an import reports "Done. 0
+                    # record(s)" and exit 0 having read nothing at all — the
+                    # exact silent undercount every other guard in this module
+                    # exists to prevent. Retry it; if it persists, fail loudly
+                    # and carry the resume key out.
+                    last_failure = (
+                        "the service returned an empty page while still "
+                        "reporting exceededTransferLimit=true"
+                    )
+                    logger.warning(
+                        "ArcGIS returned an empty page but says there is more "
+                        "(attempt %d/%d, offset %d)",
+                        attempt + 1,
+                        MAX_ATTEMPTS,
+                        offset,
+                    )
+                    if attempt < MAX_ATTEMPTS - 1:
+                        time.sleep(_backoff_seconds(attempt))
+                    continue
 
                 if isinstance(error, dict):
                     code = error.get("code")
