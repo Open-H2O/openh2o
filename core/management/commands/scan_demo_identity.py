@@ -30,11 +30,27 @@ Matching semantics, which are the substance of this command:
 2. A banned entry marked ``"match": "scoped"`` is matched only inside the
    ``table.column`` pairs its scope names. This exists for ``"MID "``, where a
    bare three-letter token matched globally would fire on ordinary prose.
-3. A hit is suppressed when a protected entry that applies to this
+3. A banned entry is ALSO matched in its composed **slug form** — lowercased,
+   every run of non-alphanumerics collapsed to a single ``.``, truncated to 40
+   characters, the exact transform `core.demo_identity.identity_slug` applies
+   and `seed_merced_details.py::_fill_account_contacts` composes contact
+   addresses with. This is what closes ISS-103: ``Merced Water Manager`` reaches
+   a database as ``merced.water.manager@example.com``, a form no substring of
+   the banned value matches. **Only multi-word banned values get a slug term**
+   — a slug containing no ``.`` is a bare token, and an ``icontains`` on
+   ``"MID "``'s slug ``mid`` would fire on ``midpoint`` and ordinary prose while
+   adding no coverage the plain substring does not already give. A slug term is
+   gated by ``applies_to`` exactly as its raw value is, so a ``scoped`` entry
+   stays scoped in both shapes. Findings record which shape was seen as
+   ``"form": "literal"`` or ``"form": "slug"``.
+4. A hit is suppressed when a protected entry that applies to this
    ``table.column`` has a value containing the matched span — or is a blanket
    ``"value": "*"`` entry, which declares the whole column real published
    content. Without this, widening a banned entry carelessly would start
-   flagging the Merced River.
+   flagging the Merced River. **Suppression is slug-aware too**, and that half
+   is what keeps item 3 safe: ``merced.river`` is not a substring of
+   ``Merced River``, so slug matching without slug suppression would flag real
+   published geography the moment a composed column carried it.
 
 Scopes may use wildcards: ``parcels_parcel.*`` for a whole column set on one
 table, ``drinking_*.*`` for a whole table group.
@@ -62,6 +78,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import models
 from django.db.models import Q
+
+from core.demo_identity import identity_slug
 
 DEFAULT_POLICY = "data/demo/identity_policy.json"
 
@@ -181,6 +199,28 @@ class Command(BaseCommand):
                 yield model, table, field.column, field.attname
 
     # ------------------------------------------------------------------
+    # The slug form
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _slug_term(value):
+        """The composed-slug form of a banned value, or ``""`` if it earns none.
+
+        **Only multi-word values get a slug term, and that is a correctness
+        guard rather than an optimisation.** The policy bans ``"MID "`` — a bare
+        three-letter token, matched ``scoped`` for exactly this reason — and its
+        slug is ``mid``. An ``icontains`` on ``mid`` would fire on ``midpoint``,
+        ``middle`` and any ordinary prose that happens to contain those three
+        letters. A single-token banned value already matches as a plain
+        substring wherever its slug would, so a slug term for it adds no
+        coverage at all and adds nothing but false positives.
+
+        The presence of a ``.`` is the test: it is what separates a composed
+        multi-word form (``merced.water.manager``) from a bare token.
+        """
+        slug = identity_slug(value)
+        return slug if "." in slug else ""
+
+    # ------------------------------------------------------------------
     # Suppression
     # ------------------------------------------------------------------
     def _blanket_for(self, protected, table, column):
@@ -191,13 +231,26 @@ class Command(BaseCommand):
         return None
 
     def _suppressor(self, protected, table, column, span):
-        """The protected entry whose value contains this matched span, if any."""
+        """The protected entry whose value contains this matched span, if any.
+
+        Suppression is slug-aware for the same reason matching is, and this half
+        is load-bearing. A span like ``merced.river`` is not found inside the
+        protected value ``Merced River``, so slug matching WITHOUT slug
+        suppression would start flagging real published geography the moment any
+        column carried a composed form — the cry-wolf failure this module's
+        docstring warns about, arriving by way of the fix for ISS-103.
+        """
         low = span.lower()
+        span_slug = identity_slug(span)
         for entry in protected:
             value = entry.get("value", "")
             if value == "*":
                 continue
-            if low in value.lower() and applies_to(entry, table, column):
+            if not applies_to(entry, table, column):
+                continue
+            if low in value.lower():
+                return entry
+            if span_slug and span_slug in identity_slug(value):
                 return entry
         return None
 
@@ -227,9 +280,17 @@ class Command(BaseCommand):
                 blanket_skipped.append((table, column, blanket))
                 continue
 
-            predicate = reduce(
-                or_, (Q(**{f"{attname}__icontains": e["value"]}) for e in applicable)
-            )
+            # Both shapes are searched in SQL. A Python pass over every row of
+            # every text column would turn a cheap indexed scan into a
+            # full-table sweep, which is what would get this command switched
+            # off the first time it made a deploy slow.
+            terms = []
+            for e in applicable:
+                terms.append(Q(**{f"{attname}__icontains": e["value"]}))
+                slug = self._slug_term(e["value"])
+                if slug:
+                    terms.append(Q(**{f"{attname}__icontains": slug}))
+            predicate = reduce(or_, terms)
             rows = (
                 model.objects.filter(predicate)
                 .values_list("pk", attname)
@@ -241,10 +302,19 @@ class Command(BaseCommand):
                     continue
                 low = value.lower()
                 for entry in applicable:
-                    index = low.find(entry["value"].lower())
+                    form = "literal"
+                    needle = entry["value"].lower()
+                    index = low.find(needle)
                     if index < 0:
-                        continue
-                    span = value[index : index + len(entry["value"])]
+                        # Not present as written — is it present as a composed
+                        # slug? `matched` stays the human-readable banned value;
+                        # `form` is what tells the reader which shape was seen.
+                        needle = self._slug_term(entry["value"])
+                        index = low.find(needle) if needle else -1
+                        if index < 0:
+                            continue
+                        form = "slug"
+                    span = value[index : index + len(needle)]
                     if self._suppressor(protected, table, column, span) is not None:
                         continue
                     findings.append(
@@ -254,6 +324,7 @@ class Command(BaseCommand):
                             "pk": pk,
                             "value": value,
                             "matched": entry["value"],
+                            "form": form,
                             "reason": entry["reason"],
                             "out_of_scope": not applies_to(entry, table, column),
                         }
@@ -342,7 +413,8 @@ class Command(BaseCommand):
                 self.stderr.write(
                     self.style.ERROR(
                         f"  {f['table']}.{f['column']} pk={f['pk']}: "
-                        f"{f['value']!r} matches banned {f['matched']!r}{flag}"
+                        f"{f['value']!r} matches banned {f['matched']!r} "
+                        f"({f['form']} form){flag}"
                     )
                 )
                 self.stderr.write(f"      why banned: {f['reason']}")
@@ -359,7 +431,7 @@ class Command(BaseCommand):
             shown = findings[: self.MAX_IN_MESSAGE]
             lines = [
                 f"{f['table']}.{f['column']} pk={f['pk']}: {f['value']!r} "
-                f"matches banned {f['matched']!r}"
+                f"matches banned {f['matched']!r} ({f['form']} form)"
                 + ("  [OUT OF SCOPE]" if f["out_of_scope"] else "")
                 for f in shown
             ]

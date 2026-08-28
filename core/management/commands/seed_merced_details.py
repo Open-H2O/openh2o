@@ -223,16 +223,18 @@ class Command(BaseCommand):
 
     # --- Water account contact emails -----------------------------------------
     def _fill_account_contacts(self):
-        import re
-
         from accounting.models import WaterAccount
+
+        from core.demo_identity import identity_slug
 
         count = 0
         for a in WaterAccount.objects.all():
             if a.contact_email:
                 continue
             basis = a.contact_name or a.name
-            slug = re.sub(r"[^a-z0-9]+", ".", basis.lower()).strip(".")[:40]
+            # The transform is shared with scan_demo_identity so the scan can
+            # match the shape this line writes (ISS-103). Do not inline it back.
+            slug = identity_slug(basis)
             a.contact_email = f"{slug or 'contact'}@example.com"
             a.save(update_fields=["contact_email"])
             count += 1

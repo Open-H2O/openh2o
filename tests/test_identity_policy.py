@@ -29,6 +29,7 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
+from core.demo_identity import identity_slug
 from core.modules import is_enabled
 from tests.factories import FlowlineFactory, ParcelFactory, WellFactory
 
@@ -338,3 +339,147 @@ def test_scan_reads_the_committed_policy_by_default(capsys):
     call_command("scan_demo_identity")
     out = capsys.readouterr().out
     assert f"{len(json.loads(POLICY_PATH.read_text())['banned'])} banned" in out
+
+
+# ---------------------------------------------------------------------------
+# 7. The composed slug form (ISS-103)
+# ---------------------------------------------------------------------------
+def test_identity_slug_matches_what_the_seeder_composes():
+    """The anti-drift guard: one transform, two callers, one place to break it.
+
+    `seed_merced_details.py::_fill_account_contacts` composes a contact address
+    and `scan_demo_identity` matches that shape. If they ever stop agreeing,
+    ISS-103 re-opens silently — the scan keeps looking for yesterday's form and
+    reports the demonstration clean. This test is the thing that goes red when
+    somebody edits one side, and it asserts against the composition as written
+    rather than against `identity_slug` calling itself.
+    """
+    for basis, expected in [
+        ("Merced Water Manager", "merced.water.manager"),
+        ("Merced Falls Hydroelectric Co.", "merced.falls.hydroelectric.co"),
+        ("Turner Island Water District GSA - Merced", "turner.island.water.district.gsa.merced"),
+        ("MID ", "mid"),
+        ("", ""),
+    ]:
+        assert identity_slug(basis) == expected
+
+    # The seeder's own line, transcribed: 40 characters, then `@example.com`,
+    # with `contact` standing in for a blank basis. A change to either half that
+    # is not made to the other lands here.
+    # The truncation happens AFTER the strip, so a 40-character cut can land on
+    # a separator and leave a trailing `.`. That is what the composer writes
+    # today and therefore what the scan must look for — pinned here on purpose,
+    # because "tidy up that trailing dot" is exactly the well-meant edit that
+    # would silently re-open ISS-103.
+    long_name = "Le Grand-Athlone Water District Growers Association"
+    assert identity_slug(long_name) == "le.grand.athlone.water.district.growers."
+    assert len(identity_slug(long_name)) == 40
+    assert f"{identity_slug('') or 'contact'}@example.com" == "contact@example.com"
+    assert (
+        f"{identity_slug('Merced Water Manager')}@example.com"
+        == "merced.water.manager@example.com"
+    )
+
+
+@pytest.mark.skipif(not is_enabled("accounting"), reason="accounting module is not enabled")
+def test_scan_catches_a_banned_name_in_composed_slug_form():
+    """ISS-103, end to end: the form the seeder writes and the scan used to miss.
+
+    `Merced Water Manager` is a banned contact string. The seeder derives
+    `contact_email` from `contact_name`, so it reaches the database as
+    `merced.water.manager@example.com` — a form no case-insensitive substring of
+    the banned value matches. Before this fix the scan reported the demonstration
+    clean with a real district's derived contact sitting on it.
+
+    The failure must still name the value in HUMAN-READABLE form: an operator
+    reading the alert needs `Merced Water Manager`, not a slug they have to
+    reverse-engineer.
+    """
+    from tests.factories import WaterAccountFactory
+
+    account = WaterAccountFactory(contact_email="merced.water.manager@example.com")
+
+    with pytest.raises(CommandError) as exc:
+        call_command("scan_demo_identity")
+
+    message = str(exc.value)
+    assert "accounting_wateraccount" in message
+    assert "contact_email" in message
+    assert f"pk={account.pk}" in message
+    assert "Merced Water Manager" in message
+    assert "slug form" in message
+
+
+def test_slug_suppression_is_load_bearing(tmp_path):
+    """Slug matching without slug suppression would flag the Merced River.
+
+    This is the slug-form twin of `test_protected_half_is_load_bearing`, and it
+    matters more here than the raw case does: `merced.river` is NOT a substring
+    of `Merced River`, so the protected half goes blind the moment a column
+    carries a composed form. The same widened policy runs twice, so the only
+    variable is whether the protected half covers the slug.
+
+    The committed policy's own halves do not currently overlap in slug form — no
+    banned slug sits inside a protected one — so this test uses a fixture policy
+    to exercise the path the committed one only guards against.
+    """
+    FlowlineFactory(name="merced.river@example.com")
+
+    # Deliberately over-broad AND multi-word, so it earns a slug term.
+    widened_banned = [
+        {
+            "value": "Merced River",
+            "reason": "deliberately over-broad, to prove slug suppression works",
+            "scope": ["geography_flowline.name"],
+        }
+    ]
+    protected = [
+        {
+            "value": "Merced River",
+            "reason": "real river, real published USGS geography",
+            "scope": ["geography_flowline.name"],
+        }
+    ]
+
+    with_protection = write_policy(
+        tmp_path, {"banned": widened_banned, "protected": protected}, "slug-with.json"
+    )
+    call_command("scan_demo_identity", policy=with_protection)  # passes
+
+    without_protection = write_policy(
+        tmp_path,
+        {
+            "banned": widened_banned,
+            "protected": [
+                {
+                    "value": "Something Else Entirely",
+                    "reason": "a non-empty protected half that covers nothing here",
+                    "scope": ["parcels_parcel.notes"],
+                }
+            ],
+        },
+        "slug-without.json",
+    )
+    with pytest.raises(CommandError) as exc:
+        call_command("scan_demo_identity", policy=without_protection)
+    assert "slug form" in str(exc.value)
+
+    # And the committed policy leaves the river alone in slug form too.
+    call_command("scan_demo_identity")
+
+
+@pytest.mark.skipif(not is_enabled("parcels"), reason="parcels module is not enabled")
+def test_a_single_token_banned_value_gets_no_slug_term():
+    """`MID `'s slug is `mid`, and an icontains on `mid` fires on ordinary prose.
+
+    This guards the multi-word rule in `Command._slug_term`. `parcels_parcelledger.description`
+    is inside `"MID "`'s declared scope, so the entry genuinely applies here — a
+    slug term for it would match `midpoint` and turn the identity scan into the
+    tripwire people learn to ignore. A single-token banned value already matches
+    as a plain substring wherever its slug would, so it loses no coverage.
+    """
+    from tests.factories import ParcelLedgerFactory
+
+    ParcelLedgerFactory(description="Adjusted at the midpoint of the reporting period.")
+
+    call_command("scan_demo_identity")  # no CommandError == not flagged
