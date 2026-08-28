@@ -75,6 +75,15 @@ STATION_SOURCE_CODES = [
     "cnrfc",                                 # fixture-only; live discovery returns []
 ]
 
+# The steps a failed traversal can be resumed into. Both page through an ArcGIS
+# FeatureServer one OBJECTID-ordered page at a time, so "carry on after N" is
+# meaningful for them and for nothing else here:
+#   - basins   uses query_by_boundary, which accumulates one flat list; there is
+#              no page to resume from.
+#   - stations does not page at all — it loops providers, and each provider's
+#              discovery is a single call.
+RESUMABLE_STEPS = ("parcels", "flowlines")
+
 
 class Command(BaseCommand):
     help = (
@@ -101,10 +110,21 @@ class Command(BaseCommand):
             action="store_true",
             help="Report what would be created without writing to the database.",
         )
+        parser.add_argument(
+            "--resume-from",
+            type=int,
+            default=None,
+            help=(
+                "Resume a failed traversal after this OBJECTID — read it off "
+                "the previous run's failure message. Requires exactly one "
+                "resumable step (--steps parcels or --steps flowlines)."
+            ),
+        )
 
     def handle(self, *args, **options):
         boundary = self._resolve_boundary(options["boundary"])
         dry_run = options["dry_run"]
+        resume_from = options.get("resume_from")
 
         if dry_run:
             self.stdout.write(self.style.WARNING("DRY RUN: no records will be created."))
@@ -137,6 +157,24 @@ class Command(BaseCommand):
                 (k, v) for k, v in step_registry.items() if k in step_names
             )
 
+        # An OBJECTID is meaningful only inside the layer it came from: the
+        # parcels layer's 2,207,678 is a different row from the flowlines
+        # layer's, so honouring one key across two steps would silently SKIP
+        # rows in the other. Skipping is the only real risk here — double
+        # counting is already impossible, because _step_parcels filters existing
+        # APNs and _step_flowlines filters existing id3dhp values, and both
+        # bulk_create with ignore_conflicts=True. Refuse rather than guess.
+        if resume_from is not None:
+            resumable = [n for n in step_registry if n in RESUMABLE_STEPS]
+            if len(step_registry) != 1 or len(resumable) != 1:
+                raise CommandError(
+                    "--resume-from needs exactly one resumable step. An "
+                    "OBJECTID belongs to one layer, so applying it to several "
+                    "steps would skip rows in the others. Re-run with "
+                    "--steps parcels or --steps flowlines "
+                    f"(you asked for: {', '.join(step_registry) or 'all steps'})."
+                )
+
         self.stdout.write(
             f"Running {len(step_registry)} step(s) for boundary "
             f"'{boundary.name}' (ID {boundary.pk})..."
@@ -147,7 +185,10 @@ class Command(BaseCommand):
         for step_name, step_fn in step_registry.items():
             self.stdout.write(f"\n--- Step: {step_name} ---")
             try:
-                count = step_fn(boundary, dry_run)
+                if step_name in RESUMABLE_STEPS:
+                    count = step_fn(boundary, dry_run, resume_from=resume_from)
+                else:
+                    count = step_fn(boundary, dry_run)
                 total_created += count
                 self.stdout.write(
                     self.style.SUCCESS(f"  {step_name}: {count} record(s) created.")
@@ -163,12 +204,17 @@ class Command(BaseCommand):
             # A step failed mid-run (e.g. an upstream API died between pages). Do
             # NOT report a green "Done" with an undercount — exit non-zero so a
             # cron/operator sees the run as incomplete. Rows created before the
-            # failure persist; re-running finishes the rest (imports are idempotent).
+            # failure persist; re-running finishes the rest (imports are
+            # idempotent). Where the failure printed a --resume-from hint, that
+            # re-run can skip the pages it already read instead of starting over.
             self.stdout.write(
                 self.style.ERROR(
                     f"\nINCOMPLETE: one or more steps failed (see errors above). "
-                    f"{total_created} record(s) created before the failure(s); "
-                    "re-run to finish."
+                    f"{total_created} record(s) created before the failure(s). "
+                    "Re-running is safe — imports are idempotent, so nothing is "
+                    "duplicated. If a failure above printed a --resume-from "
+                    "hint, re-run that one step with it to carry on from where "
+                    "it stopped instead of from the beginning."
                 )
             )
             raise CommandError("auto_populate did not complete: a step failed.")
@@ -268,7 +314,7 @@ class Command(BaseCommand):
 
         return created_count
 
-    def _step_parcels(self, boundary, dry_run):
+    def _step_parcels(self, boundary, dry_run, resume_from=None):
         """Fetch LightBox parcel boundaries that intersect the boundary.
 
         Queries DWR's statewide LightBox parcel MapServer page-by-page,
@@ -292,6 +338,7 @@ class Command(BaseCommand):
                 return_geometry=True,
                 out_sr=4326,
                 max_record_count=1500,
+                resume_from=resume_from,
             )
 
             for features in pages:
@@ -376,7 +423,7 @@ class Command(BaseCommand):
 
         return created_total
 
-    def _step_flowlines(self, boundary, dry_run):
+    def _step_flowlines(self, boundary, dry_run, resume_from=None):
         """Fetch USGS 3DHP flowlines that intersect the boundary.
 
         Queries the 3D Hydrography Program MapServer (layer 50)
@@ -400,6 +447,7 @@ class Command(BaseCommand):
                 return_geometry=True,
                 out_sr=4326,
                 max_record_count=2500,
+                resume_from=resume_from,
             )
 
             for features in pages:

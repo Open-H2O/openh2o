@@ -74,6 +74,47 @@ def _backoff_seconds(attempt):
     return min(2 ** attempt, BACKOFF_CAP_SECONDS) + random.uniform(0, 1)
 
 
+class ArcGISTraversalError(RuntimeError):
+    """A traversal that ended part-way through, carrying its resume key.
+
+    ``last_oid`` is the last OBJECTID this generator successfully yielded before
+    the failure, or None when the features carried no OID field. When it is
+    known, ``str()`` ends with a paste-ready ``--resume-from`` hint, which is
+    what makes the cheap resume shape work: ``auto_populate.handle()`` already
+    prints the exception text, so the hint reaches the operator with no second
+    reporting path and nothing stored anywhere.
+
+    The hint is attached ONLY where resuming can actually help — an exhausted
+    retry budget. A non-retryable error code means the query itself is wrong, so
+    resuming would fail in exactly the same place; promising otherwise would be
+    the same kind of false promise this phase exists to remove.
+    """
+
+    def __init__(self, message, last_oid=None):
+        self.last_oid = last_oid
+        if last_oid is not None:
+            message = f"{message} — resume with --resume-from {last_oid}"
+        super().__init__(message)
+
+
+def _validated_resume_key(value):
+    """Return ``value`` as an int, or raise ValueError.
+
+    This is the one boundary in this module where hostile input matters: the
+    resume key is string-interpolated into a ``where`` expression sent to a
+    remote service, while everything else in that clause is a literal or a
+    caller-supplied constant.
+    """
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"resume_from must be an integer OBJECTID, got {value!r}."
+        ) from None
+
+
 def query_feature_server(
     url,
     where="1=1",
@@ -84,6 +125,8 @@ def query_feature_server(
     return_geometry=True,
     out_sr=4326,
     max_record_count=1000,
+    resume_from=None,
+    oid_field="OBJECTID",
 ):
     """Generator that yields pages of features from an ArcGIS FeatureServer.
 
@@ -98,14 +141,51 @@ def query_feature_server(
     body, so a status-code-only retry never sees it. Only the error codes in
     RETRYABLE_ARCGIS_ERROR_CODES are retried; any other code (a bad field name,
     a malformed `where`) raises immediately with no sleep. Exhausting the budget
-    raises an error that names it.
+    raises ArcGISTraversalError naming it, carrying the last OBJECTID yielded so
+    the traversal can be restarted from there rather than from zero.
+
+    ``resume_from`` is an OBJECTID to start after. It is COMPOSED onto any
+    existing ``where`` (never replacing it) as ``(<where>) AND <oid_field> >
+    <resume_from>``, and the results are ordered by the OID field ascending so
+    "after N" means the same thing on every page.
+
+    ``oid_field`` defaults to "OBJECTID" because that is the measured-correct
+    answer for every service this repository calls, and that is why the code does
+    not go and discover it. All four captured service descriptions —
+    LightBox parcels, 3DHP flowlines, B118 basins and TIGERweb counties — list
+    exactly one field of type ``esriFieldTypeOID`` and it is named OBJECTID in
+    all four; but only B118 publishes an ``objectIdField`` key in its layer
+    metadata, so reading that key would work on B118 and break on the other
+    three. A plain parameter with a measured default beats a metadata round-trip
+    that is wrong three times out of four.
     """
+    if resume_from is not None:
+        resume_from = _validated_resume_key(resume_from)
+
+    # Always request the OID field, so a failure can always name a resume key.
+    # out_fields="*" already returns it; a specific field list has to ask.
+    # Callers read named attribute keys and ignore extras, so this is additive.
+    if out_fields != "*":
+        requested = [f.strip() for f in str(out_fields).split(",")]
+        if oid_field not in requested:
+            out_fields = f"{out_fields},{oid_field}"
+
+    # Compose, never overwrite: load_counties.py really does pass its own
+    # `where` (STATE='<fips>'), so replacing it would silently widen that import
+    # to every county in the country.
+    effective_where = where
+    order_by_fields = None
+    if resume_from is not None:
+        effective_where = f"({where}) AND {oid_field} > {resume_from}"
+        order_by_fields = f"{oid_field} ASC"
+
     offset = 0
     page_num = 0
+    last_oid = None
 
     while True:
         params = {
-            "where": where,
+            "where": effective_where,
             "outFields": out_fields,
             "returnGeometry": str(return_geometry).lower(),
             "outSR": out_sr,
@@ -122,6 +202,8 @@ def query_feature_server(
             params["geometryType"] = geometry_type
         if spatial_rel is not None:
             params["spatialRel"] = spatial_rel
+        if order_by_fields is not None:
+            params["orderByFields"] = order_by_fields
 
         # Retry with jittered exponential backoff.
         #
@@ -180,7 +262,7 @@ def query_feature_server(
                 if code not in RETRYABLE_ARCGIS_ERROR_CODES:
                     # Ours, not the network's: a bad field name or a malformed
                     # `where`. Fail fast and legibly — no sleep, no second try.
-                    raise RuntimeError(
+                    raise ArcGISTraversalError(
                         f"ArcGIS API error (code {code}, not retryable): {message}"
                     )
 
@@ -201,9 +283,10 @@ def query_feature_server(
                 MAX_ATTEMPTS,
                 last_failure,
             )
-            raise RuntimeError(
+            raise ArcGISTraversalError(
                 f"ArcGIS query failed after {MAX_ATTEMPTS} attempts "
-                f"(offset {offset}): {last_failure}"
+                f"(offset {offset}): {last_failure}",
+                last_oid=last_oid,
             )
 
         features = data.get("features", [])
@@ -214,6 +297,15 @@ def query_feature_server(
 
         if not features:
             break
+
+        # The resume key: the last OBJECTID this page carried. Tolerate its
+        # absence — a page whose features have no OID leaves last_oid as it was
+        # and simply produces no hint. A missing OID must never turn a
+        # recoverable failure into a different failure.
+        last_attributes = (features[-1] or {}).get("attributes") or {}
+        page_last_oid = last_attributes.get(oid_field)
+        if page_last_oid is not None:
+            last_oid = page_last_oid
 
         yield features
 
