@@ -179,17 +179,32 @@
     one out of the outer, and the tile-wide target silently shrinks back to the
     digits with nothing visibly wrong. The class is kept because it is what
     gives the number its colour.
+
+    `text-decoration: none` is inline, and it is NOT decoration-fiddling — it
+    repairs a real regression the mock-up did not show. An `<a>` underlines by
+    default and paints that through its in-flow descendants, so making the tile
+    an anchor underlined the LABELS too ("Facilities", "Sampling points"),
+    which they have never been. Caught on staging at 1440x900.
+
+    Why inline rather than the house `.card-link` component, which exists for
+    exactly "the whole card is a link": `.card-link:hover` sits AFTER
+    `.card-raised:hover` in app.css at equal specificity, so it replaces the
+    accent glow with a flat `--shadow-pop-sm`. That glow is the affordance this
+    whole task exists to honour, so borrowing the component would undo the
+    change while fixing the underline. `templates/datasync/partials/
+    _monitoring_content.html:99` sets the same property inline on a card link
+    for the same reason. Still zero CSS added.
     {% endcomment %}
     <div class="stat-grid-3col mt-lg">
-      <a class="card-raised card-inset stat-card" href="{% url 'drinking:facilities' %}">
+      <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:facilities' %}">
         <div class="stat-card-label">Facilities</div>
         <div class="stat-card-value-sm"><span class="data-table-link">{{ system.facility_count|intcomma }}</span></div>
       </a>
-      <a class="card-raised card-inset stat-card" href="{% url 'drinking:sampling_points' %}">
+      <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:sampling_points' %}">
         <div class="stat-card-label">Sampling points</div>
         <div class="stat-card-value-sm"><span class="data-table-link">{{ system.sampling_point_count|intcomma }}</span></div>
       </a>
-      <a class="card-raised card-inset stat-card" href="{% url 'drinking:results' %}">
+      <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:results' %}">
         <div class="stat-card-label">Sample results</div>
         <div class="stat-card-value-sm"><span class="data-table-link">{{ system.result_count|intcomma }}</span></div>
       </a>

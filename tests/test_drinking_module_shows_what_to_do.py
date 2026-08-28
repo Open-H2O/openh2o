@@ -148,14 +148,14 @@ class _AnchorAudit(HTMLParser):
         #: assertions here passed against the pre-change tree for exactly that
         #: reason before being scoped.
         self.by_class = []
-        #: (tag_name, href_or_None) for every element carrying `stat-card`.
+        #: (tag_name, href_or_None, style_attr) for every `stat-card` element.
         self.stat_cards = []
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         classes = (attrs.get("class") or "").split()
         if "stat-card" in classes:
-            self.stat_cards.append((tag, attrs.get("href")))
+            self.stat_cards.append((tag, attrs.get("href"), attrs.get("style") or ""))
         if tag == "a":
             if self.depth > 0:
                 self.nested.append(attrs.get("href"))
@@ -202,19 +202,44 @@ class TestTheStatTileIsTheTarget:
         assert len(audit.stat_cards) == 3, (
             f"expected three stat tiles, parsed {len(audit.stat_cards)}"
         )
-        for tag, href in audit.stat_cards:
+        for tag, href, _ in audit.stat_cards:
             assert tag == "a", (
                 f"a stat tile is a <{tag}>, so only part of it navigates"
             )
             assert href, "a stat tile is an anchor with no destination"
 
     def test_the_three_tiles_route_to_the_three_lists(self, client_in, mapped_system):
-        hrefs = {href for _, href in _audit(client_in, "drinking:overview").stat_cards}
+        hrefs = {
+            href for _, href, _ in _audit(client_in, "drinking:overview").stat_cards
+        }
         assert hrefs == {
             reverse("drinking:facilities"),
             reverse("drinking:sampling_points"),
             reverse("drinking:results"),
         }
+
+    def test_the_tile_anchor_does_not_underline_its_label(
+        self, client_in, mapped_system
+    ):
+        """Found on staging at 1440x900, after the change was already built.
+
+        An `<a>` underlines by default and paints that decoration through its
+        in-flow descendants, so wrapping the tile underlined "Facilities",
+        "Sampling points" and "Sample results" — labels that have never carried
+        one. The mock-up measurement in the plan reported the tile change
+        pixel-identical and did not show this.
+
+        Asserted on the attribute, because a Django test renders markup and
+        cannot read a computed style. That is the honest limit of this check:
+        it catches the property being deleted, not a new rule elsewhere
+        re-introducing an underline.
+        """
+        for tag, _, style in _audit(client_in, "drinking:overview").stat_cards:
+            assert "text-decoration" in style.replace(" ", "") or "none" in style, (
+                f"a <{tag}> stat tile lost its text-decoration reset, so its "
+                "label underlines"
+            )
+            assert "none" in style.split("text-decoration")[-1]
 
     def test_no_anchor_is_nested_inside_another(self, client_in, mapped_system):
         """Invalid HTML, and it fails INVISIBLY.
