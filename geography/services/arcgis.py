@@ -8,12 +8,70 @@ between ArcGIS JSON and Django GEOSGeometry formats.
 
 import json
 import logging
+import random
 import time
 
 import requests
 from django.contrib.gis.geos import LineString, MultiLineString, MultiPolygon, Polygon
 
 logger = logging.getLogger(__name__)
+
+
+# Transport-level failures worth retrying. Defined LOCALLY rather than imported
+# from datasync/adapters/base.py:46-51, which holds the identical tuple: this is
+# the house idiom copied, not the code reused. `geography` is a standard module
+# and `datasync` is optional (core/modules.py), so a standard module reaching
+# into an optional one is exactly the arrow the composition rule exists to stop.
+#
+# Measured 2026-08-28 against all three services this repo calls: transport
+# errors were 0 of 60 requests. This tuple therefore preserves existing
+# behaviour rather than fixing an observed failure — the observed failure is the
+# in-body one below.
+RETRYABLE_TRANSPORT_ERRORS = (
+    requests.HTTPError,          # a real 4xx/5xx status; raise_for_status raised it
+    requests.ConnectionError,    # DNS failure, refused connection, TCP reset
+    requests.Timeout,            # the 60s read timeout expired mid-request
+    requests.exceptions.ContentDecodingError,   # half-delivered gzip body
+    requests.exceptions.ChunkedEncodingError,   # half-delivered chunked body
+    requests.exceptions.JSONDecodeError,        # body arrived truncated; same class
+                                                # of half-delivered response as the
+                                                # two decoding errors above
+)
+
+# In-body error codes worth retrying. ArcGIS reports a server-side query failure
+# as HTTP 200 carrying {"error": {...}} in the JSON body, which is why a status-
+# code retry never fires on it.
+#
+# Measured 2026-08-28 against the DWR LightBox parcel service, two regions: the
+# ONLY code observed was 500, body {'code': 500, 'message': 'Error performing
+# query operation', 'details': []}, and it cleared on retry 8 of 8 times.
+# 500 is therefore the whole list. A second code gets added WITH its measurement,
+# never speculatively — a malformed `where` or a bad field name comes back the
+# same way with code 400, and retrying that six times turns an instant, legible
+# "that field does not exist" into a 60-second wait ending in the same message.
+RETRYABLE_ARCGIS_ERROR_CODES = (500,)
+
+# Retry budget per page.
+#
+# Measured 2026-08-28: 16 of 60 requests failed = 26.7% per-request failure rate.
+# Across a ~104-page traversal (the Merced Subbasin parcel import) that gives a
+# whole-traversal survival probability of 13.7% at 3 attempts and 96.3% at 6.
+# 6 is chosen for robustness across a range of rates rather than tuned to 26.7%
+# exactly — it is still above 99.9% at a 15% rate.
+MAX_ATTEMPTS = 6
+
+# Ceiling on a single backoff wait. At MAX_ATTEMPTS the un-capped ladder is
+# 1, 2, 4, 8, 16 seconds; the cap bounds a future budget increase.
+BACKOFF_CAP_SECONDS = 30
+
+
+def _backoff_seconds(attempt):
+    """Exponential backoff with jitter, in seconds, for a zero-based attempt.
+
+    The jitter matters: without it every page of a stalled traversal retries on
+    the same instants and the retries re-synchronise on the same server.
+    """
+    return min(2 ** attempt, BACKOFF_CAP_SECONDS) + random.uniform(0, 1)
 
 
 def query_feature_server(
@@ -31,8 +89,16 @@ def query_feature_server(
 
     Each page is a list of dicts with 'attributes' and 'geometry' keys.
     Handles pagination via resultOffset/resultRecordCount.
-    Rate limits 0.5s between pages. Retries up to 3 times with
-    exponential backoff on HTTP errors.
+    Rate limits 0.5s between pages.
+
+    Each page is requested up to MAX_ATTEMPTS (6) times with jittered
+    exponential backoff. Retry covers BOTH transport failures
+    (RETRYABLE_TRANSPORT_ERRORS) and the API's in-body error object — ArcGIS
+    reports a server-side query failure as HTTP 200 with {"error": {...}} in the
+    body, so a status-code-only retry never sees it. Only the error codes in
+    RETRYABLE_ARCGIS_ERROR_CODES are retried; any other code (a bad field name,
+    a malformed `where`) raises immediately with no sleep. Exhausting the budget
+    raises an error that names it.
     """
     offset = 0
     page_num = 0
@@ -57,7 +123,22 @@ def query_feature_server(
         if spatial_rel is not None:
             params["spatialRel"] = spatial_rel
 
-        # Retry with exponential backoff.
+        # Retry with jittered exponential backoff.
+        #
+        # The success condition is "response parsed AND no error object", not
+        # "raise_for_status() passed" — every failure this API actually produces
+        # is an HTTP 200 (measured 2026-08-28, 16 of 60 requests). That is why
+        # response.json() is INSIDE the loop and the dispatch below reads the
+        # parsed body.
+        #
+        # Deliberately NOT urllib3.util.Retry / HTTPAdapter(max_retries=...):
+        # every stock Python retry sits below the JSON parse and dispatches on
+        # status code and transport failure only, so against this service it
+        # would fire zero times — a fix that looks installed and does nothing.
+        # Deliberately NOT `tenacity` either: retry_if_result is the right
+        # abstraction, but it is a new dependency for one call site in a project
+        # whose stated constraint is a small runtime, and the house already has a
+        # retry idiom (datasync/adapters/base.py:195-208). Do not re-litigate.
         #
         # POST, not GET: the spatial query sends the boundary geometry as a
         # parameter. A full-resolution boundary (e.g. the Merced Subbasin's
@@ -66,31 +147,63 @@ def query_feature_server(
         # Large", silently yielding zero features. ArcGIS REST /query accepts
         # the identical parameters form-encoded in a POST body, which has no
         # such limit, so POST works for boundaries of any size.
-        response = None
-        for attempt in range(3):
+        data = None
+        last_failure = None
+        for attempt in range(MAX_ATTEMPTS):
             try:
                 response = requests.post(url, data=params, timeout=60)
                 response.raise_for_status()
-                break
-            except requests.RequestException as exc:
-                if attempt < 2:
-                    wait = 2 ** attempt
-                    logger.warning(
-                        "Request failed (attempt %d/3), retrying in %ds: %s",
-                        attempt + 1,
-                        wait,
-                        exc,
-                    )
-                    time.sleep(wait)
+                data = response.json()
+            except RETRYABLE_TRANSPORT_ERRORS as exc:
+                last_failure = exc
+                logger.warning(
+                    "ArcGIS request failed at the transport "
+                    "(attempt %d/%d): %s",
+                    attempt + 1,
+                    MAX_ATTEMPTS,
+                    exc,
+                )
+                if attempt < MAX_ATTEMPTS - 1:
+                    time.sleep(_backoff_seconds(attempt))
+            else:
+                error = data.get("error")
+                if error is None:
+                    break  # the only success path
+
+                if isinstance(error, dict):
+                    code = error.get("code")
+                    message = error.get("message", error)
                 else:
-                    logger.error("Request failed after 3 attempts: %s", exc)
-                    raise
+                    code = None
+                    message = error
 
-        data = response.json()
+                if code not in RETRYABLE_ARCGIS_ERROR_CODES:
+                    # Ours, not the network's: a bad field name or a malformed
+                    # `where`. Fail fast and legibly — no sleep, no second try.
+                    raise RuntimeError(
+                        f"ArcGIS API error (code {code}, not retryable): {message}"
+                    )
 
-        if "error" in data:
+                last_failure = f"code {code}: {message}"
+                logger.warning(
+                    "ArcGIS returned an in-body error "
+                    "(attempt %d/%d): code %s: %s",
+                    attempt + 1,
+                    MAX_ATTEMPTS,
+                    code,
+                    message,
+                )
+                if attempt < MAX_ATTEMPTS - 1:
+                    time.sleep(_backoff_seconds(attempt))
+        else:
+            logger.error(
+                "ArcGIS request failed after %d attempts: %s",
+                MAX_ATTEMPTS,
+                last_failure,
+            )
             raise RuntimeError(
-                f"ArcGIS API error: {data['error'].get('message', data['error'])}"
+                f"ArcGIS query failed after {MAX_ATTEMPTS} attempts "
+                f"(offset {offset}): {last_failure}"
             )
 
         features = data.get("features", [])
