@@ -130,28 +130,31 @@ nobody would notice until one of them broke.
   <div class="card-raised" style="padding: 0; overflow: hidden;">
     <div id="drinking-facilities-map" style="height: 380px; width: 100%;"></div>
   </div>
-  <p class="page-description">
-    The map shows {{ mapped_facility_count|intcomma }} of the
-    {{ total_facility_count|intcomma }} facilit{{ total_facility_count|pluralize:"y,ies" }}
-    in this inventory. Coordinates are published by the state&rsquo;s Groundwater
-    Ambient Monitoring and Assessment Program (GAMA) for groundwater sources
-    only, so distribution-system and treatment-plant facilities carry none and
-    cannot be placed on a map.{% if q or facility_type or activity_status %}
-    It is not filtered: the list below is showing {{ total_count|intcomma }}
-    facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
-    and the map is still drawing every located facility.{% endif %}
-  </p>
-  {% else %}
-  <p class="page-description">
-    No facility in this inventory has a published location, so there is no map
-    of it yet. Coordinates are published by the state&rsquo;s Groundwater Ambient
-    Monitoring and Assessment Program (GAMA) for groundwater sources only &mdash;
-    EPA&rsquo;s Envirofacts record, which onboarding builds a system from, carries
-    none &mdash; so a newly onboarded system starts unmapped and gains
-    coordinates as its sources are located.
-  </p>
   {% endif %}
 
+  {% comment %}
+  THE SENTENCE LIVES IN `_facility_results.html`, INSIDE #results, and the map
+  does not. That split is not tidiness — it is the fix for UAT-001 (found by
+  `/gsd:verify-work` on 2026-08-27, staging `8c32906`).
+
+  Both halves of it matter and they pull opposite ways:
+
+  * The MAP must stay OUTSIDE, because all four controls here are
+    `hx-target="#results"` and a map inside would be torn down and rebuilt on
+    every keystroke.
+  * The SENTENCE must be INSIDE, because it quotes `total_count` — the number
+    of rows the list is showing — and an htmx swap re-renders nothing but
+    #results. Outside, it never updated: typing `WELL 01` dropped the table to
+    6 rows while the sentence still read "21 of the 61" and the map still drew
+    21 dots, with nothing explaining the mismatch. That is exactly the
+    confusion the divergence clause was ruled into existence to prevent, and it
+    was invisible on a full `?q=` page load — which is what every guard and
+    every manual check had used.
+
+  `core/workspace.py::list_response` hands the SAME context dict to the page
+  template and the results partial, so the partial already had every count it
+  needs and no view change was required.
+  {% endcomment %}
   <div id="results">
     {% include "drinking/partials/_facility_results.html" %}
   </div>

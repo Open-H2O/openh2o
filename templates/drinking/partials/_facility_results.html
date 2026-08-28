@@ -1,4 +1,45 @@
-{% load placeholders %}<div class="result-count-bar">
+{% load humanize %}{% load placeholders %}{% comment %}
+The map coverage sentence. It lives HERE, not on the page around it, because it
+quotes `total_count` — how many rows the list is showing — and an htmx swap
+re-renders this partial and nothing else. Outside #results it silently went
+stale: the table dropped to 6 rows and the sentence still said "21 of the 61"
+(UAT-001, 2026-08-27).
+
+The MAP itself stays outside #results and must not be moved in here: four
+controls on this page swap #results wholesale, and a map inside is destroyed and
+rebuilt on every keystroke.
+
+Every number is computed in `drinking/views.py::facilities` on each render and
+NEVER written down — the demonstration happens to be 21 of 61, and an
+Envirofacts-onboarded system starts at zero because EPA publishes no
+coordinates at all.
+
+`mapped_facility_count` / `total_facility_count` are deliberately UNFILTERED,
+which is why the divergence clause exists: `drinking:facilities_geojson` takes
+no parameters and draws every located facility whatever the list is showing.
+{% endcomment %}{% if mapped_facility_count %}
+<p class="page-description">
+  The map shows {{ mapped_facility_count|intcomma }} of the
+  {{ total_facility_count|intcomma }} facilit{{ total_facility_count|pluralize:"y,ies" }}
+  in this inventory. Coordinates are published by the state&rsquo;s Groundwater
+  Ambient Monitoring and Assessment Program (GAMA) for groundwater sources
+  only, so distribution-system and treatment-plant facilities carry none and
+  cannot be placed on a map.{% if q or facility_type or activity_status %}
+  It is not filtered: the list below is showing {{ total_count|intcomma }}
+  facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
+  and the map is still drawing every located facility.{% endif %}
+</p>
+{% else %}
+<p class="page-description">
+  No facility in this inventory has a published location, so there is no map
+  of it yet. Coordinates are published by the state&rsquo;s Groundwater Ambient
+  Monitoring and Assessment Program (GAMA) for groundwater sources only &mdash;
+  EPA&rsquo;s Envirofacts record, which onboarding builds a system from, carries
+  none &mdash; so a newly onboarded system starts unmapped and gains
+  coordinates as its sources are located.
+</p>
+{% endif %}
+<div class="result-count-bar">
   <span class="text-secondary text-sm">
     <span class="count-pill">{{ total_count }}</span>
     facilit{{ total_count|pluralize:"y,ies" }} found{% if q %} matching "{{ q }}"{% endif %}

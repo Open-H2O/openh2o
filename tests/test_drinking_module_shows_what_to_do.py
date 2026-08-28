@@ -75,6 +75,22 @@ def _squash(html):
     return " ".join(html.split())
 
 
+def _get_htmx(client, route, **params):
+    """The partial the page's own controls actually fetch.
+
+    Load-bearing, and it is the check that was missing. Four controls on
+    `/drinking/facilities/` are `hx-target="#results"`, so typing in the search
+    box re-renders ONLY `_facility_results.html`. The Django test client sends
+    no `HX-Request` header, so every assertion written with a plain
+    `client.get(url, {"q": ...})` exercises the URL path and never the
+    interactive one — which is how UAT-001 survived a full guard suite, a
+    browser pass and a human checkpoint. Anything the operator must still be
+    able to read after a keystroke has to be asserted through HERE.
+    """
+    response = client.get(reverse(route), params, headers={"hx-request": "true"})
+    return html_module.unescape(_squash(response.content.decode()))
+
+
 def _get(client, route, **params):
     """Squashed AND entity-decoded page source.
 
@@ -396,6 +412,42 @@ class TestTheMapIsUnfilteredAndSaysSo:
         """Not just `q` — all three filters diverge from the map the same way."""
         html = _get(client_in, "drinking:facilities", facility_type="DS")
         assert "It is not filtered" in html
+
+    def test_the_clause_reaches_the_htmx_partial_too(self, client_in, mapped_system):
+        """UAT-001. The sentence must survive the path an operator actually uses.
+
+        Typing in the search box swaps `#results` alone. Before this, the
+        sentence lived outside that container and never re-rendered: the table
+        dropped to 6 rows while it still said "21 of the 61" and the map still
+        drew 21 dots, with nothing naming the mismatch — the exact confusion
+        the clause exists to prevent, invisible on a full `?q=` load.
+        """
+        partial = _get_htmx(client_in, "drinking:facilities", q="Well")
+        assert "It is not filtered" in partial, (
+            "the divergence clause does not reach the htmx partial, so it never "
+            "appears when an operator types in the search box"
+        )
+        assert "showing 2 facilities" in partial
+
+    def test_the_htmx_partial_states_the_coverage_and_no_clause_unfiltered(
+        self, client_in, mapped_system
+    ):
+        """The other direction, through the same path."""
+        partial = _get_htmx(client_in, "drinking:facilities")
+        assert "2 of the 3" in partial
+        assert "It is not filtered" not in partial
+
+    def test_the_htmx_partial_never_carries_the_map_host(
+        self, client_in, mapped_system
+    ):
+        """The half of the split that must NOT move.
+
+        A map inside `#results` is destroyed and rebuilt on every keystroke. If
+        the host ever appears in this partial, that is what has happened.
+        """
+        assert 'id="drinking-facilities-map"' not in _get_htmx(
+            client_in, "drinking:facilities"
+        )
 
     def test_the_geojson_ignores_every_filter(self, client_in, mapped_system):
         """The endpoint takes no parameters, and this proves it still doesn't."""
