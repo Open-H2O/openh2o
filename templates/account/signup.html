@@ -39,7 +39,7 @@
     <p class="text-sm text-center text-secondary">
         Already have an account? <a href="{% url 'account_login' %}" class="link-accent">Log in</a>
     </p>
-    {% if site_config and site_config.allow_google_oauth %}
+    {% if google_sign_in_available %}
     <div class="border-separator pt-sm mt-md">
     {% load socialaccount %}
     {% load static %}

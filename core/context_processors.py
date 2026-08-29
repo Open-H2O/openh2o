@@ -2,8 +2,9 @@
 """Django template context processors that inject site-wide values everywhere.
 
 Each function returns a dict merged into every template's context: site config,
-access-control/admin flags for sidebar gating, a fresh-install setup prompt, and
-opt-in Umami analytics and in-app feedback endpoints.
+access-control/admin flags for sidebar gating, whether Google sign-in exists on
+this deployment, a fresh-install setup prompt, and opt-in Umami analytics and
+in-app feedback endpoints.
 """
 from django.conf import settings
 
@@ -138,3 +139,23 @@ def app_version(request):
     to templates, so the footer can name the exact commit a deployment is running —
     the first question on any bug report. "dev" for un-stamped local builds."""
     return {"app_version": settings.APP_VERSION}
+
+
+def google_sign_in(request):
+    """Expose whether Google sign-in actually exists on this deployment.
+
+    ``google_sign_in_available`` is the SAME predicate the URL guards in
+    ``config/urls.py`` use (``core.oauth``), which is the point: the button and
+    the endpoint cannot drift apart, because there is only one answer to drift.
+    ISS-115 was exactly that drift — the templates read the flag, the routes read
+    nothing.
+
+    It is not enough to leave this to the templates' old
+    ``site_config.allow_google_oauth`` test. That test rendered
+    ``{% provider_login_url 'google' %}`` whenever the flag was on, and with no
+    credentials configured the tag raises an uncaught ``SocialApp.DoesNotExist``
+    — taking down the whole login page, not just the button on it.
+    """
+    from core.oauth import google_sign_in_available
+
+    return {"google_sign_in_available": google_sign_in_available()}

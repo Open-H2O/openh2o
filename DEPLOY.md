@@ -1222,7 +1222,7 @@ Two of those names carry ideas the table has no room to explain:
 | `EMAIL_HOST_USER` | No | empty | SMTP username |
 | `EMAIL_HOST_PASSWORD` | No | empty | SMTP password |
 | `ACCOUNT_EMAIL_VERIFICATION` | No | **derived from `EMAIL_HOST`:** `mandatory` when a mail server is set, `none` when it is empty | Whether a new signup must confirm its email address before it can log in. `none` = let them straight in; `optional` = send the email but don't block; `mandatory` = block login until confirmed. The derivation means an install with no mail server can never lock out its own operator, while an agency that has configured SMTP gets confirmation without asking for it. Set it explicitly to override — an open demo with SMTP configured wants `none`. An unrecognised value stops the container at boot rather than falling back silently |
-| `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID (see the note below — the keys alone do not show the button) |
+| `GOOGLE_OAUTH_CLIENT_ID` | No | empty | Google OAuth client ID (see the note below — the keys are one of the two halves that make Google sign-in exist, and on their own they do nothing anyone can see) |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | No | empty | Google OAuth client secret (see the note below) |
 | `DATASYNC_MOCK_MODE` | No | `False` | Use mock data for external sync adapters instead of live APIs |
 | `FEEDBACK_ENABLED` | No | `False` | Render the in-app feedback widget. Off by default; set `True` to turn it on (e.g. on a hosted/managed deployment with someone to read the reports) |
@@ -1252,13 +1252,33 @@ developer. If you cannot complete both halves, leave the feature switched off: a
 login page with no Google button is obviously a login page with no Google
 button, and a broken one is not obviously anything.
 
-**A third switch decides whether the button is shown at all.** Setting the two
-keys makes Google sign-in *possible* and changes nothing anyone can see. The
-**"Continue with Google"** button only appears on the login and sign-up pages
-once the per-agency database flag `allow_google_oauth` is switched on — it ships
-off. Turn it on at **Django admin → Core → Site configs → (your agency)**, tick
-**Allow google oauth**, and save. Set the keys first: the button will fail if it
-is on with no credentials behind it.
+**A third switch decides whether Google sign-in exists here at all.** Setting
+the two keys makes it *possible* and changes nothing anyone can see. It becomes
+real — the **"Continue with Google"** button on the login and sign-up pages, and
+the web addresses that button leads to — only once the per-agency database flag
+`allow_google_oauth` is switched on, and it ships off. Turn it on at **Django
+admin → Core → Site configs → (your agency)**, tick **Allow google oauth**, and
+save.
+
+**The keys and the switch are two halves of one thing, and either half missing
+gives the same result: there is no Google sign-in on this deployment.** No
+button appears, and the web addresses the button would have led to are not there
+either — somebody who types one in gets the ordinary "page not found", because
+there genuinely is no page. **So the order does not matter.** Tick the box now
+and paste the keys next week, or the other way round; nothing is broken in
+between and nothing is exposed in between. If you decide against the feature
+later, untick the box and it is gone again the moment you save.
+
+**Before you turn it on, know that it changes what an existing password does.**
+Once Google sign-in is live, somebody who already has an OpenH2O account and
+clicks **"Continue with Google"** is signed straight into that same account
+whenever Google confirms the same address they registered with — and their
+OpenH2O password is *cleared* on the way through. From then on that person signs
+in with Google, and the password they had been using stops working. Nobody loses
+their account or their data, and nobody is locked out. But it is a change to how
+your staff get in, it happens the first time each of them uses the button, and
+nothing on screen warns them — so tell them before you save the switch, not
+after.
 
 ---
 

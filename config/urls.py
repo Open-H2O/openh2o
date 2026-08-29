@@ -4,6 +4,11 @@ from django.contrib import admin
 from django.urls import include, path
 
 from core.modules import enabled_modules, url_specs_for
+from core.oauth import (
+    google_callback_guard,
+    google_login_by_token_guard,
+    google_login_guard,
+)
 
 from config.views import about, demonstration_data, index, getting_started, glossary, budgets_allocations, surface_deliveries, water_balances, methods, settings_explained, profile, set_nav_mode, global_search
 
@@ -22,6 +27,23 @@ _module_urls = [
 # global search.
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Google sign-in exists only where the per-agency flag is ON *and* the
+    # credentials are configured (core.oauth.google_sign_in_available, the same
+    # predicate the login and sign-up templates read). While either half is
+    # missing these three routes 404, for the reason recorded above: a route
+    # that does not exist should not exist, and a 403 would confirm the endpoint
+    # is real. Before this guard the flag hid the button and nothing else, so a
+    # plain GET here still handed the visitor to Google and could clear an
+    # existing account's password on the way back (ISS-115).
+    #
+    # Declared BEFORE allauth's mount on purpose: Django resolves patterns in
+    # declaration order, so these win over `allauth.urls`. They are deliberately
+    # left unnamed — allauth registers `google_login`/`google_callback`/
+    # `google_login_by_token` on the identical paths, and shadowing those names
+    # in the reverse table would buy nothing while making `reverse()` ambiguous.
+    path("accounts/google/login/", google_login_guard),
+    path("accounts/google/login/callback/", google_callback_guard),
+    path("accounts/google/login/token/", google_login_by_token_guard),
     path("accounts/", include("allauth.urls")),
 ] + _module_urls + [
     path("about/", about, name="about"),
