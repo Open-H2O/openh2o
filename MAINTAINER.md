@@ -67,6 +67,15 @@ as a secret, do **not** store it in Bitwarden, and do **not** mirror it on prod.
   behaviour is the old one.** Confirm with
   `docker inspect --format '{{.State.StartedAt}}' $(docker compose ps -q caddy)`
   against the file's mtime, never by re-reading the file.
+
+  ⚠ **The opposite is true for `error-pages/`, and the difference is the reason.**
+  The `Caddyfile` is PARSED ONCE at startup, so a change to it needs a restart.
+  `error-pages/503.html` is a bind-mounted static file that `file_server` READS PER
+  REQUEST, so a change to it is live on the next request with no restart at all.
+  Measured 2026-08-29 while verifying Phase 128: the outage page's copy was changed
+  and served new on the next request with the caddy container's `StartedAt`
+  unmoved. **Do not restart caddy for a page-copy change, and never skip it for a
+  `Caddyfile` change.**
   Never rsync with `--delete`. **Production deploy is Brent's separate, explicit
   call** — `deploy.sh` / `make deploy` in the prod checkout, never run as a side
   effect.
