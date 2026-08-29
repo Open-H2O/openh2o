@@ -148,10 +148,34 @@
     # errors CADDY produces (a reverse_proxy that could not get a response). A
     # 404 rendered BY the app is a successful proxy and passes straight through,
     # so the app keeps owning its own error pages.
-    handle_errors {
+    #
+    # **The status list and `status 503` are both load-bearing (ISS-138).** Two
+    # separate defects were measured on 2026-08-29 and each needs one of them:
+    #
+    # 1. Without `status 503`, this block served the branded page while Caddy
+    #    kept the ORIGINATING error's status — so a real outage answered **502**
+    #    while the page said "OpenH2O is starting up" and the header said
+    #    `Retry-After: 30`, both of which are 503 semantics. The filename is not
+    #    the status. Measured live: 502 twice, and 502 in Caddy's own access log.
+    #
+    # 2. Without the `502 503 504` list, this block caught EVERY error Caddy
+    #    produced — including a 404 from the `/static/*` file_server above. A
+    #    missing stylesheet rendered the outage page, and with fix 1 alone it
+    #    would have rendered it as a 503. Scoping to the gateway-class errors is
+    #    what keeps "the app is unreachable" separate from "that file is not
+    #    there", so a missing static file now returns a plain 404 as itself.
+    #
+    # `handle_errors <status…>` needs Caddy 2.9+ and `file_server { status … }`
+    # 2.7+; the image is pinned to caddy:2-alpine, measured at v2.11.3.
+    # ⚠ `caddy validate` and `caddy adapt` CANNOT see either defect — both
+    # accepted the broken form. Prove a change here by stopping `web`, waiting
+    # past the 30 s budget and reading the status line.
+    handle_errors 502 503 504 {
         root * /srv/error
         rewrite * /503.html
-        file_server
+        file_server {
+            status 503
+        }
         header Cache-Control "no-store"
         # Tell crawlers and uptime checks this is temporary, not the new truth.
         header Retry-After "30"
