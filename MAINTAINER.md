@@ -32,6 +32,26 @@ as a secret, do **not** store it in Bitwarden, and do **not** mirror it on prod.
   `~/openh2o-staging` = STAGING. Confirm which with
   `docker ps --format '{{.Names}}\t{{.Label "com.docker.compose.project.working_dir"}}'`
   before touching anything.
+
+  **What staging runs, and what it does NOT override (2026-08-29, ISS-137).**
+  Staging runs the **tracked** `Caddyfile` and the **tracked** `docker-compose.yml`
+  caddy volume list. The only staging-specific override is the host port, in the
+  untracked `~/openh2o-staging/docker-compose.override.yml`, and it exists because
+  production's caddy holds host ports 80 and 443 on this same machine.
+
+  - Staging is reached at `https://butler.tail7ae369.ts.net` through
+    `tailscale serve` → `http://127.0.0.1:8081`. It is **tailnet-only**, which is
+    why it carries no basic auth and needs none. There is no Cloudflare tunnel to
+    staging; `staging.openh2o.com` returns 404.
+  - **Do not re-introduce a second Caddyfile.** The retired copy is
+    `~/openh2o-staging/Caddyfile.staging.retired-20260829`. Mounting it again puts
+    back exactly the class of defect ISS-137 recorded: a shadow file that silently
+    stops receiving every change made to the shipped one.
+  - ⚠ **`ports: !override` REPLACES the base list rather than merging into it**, so
+    a port added to the tracked `docker-compose.yml` will **not** reach staging on
+    its own — it has to be added to the override too. That is the one piece of the
+    original defect that survives on purpose. The override deliberately carries no
+    `volumes:` key, so volumes DO merge through from the tracked file.
 - **Staging deploy** = git checkout on Butler: `git fetch && git reset --hard
   origin/main`, then `docker compose up -d --build web` (code is baked into the
   image, not bind-mounted — a sync alone changes nothing the container serves).
