@@ -55,6 +55,18 @@ as a secret, do **not** store it in Bitwarden, and do **not** mirror it on prod.
 - **Staging deploy** = git checkout on Butler: `git fetch && git reset --hard
   origin/main`, then `docker compose up -d --build web` (code is baked into the
   image, not bind-mounted — a sync alone changes nothing the container serves).
+
+  ⚠ **`--build web` does NOT reload Caddy, and a `Caddyfile` change needs
+  `docker compose restart caddy`.** The `Caddyfile` is a BIND MOUNT, so editing
+  it changes what the container can read but nothing tells Caddy to re-read it;
+  and because the caddy image and service definition are unchanged, `up -d
+  --build` leaves that container running untouched. Measured 2026-08-29: a
+  `Caddyfile` fix was deployed and staging kept serving the previous config for
+  two hours — the container's `StartedAt` was 05:32 PDT against a file mtime of
+  07:51 PDT. **Symptom to recognise: the file on disk is right and the served
+  behaviour is the old one.** Confirm with
+  `docker inspect --format '{{.State.StartedAt}}' $(docker compose ps -q caddy)`
+  against the file's mtime, never by re-reading the file.
   Never rsync with `--delete`. **Production deploy is Brent's separate, explicit
   call** — `deploy.sh` / `make deploy` in the prod checkout, never run as a side
   effect.
