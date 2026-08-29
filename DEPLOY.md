@@ -1269,16 +1269,33 @@ and paste the keys next week, or the other way round; nothing is broken in
 between and nothing is exposed in between. If you decide against the feature
 later, untick the box and it is gone again the moment you save.
 
-**Before you turn it on, know that it changes what an existing password does.**
-Once Google sign-in is live, somebody who already has an OpenH2O account and
-clicks **"Continue with Google"** is signed straight into that same account
-whenever Google confirms the same address they registered with — and their
-OpenH2O password is *cleared* on the way through. From then on that person signs
-in with Google, and the password they had been using stops working. Nobody loses
-their account or their data, and nobody is locked out. But it is a change to how
-your staff get in, it happens the first time each of them uses the button, and
-nothing on screen warns them — so tell them before you save the switch, not
-after.
+**Before you turn it on, know that on some deployments it changes what an
+existing password does.** Once Google sign-in is live, somebody who already has
+an OpenH2O account and clicks **"Continue with Google"** is signed straight into
+that same account whenever Google confirms the same address they registered
+with. **If that address has never been confirmed on this deployment, their
+OpenH2O password is *cleared* on the way through.** From then on that person
+signs in with Google, and the password they had been using stops working. Nobody
+loses their account or their data, and nobody is locked out. If the address
+*has* been confirmed here, nothing happens to the password at all.
+
+**Which case you are in was decided by whether you set up a mail server.**
+`ACCOUNT_EMAIL_VERIFICATION` (covered in §11 "Signup email verification", and in
+the environment variable table in §12) derives to `mandatory` the moment
+`EMAIL_HOST` is set, so an agency with SMTP configured has every address
+confirmed and **no password is ever cleared**. With no mail server it derives to
+`none`, addresses stay unconfirmed, and the clearing described above is what
+your staff will meet. Read it back rather than guessing:
+
+```bash
+docker compose exec web python manage.py shell -c "from django.conf import settings; print(settings.ACCOUNT_EMAIL_VERIFICATION)"
+```
+
+If that prints `none`, it is a change to how your staff get in, it happens the
+first time each of them uses the button, and nothing on screen warns them, so
+tell them before you save the switch, not after. If it prints `mandatory` or
+`optional` and your people have confirmed their addresses, the switch costs them
+nothing and there is nothing to announce.
 
 ---
 
