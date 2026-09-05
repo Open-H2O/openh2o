@@ -1,6 +1,5 @@
 {
-  "_source": "Row counts measured by Plan 103-01 on 2026-07-31 from a candidate built offline by scripts/rebuild-golden.sh at v2.7-20-g7f121cc, and reconciled model-by-model against production. The classified difference table is in .planning/phases/103-rebuild-golden-and-gates/103-01-rebuild-evidence-2026-07-31.txt SS4.",
-
+  "_source": "Row counts measured by Plan 103-01 on 2026-07-31 from a candidate built offline by scripts/rebuild-golden.sh at v2.7-20-g7f121cc, and reconciled model-by-model against production. The classified difference table is in .planning/phases/103-rebuild-golden-and-gates/103-01-rebuild-evidence-2026-07-31.txt SS4. Re-pinned 2026-09-05 by Plan 133-02 from ONE candidate built by scripts/rebuild-golden.sh at 7cea049 (66,492 rows across 70 models): eleven counts moved and every one was read off that build's manifest, not predicted. The plan named five; the build moved eleven, which is the second time in this milestone a prediction came in short (132-01 named six and moved seven).",
   "notes": [
     "Per-model row counts a rebuilt candidate MUST produce before it may become the golden snapshot.",
     "",
@@ -12,14 +11,12 @@
     "",
     "WHEN A SEED CHANGE FAILS THIS GATE: that is the design, not a bug. Update the entry, change the reason to say what moved and why, and commit both together with the seed change."
   ],
-
   "unlisted_model": "fail",
-
   "models": {
     "accounting.AllocationCarryover": {
-      "expected": 4,
+      "expected": 8,
       "tolerance": 0,
-      "reason": "Written by seed_merced's allocation step, one row per account carrying unused allocation out of the closed reporting period. Fixed by the account set and the period definition, both committed."
+      "reason": "Recharge POOL rows plus the account carryover seed_merced's allocation step writes. MOVED 4 -> 8 by Plan 133-02, observed on the candidate: 2 GSA zones x 2 pool origins (basin_recharge_pool from seed_merced_recharge_events, incidental_recharge_pool from the engine) x 2 WATER YEARS. The second water year is what is new -- a pool is keyed by water_year, so once WY 2025-2026 carries managed and incidental recharge it earns its own row per zone per origin rather than adding into the first year's."
     },
     "accounting.AllocationPlan": {
       "expected": 16,
@@ -32,9 +29,9 @@
       "reason": "The single methodology version the demonstration is locked to, created by seed_calculation_plan. A second row means a methodology was added without the version lock being considered (Phase 42)."
     },
     "accounting.CalculationRun": {
-      "expected": 912,
+      "expected": 1824,
       "tolerance": 0,
-      "reason": "Output of refresh_merced_accounting over the committed parcel set. 103-01 reproduced production's 912 exactly, of which 362 are zero-precipitation runs. This is the number that proves the engine ran and produced the same answer as the live site; a candidate with 0 here has data but no accounting."
+      "reason": "Output of refresh_merced_accounting over the committed parcel set, now across BOTH water years. MOVED 912 -> 1824 by Plan 133-01, which synthesized a second, drier OpenET window so the engine has a demand side for WY 2025-2026. 76 parcels x 12 months x 2 years, with no short count -- observed as 912 per year, not derived. A candidate with 0 here has data but no accounting; a candidate with 912 has only half the demonstration and its period selector shows an empty year."
     },
     "accounting.CalculationStep": {
       "expected": 5,
@@ -44,7 +41,7 @@
     "accounting.ReportingPeriod": {
       "expected": 2,
       "tolerance": 0,
-      "reason": "The two water years the demonstration covers. The ET cache holds exactly one window (WY 2024-25), so adding a period without extending the cache would produce empty accounting for it."
+      "reason": "The two water years the demonstration covers. BOTH now carry accounting: the committed ET cache holds two adjacent windows (WY 2024-25 and the drier WY 2025-26 that 133-01 synthesized from it), the engine has run all 24 months, and 133-02 gave the second year its surface deliveries, metered groundwater and diversion records. This reason previously said a second period 'would produce empty accounting for it' -- that was true when it was written and is now false; the sentence was Phase 133's acceptance test and it has been met. A THIRD period would need its own cache window and its own supply season, and the same sentence would apply to it."
     },
     "accounting.WaterAccount": {
       "expected": 11,
@@ -112,9 +109,9 @@
       "reason": "Frozen into data/merced/stations.json and loaded by load_station_fixture, for the same reason data/merced/flowlines.json is frozen: a gate that reddens because an upstream catalogue had a bad afternoon is a gate people learn to ignore. The demonstration's own about page lists these stations under 'Real published records -- USGS and CDEC', beside the river network, so they are demonstration content and not somebody else's registry passing through. 335 total, 42 of them is_active -- and 42 is the number the landing-page hero displays. Tolerance 0 is correct precisely because the count cannot move unless data/merced/stations.json moves. Supersedes the 103-01 reasoning that stations need not be frozen because no later seed step reads MonitoredStation: that judged them by what the build consumes rather than by what the demonstration shows."
     },
     "datasync.OpenETCache": {
-      "expected": 380,
+      "expected": 760,
       "tolerance": 0,
-      "reason": "76 parcels x 5 variables x 1 window (WY 2024-25), loaded from the committed data/merced/openet_cache.json by load_openet_fixture. 103-01 predicted 380 and measured 380, and proved the staging and production caches byte-identical by sha256. Without these rows the accounting engine has no demand side and every calculation run comes out empty."
+      "reason": "76 parcels x 5 variables x 2 WINDOWS, loaded from the committed data/merced/openet_cache.json by load_openet_fixture. MOVED 380 -> 760 by Plan 133-01: synthesize_dry_year derives WY 2025-2026 from WY 2024-2025 offline, every value from that same parcel's own committed month, and the committed window was verified unchanged row by row (380 source rows, 0 differing). check_cache_duplication reads green with exact_duplicate_groups 0 and overlapping_span_pairs 0. Without these rows the accounting engine has no demand side and every calculation run comes out empty."
     },
     "drinking.Analyte": {
       "expected": 178,
@@ -202,9 +199,9 @@
       "reason": "The meters seed_merced installs on wells. Must stay equal to wells.WellMeter."
     },
     "measurements.MeterReading": {
-      "expected": 144,
+      "expected": 288,
       "tolerance": 0,
-      "reason": "Monthly totalizer reads on the 12 certified meters across WY 2024-2025 (12 x 12), written by seed_merced_measurements (Phase 132). Each month's delta is READ OFF the ParcelLedger meter_reading rows for the parcels that well irrigates, not invented -- so this number moves only if the meter set or the ledger's month coverage moves, and a change in one without the other is the regression to look for. read_by is NULL on every row: gate 2 requires core.User = 0."
+      "reason": "Monthly totalizer reads on the 12 certified meters across BOTH water years (12 x 24), written by seed_merced_measurements. MOVED 144 -> 288 by Plan 133-02: a totalizer is a lifetime counter and does not restart on October 1, so the second year continues the first year's running value rather than opening a new record. Each month's delta is READ OFF the ParcelLedger meter_reading rows for the parcels that well irrigates, not invented -- so this number moves only if the meter set or the ledger's month coverage moves, and a change in one without the other is the regression to look for. read_by is NULL on every row: gate 2 requires core.User = 0."
     },
     "measurements.Sensor": {
       "expected": 1,
@@ -212,14 +209,14 @@
       "reason": "One pressure transducer, on MER-W-004 -- the single monitoring well whose own declaration reads 'Continuous' (transducer logs daily). The other two monitoring wells declare a manual sounder and a quarterly sweep, so installing an instrument on either would contradict the demonstration's own note about it. A second row means a sensor was added to a well that did not declare one."
     },
     "measurements.SensorMeasurement": {
-      "expected": 365,
+      "expected": 730,
       "tolerance": 0,
-      "reason": "One logged reading a day for WY 2024-2025 (2024-10-01..2025-09-30) from the single transducer. DAILY IS THE CEILING, not a starting point: PROJECT.md puts real-time telemetry out of scope, so this is a logger downloaded on a field round. A count above 365 means something began polling."
+      "reason": "One logged reading a day across BOTH water years (2024-10-01..2026-09-30) from the single transducer. MOVED 365 -> 730 by Plan 133-02. DAILY IS STILL THE CEILING, not a starting point: PROJECT.md puts real-time telemetry out of scope, so this is a logger downloaded on a field round. A count above 730 means something began polling; 365 means the record stops a year before the demonstration's open water year does."
     },
     "measurements.WaterMeasurement": {
-      "expected": 20,
+      "expected": 40,
       "tolerance": 0,
-      "reason": "Hand-entered depth-to-water readings at the cadence each monitoring well declares: MER-W-001 monthly (12), MER-W-002 quarterly (4), and 4 quarterly steel-tape checks against the transducer on MER-W-004. The checks sit a few hundredths off the logger on purpose -- that disagreement is what the quality flag exists to carry. recorded_by is NULL on every row."
+      "reason": "Hand-entered depth-to-water readings at the cadence each monitoring well declares, across BOTH water years. MOVED 20 -> 40 by Plan 133-02 -- the same cadence, twice the span. Per year: MER-W-001 monthly (12), MER-W-002 quarterly (4), and 4 quarterly steel-tape checks against the transducer on MER-W-004. The checks sit a few hundredths off the logger on purpose -- that disagreement is what the quality flag exists to carry. recorded_by is NULL on every row."
     },
     "parcels.CropType": {
       "expected": 5,
@@ -232,9 +229,9 @@
       "reason": "The selection is committed in data/merced/selected_parcels.geojson and seed_merced_parcels_from_selection.py has zero randomness in it, so this number cannot legitimately move without that file moving. Every other per-parcel count in this file is anchored to it: OpenETCache is 76 x 5, WaterAccountParcel is 76, UsageLocation is 76."
     },
     "parcels.ParcelLedger": {
-      "expected": 1271,
+      "expected": 2313,
       "tolerance": 0,
-      "reason": "The keyed water ledger entries the accounting engine writes per parcel per period. Derived output -- a shortfall here means the engine ran partially, which no page would show as an error."
+      "reason": "The keyed water ledger entries the accounting engine writes per parcel per period. MOVED 1271 -> 2313 by Plan 133-02, which gave the open water year its supply side. Observed composition: 176 allocation rows (88 a period -- BOTH periods always had these), 1,095 rows for WY 2024-2025 and 1,042 for WY 2025-2026. THE COMMITTED YEAR DID NOT MOVE: 1271 - 176 = 1095, exactly what it still holds. The open year's 1,042 are 588 surface_diversion, 215 calculated, 133 meter_reading and 106 recharge. Derived output -- a shortfall here means the engine ran partially, which no page would show as an error."
     },
     "parcels.ParcelStaging": {
       "expected": 0,
@@ -247,14 +244,14 @@
       "reason": "One usage location per parcel. Must equal parcels.Parcel."
     },
     "recharge.RechargeEvent": {
-      "expected": 28,
+      "expected": 42,
       "tolerance": 0,
-      "reason": "Managed aquifer recharge events across the seven sites, created by seed_merced to exercise the recharge ledger."
+      "reason": "Managed aquifer recharge events across the seven sites, created by seed_merced_recharge_events. MOVED 28 -> 42 by Plan 133-02: 7 basins x (4 wet-year fills + 2 dry-year fills). The dry winter spreads 0.50x basin capacity against the wet year's 1.00x -- the same rainfall multiplier 133-01 applied to the satellite record -- and does it in two mid-winter storms rather than four, because a dry winter is short of storms before it is short of water in each one. December and March do not happen."
     },
     "recharge.RechargeMeasurement": {
-      "expected": 84,
+      "expected": 126,
       "tolerance": 0,
-      "reason": "Twelve on-site readings at each of the 7 basins (ponded depth, canal inflow, percolation, source-water TDS) across the four wet-season fills seed_merced_recharge_events writes. THE ONLY SLICE OF PHASE 132 WITH A SCREEN: the recharge detail page renders the ten most recent, and before this the card read 'No measurements recorded.' on all seven pages. Moves if the basin count or the fill schedule moves."
+      "reason": "On-site readings at each of the 7 basins (ponded depth, canal inflow, percolation, source-water TDS) across every fill seed_merced_recharge_events writes -- three readings a fill. MOVED 84 -> 126 by Plan 133-02: 7 basins x 3 x 6 fills, the dry year's two included. THE ONLY SLICE OF PHASE 132 WITH A SCREEN: the recharge detail page renders the ten most recent, and before Phase 132 the card read 'No measurements recorded.' on all seven pages. The fill schedule is now IMPORTED from the events seed rather than copied, so an event history with no reading beside it cannot happen by drift. Moves if the basin count or the fill schedule moves."
     },
     "recharge.RechargeSite": {
       "expected": 7,
@@ -307,9 +304,9 @@
       "reason": "One curtailment order, so the demonstration exercises the curtailment path at all. Invented."
     },
     "surface.DiversionRecord": {
-      "expected": 85,
+      "expected": 161,
       "tolerance": 0,
-      "reason": "Reported diversions across the nine points of diversion. Invented records on real river geometry -- the river is protected published fact, the diverters are not."
+      "reason": "Reported diversions across the points of diversion, now for both water years. MOVED 85 -> 161 by Plan 133-02. Observed per POD: five district headgates record 12 months in each year (60 + 60); the curtailed El Nido POD records 9 months in WY 2024-2025 (October-June) and NOTHING in WY 2025-2026, because MER-CURT-001 is effective 2025-07-01 and is never rescinded; the two diversion-reach journey PODs record 12 + 4 in each year (16 + 16). 69 + 16 = 85 and 60 + 16 = 76. Invented records on real river geometry -- the river is protected published fact, the diverters are not."
     },
     "surface.PointOfDiversion": {
       "expected": 9,
@@ -322,9 +319,9 @@
       "reason": "Which parcels each point of diversion serves. Must stay equal to surface.WaterRightParcel."
     },
     "surface.UnallocatedDelivery": {
-      "expected": 14,
+      "expected": 18,
       "tolerance": 0,
-      "reason": "Deliveries not yet apportioned to a parcel, exercising the shared-supply apportionment path (Phase 56). MOVED 13 -> 14 by Plan 131-01, which sizes each served parcel's delivery as its measured demand divided by its own crop's irrigation-method efficiency (alfalfa 0.62 border-check flood through almonds 0.87 micro/drip) instead of a flat band keyed on the point-of-diversion's index. allocate_district_delivery caps every parcel at demand / the AGENCY-WIDE efficiency (SiteConfig, 0.750) because the kernel takes one efficiency per call and changing that would be an engine change; a POD whose crop mix is flood-heavy enough now records more than those caps explain, and the kernel writes the surplus as an UnallocatedDelivery rather than dropping it. Exactly one POD-month crossed that threshold: MER-POD-007-DEMO Plainsburg El Nido Canal Headgate, 2025-02, 5.3447 AF surplus of 45.4828 AF delivered. Observed both ways -- 13 rows with the pre-change seeder, 14 with it, on the same tree and the same data. Every other pinned count held, ParcelLedger at 1271 and DiversionRecord at 85 included."
+      "reason": "Deliveries not explained by crop demand, which allocate_district_delivery records against the POD rather than dropping. MOVED 14 -> 18 by Plan 133-02, OBSERVED on the candidate and not predicted: 14 in WY 2024-2025 (unchanged) and 4 new ones in WY 2025-2026. The mechanism is the one 131-01 recorded when this moved 13 -> 14: seed_merced_ledgers sizes each served parcel's delivery as its measured demand divided by its OWN crop's irrigation-method efficiency (alfalfa 0.62 border-check flood through almonds 0.87 micro/drip), while the kernel caps every parcel at demand / the AGENCY-WIDE efficiency (SiteConfig, 0.750) because it takes one efficiency per call and changing that would be an engine change. A POD-month whose crop mix is flood-heavy enough records more than those caps explain, and the surplus is written here. A drier year raises every parcel's demand, so four more POD-months cross that threshold. check_unallocated_delivery reads YELLOW at 364.8532 AF across 18 POD-months and is reported as it reads, not tuned."
     },
     "surface.WaterRight": {
       "expected": 6,
