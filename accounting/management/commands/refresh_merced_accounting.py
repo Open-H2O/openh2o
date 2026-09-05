@@ -32,6 +32,16 @@ of surface delivery (54-01), the fix is a deterministic TWO-PASS refresh:
 Do NOT "optimize" this down to one pass: the engine must run a SECOND time after
 the demand-weighted surface rows exist, or the residual/recharge terms are stale.
 
+And do NOT split MULTIPLE PERIODS into multiple invocations, for the mirror-image
+reason. ``seed_merced_ledgers`` SELF-FLUSHES and rebuilds every row it owns,
+across every period, on each run. So a second invocation aimed at a second water
+year would run pass 2 again and destroy the first year's supply rows — silently,
+because a wiped ledger looks like an empty year rather than like an error.
+``--period`` is therefore REPEATABLE: the engine passes run over the UNION of
+every named period's months inside ONE invocation, with exactly one pass 2
+between them. Phase 133-01 (2026-09-05) added the second water year and this is
+the constraint that shaped it.
+
 SCOPE — accounting layer ONLY. This command refreshes the engine output and the
 ledger re-allocation. It does NOT re-seed the physical/spatial layer (parcels,
 points of diversion, wells, boundaries) — those are stable and owned by
@@ -71,6 +81,19 @@ def _months_in(reporting_period):
     return months
 
 
+def _months_across(reporting_periods):
+    """The de-duplicated, ordered union of the months every period spans.
+
+    Concatenating and sorting rather than writing a second month-walker: two
+    adjacent water years produce 24 distinct months, and two periods that
+    overlapped would produce their union rather than running a month twice.
+    """
+    months = set()
+    for reporting_period in reporting_periods:
+        months.update(_months_in(reporting_period))
+    return sorted(months)
+
+
 class Command(BaseCommand):
     help = (
         "Refresh the Merced demo accounting layer with the corrected two-pass "
@@ -81,10 +104,15 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--period",
-            default=DEFAULT_PERIOD,
+            action="append",
+            dest="period",
+            default=None,
             help=(
-                "Name of the ReportingPeriod to refresh (default "
-                f"'{DEFAULT_PERIOD}'). The engine runs each month it spans."
+                "Name of a ReportingPeriod to refresh (default "
+                f"'{DEFAULT_PERIOD}'). REPEATABLE — pass it once per water year "
+                "and the engine runs the union of their months inside a single "
+                "invocation. Two invocations would flush the first year's "
+                "supply rows; see this module's docstring."
             ),
         )
         parser.add_argument(
@@ -94,20 +122,30 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        period_name = options["period"]
+        # argparse hands back a list; call_command(period="X") hands back the
+        # bare string, and every existing caller does exactly that.
+        raw = options["period"] or [DEFAULT_PERIOD]
+        period_names = [raw] if isinstance(raw, str) else list(raw)
         dry_run = options["dry_run"]
 
-        reporting_period = ReportingPeriod.objects.filter(name=period_name).first()
-        if reporting_period is None:
-            raise CommandError(
-                f"No ReportingPeriod named {period_name!r}. Seed the Merced demo "
-                f"first (`python manage.py seed_merced`), or pass --period."
-            )
+        reporting_periods = []
+        for period_name in period_names:
+            reporting_period = ReportingPeriod.objects.filter(
+                name=period_name
+            ).first()
+            if reporting_period is None:
+                raise CommandError(
+                    f"No ReportingPeriod named {period_name!r}. Seed the Merced "
+                    "demo first (`python manage.py seed_merced`), or pass "
+                    "--period."
+                )
+            reporting_periods.append(reporting_period)
 
-        months = _months_in(reporting_period)
+        months = _months_across(reporting_periods)
+        label = ", ".join(f"'{name}'" for name in period_names)
 
         if dry_run:
-            self._print_plan(period_name, months)
+            self._print_plan(label, months)
             return
 
         # Pass 1 — populate net_consumptive_use_af (surface-independent, 54-01).
@@ -133,8 +171,8 @@ class Command(BaseCommand):
         self._run_engine(months)
 
         self.stdout.write(self.style.SUCCESS(
-            f"\nMerced accounting layer refreshed for '{period_name}' "
-            f"({len(months)} months, two engine passes around the ledger "
+            f"\nMerced accounting layer refreshed for {label} "
+            f"({len(months)} months, two engine passes around ONE ledger "
             f"re-allocation). Per-parcel mass balance should now close."
         ))
 
@@ -149,18 +187,18 @@ class Command(BaseCommand):
                 "run_calculations", period=month, force=True, stdout=self.stdout
             )
 
-    def _print_plan(self, period_name, months):
+    def _print_plan(self, label, months):
         span = f"{months[0]}..{months[-1]}" if months else "(no months)"
         self.stdout.write(self.style.MIGRATE_HEADING(
             f"\nrefresh_merced_accounting --dry-run — planned sequence for "
-            f"'{period_name}' ({len(months)} months: {span})"
+            f"{label} ({len(months)} months: {span})"
         ))
         self.stdout.write(
             f"  1. run_calculations --force, each month {span} "
             f"(populate net_consumptive_use_af; surface-independent)"
         )
         self.stdout.write(
-            "  2. seed_merced_ledgers "
+            "  2. seed_merced_ledgers, ONCE "
             "(demand-weighted surface re-allocation via allocate_district_delivery)"
         )
         self.stdout.write(

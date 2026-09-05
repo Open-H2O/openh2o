@@ -186,7 +186,13 @@ run_step load_station_fixture
 run_step load_reading_fixture
 run_step load_openet_fixture
 run_step seed_calculation_plan
-run_step refresh_merced_accounting
+# BOTH water years, in ONE invocation. seed_merced_ledgers self-flushes every row
+# it owns, so a second `refresh_merced_accounting` call for the open year would
+# wipe the closed year's supply rows — silently, because a wiped ledger reads as
+# an empty year rather than as an error. The command takes --period repeatedly
+# and runs the engine over the union of their months around a single ledger pass
+# (Phase 133-01, 2026-09-05).
+run_step refresh_merced_accounting --period "WY 2024-2025" --period "WY 2025-2026"
 
 # ---------------------------------------------------------------------------
 # Dump the candidate.
