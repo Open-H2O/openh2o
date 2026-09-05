@@ -709,11 +709,23 @@ def check_et_meter_agreement():
     if ET doubles. That is deep in the red band and impossible to miss.
 
     WARNING — THE DEMO CANNOT VALIDATE THIS CHECK. seed_merced_ledgers writes each
-    meter reading as the parcel's own ET-derived need times a ratio drawn from
-    [1.05, 1.18], so demo ratios land on the inverse of that band (0.861-0.952,
-    aggregate 0.9288) no matter how wrong ET is. That is circular by construction:
-    on demo data this measures the seeder. It only becomes a real test against a
-    district's own meters. Do not "tune" the bands to make demo numbers prettier.
+    meter reading and each surface delivery as the parcel's own ET-derived need
+    DIVIDED by an efficiency the seeder itself chose, so a demo ratio is that
+    chosen efficiency read straight back out, no matter how wrong ET is. That is
+    circular by construction: on demo data this measures the seeder. It only
+    becomes a real test against a district's own meters. Do not "tune" the bands
+    to make demo numbers prettier.
+
+    What the seeder chooses has changed, and the shape of the circularity with
+    it (131-01). Until then the multiple was a flat band keyed on a WELL or POD
+    INDEX ([1.05, 1.18] and [1.02, 1.16]), so every parcel read near-drip and the
+    aggregate sat at 0.9288 whether the field was flood-irrigated alfalfa or a
+    micro-irrigated almond block. The multiple is now 1 / (that crop's
+    irrigation-method efficiency), so a demo parcel reads back the efficiency of
+    the method its crop is actually grown under and the aggregate is the
+    consumptive-use-weighted harmonic mean of the seeded crop mix. Still the
+    seeder measuring itself — but a parcel-level number a district engineer can
+    recognise rather than dismiss.
 
     Status comes from the AGGREGATE ratio, because a systematic ET error is what
     this exists to catch and that is what moves the aggregate. Individual parcels

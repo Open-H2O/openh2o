@@ -55,7 +55,36 @@ flow has no recharge sink, so a metered parcel carries a small POSITIVE residual
 / ``GW_RATE`` / ``SEASONAL_WEIGHTS`` survive ONLY as a fail-soft fallback for a
 parcel-month that genuinely has no CalculationRun (should not happen inside the
 two-pass refresh). Do NOT "restore" the flat rates — they undersupply measured ET.
-CropType and well capacity stay out of scope for the sizing itself.
+
+APPLIED WATER IS NOW CROP DEMAND ÷ THE FIELD'S IRRIGATION-METHOD EFFICIENCY
+(131-01). 58-03 sized the delivered supply as demand times a band keyed on an
+INDEX — the well's index on the meter path, the point of diversion's index on
+the surface path. An index is not a field: every parcel came out near-drip, and
+the aggregate irrigation efficiency across all 74 valley fields measured 0.9288
+whether the field was flood-irrigated alfalfa or a micro-irrigated almond block.
+``health/checks.py::check_et_meter_agreement`` says so in its own docstring —
+on demo data that check "measures the seeder". A district engineer reading 0.93
+on border-check flood stops believing the demonstration.
+
+So the multiple is now ``1 / efficiency``, and the efficiency comes from the
+crop each parcel actually carries (``CROP_IRRIGATION`` below, one entry per crop
+``seed_merced_cropland`` assigns), naming the irrigation method in words:
+
+    Almonds    micro-sprinkler / drip   0.87   inside the cited 0.70-0.95 drip/micro band
+    Grapes     drip                     0.85   inside the cited 0.70-0.95 drip/micro band
+    Tomatoes   subsurface drip          0.88   inside the cited 0.70-0.95 drip/micro band
+    Corn       furrow / sprinkler       0.72   inside the cited 0.55-0.75 flood/furrow band
+    Alfalfa    border-check flood       0.62   inside the cited 0.55-0.75 flood/furrow band
+
+The two bands are the only published figures this codebase cites, and they are
+already cited in ``health/checks.py`` (~lines 60-63 and again in that check's
+docstring). No per-crop figure here is presented as published.
+
+The per-parcel scatter 58-03 wanted SURVIVES — ±3% deterministic, index-keyed,
+through the same 8-bucket helper (``_crop_supply_ratio``). The crop sets the
+centre; the index sets the scatter. Still no ``random``.
+
+Well capacity stays out of scope for the sizing itself; CropType no longer does.
 
 Prerequisite (the physical demo must already exist on this instance)::
 
@@ -129,6 +158,46 @@ SURFACE_SUPPLY_SPAN = Decimal("0.14")
 METER_SUPPLY_LO = Decimal("1.05")     # meter over-pump band [1.05, 1.18]
 METER_SUPPLY_SPAN = Decimal("0.13")
 
+# 131-01: the flat index-keyed bands above are RETIRED as the delivered-supply
+# basis. They are kept because `_allocation_rows` and the no-CalculationRun
+# fallbacks still reference the same idea of a deterministic band, and because
+# deleting a constant a future reader may want to compare against loses the
+# history. Do NOT route delivered supply back through them: an index is not a
+# field, and a per-index band gives a flood-irrigated alfalfa field the same
+# applied-water multiple as a micro-irrigated almond block. Measured before this
+# change, the demo's aggregate irrigation efficiency was 0.9288 across all 74
+# valley fields — near-drip everywhere, including the alfalfa.
+#
+# CROP → IRRIGATION METHOD → EFFICIENCY. One entry per crop
+# `seed_merced_cropland.CROPS` assigns, round-robin by parcel index. Applied
+# water is now that parcel's measured net consumptive-use demand DIVIDED by this
+# efficiency, so the ratio a field carries is a property of how it is irrigated,
+# not of where it sits in a list.
+#
+# The only bands this codebase treats as published are the two `health/checks.py`
+# already cites (lines ~60-63, and again in `check_et_meter_agreement`'s
+# docstring): roughly **0.70-0.95 for drip/micro** and **0.55-0.75 for
+# flood/furrow**. Every value below sits inside the band for its own method.
+# Three are the figures the v2.15 roadmap fixes by name (almonds, corn,
+# alfalfa); the other two are chosen inside the cited band for the method that
+# crop is actually grown under in the San Joaquin Valley, and are NOT presented
+# as published per-crop figures — no such per-crop citation exists here.
+CROP_IRRIGATION = {
+    # crop:        (irrigation method,             efficiency, published band)
+    "Almonds":     ("micro-sprinkler / drip",      Decimal("0.87")),  # 0.70-0.95
+    "Alfalfa":     ("border-check flood",          Decimal("0.62")),  # 0.55-0.75
+    "Corn":        ("furrow / sprinkler",          Decimal("0.72")),  # 0.55-0.75
+    "Grapes":      ("drip",                        Decimal("0.85")),  # 0.70-0.95
+    "Tomatoes":    ("subsurface drip",             Decimal("0.88")),  # 0.70-0.95
+}
+
+# Per-parcel scatter around the crop's ratio. The crop sets the CENTRE; the
+# parcel index sets the scatter, so no two fields track measured ET identically
+# (the property `_supply_ratio` existed to give, preserved) while the centre
+# stops being an accident of ordering. ±3%, deterministic, no `random`.
+CROP_SCATTER_LO = Decimal("0.97")
+CROP_SCATTER_SPAN = Decimal("0.06")
+
 # Agency-wide irrigation efficiency the seed installs on the SiteConfig singleton
 # (55-03). The per-parcel surface split is now produced by
 # surface.services.allocate_district_delivery, which READS efficiency from
@@ -165,6 +234,20 @@ def _supply_ratio(seq, lo, span):
     rows. ``lo``/``span`` are the per-source bands defined above.
     """
     return lo + (Decimal(seq % 8) / Decimal("7")) * span
+
+
+def _crop_supply_ratio(seq, efficiency):
+    """Applied-water multiple for one field: ``1 / efficiency``, scattered (131-01).
+
+    The centre is the inverse of that field's irrigation-method efficiency — a
+    0.62 border-check flood alfalfa field applies 1/0.62 ≈ 1.613 times what the
+    crop consumes, a 0.87 micro-irrigated almond block 1/0.87 ≈ 1.149. The index
+    then scatters ±3% around that centre through the SAME 8-bucket helper the
+    retired flat bands used, so re-runs are identical and no two parcels track
+    measured ET exactly.
+    """
+    centre = Decimal("1") / efficiency
+    return _supply_ratio(seq, centre * CROP_SCATTER_LO, centre * CROP_SCATTER_SPAN)
 
 
 def _period_str(month_date):
@@ -332,8 +415,12 @@ class Command(BaseCommand):
         # --- Surface deliveries FIRST: synthesize the recorded district total per
         # POD, then let the PLATFORM service split it across served parcels by ET
         # demand. The service writes the negative surface_diversion rows itself. ---
+        # 131-01: each field's irrigation efficiency, resolved from its crop once
+        # (single joined query) and read from a dict inside both supply loops.
+        eff_by_parcel = self._efficiency_by_parcel(parcels)
+
         surface_rows = self._surface_deliveries(
-            parcels, curtailed_parcel_ids, prior, net_cu)
+            parcels, curtailed_parcel_ids, prior, net_cu, eff_by_parcel)
 
         # --- Meter readings AFTER surface: a metered parcel's groundwater covers
         # only the ET demand its surface delivery did NOT meet (the same residual the
@@ -342,7 +429,8 @@ class Command(BaseCommand):
         # delivered, within the over-pump band. ---
         surface_by_pm = self._surface_by_parcel_month(parcels)
         gw_rows = self._groundwater_rows(
-            parcels, curtailed_parcel_ids, gw, prior, net_cu, surface_by_pm)
+            parcels, curtailed_parcel_ids, gw, prior, net_cu, surface_by_pm,
+            eff_by_parcel)
         ParcelLedger.objects.bulk_create(gw_rows, batch_size=500)
         entries = entries + gw_rows  # combined ledger count for the summary
 
@@ -605,6 +693,36 @@ class Command(BaseCommand):
             out[(run[0], run[1])] = run[2] or Decimal("0")
         return out
 
+    def _efficiency_by_parcel(self, parcels):
+        """Map ``parcel_id -> irrigation efficiency`` from each field's crop (131-01).
+
+        ONE query over the crop-type ``UsageLocation`` rows
+        ``seed_merced_cropland`` wrote, joined to ``CropType``, read into a dict
+        before the ledger loops — never a per-parcel query inside a monthly loop.
+
+        A parcel with no crop-type usage location falls back to the agency-wide
+        ``SEED_IRRIGATION_EFFICIENCY`` (0.750, the same value the seed installs on
+        ``SiteConfig`` and the surface kernel reads) rather than being skipped: a
+        missing crop must change the parcel's ratio, never silently drop water out
+        of the ledger. A crop present in the data but absent from
+        ``CROP_IRRIGATION`` takes the same fallback.
+        """
+        from parcels.models import UsageLocation
+
+        parcel_ids = [p.id for p in parcels]
+        out = {}
+        for usage in UsageLocation.objects.filter(
+            parcel_id__in=parcel_ids, crop_type__isnull=False
+        ).select_related("crop_type"):
+            method_eff = CROP_IRRIGATION.get(usage.crop_type.name)
+            if method_eff is not None:
+                out[usage.parcel_id] = method_eff[1]
+        return out
+
+    def _efficiency_for(self, eff_by_parcel, parcel_id):
+        """That parcel's irrigation efficiency, or the agency-wide default."""
+        return eff_by_parcel.get(parcel_id, SEED_IRRIGATION_EFFICIENCY)
+
     def _surface_by_parcel_month(self, parcels):
         """Map ``(parcel_id, "YYYY-MM") -> delivered surface magnitude (positive AF)``.
 
@@ -621,7 +739,8 @@ class Command(BaseCommand):
             out[key] = out.get(key, Decimal("0")) + abs(row[2] or Decimal("0"))
         return out
 
-    def _surface_deliveries(self, parcels, curtailed_parcel_ids, prior, net_cu):
+    def _surface_deliveries(self, parcels, curtailed_parcel_ids, prior, net_cu,
+                            eff_by_parcel):
         """Surface deliveries, produced by the PLATFORM allocation service.
 
         This is the 55-03 wiring: the seed no longer sizes each parcel's delivery
@@ -686,9 +805,6 @@ class Command(BaseCommand):
                     point_of_diversion=pod
                 ).select_related("parcel")
             ]
-            surface_ratio = _supply_ratio(
-                pod_seq, SURFACE_SUPPLY_LO, SURFACE_SUPPLY_SPAN)
-
             # Record the monthly DISTRICT TOTAL that left this POD = the sum of its
             # served parcels' MEASURED net ET demand for the month, lifted by the
             # over-delivery band. This is the metered truth the platform splits;
@@ -701,7 +817,19 @@ class Command(BaseCommand):
                 for p in served:
                     demand = net_cu.get((p.id, period))
                     if demand is not None and demand > 0:
-                        total += demand * surface_ratio
+                        # 131-01: per-PARCEL, not per-POD. Each served field's
+                        # demand is divided by ITS OWN crop's irrigation-method
+                        # efficiency, so one canal can serve a flood-irrigated
+                        # alfalfa field and a drip almond block and deliver the
+                        # right multiple to each. The kernel below takes ONE
+                        # efficiency per call (per POD) and changing that is an
+                        # engine change this milestone forbids — so the
+                        # differentiation happens HERE, in the recorded district
+                        # total the kernel then splits by ET demand.
+                        total += demand * _crop_supply_ratio(
+                            seq_of.get(p.id, 0),
+                            self._efficiency_for(eff_by_parcel, p.id),
+                        )
                     else:
                         # Fail-soft fallback (no run this parcel-month).
                         area = Decimal(str(p.area_acres or 40))
@@ -735,7 +863,7 @@ class Command(BaseCommand):
         return written
 
     def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior, net_cu,
-                          surface_by_pm):
+                          surface_by_pm, eff_by_parcel):
         """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
 
         The metering split is the 52-01 dual-source invariant: wells alternate
@@ -744,8 +872,12 @@ class Command(BaseCommand):
         - A METERED well's reading is authoritative. 58-03 sizes each served
           parcel's monthly reading to the RESIDUAL groundwater it actually needed —
           its MEASURED net ET demand (``net_cu``, from the first run_calc pass) MINUS
-          the surface already delivered to it that month — times the meter over-pump
-          band. This mirrors exactly what the engine computes for an UNMETERED
+          the surface already delivered to it that month — divided by that field's
+          own crop irrigation-method efficiency (131-01; the ratio used to be a
+          per-WELL index band, but a well can irrigate several parcels growing
+          different crops, so the crop is resolved PER SERVED PARCEL through the
+          ``WellIrrigatedParcel`` links and each link's share is scaled by its own
+          ratio before the fraction weighting). This mirrors exactly what the engine computes for an UNMETERED
           conjunctive parcel (``ET − precip − surface``), so a parcel with BOTH a
           meter and a surface delivery is never double-supplied: its meter reads ~0
           when surface covered its ET, and rises (the substitution story) when
@@ -765,6 +897,10 @@ class Command(BaseCommand):
           surface → more net groundwater in the dry months.
         """
         parcel_by_id = {p.id: p for p in parcels}
+        # Parcel index → the deterministic scatter key, the SAME one the surface
+        # path uses, so a parcel's ±3% offset is a property of the parcel rather
+        # than of which supply path is writing it.
+        seq_of = {p.id: i for i, p in enumerate(parcels)}
         # well -> [WellIrrigatedParcel links] for MER wells irrigating MER parcels.
         wells = list(Well.objects.filter(
             well_registration_id__startswith="MER-W-").order_by("well_registration_id"))
@@ -792,8 +928,6 @@ class Command(BaseCommand):
             if not metered:
                 continue
 
-            meter_ratio = _supply_ratio(
-                wseq, METER_SUPPLY_LO, METER_SUPPLY_SPAN)
             substitutes = any(ln.parcel_id in curtailed_parcel_ids for ln in links)
             # Fallback basis (used only for a parcel-month with no CalculationRun).
             served_acres = sum(
@@ -806,10 +940,16 @@ class Command(BaseCommand):
                 period = _period_str(month_date)
                 # ET path: size EACH served parcel's reading to its RESIDUAL
                 # groundwater need = measured net ET demand MINUS the surface already
-                # delivered that month, times the over-pump band. A parcel fully met
+                # delivered that month, DIVIDED by that field's own crop
+                # irrigation-method efficiency (131-01). A parcel fully met
                 # by surface reads ~0; a groundwater-only parcel (no surface) reads
-                # its full demand × the band — always a small positive residual,
-                # never a deficit, no double-supply for a conjunctive parcel.
+                # its full demand ÷ its efficiency — always a positive residual,
+                # never a deficit, no double-supply for a conjunctive parcel. The
+                # ratio is resolved per PARCEL, not per well: a shared well can
+                # irrigate an alfalfa field and an almond block, and each reads its
+                # own multiple. `ln.fraction` is deliberately NOT applied here — on
+                # the ET path the demand is already per parcel, so the well total is
+                # the sum of its parcels' needs rather than a split of one figure.
                 # Fallback (no run this parcel-month): the flat seasonal envelope
                 # split by fraction, with the curtailment substitution bump.
                 demands = {
@@ -824,7 +964,10 @@ class Command(BaseCommand):
                         gw_need = demand - surf
                         if gw_need < 0:
                             gw_need = Decimal("0")
-                        shares[ln.parcel_id] = _q(gw_need * meter_ratio)
+                        shares[ln.parcel_id] = _q(gw_need * _crop_supply_ratio(
+                            seq_of.get(ln.parcel_id, 0),
+                            self._efficiency_for(eff_by_parcel, ln.parcel_id),
+                        ))
                 else:
                     well_monthly = well_annual * Decimal(str(SEASONAL_WEIGHTS[mn]))
                     if substitutes and mn in POST_CURTAILMENT_MONTHS:

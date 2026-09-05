@@ -322,9 +322,9 @@
       "reason": "Which parcels each point of diversion serves. Must stay equal to surface.WaterRightParcel."
     },
     "surface.UnallocatedDelivery": {
-      "expected": 13,
+      "expected": 14,
       "tolerance": 0,
-      "reason": "Deliveries not yet apportioned to a parcel, exercising the shared-supply apportionment path (Phase 56)."
+      "reason": "Deliveries not yet apportioned to a parcel, exercising the shared-supply apportionment path (Phase 56). MOVED 13 -> 14 by Plan 131-01, which sizes each served parcel's delivery as its measured demand divided by its own crop's irrigation-method efficiency (alfalfa 0.62 border-check flood through almonds 0.87 micro/drip) instead of a flat band keyed on the point-of-diversion's index. allocate_district_delivery caps every parcel at demand / the AGENCY-WIDE efficiency (SiteConfig, 0.750) because the kernel takes one efficiency per call and changing that would be an engine change; a POD whose crop mix is flood-heavy enough now records more than those caps explain, and the kernel writes the surplus as an UnallocatedDelivery rather than dropping it. Exactly one POD-month crossed that threshold: MER-POD-007-DEMO Plainsburg El Nido Canal Headgate, 2025-02, 5.3447 AF surplus of 45.4828 AF delivered. Observed both ways -- 13 rows with the pre-change seeder, 14 with it, on the same tree and the same data. Every other pinned count held, ParcelLedger at 1271 and DiversionRecord at 85 included."
     },
     "surface.WaterRight": {
       "expected": 6,
