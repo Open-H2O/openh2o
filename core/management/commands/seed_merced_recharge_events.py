@@ -27,7 +27,7 @@ recharge — ..."; ``create_recharge_ledger_entries`` describes these "Recharge 
 Idempotent: self-flushes its own events + ledger rows before re-creating. Runs
 AFTER ``seed_merced_ledgers`` (needs both ReportingPeriods + parcels).
 """
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
@@ -77,6 +77,25 @@ RECHARGE_SEASONS = {
 # loudly on the "no recharge areas found" branch instead of quietly writing
 # invented volumes onto rows the basin seed is about to delete.
 DEMO_OPERATOR = "Halvern Irrigation District"
+# How long the gates stay open on a fill. The events used to carry no end_date at
+# all, so every event-history card printed an em dash where the span belongs and
+# the demonstration could not say how long a storm was diverted for.
+#
+# THREE DAYS, and the readings printed beside the event on the same page are what
+# fix the length. `seed_merced_measurements` dates every reading off this event's
+# `start_date`: canal inflow at +1 day "while the basin was filling", ponded depth
+# at +2 "two days into the fill and the basin holding steady", source-water TDS at
+# +3 "during the fill", and percolation at +4 "measured off the falling head AFTER
+# THE GATES WERE SHUT". Gates open on the fill date and shut on +3 is the only
+# span that leaves all four of those sentences true at once.
+#
+# Rejected: a 2-day span. The fill volumes and the seeded headgate inflow imply it
+# physically (a ~1.4-day fill at the recorded rate), but it would put the TDS grab
+# sample at +3 a day after the gates shut, and its note says the sample was taken
+# during the fill. The recorded rate is the PEAK at the headgate on day one, which
+# is throttled back as the basin fills — so a three-day span and a 1.4-day fill
+# volume are not in conflict.
+FILL_SPAN_DAYS = 3
 # Oldest first — the order the seasons are written in, so the stdout summary
 # reads as a chronology.
 REPORTING_PERIOD_NAMES = tuple(RECHARGE_SEASONS)
@@ -179,6 +198,12 @@ class Command(BaseCommand):
                 event = RechargeEvent.objects.create(
                     recharge_site=basin,
                     start_date=ev_date,
+                    # The gates were open for FILL_SPAN_DAYS — see that constant
+                    # for why three and not two. ⚠ Never derive a reading date
+                    # from end_date: seed_merced_measurements dates all 126
+                    # readings off start_date, so the span may move only if that
+                    # command's four notes stay true.
+                    end_date=ev_date + timedelta(days=FILL_SPAN_DAYS),
                     volume_acre_feet=vol,
                     water_type=gw,
                     source_description="storm/surface runoff diverted to basin",

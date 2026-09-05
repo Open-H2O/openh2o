@@ -25,9 +25,11 @@ from decimal import Decimal
 
 import pytest
 from django.core.management import call_command
+from django.utils import timezone
 
 from accounting.models import AllocationCarryover, WaterType
 from accounting.services import BASIN_RECHARGE_POOL, INCIDENTAL_RECHARGE_POOL
+from core.management.commands.seed_merced_recharge_events import FILL_SPAN_DAYS
 from parcels.models import ParcelLedger
 from recharge.models import RechargeEvent
 from tests.factories import (
@@ -254,3 +256,87 @@ def _pool_total_for_year(zone, water_year):
         ),
         Decimal("0"),
     )
+
+
+# ---------------------------------------------------------------------------
+# 134-01: the fill has a beginning and an end
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_every_fill_carries_a_dated_span():
+    """No event may go back to the em dash the detail page used to render.
+
+    Before 134-01 every seeded event had ``end_date = NULL``, so the event-history
+    card printed a start date and nothing else and the demonstration could not say
+    how long the gates were open.
+    """
+    _fixture()
+    call_command("seed_merced_recharge_events")
+
+    events = list(RechargeEvent.objects.all())
+    assert events, "the seed wrote no events"
+    undated = [e for e in events if e.end_date is None]
+    assert not undated, f"{len(undated)} of {len(events)} fills carry no end_date"
+
+
+@pytest.mark.django_db
+def test_the_span_is_three_days_on_every_fill():
+    """Three days is load-bearing, not decorative — see FILL_SPAN_DAYS.
+
+    It is the only length that leaves all four reading notes true. Locking it here
+    means a future change to the span has to come back and re-read those notes.
+    """
+    _fixture()
+    call_command("seed_merced_recharge_events")
+
+    for event in RechargeEvent.objects.all():
+        assert (event.end_date - event.start_date).days == FILL_SPAN_DAYS == 3, (
+            f"{event.start_date} fill spans "
+            f"{(event.end_date - event.start_date).days} days, not 3"
+        )
+
+
+@pytest.mark.django_db
+def test_no_reading_falls_outside_the_fill_it_instruments():
+    """The reading-inside-the-fill invariant, in the direction that can break.
+
+    ``seed_merced_measurements`` dates every basin reading off the event's
+    ``start_date``: inflow +1, depth +2, TDS +3, percolation +4. The first three
+    fall INSIDE the 3-day span; percolation is taken off the falling head one day
+    AFTER the gates shut, which its own note says. So the bound is: no reading
+    earlier than the fill starts, none later than one day past its end.
+
+    This calls the real measurements seed rather than restating its offsets — a
+    restatement would only measure this test's reading of that command.
+    """
+    from datetime import timedelta
+
+    from core.management.commands.seed_merced_measurements import (
+        Command as MeasurementsCommand,
+    )
+    from recharge.models import RechargeMeasurement, RechargeSite
+
+    _fixture()
+    call_command("seed_merced_recharge_events")
+
+    sites = list(RechargeSite.objects.filter(operator="Halvern Irrigation District"))
+    MeasurementsCommand()._seed_recharge_measurements(RechargeMeasurement, sites)
+
+    readings = list(RechargeMeasurement.objects.all())
+    assert readings, "the measurements seed wrote no basin readings"
+
+    for site in sites:
+        spans = [
+            (e.start_date, e.end_date)
+            for e in RechargeEvent.objects.filter(recharge_site=site)
+        ]
+        assert spans, f"{site.name} has no fills to instrument"
+        for reading in RechargeMeasurement.objects.filter(recharge_site=site):
+            day = timezone.localtime(reading.measurement_date).date()
+            assert any(
+                start <= day <= end + timedelta(days=1) for start, end in spans
+            ), (
+                f"{site.name}: a {reading.measurement_type} reading on {day} "
+                f"falls outside every fill it could belong to"
+            )

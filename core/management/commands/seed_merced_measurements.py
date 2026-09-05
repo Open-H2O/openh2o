@@ -59,11 +59,16 @@ goes in ``notes``.
 TWO PLAN PREMISES THAT DID NOT SURVIVE THE SOURCE, recorded so the next reader
 does not re-derive them:
 
-  * The 28 seeded ``RechargeEvent`` rows carry ``end_date = NULL`` — every one of
-    them (``seed_merced_recharge_events`` sets only ``start_date``). There is no
-    event window to place a reading "inside", so the fill window is defined here:
-    a storm fill is worked over the ~5 days after the gates open, and the reading
-    offsets below are days from ``start_date``.
+  * The seeded ``RechargeEvent`` rows used to carry ``end_date = NULL`` — every
+    one of them — so there was no event window to place a reading "inside", and
+    the fill window was defined here instead: a storm fill worked over the ~5 days
+    after the gates open, with the reading offsets below counted from
+    ``start_date``. **134-01 gave the events a real 3-day span**
+    (``FILL_SPAN_DAYS`` in the events seed) and chose that length so all four
+    notes below stay true. The offsets are still counted from ``start_date`` and
+    MUST stay that way — deriving one from ``end_date`` would make a future span
+    change silently re-date 126 readings. ``tests/test_merced_recharge_events.py``
+    locks the reading-inside-the-fill invariant in both directions.
   * ``MONITORING_WELLS`` lives in ``scripts/export_merced_native.py``, an export
     for the native app — NOT in any Django seed, and ``wells.MonitoringWell`` was
     empty. Those three declarations are the demo's own record of which wells are
