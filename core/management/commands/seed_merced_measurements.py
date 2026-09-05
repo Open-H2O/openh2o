@@ -82,35 +82,52 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
+# The basin fill schedule lives in the events seed and is imported, not copied
+# (133-02) — the two commands describe the same storms and must not drift.
+from core.management.commands.seed_merced_recharge_events import (  # noqa: E402
+    RECHARGE_SEASONS,
+)
+
 # The single readable key that finds the demo district's basins without
 # hardcoding names — the same key seed_merced_recharge_events uses. Fictional
 # since Phase 97: these readings are invented, so they must never be attributed
 # to a real district.
 DEMO_OPERATOR = "Halvern Irrigation District"
 
-# The wet-season fill schedule seed_merced_recharge_events writes its events on.
-# Kept in step with that command by test, not by hope: a reading dated outside
-# its basin's fill is a reading of nothing.
-WET_SEASON_STARTS = [
-    datetime.date(2024, 12, 15),
-    datetime.date(2025, 1, 15),
-    datetime.date(2025, 2, 15),
-    datetime.date(2025, 3, 15),
-]
-# Fraction of capacity each fill carries (mirrors WET_SEASON in the events seed).
-# A 0.30 fill ponds deeper and runs the canal harder than a 0.20 fill; the
-# readings have to say so, or the card contradicts the event history beside it.
-WET_SEASON_FRACTIONS = [Decimal("0.20"), Decimal("0.30"), Decimal("0.30"), Decimal("0.20")]
+# The fill schedule seed_merced_recharge_events writes its events on — IMPORTED
+# from that command rather than copied (133-02). It used to be a second literal
+# list here with a comment saying the two were "kept in step by test, not by
+# hope"; no such test existed, and a reading dated outside its basin's fill is a
+# reading of nothing. One definition cannot drift from itself.
+#
+# A season is a list of (date, fraction-of-capacity). A 0.30 fill ponds deeper
+# and runs the canal harder than a 0.20 fill; the readings below have to say so,
+# or the card contradicts the event history printed beside it on the same page.
+# The dry year's season is shorter AND smaller — see RECHARGE_SEASONS' comment.
+FILL_SEASONS = RECHARGE_SEASONS
 
-# The water year everything here is measured in.
-WY_START = datetime.date(2024, 10, 1)
-WY_END = datetime.date(2025, 9, 30)
-# Month-end read dates for the totalizers, one per month of WY 2024-2025.
+# The span everything here is measured across: BOTH water years, as one
+# continuous instrument record. A logger and a totalizer do not restart on
+# October 1 — the water-year boundary is an accounting convention, not an
+# instrument event — so these bound the whole record rather than one year.
+RECORD_START = datetime.date(2024, 10, 1)
+RECORD_END = datetime.date(2026, 9, 30)
+DAYS_IN_FIRST_WY = (datetime.date(2025, 9, 30) - RECORD_START).days  # 364
+# Month-end read dates for the totalizers, one per month of BOTH water years
+# (133-02). A totalizer is a lifetime counter: it does not reset at the water
+# year boundary, so the second year continues the first year's running value.
 WY_MONTHS = [
     (2024, 10), (2024, 11), (2024, 12),
     (2025, 1), (2025, 2), (2025, 3), (2025, 4), (2025, 5),
     (2025, 6), (2025, 7), (2025, 8), (2025, 9),
+    (2025, 10), (2025, 11), (2025, 12),
+    (2026, 1), (2026, 2), (2026, 3), (2026, 4), (2026, 5),
+    (2026, 6), (2026, 7), (2026, 8), (2026, 9),
 ]
+# Index of the first month of the OPEN water year, so "one missed read a year"
+# and "the last two months are provisional" stay per-year statements rather than
+# becoming per-record accidents.
+OPEN_YEAR_FIRST_INDEX = 12
 
 # The district's monitoring points, transcribed from MONITORING_WELLS in
 # scripts/export_merced_native.py (the demo's own declaration, Phase 52.5). The
@@ -175,8 +192,62 @@ WELL_DEPTH_OFFSET = {
 # The annual calibration visit: the day the transducer was lifted out of the
 # water and kept logging in air, and the day it spent re-equilibrating. Flagged
 # anomalous with the cause named. The two days after it are reconstructed from
-# the manual sounder either side, and carry quality "estimated".
-SERVICE_VISIT = datetime.date(2025, 5, 14)
+# the manual sounder either side, and carry quality "estimated". ANNUAL, so the
+# second water year has its own (133-02) — one visit across two years would read
+# as a district that stopped servicing its instrument.
+SERVICE_VISITS = (datetime.date(2025, 5, 14), datetime.date(2026, 5, 14))
+# The tail of the record that has not been through the district's annual review.
+# It moves with the record's end, not with a literal date.
+PROVISIONAL_FROM = datetime.date(2026, 8, 16)
+
+# 133-02 — THE DRY YEAR'S WATER TABLE IS DERIVED FROM THIS DEMONSTRATION'S OWN
+# NUMBERS, not drawn a second time. The wet year's anchors above are a shape and
+# say so; a second hand-drawn shape would be a second unverifiable claim, and a
+# flat continuation would be worse — a water table that does not move through a
+# drought is the one thing this audience would never believe.
+#
+# So the second year reuses the first year's shape SEGMENT BY SEGMENT, scaled by
+# the two quantities the rest of this milestone already measured:
+#
+#   * winter RECOVERY is scaled by 0.50, because managed recharge halved —
+#     `RECHARGE_SEASONS` spreads 1.00x basin capacity in the wet year and 0.50x
+#     in the dry one, and 133-01 halved the rainfall that drives it.
+#   * summer DRAWDOWN is scaled by 1.187, because metered groundwater rose 18.7%
+#     (2,558.6 AF -> 3,037.8 AF, measured on the built demo 2026-09-05).
+#
+# The second year opens exactly where the first closed, so the record is
+# continuous across the boundary. Everything else about the shape — when the
+# season turns, how fast — is inherited rather than invented.
+DRY_RECOVERY_SCALE = Decimal("0.50")
+DRY_DRAWDOWN_SCALE = Decimal("1.187")
+
+
+def _derive_next_year_anchors(anchors, recovery_scale, drawdown_scale):
+    """Anchors for a following year, continuing ``anchors`` segment by segment.
+
+    Depth is FEET BELOW LAND SURFACE, so a falling value is the water table
+    rising (recovery) and a rising value is drawdown. Each segment's change is
+    scaled by whichever factor applies, and the year opens at the depth the
+    previous one closed at.
+    """
+    depth = Decimal(str(anchors[-1][1]))
+    out = [(anchors[0][0], float(depth))]
+    for (_d0, v0), (d1, v1) in zip(anchors, anchors[1:]):
+        delta = Decimal(str(v1)) - Decimal(str(v0))
+        depth += delta * (drawdown_scale if delta > 0 else recovery_scale)
+        out.append((d1, float(round(depth, 2))))
+    return out
+
+
+# The whole two-year record, in days from RECORD_START. The second year's day
+# numbers are the first year's shifted by one water year, so the interpolation
+# below needs no notion of which year it is in.
+RECORD_ANCHORS = DEPTH_ANCHORS + [
+    (day + DAYS_IN_FIRST_WY + 1, value)
+    for day, value in _derive_next_year_anchors(
+        DEPTH_ANCHORS, DRY_RECOVERY_SCALE, DRY_DRAWDOWN_SCALE
+    )
+]
 
 
 def _q4(value):
@@ -199,13 +270,13 @@ def _month_end(year, month):
 
 def _interp_depth(day):
     """Depth to water on day-of-water-year `day`, linear between the anchors."""
-    if day <= DEPTH_ANCHORS[0][0]:
-        return DEPTH_ANCHORS[0][1]
-    for (d0, v0), (d1, v1) in zip(DEPTH_ANCHORS, DEPTH_ANCHORS[1:]):
+    if day <= RECORD_ANCHORS[0][0]:
+        return RECORD_ANCHORS[0][1]
+    for (d0, v0), (d1, v1) in zip(RECORD_ANCHORS, RECORD_ANCHORS[1:]):
         if d0 <= day <= d1:
             span = d1 - d0
             return v0 + (v1 - v0) * (day - d0) / span
-    return DEPTH_ANCHORS[-1][1]
+    return RECORD_ANCHORS[-1][1]
 
 
 class Command(BaseCommand):
@@ -281,11 +352,17 @@ class Command(BaseCommand):
 
     # ── 1. The one slice with a screen: recharge-basin monitoring ────────────
     def _seed_recharge_measurements(self, RechargeMeasurement, sites):
-        """On-site readings across the four wet-season fills, per basin.
+        """On-site readings across every wet-season fill, per basin, per year.
 
-        Twelve readings a site. The detail card renders the ten most recent, and
-        at this spacing those ten reach from mid-December to mid-March — a
-        season, not a sample.
+        Three readings a fill: ponded depth and canal inflow every time, then
+        percolation OR source-water quality on alternating fills. The detail card
+        renders the ten most recent; at this spacing those ten reach back across a
+        season rather than sampling one storm.
+
+        133-02: the dry year's two fills are instrumented the same way the wet
+        year's four are. The district did not stop reading its basins because it
+        rained less, and an event history for WY 2025-2026 sitting beside an
+        empty measurements card is the exact contradiction 132-01 closed.
 
         The numbers have to agree with the event history printed beside them on
         the same page: a bigger basin taking a bigger fill ponds deeper and pulls
@@ -315,9 +392,10 @@ class Command(BaseCommand):
             perc_base += srng.uniform(-0.04, 0.04)
             tds_base = 296 + 34 * srng.random() - 12 * size
 
-            for idx, (start, fraction) in enumerate(
-                zip(WET_SEASON_STARTS, WET_SEASON_FRACTIONS)
-            ):
+            season_fills = [
+                pair for season in FILL_SEASONS.values() for pair in season
+            ]
+            for idx, (start, fraction) in enumerate(season_fills):
                 # A 0.20 fill is a smaller storm than a 0.30 fill.
                 fill = 0.80 if fraction == Decimal("0.20") else 1.00
                 month = start.strftime("%B")
@@ -356,9 +434,13 @@ class Command(BaseCommand):
                     ),
                 )
 
-                # Percolation, twice a season: once on the first fill and once at
-                # the end of February, when fines have had time to settle out.
-                if idx in (0, 2):
+                # Percolation, on every OTHER fill: once early, once after the
+                # fines off the first storms have had time to settle out.
+                # Expressed as a parity rather than the literal (0, 2) it used to
+                # be, so a season of a different length (133-02's two-storm dry
+                # winter) still gets a reading rather than falling through both
+                # branches and recording nothing but depth and flow.
+                if idx % 2 == 0:
                     silting = 0.0 if idx == 0 else -0.07
                     created += self._add(
                         RechargeMeasurement, site,
@@ -376,9 +458,10 @@ class Command(BaseCommand):
                         ),
                     )
 
-                # Source-water quality, twice a season, from a grab sample at the
-                # inlet. Storm runoff is the source, so it runs fresh.
-                if idx in (1, 3):
+                # Source-water quality, on the alternate fills, from a grab
+                # sample at the inlet. Storm runoff is the source, so it runs
+                # fresh. Same parity reasoning as the percolation reading above.
+                if idx % 2 == 1:
                     created += self._add(
                         RechargeMeasurement, site,
                         _aware(start + datetime.timedelta(days=3), 11),
@@ -390,8 +473,11 @@ class Command(BaseCommand):
                             f"comes in fresher than the groundwater it is going to."
                         ),
                     )
+            per_site = 3 * len(season_fills)  # depth + flow every fill, then
+            #                                     perc OR quality on each fill
             self.stdout.write(
-                f"  {site.name}: 12 reading(s) across {len(WET_SEASON_STARTS)} fills"
+                f"  {site.name}: {per_site} reading(s) across "
+                f"{len(season_fills)} fills in {len(FILL_SEASONS)} water year(s)"
             )
         return created
 
@@ -460,6 +546,14 @@ class Command(BaseCommand):
     ):
         """Monthly reads on the 12 certified meters, reconciled to the ledger.
 
+        133-02: across BOTH water years, 24 reads a meter. The delta is read off
+        the ledger month by month, so the second year's reads reconcile to the
+        second year's metered groundwater the same way the first year's do — that
+        reconciliation is the whole tie between this instrument record and the
+        accounting spine, and letting it stop at 2025-09-30 would leave 24 months
+        of pumping described by 12 months of meter reads with nothing on the page
+        saying which year was which.
+
         A domain expert reading a well's meter against its parcel's metered
         groundwater WILL compare the two, and disagreement is a worse defect than
         emptiness. So the monthly delta is not invented: it is read straight off
@@ -493,8 +587,14 @@ class Command(BaseCommand):
             # Lifetime accumulation before this water year opened — a well
             # pumping a few hundred acre-feet a year since the 1990s.
             running = _q4(Decimal(rng.randrange(80_000, 420_000)) / Decimal("10"))
-            # One meter in four had a read missed somewhere in the year.
-            estimated_month = rng.randrange(0, 12) if rng.random() < 0.30 else None
+            # One meter in four had a read missed somewhere in each water year.
+            # Drawn PER YEAR (133-02) rather than once across the whole record, so
+            # adding a second year does not silently halve the miss rate — and so
+            # the committed year's draw is the one it always was.
+            estimated_months = set()
+            for year_start in (0, OPEN_YEAR_FIRST_INDEX):
+                if rng.random() < 0.30:
+                    estimated_months.add(year_start + rng.randrange(0, 12))
 
             for m_idx, (year, month) in enumerate(WY_MONTHS):
                 first = datetime.date(year, month, 1)
@@ -512,7 +612,7 @@ class Command(BaseCommand):
                 running = _q4(previous + delta)
 
                 month_name = last.strftime("%B %Y")
-                if m_idx == estimated_month:
+                if m_idx in estimated_months:
                     quality = "estimated"
                     notes = (
                         f"Totalizer read for {month_name}. Read missed on the "
@@ -520,9 +620,12 @@ class Command(BaseCommand):
                         f"down — so the month is estimated from the following "
                         f"read and the field's irrigation schedule."
                     )
-                elif m_idx >= 10:
-                    # The last two months of the year have not been through the
-                    # district's annual review yet.
+                elif m_idx >= len(WY_MONTHS) - 2:
+                    # The last two months of the OPEN year have not been through
+                    # the district's annual review yet (133-02). WY 2024-2025 is
+                    # `is_finalized=True`, so its September read is no longer
+                    # provisional once a second year has passed — leaving it that
+                    # way would have a finalized year still awaiting review.
                     quality = "provisional"
                     notes = (
                         f"Totalizer read for {month_name}. Provisional until the "
@@ -603,9 +706,9 @@ class Command(BaseCommand):
     def _log_daily(self, SensorMeasurement, sensor, reg, gw_depth):
         offset = WELL_DEPTH_OFFSET.get(reg, Decimal("0"))
         rows = []
-        day = WY_START
+        day = RECORD_START
         idx = 0
-        while day <= WY_END:
+        while day <= RECORD_END:
             rng = random.Random(f"sm:{reg}:{day.isoformat()}")
             depth = Decimal(str(round(_interp_depth(idx), 4))) + offset
             depth += Decimal(str(round(rng.uniform(-0.12, 0.12), 4)))
@@ -613,7 +716,8 @@ class Command(BaseCommand):
             quality = "approved"
             notes = ""
 
-            service_gap = (day - SERVICE_VISIT).days
+            service_gap = min(((day - v).days for v in SERVICE_VISITS
+                               if (day - v).days >= 0), default=-1)
             if service_gap == 0:
                 anomalous = True
                 depth = Decimal("2.1400")
@@ -635,8 +739,8 @@ class Command(BaseCommand):
                     "Reconstructed from the manual sounder readings either side "
                     "of the calibration visit."
                 )
-            elif day >= datetime.date(2025, 8, 16):
-                # The tail of the year has not been reviewed yet.
+            elif day >= PROVISIONAL_FROM:
+                # The tail of the record has not been reviewed yet.
                 quality = "provisional"
 
             rows.append(SensorMeasurement(
@@ -681,9 +785,9 @@ class Command(BaseCommand):
             visit_step = 91 if has_logger else step
 
             offset = WELL_DEPTH_OFFSET.get(reg, Decimal("0"))
-            day = WY_START + datetime.timedelta(days=14)
-            idx = (day - WY_START).days
-            while day <= WY_END:
+            day = RECORD_START + datetime.timedelta(days=14)
+            idx = (day - RECORD_START).days
+            while day <= RECORD_END:
                 rng = random.Random(f"wm:{reg}:{day.isoformat()}")
                 depth = Decimal(str(round(_interp_depth(idx), 4))) + offset
                 if has_logger:

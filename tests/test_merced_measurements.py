@@ -222,7 +222,10 @@ def test_the_totalizer_reconciles_to_the_ledger(demo):
     readings = list(
         MeterReading.objects.filter(meter=demo["meter"]).order_by("reading_date")
     )
-    assert len(readings) == 12, "one read a month across the water year"
+    assert len(readings) == 24, (
+        "one read a month across BOTH water years (133-02) — a totalizer is a "
+        "lifetime counter and does not restart on October 1"
+    )
 
     for reading in readings:
         read_on = reading.reading_date.date()
@@ -351,3 +354,85 @@ def test_every_basin_gets_readings_that_differ_from_its_neighbours(demo):
     assert len({frozenset(v) for v in by_site.values()}) == 2
     for name, values in by_site.items():
         assert len(values) > 1, f"{name} ponded to exactly one depth all season"
+
+
+# --------------------------------------------------------------------------
+# 133-02 — the instrument record covers both water years
+# --------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_the_water_level_record_spans_both_water_years(demo):
+    """The logger does not stop a year before the demonstration's current year.
+
+    A monitoring-well page showing a record that ends 2025-09-30, in a demo whose
+    period selector offers WY 2025-2026, is the same blank-screen class 132-01
+    closed — just aged rather than empty.
+    """
+    call_command("seed_merced_measurements")
+
+    dates = sorted(
+        m.measurement_date.date() for m in SensorMeasurement.objects.all()
+    )
+    assert dates, "the demo declares a transducer; it should have a record"
+    assert dates[0] == date(2024, 10, 1)
+    assert dates[-1] == date(2026, 9, 30)
+    # Daily, with no gap: two water years is 730 days inclusive.
+    assert len(dates) == len(set(dates)) == 730
+
+
+@pytest.mark.django_db
+def test_the_dry_year_draws_the_water_table_down(demo):
+    """The second year ends deeper than it began, and deeper than the first year.
+
+    Depth is feet BELOW land surface, so a larger number is a lower water table.
+    The shape is derived from this demonstration's own numbers — half the managed
+    recharge, 18.7% more metered pumping — not drawn a second time.
+    """
+    call_command("seed_merced_measurements")
+
+    def depth_on(when):
+        row = SensorMeasurement.objects.filter(
+            measurement_date__date=when, is_anomalous=False
+        ).first()
+        assert row is not None, f"no logger reading for {when}"
+        return row.value
+
+    wet_open, wet_close = depth_on(date(2024, 10, 1)), depth_on(date(2025, 9, 30))
+    dry_close = depth_on(date(2026, 9, 30))
+
+    assert wet_close > wet_open, "the committed year already ends in overdraft"
+    assert dry_close > wet_close, "the dry year should end deeper still"
+    # The dry year's decline is the larger of the two by a wide margin — a
+    # district under pressure, not a district ticking along.
+    assert (dry_close - wet_close) > 3 * (wet_close - wet_open)
+
+
+@pytest.mark.django_db
+def test_the_transducer_is_serviced_every_year(demo):
+    """One calibration visit per water year, each flagged with its cause.
+
+    A two-year record with a single service visit would read as an instrument
+    nobody went back to.
+    """
+    call_command("seed_merced_measurements")
+
+    anomalous = sorted(
+        m.measurement_date.date()
+        for m in SensorMeasurement.objects.filter(is_anomalous=True)
+    )
+    assert date(2025, 5, 14) in anomalous
+    assert date(2026, 5, 14) in anomalous
+    for m in SensorMeasurement.objects.filter(is_anomalous=True):
+        assert m.notes.strip(), "an anomaly with no stated cause is not a record"
+
+
+@pytest.mark.django_db
+def test_only_the_open_years_tail_is_provisional(demo):
+    """WY 2024-2025 is finalized, so none of it may still await annual review."""
+    call_command("seed_merced_measurements")
+
+    provisional = SensorMeasurement.objects.filter(quality="provisional")
+    assert provisional.exists(), "the tail of the record should be provisional"
+    earliest = min(m.measurement_date.date() for m in provisional)
+    assert earliest > date(2025, 9, 30), (
+        "a finalized water year cannot still be waiting on the district's review"
+    )

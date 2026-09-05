@@ -5,8 +5,9 @@
 areas (El Nido Canal spreading basins + Merced River Flood-MAR cropland,
 Phase 62) as ``RechargeSite`` rows but gives them no events, so no managed
 recharge ever reaches the ledger. This command adds wet-season ``RechargeEvent``
-rows for WY 2024-2025 and deposits each to the overlying GSA's basin pool — the
-*managed* half of an honest groundwater budget. (The *incidental* deep-percolation
+rows for BOTH demonstration water years (133-02) and deposits each to the
+overlying GSA's basin pool — the *managed* half of an honest groundwater budget.
+The two seasons are deliberately different sizes: see ``RECHARGE_SEASONS``. (The *incidental* deep-percolation
 half — surface delivered beyond crop demand — is written separately by the calc
 engine; see run_calculations / ISS-052.)
 
@@ -24,7 +25,7 @@ recharge — ..."; ``create_recharge_ledger_entries`` describes these "Recharge 
 <basin> ...". The two never collide and each is independently idempotent.
 
 Idempotent: self-flushes its own events + ledger rows before re-creating. Runs
-AFTER ``seed_merced_ledgers`` (needs the WY 2024-2025 ReportingPeriod + parcels).
+AFTER ``seed_merced_ledgers`` (needs both ReportingPeriods + parcels).
 """
 from datetime import date
 from decimal import Decimal
@@ -37,16 +38,36 @@ from accounting.services import BASIN_RECHARGE_POOL, create_recharge_ledger_entr
 from geography.models import Zone
 from parcels.models import ParcelLedger
 
-# Wet-season recharge schedule for WY 2024-2025: storm-driven, weighted to
-# mid-winter. (event_date, fraction-of-capacity). Fractions sum to 1.0, so each
-# basin recharges ~one full capacity over the season — a strong, visible GW
-# credit against the demo's extraction.
-WET_SEASON = [
-    (date(2024, 12, 15), Decimal("0.20")),
-    (date(2025, 1, 15), Decimal("0.30")),
-    (date(2025, 2, 15), Decimal("0.30")),
-    (date(2025, 3, 15), Decimal("0.20")),
-]
+# Wet-season recharge schedule PER WATER YEAR: storm-driven, weighted to
+# mid-winter. (event_date, fraction-of-capacity). A season's fractions sum to
+# the number of basin-fulls spread that year, so the list says in one line how
+# wet the winter was.
+#
+# 133-02 — THE DRY YEAR'S RECHARGE IS SMALLER, NOT ABSENT, AND HERE IS WHY.
+# A dry year genuinely has less storm water to spread, so copying the wet year's
+# schedule would be a lie. Seeding nothing would be a different lie: the basins
+# and their canal intake are still there, and a winter with half the rain still
+# produces storms worth diverting. The dry season below is scaled to 0.50 — the
+# same rainfall multiplier 133-01 applied to the satellite record (Brent, at that
+# plan's opening checkpoint) — and it arrives as TWO mid-winter storms rather
+# than a four-month season, because a dry winter is short of storms before it is
+# short of water in each one. December and March, the shoulder fills, do not
+# happen at all.
+#
+# ⚠ This is the MANAGED spreading-basin schedule only. The high-flow storm
+# diversion is Phase 134's to tell and must not be built here.
+RECHARGE_SEASONS = {
+    "WY 2024-2025": [
+        (date(2024, 12, 15), Decimal("0.20")),
+        (date(2025, 1, 15), Decimal("0.30")),
+        (date(2025, 2, 15), Decimal("0.30")),
+        (date(2025, 3, 15), Decimal("0.20")),
+    ],
+    "WY 2025-2026": [
+        (date(2026, 1, 15), Decimal("0.30")),
+        (date(2026, 2, 15), Decimal("0.20")),
+    ],
+}
 # Merced recharge areas all carry this operator (set by the basin seed); the
 # single readable key that finds them without hardcoding names or hitting other
 # demos. Fictional since Phase 97 — the recharge volumes below are invented, so
@@ -56,7 +77,9 @@ WET_SEASON = [
 # loudly on the "no recharge areas found" branch instead of quietly writing
 # invented volumes onto rows the basin seed is about to delete.
 DEMO_OPERATOR = "Halvern Irrigation District"
-REPORTING_PERIOD_NAME = "WY 2024-2025"
+# Oldest first — the order the seasons are written in, so the stdout summary
+# reads as a chronology.
+REPORTING_PERIOD_NAMES = tuple(RECHARGE_SEASONS)
 
 
 class Command(BaseCommand):
@@ -74,13 +97,18 @@ class Command(BaseCommand):
         gw, _ = WaterType.objects.get_or_create(
             code="GW", defaults={"name": "Groundwater"}
         )
-        period = ReportingPeriod.objects.filter(
-            name=REPORTING_PERIOD_NAME
-        ).first()
-        if period is None:
+        # The reporting periods are a PREREQUISITE CHECK, not an argument: the
+        # events carry dates, and `create_recharge_ledger_entries` derives the
+        # period from the event. A missing period means seed_merced_ledgers has
+        # not run, and the recharge credits would land against nothing.
+        missing = [
+            name for name in REPORTING_PERIOD_NAMES
+            if not ReportingPeriod.objects.filter(name=name).exists()
+        ]
+        if missing:
             self.stderr.write(
                 self.style.ERROR(
-                    f"{REPORTING_PERIOD_NAME} ReportingPeriod not found — run "
+                    f"ReportingPeriod(s) not found: {', '.join(missing)} — run "
                     f"seed_merced_ledgers first."
                 )
             )
@@ -133,7 +161,18 @@ class Command(BaseCommand):
                 )
                 continue
             capacity = basin.capacity_acre_feet or Decimal("0")
-            for ev_date, fraction in WET_SEASON:
+            season_totals = []
+            for wy_name in REPORTING_PERIOD_NAMES:
+                season = RECHARGE_SEASONS[wy_name]
+                season_totals.append(
+                    f"{wy_name}: {sum(f for _, f in season)}x capacity over "
+                    f"{len(season)} event(s)"
+                )
+            for ev_date, fraction in [
+                pair
+                for wy_name in REPORTING_PERIOD_NAMES
+                for pair in RECHARGE_SEASONS[wy_name]
+            ]:
                 vol = (capacity * fraction).quantize(Decimal("0.0001"))
                 if vol <= 0:
                     continue
@@ -153,8 +192,8 @@ class Command(BaseCommand):
                 create_recharge_ledger_entries(event, zone=zone)
                 total_events += 1
             self.stdout.write(
-                f"  {basin.name}: {capacity} AF over {len(WET_SEASON)} "
-                f"wet-season events -> basin pool for zone '{zone.name}'"
+                f"  {basin.name}: {capacity} AF capacity -> basin pool for zone "
+                f"'{zone.name}'; " + "; ".join(season_totals)
             )
 
         self.stdout.write(
