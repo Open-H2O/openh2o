@@ -194,6 +194,29 @@ run_step seed_calculation_plan
 # (Phase 133-01, 2026-09-05).
 run_step refresh_merced_accounting --period "WY 2024-2025" --period "WY 2025-2026"
 
+# THE INSTRUMENT RECORD IS RE-SEEDED AFTER THE REFRESH, AND HAS TO BE.
+#
+# `seed_merced_measurements` runs inside `seed_merced` above, and every totalizer
+# read it writes is the SUM OF THE LEDGER ROWS for that well-month — read off
+# `ParcelLedger`, never invented, because a water master comparing a meter to its
+# parcel's metered groundwater will find any disagreement. But
+# `refresh_merced_accounting` REWRITES that ledger: its pass 2 re-runs
+# `seed_merced_ledgers`, which on the first pass had no CalculationRun rows to
+# size against and took the flat fail-soft fallback, and on this pass sizes every
+# row from measured net consumptive use instead. Two different ledgers, and the
+# meter reads were reconciled to the first one.
+#
+# Measured on the candidate built at 27bee27 before this line existed: 260 of 288
+# totalizer reads disagreed with the ledger they claim to sum, verified with the
+# same query that returns 0 of 288 on a database where the seed runs last. The
+# defect is not new — the ordering has been this way since Phase 132-01 shipped
+# the measurement record, and 132's own guard could not see it because its
+# fixture's ledger never changes under it.
+#
+# The command self-flushes, so running it a second time replaces its own rows
+# rather than duplicating them, and every pinned count stays where it is.
+run_step seed_merced_measurements
+
 # ---------------------------------------------------------------------------
 # Dump the candidate.
 # ---------------------------------------------------------------------------

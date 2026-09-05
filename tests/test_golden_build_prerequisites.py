@@ -83,3 +83,41 @@ def test_the_rebuild_still_refuses_to_create_a_superuser():
         "scripts/rebuild-golden.sh must never run `ensure_superuser` — the "
         "candidate must contain zero user rows."
     )
+
+
+def test_the_instrument_record_is_seeded_after_the_ledger_is_final():
+    """A totalizer read is a SUM OF LEDGER ROWS, so it must be written last.
+
+    **The defect this guards, measured on the candidate built at 27bee27.**
+    260 of 288 totalizer reads disagreed with the ledger they claim to sum.
+
+    `seed_merced_measurements` reads `ParcelLedger` to build each meter's monthly
+    delta — deliberately, because a water master comparing a well's meter against
+    its parcel's metered groundwater will find any disagreement, and 132-01 wrote
+    in its own docstring that disagreement is a worse defect than emptiness.
+    `refresh_merced_accounting` then rewrites that ledger: its pass 2 re-runs
+    `seed_merced_ledgers`, which the first time through had no `CalculationRun`
+    rows to size against and took the flat fail-soft fallback, and this time sizes
+    every row from measured net consumptive use. Whatever ran before the refresh
+    is reconciled to a ledger that no longer exists.
+
+    Guarded here, in the script, for the reason this module's docstring gives: the
+    database is rebuilt from this script, so the script is the thing that can
+    regress. 132-01's own test cannot see this — its fixture's ledger never
+    changes under it, which is exactly why the defect shipped.
+    """
+    steps = _steps(REBUILD_SCRIPT.read_text())
+    assert "refresh_merced_accounting" in steps
+    assert "seed_merced_measurements" in steps, (
+        "scripts/rebuild-golden.sh no longer re-seeds the measurement record. "
+        "Every totalizer read in the candidate will sum a ledger the refresh "
+        "has already replaced."
+    )
+    assert steps.index("seed_merced_measurements") > steps.index(
+        "refresh_merced_accounting"
+    ), (
+        "`seed_merced_measurements` must run AFTER `refresh_merced_accounting`. "
+        "The refresh rewrites every ParcelLedger row the meter reads sum, so a "
+        "measurement record written before it reconciles to a ledger that is "
+        "gone by the time the candidate is dumped."
+    )
