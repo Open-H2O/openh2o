@@ -98,7 +98,7 @@
           <td class="td-num">{{ mass_balance.outputs.recharge|floatformat:2 }}</td>
         </tr>
         <tr>
-          <td class="text-secondary">Groundwater recovered</td>
+          <td class="text-secondary">Groundwater pumped</td>
           <td class="td-num text-supply">{{ mass_balance.inputs.gw_recovered|floatformat:2 }}</td>
           <td class="text-secondary">Runoff</td>
           <td class="td-num">{{ mass_balance.outputs.runoff|floatformat:2 }}</td>
@@ -112,13 +112,27 @@
     </table>
 
     <div class="row-between mb-md mt-sm">
-      <span class="text-secondary text-sm">Residual: <span class="td-num">{{ mass_balance.residual_af|floatformat:4 }}</span> AF</span>
+      <span class="text-secondary text-sm">Residual: <span class="td-num">{{ mass_balance.residual_af|floatformat:2 }}</span> AF</span>
+      {% comment %}
+        Three words only — Balanced / Surplus / Deficit (Brent, 2026-09-05).
+        The COLOUR carries the size, so the vocabulary stays short without
+        losing the one thing an operator needs to see: a gap of a quarter of
+        consumptive use does not read the same as a rounding difference.
+        A deficit is orange at any size; a surplus is green until it passes
+        REALISTIC_RESIDUAL_BAND, then orange.
+
+        This block tag is required for a note this long: Django's hash-style
+        template comment is SINGLE-LINE only, and a multi-line one renders onto
+        the page as visible text. That shipped to Brent's screen on 2026-09-05.
+      {% endcomment %}
       {% if mass_balance.band_status == "closes" %}
-      <span class="badge badge-green">Balance closes</span>
+      <span class="badge badge-grey">Balanced</span>
+      {% elif not mass_balance.is_surplus %}
+      <span class="badge badge-orange">Deficit</span>
       {% elif mass_balance.band_status == "realistic" %}
-      <span class="badge badge-blue">{% if mass_balance.is_surplus %}Minor surplus{% else %}Minor shortfall{% endif %}</span>
+      <span class="badge badge-green">Surplus</span>
       {% else %}
-      <span class="badge badge-orange">{% if mass_balance.is_surplus %}Residual outstanding{% else %}Supply shortfall{% endif %}</span>
+      <span class="badge badge-orange">Surplus</span>
       {% endif %}
     </div>
     {% if mass_balance.band_status == "realistic" %}
@@ -131,6 +145,14 @@
       supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
       rootzone water the meters don't capture).
       {% endif %}
+    </p>
+    {% elif mass_balance.band_status == "large" and mass_balance.is_surplus %}
+    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+      More water is recorded arriving here than this parcel's uses account for —
+      by more than a quarter of estimated consumptive use, so it is flagged rather
+      than treated as ordinary on-farm loss. A surplus this size is a gap in the
+      books, not spare water: conveyance loss is not yet a term in this platform,
+      so ditch seepage and evaporation have nowhere to be recorded and land here.
     </p>
     {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
     <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
