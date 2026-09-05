@@ -647,3 +647,166 @@ def test_seed_surface_split_is_demand_weighted_when_calculations_exist(seeded):
 
     assert delivered(thirsty) > delivered(modest), (
         "demand-weighted split should give the thirstier parcel the larger share")
+
+
+# --------------------------------------------------------------------------
+# Group 8 — the second water year carries a supply side (133-02)
+#
+# Before 133-02 `_month_schedule()` hardcoded WY 2024-2025's twelve months and
+# every one of its four callers built that year and nothing else, so the open
+# water year had a full demand side (133-01) and no water at all.
+# --------------------------------------------------------------------------
+def _schedule_for(period_name, start, end):
+    """The seed command's month schedule for a period with these dates."""
+    from core.management.commands.seed_merced_ledgers import Command
+
+    period = ReportingPeriod(name=period_name, start_date=start, end_date=end)
+    return Command()._month_schedule(period)
+
+
+def test_month_schedule_walks_the_open_water_year():
+    """WY 2025-2026 yields 2025-10 through 2026-09 — twelve months, in order.
+
+    No database: the schedule is a pure function of the period's own dates, which
+    is the whole point of the 133-02 change.
+    """
+    schedule = _schedule_for(OPEN_WY, date(2025, 10, 1), date(2026, 9, 30))
+
+    assert len(schedule) == 12
+    assert [(d.year, d.month) for d, _ in schedule] == [
+        (2025, 10), (2025, 11), (2025, 12),
+        (2026, 1), (2026, 2), (2026, 3), (2026, 4), (2026, 5), (2026, 6),
+        (2026, 7), (2026, 8), (2026, 9),
+    ]
+    assert all(d.day == 15 for d, _ in schedule), "mid-month convention"
+    assert all(mn == d.month for d, mn in schedule)
+
+
+def test_month_schedule_still_walks_the_prior_water_year():
+    """The committed year is unchanged — same twelve dates the literals produced."""
+    schedule = _schedule_for(PRIOR_WY, date(2024, 10, 1), date(2025, 9, 30))
+
+    assert [(d.year, d.month) for d, _ in schedule] == [
+        (2024, 10), (2024, 11), (2024, 12),
+        (2025, 1), (2025, 2), (2025, 3), (2025, 4), (2025, 5), (2025, 6),
+        (2025, 7), (2025, 8), (2025, 9),
+    ]
+
+
+@pytest.mark.django_db
+def test_both_periods_carry_supply_on_the_same_parcels(seeded):
+    """Every parcel with supply in the prior year has supply in the open year too.
+
+    Checked per source and per parcel rather than in aggregate: a basin total can
+    be non-zero while a whole class of parcel is empty, and an empty parcel detail
+    panel is exactly the blank screen this milestone exists to close.
+    """
+    prior = ReportingPeriod.objects.get(name=PRIOR_WY)
+    open_wy = ReportingPeriod.objects.get(name=OPEN_WY)
+
+    for source_type in ("surface_diversion", "meter_reading"):
+        def parcels_with(period):
+            return set(
+                ParcelLedger.objects.filter(
+                    reporting_period=period, source_type=source_type
+                ).values_list("parcel_id", flat=True)
+            )
+
+        prior_parcels = parcels_with(prior)
+        open_parcels = parcels_with(open_wy)
+        assert prior_parcels, f"fixture should produce {source_type} rows"
+
+        # The curtailed right records no diversion in the open year at all — that
+        # is the ruling in CURTAILMENT_LAST_DELIVERY's comment block, not a gap.
+        expected = prior_parcels
+        if source_type == "surface_diversion":
+            expected = prior_parcels - {p.id for p in _curtailed_parcels()}
+
+        assert expected <= open_parcels, (
+            f"{source_type}: parcels {sorted(expected - open_parcels)} have supply "
+            f"in {PRIOR_WY} but none in {OPEN_WY}"
+        )
+
+
+@pytest.mark.django_db
+def test_seed_is_deterministic_across_both_water_years(seeded):
+    """A second seed reproduces the first, row for row, in both periods.
+
+    The seed self-flushes, so this exercises a full delete-and-rebuild rather than
+    an upsert. No `random` anywhere in the supply path is what makes it hold.
+    """
+    def payload():
+        return sorted(
+            ParcelLedger.objects.values_list(
+                "parcel_id", "effective_date", "source_type",
+                "amount_acre_feet", "reporting_period__name",
+            )
+        )
+
+    first = payload()
+    assert first, "fixture should produce ledger rows"
+
+    call_command("seed_merced_ledgers")
+    second = payload()
+
+    assert first == second, "a re-run changed the ledger"
+
+
+@pytest.mark.django_db
+def test_curtailed_district_delivers_nothing_in_the_open_year(seeded):
+    """The El Nido cut carries across the whole open year, and the paper trail says so.
+
+    Three facts together, because any one alone is ambiguous: the district
+    delivered water in the prior year, it delivers none in the open year, and its
+    open-year allocation is still a positive tenth of face value. The gap between
+    a live 10% budget and zero deliveries is the curtailment order doing its job —
+    not a seeding hole.
+    """
+    from django.db.models import Sum
+
+    curtailed_ids = [p.id for p in _curtailed_parcels()]
+    assert curtailed_ids, "fixture should have parcels under the curtailed right"
+
+    def delivered(period_name):
+        return abs(
+            ParcelLedger.objects.filter(
+                parcel_id__in=curtailed_ids,
+                source_type="surface_diversion",
+                reporting_period__name=period_name,
+            ).aggregate(s=Sum("amount_acre_feet"))["s"] or Decimal("0")
+        )
+
+    assert delivered(PRIOR_WY) > 0, "the curtailed district delivered before the cut"
+    assert delivered(OPEN_WY) == 0, (
+        "MER-CURT-001 is effective 2025-07-01 and never rescinded, so every month "
+        "of the open year sits after CURTAILMENT_LAST_DELIVERY"
+    )
+
+    open_wy = ReportingPeriod.objects.get(name=OPEN_WY)
+    open_budget = AllocationPlan.objects.filter(
+        reporting_period=open_wy,
+        zone__name__startswith="MER Surface Service Area",
+        notes__startswith="Surface allocation reduced",
+    ).aggregate(s=Sum("allocation_acre_feet"))["s"] or Decimal("0")
+    assert open_budget > 0, (
+        "the collapsed open-year allocation should still be a positive tenth of "
+        "face value — the contrast with zero deliveries is the story"
+    )
+
+
+@pytest.mark.django_db
+def test_diversion_records_are_stamped_with_their_own_period(seeded):
+    """No DiversionRecord carries a period whose span excludes its month.
+
+    `surface.services._records_for_period` matches a record on its reporting_period
+    FK **OR** on its month falling inside the period span. A second year's records
+    left stamped with the first year's FK would therefore be allocated against BOTH
+    periods and double-count the supply.
+    """
+    mismatched = [
+        (r.point_of_diversion_id, r.month, r.reporting_period.name)
+        for r in DiversionRecord.objects.select_related("reporting_period")
+        if r.reporting_period is not None
+        and not (r.reporting_period.start_date <= r.month <= r.reporting_period.end_date)
+    ]
+    assert not mismatched, f"records stamped outside their period: {mismatched}"

@@ -77,12 +77,22 @@ def _curtailed_account():
 
 
 # ---------------------------------------------------------------------------
-# Fix #1 — account-detail default period lands on the activity year
+# Fix #1 — the auto-selected period is one that has activity
+#
+# ⚠ THESE THREE USED TO PIN THE PERIOD NAME, and the pin expired (133-02).
+# They were written when WY 2025-2026 held allocations and nothing else, so
+# `selected.name == PRIOR_WY` was a workable stand-in for "landed somewhere with
+# usage on it". Phase 133 gave the open year a full demand AND supply side, so
+# the newest period now has activity too and the pages correctly open on it —
+# and the old assertion failed on a behaviour that had improved. The guard that
+# matters has always been "never open on an empty period", so that is what these
+# assert now, plus the new fact that makes the name-pin meaningless: BOTH years
+# carry supplies.
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
-def test_account_detail_defaults_to_activity_period_not_empty_open_year(seeded_site):
-    """A conjunctive account opened with no period filter must land on the period
-    that has real usage — so usage reads non-zero and the story is visible."""
+def test_account_detail_opens_on_a_period_that_has_usage(seeded_site):
+    """A conjunctive account opened with no period filter must land on a period
+    with real usage — so usage reads non-zero and the story is visible."""
     # A conjunctive account (has groundwater extraction) — the curtailed Plainsburg
     # account qualifies (its conjunctive parcels substitute groundwater).
     account = _curtailed_account()
@@ -90,49 +100,45 @@ def test_account_detail_defaults_to_activity_period_not_empty_open_year(seeded_s
     assert resp.status_code == 200
     selected = resp.context["selected_period"]
     assert selected is not None, "account page should auto-select a period"
-    assert selected.name == PRIOR_WY, (
-        f"expected the activity year {PRIOR_WY}, got {selected.name} "
-        "(the open year shows allocations only — usage would read 0 everywhere)"
-    )
-    # And the balance on that default page actually shows supplies (the story
-    # lands). 57-02: the page now reads the consumptive lens, so we proxy "real
-    # activity" with the supplies total — non-zero in the activity year, zero in
-    # the allocation-only open year. (Consumptive use itself reads 0 in this
-    # engine-less fixture until Phase 58 runs the engine.)
+    assert selected.name in (PRIOR_WY, OPEN_WY)
+    # 57-02: the page reads the consumptive lens, so "real activity" is proxied by
+    # the supplies total. An empty period would land this on zero.
     assert resp.context["balance"]["supply_total"] > Decimal("0"), (
-        "default account page should show non-zero supplies, not an empty open year"
+        "default account page should show non-zero supplies, not an empty period"
     )
 
 
 @pytest.mark.django_db
-def test_account_default_period_has_more_usage_than_open_year(seeded_site):
-    """Guard the regression directly: the open year shows ~zero activity; the
-    default must not be the open year (measured by the supplies total under the
-    57-02 consumptive lens)."""
+def test_both_water_years_carry_account_usage(seeded_site):
+    """Neither year is the empty one any more — which is why no name is pinned.
+
+    This is the fact 133-02 delivered, asserted directly rather than left implicit
+    in a period name: an operator switching the selector finds figures on both
+    sides, and the auto-select cannot land on an empty year because there isn't
+    one.
+    """
     account = _curtailed_account()
-    open_year_supply = account_consumptive_balance(
-        account, reporting_period=ReportingPeriod.objects.get(name=OPEN_WY)
-    )["supply_total"]
-    resp = seeded_site.get(f"/accounting/accounts/{account.pk}/")
-    default_supply = resp.context["balance"]["supply_total"]
-    assert default_supply > open_year_supply
+    for name in (PRIOR_WY, OPEN_WY):
+        supply = account_consumptive_balance(
+            account, reporting_period=ReportingPeriod.objects.get(name=name)
+        )["supply_total"]
+        assert supply > Decimal("0"), f"{name} shows no supplies on this account"
 
 
 @pytest.mark.django_db
-def test_dashboard_defaults_to_activity_period_with_nonzero_usage(seeded_site):
-    """The Budget Summary tiles must roll up a period that has real activity, not
-    the open year that holds only allocations. 57-02: under the consumptive lens
-    the proxy is grand_supply_total (the surface + groundwater supplies), non-zero
-    only in the activity year."""
+def test_dashboard_opens_on_a_period_with_nonzero_usage(seeded_site):
+    """The Budget Summary tiles must roll up a period that has real activity.
+
+    57-02: under the consumptive lens the proxy is grand_supply_total (surface +
+    groundwater supplies).
+    """
     resp = seeded_site.get("/accounting/dashboard/")
     assert resp.status_code == 200
     selected = resp.context["selected_period"]
-    assert selected is not None and selected.name == PRIOR_WY, (
-        f"dashboard should open on the activity year {PRIOR_WY}, got "
-        f"{getattr(selected, 'name', None)}"
-    )
+    assert selected is not None, "dashboard should auto-select a period"
+    assert selected.name in (PRIOR_WY, OPEN_WY)
     assert resp.context["grand_supply_total"] > Decimal("0"), (
-        "dashboard total supplies should be > 0, not the empty open year"
+        "dashboard total supplies should be > 0, not an empty period"
     )
 
 

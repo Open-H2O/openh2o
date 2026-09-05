@@ -122,6 +122,9 @@ from core.management.commands.seed_merced_operations import (  # noqa: E402
 )
 
 MER_PARCEL_PREFIX = "MER-APN-"
+# The demonstration's two water years, oldest first. Named once so the
+# `--journey-only` surgical path and the main seed cannot drift apart (133-02).
+DEMO_PERIOD_NAMES = ("WY 2024-2025", "WY 2025-2026")
 GSA_BASIN_CODE = "5-022.04"
 DISTRICT_ZONE_PREFIX = "MER Surface Service Area"
 
@@ -211,7 +214,32 @@ CURTAILED_OPEN_FRACTION = Decimal("0.1")    # curtailed district's current-year 
 # Curtailment. The junior El Nido right is cut going INTO the peak season: the
 # last month with a surface delivery is June 2025, so July–September run dry and
 # the conjunctive growers substitute groundwater (a clear pumping bump).
+#
+# 133-02 — THIS CALENDAR IS A DECISION, NOT A LEFTOVER DATE. It is a single
+# cutoff, not a per-water-year window, and that is deliberate: a curtailment
+# order does not expire when the water year rolls over. `MER-CURT-001` is
+# effective 2025-07-01, status `active`, with no rescission anywhere in the
+# seed — so every month of WY 2025-2026 falls after the cutoff and the El Nido
+# right records NO diversion at all in the open year. That is what a curtailment
+# carried across a whole dry year means. The district's paper allocation for
+# that year is deliberately NOT zero (`CURTAILED_OPEN_FRACTION` leaves it at a
+# tenth of face value), and the gap between a 10%-of-face budget and no
+# deliveries at all IS the story on screen: the board cut the allocation, and
+# then the order stopped the diversions outright. Rescinding the order partway
+# through the open year would be a different demonstration; it belongs to a
+# phase that decides to tell it, not to a constant that lapses by accident.
 CURTAILMENT_LAST_DELIVERY = date(2025, 6, 30)
+# Phase 67-03 journey calendar, as MONTH NUMBERS so it reproduces in any water
+# year (133-02). June/July/August are drawn fully by the downstream re-diversion
+# (returned_af = 0, wholly consumptive); May is the one partially-returned month,
+# so the demo shows all three points of the spectrum — 0% / partial / 100%.
+JOURNEY_FULL_DRAW_MONTHS = {6, 7, 8}
+JOURNEY_PARTIAL_RETURN_MONTH = 5
+# The substitution bump applies ONLY on the fail-soft fallback path (a
+# parcel-month with no CalculationRun). Inside the two-pass refresh every
+# parcel-month has a run, so both of these are inert in the shipped demo and are
+# kept for the fallback's hermetic story. Their month NUMBERS are water-year
+# agnostic, so a second year needs no variant of them.
 POST_CURTAILMENT_MONTHS = {7, 8, 9}
 SUBSTITUTION_MULTIPLIER = Decimal("1.6")
 
@@ -278,15 +306,20 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if options.get("journey_only"):
-            prior = ReportingPeriod.objects.filter(name="WY 2024-2025").first()
-            if prior is None:
+            # 133-02: both demonstration water years, not just the finalized one.
+            # A surgical journey re-seed that covered only WY 2024-2025 would leave
+            # the open year's reach records behind whenever it ran.
+            journey_periods = list(ReportingPeriod.objects.filter(
+                name__in=DEMO_PERIOD_NAMES).order_by("start_date"))
+            if not journey_periods:
                 self.stdout.write(self.style.ERROR(
-                    "WY 2024-2025 reporting period not found — run the full "
+                    "Neither demonstration reporting period found — run the full "
                     "seed_merced_ledgers first."
                 ))
                 return
             with transaction.atomic():
-                self._seed_diversion_journey_records(prior)
+                for rp in journey_periods:
+                    self._seed_diversion_journey_records(rp)
             return
         with transaction.atomic():
             self._flush()
@@ -406,38 +439,54 @@ class Command(BaseCommand):
         # (gross ET − effective precip), read from the CalculationRuns the first
         # run_calculations pass wrote. Supply (surface + meter) is sized to THIS,
         # so the seed sizes against the SAME ET the mass balance later checks.
-        net_cu = self._net_cu_by_parcel_month(parcels)
+        net_cu = self._net_cu_by_parcel_month(parcels, periods)
 
         # --- Paper allocation (budget-ceiling) rows ---
         entries = self._allocation_rows(parcels, surface_parcel_ids, gw, sw, periods)
         ParcelLedger.objects.bulk_create(entries, batch_size=500)
 
-        # --- Surface deliveries FIRST: synthesize the recorded district total per
-        # POD, then let the PLATFORM service split it across served parcels by ET
-        # demand. The service writes the negative surface_diversion rows itself. ---
         # 131-01: each field's irrigation efficiency, resolved from its crop once
-        # (single joined query) and read from a dict inside both supply loops.
+        # (single joined query) and read from a dict inside both supply loops. It is
+        # a property of the FIELD, not of the year, so it is resolved ONCE outside
+        # the per-period loop and both water years share it (133-02).
         eff_by_parcel = self._efficiency_by_parcel(parcels)
 
-        surface_rows = self._surface_deliveries(
-            parcels, curtailed_parcel_ids, prior, net_cu, eff_by_parcel)
+        # --- THE SUPPLY SIDE, ONCE PER REPORTING PERIOD (133-02). Before this, the
+        # month schedule was hardcoded to WY 2024-2025's twelve months, so the open
+        # water year carried a full demand side and no supply at all. Within a period
+        # the ordering is unchanged and still load-bearing: surface FIRST, then
+        # meters against the demand surface left unmet. Across periods the ledger
+        # keys are month-scoped, so neither year can see the other's rows. ---
+        surface_rows = []
+        gw_rows = []
+        for rp in periods:
+            # Surface deliveries FIRST: synthesize the recorded district total per
+            # POD, then let the PLATFORM service split it across served parcels by
+            # ET demand. The service writes the negative surface_diversion rows.
+            surface_rows.extend(self._surface_deliveries(
+                parcels, curtailed_parcel_ids, rp, net_cu, eff_by_parcel))
 
-        # --- Meter readings AFTER surface: a metered parcel's groundwater covers
-        # only the ET demand its surface delivery did NOT meet (the same residual the
-        # engine computes for an UNMETERED conjunctive parcel), so a parcel with both
-        # sources is never double-supplied. Sized from the surface actually
-        # delivered, within the over-pump band. ---
-        surface_by_pm = self._surface_by_parcel_month(parcels)
-        gw_rows = self._groundwater_rows(
-            parcels, curtailed_parcel_ids, gw, prior, net_cu, surface_by_pm,
-            eff_by_parcel)
-        ParcelLedger.objects.bulk_create(gw_rows, batch_size=500)
+            # Meter readings AFTER surface: a metered parcel's groundwater covers
+            # only the ET demand its surface delivery did NOT meet (the same residual
+            # the engine computes for an UNMETERED conjunctive parcel), so a parcel
+            # with both sources is never double-supplied. Sized from the surface
+            # actually delivered, within the over-pump band. The lookup is keyed
+            # (parcel, "YYYY-MM"), so re-reading it inside the loop returns this
+            # period's months and the other year's rows are simply never asked for.
+            surface_by_pm = self._surface_by_parcel_month(parcels)
+            period_gw_rows = self._groundwater_rows(
+                parcels, curtailed_parcel_ids, gw, rp, net_cu, surface_by_pm,
+                eff_by_parcel)
+            ParcelLedger.objects.bulk_create(period_gw_rows, batch_size=500)
+            gw_rows.extend(period_gw_rows)
+
+            # Phase 67-03: the visible water journey (non-consumptive passthrough +
+            # downstream re-diversion). Parcel-less PODs -> zero ledger supply ->
+            # closure untouched. Recreated AFTER the flush so a `make merced` re-run
+            # reproduces it.
+            self._seed_diversion_journey_records(rp)
+
         entries = entries + gw_rows  # combined ledger count for the summary
-
-        # Phase 67-03: the visible water journey (non-consumptive passthrough +
-        # downstream re-diversion). Parcel-less PODs → zero ledger supply → closure
-        # untouched. Recreated AFTER the flush so a `make merced` re-run reproduces it.
-        self._seed_diversion_journey_records(prior)
 
         self._summary(parcels, district_zones, surface_parcel_ids,
                       curtailed_parcel_ids, entries, surface_rows)
@@ -643,13 +692,25 @@ class Command(BaseCommand):
                     ))
         return rows
 
-    def _month_schedule(self):
-        """(date, month_num) for each month of the prior water year, day 15."""
+    def _month_schedule(self, period):
+        """(date, month_num) for each month of ``period``, day 15.
+
+        133-02: walks the ReportingPeriod's OWN start/end dates. It used to
+        hardcode ``2024 if mn >= 10 else 2025``, which is why the open water year
+        had a full demand side and no supply at all — every one of this method's
+        four callers built WY 2024-2025 and nothing else. Reading the dates off
+        the period means a second water year needs no second code path, and a
+        period whose dates are edited needs no code change either.
+
+        Day 15 is the mid-month convention the whole seed uses: `DiversionRecord`
+        is unique on (POD, month, type), and the engine keys `CalculationRun` by
+        ``YYYY-MM``, so the day is a label rather than a date.
+        """
         schedule = []
-        for offset in range(12):
-            mn = ((10 + offset - 1) % 12) + 1
-            yr = 2024 if mn >= 10 else 2025
-            schedule.append((date(yr, mn, 15), mn))
+        year, month = period.start_date.year, period.start_date.month
+        while date(year, month, 15) <= period.end_date:
+            schedule.append((date(year, month, 15), month))
+            year, month = (year + 1, 1) if month == 12 else (year, month + 1)
         return schedule
 
     def _ensure_efficiency(self):
@@ -672,12 +733,13 @@ class Command(BaseCommand):
             config.default_irrigation_efficiency = SEED_IRRIGATION_EFFICIENCY
             config.save(update_fields=["default_irrigation_efficiency"])
 
-    def _net_cu_by_parcel_month(self, parcels):
+    def _net_cu_by_parcel_month(self, parcels, periods):
         """Map ``(parcel_id, "YYYY-MM") -> measured net consumptive-use demand``.
 
         Reads the ``CalculationRun`` rows the first ``run_calculations`` pass wrote
         for every parcel (54-01 spine + 58-03 metered reference run), scoped to the
-        prior water year's months. ``net_consumptive_use_af`` is gross ET minus
+        months of every period being seeded (133-02 — one query for both water
+        years, never one per year inside a loop). ``net_consumptive_use_af`` is gross ET minus
         effective precip — the demand the supply must meet — and is stable across
         the two passes (it never depends on surface or meter readings), so sizing
         supply against it guarantees the seed and the mass balance use the SAME ET.
@@ -685,10 +747,14 @@ class Command(BaseCommand):
         from accounting.models import CalculationRun
 
         parcel_ids = [p.id for p in parcels]
-        periods = [_period_str(d) for d, _ in self._month_schedule()]
+        period_keys = sorted({
+            _period_str(d)
+            for rp in periods
+            for d, _ in self._month_schedule(rp)
+        })
         out = {}
         for run in CalculationRun.objects.filter(
-            parcel_id__in=parcel_ids, period__in=periods
+            parcel_id__in=parcel_ids, period__in=period_keys
         ).values_list("parcel_id", "period", "net_consumptive_use_af"):
             out[(run[0], run[1])] = run[2] or Decimal("0")
         return out
@@ -739,7 +805,7 @@ class Command(BaseCommand):
             out[key] = out.get(key, Decimal("0")) + abs(row[2] or Decimal("0"))
         return out
 
-    def _surface_deliveries(self, parcels, curtailed_parcel_ids, prior, net_cu,
+    def _surface_deliveries(self, parcels, curtailed_parcel_ids, period, net_cu,
                             eff_by_parcel):
         """Surface deliveries, produced by the PLATFORM allocation service.
 
@@ -767,7 +833,16 @@ class Command(BaseCommand):
         Curtailed PODs record NO diversion after June 2025 — the El Nido cut — so
         the service produces no post-curtailment deliveries for their parcels; the
         resulting summer shortfall on their surface-only parcels is the intentional
-        scarcity demonstration, not a sizing error.
+        scarcity demonstration, not a sizing error. 133-02: because the cutoff is a
+        date and not a per-year window, that also means a curtailed POD records
+        nothing at all across WY 2025-2026 — see the constant's comment block.
+
+        133-02: called ONCE PER REPORTING PERIOD. The ``period`` argument sets both
+        the month schedule and the ``reporting_period`` stamped on each
+        ``DiversionRecord`` — that FK matters, because ``_records_for_period``
+        matches a record on its FK **OR** its month falling inside the period span,
+        so a second year's records carrying the first year's FK would be allocated
+        against BOTH periods.
 
         Returns the list of ``ParcelLedger`` surface rows the service wrote (for the
         summary count); the service has already persisted them.
@@ -780,7 +855,7 @@ class Command(BaseCommand):
         )
         from surface.services import allocate_district_delivery
 
-        schedule = self._month_schedule()
+        schedule = self._month_schedule(period)
         seq_of = {p.id: i for i, p in enumerate(parcels)}
 
         # MER PODs that serve MER parcels (skip PODs with no served parcels — the
@@ -812,10 +887,10 @@ class Command(BaseCommand):
             for month_date, mn in schedule:
                 if curtailed and month_date > CURTAILMENT_LAST_DELIVERY:
                     continue  # no diversion recorded once the junior right is cut
-                period = _period_str(month_date)
+                month_key = _period_str(month_date)
                 total = Decimal("0")
                 for p in served:
-                    demand = net_cu.get((p.id, period))
+                    demand = net_cu.get((p.id, month_key))
                     if demand is not None and demand > 0:
                         # 131-01: per-PARCEL, not per-POD. Each served field's
                         # demand is divided by ITS OWN crop's irrigation-method
@@ -846,7 +921,7 @@ class Command(BaseCommand):
                     month=month_date,
                     diversion_type="direct_use",
                     defaults={
-                        "reporting_period": prior,
+                        "reporting_period": period,
                         "volume_acre_feet": total,
                     },
                 )
@@ -854,15 +929,15 @@ class Command(BaseCommand):
             # Let the platform service split the recorded totals across parcels by
             # ET demand (or the static fraction fallback) and write the negative
             # surface_diversion rows. Same path the app uses.
-            written.extend(allocate_district_delivery(pod, prior))
+            written.extend(allocate_district_delivery(pod, period))
 
         self.stdout.write(
-            f"    surface deliveries: {len(written)} row(s) written by "
-            f"allocate_district_delivery across {pods.count()} POD(s)"
+            f"    surface deliveries [{period.name}]: {len(written)} row(s) written "
+            f"by allocate_district_delivery across {pods.count()} POD(s)"
         )
         return written
 
-    def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, prior, net_cu,
+    def _groundwater_rows(self, parcels, curtailed_parcel_ids, gw, period, net_cu,
                           surface_by_pm, eff_by_parcel):
         """Monthly groundwater extraction (NEGATIVE) for METERED wells ONLY.
 
@@ -910,13 +985,16 @@ class Command(BaseCommand):
         ):
             links_by_well.setdefault(ln.well_id, []).append(ln)
 
-        schedule = self._month_schedule()
+        schedule = self._month_schedule(period)
         rows = []
         for wseq, well in enumerate(wells):
             links = links_by_well.get(well.id)
             if not links:
                 continue
             # Alternate metered / unmetered so the demo exercises both stories.
+            # The assignment is a property of the WELL, not of the water year, so
+            # calling this once per period (133-02) re-derives the identical value
+            # and the guarded update below writes nothing on the second pass.
             metered = (wseq % 2 == 0)
             method = "certified_meter" if metered else "unmetered_estimate"
             if well.measurement_method != method:
@@ -937,7 +1015,7 @@ class Command(BaseCommand):
             well_annual = served_acres * Decimal(str(GW_RATE)) * _jitter(wseq)
 
             for month_date, mn in schedule:
-                period = _period_str(month_date)
+                month_key = _period_str(month_date)
                 # ET path: size EACH served parcel's reading to its RESIDUAL
                 # groundwater need = measured net ET demand MINUS the surface already
                 # delivered that month, DIVIDED by that field's own crop
@@ -953,14 +1031,16 @@ class Command(BaseCommand):
                 # Fallback (no run this parcel-month): the flat seasonal envelope
                 # split by fraction, with the curtailment substitution bump.
                 demands = {
-                    ln.parcel_id: net_cu.get((ln.parcel_id, period)) for ln in links
+                    ln.parcel_id: net_cu.get((ln.parcel_id, month_key))
+                    for ln in links
                 }
                 has_demand = any(d is not None and d > 0 for d in demands.values())
                 if has_demand:
                     shares = {}
                     for ln in links:
                         demand = demands[ln.parcel_id] or Decimal("0")
-                        surf = surface_by_pm.get((ln.parcel_id, period), Decimal("0"))
+                        surf = surface_by_pm.get(
+                            (ln.parcel_id, month_key), Decimal("0"))
                         gw_need = demand - surf
                         if gw_need < 0:
                             gw_need = Decimal("0")
@@ -985,14 +1065,14 @@ class Command(BaseCommand):
                         amount_acre_feet=-share, water_type=gw,
                         source_type="meter_reading",
                         description="Monthly metered groundwater extraction",
-                        reporting_period=prior,
+                        reporting_period=period,
                     ))
         return rows
 
     # ------------------------------------------------------------------
     # Diversion-reach journey records (Phase 67-03)
     # ------------------------------------------------------------------
-    def _seed_diversion_journey_records(self, prior):
+    def _seed_diversion_journey_records(self, period):
         """Recorded diversions for the two parcel-less journey PODs.
 
         The UPSTREAM hydroelectric passthrough (seed_merced_operations placed it on
@@ -1009,6 +1089,13 @@ class Command(BaseCommand):
         the records are visible on the detail pages + in CalWATRS (gross Volume AF +
         Return Flow AF) but contribute nothing to the whole-basin balance.
         ``update_or_create`` on the ``(POD, month, type)`` unique key → idempotent.
+
+        133-02: the calendar comes from ``period`` rather than four literal 2025
+        dates. The hydro passthrough runs every month of whichever year is being
+        seeded; the downstream re-diversion draws in that year's June/July/August
+        and returns part of its May. Those are MONTH NUMBERS, so the same shape
+        reproduces in any water year — and for WY 2024-2025 it reproduces the
+        exact five records the literals used to write.
         """
         # Local import: `surface` is an optional module (Phase 87) — see `_flush`.
         from surface.models import DiversionRecord, PointOfDiversion
@@ -1025,39 +1112,36 @@ class Command(BaseCommand):
 
         created = 0
         # Upstream: a steady run-of-river hydro passthrough, 100% returned, every
-        # month of the prior water year. consumed == 0 on every row.
+        # month of the water year being seeded. consumed == 0 on every row.
         hydro_af = Decimal("1200.0000")
-        for month_date, _mn in self._month_schedule():
+        for month_date, _mn in self._month_schedule(period):
             DiversionRecord.objects.update_or_create(
                 point_of_diversion=upstream, month=month_date,
                 diversion_type="direct_use",
-                defaults={"reporting_period": prior,
+                defaults={"reporting_period": period,
                           "volume_acre_feet": hydro_af, "returned_af": hydro_af},
             )
             created += 1
 
         # Downstream re-diversion: summer months drawn fully (consumptive), well
         # under the upstream return flow it draws on; one spring month partial.
-        for md in (date(2025, 6, 15), date(2025, 7, 15), date(2025, 8, 15)):
+        for month_date, mn in self._month_schedule(period):
+            if mn in JOURNEY_FULL_DRAW_MONTHS:
+                volume, returned = Decimal("300.0000"), Decimal("0")
+            elif mn == JOURNEY_PARTIAL_RETURN_MONTH:
+                volume, returned = Decimal("250.0000"), Decimal("100.0000")
+            else:
+                continue
             DiversionRecord.objects.update_or_create(
-                point_of_diversion=downstream, month=md,
+                point_of_diversion=downstream, month=month_date,
                 diversion_type="direct_use",
-                defaults={"reporting_period": prior,
-                          "volume_acre_feet": Decimal("300.0000"),
-                          "returned_af": Decimal("0")},
+                defaults={"reporting_period": period,
+                          "volume_acre_feet": volume, "returned_af": returned},
             )
             created += 1
-        DiversionRecord.objects.update_or_create(
-            point_of_diversion=downstream, month=date(2025, 5, 15),
-            diversion_type="direct_use",
-            defaults={"reporting_period": prior,
-                      "volume_acre_feet": Decimal("250.0000"),
-                      "returned_af": Decimal("100.0000")},
-        )
-        created += 1
 
         self.stdout.write(
-            f"    diversion-reach journey: {created} records "
+            f"    diversion-reach journey [{period.name}]: {created} records "
             "(upstream hydro 100%-returned, downstream re-diversion + 1 partial)"
         )
 
