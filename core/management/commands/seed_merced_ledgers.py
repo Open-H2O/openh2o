@@ -93,6 +93,7 @@ Prerequisite (the physical demo must already exist on this instance)::
     python manage.py seed_merced_operations
     python manage.py seed_merced_parcels_from_selection
 """
+from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 
@@ -119,6 +120,15 @@ from wells.models import Well, WellIrrigatedParcel
 from core.management.commands.seed_merced_operations import (  # noqa: E402
     JOURNEY_DOWNSTREAM_POD,
     JOURNEY_UPSTREAM_POD,
+)
+
+# 134-01: the storm fill schedule, IMPORTED from the command that owns it rather
+# than copied — the same import `seed_merced_measurements` makes. Three commands
+# now describe the same storms (the events, the on-site readings, and the surface
+# diversion they were taken under); one definition cannot drift from itself.
+from core.management.commands.seed_merced_recharge_events import (  # noqa: E402
+    DEMO_OPERATOR as RECHARGE_OPERATOR,
+    RECHARGE_SEASONS,
 )
 
 MER_PARCEL_PREFIX = "MER-APN-"
@@ -243,6 +253,27 @@ JOURNEY_PARTIAL_RETURN_MONTH = 5
 POST_CURTAILMENT_MONTHS = {7, 8, 9}
 SUBSTITUTION_MULTIPLIER = Decimal("1.6")
 
+# 134-01 — THE STORM'S HEADGATE RATE. The peak flow recorded on the CalWATRS
+# "Max rate (CFS)" column for a basin fill. Same deterministic shape
+# `seed_merced_measurements` uses for its canal-inflow reading (a bigger basin
+# taking a bigger fill pulls more canal water), so the number on the form and the
+# number on the basin's readings card describe one storm rather than two.
+#
+# ⛔ NO JITTER. The measurements seed adds `rng.uniform(-2.5, 2.5)` to its
+# reading, because a reading is one instrument at one moment. A peak rate written
+# on a state form is the district's record of the highest flow it ran — taken
+# once, then transcribed. Re-rolling a random draw for it would mean the form and
+# the reading disagree by a couple of cfs for no reason anyone could explain.
+HEADGATE_BASE_CFS = 48.0
+HEADGATE_SIZE_CFS = 38.0
+# A 0.20 fill is a smaller storm than a 0.30 fill and the gates are not opened as
+# far: the same 0.82 the measurements seed applies to its inflow reading.
+HEADGATE_SMALL_FILL_FACTOR = 0.82
+SMALL_FILL_FRACTION = Decimal("0.20")
+# The recharge intake POD name prefix. `MER-BPOD-001 El Nido Canal Recharge
+# Intake` has no water right of its own, so the flush needs a second handle on it.
+RECHARGE_INTAKE_POD_PREFIX = "MER-BPOD-"
+
 
 def _q(value):
     """Quantize to the ledger's 4 decimal places."""
@@ -343,6 +374,19 @@ class Command(BaseCommand):
         # to MER- rights so the flush never touches Demo Valley / base-layer records.
         DiversionRecord.objects.filter(
             point_of_diversion__water_right__right_id__startswith="MER-WR-"
+        ).delete()
+
+        # 134-01: the recharge-basin intake carries NO water right, so the filter
+        # above does not reach it and its to-storage records would accumulate on
+        # every re-run. This is the same defect class as the 132-01 totalizer bug
+        # and it is exactly why the storm records are written HERE and not in
+        # seed_merced_recharge_events: `refresh_merced_accounting`'s pass 2 re-runs
+        # this command, so records written elsewhere get half-deleted —
+        # MER-POD-009-DEMO carries MER-WR-008-DEMO and would be caught by the line
+        # above, MER-BPOD-001 carries no right and would survive. One command owns
+        # both the creation and the flush.
+        DiversionRecord.objects.filter(
+            point_of_diversion__name__startswith=RECHARGE_INTAKE_POD_PREFIX
         ).delete()
 
         acct_ids = list(
@@ -485,6 +529,19 @@ class Command(BaseCommand):
             # closure untouched. Recreated AFTER the flush so a `make merced` re-run
             # reproduces it.
             self._seed_diversion_journey_records(rp)
+
+        # 134-01: the high-flow diversions the managed basin fills were taken
+        # under. AFTER the period loop closes, not inside it, and that placement
+        # is load-bearing. `surface.services._records_for_period` selects a POD's
+        # records by period FK *or* month span and does NOT filter on
+        # `diversion_type`, so `allocate_district_delivery` would happily split a
+        # to-storage record across the parcels its intake serves — and
+        # MER-POD-009-DEMO serves ten. Writing these after every
+        # `allocate_district_delivery` call in the build has been made means no
+        # allocator run can ever see one, without depending on which month lands
+        # in which period. ⚠ Do not move this back inside the loop.
+        for rp in periods:
+            self._seed_recharge_diversion_records(rp)
 
         entries = entries + gw_rows  # combined ledger count for the summary
 
@@ -1143,6 +1200,152 @@ class Command(BaseCommand):
         self.stdout.write(
             f"    diversion-reach journey [{period.name}]: {created} records "
             "(upstream hydro 100%-returned, downstream re-diversion + 1 partial)"
+        )
+
+    def _seed_recharge_diversion_records(self, period):
+        """The surface-side paper for every managed basin fill (134-01).
+
+        ``MER-BPOD-001 El Nido Canal Recharge Intake`` carries the note "Operated
+        during high-flow/storm events to divert water for managed aquifer
+        recharge" and, directly beneath it on the same page, "No diversion records
+        yet." Nothing had ever flowed through it. The basins it feeds were being
+        filled by 42 ``RechargeEvent`` rows with no diverted water behind them.
+
+        One ``to_storage`` record per fill month per feeding point of diversion.
+        Six fill dates across the two water years and two feeding points → twelve
+        records, eight in the wet year and four in the dry.
+
+        EVERY NUMBER IS DERIVED, none typed:
+
+          * ``volume_acre_feet`` is the sum of the fills that point fed on that
+            date — capacity × the season's fraction, the same arithmetic
+            ``seed_merced_recharge_events`` uses to size the events themselves.
+            POSITIVE, matching all 161 existing records; the model docstring's
+            remark about a negative production convention describes the surface
+            *delivery* path, and this seed has never followed it.
+          * ``max_flow_rate_cfs`` is the summed peak headgate rate — see
+            ``HEADGATE_BASE_CFS`` for the shape and for why the measurements
+            seed's ±2.5 jitter is deliberately dropped. It is the PEAK: flow is
+            highest on day one and throttled back as the basin fills, which is
+            why a 3-day event span and a ~1.4-day fill volume are not in conflict.
+          * ``reporting_period`` is set EXPLICITLY (133-02). ``_records_for_period``
+            matches on the FK *or* the month span, so a missing or stale FK
+            double-allocates.
+          * ``returned_af`` is 0. Water diverted into a recharge basin percolates;
+            none of it goes back to the stream.
+
+        ⛔ ``create_diversion_ledger_entries`` is NOT called on these records, and
+        must never be. The recharge credit already reaches the basin pool through
+        ``create_recharge_ledger_entries``; calling it here would count the same
+        water twice — and ``MER-BPOD-001`` has neither parcel links nor a water
+        right, so it would raise rather than silently double. Nothing outside
+        ``reporting/`` reads ``DiversionRecord``, so these rows appear on the POD
+        page and in the CalWATRS "To Storage" filing and touch no parcel's account.
+
+        Side effect worth naming: ``validate_report(period, "calwatrs_a2")`` used
+        to ERROR in BOTH water years — "No to storage diversion records for this
+        period" — because all 161 seeded records were ``direct_use``. One of the
+        four report layouts the platform ships could not be produced from the
+        demonstration. A basin fill IS a to-storage diversion, so writing these
+        fixes that as a consequence rather than as separate work.
+        """
+        # `recharge` is an optional module (ISS-072) and `surface` is optional too
+        # (Phase 87) — see `_flush`. With recharge off there are no basins to fill,
+        # so there is nothing to record and nothing to import.
+        from core.modules import is_enabled
+
+        if not is_enabled("recharge"):
+            return
+        from recharge.models import RechargeSite, RechargeSitePOD
+        from surface.models import DiversionRecord
+
+        season = RECHARGE_SEASONS.get(period.name)
+        if not season:
+            return
+
+        sites = list(
+            RechargeSite.objects.filter(
+                operator=RECHARGE_OPERATOR, site_type="spreading_basin"
+            )
+        )
+        if not sites:
+            self.stdout.write(self.style.WARNING(
+                "    recharge intake diversions: no recharge areas found — run "
+                "seed_merced_basins_from_selection first; skipping."
+            ))
+            return
+
+        # The size scale is taken across ALL the district's basins, not across one
+        # intake's share of them, so the same basin gets the same headgate rate
+        # whichever point of diversion happens to feed it. This is the identical
+        # scaling `seed_merced_measurements._seed_recharge_measurements` computes.
+        capacities = [float(s.capacity_acre_feet or 0) for s in sites]
+        cap_min, cap_max = min(capacities), max(capacities)
+        cap_span = (cap_max - cap_min) or 1.0
+
+        # Group the basins by the point of diversion that fills them. A basin with
+        # no POD link has no surface paper to write and is simply skipped.
+        sites_by_pod = defaultdict(list)
+        for link in RechargeSitePOD.objects.filter(
+            recharge_site__in=sites
+        ).select_related("point_of_diversion"):
+            sites_by_pod[link.point_of_diversion].append(link.recharge_site)
+
+        created = 0
+        for pod in sorted(sites_by_pod, key=lambda p: p.name):
+            fed = sorted(sites_by_pod[pod], key=lambda s: s.name)
+            for fill_date, fraction in season:
+                # Belt and braces on the FK: the season is keyed by the period's
+                # own name, and the fill must also fall inside the period's span.
+                # A schedule edited into the wrong year should stop here rather
+                # than attach a record to a period that does not contain it.
+                if not (period.start_date <= fill_date <= period.end_date):
+                    continue
+
+                volume = Decimal("0")
+                peak_cfs = 0.0
+                filled = []
+                for site in fed:
+                    capacity = site.capacity_acre_feet or Decimal("0")
+                    vol = (capacity * fraction).quantize(Decimal("0.0001"))
+                    if vol <= 0:
+                        continue
+                    volume += vol
+                    size = (float(capacity) - cap_min) / cap_span
+                    rate = HEADGATE_BASE_CFS + HEADGATE_SIZE_CFS * size
+                    if fraction == SMALL_FILL_FRACTION:
+                        rate *= HEADGATE_SMALL_FILL_FACTOR
+                    peak_cfs += rate
+                    filled.append(site.name)
+
+                if volume <= 0:
+                    continue
+
+                month_name = fill_date.strftime("%B %Y")
+                DiversionRecord.objects.update_or_create(
+                    point_of_diversion=pod,
+                    month=fill_date,
+                    diversion_type="to_storage",
+                    defaults={
+                        "reporting_period": period,
+                        "volume_acre_feet": _q(volume),
+                        "returned_af": Decimal("0"),
+                        "max_flow_rate_cfs": _q(peak_cfs),
+                        "notes": (
+                            f"High-flow diversion on the {month_name} storm, "
+                            f"taken to storage for managed aquifer recharge and "
+                            f"spread across {len(filled)} basin(s): "
+                            f"{', '.join(filled)}. Rate is the peak at the "
+                            f"headgate; flow was throttled back as the basins "
+                            f"filled. None returned to the stream."
+                        ),
+                    },
+                )
+                created += 1
+
+        self.stdout.write(
+            f"    recharge intake diversions [{period.name}]: {created} "
+            f"to-storage record(s) across {len(sites_by_pod)} intake(s)"
         )
 
     # ------------------------------------------------------------------

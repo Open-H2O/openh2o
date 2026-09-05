@@ -810,3 +810,223 @@ def test_diversion_records_are_stamped_with_their_own_period(seeded):
         and not (r.reporting_period.start_date <= r.month <= r.reporting_period.end_date)
     ]
     assert not mismatched, f"records stamped outside their period: {mismatched}"
+
+
+# ---------------------------------------------------------------------------
+# 134-01: the storm the recharge intake exists for
+# ---------------------------------------------------------------------------
+# `MER-BPOD-001 El Nido Canal Recharge Intake` says on its own page that it is
+# "operated during high-flow/storm events to divert water for managed aquifer
+# recharge", and said "No diversion records yet." directly beneath it. These lock
+# the to-storage records that fill that gap — and lock the two ways the storm
+# could reach somewhere it must not: a parcel's ledger, or a second copy of
+# itself on the next re-run.
+
+# The two intakes the fixture builds, mirroring the real demo's shape: the El Nido
+# canal intake carries NO water right (so `_flush`'s MER-WR- filter cannot see it
+# and the name-prefix flush is the only thing stopping it accumulating), and the
+# Flood-MAR take hangs off an ordinary MER-WR- right.
+BASIN_INTAKE_POD = "MER-BPOD-001 El Nido Canal Recharge Intake"
+FLOOD_MAR_POD = "MER-POD-009-DEMO Bottomlands Riparian Take"
+
+
+def _build_recharge_basins():
+    """Two feeding intakes and the four basins they fill.
+
+    Shape, not scale: what matters is one intake with a water right and one
+    without, because those two take different paths through `_flush`.
+    """
+    from recharge.models import RechargeSite, RechargeSitePOD
+
+    right = WaterRight.objects.get(right_id=NORMAL_RIGHT)
+    intake = PointOfDiversion.objects.create(
+        water_right=None, name=BASIN_INTAKE_POD,
+        location=Point(-120.49, 37.22), status="active",
+    )
+    flood_mar = PointOfDiversion.objects.create(
+        water_right=right, name=FLOOD_MAR_POD,
+        location=Point(-120.52, 37.26), status="active",
+    )
+    caps = {
+        intake: [("El Nido Recharge Basin 1", "637.1"), ("El Nido Recharge Basin 2", "1281.1")],
+        flood_mar: [
+            ("Merced River Ag Parcel 1 (Flood-MAR)", "159.6"),
+            ("Merced River Ag Parcel 2 (Flood-MAR)", "266.5"),
+        ],
+    }
+    for pod, basins in caps.items():
+        for name, cap in basins:
+            site = RechargeSite.objects.create(
+                name=name, location=pod.location, site_type="spreading_basin",
+                operator="Halvern Irrigation District",
+                capacity_acre_feet=Decimal(cap), status="active",
+            )
+            RechargeSitePOD.objects.create(recharge_site=site, point_of_diversion=pod)
+    return intake, flood_mar
+
+
+@pytest.fixture
+def seeded_with_basins():
+    """The physical slice PLUS recharge basins, then the ledger seed.
+
+    Kept separate from `seeded` on purpose: adding basins changes the diversion
+    record count, and the tests above assert against a slice without them.
+    """
+    _build_physical_merced()
+    pods = _build_recharge_basins()
+    call_command("seed_merced_ledgers")
+    return pods
+
+
+def _to_storage():
+    return DiversionRecord.objects.filter(diversion_type="to_storage")
+
+
+@pytest.mark.django_db
+def test_every_managed_fill_has_a_to_storage_diversion_behind_it(seeded_with_basins):
+    """Six fill dates x two feeding intakes = twelve records, 8 wet + 4 dry.
+
+    The wet year spreads four storms, the dry year two (RECHARGE_SEASONS), so the
+    split is not symmetric and a test that only counted twelve would pass on a
+    seed that wrote both years into one.
+    """
+    by_period = defaultdict(int)
+    for rec in _to_storage().select_related("reporting_period"):
+        by_period[rec.reporting_period.name] += 1
+
+    assert _to_storage().count() == 12, "expected one record per fill date per intake"
+    assert by_period["WY 2024-2025"] == 8, "four wet-year storms across two intakes"
+    assert by_period["WY 2025-2026"] == 4, "two dry-year storms across two intakes"
+
+
+@pytest.mark.django_db
+def test_each_storm_record_carries_a_period_and_a_peak_rate(seeded_with_basins):
+    """The two fields a CalWATRS To Storage filing cannot be produced without.
+
+    A NULL `reporting_period` makes the record invisible to every period-scoped
+    filing (133-02: `_records_for_period` matches FK **or** month span, so it also
+    double-allocates). A NULL `max_flow_rate_cfs` leaves the worksheet's
+    "Max rate (CFS)" column blank, which is where all 161 prior records left it.
+    """
+    for rec in _to_storage().select_related("reporting_period"):
+        assert rec.reporting_period is not None, f"{rec} carries no reporting period"
+        assert rec.max_flow_rate_cfs is not None, f"{rec} carries no peak flow rate"
+        assert rec.max_flow_rate_cfs > 0, f"{rec} records a peak rate of {rec.max_flow_rate_cfs}"
+        assert rec.reporting_period.start_date <= rec.month <= rec.reporting_period.end_date
+
+
+@pytest.mark.django_db
+def test_the_diverted_volume_equals_the_fills_it_paid_for(seeded_with_basins):
+    """The paper and the water agree, derived from the same schedule.
+
+    Each record's volume is the sum of the basin fills its intake fed on that
+    date. Computed here from the events seed's own schedule and the basins'
+    capacities — the same two inputs the ledger seed reads — so a drift in either
+    breaks this rather than passing quietly.
+    """
+    from core.management.commands.seed_merced_recharge_events import RECHARGE_SEASONS
+    from recharge.models import RechargeSitePOD
+
+    expected = defaultdict(Decimal)
+    for link in RechargeSitePOD.objects.select_related(
+        "recharge_site", "point_of_diversion"
+    ):
+        cap = link.recharge_site.capacity_acre_feet or Decimal("0")
+        for season in RECHARGE_SEASONS.values():
+            for fill_date, fraction in season:
+                key = (link.point_of_diversion_id, fill_date)
+                expected[key] += (cap * fraction).quantize(Decimal("0.0001"))
+
+    for rec in _to_storage():
+        key = (rec.point_of_diversion_id, rec.month)
+        assert key in expected, f"{rec} matches no scheduled fill"
+        assert rec.volume_acre_feet == expected[key].quantize(Decimal("0.0001")), (
+            f"{rec.point_of_diversion} {rec.month}: recorded "
+            f"{rec.volume_acre_feet} AF against {expected[key]} AF of fills"
+        )
+        assert rec.volume_acre_feet > 0, "the 161 existing records are positive; match them"
+        assert rec.returned_af == Decimal("0"), (
+            "water spread in a recharge basin percolates; none returns to the stream"
+        )
+
+
+@pytest.mark.django_db
+def test_the_storm_never_reaches_a_parcels_account():
+    """Adding the storm must not move one acre-foot of anybody's delivery.
+
+    The recharge credit already reaches the basin pool through
+    `create_recharge_ledger_entries`. If a to-storage record were ever allocated
+    across parcels the same water would be counted twice, and the demonstration's
+    surface-delivered total would drift.
+
+    This is measured, not reasoned: seed the same slice with and without recharge
+    basins and compare the surface-delivered total. The comparison catches the
+    real coupling rather than a symptom — `surface.services._records_for_period`
+    does NOT filter on `diversion_type`, so `allocate_district_delivery` would
+    split a to-storage record across the ten parcels MER-POD-009-DEMO serves if
+    one existed when it ran. The seed writes them after the last allocator call in
+    the build for exactly that reason.
+    """
+    from django.db.models import Sum
+
+    def _surface_total():
+        return ParcelLedger.objects.filter(
+            source_type="surface_diversion"
+        ).aggregate(s=Sum("amount_acre_feet"))["s"] or Decimal("0")
+
+    _build_physical_merced()
+    call_command("seed_merced_ledgers")
+    without_basins = _surface_total()
+    assert without_basins != 0, "the fixture delivered no surface water at all"
+
+    _build_recharge_basins()
+    call_command("seed_merced_ledgers")
+    with_basins = _surface_total()
+
+    assert _to_storage().count() == 12, "the storm records were not written"
+    assert with_basins == without_basins, (
+        f"surface delivered moved from {without_basins} AF to {with_basins} AF "
+        f"when the storm was added — a to-storage record reached a parcel"
+    )
+
+
+@pytest.mark.django_db
+def test_the_storm_does_not_accumulate_on_a_re_run(seeded_with_basins):
+    """The flush must reach the intake that has no water right.
+
+    `_flush` deletes diversion records by `water_right__right_id__startswith=
+    "MER-WR-"`. MER-BPOD-001 carries no right at all, so before 134-01 extended
+    the flush by name prefix, a second run would have left the El Nido records
+    behind and written them again. `refresh_merced_accounting`'s pass 2 re-runs
+    this command on every build, so this is the ordinary path, not an edge case.
+    """
+    first = {
+        (r.point_of_diversion_id, r.month, str(r.volume_acre_feet))
+        for r in _to_storage()
+    }
+    call_command("seed_merced_ledgers")
+    second = {
+        (r.point_of_diversion_id, r.month, str(r.volume_acre_feet))
+        for r in _to_storage()
+    }
+
+    assert _to_storage().count() == 12, "a re-run duplicated the storm records"
+    assert first == second, "a re-run changed the storm records"
+
+
+@pytest.mark.django_db
+def test_the_to_storage_report_can_be_produced_in_both_years(seeded_with_basins):
+    """The CalWATRS layout that could not be produced from the demo at all.
+
+    All 161 seeded records were `direct_use`, so `validate_report(period,
+    "calwatrs_a2")` errored in BOTH water years — "No to storage diversion records
+    for this period". A basin fill IS a to-storage diversion, so writing the
+    records above fixes the report as a consequence rather than as extra work.
+    """
+    from reporting.validators import validate_report
+
+    for period in ReportingPeriod.objects.all():
+        errors = [
+            w for w in validate_report(period, "calwatrs_a2") if w["level"] == "error"
+        ]
+        assert not errors, f"{period.name} calwatrs_a2 errors: {errors}"
