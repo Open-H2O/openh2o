@@ -54,6 +54,18 @@ OBSERVED_PROPERTIES = [
     ("snowfall", "Snowfall", "", "Snow depth", "mm"),
     ("solar_radiation", "Solar Radiation", "", "Solar radiation", "W/m2"),
     ("wind_speed", "Wind Speed", "", "Wind velocity", "m/s"),
+    # A totalizer meter reads a VOLUME EXTRACTED, and nothing above meant that:
+    # the seventeen concepts before it cover flow, stage, groundwater level,
+    # reservoir storage, ET, precipitation and weather. `reservoir_storage`
+    # carries the right UCUM atom and entirely the wrong concept. Added by Phase
+    # 132 so the demonstration's meter reads can name what they measure instead
+    # of carrying a null FK past the conformance audit. The pcode is blank on
+    # purpose — the documented non-blocking exception (decision 31-01) — and
+    # there is deliberately no CODE_TO_KEY entry below, because no external
+    # adapter emits this concept and a crosswalk row would claim a source that
+    # does not exist.
+    ("extracted_volume", "Extracted Volume", "", "Water withdrawal, volume",
+     "[acr_us].[ft_i]"),
 ]
 
 # ── Step 2: source native code → canonical concept key ──────────────────────

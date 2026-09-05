@@ -48,7 +48,13 @@ Order matters:
                               addresses, CalWATRS PINs, account contacts) so every
                               detail page reads complete. Invented mock data, which
                               is why step 11's real wells are excluded from it.
- 11. seed_merced_drinking  — the drinking-water domain for the same subbasin: the
+ 11. seed_merced_measurements — the instrument record: on-site monitoring at the
+                              seven recharge basins (the one measurement screen an
+                              operator can open), the three monitoring wells, monthly
+                              totalizer reads reconciled to the ledger, and one daily
+                              logger with its manual checks. Runs after steps 8-10
+                              because it reads the ledger, the events and the meters.
+ 12. seed_merced_drinking  — the drinking-water domain for the same subbasin: the
                               City of Merced (CA2410009), its facilities, its
                               municipal supply wells and three years of its real
                               published lab results. Runs LAST: it needs the well
@@ -133,6 +139,13 @@ SEQUENCE = [
     # Runs after the ledger rebuild because it fills account contacts; fill-only-
     # when-blank + deterministic, so it's idempotent and never clobbers real data.
     ("seed_merced_details", {}),
+    # The instrument record: what the district actually READ. Runs last in the
+    # Merced chain because it reads three earlier steps — the recharge events'
+    # dates, the ParcelLedger's metered groundwater (its totalizer reads
+    # reconcile to it), and the meters + wells seed_merced_details enriched.
+    # Writes to five measurement tables and nothing else; the accounting spine
+    # does not move. Idempotent (self-flushes its own rows).
+    ("seed_merced_measurements", {}),
     # The drinking-water half of the same subbasin: the City of Merced
     # (CA2410009), its facilities, its municipal supply wells and three years
     # of its real published lab results. Runs LAST for two reasons. It needs

@@ -202,24 +202,24 @@
       "reason": "The meters seed_merced installs on wells. Must stay equal to wells.WellMeter."
     },
     "measurements.MeterReading": {
-      "expected": 0,
+      "expected": 144,
       "tolerance": 0,
-      "reason": "Readings arrive from datasync pulls or operator entry, neither of which happens in an offline build. Flagged by ISS-105 as a gap in what the demonstration shows."
+      "reason": "Monthly totalizer reads on the 12 certified meters across WY 2024-2025 (12 x 12), written by seed_merced_measurements (Phase 132). Each month's delta is READ OFF the ParcelLedger meter_reading rows for the parcels that well irrigates, not invented -- so this number moves only if the meter set or the ledger's month coverage moves, and a change in one without the other is the regression to look for. read_by is NULL on every row: gate 2 requires core.User = 0."
     },
     "measurements.Sensor": {
-      "expected": 0,
+      "expected": 1,
       "tolerance": 0,
-      "reason": "Sensors are an operator's own telemetry, registered on a live deployment rather than discovered or seeded. The demonstration has never carried any. (This entry used to cite datasync.MonitoredStation as the parallel case; that is no longer one -- the stations ARE frozen, in data/merced/stations.json.)"
+      "reason": "One pressure transducer, on MER-W-004 -- the single monitoring well whose own declaration reads 'Continuous' (transducer logs daily). The other two monitoring wells declare a manual sounder and a quarterly sweep, so installing an instrument on either would contradict the demonstration's own note about it. A second row means a sensor was added to a well that did not declare one."
     },
     "measurements.SensorMeasurement": {
-      "expected": 0,
+      "expected": 365,
       "tolerance": 0,
-      "reason": "Follows measurements.Sensor -- no sensors, no measurements."
+      "reason": "One logged reading a day for WY 2024-2025 (2024-10-01..2025-09-30) from the single transducer. DAILY IS THE CEILING, not a starting point: PROJECT.md puts real-time telemetry out of scope, so this is a logger downloaded on a field round. A count above 365 means something began polling."
     },
     "measurements.WaterMeasurement": {
-      "expected": 0,
+      "expected": 20,
       "tolerance": 0,
-      "reason": "Operator-entered measurements. Not seeded; noted in ISS-105 as content the demonstration could usefully gain."
+      "reason": "Hand-entered depth-to-water readings at the cadence each monitoring well declares: MER-W-001 monthly (12), MER-W-002 quarterly (4), and 4 quarterly steel-tape checks against the transducer on MER-W-004. The checks sit a few hundredths off the logger on purpose -- that disagreement is what the quality flag exists to carry. recorded_by is NULL on every row."
     },
     "parcels.CropType": {
       "expected": 5,
@@ -252,9 +252,9 @@
       "reason": "Managed aquifer recharge events across the seven sites, created by seed_merced to exercise the recharge ledger."
     },
     "recharge.RechargeMeasurement": {
-      "expected": 0,
+      "expected": 84,
       "tolerance": 0,
-      "reason": "Instrument readings at recharge sites. Not seeded; another ISS-105 candidate."
+      "reason": "Twelve on-site readings at each of the 7 basins (ponded depth, canal inflow, percolation, source-water TDS) across the four wet-season fills seed_merced_recharge_events writes. THE ONLY SLICE OF PHASE 132 WITH A SCREEN: the recharge detail page renders the ten most recent, and before this the card read 'No measurements recorded.' on all seven pages. Moves if the basin count or the fill schedule moves."
     },
     "recharge.RechargeSite": {
       "expected": 7,
@@ -292,9 +292,9 @@
       "reason": "Production carries exactly one row created by no non-test code anywhere in the repository -- found by 103-01 and recorded in ISS-105. The candidate having none is correct."
     },
     "standards.ObservedProperty": {
-      "expected": 17,
+      "expected": 18,
       "tolerance": 0,
-      "reason": "The SensorThings crosswalk, seeded by seed_observed_properties. THIS WAS ZERO IN THE FIRST CANDIDATE and no test and no page would ever have shown it: the standards app ships no views and no urls. seed_observed_properties sits outside the seed_data umbrella deliberately (core/modules.py:320-324), so the build sequence has to call it by name. It is the table check_conformance and every adapter's PARAMETER_MAP resolve against. Fixed in 7f121cc; this entry is the tripwire that keeps it fixed."
+      "reason": "The SensorThings crosswalk, seeded by seed_observed_properties. 17 until Phase 132 added `extracted_volume` -- the concept a totalizer meter actually reads, which nothing in the vocabulary meant: reservoir_storage carries the right UCUM atom (acre-foot) and entirely the wrong concept. Its USGS pcode is blank, the documented non-blocking exception (decision 31-01). THIS WAS ZERO IN THE FIRST CANDIDATE and no test and no page would ever have shown it: the standards app ships no views and no urls. seed_observed_properties sits outside the seed_data umbrella deliberately (core/modules.py:320-324), so the build sequence has to call it by name. It is the table check_conformance and every adapter's PARAMETER_MAP resolve against. Fixed in 7f121cc; this entry is the tripwire that keeps it fixed."
     },
     "standards.SourceParameter": {
       "expected": 26,
@@ -342,9 +342,9 @@
       "reason": "Reference data from seed_data. Production carries 7 because of a bare 'Appropriative' row left over from the retired Demo Valley dataset. The candidate is the correct side."
     },
     "wells.MonitoringWell": {
-      "expected": 0,
+      "expected": 3,
       "tolerance": 0,
-      "reason": "Dedicated monitoring wells, as distinct from production wells. Not part of the Merced demonstration; flagged in ISS-105."
+      "reason": "The three ag wells that double as water-level monitoring points, written by seed_merced_measurements (Phase 132). Zero until then, and the reason mattered: the declarations lived only in scripts/export_merced_native.py, an export for the native app, so wells/partials/_detail_pane.html rendered a Monitoring section that had never had a row to show. Carried across verbatim rather than re-invented -- agency, frequency, reference elevation and datum, including the deliberate NGVD29 legacy-datum row on MER-W-004. Every instrument's cadence is read off measurement_frequency here."
     },
     "wells.Well": {
       "expected": 45,
