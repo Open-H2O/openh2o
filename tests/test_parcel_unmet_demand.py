@@ -131,8 +131,17 @@ def test_the_field_page_states_the_figure_under_the_settled_words():
     assert '<span class="td-num">330.37</span>' in html
 
 
-def test_the_wet_year_says_nothing():
-    """The same field, the year its supplies were on record."""
+def test_a_period_with_no_unmet_disposition_says_nothing():
+    """The same field, in a period whose run resolved to groundwater instead.
+
+    ⚠ Deliberately NOT named "the wet year". Measured against the demonstration
+    database on 2026-09-06, the six Merced fields carry unmet demand in BOTH
+    reporting periods — 962.67 AF across WY 2024-2025 and 1,986.50 AF across
+    WY 2025-2026. The plan for this task expected the wet year to be silent; it
+    is not, and the screen states what the platform stored. What actually makes
+    the line disappear is a period with no unmet-demand disposition, which is
+    what this fixture builds.
+    """
     parcel, older, newer = _field_with_unmet_demand()
 
     response = _client().get(

@@ -25,6 +25,7 @@ from accounting.services import (
     parcel_consumptive_balance,
     parcel_mass_balance,
     parcel_run_periods,
+    parcel_unmet_demand,
 )
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from parcels.models import Parcel, ParcelLedger
@@ -178,6 +179,8 @@ def _parcel_detail_context(parcel, period_id=None):
     # which the template renders as an honest "ET not yet computed" state rather
     # than a scary red residual.
     run_periods = parcel_run_periods(parcel, balance_period)
+    # ISS-157: what the platform already stored and no screen had ever shown.
+    unmet_demand_af = parcel_unmet_demand(parcel, balance_period)
 
     geojson = None
     if parcel.geometry:
@@ -213,6 +216,7 @@ def _parcel_detail_context(parcel, period_id=None):
         "consumptive_balance": consumptive_balance,
         "mass_balance": mass_balance,
         "run_periods": run_periods,
+        "unmet_demand_af": unmet_demand_af,
         "editable_fields": EDITABLE_FIELDS,
         "editable_fields_with_values": editable_fields_with_values,
         # Pass the Python object (or None); the template escapes it via

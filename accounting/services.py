@@ -799,6 +799,42 @@ def parcel_mass_balance(parcel, reporting_period=None):
     }
 
 
+def parcel_unmet_demand(parcel, reporting_period=None):
+    """Consumptive use on this field that no supply on record explains (AF).
+
+    The engine already records this and always has: where a field has NO well,
+    the ET − precip − surface leftover is written as ``unmet_demand_af`` with
+    ``residual_disposition="unmet_demand"`` rather than as a calculated
+    groundwater extraction, because inventing pumping through a well that does
+    not exist would be a fabricated number (``run_calculations.py``; the help
+    page states the principle: "It is never phantom pumping"). Nothing read it
+    back until 137-01.
+
+    It is a figure, not a finding. It says the arithmetic on this field did not
+    close from the supplies on record, and it says nothing whatever about why —
+    under-irrigation, a delivery filed against the wrong field, and a surface
+    allocation error all land here identically. ⛔ The screen wording is settled
+    (Brent, 2026-09-06): *water use recorded, no supply reported*. Never
+    unauthorized, unpermitted, unlawful, illegal or stolen, and never implying
+    them; the DESIGN.md rule-12 row gates those words.
+
+    Scoped through ``runs_in_period`` like every other per-parcel read, so it
+    selects exactly the months the balance panel above it selects.
+
+    Returns:
+        Decimal: the summed shortfall, quantized to 4 places; ``Decimal("0")``
+        when no run in the period carries the unmet-demand disposition.
+    """
+    total = (
+        _calculation_runs_for_period(parcel, reporting_period)
+        .filter(residual_disposition="unmet_demand")
+        .aggregate(s=Sum("unmet_demand_af"))["s"]
+    )
+    if total is None:
+        return Decimal("0")
+    return total.quantize(Decimal("0.0001"))
+
+
 # ---------------------------------------------------------------------------
 # Consumptive-use balance read (Phase 57-01, the corrected v1.10 lens)
 # ---------------------------------------------------------------------------

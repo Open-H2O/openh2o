@@ -115,6 +115,31 @@
       </div>
     </div>
 
+    {% comment %}
+      ISS-157, the field's surface. The platform has always recorded this — on a
+      field with no well the engine writes the leftover as unmet demand rather
+      than inventing pumping — and no screen had ever shown it.
+
+      ⛔ It is a figure, not a finding. The words are settled (Brent,
+      2026-09-06): *water use recorded, no supply reported*. Never unauthorized,
+      unpermitted, unlawful, illegal or stolen, never implying them, and no
+      editorialising either — "unexplained", "suspicious" and "should be
+      investigated" are all out. It states the arithmetic and stops. DESIGN.md
+      rule 12's row gates the words; the tone is on whoever edits this next.
+
+      A zero renders NOTHING — not "0.00", not "none" (DESIGN.md rule 8). A zero
+      here would read as a clearance, and a clearance is a finding.
+
+      No colour accent, no badge, no icon: it sits in the house style of the
+      cause lines below it, because it is the same kind of sentence.
+    {% endcomment %}
+    {% if unmet_demand_af > 0 %}
+    <p class="text-sm text-secondary" style="margin: var(--space-md) 0 0;">
+      <strong>Water use recorded, no supply reported:</strong>
+      <span class="td-num">{{ unmet_demand_af|floatformat:2|intcomma }}</span> AF{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="On a field with no well, the platform records the part of consumptive use that no delivery, no pumping and no rainfall on record explains. It is stored as a figure, not booked as pumping." link=wb_help_url link_label="How water balances work" %}
+    </p>
+    {% endif %}
+
     {% if mass_balance.band_status == "realistic" %}
     <p class="text-tertiary text-xs" style="margin: var(--space-md) 0 var(--space-sm);">
       {% if mass_balance.is_surplus %}
