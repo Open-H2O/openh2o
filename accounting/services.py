@@ -39,7 +39,7 @@ from parcels.models import Parcel, ParcelLedger
 
 from core.constants import CARRY_FORWARD
 
-from accounting.carryover_math import water_year_of
+from accounting.carryover_math import available_with_carryover, water_year_of
 from accounting.ledger_import import import_ledger_rows
 from accounting.models import (
     AllocationCarryover,
@@ -1129,6 +1129,84 @@ def zone_carryover(zone, water_year):
     return AllocationCarryover.objects.filter(
         zone=zone, water_year=water_year
     ).aggregate(total=Sum("amount_af"))["total"] or Decimal("0")
+
+
+def zone_groundwater_budget(zone, reporting_period):
+    """A zone's groundwater budget for one period — the ONE computation of it.
+
+    Called by the dashboard's zone row and by the district page's Allocation vs.
+    use table, which is the whole point: before 137-02 each screen computed its
+    own and they disagreed (ISS-154, ISS-155). The dashboard added the prior
+    year's carry-over and the district page did not; worse, the district page
+    spent the groundwater allocation against EVERY negative billable row, and
+    canal deliveries are stored negative, so 1,170.93 AF of surface water sat
+    inside a column headed *pumped* and reversed the sign a district manager
+    acts on.
+
+    Like with like, per DESIGN.md rule 12: a groundwater allocation is spent by
+    groundwater use, and a surface allocation by water delivered. Groundwater use
+    here is ``zone_consumptive_balance(...)["supplies"]["groundwater"]`` — the
+    same term the mass balance calls ``gw_recovered`` — so this can never drift
+    from the billable ledger. It counts metered and calculated pumping, never a
+    canal delivery.
+
+    **Absent, not zero, when the zone has no groundwater plan** (136-01's dash
+    rule). The five surface service areas carry surface plans only; a zero
+    allocation there would read as a budget fully spent rather than as a budget
+    the agency does not have. ``used`` is still a real number in that case — the
+    zone's parcels may well pump — it simply has nothing to be spent against.
+
+    Args:
+        zone: the ``geography.Zone``.
+        reporting_period: the ``ReportingPeriod`` to scope to.
+
+    Returns:
+        dict::
+
+            {"allocation": Decimal | None,   # groundwater plans, this period
+             "carryover":  Decimal | None,   # signed, rolled in from last year
+             "available":  Decimal | None,   # allocation adjusted by carry-over
+             "used":       Decimal,          # groundwater only, never canal water
+             "remaining":  Decimal | None}   # available − used
+    """
+    used = zone_consumptive_balance(zone, reporting_period=reporting_period)[
+        "supplies"
+    ]["groundwater"]
+
+    # Resolved by CODE, not by id: the water types are seeded reference data and
+    # their primary keys differ between deployments.
+    groundwater_type = WaterType.objects.filter(code__iexact="GW").first()
+    allocation = None
+    if groundwater_type is not None:
+        allocation = AllocationPlan.objects.filter(
+            zone=zone,
+            reporting_period=reporting_period,
+            water_type=groundwater_type,
+        ).aggregate(total=Sum("allocation_acre_feet"))["total"]
+
+    if allocation is None:
+        return {
+            "allocation": None,
+            "carryover": None,
+            "available": None,
+            "used": used,
+            "remaining": None,
+        }
+
+    # The carry-over is signed: positive is last year's surplus rolled in,
+    # negative a debt borrowed against this year. `available_with_carryover`
+    # applies the surplus-depreciates / debt-does-not rule centrally; periods
+    # elapsed is 0 because this is the opening balance for the very next year.
+    end = reporting_period.end_date
+    carryover = zone_carryover(zone, water_year_of(f"{end.year}-{end.month:02d}"))
+    available = available_with_carryover(allocation, carryover)
+    return {
+        "allocation": allocation,
+        "carryover": carryover,
+        "available": available,
+        "used": used,
+        "remaining": available - used,
+    }
 
 
 def resolve_recovery_horizon(zone, *, agency_default=None):

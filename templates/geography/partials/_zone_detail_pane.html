@@ -107,7 +107,7 @@
       {% comment %}Phase 89: allocations are Accounting's. Without the module
       the card renders its empty state, "No allocations for this zone." — which
       reads as a fact about the agency's data rather than about what this
-      deployment tracks.{% endcomment %}{% if 'accounting' in enabled_modules %}<div class="card-raised">
+      deployment tracks.{% endcomment %}{% if 'accounting' in enabled_modules %}{% url 'accounting:dashboard' as dashboard_url %}<div class="card-raised">
         <h2 class="section-header mb-md">Allocation vs. use</h2>
         {% if budgets %}
         <table class="data-table text-sm">
@@ -116,8 +116,9 @@
               <th>Period</th>
               <th>Water Type</th>
               <th class="th-right">Allocation (AF)</th>
+              <th class="th-right">Carried Forward (AF)</th>
               <th class="th-right">Used (AF)</th>
-              <th class="th-right">Remaining (AF)</th>
+              <th class="th-right">Remaining (AF){% include "partials/_explainer_popout.html" with title="Remaining (AF)" text="Groundwater rows: allocation plus last year's carry-over, minus groundwater use, metered or calculated — the same figure as the dashboard's zone row for this zone and period. Surface rows: allocation minus water delivered. Canal water never counts against a groundwater allocation." link=dashboard_url link_label="See it on the dashboard" %}</th>
             </tr>
           </thead>
           <tbody>
@@ -126,8 +127,19 @@
               <td class="text-secondary">{{ b.period.name }}</td>
               <td class="text-secondary">{{ b.water_type.name }}</td>
               <td class="td-num">{{ b.budget|floatformat:2 }}</td>
+              {% comment %}
+                Signed, and dashed on a surface row — the same treatment the
+                dashboard's zone table gives the same quantity. A surface
+                allocation has no groundwater carry-over, and a 0.00 there would
+                read as "nothing left over" rather than "not a cell here".
+              {% endcomment %}
+              <td class="td-num {% if b.carryover is None %}text-tertiary{% elif b.carryover > 0 %}text-surplus{% elif b.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
+                {% if b.carryover is None %}&mdash;{% else %}{% if b.carryover > 0 %}+{% endif %}{{ b.carryover|floatformat:2 }}{% endif %}
+              </td>
               <td class="td-num">{{ b.used|floatformat:2 }} <span class="text-tertiary text-xs">{{ b.used_label }}</span></td>
-              <td class="td-num">{{ b.remaining|floatformat:2 }}</td>
+              <td class="td-num {% if b.remaining is None %}text-tertiary{% elif b.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+                {% if b.remaining is None %}&mdash;{% else %}{{ b.remaining|floatformat:2 }}{% endif %}
+              </td>
             </tr>
             {% endfor %}
           </tbody>

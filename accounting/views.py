@@ -47,7 +47,6 @@ from accounting.models import (
     WaterCreditDraw,
     WaterType,
 )
-from accounting.carryover_math import available_with_carryover, water_year_of
 from core.access import admin_required
 from core.models import SiteConfig
 from core.modules import is_enabled
@@ -57,8 +56,8 @@ from accounting.services import (
     parse_ledger_csv,
     runs_in_period,
     unmet_demand_by_parcel,
-    zone_carryover,
     zone_consumptive_balance,
+    zone_groundwater_budget,
 )
 from geography.models import ParcelZone, Zone
 from parcels.models import Parcel, ParcelLedger
@@ -229,12 +228,6 @@ def dashboard(request):
             grand_supply_groundwater += cu["supplies"]["groundwater"]
             grand_supply_precip += cu["supplies"]["precip"]
 
-        # Water year of the selected period, so we can pull the carry-over that
-        # rolled INTO it from the prior year (labelled by the year it ends in,
-        # default Oct-anchor — matches carryover_math + rollover_allocations).
-        sel_end = selected_period.end_date
-        selected_water_year = water_year_of(f"{sel_end.year}-{sel_end.month:02d}")
-
         # Zone summaries
         for zone in Zone.objects.order_by("name"):
             zcu = zone_consumptive_balance(zone, reporting_period=selected_period)
@@ -243,26 +236,18 @@ def dashboard(request):
             # budget. Its three budget cells are absent rather than zero, so the
             # template renders a dash; a surface allocation minus pumping is not
             # a number anyone manages.
-            zone_allocation = None
-            if has_allocations and groundwater_type is not None:
-                zone_allocation = AllocationPlan.objects.filter(
-                    zone=zone,
-                    reporting_period=selected_period,
-                    water_type=groundwater_type,
-                ).aggregate(total=Sum("allocation_acre_feet"))["total"]
+            #
+            # 137-02: the three budget cells come from `zone_groundwater_budget`,
+            # which the district page's Allocation vs. use table now calls too.
+            # They used to be computed here and again over there, and the two
+            # answers differed — the district page added no carry-over and spent
+            # the groundwater allocation against canal deliveries as well as
+            # pumping (ISS-154). One quantity, one computation.
+            budget = zone_groundwater_budget(zone, selected_period)
+            zone_allocation = budget["allocation"] if has_allocations else None
             if zone_allocation is not None:
-                # Prior-year carry-over (signed): + surplus rolled in, − debt
-                # borrowed against this year. available_with_carryover applies the
-                # surplus-depreciates / debt-doesn't rule centrally; periods
-                # elapsed = 0 because this is the opening balance for the very
-                # next year (no aging yet), so it is a plain signed adjustment.
-                zone_carryover_af = zone_carryover(zone, selected_water_year)
-                zone_available = available_with_carryover(
-                    zone_allocation, zone_carryover_af
-                )
-                # Same basis as the account rows (136-01, ISS-151): the
-                # groundwater budget is spent by groundwater use.
-                zone_remaining = zone_available - zcu["supplies"]["groundwater"]
+                zone_carryover_af = budget["carryover"]
+                zone_remaining = budget["remaining"]
             else:
                 zone_carryover_af = None
                 zone_remaining = None

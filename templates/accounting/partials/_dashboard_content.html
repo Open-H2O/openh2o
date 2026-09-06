@@ -289,7 +289,16 @@
   shortfall is an engine output, so with no run there is nothing to list and the
   empty state below would be a claim rather than a finding.
 {% endcomment %}
-{% if not engine_has_never_run %}
+{% comment %}
+  Guarded on `parcels` as well as on the engine: the field column links into
+  `parcels:detail`, and with that module dropped the reverse would raise on every
+  dashboard render. `parcels` and `accounting` are an inseparable pair today, so
+  the guard can never be false here — it is written anyway because
+  `tests/test_module_template_guards.py` is what keeps the promise true when the
+  pairing changes, and a link that only happens to work is the shape it exists to
+  catch.
+{% endcomment %}
+{% if not engine_has_never_run and 'parcels' in enabled_modules %}
 {% url 'water_balances' as wb_help_url %}
 <h2 class="content-section-label" id="unmet-demand">Fields with water use recorded and no supply reported</h2>
 <div class="card-raised">

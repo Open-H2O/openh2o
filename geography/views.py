@@ -22,7 +22,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from accounting.models import AllocationPlan
-from accounting.services import billable_ledger
+from accounting.services import billable_ledger, zone_groundwater_budget
 from core.access import admin_required, public_in_open_demo
 from core.constants import RECOVERY_HORIZON_CHOICES
 from core.models import SiteConfig
@@ -182,9 +182,18 @@ def _zone_detail_context(zone):
     # Allocation vs. use (Phase 52-02): an allocation number alone doesn't tell the story —
     # an evaluator needs "of X allocated, Y was used". For each allocation, compute the
     # matching draw against the zone's parcels in that period: groundwater allocations
-    # show metered/estimated PUMPING (the magnitude of the negative extraction
-    # rows); surface allocations show DELIVERED canal water (the surface-delivery rows
-    # only — allocations are excluded so we don't count the grant as a use).
+    # show PUMPING ONLY, metered or calculated, plus last year's carry-over; surface
+    # allocations show DELIVERED canal water (the surface-delivery rows only —
+    # allocations are excluded so we don't count the grant as a use).
+    #
+    # 137-02 (ISS-154): the groundwater branch used to sum EVERY negative billable row
+    # for the period. Canal deliveries are stored negative by the platform's own
+    # convention, so 1,170.93 AF of surface water landed inside a column headed
+    # *pumped* and Halvern Irrigation-Urban read 562.75 AF OVER its groundwater
+    # allocation when its actual draw left it 911.58 AF under. The branch now calls
+    # `zone_groundwater_budget`, which the dashboard's zone row calls as well — so the
+    # two screens cannot print two different remainings for one zone-period, which is
+    # the second half of the same defect (ISS-155's class, DESIGN.md rule 12).
     zone_parcel_ids = list(parcel_zones.values_list("parcel_id", flat=True))
     budgets = []
     for alloc in allocations:
@@ -195,13 +204,20 @@ def _zone_detail_context(zone):
             )
         )
         if (alloc.water_type.code or "").upper() == "GW":
-            used = abs(
-                period_rows.filter(amount_acre_feet__lt=0).aggregate(
-                    s=Sum("amount_acre_feet")
-                )["s"]
-                or Decimal("0")
-            )
-            used_label = "pumped"
+            gw = zone_groundwater_budget(zone, alloc.reporting_period)
+            budgets.append({
+                "period": alloc.reporting_period,
+                "water_type": alloc.water_type,
+                # The plan row's own allocation, so a zone carrying two GW plans
+                # in one period still lists two rows; `remaining` is the zone's
+                # position, which is what the dashboard states as well.
+                "budget": alloc.allocation_acre_feet or Decimal("0"),
+                "carryover": gw["carryover"],
+                "used": gw["used"],
+                "used_label": "pumped",
+                "remaining": gw["remaining"],
+            })
+            continue
         else:
             # surface_diversion is stored NEGATIVE (production convention); the
             # delivered magnitude is its absolute value, so remaining =
@@ -218,6 +234,10 @@ def _zone_detail_context(zone):
             "period": alloc.reporting_period,
             "water_type": alloc.water_type,
             "budget": budget,
+            # A surface allocation has no groundwater carry-over. Absent, not
+            # zero: the template dashes it rather than printing 0.00, which
+            # would read as "nothing left over" instead of "not a cell here".
+            "carryover": None,
             "used": used,
             "used_label": used_label,
             "remaining": budget - used,
