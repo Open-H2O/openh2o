@@ -1,0 +1,29 @@
+[
+  {
+    "slug": "accounting-dashboard-wy2026",
+    "url": "/accounting/dashboard/?period=2",
+    "status": 200,
+    "bytes": 56847,
+    "sha256": "910506e95c0c734e0747b84ce834f9662e5463609b63fe89fb14cf24c8c1feac",
+    "note": "THE PINNED INSTANCE for ledger section 1. WY 2025-2026, the dry year, and the period the bare /accounting/dashboard/ URL resolves to on this data. Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row on screen). Pinned zone row: Halvern Irrigation-Urban GSA (id 2, first row on screen, 23 parcels).",
+    "commit": "d12d778a56f5eaad1192744160d1a1f003b385ff"
+  },
+  {
+    "slug": "accounting-dashboard-wy2025",
+    "url": "/accounting/dashboard/?period=1",
+    "status": 200,
+    "bytes": 56861,
+    "sha256": "dd533d08ab8bb4ba7d7b9b46ba059a4531a8a95aa1633b1f34f23e881115f1bc",
+    "note": "WY 2024-2025, the wet year. Captured as the second instance so a later plan can check the same 23 sites against a different period without re-deriving the pin.",
+    "commit": "d12d778a56f5eaad1192744160d1a1f003b385ff"
+  },
+  {
+    "slug": "accounting-dashboard-default",
+    "url": "/accounting/dashboard/",
+    "status": 200,
+    "bytes": 56847,
+    "sha256": "db0f2f8cfed0cadefef80c1fadcef9ec35e9f7b9bfb3bdaca1286a6ce5d17842",
+    "note": "No period parameter. Captured to RECORD which period the view's activity-based default actually resolves to, rather than asserting it from reading the code.",
+    "commit": "d12d778a56f5eaad1192744160d1a1f003b385ff"
+  }
+]

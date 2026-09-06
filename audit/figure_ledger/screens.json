@@ -1,0 +1,17 @@
+[
+  {
+    "slug": "accounting-dashboard-wy2026",
+    "url": "/accounting/dashboard/?period=2",
+    "note": "THE PINNED INSTANCE for ledger section 1. WY 2025-2026, the dry year, and the period the bare /accounting/dashboard/ URL resolves to on this data. Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row on screen). Pinned zone row: Halvern Irrigation-Urban GSA (id 2, first row on screen, 23 parcels)."
+  },
+  {
+    "slug": "accounting-dashboard-wy2025",
+    "url": "/accounting/dashboard/?period=1",
+    "note": "WY 2024-2025, the wet year. Captured as the second instance so a later plan can check the same 23 sites against a different period without re-deriving the pin."
+  },
+  {
+    "slug": "accounting-dashboard-default",
+    "url": "/accounting/dashboard/",
+    "note": "No period parameter. Captured to RECORD which period the view's activity-based default actually resolves to, rather than asserting it from reading the code."
+  }
+]
