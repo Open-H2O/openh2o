@@ -114,12 +114,16 @@
     <div class="row-between mb-md mt-sm">
       <span class="text-secondary text-sm">Residual: <span class="td-num">{{ mass_balance.residual_af|floatformat:2 }}</span> AF</span>
       {% comment %}
-        Three words only — Balanced / Surplus / Deficit (Brent, 2026-09-05).
-        The COLOUR carries the size, so the vocabulary stays short without
-        losing the one thing an operator needs to see: a gap of a quarter of
-        consumptive use does not read the same as a rounding difference.
-        A deficit is orange at any size; a surplus is green until it passes
-        REALISTIC_RESIDUAL_BAND, then orange.
+        Three words only: Balanced / Residual / Deficit (Brent, 2026-09-05;
+        DESIGN.md rule 12). "Surplus" read as good news to a water manager, and
+        a positive residual here is the opposite: water recorded arriving that
+        the parcel's uses do not account for (ISS-143). The COLOUR carries the
+        size, so the vocabulary stays short without losing the one thing an
+        operator needs to see: a gap of a quarter of consumptive use does not
+        read the same as a rounding difference. A deficit is orange at any
+        size; a positive residual is green until it passes
+        REALISTIC_RESIDUAL_BAND, then orange. How the badge sits beside the
+        Residual figure is Phase 137's.
 
         This block tag is required for a note this long: Django's hash-style
         template comment is SINGLE-LINE only, and a multi-line one renders onto
@@ -130,9 +134,9 @@
       {% elif not mass_balance.is_surplus %}
       <span class="badge badge-orange">Deficit</span>
       {% elif mass_balance.band_status == "realistic" %}
-      <span class="badge badge-green">Surplus</span>
+      <span class="badge badge-green">Residual</span>
       {% else %}
-      <span class="badge badge-orange">Surplus</span>
+      <span class="badge badge-orange">Residual</span>
       {% endif %}
     </div>
     {% if mass_balance.band_status == "realistic" %}
@@ -150,7 +154,7 @@
     <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
       More water is recorded arriving here than this parcel's uses account for —
       by more than a quarter of estimated consumptive use, so it is flagged rather
-      than treated as ordinary on-farm loss. A surplus this size is a gap in the
+      than treated as ordinary on-farm loss. A residual this size is a gap in the
       books, not spare water: conveyance loss is not yet a term in this platform,
       so ditch seepage and evaporation have nowhere to be recorded and land here.
     </p>

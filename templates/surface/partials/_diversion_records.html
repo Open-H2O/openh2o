@@ -9,7 +9,7 @@
       <th>Month</th>
       <th class="th-right">Diverted (AF)</th>
       <th class="th-right">Return Flow (AF)</th>
-      <th class="th-right">Consumptive Use (AF)</th>
+      <th class="th-right">Retained (AF)</th>
       <th>Period</th>
     </tr>
   </thead>
@@ -21,7 +21,17 @@
       <td class="td-num text-secondary">{{ record.returned_af|floatformat:2 }}</td>
       <td class="td-num">
         {{ record.consumed_acre_feet|floatformat:2 }}
-        {% if record.is_non_consumptive %}
+        {% comment %}
+          Retained = diverted minus returned to stream (DESIGN.md rule 12). Whether
+          retained water was delivered to a field or taken to storage is the
+          record's diversion_type, and only delivered water can be consumed: the
+          column used to claim consumption over recharge water spread into a
+          basin (ISS-153). The type branch comes first; the two return-flow badges
+          below it are about the returned part and keep their meaning.
+        {% endcomment %}
+        {% if record.diversion_type == "to_storage" %}
+        <span class="badge badge-teal" title="The retained volume was taken to storage: spread for recharge, banked, and not consumed.">To storage</span>
+        {% elif record.is_non_consumptive %}
         <span class="badge badge-teal" title="Returned volume equals the diverted volume, so nothing counts as consumed. Hydropower and other passthroughs record this way.">Non-consumptive (returned to stream)</span>
         {% elif record.is_partial_return %}
         <span class="badge badge-blue" title="Part of the diverted volume is returned to the stream; only the remainder is consumed.">Partial return</span>

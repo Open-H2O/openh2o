@@ -100,22 +100,26 @@
       </tr>
       {% endfor %}
     </tbody>
-    {% comment %} Column totals for the WHOLE filtered set (all pages, not just the
-       rows shown). Amounts are signed, so the net is split into credits (supplies,
-       >= 0) and debits (usage, < 0). This is the dense-table "how much, in total?"
-       footer (Bucket 2). {% endcomment %}
+    {% comment %} Two subtotals over the WHOLE filtered set (all pages, not just
+       the rows shown), named by KIND and never netted. Credits are allocation and
+       recharge entries: paper or banked water. The water figure is canal
+       deliveries and pumping, stored negative and shown as a magnitude. The two
+       are not addable, so the footer carries no net: it used to, and it stated
+       the same year as the dashboard with the opposite sign (ISS-155; DESIGN.md
+       rule 12, review question 3). The dense-table "how much, in total?" footer
+       (Bucket 2) still applies to each kind on its own. {% endcomment %}
     {% if total_count %}
     <tfoot>
       <tr style="border-top: 2px solid var(--color-border); background: var(--color-elevated);">
         <td colspan="2" class="text-secondary" style="font-weight: 600; white-space: nowrap;">
           All {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
         </td>
-        <td class="th-right td-num-bold {% if ledger_total_net >= 0 %}text-supply{% endif %}" style="white-space: nowrap;">
-          {{ ledger_total_net|floatformat:2|intcomma }}
-        </td>
-        <td colspan="3" class="text-tertiary text-xs" style="white-space: nowrap;">
-          <span class="text-supply">+{{ ledger_total_credits|floatformat:2|intcomma }}</span> credits
-          &middot; {{ ledger_total_debits|floatformat:2|intcomma }} debits &middot; net AF
+        <td colspan="4" class="text-xs" style="white-space: nowrap;">
+          <span class="text-secondary">Credits</span> <span class="text-tertiary">(allocation and recharge entries)</span>
+          <span class="td-num-bold text-supply">+{{ ledger_total_credits|floatformat:2|intcomma }}</span>
+          &middot; <span class="text-secondary">Delivered and pumped</span>
+          <span class="td-num-bold">{{ ledger_total_water|floatformat:2|intcomma }}</span>
+          <span class="block text-tertiary">Water leaving a canal or a well is stored as a negative entry. Credits are paper or banked water and are not a supply.</span>
         </td>
       </tr>
     </tfoot>

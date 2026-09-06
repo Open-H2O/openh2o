@@ -556,9 +556,10 @@ class TestAccessibilityAndHelp:
         )
         html = response.content.decode()
         assert response.status_code == 200
-        # The explainer button's aria-label is "Explain: <title>".
-        assert "Explain: Allocation" in html
-        assert "Explain: Remaining" in html
+        # The explainer button's aria-label is "Explain: <title>". The two
+        # budget columns are the groundwater budget (136-01, DESIGN.md rule 12).
+        assert "Explain: GW allocation" in html
+        assert "Explain: GW remaining" in html
         assert reverse("budgets_allocations") in html
 
 

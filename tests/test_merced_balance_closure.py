@@ -431,3 +431,72 @@ def test_diversion_reach_journey_does_not_move_basin_closure():
         description__icontains="MER-POD-010-DEMO").exists()
     assert DiversionRecord.objects.filter(
         point_of_diversion__in=[upstream, downstream]).count() == 2
+
+
+# ---------------------------------------------------------------------------
+# The rendered badge word (136-01, ISS-143 / ISS-148 words)
+# ---------------------------------------------------------------------------
+#
+# The parcel pane's badge trio is Balanced / Residual / Deficit (Brent,
+# 2026-09-05; DESIGN.md rule 12). "Surplus" read as good news to the one
+# audience the platform is for, and on this pane a positive residual is the
+# opposite: water recorded arriving that the parcel's uses do not account for.
+# The `is_surplus` KEY in `parcel_mass_balance` keeps its name (it is code, and
+# `test_metered_parcel_mass_balance_within_band` above still reads it); only the
+# word on screen changed. How the badge sits beside the figure is Phase 137's.
+
+
+def test_parcel_pane_renders_residual_in_green_and_never_surplus():
+    """One meter reading of 110 AF against 100 AF of gross ET.
+
+    Inputs 110 (pumped), outputs 100 (ET): residual +10.00 AF, which is 10% of
+    ET and inside REALISTIC_RESIDUAL_BAND (25%), so the badge is the green
+    Residual and the realistic-band cause line renders.
+    """
+    import factory
+    from django.contrib.auth.hashers import make_password
+    from django.test import Client
+    from django.urls import reverse
+
+    from tests.factories import ParcelFactory, ParcelLedgerFactory, ReportingPeriodFactory
+
+    class _User(factory.django.DjangoModelFactory):
+        class Meta:
+            model = "core.User"
+
+        username = factory.Sequence(lambda n: f"paneuser{n}")
+        email = factory.Sequence(lambda n: f"paneuser{n}@example.com")
+        password = factory.LazyFunction(lambda: make_password("testpass123"))
+        is_active = True
+
+    rp = ReportingPeriodFactory(
+        name="Water Year 2025-2026",
+        start_date=dt.date(2025, 10, 1),
+        end_date=dt.date(2026, 9, 30),
+    )
+    parcel = ParcelFactory()
+    ParcelLedgerFactory(
+        parcel=parcel, reporting_period=rp, source_type="meter_reading",
+        amount_acre_feet=Decimal("-110.0000"),
+        transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
+    )
+    CalculationRun.objects.create(
+        parcel=parcel, period="2026-01",
+        gross_et_af=Decimal("100.0000"),
+        net_consumptive_use_af=Decimal("100.0000"),
+        effective_precip_af=Decimal("0.0000"),
+        final_af=Decimal("100.0000"),
+    )
+
+    client = Client()
+    client.force_login(_User())
+    response = client.get(reverse("parcels:detail", args=[parcel.pk]), HTTP_HX_REQUEST="true")
+    assert response.status_code == 200
+    html = response.content.decode()
+
+    assert 'Residual: <span class="td-num">10.00</span> AF' in html
+    assert '<span class="badge badge-green">Residual</span>' in html
+    assert "Surplus" not in html, (
+        "the parcel pane still says Surplus; the badge word is Residual "
+        "(Brent, 2026-09-05; DESIGN.md rule 12)"
+    )

@@ -190,3 +190,53 @@ class TestLedgerZoneFacet:
         rows = list(resp.context["page_obj"])
         assert len(rows) == 1
         assert rows[0].source_type == "calculated"
+
+
+# ---------------------------------------------------------------------------
+# The footer (136-01, ISS-155)
+# ---------------------------------------------------------------------------
+
+
+class TestLedgerFooter:
+    """Two subtotals named by kind, and no net.
+
+    The footer used to add allocation paper to delivered water and print one
+    signed net, which stated WY 2025-2026 at -1,504.32 AF beside a dashboard
+    reading +1,249.07 AF over the same rows. Paper and water are not addable
+    (DESIGN.md rule 12, review question 3), so the net is gone and the two
+    subtotals say what they are.
+    """
+
+    def _four_rows(self):
+        period = ReportingPeriodFactory()
+        parcel = ParcelFactory()
+        for source_type, amount in (
+            ("allocation", Decimal("100.0000")),
+            ("recharge", Decimal("25.0000")),
+            ("surface_diversion", Decimal("-40.0000")),
+            ("meter_reading", Decimal("-10.0000")),
+        ):
+            ParcelLedgerFactory(
+                parcel=parcel, reporting_period=period, source_type=source_type,
+                amount_acre_feet=amount, effective_date=date(2024, 6, 15),
+            )
+        return period
+
+    def test_footer_names_credits_and_water_and_prints_no_net(self, auth_client):
+        period = self._four_rows()
+
+        response = auth_client.get(_ledger_url(period=period.pk))
+        assert response.status_code == 200
+        html = response.content.decode()
+
+        # 100.0000 allocation + 25.0000 recharge = +125.00 of credits.
+        assert response.context["ledger_total_credits"] == Decimal("125.0000")
+        assert "Credits" in html and "+125.00" in html
+        # 40.0000 delivered + 10.0000 pumped = 50.00 of water, as a magnitude.
+        assert response.context["ledger_total_water"] == Decimal("50.0000")
+        assert "Delivered and pumped" in html and "50.00" in html
+        # No net: neither the signed -75.00 nor its magnitude appears anywhere.
+        assert "ledger_total_net" not in response.context
+        assert "75.00" not in html
+        assert "debits" not in html
+        assert "Credits are paper or banked water and are not a supply." in html

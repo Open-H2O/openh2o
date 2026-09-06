@@ -530,7 +530,7 @@ def glossary(request):
     """
     terms = {
         "Allocation Ceiling": "The total volume of water assigned to a zone for a reporting period, set per zone, water type, and period. It is the policy ceiling for a whole area. The platform divides it into per-account Allocations. See Help > Allocations & Ceilings.",
-        "Allocation": "A single account's share of a zone's Allocation Ceiling, pro-rated by how many parcels the account holds in the zone. Allocation minus usage gives the account's remaining water; a negative remaining is an overdraft. See Help > Allocations & Ceilings.",
+        "Allocation": "A single account's share of a zone's Allocation Ceiling, pro-rated by how many parcels the account holds in the zone. Allocation minus groundwater use (metered and calculated pumping) gives the account's remaining water; a negative remaining is an overdraft. See Help > Allocations & Ceilings.",
         "Apportionment": "Dividing a shared supply — a well or headgate that serves several fields — among those fields by their estimated ET demand rather than by headcount, so the total always reconciles back to what the source actually produced. See Help > Methods Behind the Numbers.",
         "Usage": "Water consumed via extraction (well meters) or evapotranspiration (ET estimates), recorded as negative ledger entries.",
         "CalWATRS": "California Water Accounting, Tracking, and Reporting System: the State Water Board's surface-diversion reporting system (replaced eWRIMS).",

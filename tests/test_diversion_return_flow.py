@@ -24,8 +24,12 @@ Also pins the one-hop ``rediverted_from`` self-link on PointOfDiversion.
 from datetime import date
 from decimal import Decimal
 
+import factory
 import pytest
+from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
+from django.test import Client
+from django.urls import reverse
 
 from accounting.models import CalculationRun
 from accounting.services import create_diversion_ledger_entries
@@ -224,3 +228,74 @@ def test_rediverted_from_links_upstream_pod():
 def test_rediverted_from_defaults_none():
     pod = PointOfDiversionFactory()
     assert pod.rediverted_from is None
+
+
+# --- 5. The rendered words on the diversion table (136-01, ISS-153) ---------
+#
+# The third numeric column is Retained (diverted minus returned to stream), and
+# whether retained water was delivered or taken to storage is the record's
+# diversion_type. Until 136-01 the column was headed "Consumptive Use (AF)" and
+# a to_storage record fell through both return-flow branches to a bare number,
+# so the El Nido recharge intake reported 877.47 AF consumed on water spread
+# into a basin to percolate. DESIGN.md rule 12 gates the old heading in
+# templates/surface/; these tests pin the words a reader sees, with the values
+# the fixture produces.
+
+
+class _PaneUserFactory(factory.django.DjangoModelFactory):
+    """Local, matching the house convention: every suite file defines its own."""
+
+    class Meta:
+        model = "core.User"
+
+    username = factory.Sequence(lambda n: f"divpane{n}")
+    email = factory.Sequence(lambda n: f"divpane{n}@example.com")
+    password = factory.LazyFunction(lambda: make_password("testpass123"))
+    is_active = True
+
+
+def _pod_pane(pod):
+    """The POD detail pane as the workspace swaps it in, signed in."""
+    client = Client()
+    client.force_login(_PaneUserFactory())
+    response = client.get(reverse("surface:pod_detail", args=[pod.pk]), HTTP_HX_REQUEST="true")
+    assert response.status_code == 200
+    return response.content.decode()
+
+
+def test_a_to_storage_record_renders_to_storage_and_never_consumptive_use():
+    rp = ReportingPeriodFactory()
+    pod = PointOfDiversionFactory()
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("877.4700"), returned_af=Decimal("0"),
+        diversion_type="to_storage",
+    )
+
+    html = _pod_pane(pod)
+
+    assert "Retained (AF)" in html
+    assert "To storage" in html
+    # 877.47 diverted, 0 returned: the retained cell reads the whole volume.
+    assert "877.47" in html
+    assert "Consumptive Use" not in html, (
+        "the diversion table still calls retained water consumptive use; a "
+        "to_storage record is banked, not consumed (ISS-153, DESIGN.md rule 12)"
+    )
+
+
+def test_a_direct_use_record_with_a_partial_return_still_says_partial_return():
+    rp = ReportingPeriodFactory()
+    pod = PointOfDiversionFactory()
+    DiversionRecordFactory(
+        point_of_diversion=pod, reporting_period=rp, month=JAN,
+        volume_acre_feet=Decimal("100.0000"), returned_af=Decimal("40.0000"),
+        diversion_type="direct_use",
+    )
+
+    html = _pod_pane(pod)
+
+    assert "Partial return" in html
+    assert "To storage" not in html
+    # 100.00 diverted minus 40.00 returned: retained reads 60.00.
+    assert "60.00" in html
