@@ -13,5 +13,150 @@
     "slug": "accounting-dashboard-default",
     "url": "/accounting/dashboard/",
     "note": "No period parameter. Captured to RECORD which period the view's activity-based default actually resolves to, rather than asserting it from reading the code."
+  },
+  {
+    "slug": "accounting-a-account-78-p2",
+    "url": "/accounting/accounts/78/?period=2",
+    "note": "THE PINNED INSTANCE for ledger section A's account balance pane (FIG-accounting-009..020). MER-ACCT-001 Ashvale Orchards Inc. (account id 78), WY 2025-2026 (period id 2, the dry year), the SAME account and period section 1 pinned on the dashboard, so the two screens' figures can be compared to each other as well as to the rows. Requested without the HTMX header, so the full account_detail page renders and _account_balances.html is reached through _account_detail_pane.html with the identical context. The per-parcel table's pinned row is named in the section: every one of this account's 18 assignments carries added_date 2026-09-05, so '-added_date' does not order them and 'the first row' is not reproducible. The row is pinned by parcel number instead, read out of this capture."
+  },
+  {
+    "slug": "accounting-a-calcrun-p16-2026-03",
+    "url": "/accounting/calculation-run/16/2026-03/",
+    "note": "THE PINNED INSTANCE for the calculation-run audit page (FIG-accounting-001..008). Parcel 16, MER-APN-016, March 2026, inside WY 2025-2026. Chosen because it is the run in that period where effective precipitation actually bites: gross 39.8491 AF, effective precip 11.8546 AF, final 27.9945 AF, so the waterfall's In and Out columns differ instead of showing five identical numbers. Calculation run id 19548."
+  },
+  {
+    "slug": "accounting-a-methodology-preview-p16-2026-03",
+    "url": "/accounting/methodology/preview/?parcel_id=16&period=2026-03",
+    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-050..053). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month."
+  },
+  {
+    "slug": "accounting-a-ledger-p2",
+    "url": "/accounting/ledger/?period=2",
+    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-046..049). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture."
+  },
+  {
+    "slug": "accounting-a-allocations-p2",
+    "url": "/accounting/allocations/?period=2",
+    "note": "THE PINNED INSTANCE for the allocations table (FIG-accounting-021, 022). Period filtered to WY 2025-2026 to line up with every other pin in this section. Ordered by reporting period start date descending then name; page 1 of 25. The pinned allocation row is named in the section."
+  },
+  {
+    "slug": "accounting-a-period-2",
+    "url": "/accounting/reporting-periods/2/",
+    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-054). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses."
+  },
+  {
+    "slug": "accounting-a-account-78-p1",
+    "url": "/accounting/accounts/78/?period=1",
+    "note": "The same account balance pane in WY 2024-2025, the wet year. Captured as a second instance so a later plan can check the same twelve sites against a different period without re-deriving the pin, and so the wet-year and dry-year figures for one account sit side by side in the record."
+  },
+  {
+    "slug": "parcel-detail-agree-mer-apn-017",
+    "url": "/parcels/17/",
+    "note": "PINNED INSTANCE A for ledger section 2, the AGREEING case. MER-APN-017, Saddlebow Ag Holdings (parcel id 17). The two balances on this pane agree: the Supplies-minus-consumptive-use card and the mass-balance residual are the same number, because this parcel banked no incidental recharge in the period. The pane has no period control (parcels/views.py:181 builds its context without reading the request), so the period is whatever parcels/views.py:118-127 resolves for this parcel: WY 2025-2026, the dry year, reporting period id 2."
+  },
+  {
+    "slug": "parcel-detail-disagree-mer-apn-032",
+    "url": "/parcels/32/",
+    "note": "PINNED INSTANCE B for ledger section 2, the DISAGREEING case (ISS-148). MER-APN-032, Ashvale Orchards Inc. (parcel id 32). The Supplies-minus-consumptive-use card reads a large positive surplus while the mass-balance residual immediately below reads 0.00 and the badge reads Balanced. Same period resolution as instance A: WY 2025-2026, the dry year, reporting period id 2."
+  },
+  {
+    "slug": "parcel-detail-disagree-mer-apn-032-periodparam-2",
+    "url": "/parcels/32/?period=2",
+    "note": "The same parcel with an explicit ?period=2. Captured to OBSERVE whether the parcel pane honours a period parameter at all, rather than asserting it from reading the view. Compare byte-for-byte against parcel-detail-disagree-mer-apn-032."
+  },
+  {
+    "slug": "parcel-detail-disagree-mer-apn-032-periodparam-1",
+    "url": "/parcels/32/?period=1",
+    "note": "The same parcel with ?period=1, the wet year. The other half of the same observation: if the pane honoured a period parameter these bytes would differ from the ?period=2 capture."
+  },
+  {
+    "slug": "surface-pod-detail-snelling",
+    "url": "/surface/diversion/9/",
+    "note": "PINNED for FIG-surface-001..005. MER-POD-011-DEMO Snelling Re-Diversion (point of diversion id 9), on water right MER-WR-010-DEMO. Chosen over the first row on the diversion list because it is the ONLY point of diversion in the demonstration whose return flow is neither zero nor the whole volume: its 2026-05-15 record is 250.0000 diverted / 100.0000 returned / 150.0000 consumed, so Diverted, Return Flow and Consumptive Use are three distinct numbers and a wrong subtraction can actually fail. Everywhere else consumed equals diverted and a zero column would match any formula. The diversion-records table is pinned to the 2026-05-15 row (fourth row on screen); the table itself is NOT period-scoped, so ?period= would change nothing here."
+  },
+  {
+    "slug": "surface-pod-detail-bpod001",
+    "url": "/surface/diversion/10/",
+    "note": "Evidence, not a figure pin. MER-BPOD-001 El Nido Canal Recharge Intake (id 10) carries no water right and no maximum rate, so both of this template's figures are inside {% if %} guards that do not fire. Captured to record what the screen says instead, because the same diversion point IS shown on the CalWATRS worksheet and is withheld from the generated state file."
+  },
+  {
+    "slug": "surface-right-detail-wr010",
+    "url": "/surface/rights/7/",
+    "note": "PINNED for FIG-surface-007..009. MER-WR-010-DEMO, Halvern Hydroelectric Co., face value 60,000 AF. Same right as the diversion-point pin above, so the two screens can be read against each other. Points of diversion are ordered by name, so the pinned Max rate row is MER-POD-010-DEMO Merced Falls Hydroelectric Diversion. Recent diversion records are pinned to the FIRST row, 2026-09-15 on MER-POD-010-DEMO -- unambiguous because the other diversion point on this right has no September 2026 record."
+  },
+  {
+    "slug": "surface-rights-list",
+    "url": "/surface/rights/",
+    "note": "PINNED for FIG-surface-006. The water rights list, ordered by right identifier, so the pinned Face Value cell is the first row: MER-WR-004-DEMO, Halvern Irrigation District. All six rights are also checked whole-column in SQL."
+  },
+  {
+    "slug": "reporting-shared-supply-wy2026",
+    "url": "/reporting/reports/shared-supply-check/?period=2",
+    "note": "PINNED for FIG-reporting-003..005. WY 2025-2026, the dry year, matching section 1's pin. Groups sort by kind then source name, so the first group is Point of diversion: MER-POD-004-DEMO Atwater Canal Headgate, five use areas, every share hand-set to 0.2000. The pinned row is named by its use-area number, read out of the captured page, because the code orders rows only by the database's own row order."
+  },
+  {
+    "slug": "reporting-shared-supply-default",
+    "url": "/reporting/reports/shared-supply-check/",
+    "note": "No period parameter. Captured to RECORD which period the activity-based default resolves to, rather than asserting it from reading the code -- the same method section 1 used for the accounting dashboard."
+  },
+  {
+    "slug": "reporting-calwatrs-worksheet-sub4",
+    "url": "/reporting/reports/4/calwatrs-worksheet/",
+    "note": "PINNED for FIG-reporting-001..002. Report submission 4, CalWATRS To Storage (report type calwatrs_a2), reporting period WY 2025-2026 -- the same dry year as the pin above. Blocks are ordered by diversion point name, so the first block is MER-BPOD-001 El Nido Canal Recharge Intake, which has no linked water right. Its first row is 2026-01-15."
+  },
+  {
+    "slug": "d-zone-detail-halvern-irrigation-urban",
+    "url": "/map/zones/2/",
+    "note": "SECTION D PIN for FIG-geography-001..003. Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row - WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-004, the parcel-area column, is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels."
+  },
+  {
+    "slug": "d-datasync-station-list",
+    "url": "/datasync/stations/",
+    "note": "SECTION D EVIDENCE, not a figure site. The station detail pane cannot be reached on this data: datasync_monitoredstation holds ZERO rows. This capture records what the station list actually says, so the four UNVERIFIED datasync rows rest on the served page and not only on a row count."
+  },
+  {
+    "slug": "d-datasync-station-detail-lowest-id",
+    "url": "/datasync/stations/1/",
+    "note": "SECTION D EVIDENCE for FIG-datasync-001..004. Expected to be a non-200: no MonitoredStation row exists with any primary key, so the pane that carries all four datasync figures has no instance to render. Recorded as a finding, not retried."
+  },
+  {
+    "slug": "d-well-detail-mer-w-001",
+    "url": "/wells/32/",
+    "note": "SECTION D PIN for FIG-wells-001..004. Well id 32, registration MER-W-001, 'Ag well on MER-APN-002'. Chosen because one screen carries all four wells figures: it has an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order)."
+  },
+  {
+    "slug": "d-recharge-detail-el-nido-basin-1",
+    "url": "/recharge/6/",
+    "note": "SECTION D PIN for FIG-recharge-001, -002 and -003. El Nido Recharge Basin 1 (site id 6), the first site by name on the list page, so the list figure and the detail figures describe the same basin. Pinned measurement row: the newest, 2026-02-18 water quality, 315.2601 mg/L. Pinned event row: the newest by start date, 2026-02-15 to 2026-02-18, 127.4200 AF."
+  },
+  {
+    "slug": "d-recharge-list",
+    "url": "/recharge/",
+    "note": "SECTION D PIN for FIG-recharge-004. The list is ordered by name and shows every site on one page, so the pinned row is the first: El Nido Recharge Basin 1, capacity 637.10 AF rendered to whole acre-feet."
+  },
+  {
+    "slug": "d-setup-wizard",
+    "url": "/setup/",
+    "note": "SECTION D PIN for FIG-setup-002. The figure renders inside an <option> of the 'District boundary' dropdown. One Boundary row exists, Merced Subbasin, so the pinned option is the only one: stated area 800.948 square miles."
+  },
+  {
+    "slug": "d-setup-confirm",
+    "url": "/setup/confirm/",
+    "note": "SECTION D, FIG-setup-001. Expected to redirect: the confirmation step reads a boundary out of the visitor's session, which is written by the wizard's POST, and this capture performs GETs only. Recorded as a finding so the row says why the screen could not be read rather than borrowing a number from the wizard page."
+  },
+  {
+    "slug": "d-zone-detail-halvern-valley-gsa",
+    "url": "/map/zones/1/",
+    "note": "SECTION D whole-column check on FIG-geography-001..003. Halvern Valley GSA (zone id 1), 46 parcels, the largest groundwater zone. Captured so the Used column's finding rests on every groundwater zone's screen rather than on one."
+  },
+  {
+    "slug": "d-zone-detail-verdano-island-gsa",
+    "url": "/map/zones/3/",
+    "note": "SECTION D whole-column check on FIG-geography-001..003. Verdano Island Water District GSA (zone id 3), 7 parcels. The one groundwater zone whose parcels take no surface canal delivery, so its Used figure is the control case."
+  },
+  {
+    "slug": "d-zone-detail-surface-service-area-halvern",
+    "url": "/map/zones/39/",
+    "note": "SECTION D whole-column check on FIG-geography-001..003. MER Surface Service Area - Halvern Irrigation District (zone id 39), a surface-water allocation, so the page takes the other branch (geography/views.py:205) and labels the figure 'delivered'. Captured to show that branch does filter on source type where the groundwater branch does not."
   }
 ]
