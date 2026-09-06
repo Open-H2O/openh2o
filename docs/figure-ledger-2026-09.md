@@ -56,7 +56,7 @@ labelled wrongly, and figures that no screen can currently show.
 | `EXPLAINED` | 1 | The two agree for a stated reason that is not a measurement |
 | `UNVERIFIED` | 13 | The screen never rendered it, or nothing derives it |
 
-Nine rows carry an issue number, and they name four problems:
+Eight rows carry an issue number, and they name four problems:
 
 **The district page counts canal water as pumping** ([ISS-154](#), reserved here
 and filed by the next plan). A district's Allocation vs. use table has a column
@@ -84,13 +84,28 @@ groundwater allocation, printed as one number in acre-feet that no agency
 manages. Section 3, finding 4.
 
 Thirteen figures could not be independently recomputed, and they are named rather
-than omitted: four monitoring-station figures (there is no station in this
-database, and the file that pins the demonstration's contents says there should
-be 335), four on the calculation page's banked-water block (no run in this
-database carries a deposit or a draw), two in a notice shown only to a parcel
-with no calculations yet (every parcel has them), two well fields a person types
-by hand, and the setup wizard's confirmation step, which needs a form submission
-to reach.
+than omitted: four monitoring-station figures (this audit ran against a
+development database, which by design loads no stations; the shipping build loads
+all 335, and the reasoning is in `audit/figure_ledger/triage.md` section B1),
+four on the calculation page's banked-water block (no run in this database
+carries a deposit or a draw, and the five credit rows that do exist all hold
+0.0000 acre-feet), two in a notice shown only to a parcel with no calculations
+yet (every parcel has them, in both years), two well fields a person types by
+hand, and the setup wizard's confirmation step, which needs a form submission to
+reach.
+
+**Every one of those eight was then re-derived a THIRD time before it was
+filed**, by an identity neither of the first two derivations used, and the
+working is in `audit/figure_ledger/triage.md`. Three survived and became
+ISS-154, ISS-155 and ISS-156; one was already ISS-148; none turned out to be the
+auditor's arithmetic. Three claims written *around* those numbers did not
+survive, and they are set out there too.
+
+**Section 6 is the other half of this document's job.** Every section before it
+asks whether a figure matches its rows. Section 6 asks, of the 21 field-years
+whose water balance sits outside the platform's own acceptance band, whether the
+platform is wrong or the water is. Twenty-one flags turned out to have three
+causes, and only one of them is a defect.
 
 **One caution that applies to the whole document.** The guard that stops a
 month's water being counted twice is stated in every recomputation that depends
@@ -1164,3 +1179,228 @@ real water user.
 - Results: `audit/figure_ledger/results/section_d.csv`, with the two halves in
   `rendered_section_d.csv` and `recomputed_section_d.csv`, and the four-district
   check in `zone_used_column_section_d.csv`
+
+---
+
+## Section 6 — The parcels outside the realistic band
+
+Every section above asks whether a number on a screen matches the rows behind
+it. They all do. This section asks a different question, and it is the one a
+water professional would ask first: **when the parcel pane says a field's books
+did not close, is the platform wrong, or is the water?**
+
+**The bar this section is judged against is not zero, and it was set
+deliberately.** Real water accounting never closes to nothing. A meter measures
+water lifted out of the ground, which is more than the crop consumed. Deficit
+irrigation in a drought leaves a real shortfall. Salt-flush and operational
+flooding put water on a field that the crop never uses. Shallow groundwater and
+a stream at the edge of a field feed the root zone with water nobody delivered.
+So the platform carries an acceptance band: a residual within a quarter of the
+field's gross crop water use is *small, realistic, and never alarming*
+(`REALISTIC_RESIDUAL_BAND = 0.25`, `accounting/services.py:581`). **A field
+outside that band is not automatically a defect. It needs a reason**, and "the
+demonstration sized this one badly" and "the arithmetic is wrong" are different
+findings.
+
+Twenty-one field-years sit outside the band: **10 of 76 fields in WY 2024-2025
+and 11 of 76 in WY 2025-2026.** Every one of them has a reason below, and the
+reasons are three, not twenty-one.
+
+**Reproduce it with** `bash audit/figure_ledger/run_sql.sh audit/figure_ledger/sql/parcel_band_review.sql`.
+That file re-derives both balances for all 76 fields in both years from the
+stored rows, independently of the code that renders them, and reproduces the
+four already-worked fields to the cent before anything downstream of it is
+trusted.
+
+### The three reasons, and how many field-years each one carries
+
+| Reason | Field-years | Direction | Is it a defect? |
+|---|---:|---|---|
+| **The junior canal right was curtailed, and the field kept its crop** | 6 | Deficit, −81.8% to −90.9% of gross ET | **Yes, in the demonstration's content.** Filed as ISS-157 |
+| **The same curtailment, caught part-way through the earlier year** | 5 | Deficit, −36.8% to −51.7% | No. This is the scarcity demonstration behaving as designed |
+| **The meter measures pumping, and the books have nowhere to put the difference** | 10 | Surplus, +31.6% to +55.8% | No new issue. It is ISS-148's shape with the sign reversed, and it belongs to Phase 137 |
+
+---
+
+### Reason 1 — the junior canal right was curtailed, and the field kept its crop
+
+**Six fields, WY 2025-2026 only.** MER-APN-010, -011, -012, -013, -014, -019, all
+farmed by Saddlebow Ag Holdings.
+
+**What the demonstration set up.** A drought curtailment order, `MER-CURT-001`,
+takes effect 1 July 2025 and cuts the junior El Nido Canal right
+(`MER-WR-009-DEMO`, Saddlebow Irrigation District). Its own note says what is
+supposed to happen next: *"Surface deliveries stop after June; conjunctive
+growers substitute groundwater."* Nine fields sit on that right.
+
+**Three of the nine did substitute.** MER-APN-015, -016 and -017 each carry
+twelve monthly groundwater rows in the dry year. MER-APN-017 substituted so
+completely that it appears further down this page as a *surplus*.
+
+**The other six received nothing at all.** Their only ledger row in the whole dry
+year is a paper allocation. No canal delivery, no meter reading, no calculated
+pumping. Checked twice: once through the same suppression rules the platform
+applies, and once against the raw rows with no filtering of any kind.
+
+**And their crops did not notice.** Satellite-measured crop water use is
+essentially unchanged from the wet year:
+
+| Field | Crop | Gross crop water use, WY 2024-25 | WY 2025-26 | Change | Water delivered, WY 2025-26 |
+|---|---|---:|---:|---:|---:|
+| MER-APN-010 | Tomatoes | 408.22 | 401.11 | −1.7% | **0.00** |
+| MER-APN-011 | Almonds | 370.26 | 363.26 | −1.9% | **0.00** |
+| MER-APN-012 | Alfalfa | 190.28 | 183.44 | −3.6% | **0.00** |
+| MER-APN-013 | Corn | 328.67 | 321.84 | −2.1% | **0.00** |
+| MER-APN-014 | Grapes | 506.24 | 496.09 | −2.0% | **0.00** |
+| MER-APN-019 | Grapes | 457.41 | 448.46 | −2.0% | **0.00** |
+
+**That is the finding, and it is about the demonstration's content rather than
+its arithmetic.** A field cannot grow a full crop on no water. Either those six
+growers pumped, and the demonstration owes them meter rows, or they fallowed,
+and the satellite record should show it. As it stands the pane tells a grower
+their books are short by the entire year's crop, which is true of the rows and
+impossible in the field.
+
+**A corrected sizing.** The three fields that substituted pumped between 195 and
+388 acre-feet over twelve months. Giving these six the same treatment (monthly
+groundwater rows covering the post-curtailment demand) would put all six back
+inside the band and would tell the story the curtailment note already describes.
+The alternative, and the more interesting demonstration, is to fallow two of them
+and let the satellite record collapse, which is what a grower with no water and no
+well actually does.
+
+⚠ **Not fixed here. Phase 135 is read-only on product code and on the seed.**
+Filed as **ISS-157** for Phase 136, which is already re-sizing this
+demonstration's allocations and rebuilding the golden dataset.
+
+---
+
+### Reason 2 — the same curtailment, caught part-way through the earlier year
+
+**Five fields, WY 2024-2025 only.** MER-APN-010, -011, -013, -014, -019.
+
+The water year runs October 2024 to September 2025, and the curtailment lands on
+1 July 2025, inside it, and at the peak of the irrigation season. So these
+fields took canal water for nine months and then lost it for the three that
+matter most.
+
+| Field | Canal delivery | Effective rainfall | Total supplies | Gross crop water use | Deep percolation credited | Residual | Residual as % of crop use |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| MER-APN-013 | 126.11 | 62.33 | 188.43 | 328.67 | 29.73 | −169.96 | −51.7% |
+| MER-APN-019 | 189.45 | 80.27 | 269.72 | 457.41 | 41.71 | −229.39 | −50.2% |
+| MER-APN-011 | 161.78 | 62.85 | 224.64 | 370.26 | 35.95 | −181.57 | −49.0% |
+| MER-APN-014 | 281.90 | 89.07 | 370.97 | 506.24 | 57.97 | −193.23 | −38.2% |
+| MER-APN-010 | 227.17 | 75.78 | 302.95 | 408.22 | 45.14 | −150.40 | −36.8% |
+
+**This is the demonstration working, and the pane is right to say so.** A grower
+who loses their surface water in July finishes the year short, and a page that
+reported anything else would be hiding the point of the exercise. The deficit is
+roughly half a season's water, which is what losing the last quarter of the year
+costs a crop that was already being irrigated at a loss.
+
+**No issue.** The one thing worth carrying forward is that these five field-years
+and the six above are the same six growers in two consecutive years, and a reader
+looking at one year cannot tell which situation they are in. That is a
+presentation question for Phase 137, not a defect here.
+
+---
+
+### Reason 3 — the meter measures pumping, and the books have nowhere to put the difference
+
+**Ten field-years across five fields**, in both years: MER-APN-002, -017, -048,
+-052, -053. Every one is a surplus, and every one sits between +31.6% and +55.8%
+of the field's gross crop water use.
+
+**Why a surplus happens at all.** A flow meter on a well measures water lifted
+out of the aquifer. The crop consumes less than that: some runs off the end of
+the field, and some percolates back down past the root zone. So applied water
+routinely exceeds crop water use by a fifth or more, and the difference is real
+water that went somewhere.
+
+**The platform records where that water went, but only when it arrived by
+canal.** The calculation chain runs rainfall and canal deliveries down against
+crop demand and, where they overshoot, writes the excess out as deep percolation
+to the aquifer (`accounting/steps.py:279`: *"the remainder, which is surface
+water delivered beyond crop demand … physically this is deep percolation that
+recharges the aquifer"*). Pumped groundwater is not one of the chain's inputs. It
+is what the chain **computes**, how much pumping the field needed, so pumping
+in excess of that never meets the overshoot rule, and no deep-percolation row is
+ever written for it.
+
+**Measured across the whole demonstration, and this is what makes it a mechanism
+rather than a story:**
+
+| How the field was supplied | Field-years | With deep percolation recorded | Outside the band | Average residual, % of crop use | Applied water, % of crop use |
+|---|---:|---:|---:|---:|---:|
+| Canal water only | 101 | **101 of 101** | 5 | −2.4% | 120.0% |
+| Both canal and pumped | 8 | **8 of 8** | 1 | +7.2% | 125.6% |
+| Pumped groundwater only | 37 | **0 of 37** | 9 | **+15.1%** | 115.1% |
+| No delivered supply at all | 6 | 0 of 6 | 6 | −89.0% | 11.0% |
+
+Fields in the first two groups over-apply *more* than fields in the third
+(120.0% and 125.6% of crop use, against 115.1%), and their books still close,
+because their excess has a name. The pumped-only fields over-apply less and their
+books do not close, because their excess has nowhere to go and lands in the
+residual entire.
+
+**The ten field-years, with each term beside them:**
+
+| Water year | Field | Crop | Pumped groundwater | Effective rainfall | Total supplies | Gross crop water use | Residual | % of crop use |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| WY 2024-2025 | MER-APN-017 | Alfalfa | 220.29 | 53.83 | 379.84¹ | 268.97 | +84.97 | +31.6% |
+| WY 2024-2025 | MER-APN-053 | Corn | 152.28 | 19.05 | 171.33 | 127.89 | +43.45 | +34.0% |
+| WY 2024-2025 | MER-APN-048 | Corn | 330.11 | 49.84 | 379.95 | 277.20 | +102.75 | +37.1% |
+| WY 2024-2025 | MER-APN-002 | Alfalfa | 766.72 | 78.46 | 845.18 | 564.23 | +280.94 | +49.8% |
+| WY 2024-2025 | MER-APN-052 | Alfalfa | 196.01 | 21.26 | 217.27 | 143.01 | +74.26 | +51.9% |
+| WY 2025-2026 | MER-APN-053 | Corn | 161.44 | 10.02 | 171.46 | 125.76 | +45.70 | +36.3% |
+| WY 2025-2026 | MER-APN-048 | Corn | 351.48 | 26.68 | 378.15 | 272.37 | +105.78 | +38.8% |
+| WY 2025-2026 | MER-APN-017 | Alfalfa | 368.34 | 27.64 | 395.97 | 263.07 | +132.90 | +50.5% |
+| WY 2025-2026 | MER-APN-002 | Alfalfa | 811.73 | 39.41 | 851.14 | 553.70 | +297.44 | +53.7% |
+| WY 2025-2026 | MER-APN-052 | Alfalfa | 208.05 | 11.09 | 219.14 | 140.64 | +78.50 | +55.8% |
+
+¹ MER-APN-017 also took 105.72 AF of canal water in the wet year, and 25.90 AF
+of deep percolation is credited against it. It is the only field in this group
+that was supplied both ways in either year.
+
+**These residuals are real water, and the pane is not wrong about any of them.**
+Between a third and a half of a crop's water use, applied and not consumed, is
+what flood-irrigated alfalfa and furrow-irrigated corn look like on a meter. It
+is the class of residual the acceptance bar was written to accept.
+
+**What the platform is missing is a name for it.** The books have an output term
+for canal water that percolates and none for pumped water that percolates, so the
+same physical event is bookkeeping on one field and an unexplained surplus on the
+next. Until there is such a term the badge on these ten field-years will keep
+reading as a warning about fields that are behaving normally.
+
+**No new issue.** This is [ISS-148](#) seen from the other side: the pane's two
+balances differ by exactly the deep-percolation term, and these are the fields
+where that term is zero when it should not be. It is answered in Phase 136 with
+the vocabulary and settled in Phase 137 with the panel. The missing output term
+itself is the substance of ISS-139, which this milestone deliberately leaves out
+because it changes the mass-balance identity and you validate before you change.
+
+---
+
+### What this section is not
+
+It is **not** a finding that the platform's arithmetic is wrong anywhere. Every
+one of these 21 field-years reproduces to the cent from the stored rows, and the
+identity `residual = card three − deep percolation − net banked` holds on all
+**152** field-years with **zero** violations.
+
+It is **not** a claim that all 21 should read as balanced. Eleven of them are a
+drought curtailment doing exactly what a drought curtailment does, and the pane
+should say so loudly.
+
+It **is** the first time anyone has looked at all of them together, and looking
+at them together is what turned twenty-one flags into three causes.
+
+### Where this section's evidence lives
+
+- Recomputation: `audit/figure_ledger/sql/parcel_band_review.sql`
+- Triage of every disagreement, with the third-route derivations:
+  `audit/figure_ledger/triage.md`
+- The band and the identity: `accounting/services.py:581`, `:702`, `:767`
+- The deep-percolation rule: `accounting/steps.py:270-330`
+- The curtailment: `surface_curtailmentorder`, order `MER-CURT-001`
