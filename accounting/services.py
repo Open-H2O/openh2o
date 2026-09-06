@@ -767,6 +767,17 @@ def parcel_mass_balance(parcel, reporting_period=None):
 
     runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.
 
+    # 137-01: is the groundwater term a RECORDED number or the engine's own
+    # plug? Where a field has a well and no meter, `run_calculations` writes the
+    # ET − precip − surface leftover as a `calculated` ledger row, and that row
+    # then re-enters this balance as a supply — so the books close by
+    # construction, not by agreement. A `calculated` row in the period is
+    # exactly that state. Measured 2026-09-06: 113 of 152 field-years close, and
+    # every one of them had a plug available; not one field-year carrying a
+    # meter closes. The screen labels the derived figure rather than letting a
+    # 0.00 residual read as a reconciliation.
+    gw_is_estimated = billable.filter(source_type="calculated").exists()
+
     inputs = {"surface": surface, "precip": precip, "gw_recovered": gw_recovered}
     outputs = {
         "et": et,
@@ -785,6 +796,10 @@ def parcel_mass_balance(parcel, reporting_period=None):
     return {
         "inputs": inputs,
         "inputs_total": inputs_total,
+        # True when the groundwater supply above is the engine's estimate rather
+        # than a meter reading. Recharge is ALWAYS engine-derived, so it needs no
+        # flag — the template gates that one on the value being non-zero.
+        "gw_is_estimated": gw_is_estimated,
         "outputs": outputs,
         "outputs_total": outputs_total,
         "residual_af": residual,

@@ -619,9 +619,13 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
     ) in residual
     assert '<span class="badge badge-orange">Deficit</span>' in residual
 
-    assert "<span>Recharge <b>20.00</b></span>" in html, (
+    assert (
+        '<span>Recharge <b>20.00</b> <span class="text-tertiary">(estimated)</span></span>'
+    ) in html, (
         "the uses foot does not show the 20.00 AF that left this field for the "
-        "basin, so the residual is not legible from the panel"
+        "basin, so the residual is not legible from the panel. Incidental "
+        "recharge is always engine-derived, so it carries the (estimated) label "
+        "whenever it is non-zero (ISS-158)."
     )
 
 
@@ -670,3 +674,69 @@ def test_a_balanced_field_does_not_paint_its_residual_as_a_deficit():
         "a grey Balanced badge"
     )
     assert "budget-seg-value text-neutral" in residual
+
+
+def test_a_plugged_figure_says_it_is_an_estimate():
+    """The engine's own output re-entering the balance is labelled as such.
+
+    A field with a well and no meter has its groundwater written BY the engine
+    as the leftover after crop use minus rainfall minus surface water, and that
+    figure then re-enters this balance as a supply — so the residual closes by
+    construction. Measured 2026-09-06: 113 of 152 field-years read 0.00, and
+    every one had such a plug; not one field-year carrying a meter closes. A
+    bare 0.00 with no label reads as a reconciliation that never happened
+    (ISS-158).
+    """
+    from django.test import Client
+    from django.urls import reverse
+
+    from tests.factories import ParcelFactory, ParcelLedgerFactory, ReportingPeriodFactory
+
+    rp = ReportingPeriodFactory(
+        name="Water Year 2025-2026",
+        start_date=dt.date(2025, 10, 1),
+        end_date=dt.date(2026, 9, 30),
+    )
+    client = Client()
+    client.force_login(_pane_user())
+
+    def render(parcel):
+        response = client.get(
+            reverse("parcels:detail", args=[parcel.pk]), HTTP_HX_REQUEST="true"
+        )
+        assert response.status_code == 200
+        return response.content.decode()
+
+    def run_for(parcel):
+        CalculationRun.objects.create(
+            parcel=parcel, period="2026-01",
+            gross_et_af=Decimal("100.0000"),
+            net_consumptive_use_af=Decimal("100.0000"),
+            effective_precip_af=Decimal("0.0000"),
+            final_af=Decimal("100.0000"),
+        )
+
+    # The engine wrote this pumping figure: a `calculated` row.
+    plugged = ParcelFactory()
+    ParcelLedgerFactory(
+        parcel=plugged, reporting_period=rp, source_type="calculated",
+        amount_acre_feet=Decimal("-100.0000"),
+        transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
+    )
+    run_for(plugged)
+    assert "Groundwater <b>100.00</b> <span class=\"text-tertiary\">(estimated)</span>" in render(plugged)
+
+    # A meter owns this one: the engine had nothing to solve for.
+    metered = ParcelFactory()
+    ParcelLedgerFactory(
+        parcel=metered, reporting_period=rp, source_type="meter_reading",
+        amount_acre_feet=Decimal("-110.0000"),
+        transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
+    )
+    run_for(metered)
+    metered_html = render(metered)
+    assert "Groundwater <b>110.00</b></span>" in metered_html, (
+        "a metered groundwater figure is a recorded measurement and must not be "
+        "labelled an estimate"
+    )
+    assert "(estimated)" not in metered_html
