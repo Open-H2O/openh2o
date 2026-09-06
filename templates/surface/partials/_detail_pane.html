@@ -163,6 +163,11 @@
                 <div class="field-label">Status</div>
                 <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
               </div>
+              {% if basin_links %}
+              {% comment %} 136-02: a right-holding intake that feeds basins. Rule 12's words —
+                   Retained / To storage — not "consumptive". {% endcomment %}
+              <p class="text-secondary text-sm mt-xs">Recharge diversion. Water retained here is taken to storage in the basins below, not consumed.</p>
+              {% endif %}
             {% elif basin_links %}
               <p class="text-secondary text-sm">Recharge diversion. It feeds a recharge basin rather than a consumptive use, and no water right is linked.</p>
             {% else %}

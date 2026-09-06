@@ -28,6 +28,24 @@ Each recharge area is tied to its diversion through a RechargeSitePOD link
 command places sits on the real waterway: source_flowline + stream_name are read
 FROM the flowline, never typed (geography.placement, the ISS-053 archetype rule).
 
+THE INTAKE'S WATER RIGHT (136-02, ISS-152 option a, Brent 2026-09-05). The El
+Nido intake diverts storm water to storage under its own invented right,
+``MER-WR-011-DEMO``, created and attached HERE because this command owns the
+intake POD and ``update_or_create``s it on every build — a link made anywhere
+else would be erased by the next rebuild. The right is NEW rather than borrowed:
+``MER-WR-009-DEMO`` (Saddlebow, the curtailed junior right on this same canal)
+delivers nothing in the dry year and is special-cased by the ledger seed's flush
+and curtailment lookup, and ``MER-WR-004-DEMO`` names the Merced River as its
+source. A real district files a separate right for a recharge operation, and it
+appears honestly as the seventh row of the water-rights list. The right serves
+NO parcel — no WaterRightParcel, no PointOfDiversionParcel — so the ledger
+seed's delivery allocator never selects the intake (its POD filter needs both a
+``MER-WR-`` right AND a served parcel) and the storm never reaches a field's
+account; ``tests/test_merced_ledgers.py::test_the_storm_never_reaches_a_parcels_account``
+measures that in both shapes. The right type is looked up by NAME from
+``seed_data``'s reference rows, never created here (``surface.WaterRightType``
+is pinned at 6).
+
 REPLACES seed_merced_recharge in the seed sequence; runs AFTER
 seed_merced_parcels_from_selection (it needs MER-POD-009) and BEFORE
 seed_merced_recharge_events (which deposits the managed/storm recharge).
@@ -35,13 +53,15 @@ seed_merced_recharge_events (which deposits the managed/storm recharge).
 Idempotent + Merced-scoped. A re-run wipes the demo district's recharge areas
 (old hardcoded AND prior selection runs, keyed on operator — including the
 operator names this demo used before Phase 97 renamed them), their POD
-links, the recharge-intake PODs this command owns (MER-BPOD-*), and ONLY the
+links, the recharge-intake PODs this command owns (MER-BPOD-*), the intake's
+own right (MER-WR-011-DEMO, so a reset never orphans it), and ONLY the
 managed ``basin_recharge_pool`` slice for the Merced GSA zones — never the
 engine's ``incidental_recharge_pool`` or the rollover's ``allocation_carryover``
 (RESEARCH Pitfall 1). It never touches Demo Valley rows.
 """
 import json
 import os
+from datetime import date
 from decimal import Decimal
 
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
@@ -77,6 +97,17 @@ LEGACY_OPERATORS = ("Merced Irrigation District",)
 # prefix so a removed basin never leaves an orphan intake behind. Distinct from
 # the operational MER-POD-### diversions, which this command never deletes.
 BASIN_POD_PREFIX = "MER-BPOD-"
+# The intake's own water right (136-02, ISS-152 option a). Invented, like the
+# other six MER-WR- rights; the holder is the basins' operator, the Phase 97
+# demonstration name (gate 1 scans holder_name for real district names).
+RECHARGE_RIGHT_ID = "MER-WR-011-DEMO"
+RECHARGE_RIGHT_TYPE = "Post-1914 Appropriative"   # by NAME; seed_data owns the rows
+# Above the 2,924.90 AF the wet year takes to storage, so the intake is never
+# shown diverting past its face value — a different story, not the one chosen.
+RECHARGE_RIGHT_FACE_VALUE_AF = Decimal("3500")
+# SGMA-era. Invented, carries no legal claim; the demonstration's recharge
+# operation is post-2014 by design.
+RECHARGE_RIGHT_PRIORITY_DATE = date(2016, 11, 15)
 # Capacity convention: ~2 ft active ponded depth × footprint acres (Brent, 62-02
 # — dialed down from the prior basins' 5 ft because these hand-picked parcels are
 # large, so the operationally ponded fraction is shallower). Managed/storm
@@ -182,10 +213,16 @@ class Command(BaseCommand):
                 f'No "{feeds_via}" flowline in {MERCED_BOUNDARY}; base layer '
                 "incomplete or feeds_via misspelled."
             )
+        right = self._recharge_right(line)
         pod, _ = PointOfDiversion.objects.update_or_create(
             name=f"{BASIN_POD_PREFIX}001 El Nido Canal Recharge Intake",
             defaults={
-                "water_right": None,  # storm/high-flow recharge take, no consumptive right
+                # 136-02 (ISS-152 a): the storm/high-flow recharge take diverts
+                # under the demonstration's own recharge right, so the whole
+                # storm reaches the CalWATRS To Storage file instead of being
+                # withheld for a blank Water Right ID. Not a consumptive right:
+                # the right serves no parcel (see _recharge_right).
+                "water_right": right,
                 "location": snap_to_flowline(centroid, line),
                 "stream_name": line.name,        # read FROM the flowline
                 "source_flowline": line,
@@ -204,6 +241,48 @@ class Command(BaseCommand):
                 defaults={"notes": f"{site.name} is filled from the {line.name}."},
             )
         return len(sites), 1
+
+    def _recharge_right(self, line):
+        """The intake's own right, MER-WR-011-DEMO, on the flowline it sits on.
+
+        Created here, in the same block that creates the intake POD, because
+        this command owns that POD and rewrites its ``water_right`` on every
+        build. Creates NO WaterRightParcel and NO PointOfDiversionParcel —
+        trap 2 (136-02): ``seed_merced_ledgers._seed_surface_deliveries``
+        selects PODs by a ``MER-WR-`` right AND a served parcel, so a right
+        that serves no parcel keeps the storm out of every field's ledger.
+        ``test_the_storm_never_reaches_a_parcels_account`` measures it.
+        """
+        from surface.models import WaterRight, WaterRightType
+
+        try:
+            right_type = WaterRightType.objects.get(name=RECHARGE_RIGHT_TYPE)
+        except WaterRightType.DoesNotExist:
+            raise CommandError(
+                f'Water right type "{RECHARGE_RIGHT_TYPE}" not found — run '
+                "seed_data first. This command never creates a right type: "
+                "surface.WaterRightType is reference data seed_data owns."
+            )
+        right, _ = WaterRight.objects.update_or_create(
+            right_id=RECHARGE_RIGHT_ID,
+            defaults={
+                "right_type": right_type,
+                "holder_name": DEMO_OPERATOR,
+                "status": "active",
+                "source_name": line.name,      # read FROM the flowline, never typed
+                "priority_date": RECHARGE_RIGHT_PRIORITY_DATE,
+                "face_value_acre_feet": RECHARGE_RIGHT_FACE_VALUE_AF,
+                "notes": (
+                    f"The demonstration's recharge right for the El Nido storm "
+                    f"intake: water diverted from the {line.name} during "
+                    f"high-flow events is taken to storage in the El Nido "
+                    f"spreading basins, not consumed. Invented (demonstration "
+                    f"data); the priority date and face value carry no legal "
+                    f"claim. Serves no parcel."
+                ),
+            },
+        )
+        return right
 
     # ------------------------------------------------------------------
     # Merced River — dual-purpose Flood-MAR on cropland (MER-POD-009)
@@ -340,7 +419,7 @@ class Command(BaseCommand):
         # Local imports: `recharge` and `surface` are optional modules, so these
         # must not run at module scope (ISS-072, Phase 87).
         from recharge.models import RechargeSite, RechargeSitePOD
-        from surface.models import PointOfDiversion
+        from surface.models import PointOfDiversion, WaterRight
 
         site_ids = list(
             RechargeSite.objects.filter(
@@ -358,3 +437,8 @@ class Command(BaseCommand):
         ).delete()
         RechargeSite.objects.filter(id__in=site_ids).delete()
         PointOfDiversion.objects.filter(id__in=intake_ids).delete()
+        # 136-02: the intake's own right goes with the intake, so a reset never
+        # leaves MER-WR-011-DEMO orphaned on the rights list. The POD's FK is
+        # SET_NULL and the intake is already gone; the right serves no parcel,
+        # so there is nothing else for this delete to cascade into.
+        WaterRight.objects.filter(right_id=RECHARGE_RIGHT_ID).delete()

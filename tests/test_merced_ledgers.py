@@ -866,19 +866,42 @@ def test_diversion_records_are_stamped_with_their_own_period(seeded):
 # Flood-MAR take hangs off an ordinary MER-WR- right.
 BASIN_INTAKE_POD = "MER-BPOD-001 El Nido Canal Recharge Intake"
 FLOOD_MAR_POD = "MER-POD-009-DEMO Bottomlands Riparian Take"
+# The intake's own right in the linked shape (136-02). Fixture ids drop the
+# -DEMO suffix the way NORMAL_RIGHT and CURTAILED_RIGHT do.
+RECHARGE_RIGHT = "MER-WR-011"
+# Wet-year storms in RECHARGE_SEASONS x the two intakes. Written as a literal
+# so a change to the schedule goes red here rather than being re-derived.
+WET_YEAR_STORMS_PER_INTAKE = 4
 
 
-def _build_recharge_basins():
+def _build_recharge_basins(linked=False):
     """Two feeding intakes and the four basins they fill.
 
     Shape, not scale: what matters is one intake with a water right and one
     without, because those two take different paths through `_flush`.
+
+    136-02 (ISS-152, option a): the real demo's intake now carries its own
+    right, `MER-WR-011-DEMO`, which serves NO parcel. `linked=True` mirrors that
+    shape — the intake under a `MER-WR-` right with no `WaterRightParcel` and no
+    `PointOfDiversionParcel` — so the two traps 136-02 measured are held in
+    both shapes: `_flush`'s first filter now reaches the intake's records
+    (trap 1), and `_seed_surface_deliveries` still never selects a POD that
+    serves no parcel (trap 2). `linked=False` keeps the pre-136-02 shape, where
+    the name-prefix flush is the only thing stopping the storm accumulating.
     """
     from recharge.models import RechargeSite, RechargeSitePOD
 
     right = WaterRight.objects.get(right_id=NORMAL_RIGHT)
+    intake_right = None
+    if linked:
+        intake_right = WaterRight.objects.create(
+            right_id=RECHARGE_RIGHT, right_type=right.right_type,
+            holder_name="Halvern Irrigation District", status="active",
+            source_name="El Nido Canal", face_value_acre_feet=Decimal("3500"),
+            priority_date=date(2016, 11, 15),
+        )
     intake = PointOfDiversion.objects.create(
-        water_right=None, name=BASIN_INTAKE_POD,
+        water_right=intake_right, name=BASIN_INTAKE_POD,
         location=Point(-120.49, 37.22), status="active",
     )
     flood_mar = PointOfDiversion.objects.create(
@@ -989,8 +1012,14 @@ def test_the_diverted_volume_equals_the_fills_it_paid_for(seeded_with_basins):
 
 
 @pytest.mark.django_db
-def test_the_storm_never_reaches_a_parcels_account():
+@pytest.mark.parametrize("linked", [False, True], ids=["intake-no-right", "intake-under-MER-WR-011"])
+def test_the_storm_never_reaches_a_parcels_account(linked):
     """Adding the storm must not move one acre-foot of anybody's delivery.
+
+    Run in both intake shapes (136-02). The linked shape is the measurement of
+    trap 2: the intake's right starts `MER-WR-` and so passes the first half of
+    `_seed_surface_deliveries`' POD filter; only the absence of any
+    `PointOfDiversionParcel` keeps it out of `allocate_district_delivery`.
 
     The recharge credit already reaches the basin pool through
     `create_recharge_ledger_entries`. If a to-storage record were ever allocated
@@ -1017,7 +1046,7 @@ def test_the_storm_never_reaches_a_parcels_account():
     without_basins = _surface_total()
     assert without_basins != 0, "the fixture delivered no surface water at all"
 
-    _build_recharge_basins()
+    _build_recharge_basins(linked=linked)
     call_command("seed_merced_ledgers")
     with_basins = _surface_total()
 
@@ -1029,15 +1058,22 @@ def test_the_storm_never_reaches_a_parcels_account():
 
 
 @pytest.mark.django_db
-def test_the_storm_does_not_accumulate_on_a_re_run(seeded_with_basins):
-    """The flush must reach the intake that has no water right.
+@pytest.mark.parametrize("linked", [False, True], ids=["intake-no-right", "intake-under-MER-WR-011"])
+def test_the_storm_does_not_accumulate_on_a_re_run(linked):
+    """The flush must reach the intake whether or not it has a water right.
 
     `_flush` deletes diversion records by `water_right__right_id__startswith=
-    "MER-WR-"`. MER-BPOD-001 carries no right at all, so before 134-01 extended
-    the flush by name prefix, a second run would have left the El Nido records
-    behind and written them again. `refresh_merced_accounting`'s pass 2 re-runs
-    this command on every build, so this is the ordinary path, not an edge case.
+    "MER-WR-"`. Before 136-02 MER-BPOD-001 carried no right at all, so before
+    134-01 extended the flush by name prefix, a second run would have left the
+    El Nido records behind and written them again. `refresh_merced_accounting`'s
+    pass 2 re-runs this command on every build, so this is the ordinary path,
+    not an edge case. In the linked shape (136-02, trap 1) BOTH filters match
+    the intake's records; the same command deletes and re-writes them, so the
+    count and the values must still come back identical.
     """
+    _build_physical_merced()
+    _build_recharge_basins(linked=linked)
+    call_command("seed_merced_ledgers")
     first = {
         (r.point_of_diversion_id, r.month, str(r.volume_acre_feet))
         for r in _to_storage()
@@ -1068,3 +1104,61 @@ def test_the_to_storage_report_can_be_produced_in_both_years(seeded_with_basins)
             w for w in validate_report(period, "calwatrs_a2") if w["level"] == "error"
         ]
         assert not errors, f"{period.name} calwatrs_a2 errors: {errors}"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "linked, expected_rows, intake_named",
+    [
+        # Pre-136-02 shape: the intake has no right, so its four wet-year records
+        # are withheld (ISS-031b) and the validator names it. Only the Flood-MAR
+        # take files: 4 records, one row each (the fixture links it to no parcel).
+        (False, 4, True),
+        # 136-02 shape (ISS-152, option a): both intakes file. 4 storms x 2
+        # intakes = 8 rows, and no warning names the intake.
+        (True, 8, False),
+    ],
+    ids=["intake-no-right", "intake-under-MER-WR-011"],
+)
+def test_the_whole_storm_reaches_the_to_storage_file_when_the_intake_has_a_right(
+    linked, expected_rows, intake_named
+):
+    """ISS-152: the storm that fills the El Nido basins reaches the state file.
+
+    The withhold rule is correct and stays (a blank Water Right ID is what the
+    portal flags, Water Code SS1846; `tests/test_state_exports.py::TestCalwatrsBlankRightId`
+    pins it on a synthetic fixture). What changed is the DATA: the intake now
+    has a right, so nothing is withheld. Both shapes are asserted with a literal
+    row count computed from the fixture's schedule, never from the generator.
+    """
+    import csv
+
+    from reporting.generators import generate_calwatrs_csv
+    from reporting.validators import validate_report
+
+    _build_physical_merced()
+    _build_recharge_basins(linked=linked)
+    call_command("seed_merced_ledgers")
+    assert expected_rows in (
+        WET_YEAR_STORMS_PER_INTAKE, 2 * WET_YEAR_STORMS_PER_INTAKE
+    ), "the literal must be the fixture's own schedule, one or both intakes"
+
+    wet = ReportingPeriod.objects.get(name=PRIOR_WY)
+    content = generate_calwatrs_csv(wet, template_type="a2").read()
+    rows = [r for r in csv.reader(content.splitlines()) if r]
+    data = [r for r in rows if len(r) > 3 and r[0] != "Water Right ID"]
+    assert len(data) == expected_rows, (
+        f"{len(data)} To Storage data rows, expected {expected_rows}: "
+        + "; ".join(",".join(r[:3]) for r in data)
+    )
+    if linked:
+        assert {r[0] for r in data} == {NORMAL_RIGHT, RECHARGE_RIGHT}, (
+            "both intakes should file under a right id")
+        assert sum(1 for r in data if r[0] == RECHARGE_RIGHT) == WET_YEAR_STORMS_PER_INTAKE
+
+    warnings = [
+        w["message"] for w in validate_report(wet, "calwatrs_a2")
+        if BASIN_INTAKE_POD in w["message"]
+    ]
+    assert bool(warnings) is intake_named, (
+        f"validator warnings naming the intake: {warnings}")
