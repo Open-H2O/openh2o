@@ -1,0 +1,32 @@
+{% comment %}
+  The pane's reporting-period control (ISS-147).
+
+  It is one control shared by the balance panel's head and the ET-not-computed
+  branch, because a reader who switches INTO a period the engine never ran for
+  must still have a way back out. Rendering it in only the panel's head would
+  have made that a dead end.
+
+  `hx-target="#detail-body"` is the same target the list's row click uses
+  (`_list_results.html`) and the id the standalone page wraps its include in
+  (`detail.html`), so one attribute serves the workspace and the page both. The
+  view returns this fragment for any HX request, so the swap replaces the pane
+  body with the same parcel at the chosen period.
+
+  With one period there is nothing to choose, so it renders the name — a
+  one-option select is a control that cannot do anything.
+{% endcomment %}
+{% if all_periods|length > 1 %}
+<select name="period"
+        class="form-select"
+        aria-label="Reporting period"
+        hx-get="{% url 'parcels:detail' parcel.pk %}"
+        hx-target="#detail-body"
+        hx-trigger="change"
+        style="min-width: 190px;">
+  {% for p in all_periods %}
+  <option value="{{ p.pk }}" {% if balance_period and balance_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+  {% endfor %}
+</select>
+{% elif balance_period %}
+<span class="budget-panel-period">{{ balance_period.name }}</span>
+{% endif %}

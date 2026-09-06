@@ -88,7 +88,11 @@ def parcels_list(request):
         "selected_parcel": selected_parcel,
     }
     if selected_parcel is not None:
-        context.update(_parcel_detail_context(selected_parcel))
+        context.update(
+            _parcel_detail_context(
+                selected_parcel, period_id=request.GET.get("period", "").strip()
+            )
+        )
 
     if request.headers.get("HX-Request"):
         return render(request, "parcels/partials/_list_results.html", context)
@@ -96,11 +100,15 @@ def parcels_list(request):
     return render(request, "parcels/list.html", context)
 
 
-def _parcel_detail_context(parcel):
+def _parcel_detail_context(parcel, period_id=None):
     """Build the per-parcel water-balance context.
 
     Shared by the standalone detail page, the in-pane HTMX render, and the
-    workspace's pre-loaded `?selected=` pane so all three are identical.
+    workspace's pre-loaded `?selected=` pane so all three are identical —
+    including the period, which is why ``period_id`` is an argument here rather
+    than a lookup inside one of the three.
+
+    ``period_id`` is the raw ``?period=`` string, or None.
     """
     zone_memberships = parcel.parcel_zones.select_related("zone").all()
     related_wells = parcel.wellirrigatedparcel_set.select_related("well").all()
@@ -108,23 +116,58 @@ def _parcel_detail_context(parcel):
         "-effective_date", "-created_at"
     )[:10]
 
-    # Resolve the period the same way the account page does: the most recent
-    # period carrying REAL (non-allocation) activity for THIS parcel, so the
-    # balance card opens where the data is and never on an empty open year.
-    # Fall back to the most recent period overall when the parcel has no
-    # billable rows yet. Mirrors accounting.views.account_detail's default.
+    # Which period the pane opens on (ISS-147). Four steps, in order, and the
+    # ORDER is the whole fix:
+    #
+    #   1. An explicit `?period=` the reader chose. An unknown or malformed pk
+    #      falls through rather than 404ing — a stale bookmark should show the
+    #      pane, not an error page.
+    #   2. The most recent period this parcel has a CalculationRun for. A run
+    #      with demand and no supply is exactly the state ISS-147 wants shown:
+    #      the six curtailed Merced fields have their finding in the dry year,
+    #      and step 3 could not see it because the dry year carries no delivery
+    #      row of their own.
+    #   3. The old default: the most recent period with REAL (non-allocation)
+    #      ledger activity. Still right for a surface-only field the engine has
+    #      never run, which is the ISS-054 case.
+    #   4. The most recent period overall.
+    #
+    # ⛔ Step 2 is NOT "the most recent period". Flipping the default outright
+    # would hide the wet year with no way back, which is ISS-147's own warning;
+    # the control below is the way back, and step 1 is what it drives.
+    all_periods = list(ReportingPeriod.objects.order_by("-start_date"))
+    by_pk = {period.pk: period for period in all_periods}
+
     balance_period = None
-    activity_period_id = (
-        ParcelLedger.objects.filter(parcel=parcel, reporting_period__isnull=False)
-        .exclude(source_type="allocation")
-        .order_by("-reporting_period__start_date")
-        .values_list("reporting_period_id", flat=True)
-        .first()
-    )
-    if activity_period_id:
-        balance_period = ReportingPeriod.objects.filter(pk=activity_period_id).first()
-    else:
-        balance_period = ReportingPeriod.objects.order_by("-start_date").first()
+    if period_id:
+        try:
+            balance_period = by_pk.get(int(period_id))
+        except (TypeError, ValueError):
+            balance_period = None
+
+    if balance_period is None:
+        # `parcel_run_periods` is THE selector for "which runs belong to this
+        # period" (it wraps `runs_in_period`), so asking it per period keeps
+        # this in step with the balance read instead of re-deriving month
+        # membership here. At most a handful of periods exist.
+        for period in all_periods:
+            if parcel_run_periods(parcel, period):
+                balance_period = period
+                break
+
+    if balance_period is None:
+        activity_period_id = (
+            ParcelLedger.objects.filter(parcel=parcel, reporting_period__isnull=False)
+            .exclude(source_type="allocation")
+            .order_by("-reporting_period__start_date")
+            .values_list("reporting_period_id", flat=True)
+            .first()
+        )
+        if activity_period_id:
+            balance_period = by_pk.get(activity_period_id)
+
+    if balance_period is None and all_periods:
+        balance_period = all_periods[0]
 
     # The corrected v1.10 lens (57-01) + the closing identity (52.6-03), both
     # read from the same source fields so the card is internally consistent.
@@ -165,6 +208,8 @@ def _parcel_detail_context(parcel):
         "related_wells": related_wells,
         "recent_ledger": recent_ledger,
         "balance_period": balance_period,
+        # Every period, newest first — the options of the pane's period control.
+        "all_periods": all_periods,
         "consumptive_balance": consumptive_balance,
         "mass_balance": mass_balance,
         "run_periods": run_periods,
@@ -186,7 +231,9 @@ def parcel_detail(request, pk):
     standalone page, which deep links and no-HTMX clients still reach.
     """
     parcel = get_object_or_404(Parcel, pk=pk)
-    context = _parcel_detail_context(parcel)
+    context = _parcel_detail_context(
+        parcel, period_id=request.GET.get("period", "").strip()
+    )
     if request.headers.get("HX-Request"):
         return render(request, "parcels/partials/_detail_pane.html", context)
     return render(request, "parcels/detail.html", context)

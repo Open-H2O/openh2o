@@ -52,7 +52,7 @@
     <div class="budget-panel">
       <div class="budget-panel-head">
         <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss." link=methods_help_url link_label="Methods behind the numbers" %}</span>
-        {% if balance_period %}<span class="budget-panel-period">{{ balance_period.name }}</span>{% endif %}
+        {% include "parcels/partials/_period_control.html" %}
       </div>
       <div class="budget-panel-row">
         <div class="budget-seg">
@@ -158,7 +158,7 @@
     {% else %}
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
       <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
-      {% if balance_period %}<span class="text-tertiary text-xs">{{ balance_period.name }}</span>{% endif %}
+      {% include "parcels/partials/_period_control.html" %}
     </div>
     <div class="alert-warning">
       ET has not been computed for this use area yet, so the closing balance
