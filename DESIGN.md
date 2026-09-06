@@ -342,3 +342,65 @@ be confused.** That gate says *you must define an infrastructure term before you
 use it*; this one says *you must not define a water term at all*. Both are true
 at once, and holding only one of them is how the platform ended up lecturing
 hydrologists about hydrology while assuming they knew what DNS was.
+
+### 12. One vocabulary of water
+
+**The rule, in one sentence: name each quantity once, and the same way on
+every screen.**
+
+**What was counted.** Phase 135 traced all 106 figures the platform renders and
+recomputed every one of them a second way, in SQL that cannot call the
+platform's own code. Not one figure computed a wrong number. Every defect it
+could confirm was a correct number under a label naming something else, or two
+screens describing the same rows differently: a diversion table headed
+"Consumptive Use" over water spread into a recharge basin (ISS-153); a use
+ledger footer and a dashboard stating the same year with opposite signs, because
+one file called a canal delivery a debit and the other a supply (ISS-155); a
+budget that subtracted gross crop water use, a quantity that falls in a drought
+(ISS-151); and a parcel badge reading "Surplus" to an audience for whom surplus
+is good news (ISS-143). Three different quantities were all called "consumptive
+use". The product had two live definitions of "supply" and had never chosen.
+This rule chooses, and the table below is where the choice is written down.
+
+**The operating form, for every test that touches a figure.** Three review
+questions, from the 2026-09-06 write-up on how those defects survived fifteen
+months of green builds. (1) A numeric test asserts a value, never a direction:
+`> 0`, `!= None` and `status == 200` all survive the defect they were written
+to prevent. (2) A test may not re-derive the formula it tests: compute the
+expected number by hand from the fixture, once, and paste the literal;
+`assert remaining == budget - used` is true whatever `used` contains. (3) Any
+figure that adds rows must say what makes them addable, and if the honest answer
+is "they are all numbers", the total is wrong and the fix is to stop printing it.
+
+**Rule 11 and this rule hold at once.** Rule 11 says never explain the water:
+the reader knows what evapotranspiration is. This rule says name each quantity
+once: the reader cannot know which of three quantities this product means by
+"consumptive use" unless every screen means the same one. A sentence saying
+"this column counts metered and calculated pumping" is a data convention and is
+allowed under both.
+
+**The guard is `tests/test_water_vocabulary.py`**, which reads the table below
+through `core/water_vocabulary.py` and holds every gated phrase at a strict zero
+inside its scope. The gate finds the table by the two HTML-comment markers, not
+by this heading. The "Never called" column has a machine-readable shape: one or
+more entries of the form `` `phrase` in `templates/<dir>/` `` or
+`` `phrase` anywhere ``, or the words `no gated phrase` where the misuse is a
+concept rather than a string. Phrases match case-sensitively, exactly as written,
+and word-bounded, so `Surplus` (a badge) is a hit and `text-surplus` (a CSS
+token) is not. "Computed as" names the function or field that already produces
+the number; nothing in this table asks for a new calculation.
+
+<!-- vocabulary: begin -->
+| Term | Means | Computed as | Never called |
+|---|---|---|---|
+| **Consumptive use** | The water the crop transpired, estimated from satellite ET. Gross. The platform's headline use figure on the dashboard, the parcel pane, the help pages and the glossary. Not "use" of a diversion, and not "usage", which is the ledger's word for pumping rows. | `consumptive_use_gross` = sum of `CalculationRun.gross_et_af` | no gated phrase |
+| **Net consumptive use** | Consumptive use after effective rainfall is taken off. Never "Net" without saying net of what, except in the dashboard's Net column, whose popout already says it. | `consumptive_use_net` = sum of `CalculationRun.net_consumptive_use_af` | no gated phrase |
+| **Supplies** | Water that physically reached the field in the period: surface water delivered, groundwater pumped (metered or calculated), effective rainfall. Never a credit, an allocation, or paper of any kind. | `supplies.surface` + `supplies.groundwater` + `supplies.precip`, from `consumptive_use_balance()` | no gated phrase |
+| **Groundwater use** | Pumping, metered or calculated. The same rows as `supplies.groundwater`, read as the thing a groundwater budget is spent by. Never "consumptive use", and never "pumped" when the number also holds canal water (ISS-154, Phase 137). | `_balance_dict(billable_ledger(qs))["usage"]` | no gated phrase |
+| **Allocation** | Paper. A zone's ceiling for one water type in one period; an account's pro-rated share of it. A groundwater allocation and a surface allocation are managed by different agencies under different law and are never added (ISS-156, Phase 138). Never a supply. | `AllocationPlan.allocation_acre_feet`, filtered by `water_type` | no gated phrase |
+| **Remaining** | Allocation minus the use of the same water type: groundwater allocation minus groundwater use; surface allocation minus surface water delivered. Never "allocation minus consumptive use". | `allocation - supplies.groundwater` on the dashboard (`accounting/views.py`); the surface branch at `geography/views.py:210` | `Allocation minus estimated consumptive use` anywhere; `Allocation minus usage` anywhere |
+| **Credit** | A ledger entry that is paper or banked water: an allocation entry or a recharge entry. Stored positive. Never a supply. | `source_type in ("allocation", "recharge")`, `amount_acre_feet >= 0` | no gated phrase |
+| **Delivered / Pumped** | Water that left a canal or a well for a field. Stored negative by the ledger's convention (water leaving its source). Never "debits", and never "usage" in a footer that also holds credits. | `surface_diversion` rows; `meter_reading` and `calculated` rows | `debits` in `templates/accounting/` |
+| **Residual** | The parcel mass balance's leftover: supplies minus consumptive use minus storage change. Positive or negative. Badge words: Balanced / Residual / Deficit (Brent, 2026-09-05). Never "Surplus". | `parcel_mass_balance()["residual_af"]` | `Surplus` in `templates/parcels/` |
+| **Diverted / Returned to stream / Retained** | A diversion record's volume; the part returned to the stream; the difference. Retained water is delivered (direct use) or taken to storage (recharge) according to the record's `diversion_type`, and only delivered water can be consumed. The method keeps its name because 173 records and the CalWATRS generator read it; the column does not. | `volume_acre_feet`; `returned_af`; `consumed_acre_feet()` | `Consumptive Use` in `templates/surface/` |
+<!-- vocabulary: end -->
