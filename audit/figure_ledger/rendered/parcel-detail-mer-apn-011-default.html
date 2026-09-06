@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Use Area MER-APN-032 - Open Water Accounting Platform</title>
+    <title>Use Area MER-APN-011 - Open Water Accounting Platform</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png?v=3">
     <link rel="icon" type="image/png" sizes="192x192" href="/static/img/favicon-192.png?v=3">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png?v=3">
@@ -40,7 +40,7 @@
 
     
 </head>
-<body class="section-water_data" hx-headers='{"X-CSRFToken": "4HHKlwflwkYuqqGCtE2zX1xUN0rE6Rv5VGzhTnzAOTOGVrw0lL5SxVgKK02t6bzp"}'>
+<body class="section-water_data" hx-headers='{"X-CSRFToken": "QMqBgt8syevCrGWm7oQbLAktOV6dFdvZR0TdCAZqQocVNixwmutNZUfGICWvrPsg"}'>
     
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
@@ -532,7 +532,7 @@
     <span class="breadcrumb-separator">/</span>
     <a href="/parcels/">Use Areas</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">MER-APN-032</span>
+    <span class="breadcrumb-current">MER-APN-011</span>
   </nav>
   <p class="page-description">Use area details and related data. Click any editable field to update it.</p>
 </div>
@@ -540,7 +540,7 @@
 
             <main class="app-content" id="main-content">
                 
-                <h1 class="sr-only">Use Area MER-APN-032</h1>
+                <h1 class="sr-only">Use Area MER-APN-011</h1>
                 
                 
 <div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
@@ -568,157 +568,146 @@
 <!-- Pane header: which parcel you're looking at (the workspace has no breadcrumb). -->
 <div class="pane-header">
   <div>
-    <div class="pane-header-title">MER-APN-032</div>
-    <div class="pane-header-sub">Ashvale Orchards Inc.</div>
+    <div class="pane-header-title">MER-APN-011</div>
+    <div class="pane-header-sub">Saddlebow Ag Holdings</div>
   </div>
   <div class="pane-header-meta">
     
   <span class="badge badge-pill badge-green">Active</span>
 
 
-    <a href="/parcels/32/" class="text-tertiary text-xs back-link" title="Open this use area on its own page">Open full page &rarr;</a>
+    <a href="/parcels/11/" class="text-tertiary text-xs back-link" title="Open this use area on its own page">Open full page &rarr;</a>
   </div>
 </div>
 
 <div class="pane-stack">
 
-  <!-- Water Balance card -->
+  <!-- Water balance: ONE statement, stated once — the parcel MASS balance. -->
+  
+  
   <div class="card-raised">
-    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance
+    
+    
+    <div class="budget-panel">
+      <div class="budget-panel-head">
+        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance
 <span class="explainer-popout">
-  <button type="button" class="explainer-icon" aria-label="Explain: How this is calculated">?</button>
+  <button type="button" class="explainer-icon" aria-label="Explain: How this balance is built">?</button>
   <span class="explainer-panel" role="tooltip">
-    <span class="explainer-title">How this is calculated</span>
-    <span class="explainer-text">Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's satellite-estimated consumptive use (ET). The month links below show each step.</span>
+    <span class="explainer-title">How this balance is built</span>
+    <span class="explainer-text">Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss.</span>
     
     <a href="/help/methods/" class="explainer-link">Methods behind the numbers &rarr;</a>
     
   </span>
 </span>
-</h2>
+</span>
+        
+
+<select name="period"
+        class="form-select"
+        aria-label="Reporting period"
+        hx-get="/parcels/11/"
+        hx-target="#detail-body"
+        hx-trigger="change"
+        style="min-width: 190px;">
+  
+  <option value="2" selected>WY 2025-2026</option>
+  
+  <option value="1" >WY 2024-2025</option>
+  
+</select>
+
+
+      </div>
+      <div class="budget-panel-row">
+        <div class="budget-seg">
+          <div class="budget-seg-label">Supplies</div>
+          <div class="budget-seg-value text-supply">32.89<span class="budget-seg-unit">AF</span></div>
+        </div>
+        <div class="budget-op">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Uses</div>
+          <div class="budget-seg-value text-usage">363.26<span class="budget-seg-unit">AF</span></div>
+        </div>
+        <div class="budget-op">&equals;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Residual</div>
+          <div class="budget-seg-value text-deficit">-330.37<span class="budget-seg-unit">AF</span></div>
+          
+          <div class="mt-sm">
+            
+            <span class="badge badge-orange">Deficit</span>
+            
+          </div>
+        </div>
+      </div>
       
-      <span class="text-tertiary text-xs">WY 2025-2026</span>
-      
+      <div class="budget-panel-foot">
+        <span>Surface <b>0.00</b></span>
+        <span>Groundwater <b>0.00</b></span>
+        <span>Rain <b>32.89</b></span>
+      </div>
+      <div class="budget-panel-foot">
+        <span>Consumptive use <b>363.26</b></span>
+        <span>Recharge <b>0.00</b></span>
+        <span>Storage change <b>0.00</b></span>
+      </div>
     </div>
 
     
-    <!-- ET has been computed: full consumptive-use + closing identity. -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
-      <div class="inset-card">
-        <div class="stat-card-label">Consumptive use (ET)</div>
-        <div class="stat-card-value-sm text-usage">591.28</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-      <div class="inset-card">
-        <div class="stat-card-label">Total supplies</div>
-        <div class="stat-card-value-sm text-supply">765.41</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-      <div class="inset-card">
-        <div class="stat-card-label">Supplies − consumptive use</div>
-        <div class="stat-card-value-sm text-surplus">174.13</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-    </div>
+    
+    <p class="text-sm text-secondary" style="margin: var(--space-md) 0 0;">
+      <strong>Water use recorded, no supply reported:</strong>
+      <span class="td-num">330.37</span> AF
+<span class="explainer-popout">
+  <button type="button" class="explainer-icon" aria-label="Explain: Water use recorded, no supply reported">?</button>
+  <span class="explainer-panel" role="tooltip">
+    <span class="explainer-title">Water use recorded, no supply reported</span>
+    <span class="explainer-text">On a field with no well, the platform records the part of consumptive use that no delivery, no pumping and no rainfall on record explains. It is stored as a figure, not booked as pumping.</span>
+    
+    <a href="/help/water-balances/" class="explainer-link">How water balances work &rarr;</a>
+    
+  </span>
+</span>
 
-    <div style="margin: 0 0 var(--space-lg);">
-      <p class="text-sm text-secondary" style="margin: 0 0 var(--space-sm);">
-        Net consumptive demand of
-        <span class="text-usage" style="font-weight: 600;">545.17 AF</span>
-        (consumptive use after effective rainfall), met by these supplies:
-      </p>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm);">
-        <div class="inset-card">
-          <div class="stat-card-label">Surface water</div>
-          <div class="stat-card-value-sm text-supply">719.30</div>
-          <div class="stat-card-unit">AF</div>
-        </div>
-        <div class="inset-card">
-          <div class="stat-card-label">Groundwater</div>
-          <div class="stat-card-value-sm text-supply">0.00</div>
-          <div class="stat-card-unit">AF</div>
-        </div>
-        <div class="inset-card">
-          <div class="stat-card-label">Precipitation</div>
-          <div class="stat-card-value-sm text-supply">46.11</div>
-          <div class="stat-card-unit">AF</div>
-        </div>
-      </div>
-    </div>
+    </p>
+    
 
-    <h3 class="section-header-sm">Supply vs. use summary</h3>
-    <table class="data-table text-sm">
-      <thead>
-        <tr>
-          <th>Supplies</th><th class="th-right">AF</th>
-          <th>Uses</th><th class="th-right">AF</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="text-secondary">Surface</td>
-          <td class="td-num text-supply">719.30</td>
-          <td class="text-secondary">ET</td>
-          <td class="td-num text-usage">591.28</td>
-        </tr>
-        <tr>
-          <td class="text-secondary">Precip</td>
-          <td class="td-num text-supply">46.11</td>
-          <td class="text-secondary">Recharge</td>
-          <td class="td-num">174.13</td>
-        </tr>
-        <tr>
-          <td class="text-secondary">Groundwater pumped</td>
-          <td class="td-num text-supply">0.00</td>
-          <td class="text-secondary">Runoff</td>
-          <td class="td-num">0.00</td>
-        </tr>
-        <tr>
-          <td></td><td></td>
-          <td class="text-secondary">Net Banked/Drawn (credits)</td>
-          <td class="td-num">0.00</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="row-between mb-md mt-sm">
-      <span class="text-secondary text-sm">Residual: <span class="td-num">0.00</span> AF</span>
-      
-      
-      <span class="badge badge-grey">Balanced</span>
-      
-    </div>
+    
+    
+    <p class="text-tertiary text-xs" style="margin: var(--space-md) 0 var(--space-sm);">
+      Recorded supplies fell well short of estimated consumptive use this period.
+    </p>
     
 
     <div class="border-separator">
       <div class="text-tertiary text-xs mb-sm">See the calculation for each month:</div>
       <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
         
-        <a href="/accounting/calculation-run/32/2025-10/" class="badge badge-blue">2025-10</a>
+        <a href="/accounting/calculation-run/11/2025-10/" class="badge badge-blue">2025-10</a>
         
-        <a href="/accounting/calculation-run/32/2025-11/" class="badge badge-blue">2025-11</a>
+        <a href="/accounting/calculation-run/11/2025-11/" class="badge badge-blue">2025-11</a>
         
-        <a href="/accounting/calculation-run/32/2025-12/" class="badge badge-blue">2025-12</a>
+        <a href="/accounting/calculation-run/11/2025-12/" class="badge badge-blue">2025-12</a>
         
-        <a href="/accounting/calculation-run/32/2026-01/" class="badge badge-blue">2026-01</a>
+        <a href="/accounting/calculation-run/11/2026-01/" class="badge badge-blue">2026-01</a>
         
-        <a href="/accounting/calculation-run/32/2026-02/" class="badge badge-blue">2026-02</a>
+        <a href="/accounting/calculation-run/11/2026-02/" class="badge badge-blue">2026-02</a>
         
-        <a href="/accounting/calculation-run/32/2026-03/" class="badge badge-blue">2026-03</a>
+        <a href="/accounting/calculation-run/11/2026-03/" class="badge badge-blue">2026-03</a>
         
-        <a href="/accounting/calculation-run/32/2026-04/" class="badge badge-blue">2026-04</a>
+        <a href="/accounting/calculation-run/11/2026-04/" class="badge badge-blue">2026-04</a>
         
-        <a href="/accounting/calculation-run/32/2026-05/" class="badge badge-blue">2026-05</a>
+        <a href="/accounting/calculation-run/11/2026-05/" class="badge badge-blue">2026-05</a>
         
-        <a href="/accounting/calculation-run/32/2026-06/" class="badge badge-blue">2026-06</a>
+        <a href="/accounting/calculation-run/11/2026-06/" class="badge badge-blue">2026-06</a>
         
-        <a href="/accounting/calculation-run/32/2026-07/" class="badge badge-blue">2026-07</a>
+        <a href="/accounting/calculation-run/11/2026-07/" class="badge badge-blue">2026-07</a>
         
-        <a href="/accounting/calculation-run/32/2026-08/" class="badge badge-blue">2026-08</a>
+        <a href="/accounting/calculation-run/11/2026-08/" class="badge badge-blue">2026-08</a>
         
-        <a href="/accounting/calculation-run/32/2026-09/" class="badge badge-blue">2026-09</a>
+        <a href="/accounting/calculation-run/11/2026-09/" class="badge badge-blue">2026-09</a>
         
       </div>
     </div>
@@ -740,7 +729,7 @@
 
         <div class="field-group">
           <div class="field-label">Parcel number</div>
-          <div class="field-value">MER-APN-032</div>
+          <div class="field-value">MER-APN-011</div>
         </div>
 
         
@@ -752,11 +741,11 @@
           <div id="field-owner_name" class="field-row">
             <span class="field-value" style="flex: 1;">
               
-                Ashvale Orchards Inc.
+                Saddlebow Ag Holdings
               
             </span>
             <button
-              hx-get="/parcels/32/edit-field/?field=owner_name"
+              hx-get="/parcels/11/edit-field/?field=owner_name"
               hx-target="#field-owner_name"
               hx-swap="innerHTML"
               class="edit-btn"
@@ -780,11 +769,11 @@
           <div id="field-area_acres" class="field-row">
             <span class="field-value" style="flex: 1;">
               
-                154.69
+                109.80
               
             </span>
             <button
-              hx-get="/parcels/32/edit-field/?field=area_acres"
+              hx-get="/parcels/11/edit-field/?field=area_acres"
               hx-target="#field-area_acres"
               hx-swap="innerHTML"
               class="edit-btn"
@@ -815,7 +804,7 @@
               
             </span>
             <button
-              hx-get="/parcels/32/edit-field/?field=status"
+              hx-get="/parcels/11/edit-field/?field=status"
               hx-target="#field-status"
               hx-swap="innerHTML"
               class="edit-btn"
@@ -833,11 +822,11 @@
           <div id="field-address" class="field-row">
             <span class="field-value" style="flex: 1;">
               
-                13739 Plainsburg Rd, Merced, CA 95340
+                1312 Santa Fe Rd, Le Grand, CA 95333
               
             </span>
             <button
-              hx-get="/parcels/32/edit-field/?field=address"
+              hx-get="/parcels/11/edit-field/?field=address"
               hx-target="#field-address"
               hx-swap="innerHTML"
               class="edit-btn"
@@ -855,11 +844,11 @@
           <div id="field-notes" class="field-row">
             <span class="field-value" style="flex: 1;">
               
-                DWR field 2401974 | Deciduous fruits &amp; nuts (D14) | Merced | source=conjunctive
+                DWR field 2417185 | Field crops (F16) | Merced | source=surface
               
             </span>
             <button
-              hx-get="/parcels/32/edit-field/?field=notes"
+              hx-get="/parcels/11/edit-field/?field=notes"
               hx-target="#field-notes"
               hx-swap="innerHTML"
               class="edit-btn"
@@ -890,7 +879,7 @@
           </div>
           
           <div class="item-row row-start">
-            <span class="field-value-sm">MER Surface Service Area — Ashvale-Dunmoor Water District (MER-WR-005-DEMO)</span>
+            <span class="field-value-sm">MER Surface Service Area — Saddlebow Irrigation District (MER-WR-009-DEMO)</span>
             
             <span class="pill-tag">Custom</span>
             
@@ -903,14 +892,7 @@
       <div class="card-raised">
         <h2 class="section-header mb-md">Related wells</h2>
         
-          
-          <div class="item-row row-between">
-            <a href="/wells/19/" class="data-table-link text-base">
-              Ag well on MER-APN-032
-            </a>
-            <span class="text-tertiary text-xs">1.00 fraction</span>
-          </div>
-          
+          <p class="text-tertiary text-base">No wells linked to this parcel.</p>
         
       </div>
 
@@ -923,11 +905,11 @@
         <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
           <h2 class="section-header-flush">Recent ledger entries</h2>
           <div class="row-start">
-            <a href="/accounting/ledger/?q=MER-APN-032"
+            <a href="/accounting/ledger/?q=MER-APN-011"
                class="text-tertiary back-link text-xs">
               View All
             </a>
-            <a href="/accounting/ledger/create/?parcel=32"
+            <a href="/accounting/ledger/create/?parcel=11"
                class="btn-primary btn-sm">
               + Add entry
             </a>
@@ -945,63 +927,63 @@
           <tbody>
             
             <tr>
-              <td class="text-secondary">Sep 15, 2026</td>
-              <td class="td-num ">-75.23</td>
+              <td class="text-secondary">Oct 01, 2025</td>
+              <td class="td-num text-supply">241.56</td>
+              <td class="text-tertiary">Allocation</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Jun 15, 2025</td>
+              <td class="td-num ">-36.55</td>
               <td class="text-tertiary">Surface Diversion</td>
             </tr>
             
             <tr>
-              <td class="text-secondary">Sep 01, 2026</td>
-              <td class="td-num text-supply">18.15</td>
-              <td class="text-tertiary">Recharge</td>
-            </tr>
-            
-            <tr>
-              <td class="text-secondary">Sep 01, 2026</td>
-              <td class="td-num text-supply">0.00</td>
-              <td class="text-tertiary">Calculated</td>
-            </tr>
-            
-            <tr>
-              <td class="text-secondary">Aug 15, 2026</td>
-              <td class="td-num ">-115.94</td>
+              <td class="text-secondary">May 15, 2025</td>
+              <td class="td-num ">-20.85</td>
               <td class="text-tertiary">Surface Diversion</td>
             </tr>
             
             <tr>
-              <td class="text-secondary">Aug 01, 2026</td>
-              <td class="td-num text-supply">28.10</td>
-              <td class="text-tertiary">Recharge</td>
-            </tr>
-            
-            <tr>
-              <td class="text-secondary">Aug 01, 2026</td>
-              <td class="td-num text-supply">0.00</td>
-              <td class="text-tertiary">Calculated</td>
-            </tr>
-            
-            <tr>
-              <td class="text-secondary">Jul 15, 2026</td>
-              <td class="td-num ">-123.18</td>
+              <td class="text-secondary">Apr 15, 2025</td>
+              <td class="td-num ">-48.15</td>
               <td class="text-tertiary">Surface Diversion</td>
             </tr>
             
             <tr>
-              <td class="text-secondary">Jul 01, 2026</td>
-              <td class="td-num text-supply">29.91</td>
-              <td class="text-tertiary">Recharge</td>
-            </tr>
-            
-            <tr>
-              <td class="text-secondary">Jul 01, 2026</td>
-              <td class="td-num text-supply">0.00</td>
-              <td class="text-tertiary">Calculated</td>
-            </tr>
-            
-            <tr>
-              <td class="text-secondary">Jun 15, 2026</td>
-              <td class="td-num ">-122.61</td>
+              <td class="text-secondary">Mar 15, 2025</td>
+              <td class="td-num ">-14.18</td>
               <td class="text-tertiary">Surface Diversion</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Feb 15, 2025</td>
+              <td class="td-num ">-5.95</td>
+              <td class="text-tertiary">Surface Diversion</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Jan 15, 2025</td>
+              <td class="td-num ">-4.28</td>
+              <td class="text-tertiary">Surface Diversion</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Dec 15, 2024</td>
+              <td class="td-num ">-5.60</td>
+              <td class="text-tertiary">Surface Diversion</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Oct 15, 2024</td>
+              <td class="td-num ">-26.22</td>
+              <td class="text-tertiary">Surface Diversion</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Oct 01, 2024</td>
+              <td class="td-num text-supply">241.56</td>
+              <td class="text-tertiary">Allocation</td>
             </tr>
             
           </tbody>
@@ -1014,7 +996,7 @@
 </div>
 
 
-<script id="parcel-geojson-data" type="application/json">{"type": "FeatureCollection", "features": [{"type": "Feature", "id": 32, "properties": {"parcel_number": "MER-APN-032", "owner_name": "Ashvale Orchards Inc."}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[-120.2974039799432, 37.32359791603082], [-120.2973851189155, 37.32357246188964], [-120.29743478047935, 37.319706090473595], [-120.29745793904739, 37.316778487530044], [-120.30617185511983, 37.316878357864525], [-120.3062333555808, 37.31691954806084], [-120.30627205320663, 37.31698521442458], [-120.30635343518148, 37.31693526041264], [-120.30645479299329, 37.316932424859566], [-120.3064488973501, 37.318560187627085], [-120.30643798910758, 37.31995233402029], [-120.3064216029385, 37.32099625919063], [-120.30640521227784, 37.32195673420765], [-120.30631101044554, 37.32199117647358], [-120.30602737817438, 37.322160318609875], [-120.30608313031586, 37.32220643724192], [-120.30632583354605, 37.322023241992525], [-120.30638546101967, 37.32202157249413], [-120.30640248948417, 37.322032966087384], [-120.30638890426214, 37.32291482524699], [-120.30632155936192, 37.322934748973886], [-120.30625014060192, 37.32293312235785], [-120.30620370129498, 37.32291775844281], [-120.30616850081056, 37.32290026713573], [-120.3061843372107, 37.322880629147164], [-120.30622524020053, 37.322860414657875], [-120.30619928338041, 37.32284408347252], [-120.30607582611427, 37.32284715097249], [-120.306069585518, 37.322850464215165], [-120.30611874941518, 37.32288246364557], [-120.3061188437383, 37.32302072668834], [-120.30621278326248, 37.32298472400115], [-120.30622594986961, 37.32296356657445], [-120.30632131951175, 37.32296812352621], [-120.30631885812787, 37.32303701211579], [-120.30639624080307, 37.323043742167506], [-120.30638972172905, 37.32381131843343], [-120.30631455429933, 37.323909743561735], [-120.30624568944965, 37.32391532770393], [-120.30611375388389, 37.32393139648688], [-120.3060229018693, 37.323967473728125], [-120.30598298163638, 37.32400668626866], [-120.3055082777043, 37.32399819326787], [-120.30391737481085, 37.323988624442954], [-120.30386197391064, 37.323951598543985], [-120.3038572568571, 37.32387667588761], [-120.3038111858594, 37.323900541906056], [-120.30377714689669, 37.32389902675089], [-120.30376251244238, 37.32397794193259], [-120.30233900341563, 37.32395598541855], [-120.30240062964074, 37.323863675980135], [-120.30236860110757, 37.32384549839385], [-120.30239318260703, 37.323799280757264], [-120.30248143130392, 37.32381360867055], [-120.30250501028347, 37.323796763353286], [-120.30249950810237, 37.323671156644934], [-120.30265792061282, 37.32359941476168], [-120.30269474525127, 37.32353157751465], [-120.30279505922074, 37.32339796449034], [-120.30286460589171, 37.32328987691048], [-120.30294563482865, 37.323291724257466], [-120.30296543639247, 37.3232683723884], [-120.302956269085, 37.323161353313424], [-120.30311491605575, 37.323103282489384], [-120.30311328471521, 37.32296387089516], [-120.30362656230561, 37.322824371174846], [-120.30421004952368, 37.3227544244088], [-120.30462892046593, 37.32281065457303], [-120.30473074899496, 37.32288647411032], [-120.30478606814846, 37.32282056430197], [-120.30488588534958, 37.32278520659452], [-120.3050765446838, 37.3227875747292], [-120.30512021628134, 37.32278261343339], [-120.30508962595097, 37.32269764913791], [-120.30487968607582, 37.32260697263496], [-120.30482672859317, 37.32263536245311], [-120.30481471632122, 37.32268821516344], [-120.30475267237946, 37.32275355930704], [-120.30472942847148, 37.32275420724039], [-120.30435330925192, 37.32275399578694], [-120.304176238733, 37.32269815562643], [-120.30397703552211, 37.322750210341574], [-120.3032411850487, 37.32281726320224], [-120.30311972383915, 37.32290647785395], [-120.30303460038112, 37.32290528057269], [-120.30304226660378, 37.323080280601374], [-120.3028755491685, 37.323056334313364], [-120.30282376398732, 37.323100690767944], [-120.30285647524008, 37.323131959295196], [-120.30289719407529, 37.32314154823141], [-120.302904324902, 37.32320213859306], [-120.30276425958291, 37.323377692276786], [-120.30250438505604, 37.323578048914335], [-120.30239086136032, 37.32354188576271], [-120.30237516330074, 37.32359238687087], [-120.3024473420355, 37.32360467246367], [-120.30246428516008, 37.32363122671045], [-120.30244689826777, 37.32369997396315], [-120.30241613096926, 37.32372549735407], [-120.30237172634646, 37.32379839637986], [-120.30234061768816, 37.32383344857906], [-120.30228649778556, 37.32384413682488], [-120.3022604160996, 37.32390553098804], [-120.3022321209648, 37.32394541791523], [-120.30215975987203, 37.323965224928436], [-120.29808338567406, 37.32391505981941], [-120.29763197326064, 37.32389669365481], [-120.2974039799432, 37.32359791603082]], [[-120.30172593018365, 37.31860356728034], [-120.30179149192806, 37.31862843657473], [-120.30216632745505, 37.31846348936687], [-120.30222046442566, 37.31850011790006], [-120.30304314246118, 37.31814720344413], [-120.30301235360312, 37.31809847828215], [-120.30226737714476, 37.31842633786706], [-120.30220411688413, 37.318399498159884], [-120.30180371620241, 37.318580416132406], [-120.30173058255853, 37.31854622449003], [-120.30154328921166, 37.31863155425538], [-120.3013555125712, 37.31859675038749], [-120.30124600524312, 37.31865892897175], [-120.30027906406119, 37.31860773942997], [-120.3002109511014, 37.31865960837439], [-120.30151478746436, 37.31868956352362], [-120.30172593018365, 37.31860356728034]]]]}}]}</script>
+<script id="parcel-geojson-data" type="application/json">{"type": "FeatureCollection", "features": [{"type": "Feature", "id": 11, "properties": {"parcel_number": "MER-APN-011", "owner_name": "Saddlebow Ag Holdings"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[-120.41004367862173, 37.209207995736634], [-120.41004003056334, 37.20920069888512], [-120.41001036639607, 37.20914137035505], [-120.40994374014804, 37.20909378086301], [-120.41003416007298, 37.20742339908107], [-120.41020072299801, 37.20418257309141], [-120.41025782890063, 37.203606743814454], [-120.4103101782238, 37.20305470787896], [-120.41032445514863, 37.202740618676025], [-120.41022451757325, 37.20255026370083], [-120.40980097269659, 37.20211720096309], [-120.40898243858946, 37.20130818393082], [-120.40843992173487, 37.2007323549057], [-120.40823052803539, 37.20039447178337], [-120.40819721580972, 37.20023266709499], [-120.40819721580972, 37.20012321267962], [-120.40826384026111, 37.200047069824095], [-120.41530704621194, 37.19988526653762], [-120.41543077836252, 37.19990906025538], [-120.41550692136265, 37.19999472129801], [-120.41554023448664, 37.200089900279224], [-120.41554023358835, 37.200242185111634], [-120.41559734038925, 37.20055151570547], [-120.41563541278764, 37.20089415709188], [-120.41564492953977, 37.2013843262298], [-120.41565444898683, 37.20894149600383], [-120.415640172062, 37.209041432887915], [-120.41563065441159, 37.20916040628656], [-120.41559734218589, 37.20924130697442], [-120.41559938405655, 37.209280114261745], [-120.41003895527997, 37.20921507938401], [-120.41004367862173, 37.209207995736634]]]]}}]}</script>
 <script>
 (function () {
   function boot() {

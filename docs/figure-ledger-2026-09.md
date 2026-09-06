@@ -3,16 +3,21 @@
 Every number this platform puts on a screen, traced to the rows it came from and
 then worked out a second way, independently, to see whether the two agree.
 
-**This ledger is complete.** All 105 figures the platform renders have a row, and
+**This ledger is complete.** All 100 figures the platform renders have a row, and
 a test in the build refuses to let that stay true by accident: add a figure to a
 template without tracing it, or leave a row behind after deleting a template, and
 the suite goes red.
 
 ## What this is, and what it is not
 
-The platform renders 105 figures across 24 page templates (106 until 2026-09-06,
-when 136-01 retired the use ledger footer's net; see section 3, finding 3). Each
-one has a chain
+The platform renders 100 figures across 24 page templates (105 until 2026-09-06,
+when 137-01 replaced the parcel pane's two-balance display, namely three stat
+cards, a "Net consumptive demand" sentence, three supply-composition cards, a
+seven-row supply-vs-use table and a free-standing residual row (20 figure sites
+in all), with ONE `.budget-panel` (three segments plus a two-line foot, 9 sites)
+and added the ISS-157 unmet-demand figure, a net five sites fewer; 106 before
+that, when 136-01 retired the use ledger footer's net; see section 2 and section
+3, finding 3). Each one has a chain
 behind it: a page, a template line, a view that put a value into that line, often
 a service function that computed it, and underneath all of it some rows in the
 database. This ledger walks that chain for every figure, and then does something
@@ -45,27 +50,29 @@ idea of what the number is. Every row says which kind it is, in its Notes.
 
 ## What the ledger found
 
-**88 of the 105 figures agree with the rows behind them to the cent, and nothing
-in this platform computes a number wrongly**, as of 2026-09-06 after 136-02 (86
-after 136-01 the same day, and 84 of 106 on 2026-09-05; both 2026-09-06
-re-measures are set out at the top of section 1). Not one figure disagrees with
-its own arithmetic. What the ledger found instead is figures that are correct and
-labelled wrongly, and figures that no screen can currently show.
+**86 of the 100 figures agree with the rows behind them to the cent, and nothing
+in this platform computes a number wrongly**, as of 2026-09-06 after 137-01 (88
+of 105 after 136-02 earlier the same day, 86 after 136-01, and 84 of 106 on
+2026-09-05; every same-day re-measure is set out at the top of its own section).
+Not one figure disagrees with its own arithmetic. What the ledger found instead
+is figures that are correct and labelled wrongly, and figures that no screen can
+currently show.
 
 The verdict counts, recounted from the five section ledgers on 2026-09-06 after
-136-02:
+137-01:
 
-| Verdict | Count of 105 | Meaning |
+| Verdict | Count of 100 | Meaning |
 |---|---:|---|
-| `MATCH` | 88 | The screen and the independent recomputation agree to the cent |
+| `MATCH` | 86 | The screen and the independent recomputation agree to the cent |
 | `MATCH · ISS-###` | 1 | The number is right; a separate issue is raised against the words beside it |
-| `ISS-###` | 4 | The screen states two things that cannot both be true |
-| `EXPLAINED` | 1 | The two agree for a stated reason that is not a measurement |
+| `ISS-###` | 2 | The screen states two things that cannot both be true |
+| `EXPLAINED` | 0 | The two agree for a stated reason that is not a measurement |
 | `UNVERIFIED` | 11 | The screen never rendered it, or nothing derives it |
 
-Five rows carry an issue number, and they name three problems (eight rows and
-four problems on 2026-09-05; ISS-155 was resolved by 136-01 on 2026-09-06 and
-its three rows now read `MATCH`):
+Three rows carry an issue number, and they name two problems (five rows and
+three problems until 137-01 closed ISS-148 the same day; eight rows and four
+problems on 2026-09-05; ISS-155 was resolved by 136-01 on 2026-09-06 and its
+three rows now read `MATCH`):
 
 **The district page counts canal water as pumping** ([ISS-154](#), reserved here
 and filed by the next plan). A district's Allocation vs. use table has a column
@@ -79,11 +86,13 @@ canal water, which is why the fault is invisible to anyone reading one page. On
 2026-09-05, before 136-02 re-sized the allocations, the sign was reversed on two
 of the three rather than one. Section 5, finding 1.
 
-**The parcel pane states two balances that disagree** ([ISS-148](#), already
-filed). A card at the top of the pane says 174.13 acre-feet of water arrived and
-was not consumed; a residual three inches below says the books close at 0.00,
-Balanced. On about two thirds of parcels each year the two printed numbers
-differ. Section 2, finding 1.
+**The parcel pane stated two balances that disagreed** ([ISS-148](#), resolved
+2026-09-06 by 137-01). A card at the top of the pane said 174.13 acre-feet of
+water arrived and was not consumed; a residual three inches below said the books
+closed at 0.00, Balanced. On about two thirds of parcels each year the two
+printed numbers differed. 137-01 removed the card: the pane now states the mass
+balance alone, so there is nothing left on the screen for the residual to
+disagree with. Section 2, finding 1.
 
 **The use ledger and the dashboard stated the year with opposite signs**
 ([ISS-155](#), resolved 2026-09-06 by 136-01). Over the same 1,130 rows on the
@@ -412,214 +421,236 @@ show and what the 2026-09-05 figures could not.
 
 ---
 
-## Section 2 — The parcel detail pane (20 figures)
+## Section 2 — The parcel detail pane (15 figures)
 
-**Screens.** `/parcels/32/` and `/parcels/17/`. This is the pane a person lands on
-when they click a use area in the parcel workspace, and the same body is served
-on the parcel's own page. It is the densest single screen in the platform: three
-summary cards, a three-way split of the supplies that met the crop's demand, a
-supply-versus-use table, a residual with a coloured badge, the parcel's own
-attributes, its wells, and its ten most recent ledger rows.
+**Rewritten 2026-09-06 by 137-01.** Before this plan the pane stated TWO
+balances that could disagree (ISS-148): a card near the top read supplies minus
+gross consumptive use, and a residual near the bottom read the full mass-balance
+identity, and the two differed by exactly the recharge and storage terms. 137-01
+removed the card, the "Net consumptive demand" sentence, the three supply
+composition cards and the seven-row supply-vs-use table, twenty figure sites
+retired in all, and replaced them with ONE `.budget-panel`: three segments
+(Supplies, Uses, Residual) and a two-line foot, nine figure sites. It also added
+a new figure, `unmet_demand_af` (ISS-157), which renders one line under the
+panel on a field whose consumptive use no supply on record explains. Net: 20
+sites retired, 15 added, five fewer than before. The retirement follows the same
+procedure 136-01 used for the use-ledger footer's net (`docs/figure-ledger-2026-09.md`
+at commit `b55fb80`): every retired id is named below, and every new id was
+assigned by `scripts/figure_inventory.py` in template order, never by hand.
 
-**Pinned instances, and why there are two.** This pane renders once per parcel,
-76 times over. One pin would have been enough to check the arithmetic and not
-enough to check the thing this section exists to record, because the pane's two
-balances agree on some parcels and disagree on others. So two parcels are pinned,
-both in the drier water year:
+**Screens.** `/parcels/11/`, `/parcels/32/` and `/parcels/17/`, each with an
+explicit `?period=`. This is the pane a person lands on when they click a use
+area in the parcel workspace, and the same body is served on the parcel's own
+page. The pane now carries a period control (ISS-147, 137-01 Task 3): `?period=<pk>` is honoured on all three render paths, and a screen's pin is
+therefore its URL, not just its parcel.
 
-* **`MER-APN-032`, Ashvale Orchards Inc.** The disagreeing case. The card at the
-  top of the pane reads a surplus of **174.13 AF**; the residual four inches
-  below it reads **0.00 AF** with a grey *Balanced* badge.
-* **`MER-APN-017`, Saddlebow Ag Holdings.** The agreeing case. Both numbers read
-  **132.90 AF** and the badge reads *Surplus*.
+**Pinned instances, and why there are three.** This pane renders once per
+parcel, 76 times over, in either of two years. One pin would have checked the
+arithmetic and shown nothing about the two things this plan changed: the
+unmet-demand figure, which renders on some fields and not others, and the
+Recharge foot cell, which reads zero on most parcels and something else on a
+few. So three parcels are pinned, and a fourth capture of one of them:
 
-Both pages were captured signed in, at commit `9f9e27b2543516a95cdc15743070e3746d04ddbe`
-(tag `v2.15`), 2026-09-05, and both answered 200. The saved pages are
-`audit/figure_ledger/rendered/parcel-detail-disagree-mer-apn-032.html` and
-`parcel-detail-agree-mer-apn-017.html`, with their sizes and content fingerprints
-in `manifest-b.json` beside them.
+* **`MER-APN-011`, Saddlebow Ag Holdings, the ISS-157 instance.** A no-well
+  field. Its balance panel reads Supplies **32.89 AF**, Uses **363.26 AF**,
+  Residual **&minus;330.37 AF**, Deficit, in WY 2025-2026 (period id 2, the dry
+  year), and the new line underneath reads *Water use recorded, no supply
+  reported: 330.37 AF*. Captured three ways: `?period=2` (the primary pin),
+  `?period=1` (the wet year, where the same line reads 181.57 AF instead of
+  disappearing, the finding named in "What section 2 found" item 2 below) and
+  with no `?period=` at all, to prove the ISS-147 default now resolves to the
+  dry year for this parcel without being asked.
+* **`MER-APN-032`, Ashvale Orchards Inc., the recharge instance.** The one
+  pinned parcel-year where the Uses foot's Recharge cell is non-zero
+  (174.13 AF), so a wrong subtraction there, or in the Uses segment total that
+  includes it, could actually fail. This was the DISAGREEING pinned instance
+  for the retired card-vs-residual comparison before 137-01; it is repinned
+  here for the recharge case the panel's foot still needs exercised. Also
+  carries the pane's other five figures (Area, well share, first ledger row),
+  pinned here rather than to `MER-APN-011` because `MER-APN-011` has no well
+  to show one.
+* **`MER-APN-017`, Saddlebow Ag Holdings, the plain instance.** No recharge, no
+  storage change, no unmet demand: the panel's ordinary case, given as a full
+  second worked example rather than a bare comparison table.
 
-**The pane has no year selector, and adding one to the address does nothing.**
-The parcel page builds its figures from the parcel alone and never reads the rest
-of the request, so `?period=1` and `?period=2` are ignored. That was observed
-rather than deduced: `/parcels/32/`, `/parcels/32/?period=1` and
-`/parcels/32/?period=2` were all captured, and the three saved pages differ only
-in the one-time security token each request carries. The year each pane shows is
-chosen for the reader, by a rule in the page's own code: the most recent year in
-which that parcel has any activity other than an allocation. On this data that
-sends **70 of the 76** parcels to WY 2025-2026 and the remaining **6** to
-WY 2024-2025. Both pinned parcels land on WY 2025-2026, and the pane says so, in
-small grey type at the top right of the water balance card.
+All five pages were captured signed in, at commit `a320e77` (the last commit
+before this plan's ledger pass), 2026-09-06, and all five answered 200. Saved
+under `audit/figure_ledger/rendered/parcel-detail-mer-apn-011-dry.html`,
+`-wet.html`, `-default.html`, `parcel-detail-recharge-mer-apn-032.html` and
+`parcel-detail-plain-mer-apn-017.html`, with sizes and content fingerprints in
+`manifest.json` beside them. Every captured page's `<title>` was checked against
+its pinned parcel number before anything else ran: the dev database holds the
+candidate's own primary keys, so a pinned id can silently point at a different
+row, and all five titles matched.
 
-**Recomputation.** `audit/figure_ledger/sql/parcel_detail_pane.sql`, run on the
-host with `bash audit/figure_ledger/run_sql.sh`. It names tables and columns only.
-Every whole-column count below was measured by that file, for both years
-separately, and every count in this section carries the year it belongs to.
+**The pane now has a period control (ISS-147), and the default changed with
+it.** Before 137-01, `?period=` was ignored (observed by diffing three captures
+of one parcel byte for byte); the pane picked a year for the reader by the most
+recent period with any non-allocation ledger activity, which put six curtailed
+fields (MER-APN-010/011/012/013/014/019) on the wrong year. 137-01 Task 3
+changed the default to the most recent period the parcel has a CalculationRun
+in, falling back to the old rule and then to the most recent period overall.
+Reproduced here: with no `?period=` given, all 76 parcels still resolve, 0 to
+WY 2024-2025 and 76 to WY 2025-2026 (`CHK-parcels-080`, `CHK-parcels-081`), and
+of the six ISS-147 parcels named above, all six now resolve to WY 2025-2026
+(`CHK-parcels-082`, expected and observed: 6). `MER-APN-011`'s own default
+capture is byte-identical to its `?period=2` capture apart from the one-time
+security token, confirming the observation for that parcel directly rather than
+only through the SQL.
+
+**Recomputation.** `audit/figure_ledger/sql/parcel_detail_pane.sql` for the
+balance panel's nine segment and foot figures and the pane's five unrelated
+attribute figures (Area, well share, first ledger row, the unreachable
+ET-not-computed branch), and the new
+`audit/figure_ledger/sql/parcel_unmet_demand.sql` for `unmet_demand_af`, both
+run on the host with `bash audit/figure_ledger/run_sql.sh`. Neither file's
+underlying identity changed from before 137-01: the segments and foot cells are
+`parcel_mass_balance`'s existing terms, reused rather than rewritten, and the
+unmet-demand file is new arithmetic entirely independent of the mass balance.
+Both name tables and columns only.
 
 ---
 
-### The ledger, pinned to `MER-APN-032` (the disagreeing case)
+### The ledger, pinned to `MER-APN-011` (the ISS-157 instance, WY 2025-2026) and `MER-APN-032` (the recharge instance)
 
 | `id` | `screen` | `site` | `label` | `context_var` | `view` | `service` | `raw_tables` | `rendered` | `recomputed` | `delta` | `verdict` | `notes` |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `FIG-parcels-001` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:39` | Consumptive use (ET) | `consumptive_balance.consumptive_use_gross` | `parcels/views.py:168` | `parcel_consumptive_balance` | `accounting_calculationrun` | 591.28 | 591.28 | MATCH | MATCH | Independence: restatement. Gross satellite-estimated evapotranspiration, summed over the parcel's twelve monthly calculation runs in the year. |
-| `FIG-parcels-002` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:44` | Total supplies | `consumptive_balance.supply_total` | `parcels/views.py:168` | `parcel_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 765.41 | 765.41 | MATCH | MATCH | Independence: restatement. Canal deliveries plus pumped groundwater plus effective rainfall. |
-| `FIG-parcels-003` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:49` | Supplies − consumptive use | `consumptive_balance.net_vs_supply` | `parcels/views.py:168` | `parcel_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 174.13 | 174.13 | MATCH | ISS-148 | Independence: restatement. **The arithmetic of this figure is right to the cent. The issue is that it contradicts `FIG-parcels-015` on the same screen: this card says 174.13 AF of water arrived and was not consumed, and the residual below says the books close at 0.00 AF.** The difference is exactly the Recharge term, `FIG-parcels-011`, also 174.13 AF: the same water counted as an unused supply by one balance and as an output by the other. Reproduced whole-column as `CHK-parcels-031` and `CHK-parcels-037`. |
-| `FIG-parcels-004` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:57` | Net consumptive demand of … AF | `consumptive_balance.consumptive_use_net` | `parcels/views.py:168` | `parcel_consumptive_balance` | `accounting_calculationrun` | 545.17 | 545.17 | MATCH | MATCH | Independence: restatement. Consumptive use after effective rainfall, stored per run rather than derived here. |
-| `FIG-parcels-005` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:63` | Surface water | `consumptive_balance.supplies.surface` | `parcels/views.py:168` | `parcel_consumptive_balance` | `parcels_parcelledger` | 719.30 | 719.30 | MATCH | MATCH | Independence: restatement. Magnitude of the delivery rows, which the platform stores as negative numbers by its own convention. |
-| `FIG-parcels-006` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:68` | Groundwater | `consumptive_balance.supplies.groundwater` | `parcels/views.py:168` | `parcel_consumptive_balance` | `parcels_parcelledger` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. A real zero, not a suppression: this parcel has twelve calculation runs in the year and no metered or calculated groundwater row in it. Absolute value OF THE SUM of the negative non-delivery rows, not the sum of absolute values; transcribed as written. |
-| `FIG-parcels-007` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:73` | Precipitation | `consumptive_balance.supplies.precip` | `parcels/views.py:168` | `parcel_consumptive_balance` | `accounting_calculationrun` | 46.11 | 46.11 | MATCH | MATCH | Independence: restatement. Effective rainfall, from the calculation runs rather than the ledger. |
-| `FIG-parcels-008` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:90` | Supplies: Surface | `mass_balance.inputs.surface` | `parcels/views.py:169` | `parcel_mass_balance` | `parcels_parcelledger` | 719.30 | 719.30 | MATCH | MATCH | Independence: restatement. The same quantity as `FIG-parcels-005`, printed a second time forty lines lower under a different heading. |
-| `FIG-parcels-009` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:92` | Uses: ET | `mass_balance.outputs.et` | `parcels/views.py:169` | `parcel_mass_balance` | `accounting_calculationrun` | 591.28 | 591.28 | MATCH | MATCH | Independence: restatement. The same quantity as `FIG-parcels-001`. |
-| `FIG-parcels-010` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:96` | Supplies: Precip | `mass_balance.inputs.precip` | `parcels/views.py:169` | `parcel_mass_balance` | `accounting_calculationrun` | 46.11 | 46.11 | MATCH | MATCH | Independence: restatement. The same quantity as `FIG-parcels-007`. |
-| `FIG-parcels-011` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:98` | Uses: Recharge | `mass_balance.outputs.recharge` | `parcels/views.py:169` | `parcel_mass_balance` | `accounting_calculationrun` | 174.13 | 174.13 | MATCH | MATCH | Independence: restatement, and the one figure on this pane not read from a column. It is read out of a stored record of the calculation itself: the step called `clamp_floor`, field `incidental_recharge_af`. This is the term that carries the whole gap between the pane's two balances. |
-| `FIG-parcels-012` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:102` | Supplies: Groundwater pumped | `mass_balance.inputs.gw_recovered` | `parcels/views.py:169` | `parcel_mass_balance` | `parcels_parcelledger` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. The same quantity as `FIG-parcels-006`, and the platform's own code says so. |
-| `FIG-parcels-013` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:104` | Uses: Runoff | `mass_balance.outputs.runoff` | `parcels/views.py:169` | `parcel_mass_balance` | `n/a (no table)` | 0.00 | 0.00 | EXPLAINED | EXPLAINED | **This figure has no data behind it.** It is a fixed zero written into the code, a named placeholder for a term the platform does not model, and it will read 0.00 on every parcel in every year no matter what the rows say. The recomputation writes the same fixed zero, so the two agree for a reason that is not a measurement. Recorded as `EXPLAINED` rather than `MATCH` so nobody reads the agreement as evidence. |
-| `FIG-parcels-014` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:109` | Uses: Net Banked/Drawn (credits) | `mass_balance.outputs.delta_storage` | `parcels/views.py:169` | `parcel_mass_balance` | `accounting_calculationrun` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. Credit banked less credit drawn. Zero here, and zero on all 152 parcel-years measured (`CHK-parcels-053`), so this term is carrying nothing anywhere on this data. |
-| `FIG-parcels-015` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:115` | Residual | `mass_balance.residual_af` | `parcels/views.py:169` | `parcel_mass_balance` | `parcels_parcelledger, accounting_calculationrun` | 0.00 | 0.00 | MATCH | ISS-148 | Independence: restatement. **Right to the cent, and it contradicts `FIG-parcels-003` above it.** Recomputed at full precision the residual is −0.000117 AF, which prints as 0.00 and sits inside the 0.01 AF band the platform calls Balanced. So the reader sees 174.13 AF of surplus in one place and a closed book in another, three inches apart, with nothing on the page connecting them. Re-checked 2026-09-06 after 136-01: the value is unchanged at 0.00; only the badge word beside it changed (*Surplus* to *Residual*, ISS-143), and the panel's arrangement is Phase 137's. |
-| `FIG-parcels-016` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:182` | surface (in the "ET has not been computed" notice) | `consumptive_balance.supplies.surface` | `parcels/views.py:168` | `parcel_consumptive_balance` | `parcels_parcelledger` | not rendered | 719.30 | NO VALUE | UNVERIFIED | **This figure could not be checked, because nothing on this platform can currently display it.** It sits in the branch shown only when a parcel has no calculation runs for the year, and every one of the 76 parcels has runs in both years (`CHK-parcels-070`, `CHK-parcels-071`, both zero). The value it would print is recomputed and recorded, so the day the branch becomes reachable the number is already on file. |
-| `FIG-parcels-017` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:183` | groundwater (in the "ET has not been computed" notice) | `consumptive_balance.supplies.groundwater` | `parcels/views.py:168` | `parcel_consumptive_balance` | `parcels_parcelledger` | not rendered | 0.00 | NO VALUE | UNVERIFIED | Same branch, same reason as `FIG-parcels-016`. |
-| `FIG-parcels-018` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:220` | Area (Acres) | `ef.value` | `parcels/views.py:172` | `— (model field, read at parcels/views.py:157)` | `parcels_parcel` | 154.69 | 154.69 | MATCH | MATCH | Independence: restatement of a stored value, which is the weakest kind of check there is and is stated as such. The pane loops over five editable fields; Area is the only one typed as a number, so it is the only one that reaches the two-decimal display filter. |
-| `FIG-parcels-019` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:270` | … fraction (Related wells) | `wip.fraction` | `parcels/views.py:165` | `— (model field, fetched at parcels/views.py:106)` | `wells_wellirrigatedparcel` | 1.00 | 1.00 | MATCH | MATCH | Independence: restatement of a stored value. The share of this well's pumping attributed to this parcel. One well is linked here, so 1.00 means all of it. Renders only while the wells module is switched on, which it is on this deployment (observed: the Related wells card is in the captured page). |
-| `FIG-parcels-020` | `/parcels/32/` | `templates/parcels/partials/_detail_pane.html:310` | Amount (AF), first row of Recent ledger entries | `entry.amount_acre_feet` | `parcels/views.py:166` | `— (model field, fetched at parcels/views.py:107)` | `parcels_parcelledger` | -75.23 | -75.23 | MATCH | MATCH | Independence: restatement of a stored value. The most recent of the parcel's ten latest rows, a canal delivery dated 15 September 2026. Note this list is NOT scoped to the year the balance card above it is showing, so the two halves of the pane can be describing different spans of time. |
+| `FIG-parcels-001` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:60` | Supplies (segment) | `mass_balance.inputs_total` | `parcels/views.py:176` | `parcel_mass_balance` | `parcels_parcelledger, accounting_calculationrun` | 32.89 | 32.89 | MATCH | MATCH | Independence: restatement. Rain alone: this no-well field took no canal delivery and has no pumping to show. New field, added by 137-01: `inputs_total` did not exist on `parcel_mass_balance`'s return dict before this plan; it sums the same three inputs the foot cells below print. |
+| `FIG-parcels-002` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:65` | Uses (segment) | `mass_balance.outputs_total` | `parcels/views.py:176` | `parcel_mass_balance` | `accounting_calculationrun` | 363.26 | 363.26 | MATCH | MATCH | Independence: restatement. Gross ET alone: no recharge, no storage change on this field-year. New field, added by 137-01, summing the three outputs below. |
+| `FIG-parcels-003` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:70` | Residual (segment) | `mass_balance.residual_af` | `parcels/views.py:176` | `parcel_mass_balance` | `parcels_parcelledger, accounting_calculationrun` | -330.37 | -330.37 | MATCH | MATCH | Independence: restatement. The same identity `mass_balance.residual_af` computed before 137-01 (the old free-standing "Residual: N AF" row, `FIG-parcels-015` in the pre-137-01 numbering); only its position on the screen moved, into this segment, with the badge now rendered inside it. Equals the negative of the unmet-demand figure below on this field, because a no-well field with no other supply has nowhere else for the shortfall to go. |
+| `FIG-parcels-004` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:107` | Foot: Surface | `mass_balance.inputs.surface` | `parcels/views.py:176` | `parcel_mass_balance` | `parcels_parcelledger` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. A real zero: this field took no canal delivery in the year. |
+| `FIG-parcels-005` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:108` | Foot: Groundwater | `mass_balance.inputs.gw_recovered` | `parcels/views.py:176` | `parcel_mass_balance` | `parcels_parcelledger` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. A real zero: this field has no well, which is the whole of ISS-157's story. |
+| `FIG-parcels-006` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:109` | Foot: Rain | `mass_balance.inputs.precip` | `parcels/views.py:176` | `parcel_mass_balance` | `accounting_calculationrun` | 32.89 | 32.89 | MATCH | MATCH | Independence: restatement. The field's only recorded supply. |
+| `FIG-parcels-007` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:112` | Foot: Consumptive use | `mass_balance.outputs.et` | `parcels/views.py:176` | `parcel_mass_balance` | `accounting_calculationrun` | 363.26 | 363.26 | MATCH | MATCH | Independence: restatement. Gross satellite-estimated evapotranspiration, summed over the parcel's runs in the period. |
+| `FIG-parcels-008` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:113` | Foot: Recharge | `mass_balance.outputs.recharge` | `parcels/views.py:176` | `parcel_mass_balance` | `accounting_calculationrun` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. A real measured zero, not the old fixed placeholder: this term reads out of each run's stored `clamp_floor` step and can be non-zero, as it is on `MER-APN-032` below. |
+| `FIG-parcels-009` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:114` | Foot: Storage change | `mass_balance.outputs.delta_storage` | `parcels/views.py:176` | `parcel_mass_balance` | `accounting_calculationrun` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. Credit banked less credit drawn. Zero here, and zero on all 152 parcel-years measured (`CHK-parcels-053`). |
+| `FIG-parcels-010` | `/parcels/11/?period=2` | `templates/parcels/partials/_detail_pane.html:139` | Water use recorded, no supply reported | `unmet_demand_af` | `parcels/views.py:183` | `parcel_unmet_demand` | `accounting_calculationrun` | 330.37 | 330.37 | MATCH | MATCH | Independence: separate recomputation, `audit/figure_ledger/sql/parcel_unmet_demand.sql`, never touching the mass-balance identity above. New figure (ISS-157): the platform's engine has always recorded this on a no-well field's runs (`residual_disposition="unmet_demand"`); 137-01 is the first screen to read it back. Renders only because it is positive; DESIGN.md rule 8 says a zero here prints nothing. |
+| `FIG-parcels-011` | `/parcels/32/?period=2` | `templates/parcels/partials/_detail_pane.html:192` | ET-not-computed branch: surface (branch not rendered) | `consumptive_balance.supplies.surface` | `parcels/views.py:175` | `parcel_consumptive_balance` | `parcels_parcelledger` | not rendered | 719.30 | NO VALUE | UNVERIFIED | **This figure could not be checked, because nothing on this platform can currently display it.** It sits in the branch shown only when a parcel has no calculation runs for the year, and every one of the 76 parcels has runs in both years (`CHK-parcels-070`, `CHK-parcels-071`, both zero). The value it would print is recomputed and recorded, so the day the branch becomes reachable the number is already on file. Unchanged by 137-01 apart from its id and line number. |
+| `FIG-parcels-012` | `/parcels/32/?period=2` | `templates/parcels/partials/_detail_pane.html:193` | ET-not-computed branch: groundwater (branch not rendered) | `consumptive_balance.supplies.groundwater` | `parcels/views.py:175` | `parcel_consumptive_balance` | `parcels_parcelledger` | not rendered | 0.00 | NO VALUE | UNVERIFIED | Same branch, same reason as `FIG-parcels-011`. |
+| `FIG-parcels-013` | `/parcels/32/?period=2` | `templates/parcels/partials/_detail_pane.html:230` | Area (Acres) | `ef.value` | `parcels/views.py:202` | `— (model field, read at parcels/views.py:202)` | `parcels_parcel` | 154.69 | 154.69 | MATCH | MATCH | Independence: restatement of a stored value, which is the weakest kind of check there is and is stated as such. Unchanged by 137-01 apart from its id and line number. |
+| `FIG-parcels-014` | `/parcels/32/?period=2` | `templates/parcels/partials/_detail_pane.html:280` | … fraction (Related wells) | `wip.fraction` | `parcels/views.py:115` | `— (model field, fetched at parcels/views.py:115)` | `wells_wellirrigatedparcel` | 1.00 | 1.00 | MATCH | MATCH | Independence: restatement of a stored value. Pinned to `MER-APN-032` rather than the primary instance because `MER-APN-011` has no well linked (ISS-157: that is the whole reason it carries unmet demand), so its Related wells card has nothing to show. |
+| `FIG-parcels-015` | `/parcels/32/?period=2` | `templates/parcels/partials/_detail_pane.html:320` | Amount (AF), first row of Recent ledger entries | `entry.amount_acre_feet` | `parcels/views.py:116` | `— (model field, fetched at parcels/views.py:116)` | `parcels_parcelledger` | -75.23 | -75.23 | MATCH | MATCH | Independence: restatement of a stored value. Note this list is NOT scoped to the year the balance panel above it is showing, so the two halves of the pane can be describing different spans of time; unchanged since before 137-01. |
 
-### The same twenty figures, pinned to `MER-APN-017` (the agreeing case)
+### The same nine balance-panel figures, `MER-APN-011` in the wet year and `MER-APN-032`, `MER-APN-017` in the dry year
 
-This table is a comparison, not a second set of ledger rows: the ledger
-carries one row per figure and that is the table above. The identifiers
-here are references back to it.
+This table is a comparison, not a second set of ledger rows: the ledger carries
+one row per figure and that is the table above. The identifiers here are
+references back to it. The `site`, `context_var`, `view`, `service` and
+`raw_tables` columns are the same line of the same template rendered for a
+different parcel or period, so they are identical to the table above and are
+not repeated. What changes is the numbers.
 
-The `site`, `context_var`, `view`, `service` and `raw_tables` columns are the same
-line of the same template rendered for a different parcel, so they are identical
-to the table above and are not repeated. What changes is the numbers.
-
-| `id` | `label` | `rendered` | `recomputed` | `delta` | `verdict` | `notes` |
-|---|---|---|---|---|---|---|
-| FIG-parcels-001 | Consumptive use (ET) | 263.07 | 263.07 | MATCH | MATCH |  |
-| FIG-parcels-002 | Total supplies | 395.97 | 395.97 | MATCH | MATCH |  |
-| FIG-parcels-003 | Supplies − consumptive use | 132.90 | 132.90 | MATCH | MATCH | Agrees with `FIG-parcels-015` below, exactly. This parcel banked no incidental recharge in the year, so the two balances have nothing to differ by. |
-| FIG-parcels-004 | Net consumptive demand | 235.43 | 235.43 | MATCH | MATCH |  |
-| FIG-parcels-005 | Surface water | 0.00 | 0.00 | MATCH | MATCH | A real zero: this parcel took no canal delivery in the year and met its demand by pumping. |
-| FIG-parcels-006 | Groundwater | 368.34 | 368.34 | MATCH | MATCH |  |
-| FIG-parcels-007 | Precipitation | 27.64 | 27.64 | MATCH | MATCH |  |
-| FIG-parcels-008 | Supplies: Surface | 0.00 | 0.00 | MATCH | MATCH |  |
-| FIG-parcels-009 | Uses: ET | 263.07 | 263.07 | MATCH | MATCH |  |
-| FIG-parcels-010 | Supplies: Precip | 27.64 | 27.64 | MATCH | MATCH |  |
-| FIG-parcels-011 | Uses: Recharge | 0.00 | 0.00 | MATCH | MATCH | Zero, which is why this parcel's two balances agree. |
-| FIG-parcels-012 | Supplies: Groundwater pumped | 368.34 | 368.34 | MATCH | MATCH |  |
-| FIG-parcels-013 | Uses: Runoff | 0.00 | 0.00 | EXPLAINED | EXPLAINED | The fixed zero again. Same reason as the table above. |
-| FIG-parcels-014 | Uses: Net Banked/Drawn (credits) | 0.00 | 0.00 | MATCH | MATCH |  |
-| FIG-parcels-015 | Residual | 132.90 | 132.90 | MATCH | MATCH | Equal to `FIG-parcels-003`. The badge beside it read *Surplus* in orange until 136-01 (2026-09-06) changed the word to *Residual* (ISS-143; the figure did not move), and the page prints a sentence saying more water is recorded arriving here than the parcel's uses account for. That is the pane behaving as designed. How the badge sits beside the figure waits for Phase 137. |
-| FIG-parcels-016 | surface (ET-not-computed notice) | not rendered | 0.00 | NO VALUE | UNVERIFIED | Branch unreachable, as above. |
-| FIG-parcels-017 | groundwater (ET-not-computed notice) | not rendered | 368.34 | NO VALUE | UNVERIFIED | Branch unreachable, as above. |
-| FIG-parcels-018 | Area (Acres) | 89.84 | 89.84 | MATCH | MATCH |  |
-| FIG-parcels-019 | … fraction (Related wells) | 1.00 | 1.00 | MATCH | MATCH |  |
-| FIG-parcels-020 | Amount (AF), first ledger row | -47.48 | -47.48 | MATCH | MATCH | A meter reading dated 15 September 2026. |
+| `id` | `screen` | `label` | `rendered` | `recomputed` | `delta` | `verdict` | `notes` |
+|---|---|---|---|---|---|---|---|
+| FIG-parcels-001 | `/parcels/11/?period=1` | Supplies (segment) | 224.64 | 224.64 | MATCH | MATCH | `MER-APN-011`, WY 2024-2025 (the wet year). |
+| FIG-parcels-002 | `/parcels/11/?period=1` | Uses (segment) | 406.21 | 406.21 | MATCH | MATCH | |
+| FIG-parcels-003 | `/parcels/11/?period=1` | Residual (segment) | -181.57 | -181.57 | MATCH | MATCH | |
+| FIG-parcels-004 | `/parcels/11/?period=1` | Foot: Surface | 161.78 | 161.78 | MATCH | MATCH | Non-zero, unlike the dry year: this field DID take a canal delivery in the wet year. |
+| FIG-parcels-005 | `/parcels/11/?period=1` | Foot: Groundwater | 0.00 | 0.00 | MATCH | MATCH | Still no well, both years. |
+| FIG-parcels-006 | `/parcels/11/?period=1` | Foot: Rain | 62.85 | 62.85 | MATCH | MATCH | |
+| FIG-parcels-007 | `/parcels/11/?period=1` | Foot: Consumptive use | 370.26 | 370.26 | MATCH | MATCH | |
+| FIG-parcels-008 | `/parcels/11/?period=1` | Foot: Recharge | 35.95 | 35.95 | MATCH | MATCH | Non-zero, unlike the dry year. |
+| FIG-parcels-009 | `/parcels/11/?period=1` | Foot: Storage change | 0.00 | 0.00 | MATCH | MATCH | |
+| FIG-parcels-010 | `/parcels/11/?period=1` | Water use recorded, no supply reported | 181.57 | 181.57 | MATCH | MATCH | **Renders in the wet year too**, at a smaller figure. See finding 2 below: the checkpoint this plan was scoped against expected the line to disappear here, and it does not. |
+| FIG-parcels-001 | `/parcels/32/?period=2` | Supplies (segment) | 765.41 | 765.41 | MATCH | MATCH | `MER-APN-032`, the recharge instance, WY 2025-2026. |
+| FIG-parcels-002 | `/parcels/32/?period=2` | Uses (segment) | 765.41 | 765.41 | MATCH | MATCH | |
+| FIG-parcels-003 | `/parcels/32/?period=2` | Residual (segment) | 0.00 | 0.00 | MATCH | MATCH | Inside the 0.01 AF Balanced band. |
+| FIG-parcels-004 | `/parcels/32/?period=2` | Foot: Surface | 719.30 | 719.30 | MATCH | MATCH | |
+| FIG-parcels-005 | `/parcels/32/?period=2` | Foot: Groundwater | 0.00 | 0.00 | MATCH | MATCH | |
+| FIG-parcels-006 | `/parcels/32/?period=2` | Foot: Rain | 46.11 | 46.11 | MATCH | MATCH | |
+| FIG-parcels-007 | `/parcels/32/?period=2` | Foot: Consumptive use | 591.28 | 591.28 | MATCH | MATCH | |
+| FIG-parcels-008 | `/parcels/32/?period=2` | Foot: Recharge | 174.13 | 174.13 | MATCH | MATCH | **The non-zero case.** Before 137-01 this was the exact term the pane's two balances disagreed over (ISS-148); the panel now states it once, in the Uses total, and nowhere else. |
+| FIG-parcels-009 | `/parcels/32/?period=2` | Foot: Storage change | 0.00 | 0.00 | MATCH | MATCH | |
+| FIG-parcels-001 | `/parcels/17/?period=2` | Supplies (segment) | 395.97 | 395.97 | MATCH | MATCH | `MER-APN-017`, the plain instance, WY 2025-2026. |
+| FIG-parcels-002 | `/parcels/17/?period=2` | Uses (segment) | 263.07 | 263.07 | MATCH | MATCH | |
+| FIG-parcels-003 | `/parcels/17/?period=2` | Residual (segment) | 132.90 | 132.90 | MATCH | MATCH | The same value the pane's two identities already agreed on before 137-01, because this parcel banks no recharge. |
+| FIG-parcels-004 | `/parcels/17/?period=2` | Foot: Surface | 0.00 | 0.00 | MATCH | MATCH | A real zero: this parcel took no canal delivery and met its demand by pumping. |
+| FIG-parcels-005 | `/parcels/17/?period=2` | Foot: Groundwater | 368.34 | 368.34 | MATCH | MATCH | |
+| FIG-parcels-006 | `/parcels/17/?period=2` | Foot: Rain | 27.64 | 27.64 | MATCH | MATCH | |
+| FIG-parcels-007 | `/parcels/17/?period=2` | Foot: Consumptive use | 263.07 | 263.07 | MATCH | MATCH | |
+| FIG-parcels-008 | `/parcels/17/?period=2` | Foot: Recharge | 0.00 | 0.00 | MATCH | MATCH | Zero, which is why this parcel's Residual matched the pre-137-01 card exactly. |
+| FIG-parcels-009 | `/parcels/17/?period=2` | Foot: Storage change | 0.00 | 0.00 | MATCH | MATCH | |
+| FIG-parcels-010 | `/parcels/17/?period=2` | Water use recorded, no supply reported | not rendered | 0.00 | NO VALUE | MATCH | Has a well; zero on the disposition the figure sums. The line correctly does not render (DESIGN.md rule 8: a zero prints nothing). |
 
 ---
 
 ### What section 2 found
 
-**Eighteen of the twenty figures agree with the rows behind them, to the cent, on
-both pinned parcels. Two could not be checked at all.** Nothing on this pane is
-computing a wrong number. That is worth stating plainly before anything else,
-because the rest of this section is about a screen that is arithmetically correct
-and still tells a reader two incompatible things.
+**Every one of the fifteen figures agrees with the rows behind it, to the cent,
+on every pinned screen.** Nothing on this pane computes a wrong number, before
+137-01 or after it. That was already true of the pane's old twenty figures
+(eighteen matched, two were unreachable); this plan changed which figures the
+screen shows, not the correctness of any of them.
 
-Six things the reconciliation turned up that a matching column does not show.
+Three things the reconciliation turned up.
 
-#### 1. The pane states two balances that disagree, and the count depends on which disagreement you mean
+#### 1. ISS-148 is closed: the pane now states one balance, and there is nothing left to disagree with
 
-Both numbers were measured here, over all 76 parcels, in both years, by
-`audit/figure_ledger/sql/parcel_detail_pane.sql`. They are not carried forward
-from anywhere.
+Before 137-01 the pane printed two identities four inches apart on the same
+screen. On the pinned recharge instance, `MER-APN-032`, the retired card read a
+surplus of 174.13 AF and the retired residual row read 0.00 AF, Balanced, over
+the same field-year, differing by exactly the Recharge term (`CHK-parcels-054`
+on the old basis). The old ledger measured this at 32 of 76 wet-year parcels
+and 24 of 76 dry-year parcels disagreeing in sign, on the reasoning laid out in
+`docs/figure-ledger-2026-09.md`'s pre-137-01 section 2.
 
-| What was counted | WY 2024-2025 (wet) | WY 2025-2026 (dry) | Check |
-|---|---|---|---|
-| Parcels where the card and the residual disagree on sign | **32 of 76** | **24 of 76** | `CHK-parcels-030`, `CHK-parcels-031` |
-| Parcels printing a non-zero surplus beside a residual that prints 0.00 | **47 of 76** | **49 of 76** | `CHK-parcels-036`, `CHK-parcels-037` |
-| Parcels where the two printed numbers differ at all | **59 of 76** | **50 of 76** | `CHK-parcels-034`, `CHK-parcels-035` |
+137-01 removed the card, the composition cards, the summary table and the
+free-standing residual row, and kept the mass balance alone as the panel's one
+statement: Supplies minus Uses equals Residual, with the badge inside the
+Residual segment because that is the number it judges. The design decision and
+its rejected alternatives are recorded in the panel's own template comment and
+in `.planning/ISSUES.md`'s ISS-148 entry. On `MER-APN-032` the panel now shows
+Uses **765.41 AF**, of which the foot names 174.13 AF as Recharge, so the same
+water that used to read as an unaccounted surplus in one place and a closed
+book in another now reads once, as part of what the field's uses spent.
 
-The first row reproduces the figure this phase inherited, exactly, in both years.
-**The second row is the one a reader would notice.** The sign disagreement is real
-but it is sub-cent: on all 32 of those parcels in the wet year and all 24 in the
-dry year, the residual is a few ten-thousandths of an acre-foot below zero, prints
-as 0.00, and falls inside the band the platform calls *Balanced*, so the badge
-reads *Balanced* on every single one (`CHK-parcels-042`, `CHK-parcels-043`). No
-reader has ever seen that sign flip.
+**This is not a claim that recharge water is well understood everywhere.** The
+missing bookkeeping term for pumped water that percolates (as opposed to canal
+water, which already has one) is ISS-139, unchanged and still open; see section
+6, "The meter measures pumping, and the books have nowhere to put the
+difference." 137-01 closed the SCREEN issue (two numbers, one page, disagreeing)
+without touching the MODEL issue (one output term, still missing for one supply
+source). The residual size and sign on every affected parcel-year are unchanged
+by this plan: only how many times, and where, the pane states them.
 
-What a reader does see is the pair of numbers. On the pinned parcel the card says
-**174.13 AF** of supplies over and above consumptive use, and the residual three
-inches below says **0.00 AF, Balanced**. The largest such pair on this data is
-**177.47 AF beside 0.00** in the dry year and **168.31 AF beside 0.00** in the wet
-one (`CHK-parcels-044`, `CHK-parcels-045`). That happens on about two thirds of
-parcels in each year, not a third.
+#### 2. The unmet-demand line renders in both years on `MER-APN-011`, not only the dry one
 
-**Both numbers belong in the record, and each needs its year said out loud.** The
-plan this section inherited carried "32 of 76" with no year attached, and that is
-how the wet year's figure came to be read as the whole picture.
+This plan's own checkpoint text assumed the ISS-157 line would disappear on the
+wet-year capture of the pinned parcel. It does not: `MER-APN-011` carries
+181.57 AF of unmet demand in WY 2024-2025 and 330.37 AF in WY 2025-2026, both
+positive, both rendering. Measured whole-column: six parcels carry unmet demand
+in EACH year (`audit/figure_ledger/sql/parcel_unmet_demand.sql`, block D), the
+same six named in ISS-157 (MER-APN-010/011/012/013/014/019), totalling
+962.6696 AF in the wet year and 1,986.5015 AF in the dry one (block A). The
+figure is real and correctly computed either year; the plan text's expectation
+about which screen would show it, not the platform, was wrong. Recorded here so
+a later reader does not go looking for a bug that is not there.
 
-#### 2. The gap between the two balances is one term, and it is the same term every time
+#### 3. The pane's period control now resolves the six ISS-147 parcels correctly, and the whole-column proof travels with the plan rather than by hand
 
-Working from the two definitions rather than from either service, the residual is
-always the card figure minus the recharge term minus net banked credit. That
-relation was checked against all 152 parcel-years and holds on every one, with no
-violations (`CHK-parcels-051`). Net banked credit is zero on all 152
-(`CHK-parcels-053`), so the whole gap, wherever there is one, is the recharge
-term alone, on all 109 parcel-years where recharge is non-zero (`CHK-parcels-052`,
-`CHK-parcels-054`).
+Before 137-01, `?period=` did nothing (observed by byte-diffing three captures
+of one parcel) and the pane's silent default put six curtailed fields on the
+wrong water year. 137-01 Task 3 fixed the default and added the control; this
+section's SQL reproduces the new four-step resolution independently
+(`resolved_period` in `parcel_detail_pane.sql`) rather than trusting the six
+named parcels by inspection. All 76 parcels resolve to WY 2025-2026 with no
+`?period=` given (`CHK-parcels-081`), and specifically all six of the ISS-147
+parcels do (`CHK-parcels-082`, expected and observed: 6 of 6). `MER-APN-011`'s
+own default capture is byte-identical to its explicit `?period=2` capture
+(apart from the one-time security token), so this is not resting on the SQL's
+transcription of the view alone.
 
-In plain terms: water delivered to a parcel beyond what the crop consumed is
-booked as having soaked into the aquifer. One balance treats that water as
-supply the parcel did not use, and shows a surplus. The other treats it as water
-that left the parcel, and closes. The page prints both, with no sentence
-connecting them. Diagnosing this is ISS-148's job and Phase 137's; this ledger
-records it.
+---
 
-#### 3. Two of the twenty figures cannot be reached at all
-
-`FIG-parcels-016` and `FIG-parcels-017` sit in the notice the pane shows when a
-parcel has no computed evapotranspiration yet. Every one of the 76 parcels has
-calculation runs in both years (`CHK-parcels-070`, `CHK-parcels-071`), so that
-notice never renders and there is no rendered value to compare anything against.
-They are recorded `UNVERIFIED`, with the value they would have printed recomputed
-and stored beside them. **Nobody should read the eighteen matches as nineteen or
-twenty.**
-
-#### 4. One figure on the pane is a placeholder, not a measurement
-
-Runoff, `FIG-parcels-013`, is a fixed zero written into the platform's code, a
-named term for something it does not model. It reads 0.00 on every parcel in
-every year regardless of the data. The recomputation writes the same fixed zero,
-so the two agree, and the agreement means nothing. It is recorded `EXPLAINED`
-rather than `MATCH` for exactly that reason. A reader looking at the
-supply-versus-use table sees Runoff sitting in the Uses column beside ET and
-Recharge, formatted identically, with nothing to tell them one of the three is
-not a number about this parcel.
-
-#### 5. The pane cannot be pointed at a year, and the two halves of it can describe different years
-
-The parcel page ignores a year in the address. It picks a year for the reader,
-and different parcels get different years: 70 land on WY 2025-2026 and 6 on
-WY 2024-2025 (`CHK-parcels-080`, `CHK-parcels-081`). That was confirmed by
-capturing `/parcels/32/` three ways and comparing the saved bytes, not by reading
-the code.
-
-Two consequences worth recording. A person cannot compare a parcel across the two
-years from this screen at all. And the Recent ledger entries card at the bottom
-right is not scoped to the year the balance card at the top is showing, so a pane
-whose balance describes WY 2024-2025 can list rows from WY 2025-2026 underneath
-it, with no date range printed on either.
-
-#### 6. The double-counting guard is inert here too, exactly as it was on the dashboard
-
-The rule that stops a month being counted twice, once as a satellite estimate and
-once as a calculated figure, is written into the recomputation and cannot fire:
-there are zero satellite-estimate rows in the entire database (`CHK-parcels-060`).
-This is the same guard section 1 found inert on the accounting dashboard, and the
-same caution applies. It is stated so the section stays correct the day the data
-grows one, but no reader should take it as tested.
-
+**Carried forward from before 137-01, unchanged.** The pane's remaining
+UNVERIFIED figures (`FIG-parcels-011`, `-012`, the ET-not-computed branch) are
+still unreachable for the same reason: every one of the 76 parcels has
+calculation runs in both years (`CHK-parcels-070`, `CHK-parcels-071`, both
+zero). The double-counting guard against a satellite estimate and a calculated
+figure both landing on one month is still inert on this data: there are zero
+satellite-estimate rows in the whole database (`CHK-parcels-060`). Both cautions
+apply exactly as they did before this plan; no reader should take either as
+tested by its continued presence here.
 
 ---
 
@@ -1407,7 +1438,7 @@ trusted.
 |---|---:|---|---|
 | **The junior canal right was curtailed, and the field kept its crop** | 6 | Deficit, −81.8% to −90.9% of gross ET | **Not a defect. It is water use with no accountable supply, which the platform already measures and no screen shows.** ISS-157 |
 | **The same curtailment, caught part-way through the earlier year** | 5 | Deficit, −36.8% to −51.7% | No. This is the scarcity demonstration behaving as designed |
-| **The meter measures pumping, and the books have nowhere to put the difference** | 10 | Surplus, +31.6% to +55.8% | No new issue. It is ISS-148's shape with the sign reversed, and it belongs to Phase 137 |
+| **The meter measures pumping, and the books have nowhere to put the difference** | 10 | Surplus, +31.6% to +55.8% | No new issue. It was ISS-148's shape with the sign reversed; 137-01 closed ISS-148 (the screen showed it twice, now it shows it once), but the missing output term itself is still ISS-139 |
 
 ---
 
@@ -1591,12 +1622,15 @@ same physical event is bookkeeping on one field and an unexplained surplus on th
 next. Until there is such a term the badge on these ten field-years will keep
 reading as a warning about fields that are behaving normally.
 
-**No new issue.** This is [ISS-148](#) seen from the other side: the pane's two
-balances differ by exactly the deep-percolation term, and these are the fields
-where that term is zero when it should not be. It is answered in Phase 136 with
-the vocabulary and settled in Phase 137 with the panel. The missing output term
-itself is the substance of ISS-139, which this milestone deliberately leaves out
-because it changes the mass-balance identity and you validate before you change.
+**No new issue.** This was [ISS-148](#) seen from the other side: the pane used
+to print two balances that differed by exactly the deep-percolation term, and
+these are the fields where that term is zero when it should not be. Phase 136
+answered it with the vocabulary and 137-01 settled it with the panel: the pane
+now states the mass balance alone, so there is no second number for these
+residuals to disagree with, though the residual itself and the badge on it are
+unchanged. The missing output term itself is still the substance of ISS-139,
+which this milestone deliberately leaves out because it changes the
+mass-balance identity and you validate before you change.
 
 ---
 

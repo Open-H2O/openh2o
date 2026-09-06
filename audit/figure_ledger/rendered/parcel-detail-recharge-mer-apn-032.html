@@ -40,7 +40,7 @@
 
     
 </head>
-<body class="section-water_data" hx-headers='{"X-CSRFToken": "zvR6TJ6rQMuQFoHCfEswN4mZeyCp3vwvquJDrAqG8lk2apx07LvPnY5Pbyde3PAP"}'>
+<body class="section-water_data" hx-headers='{"X-CSRFToken": "kVbQ2r8iGeceRFSd7btOJTI17XLMs2WAl9EsoyZgYoTxdhtnmh6qXdDe1EB4eETR"}'>
     
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
@@ -582,114 +582,82 @@
 
 <div class="pane-stack">
 
-  <!-- Water Balance card -->
+  <!-- Water balance: ONE statement, stated once — the parcel MASS balance. -->
+  
+  
   <div class="card-raised">
-    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance
+    
+    
+    <div class="budget-panel">
+      <div class="budget-panel-head">
+        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance
 <span class="explainer-popout">
-  <button type="button" class="explainer-icon" aria-label="Explain: How this is calculated">?</button>
+  <button type="button" class="explainer-icon" aria-label="Explain: How this balance is built">?</button>
   <span class="explainer-panel" role="tooltip">
-    <span class="explainer-title">How this is calculated</span>
-    <span class="explainer-text">Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's satellite-estimated consumptive use (ET). The month links below show each step.</span>
+    <span class="explainer-title">How this balance is built</span>
+    <span class="explainer-text">Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss.</span>
     
     <a href="/help/methods/" class="explainer-link">Methods behind the numbers &rarr;</a>
     
   </span>
 </span>
-</h2>
+</span>
+        
+
+<select name="period"
+        class="form-select"
+        aria-label="Reporting period"
+        hx-get="/parcels/32/"
+        hx-target="#detail-body"
+        hx-trigger="change"
+        style="min-width: 190px;">
+  
+  <option value="2" selected>WY 2025-2026</option>
+  
+  <option value="1" >WY 2024-2025</option>
+  
+</select>
+
+
+      </div>
+      <div class="budget-panel-row">
+        <div class="budget-seg">
+          <div class="budget-seg-label">Supplies</div>
+          <div class="budget-seg-value text-supply">765.41<span class="budget-seg-unit">AF</span></div>
+        </div>
+        <div class="budget-op">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Uses</div>
+          <div class="budget-seg-value text-usage">765.41<span class="budget-seg-unit">AF</span></div>
+        </div>
+        <div class="budget-op">&equals;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Residual</div>
+          <div class="budget-seg-value text-deficit">0.00<span class="budget-seg-unit">AF</span></div>
+          
+          <div class="mt-sm">
+            
+            <span class="badge badge-grey">Balanced</span>
+            
+          </div>
+        </div>
+      </div>
       
-      <span class="text-tertiary text-xs">WY 2025-2026</span>
-      
+      <div class="budget-panel-foot">
+        <span>Surface <b>719.30</b></span>
+        <span>Groundwater <b>0.00</b></span>
+        <span>Rain <b>46.11</b></span>
+      </div>
+      <div class="budget-panel-foot">
+        <span>Consumptive use <b>591.28</b></span>
+        <span>Recharge <b>174.13</b></span>
+        <span>Storage change <b>0.00</b></span>
+      </div>
     </div>
 
     
-    <!-- ET has been computed: full consumptive-use + closing identity. -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
-      <div class="inset-card">
-        <div class="stat-card-label">Consumptive use (ET)</div>
-        <div class="stat-card-value-sm text-usage">591.28</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-      <div class="inset-card">
-        <div class="stat-card-label">Total supplies</div>
-        <div class="stat-card-value-sm text-supply">765.41</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-      <div class="inset-card">
-        <div class="stat-card-label">Supplies − consumptive use</div>
-        <div class="stat-card-value-sm text-surplus">174.13</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-    </div>
+    
 
-    <div style="margin: 0 0 var(--space-lg);">
-      <p class="text-sm text-secondary" style="margin: 0 0 var(--space-sm);">
-        Net consumptive demand of
-        <span class="text-usage" style="font-weight: 600;">545.17 AF</span>
-        (consumptive use after effective rainfall), met by these supplies:
-      </p>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm);">
-        <div class="inset-card">
-          <div class="stat-card-label">Surface water</div>
-          <div class="stat-card-value-sm text-supply">719.30</div>
-          <div class="stat-card-unit">AF</div>
-        </div>
-        <div class="inset-card">
-          <div class="stat-card-label">Groundwater</div>
-          <div class="stat-card-value-sm text-supply">0.00</div>
-          <div class="stat-card-unit">AF</div>
-        </div>
-        <div class="inset-card">
-          <div class="stat-card-label">Precipitation</div>
-          <div class="stat-card-value-sm text-supply">46.11</div>
-          <div class="stat-card-unit">AF</div>
-        </div>
-      </div>
-    </div>
-
-    <h3 class="section-header-sm">Supply vs. use summary</h3>
-    <table class="data-table text-sm">
-      <thead>
-        <tr>
-          <th>Supplies</th><th class="th-right">AF</th>
-          <th>Uses</th><th class="th-right">AF</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="text-secondary">Surface</td>
-          <td class="td-num text-supply">719.30</td>
-          <td class="text-secondary">ET</td>
-          <td class="td-num text-usage">591.28</td>
-        </tr>
-        <tr>
-          <td class="text-secondary">Precip</td>
-          <td class="td-num text-supply">46.11</td>
-          <td class="text-secondary">Recharge</td>
-          <td class="td-num">174.13</td>
-        </tr>
-        <tr>
-          <td class="text-secondary">Groundwater pumped</td>
-          <td class="td-num text-supply">0.00</td>
-          <td class="text-secondary">Runoff</td>
-          <td class="td-num">0.00</td>
-        </tr>
-        <tr>
-          <td></td><td></td>
-          <td class="text-secondary">Net Banked/Drawn (credits)</td>
-          <td class="td-num">0.00</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="row-between mb-md mt-sm">
-      <span class="text-secondary text-sm">Residual: <span class="td-num">0.00</span> AF</span>
-      
-      
-      <span class="badge badge-grey">Balanced</span>
-      
-    </div>
     
 
     <div class="border-separator">
