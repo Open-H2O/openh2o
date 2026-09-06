@@ -159,6 +159,34 @@ def test_district_zones_have_parcel_links(seeded_site):
 # ---------------------------------------------------------------------------
 # Fix #3 — zone-detail shows budget VS USE
 # ---------------------------------------------------------------------------
+# ISS-154 (Phase 137-02). The three literals below are hand-computed ONCE from
+# this file's own fixture — `_build_physical_merced()` plus `seed_merced_ledgers`
+# — by reading the raw ParcelLedger rows for the four parcels of the GSA the test
+# selects (Halvern Valley GSA, basin 5-022.04) in WY 2024-2025 and partitioning
+# them by `source_type` outside any application helper:
+#
+#     allocation          +672.0000   (4 rows)   -> a supply, not a use
+#     meter_reading       -146.8800  (12 rows)   -> GROUNDWATER pumping
+#     surface_diversion   -517.4400  (36 rows)   -> canal water DELIVERED
+#
+# and by reading the zone's own AllocationPlan (GW = 500.0000) and its
+# AllocationCarryover rows for water year 2025 — of which this fixture has NONE,
+# so the carry-over is a real, observed 0.0000 rather than an absent value.
+# `seed_merced_ledgers` writes no `et_estimate` and no `calculated` rows here, so
+# the billable subset is the raw subset and the groundwater magnitude is the
+# meter total exactly.
+#
+# ⛔ The old assertions were `used > 0` and `remaining == budget - used`. Both are
+# satisfied by the defect: they never look at WHICH rows landed in `used`, and the
+# second re-derives the screen's own arithmetic instead of checking a value. That
+# is how 1,170.93 AF of canal water sat inside a column headed *pumped* through a
+# full ledger audit. Literals only from here.
+GSA_PRIOR_ALLOCATION = Decimal("500.0000")
+GSA_PRIOR_CARRYOVER = Decimal("0.0000")
+GSA_PRIOR_GROUNDWATER_USE = Decimal("146.8800")
+GSA_PRIOR_REMAINING = Decimal("353.1200")
+
+
 @pytest.mark.django_db
 def test_gsa_zone_detail_shows_groundwater_pumped_against_budget(seeded_site):
     gsa = Zone.objects.filter(
@@ -171,12 +199,38 @@ def test_gsa_zone_detail_shows_groundwater_pumped_against_budget(seeded_site):
     gw = [b for b in budgets if (b["water_type"].code or "").upper() == "GW"]
     assert gw, "GSA zone should have a groundwater budget row"
     assert all(b["used_label"] == "pumped" for b in gw)
-    # The prior (activity) year should show real pumping against the budget.
     prior = [b for b in gw if b["period"].name == PRIOR_WY]
-    assert prior and prior[0]["used"] > Decimal("0"), (
-        "GSA prior-year groundwater 'used' should be > 0 (pumping happened)"
+    assert prior, "GSA should carry a groundwater budget row for the prior year"
+    row = prior[0]
+    assert row["budget"] == GSA_PRIOR_ALLOCATION
+    assert row["carryover"] == GSA_PRIOR_CARRYOVER
+    assert row["used"] == GSA_PRIOR_GROUNDWATER_USE
+    assert row["remaining"] == GSA_PRIOR_REMAINING
+
+
+@pytest.mark.django_db
+def test_gsa_zone_detail_renders_the_groundwater_figures_it_computed(seeded_site):
+    """The same four numbers, in the HTML a district manager actually reads.
+
+    Separate from the context test on purpose: a correct context dict that the
+    template never prints, or prints from a different key, is the defect class
+    ISS-155 names. Reading `resp.content` is the only check that cannot pass
+    that way.
+    """
+    gsa = Zone.objects.filter(
+        zone_type="management_area", basin_code="5-022.04"
+    ).first()
+    resp = seeded_site.get(f"/map/zones/{gsa.pk}/")
+    body = resp.content.decode()
+    for rendered in ("500.00", "146.88", "353.12"):
+        assert rendered in body, (
+            f"{rendered} is computed for the prior year's groundwater row but "
+            "never reaches the rendered Allocation vs. use table"
+        )
+    # The canal magnitude must NOT appear as this row's use any more.
+    assert "664.32" not in body, (
+        "664.32 is groundwater pumping plus canal deliveries — the ISS-154 sum"
     )
-    assert prior[0]["remaining"] == prior[0]["budget"] - prior[0]["used"]
 
 
 @pytest.mark.django_db
