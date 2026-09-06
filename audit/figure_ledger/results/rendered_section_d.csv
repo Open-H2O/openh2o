@@ -1,0 +1,19 @@
+id,label,rendered
+FIG-datasync-001,Location latitude,
+FIG-datasync-002,Location longitude,
+FIG-datasync-003,Current reading value,
+FIG-datasync-004,Recent record value,
+FIG-geography-001,Allocation (AF),750.32
+FIG-geography-002,Used (AF),1313.07
+FIG-geography-003,Remaining (AF),-562.75
+FIG-geography-004,Area (acres),12.74
+FIG-recharge-001,Capacity (AF),637.10
+FIG-recharge-002,Value,315.26
+FIG-recharge-003,Volume (AF),127.42
+FIG-recharge-004,Capacity,637
+FIG-setup-001,"Area, square miles",
+FIG-setup-002,sq mi (dropdown option),800.9
+FIG-wells-001,fraction,1.00
+FIG-wells-002,Reference elevation,182.4
+FIG-wells-003,Year Pumping Began,1987
+FIG-wells-004,Capacity (gpm),2000.00

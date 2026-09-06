@@ -1,0 +1,19 @@
+id,label,recomputed
+FIG-datasync-001,"Station location, latitude (no station exists)",0
+FIG-datasync-002,"Station location, longitude (no station exists)",0
+FIG-datasync-003,Current reading value (no station exists),0
+FIG-datasync-004,Recent record value (no published record exists),0
+FIG-geography-001,Zone 2 WY 2025-2026 Allocation (AF),750.32
+FIG-geography-002,"Zone 2 WY 2025-2026 Used (AF), labelled pumped",1313.07
+FIG-geography-003,Zone 2 WY 2025-2026 Remaining (AF),-562.75
+FIG-geography-004,Zone 2 parcel MER-APN-026 Area (acres),12.74
+FIG-recharge-001,El Nido Recharge Basin 1 Capacity (AF),637.10
+FIG-recharge-002,El Nido Recharge Basin 1 newest measurement Value,315.26
+FIG-recharge-003,El Nido Recharge Basin 1 newest event Volume (AF),127.42
+FIG-recharge-004,"Recharge list first row Capacity, whole AF",637
+FIG-setup-001,"Confirmation page Area, square miles (page not reachable)",800.9
+FIG-setup-002,"Wizard boundary option Area, square miles",800.9
+FIG-wells-001,Well MER-W-001 irrigated parcel Fraction,1.00
+FIG-wells-002,Well MER-W-001 Reference elevation (ft),182.4
+FIG-wells-003,Well MER-W-001 Year Pumping Began,1987
+FIG-wells-004,Well MER-W-001 Capacity (gpm),2000.00

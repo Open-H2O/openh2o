@@ -1,0 +1,15 @@
+id,label,recomputed
+FIG-reporting-001,CalWATRS worksheet Volume (AF),877.47
+FIG-reporting-002,CalWATRS worksheet Max Rate (CFS),312.07
+FIG-reporting-003,Shared-supply Your share,0.2000
+FIG-reporting-004,Shared-supply ET-implied share,0.1196
+FIG-reporting-005,Shared-supply Gap,0.0804
+FIG-surface-001,Diversion point Max rate (CFS),150.00
+FIG-surface-002,"Diversion point, linked right Face value (AF)",60000.00
+FIG-surface-003,Diversion records Diverted (AF),250.00
+FIG-surface-004,Diversion records Return Flow (AF),100.00
+FIG-surface-005,Diversion records Consumptive Use (AF),150.00
+FIG-surface-006,Rights list Face Value,120000
+FIG-surface-007,Water right Face value (AF),60000.00
+FIG-surface-008,"Water right, first point of diversion Max rate",400.00
+FIG-surface-009,Water right Recent diversion records Volume (AF),1200.00

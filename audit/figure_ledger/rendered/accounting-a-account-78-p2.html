@@ -1,0 +1,1729 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MER-ACCT-001 - Open Water Accounting Platform</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png?v=3">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/img/favicon-192.png?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png?v=3">
+
+    
+
+    <!-- Google Fonts: Public Sans (single sitewide typeface) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Design tokens (loaded separately for cache control) -->
+    <link rel="stylesheet" href="/static/css/tokens.css?v=11">
+    <!-- Compiled Tailwind CSS -->
+    <link rel="stylesheet" href="/static/css/output.css">
+    <!-- App layout and component styles -->
+    <link rel="stylesheet" href="/static/css/app.css?v=71">
+
+    <!-- MapLibre GL JS (available in map pages via block) -->
+    
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous" defer></script>
+
+    <!-- Explainer pop-out positioning (escapes the content scroll box) -->
+    <script src="/static/js/explainer-popout.js?v=1" defer></script>
+
+    
+    
+
+    
+</head>
+<body class="section-administration" hx-headers='{"X-CSRFToken": "TsbLb0V7zrVsS4TayHnp9YhcWGXouIjLFliysB6tOyREigtT0X7koscN7KPd3pbU"}'>
+    
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="loading-bar" class="loading-bar"></div>
+    <div id="toast-container" class="toast-container"></div>
+    <div class="app-shell">
+        
+<aside id="sidebar" aria-label="Main navigation"
+       class="sidebar"
+       data-collapsed="false">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+        <span class="sidebar-brand-icon">
+            <img src="/static/img/favicon-192.png?v=3" alt="" height="36" style="width: auto;">
+        </span>
+        <span class="sidebar-brand-text">Open<span class="sidebar-brand-accent">H2O</span></span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+
+        <!-- OVERVIEW (no label) -->
+        <a href="/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span class="sidebar-link-text">Home</span>
+        </a>
+
+        <a href="/accounting/dashboard/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Dashboard</span>
+        </a>
+        <a href="/map/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                <line x1="8" y1="2" x2="8" y2="18"/>
+                <line x1="16" y1="6" x2="16" y2="22"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Map</span>
+        </a>
+        <!-- WATER DATA -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Water Data</span>
+        </div>
+        <a href="/accounting/ledger/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <line x1="10" y1="9" x2="8" y2="9"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Use Ledger</span>
+        </a>
+        <a href="/parcels/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="3" x2="9" y2="21"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Use Areas</span>
+        </a>
+        <a href="/wells/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v4"/>
+                <path d="M12 18v4"/>
+                <path d="M4.93 4.93l2.83 2.83"/>
+                <path d="M16.24 16.24l2.83 2.83"/>
+                <path d="M2 12h4"/>
+                <path d="M18 12h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Wells</span>
+        </a>
+        <a href="/surface/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Surface Diversions</span>
+        </a>
+        <a href="/recharge/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Recharge Areas</span>
+        </a>
+        <a href="/datasync/stations/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M3 12h3"/>
+                <path d="M18 12h3"/>
+                <path d="M12 3v3"/>
+                <path d="M12 18v3"/>
+                <path d="M5.64 5.64l2.12 2.12"/>
+                <path d="M16.24 16.24l2.12 2.12"/>
+                <path d="M5.64 18.36l2.12-2.12"/>
+                <path d="M16.24 7.76l2.12-2.12"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Monitoring Stations</span>
+        </a>
+        <hr class="sidebar-divider">
+        <a href="/drinking/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3h12l-1.4 16.2a2 2 0 0 1-2 1.8H9.4a2 2 0 0 1-2-1.8z"/>
+                <path d="M6.8 10h10.4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Drinking Water</span>
+        </a>
+        <a href="/drinking/facilities/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="7" height="9" rx="1"/>
+                <rect x="14" y="5" width="7" height="15" rx="1"/>
+                <path d="M2 20h20"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Facilities</span>
+        </a>
+        <a href="/drinking/sampling-points/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 2h6"/>
+                <path d="M10 2v15a2 2 0 0 0 4 0V2"/>
+                <path d="M10 13h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Sampling Points</span>
+        </a>
+        <a href="/drinking/results/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 2v6.5L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 8.5V2"/>
+                <path d="M8.5 2h7"/>
+                <path d="M7 14h10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Sample Results</span>
+        </a>
+        <a href="/drinking/onboard/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3h9l-1.1 12.6a2 2 0 0 1-2 1.8H9.1a2 2 0 0 1-2-1.8z"/>
+                <path d="M6.7 9h7.6"/>
+                <path d="M18 15v6"/>
+                <path d="M15 18h6"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Onboard System</span>
+        </a>
+        <!-- ADMINISTRATION (Admin view only) -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Administration</span>
+        </div>
+        <a href="/surface/rights/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="6"/>
+                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Water Rights</span>
+        </a>
+        <a href="/accounting/accounts/"
+           class="sidebar-link active">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="M2 10h20"/>
+                <path d="M6 16h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Accounts</span>
+        </a>
+        <a href="/accounting/reporting-periods/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Water Years</span>
+        </a>
+        <a href="/accounting/allocations/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 2a10 10 0 0 1 0 20"/>
+                <path d="M12 2v20"/>
+                <path d="M2 12h10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Allocations</span>
+        </a>
+        <a href="/map/zones/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Zones</span>
+        </a>
+        <a href="/users/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Users</span>
+        </a>
+        <a href="/accounting/methodology/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"/>
+                <line x1="4" y1="10" x2="4" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12" y2="3"/>
+                <line x1="20" y1="21" x2="20" y2="16"/>
+                <line x1="20" y1="12" x2="20" y2="3"/>
+                <line x1="1" y1="14" x2="7" y2="14"/>
+                <line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="17" y1="16" x2="23" y2="16"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Methodology</span>
+        </a>
+        <a href="/accounting/delivery-settings/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12h20"/>
+                <path d="M2 6h20"/>
+                <path d="M2 18h20"/>
+                <circle cx="8" cy="6" r="2" fill="currentColor"/>
+                <circle cx="16" cy="12" r="2" fill="currentColor"/>
+                <circle cx="7" cy="18" r="2" fill="currentColor"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Delivery Settings</span>
+        </a>
+        <a href="/health/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Site Health</span>
+        </a>
+        <a href="/setup/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 1.36 13.37"/>
+                <path d="M4.93 4.93a10 10 0 0 0-1.36 13.37"/>
+                <path d="M12 2v3"/>
+                <path d="M12 19v3"/>
+                <path d="M2 12h3"/>
+                <path d="M19 12h3"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Setup Wizard</span>
+        </a>
+        <!-- REPORTING -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Reporting</span>
+        </div>
+        <a href="/reporting/reports/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+                <line x1="9" y1="11" x2="13" y2="11"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Reports</span>
+        </a>
+
+        <!-- HELP (collapsed by default; auto-opens on a help/about page) -->
+        <details class="sidebar-collapsible">
+        <summary class="sidebar-section sidebar-collapsible-summary">
+            <span class="sidebar-link-text sidebar-section-label">Help</span>
+            <svg class="sidebar-collapsible-chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </summary>
+        <a href="/help/getting-started/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span class="sidebar-link-text">Getting Started</span>
+        </a>
+        <a href="/help/water-balances/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v18"/>
+                <path d="M5 7h14"/>
+                <path d="M5 7l-3 6a3 3 0 0 0 6 0z"/>
+                <path d="M19 7l-3 6a3 3 0 0 0 6 0z"/>
+                <path d="M8 21h8"/>
+            </svg>
+            <span class="sidebar-link-text">Water Balance Info</span>
+        </a>
+        <a href="/help/methods/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span class="sidebar-link-text">Methods</span>
+        </a>
+        <a href="/help/settings/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span class="sidebar-link-text">Configs Explained</span>
+        </a>
+        <a href="/help/glossary/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="4" y1="12" x2="14" y2="12"/>
+                <line x1="4" y1="18" x2="18" y2="18"/>
+            </svg>
+            <span class="sidebar-link-text">Glossary</span>
+        </a>
+        <a href="/about/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span class="sidebar-link-text">About</span>
+        </a>
+        </details>
+
+        <!-- VIEW MODE — segmented toggle, tucked at the foot of the nav -->
+        <div class="nav-mode-toggle" role="group" aria-label="Sidebar view mode">
+            <a href="/nav-mode/?mode=operations"
+               class="nav-mode-option"
+               title="Everyday tools only">Operations</a>
+            <a href="/nav-mode/?mode=admin"
+               class="nav-mode-option active"
+               title="Show setup &amp; administration tools">Admin</a>
+        </div>
+    </nav>
+</aside>
+<script>
+    // On a phone the sidebar is a fixed overlay that sits on top of the page,
+    // so it must start closed or it covers the content on every load. Run this
+    // inline right after the sidebar markup (before the main content paints) to
+    // avoid a flash of the open sidebar. The hamburger opens it; an outside tap
+    // closes it (wired in base.html). We deliberately do NOT write localStorage
+    // here, so the desktop open/collapsed preference is left untouched.
+    (function () {
+        if (window.matchMedia('(max-width: 767px)').matches) {
+            document.getElementById('sidebar').setAttribute('data-collapsed', 'true');
+        }
+    })();
+</script>
+
+
+        <div class="app-main">
+            <header class="app-header">
+    <!-- Left group: sidebar toggle + global search -->
+    <div class="app-header-left">
+        <!-- Sidebar toggle (hamburger) -->
+        <button id="sidebar-toggle"
+                class="sidebar-toggle"
+                type="button"
+                aria-label="Toggle sidebar">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
+
+        
+        <div class="global-search" id="global-search">
+            <svg class="global-search-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search"
+                   id="global-search-input"
+                   name="q"
+                   class="global-search-input"
+                   placeholder="Search parcels, wells, accounts…"
+                   autocomplete="off"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-controls="global-search-results"
+                   aria-label="Search records"
+                   hx-get="/search/"
+                   hx-target="#global-search-results"
+                   hx-swap="innerHTML"
+                   hx-trigger="keyup changed delay:250ms, focus">
+            <div id="global-search-results" class="global-search-results"></div>
+        </div>
+        
+    </div>
+
+    
+    <div></div>
+
+    <!-- User menu -->
+    <div class="app-header-user">
+        
+            <a href="/nav-mode/?mode=operations" class="header-mode-badge"
+               title="You are in Admin mode — click to return to Operations">Admin mode</a>
+        
+        
+            <a href="/profile/" class="app-header-email">render-crawl@example.invalid</a>
+            <a href="/accounts/logout/" class="btn-secondary btn-sm">Sign out</a>
+        
+    </div>
+</header>
+
+
+            
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/accounting/accounts/">Accounting</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="/accounting/accounts/">Accounts</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">MER-ACCT-001</span>
+  </nav>
+</div>
+
+
+            <main class="app-content" id="main-content">
+                
+                <h1 class="sr-only">MER-ACCT-001</h1>
+                
+                
+<div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
+  <span class="badge badge-pill notice-badge">Demo</span>
+  <p class="demo-notice-text">
+    This demo mixes <strong>invented sample data</strong> with <strong>real published records</strong> to show what the platform can do.
+    <a href="/about/demonstration-data/" class="prose-link">See the difference</a>.
+    <strong>For testing purposes only.</strong>
+  </p>
+</div>
+
+
+                
+<div class="page-stack">
+  <div>
+    <a href="/accounting/accounts/" class="back-link">
+      &larr; Back to Water Accounts
+    </a>
+  </div>
+  <div id="detail-body">
+    
+
+<!-- Pane header: which account you're looking at. -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">MER-ACCT-001</div>
+    <div class="pane-header-sub">Ashvale Orchards Inc.</div>
+  </div>
+  <div class="pane-header-meta">
+    
+      <span class="badge badge-pill badge-green">Active</span>
+    
+    <a href="/accounting/accounts/78/" class="text-tertiary text-xs back-link" title="Open this account on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+<div class="pane-stack">
+
+  
+
+  <div class="page-grid-2col">
+
+    <!-- Left column: Account Info -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+        <h2 class="section-header">
+          Account information <span class="badge badge-pill badge-demo" title="Sample data — not a real legal action">DEMO</span>
+
+        </h2>
+
+        <div class="field-group">
+          <div class="field-label">Account number</div>
+          <div class="field-value">MER-ACCT-001</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Name</div>
+          <div class="field-value">Ashvale Orchards Inc.</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Status</div>
+          <div class="field-value">
+            
+              <span class="badge badge-pill badge-green">Active</span>
+            
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Contact name</div>
+          <div class="field-value">Ashvale Water Manager</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Contact email</div>
+          <div class="field-value"><span class="value-empty">Not recorded</span></div>
+        </div>
+
+        
+
+        <div class="border-separator">
+          <div class="text-tertiary text-xs">
+            Created Sep 05, 2026 &middot; Updated Sep 05, 2026
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Balances + Use Areas -->
+    <div class="page-stack">
+
+      <!-- Balance card with period selector -->
+      <div class="card-raised">
+        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 class="section-header-flush">Account balance</h2>
+          <select name="period"
+                  hx-get="/accounting/accounts/78/"
+                  hx-target="#balance-section"
+                  hx-trigger="change"
+                  class="form-select" style="width: auto; padding: 4px var(--space-sm); font-size: 0.8125rem;">
+            <option value="">All Time</option>
+            
+            <option value="2" selected>WY 2025-2026</option>
+            
+            <option value="1" >WY 2024-2025</option>
+            
+          </select>
+        </div>
+
+        <div id="balance-section">
+          
+
+
+<div class="budget-panel" style="margin-bottom: var(--space-md);">
+  <div class="budget-panel-row">
+    <div class="budget-seg">
+      <div class="budget-seg-label">Supplies</div>
+      <div class="budget-seg-value text-supply">5,921.09<span class="budget-seg-unit">AF</span></div>
+    </div>
+    <div class="budget-op">&minus;</div>
+    <div class="budget-seg">
+      <div class="budget-seg-label">Consumptive use</div>
+      <div class="budget-seg-value text-usage">4,589.61<span class="budget-seg-unit">AF</span></div>
+    </div>
+    <div class="budget-op">&equals;</div>
+    <div class="budget-seg">
+      <div class="budget-seg-label" style="display: flex; align-items: center; justify-content: center; gap: var(--space-xs);">Balance
+<span class="explainer-popout">
+  <button type="button" class="explainer-icon" aria-label="Explain: How this balance is built">?</button>
+  <span class="explainer-panel" role="tooltip">
+    <span class="explainer-title">How this balance is built</span>
+    <span class="explainer-text">Consumptive use here is the satellite ET estimate. Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error.</span>
+    
+    <a href="/help/water-balances/" class="explainer-link">How water balances work &rarr;</a>
+    
+  </span>
+</span>
+</div>
+      <div class="budget-seg-value text-surplus">1,331.48<span class="budget-seg-unit">AF</span></div>
+    </div>
+  </div>
+  <div class="budget-panel-foot">
+    <span>Surface <b>5,500.97</b></span>
+    <span>Groundwater <b>0.00</b></span>
+    <span>Rain <b>420.12</b></span>
+  </div>
+</div>
+
+<!-- Per-parcel breakdown -->
+
+<h3 class="section-header-sm">Per-Parcel breakdown</h3>
+<div class="table-scroll">
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Parcel</th>
+      <th class="th-right">Consumptive Use</th>
+      <th class="th-right">Surface</th>
+      <th class="th-right">Groundwater</th>
+      <th class="th-right">Precip</th>
+      <th class="th-right">Supplies</th>
+      <th class="th-right">Net</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td>
+        <a href="/parcels/21/" class="data-table-link">
+          MER-APN-021
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        177.23
+      </td>
+      <td class="td-num text-supply">
+        210.17
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        17.92
+      </td>
+      <td class="td-num-bold text-supply">
+        228.09
+      </td>
+      <td class="td-num-bold text-surplus">
+        50.87
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/23/" class="data-table-link">
+          MER-APN-023
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        563.74
+      </td>
+      <td class="td-num text-supply">
+        669.68
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        56.15
+      </td>
+      <td class="td-num-bold text-supply">
+        725.83
+      </td>
+      <td class="td-num-bold text-surplus">
+        162.09
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/24/" class="data-table-link">
+          MER-APN-024
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        611.63
+      </td>
+      <td class="td-num text-supply">
+        733.22
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        55.88
+      </td>
+      <td class="td-num-bold text-supply">
+        789.10
+      </td>
+      <td class="td-num-bold text-surplus">
+        177.47
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/25/" class="data-table-link">
+          MER-APN-025
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        427.54
+      </td>
+      <td class="td-num text-supply">
+        513.76
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        38.12
+      </td>
+      <td class="td-num-bold text-supply">
+        551.88
+      </td>
+      <td class="td-num-bold text-surplus">
+        124.34
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/26/" class="data-table-link">
+          MER-APN-026
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        41.10
+      </td>
+      <td class="td-num text-supply">
+        49.26
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        3.76
+      </td>
+      <td class="td-num-bold text-supply">
+        53.02
+      </td>
+      <td class="td-num-bold text-surplus">
+        11.92
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/27/" class="data-table-link">
+          MER-APN-027
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        78.49
+      </td>
+      <td class="td-num text-supply">
+        95.05
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        6.45
+      </td>
+      <td class="td-num-bold text-supply">
+        101.50
+      </td>
+      <td class="td-num-bold text-surplus">
+        23.01
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/28/" class="data-table-link">
+          MER-APN-028
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        117.11
+      </td>
+      <td class="td-num text-supply">
+        140.97
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        10.26
+      </td>
+      <td class="td-num-bold text-supply">
+        151.23
+      </td>
+      <td class="td-num-bold text-surplus">
+        34.12
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/29/" class="data-table-link">
+          MER-APN-029
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        472.06
+      </td>
+      <td class="td-num text-supply">
+        559.53
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        47.94
+      </td>
+      <td class="td-num-bold text-supply">
+        607.47
+      </td>
+      <td class="td-num-bold text-surplus">
+        135.41
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/30/" class="data-table-link">
+          MER-APN-030
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        33.59
+      </td>
+      <td class="td-num text-supply">
+        40.57
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        2.84
+      </td>
+      <td class="td-num-bold text-supply">
+        43.41
+      </td>
+      <td class="td-num-bold text-surplus">
+        9.82
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/32/" class="data-table-link">
+          MER-APN-032
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        591.28
+      </td>
+      <td class="td-num text-supply">
+        719.30
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        46.11
+      </td>
+      <td class="td-num-bold text-supply">
+        765.41
+      </td>
+      <td class="td-num-bold text-surplus">
+        174.13
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/33/" class="data-table-link">
+          MER-APN-033
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        106.05
+      </td>
+      <td class="td-num text-supply">
+        127.91
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        9.10
+      </td>
+      <td class="td-num-bold text-supply">
+        137.01
+      </td>
+      <td class="td-num-bold text-surplus">
+        30.96
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/34/" class="data-table-link">
+          MER-APN-034
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        199.76
+      </td>
+      <td class="td-num text-supply">
+        239.72
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        18.07
+      </td>
+      <td class="td-num-bold text-supply">
+        257.79
+      </td>
+      <td class="td-num-bold text-surplus">
+        58.02
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/35/" class="data-table-link">
+          MER-APN-035
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        59.20
+      </td>
+      <td class="td-num text-supply">
+        70.85
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        5.50
+      </td>
+      <td class="td-num-bold text-supply">
+        76.35
+      </td>
+      <td class="td-num-bold text-surplus">
+        17.15
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/36/" class="data-table-link">
+          MER-APN-036
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        405.85
+      </td>
+      <td class="td-num text-supply">
+        487.67
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        36.23
+      </td>
+      <td class="td-num-bold text-supply">
+        523.90
+      </td>
+      <td class="td-num-bold text-surplus">
+        118.05
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/37/" class="data-table-link">
+          MER-APN-037
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        320.78
+      </td>
+      <td class="td-num text-supply">
+        382.23
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        31.06
+      </td>
+      <td class="td-num-bold text-supply">
+        413.29
+      </td>
+      <td class="td-num-bold text-surplus">
+        92.51
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/38/" class="data-table-link">
+          MER-APN-038
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        167.18
+      </td>
+      <td class="td-num text-supply">
+        200.35
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        15.33
+      </td>
+      <td class="td-num-bold text-supply">
+        215.67
+      </td>
+      <td class="td-num-bold text-surplus">
+        48.50
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/22/" class="data-table-link">
+          MER-APN-022
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        24.37
+      </td>
+      <td class="td-num text-supply">
+        28.87
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        2.49
+      </td>
+      <td class="td-num-bold text-supply">
+        31.36
+      </td>
+      <td class="td-num-bold text-surplus">
+        6.99
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/31/" class="data-table-link">
+          MER-APN-031
+        </a>
+      </td>
+      <td class="td-num text-usage">
+        192.65
+      </td>
+      <td class="td-num text-supply">
+        231.86
+      </td>
+      <td class="td-num text-supply">
+        0.00
+      </td>
+      <td class="td-num text-supply">
+        16.91
+      </td>
+      <td class="td-num-bold text-supply">
+        248.77
+      </td>
+      <td class="td-num-bold text-surplus">
+        56.12
+      </td>
+    </tr>
+    
+  </tbody>
+</table>
+</div>
+
+
+        </div>
+      </div>
+
+      <!-- Use Area Assignment card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Assigned use areas</h2>
+
+        <div id="parcel-assignments">
+          
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Parcel</th>
+      <th>Added</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td>
+        <a href="/parcels/21/" class="data-table-link">
+          MER-APN-021
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/553/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-021 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/23/" class="data-table-link">
+          MER-APN-023
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/555/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-023 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/24/" class="data-table-link">
+          MER-APN-024
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/556/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-024 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/25/" class="data-table-link">
+          MER-APN-025
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/557/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-025 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/26/" class="data-table-link">
+          MER-APN-026
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/558/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-026 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/27/" class="data-table-link">
+          MER-APN-027
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/559/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-027 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/28/" class="data-table-link">
+          MER-APN-028
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/560/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-028 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/29/" class="data-table-link">
+          MER-APN-029
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/561/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-029 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/30/" class="data-table-link">
+          MER-APN-030
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/562/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-030 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/32/" class="data-table-link">
+          MER-APN-032
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/564/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-032 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/33/" class="data-table-link">
+          MER-APN-033
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/565/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-033 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/34/" class="data-table-link">
+          MER-APN-034
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/566/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-034 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/35/" class="data-table-link">
+          MER-APN-035
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/567/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-035 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/36/" class="data-table-link">
+          MER-APN-036
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/568/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-036 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/37/" class="data-table-link">
+          MER-APN-037
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/569/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-037 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/38/" class="data-table-link">
+          MER-APN-038
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/570/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-038 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/22/" class="data-table-link">
+          MER-APN-022
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/554/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-022 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/31/" class="data-table-link">
+          MER-APN-031
+        </a>
+      </td>
+      <td class="text-secondary">Sep 05, 2026</td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/accounting/accounts/78/remove-parcel/563/"
+          hx-target="#parcel-assignments"
+          hx-confirm="Remove parcel MER-APN-031 from this account?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+  </tbody>
+</table>
+
+
+        </div>
+      </div>
+
+      <!-- Assign Use Area search card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Assign use area</h2>
+
+        <div class="field-group">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by parcel number or owner..."
+            hx-get="/accounting/accounts/78/search-parcels/"
+            hx-target="#parcel-search-results"
+            hx-trigger="keyup changed delay:300ms"
+            class="form-input"
+          >
+        </div>
+
+        <div id="parcel-search-results">
+          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+  </div>
+</div>
+
+            </main>
+
+            <footer class="app-footer">
+                <div>
+                    OpenH2O — Open Water Accounting Platform ·
+                    <a href="/about/">About</a> ·
+                    <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer">Source code (AGPL-3.0)</a>
+                </div>
+            </footer>
+
+            
+            
+
+
+        </div>
+    </div>
+
+    
+    
+    
+
+    <script>
+    (function() {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var COLLAPSED_KEY = 'sidebar-collapsed';
+
+        // Restore saved state
+        if (localStorage.getItem(COLLAPSED_KEY) === 'true') {
+            sidebar.setAttribute('data-collapsed', 'true');
+        }
+
+        toggle.addEventListener('click', function() {
+            var isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
+            sidebar.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+            localStorage.setItem(COLLAPSED_KEY, isCollapsed ? 'false' : 'true');
+        });
+
+        // Close sidebar on mobile when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth < 768 &&
+                sidebar.getAttribute('data-collapsed') === 'false' &&
+                !sidebar.contains(e.target) &&
+                !toggle.contains(e.target)) {
+                sidebar.setAttribute('data-collapsed', 'true');
+                localStorage.setItem(COLLAPSED_KEY, 'true');
+            }
+        });
+    })();
+    </script>
+
+    <script>
+    // HTMX loading bar
+    (function() {
+        var bar = document.getElementById('loading-bar');
+        document.body.addEventListener('htmx:beforeRequest', function() {
+            bar.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            bar.style.transform = 'scaleX(0.7)';
+        });
+        document.body.addEventListener('htmx:afterRequest', function() {
+            bar.style.transform = 'scaleX(1)';
+            setTimeout(function() {
+                bar.style.transition = 'none';
+                bar.style.transform = 'scaleX(0)';
+                setTimeout(function() {
+                    bar.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                }, 50);
+            }, 300);
+        });
+    })();
+
+    // Toast notification system
+    window.showToast = function(message, type, duration) {
+        type = type || 'success';
+        duration = duration || 3000;
+        var container = document.getElementById('toast-container');
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        // Trigger show animation
+        requestAnimationFrame(function() {
+            toast.classList.add('show');
+        });
+        // Auto-dismiss
+        setTimeout(function() {
+            toast.classList.remove('show');
+            setTimeout(function() { toast.remove(); }, 200);
+        }, duration);
+    };
+
+    // Listen for server-driven toasts via HX-Trigger
+    document.body.addEventListener('showToast', function(e) {
+        var detail = e.detail || {};
+        window.showToast(detail.message || 'Done', detail.type || 'success', detail.duration || 3000);
+    });
+    </script>
+
+    <script>
+    // Global search dropdown (E2): open/close state + keyboard navigation.
+    // HTMX fills #global-search-results; this only manages dismissal and the
+    // up/down/enter affordances over whatever links it rendered.
+    (function() {
+        var wrap = document.getElementById('global-search');
+        if (!wrap) return;  // only present for signed-in users
+        var input = document.getElementById('global-search-input');
+        var results = document.getElementById('global-search-results');
+
+        function options() { return results.querySelectorAll('.search-result'); }
+        function clearActive() {
+            results.querySelectorAll('.search-result.is-active')
+                   .forEach(function(el) { el.classList.remove('is-active'); });
+        }
+        function close() {
+            results.innerHTML = '';
+            input.setAttribute('aria-expanded', 'false');
+        }
+
+        // After each HTMX swap, reflect whether the dropdown actually has content.
+        results.addEventListener('htmx:afterSwap', function() {
+            input.setAttribute('aria-expanded', results.children.length ? 'true' : 'false');
+        });
+
+        input.addEventListener('keydown', function(e) {
+            var opts = options();
+            if (e.key === 'Escape') { close(); input.blur(); return; }
+            if (!opts.length) return;
+            var active = results.querySelector('.search-result.is-active');
+            var idx = Array.prototype.indexOf.call(opts, active);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                clearActive();
+                opts[(idx + 1) % opts.length].classList.add('is-active');
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                clearActive();
+                opts[(idx - 1 + opts.length) % opts.length].classList.add('is-active');
+            } else if (e.key === 'Enter') {
+                var target = active || opts[0];
+                if (target) { e.preventDefault(); window.location.href = target.href; }
+            }
+        });
+
+        // Dismiss when focus/click leaves the search component entirely.
+        document.addEventListener('click', function(e) {
+            if (!wrap.contains(e.target)) close();
+        });
+    })();
+    </script>
+
+    
+</body>
+</html>

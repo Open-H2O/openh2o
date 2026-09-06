@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "d-zone-detail-halvern-irrigation-urban",
+    "url": "/map/zones/2/",
+    "note": "SECTION D PIN for FIG-geography-001..003. Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row - WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-004, the parcel-area column, is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels."
+  },
+  {
+    "slug": "d-datasync-station-list",
+    "url": "/datasync/stations/",
+    "note": "SECTION D EVIDENCE, not a figure site. The station detail pane cannot be reached on this data: datasync_monitoredstation holds ZERO rows. This capture records what the station list actually says, so the four UNVERIFIED datasync rows rest on the served page and not only on a row count."
+  },
+  {
+    "slug": "d-datasync-station-detail-lowest-id",
+    "url": "/datasync/stations/1/",
+    "note": "SECTION D EVIDENCE for FIG-datasync-001..004. Expected to be a non-200: no MonitoredStation row exists with any primary key, so the pane that carries all four datasync figures has no instance to render. Recorded as a finding, not retried."
+  },
+  {
+    "slug": "d-well-detail-mer-w-001",
+    "url": "/wells/32/",
+    "note": "SECTION D PIN for FIG-wells-001..004. Well id 32, registration MER-W-001, 'Ag well on MER-APN-002'. Chosen because one screen carries all four wells figures: it has an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order)."
+  },
+  {
+    "slug": "d-recharge-detail-el-nido-basin-1",
+    "url": "/recharge/6/",
+    "note": "SECTION D PIN for FIG-recharge-001, -002 and -003. El Nido Recharge Basin 1 (site id 6), the first site by name on the list page, so the list figure and the detail figures describe the same basin. Pinned measurement row: the newest, 2026-02-18 water quality, 315.2601 mg/L. Pinned event row: the newest by start date, 2026-02-15 to 2026-02-18, 127.4200 AF."
+  },
+  {
+    "slug": "d-recharge-list",
+    "url": "/recharge/",
+    "note": "SECTION D PIN for FIG-recharge-004. The list is ordered by name and shows every site on one page, so the pinned row is the first: El Nido Recharge Basin 1, capacity 637.10 AF rendered to whole acre-feet."
+  },
+  {
+    "slug": "d-setup-wizard",
+    "url": "/setup/",
+    "note": "SECTION D PIN for FIG-setup-002. The figure renders inside an <option> of the 'District boundary' dropdown. One Boundary row exists, Merced Subbasin, so the pinned option is the only one: stated area 800.948 square miles."
+  },
+  {
+    "slug": "d-setup-confirm",
+    "url": "/setup/confirm/",
+    "note": "SECTION D, FIG-setup-001. Expected to redirect: the confirmation step reads a boundary out of the visitor's session, which is written by the wizard's POST, and this capture performs GETs only. Recorded as a finding so the row says why the screen could not be read rather than borrowing a number from the wizard page."
+  },
+  {
+    "slug": "d-zone-detail-halvern-valley-gsa",
+    "url": "/map/zones/1/",
+    "note": "SECTION D whole-column check on FIG-geography-001..003. Halvern Valley GSA (zone id 1), 46 parcels, the largest groundwater zone. Captured so the Used column's finding rests on every groundwater zone's screen rather than on one."
+  },
+  {
+    "slug": "d-zone-detail-verdano-island-gsa",
+    "url": "/map/zones/3/",
+    "note": "SECTION D whole-column check on FIG-geography-001..003. Verdano Island Water District GSA (zone id 3), 7 parcels. The one groundwater zone whose parcels take no surface canal delivery, so its Used figure is the control case."
+  },
+  {
+    "slug": "d-zone-detail-surface-service-area-halvern",
+    "url": "/map/zones/39/",
+    "note": "SECTION D whole-column check on FIG-geography-001..003. MER Surface Service Area - Halvern Irrigation District (zone id 39), a surface-water allocation, so the page takes the other branch (geography/views.py:205) and labels the figure 'delivered'. Captured to show that branch does filter on source type where the groundwater branch does not."
+  }
+]

@@ -1,0 +1,65 @@
+id,pin,label,recomputed
+CHK-parcels-030,(all 76 parcels),"WY 2024-2025 (period 1): parcels where the card and the residual disagree on sign, i.e. (card >= 0) is not (residual >= 0)",32
+CHK-parcels-031,(all 76 parcels),WY 2025-2026 (period 2): parcels where the card and the residual disagree on sign,24
+CHK-parcels-032,(all 76 parcels),"WY 2024-2025 (period 1): of those, how many are card-says-surplus while residual is negative",32
+CHK-parcels-033,(all 76 parcels),"WY 2025-2026 (period 2): of those, how many are card-says-surplus while residual is negative",24
+CHK-parcels-034,(all 76 parcels),WY 2024-2025 (period 1): parcels where the two PRINTED numbers differ at two decimal places,59
+CHK-parcels-035,(all 76 parcels),WY 2025-2026 (period 2): parcels where the two PRINTED numbers differ at two decimal places,50
+CHK-parcels-036,(all 76 parcels),WY 2024-2025 (period 1): parcels printing a non-zero card beside a residual that prints 0.00,47
+CHK-parcels-037,(all 76 parcels),WY 2025-2026 (period 2): parcels printing a non-zero card beside a residual that prints 0.00,49
+CHK-parcels-040,(all 76 parcels),WY 2024-2025 (period 1): parcels whose residual falls inside the 0.01 AF Balanced band,55
+CHK-parcels-041,(all 76 parcels),WY 2025-2026 (period 2): parcels whose residual falls inside the 0.01 AF Balanced band,58
+CHK-parcels-042,(all 76 parcels),"WY 2024-2025 (period 1): of the sign-disagreeing parcels, how many nevertheless show the grey Balanced badge (residual inside 0.01 AF)",32
+CHK-parcels-043,(all 76 parcels),"WY 2025-2026 (period 2): of the sign-disagreeing parcels, how many nevertheless show the grey Balanced badge",24
+CHK-parcels-044,(all 76 parcels),WY 2025-2026 (period 2): the largest Supplies-minus-consumptive-use figure printed on a pane whose badge reads Balanced,177.47
+CHK-parcels-045,(all 76 parcels),WY 2024-2025 (period 1): the largest Supplies-minus-consumptive-use figure printed on a pane whose badge reads Balanced,168.31
+CHK-parcels-051,(all 76 parcels),"Both periods, all 152 parcel-periods: violations of residual = card - recharge - net banked/drawn",0
+CHK-parcels-052,(all 76 parcels),Both periods: parcel-periods where the whole gap between the two balances is the recharge term alone,109
+CHK-parcels-053,(all 76 parcels),"Both periods: parcel-periods where the Net Banked/Drawn term is non-zero, i.e. banked credit contributes to the gap at all",0
+CHK-parcels-054,(all 76 parcels),Both periods: parcel-periods where the Recharge term is non-zero,109
+CHK-parcels-060,(all 76 parcels),et_estimate ledger rows in the whole database. The suppression rule above is inert while this is 0,0
+CHK-parcels-070,(all 76 parcels),"WY 2024-2025 (period 1): parcels with NO calculation runs, which is what would render the ET-not-computed branch",0
+CHK-parcels-071,(all 76 parcels),WY 2025-2026 (period 2): parcels with NO calculation runs,0
+CHK-parcels-080,(all 76 parcels),Parcels whose pane resolves to WY 2024-2025 (period 1),6
+CHK-parcels-081,(all 76 parcels),Parcels whose pane resolves to WY 2025-2026 (period 2),70
+CHK-parcels-090,(all 76 parcels),Total parcels,76
+FIG-parcels-001,MER-APN-017,Consumptive use (ET),263.07
+FIG-parcels-001,MER-APN-032,Consumptive use (ET),591.28
+FIG-parcels-002,MER-APN-017,Total supplies,395.97
+FIG-parcels-002,MER-APN-032,Total supplies,765.41
+FIG-parcels-003,MER-APN-017,Supplies minus consumptive use,132.90
+FIG-parcels-003,MER-APN-032,Supplies minus consumptive use,174.13
+FIG-parcels-004,MER-APN-017,Net consumptive demand,235.43
+FIG-parcels-004,MER-APN-032,Net consumptive demand,545.17
+FIG-parcels-005,MER-APN-017,Surface water (supply split),0.00
+FIG-parcels-005,MER-APN-032,Surface water (supply split),719.30
+FIG-parcels-006,MER-APN-017,Groundwater (supply split),368.34
+FIG-parcels-006,MER-APN-032,Groundwater (supply split),0.00
+FIG-parcels-007,MER-APN-017,Precipitation (supply split),27.64
+FIG-parcels-007,MER-APN-032,Precipitation (supply split),46.11
+FIG-parcels-008,MER-APN-017,Summary table: Surface,0.00
+FIG-parcels-008,MER-APN-032,Summary table: Surface,719.30
+FIG-parcels-009,MER-APN-017,Summary table: ET,263.07
+FIG-parcels-009,MER-APN-032,Summary table: ET,591.28
+FIG-parcels-010,MER-APN-017,Summary table: Precip,27.64
+FIG-parcels-010,MER-APN-032,Summary table: Precip,46.11
+FIG-parcels-011,MER-APN-017,Summary table: Recharge,0.00
+FIG-parcels-011,MER-APN-032,Summary table: Recharge,174.13
+FIG-parcels-012,MER-APN-017,Summary table: Groundwater pumped,368.34
+FIG-parcels-012,MER-APN-032,Summary table: Groundwater pumped,0.00
+FIG-parcels-013,MER-APN-017,Summary table: Runoff,0.00
+FIG-parcels-013,MER-APN-032,Summary table: Runoff,0.00
+FIG-parcels-014,MER-APN-017,Summary table: Net Banked/Drawn,0.00
+FIG-parcels-014,MER-APN-032,Summary table: Net Banked/Drawn,0.00
+FIG-parcels-015,MER-APN-017,Residual,132.90
+FIG-parcels-015,MER-APN-032,Residual,0.00
+FIG-parcels-016,MER-APN-017,ET-not-computed branch: surface (branch not rendered),0.00
+FIG-parcels-016,MER-APN-032,ET-not-computed branch: surface (branch not rendered),719.30
+FIG-parcels-017,MER-APN-017,ET-not-computed branch: groundwater (branch not rendered),368.34
+FIG-parcels-017,MER-APN-032,ET-not-computed branch: groundwater (branch not rendered),0.00
+FIG-parcels-018,MER-APN-017,Area (Acres),89.84
+FIG-parcels-018,MER-APN-032,Area (Acres),154.69
+FIG-parcels-019,MER-APN-017,Well share (fraction),1.00
+FIG-parcels-019,MER-APN-032,Well share (fraction),1.00
+FIG-parcels-020,MER-APN-017,Recent ledger entries: first Amount (AF),-47.48
+FIG-parcels-020,MER-APN-032,Recent ledger entries: first Amount (AF),-75.23

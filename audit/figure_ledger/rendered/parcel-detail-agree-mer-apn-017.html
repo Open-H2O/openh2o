@@ -1,0 +1,1280 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Use Area MER-APN-017 - Open Water Accounting Platform</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png?v=3">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/img/favicon-192.png?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png?v=3">
+
+    
+
+    <!-- Google Fonts: Public Sans (single sitewide typeface) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Design tokens (loaded separately for cache control) -->
+    <link rel="stylesheet" href="/static/css/tokens.css?v=11">
+    <!-- Compiled Tailwind CSS -->
+    <link rel="stylesheet" href="/static/css/output.css">
+    <!-- App layout and component styles -->
+    <link rel="stylesheet" href="/static/css/app.css?v=71">
+
+    <!-- MapLibre GL JS (available in map pages via block) -->
+    
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/map-engine.css">
+
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous" defer></script>
+
+    <!-- Explainer pop-out positioning (escapes the content scroll box) -->
+    <script src="/static/js/explainer-popout.js?v=1" defer></script>
+
+    
+    
+
+    
+</head>
+<body class="section-water_data" hx-headers='{"X-CSRFToken": "RPkAy8KWzSu6XP6QxHJecN4zI5OlkEaqODQU3cMIZG7K8unx8F8V0j5D37h5uskV"}'>
+    
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="loading-bar" class="loading-bar"></div>
+    <div id="toast-container" class="toast-container"></div>
+    <div class="app-shell">
+        
+<aside id="sidebar" aria-label="Main navigation"
+       class="sidebar"
+       data-collapsed="false">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+        <span class="sidebar-brand-icon">
+            <img src="/static/img/favicon-192.png?v=3" alt="" height="36" style="width: auto;">
+        </span>
+        <span class="sidebar-brand-text">Open<span class="sidebar-brand-accent">H2O</span></span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+
+        <!-- OVERVIEW (no label) -->
+        <a href="/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span class="sidebar-link-text">Home</span>
+        </a>
+
+        <a href="/accounting/dashboard/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Dashboard</span>
+        </a>
+        <a href="/map/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                <line x1="8" y1="2" x2="8" y2="18"/>
+                <line x1="16" y1="6" x2="16" y2="22"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Map</span>
+        </a>
+        <!-- WATER DATA -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Water Data</span>
+        </div>
+        <a href="/accounting/ledger/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <line x1="10" y1="9" x2="8" y2="9"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Use Ledger</span>
+        </a>
+        <a href="/parcels/"
+           class="sidebar-link active">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="3" x2="9" y2="21"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Use Areas</span>
+        </a>
+        <a href="/wells/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v4"/>
+                <path d="M12 18v4"/>
+                <path d="M4.93 4.93l2.83 2.83"/>
+                <path d="M16.24 16.24l2.83 2.83"/>
+                <path d="M2 12h4"/>
+                <path d="M18 12h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Wells</span>
+        </a>
+        <a href="/surface/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Surface Diversions</span>
+        </a>
+        <a href="/recharge/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Recharge Areas</span>
+        </a>
+        <a href="/datasync/stations/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M3 12h3"/>
+                <path d="M18 12h3"/>
+                <path d="M12 3v3"/>
+                <path d="M12 18v3"/>
+                <path d="M5.64 5.64l2.12 2.12"/>
+                <path d="M16.24 16.24l2.12 2.12"/>
+                <path d="M5.64 18.36l2.12-2.12"/>
+                <path d="M16.24 7.76l2.12-2.12"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Monitoring Stations</span>
+        </a>
+        <hr class="sidebar-divider">
+        <a href="/drinking/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3h12l-1.4 16.2a2 2 0 0 1-2 1.8H9.4a2 2 0 0 1-2-1.8z"/>
+                <path d="M6.8 10h10.4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Drinking Water</span>
+        </a>
+        <a href="/drinking/facilities/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="7" height="9" rx="1"/>
+                <rect x="14" y="5" width="7" height="15" rx="1"/>
+                <path d="M2 20h20"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Facilities</span>
+        </a>
+        <a href="/drinking/sampling-points/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 2h6"/>
+                <path d="M10 2v15a2 2 0 0 0 4 0V2"/>
+                <path d="M10 13h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Sampling Points</span>
+        </a>
+        <a href="/drinking/results/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 2v6.5L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 8.5V2"/>
+                <path d="M8.5 2h7"/>
+                <path d="M7 14h10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Sample Results</span>
+        </a>
+        <a href="/drinking/onboard/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3h9l-1.1 12.6a2 2 0 0 1-2 1.8H9.1a2 2 0 0 1-2-1.8z"/>
+                <path d="M6.7 9h7.6"/>
+                <path d="M18 15v6"/>
+                <path d="M15 18h6"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Onboard System</span>
+        </a>
+        <!-- ADMINISTRATION (Admin view only) -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Administration</span>
+        </div>
+        <a href="/surface/rights/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="6"/>
+                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Water Rights</span>
+        </a>
+        <a href="/accounting/accounts/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="M2 10h20"/>
+                <path d="M6 16h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Accounts</span>
+        </a>
+        <a href="/accounting/reporting-periods/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Water Years</span>
+        </a>
+        <a href="/accounting/allocations/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 2a10 10 0 0 1 0 20"/>
+                <path d="M12 2v20"/>
+                <path d="M2 12h10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Allocations</span>
+        </a>
+        <a href="/map/zones/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Zones</span>
+        </a>
+        <a href="/users/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Users</span>
+        </a>
+        <a href="/accounting/methodology/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"/>
+                <line x1="4" y1="10" x2="4" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12" y2="3"/>
+                <line x1="20" y1="21" x2="20" y2="16"/>
+                <line x1="20" y1="12" x2="20" y2="3"/>
+                <line x1="1" y1="14" x2="7" y2="14"/>
+                <line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="17" y1="16" x2="23" y2="16"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Methodology</span>
+        </a>
+        <a href="/accounting/delivery-settings/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12h20"/>
+                <path d="M2 6h20"/>
+                <path d="M2 18h20"/>
+                <circle cx="8" cy="6" r="2" fill="currentColor"/>
+                <circle cx="16" cy="12" r="2" fill="currentColor"/>
+                <circle cx="7" cy="18" r="2" fill="currentColor"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Delivery Settings</span>
+        </a>
+        <a href="/health/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Site Health</span>
+        </a>
+        <a href="/setup/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 1.36 13.37"/>
+                <path d="M4.93 4.93a10 10 0 0 0-1.36 13.37"/>
+                <path d="M12 2v3"/>
+                <path d="M12 19v3"/>
+                <path d="M2 12h3"/>
+                <path d="M19 12h3"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Setup Wizard</span>
+        </a>
+        <!-- REPORTING -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Reporting</span>
+        </div>
+        <a href="/reporting/reports/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+                <line x1="9" y1="11" x2="13" y2="11"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Reports</span>
+        </a>
+
+        <!-- HELP (collapsed by default; auto-opens on a help/about page) -->
+        <details class="sidebar-collapsible">
+        <summary class="sidebar-section sidebar-collapsible-summary">
+            <span class="sidebar-link-text sidebar-section-label">Help</span>
+            <svg class="sidebar-collapsible-chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </summary>
+        <a href="/help/getting-started/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span class="sidebar-link-text">Getting Started</span>
+        </a>
+        <a href="/help/water-balances/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v18"/>
+                <path d="M5 7h14"/>
+                <path d="M5 7l-3 6a3 3 0 0 0 6 0z"/>
+                <path d="M19 7l-3 6a3 3 0 0 0 6 0z"/>
+                <path d="M8 21h8"/>
+            </svg>
+            <span class="sidebar-link-text">Water Balance Info</span>
+        </a>
+        <a href="/help/methods/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span class="sidebar-link-text">Methods</span>
+        </a>
+        <a href="/help/settings/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span class="sidebar-link-text">Configs Explained</span>
+        </a>
+        <a href="/help/glossary/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="4" y1="12" x2="14" y2="12"/>
+                <line x1="4" y1="18" x2="18" y2="18"/>
+            </svg>
+            <span class="sidebar-link-text">Glossary</span>
+        </a>
+        <a href="/about/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span class="sidebar-link-text">About</span>
+        </a>
+        </details>
+
+        <!-- VIEW MODE — segmented toggle, tucked at the foot of the nav -->
+        <div class="nav-mode-toggle" role="group" aria-label="Sidebar view mode">
+            <a href="/nav-mode/?mode=operations"
+               class="nav-mode-option"
+               title="Everyday tools only">Operations</a>
+            <a href="/nav-mode/?mode=admin"
+               class="nav-mode-option active"
+               title="Show setup &amp; administration tools">Admin</a>
+        </div>
+    </nav>
+</aside>
+<script>
+    // On a phone the sidebar is a fixed overlay that sits on top of the page,
+    // so it must start closed or it covers the content on every load. Run this
+    // inline right after the sidebar markup (before the main content paints) to
+    // avoid a flash of the open sidebar. The hamburger opens it; an outside tap
+    // closes it (wired in base.html). We deliberately do NOT write localStorage
+    // here, so the desktop open/collapsed preference is left untouched.
+    (function () {
+        if (window.matchMedia('(max-width: 767px)').matches) {
+            document.getElementById('sidebar').setAttribute('data-collapsed', 'true');
+        }
+    })();
+</script>
+
+
+        <div class="app-main">
+            <header class="app-header">
+    <!-- Left group: sidebar toggle + global search -->
+    <div class="app-header-left">
+        <!-- Sidebar toggle (hamburger) -->
+        <button id="sidebar-toggle"
+                class="sidebar-toggle"
+                type="button"
+                aria-label="Toggle sidebar">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
+
+        
+        <div class="global-search" id="global-search">
+            <svg class="global-search-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search"
+                   id="global-search-input"
+                   name="q"
+                   class="global-search-input"
+                   placeholder="Search parcels, wells, accounts…"
+                   autocomplete="off"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-controls="global-search-results"
+                   aria-label="Search records"
+                   hx-get="/search/"
+                   hx-target="#global-search-results"
+                   hx-swap="innerHTML"
+                   hx-trigger="keyup changed delay:250ms, focus">
+            <div id="global-search-results" class="global-search-results"></div>
+        </div>
+        
+    </div>
+
+    
+    <div></div>
+
+    <!-- User menu -->
+    <div class="app-header-user">
+        
+            <a href="/nav-mode/?mode=operations" class="header-mode-badge"
+               title="You are in Admin mode — click to return to Operations">Admin mode</a>
+        
+        
+            <a href="/profile/" class="app-header-email">render-crawl@example.invalid</a>
+            <a href="/accounts/logout/" class="btn-secondary btn-sm">Sign out</a>
+        
+    </div>
+</header>
+
+
+            
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/parcels/">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="/parcels/">Use Areas</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">MER-APN-017</span>
+  </nav>
+  <p class="page-description">Use area details and related data. Click any editable field to update it.</p>
+</div>
+
+
+            <main class="app-content" id="main-content">
+                
+                <h1 class="sr-only">Use Area MER-APN-017</h1>
+                
+                
+<div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
+  <span class="badge badge-pill notice-badge">Demo</span>
+  <p class="demo-notice-text">
+    This demo mixes <strong>invented sample data</strong> with <strong>real published records</strong> to show what the platform can do.
+    <a href="/about/demonstration-data/" class="prose-link">See the difference</a>.
+    <strong>For testing purposes only.</strong>
+  </p>
+</div>
+
+
+                
+<div class="page-stack">
+  <div>
+    <a href="/parcels/" class="back-link">&larr; Back to Use Areas</a>
+  </div>
+  <!-- Persistent map host (the shared body partial builds the map into this). -->
+  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+  </div>
+  <div id="detail-body">
+    
+
+<!-- Pane header: which parcel you're looking at (the workspace has no breadcrumb). -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">MER-APN-017</div>
+    <div class="pane-header-sub">Saddlebow Ag Holdings</div>
+  </div>
+  <div class="pane-header-meta">
+    
+  <span class="badge badge-pill badge-green">Active</span>
+
+
+    <a href="/parcels/17/" class="text-tertiary text-xs back-link" title="Open this use area on its own page">Open full page &rarr;</a>
+  </div>
+</div>
+
+<div class="pane-stack">
+
+  <!-- Water Balance card -->
+  <div class="card-raised">
+    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+      
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance
+<span class="explainer-popout">
+  <button type="button" class="explainer-icon" aria-label="Explain: How this is calculated">?</button>
+  <span class="explainer-panel" role="tooltip">
+    <span class="explainer-title">How this is calculated</span>
+    <span class="explainer-text">Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's satellite-estimated consumptive use (ET). The month links below show each step.</span>
+    
+    <a href="/help/methods/" class="explainer-link">Methods behind the numbers &rarr;</a>
+    
+  </span>
+</span>
+</h2>
+      
+      <span class="text-tertiary text-xs">WY 2025-2026</span>
+      
+    </div>
+
+    
+    <!-- ET has been computed: full consumptive-use + closing identity. -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
+      <div class="inset-card">
+        <div class="stat-card-label">Consumptive use (ET)</div>
+        <div class="stat-card-value-sm text-usage">263.07</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+      <div class="inset-card">
+        <div class="stat-card-label">Total supplies</div>
+        <div class="stat-card-value-sm text-supply">395.97</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+      <div class="inset-card">
+        <div class="stat-card-label">Supplies − consumptive use</div>
+        <div class="stat-card-value-sm text-surplus">132.90</div>
+        <div class="stat-card-unit">AF</div>
+      </div>
+    </div>
+
+    <div style="margin: 0 0 var(--space-lg);">
+      <p class="text-sm text-secondary" style="margin: 0 0 var(--space-sm);">
+        Net consumptive demand of
+        <span class="text-usage" style="font-weight: 600;">235.43 AF</span>
+        (consumptive use after effective rainfall), met by these supplies:
+      </p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm);">
+        <div class="inset-card">
+          <div class="stat-card-label">Surface water</div>
+          <div class="stat-card-value-sm text-supply">0.00</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+        <div class="inset-card">
+          <div class="stat-card-label">Groundwater</div>
+          <div class="stat-card-value-sm text-supply">368.34</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+        <div class="inset-card">
+          <div class="stat-card-label">Precipitation</div>
+          <div class="stat-card-value-sm text-supply">27.64</div>
+          <div class="stat-card-unit">AF</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="section-header-sm">Supply vs. use summary</h3>
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th>Supplies</th><th class="th-right">AF</th>
+          <th>Uses</th><th class="th-right">AF</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-secondary">Surface</td>
+          <td class="td-num text-supply">0.00</td>
+          <td class="text-secondary">ET</td>
+          <td class="td-num text-usage">263.07</td>
+        </tr>
+        <tr>
+          <td class="text-secondary">Precip</td>
+          <td class="td-num text-supply">27.64</td>
+          <td class="text-secondary">Recharge</td>
+          <td class="td-num">0.00</td>
+        </tr>
+        <tr>
+          <td class="text-secondary">Groundwater pumped</td>
+          <td class="td-num text-supply">368.34</td>
+          <td class="text-secondary">Runoff</td>
+          <td class="td-num">0.00</td>
+        </tr>
+        <tr>
+          <td></td><td></td>
+          <td class="text-secondary">Net Banked/Drawn (credits)</td>
+          <td class="td-num">0.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="row-between mb-md mt-sm">
+      <span class="text-secondary text-sm">Residual: <span class="td-num">132.90</span> AF</span>
+      
+      
+      <span class="badge badge-orange">Surplus</span>
+      
+    </div>
+    
+    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+      More water is recorded arriving here than this parcel's uses account for —
+      by more than a quarter of estimated consumptive use, so it is flagged rather
+      than treated as ordinary on-farm loss. A surplus this size is a gap in the
+      books, not spare water: conveyance loss is not yet a term in this platform,
+      so ditch seepage and evaporation have nowhere to be recorded and land here.
+    </p>
+    
+
+    <div class="border-separator">
+      <div class="text-tertiary text-xs mb-sm">See the calculation for each month:</div>
+      <div class="row-start" style="flex-wrap: wrap; gap: var(--space-xs);">
+        
+        <a href="/accounting/calculation-run/17/2025-10/" class="badge badge-blue">2025-10</a>
+        
+        <a href="/accounting/calculation-run/17/2025-11/" class="badge badge-blue">2025-11</a>
+        
+        <a href="/accounting/calculation-run/17/2025-12/" class="badge badge-blue">2025-12</a>
+        
+        <a href="/accounting/calculation-run/17/2026-01/" class="badge badge-blue">2026-01</a>
+        
+        <a href="/accounting/calculation-run/17/2026-02/" class="badge badge-blue">2026-02</a>
+        
+        <a href="/accounting/calculation-run/17/2026-03/" class="badge badge-blue">2026-03</a>
+        
+        <a href="/accounting/calculation-run/17/2026-04/" class="badge badge-blue">2026-04</a>
+        
+        <a href="/accounting/calculation-run/17/2026-05/" class="badge badge-blue">2026-05</a>
+        
+        <a href="/accounting/calculation-run/17/2026-06/" class="badge badge-blue">2026-06</a>
+        
+        <a href="/accounting/calculation-run/17/2026-07/" class="badge badge-blue">2026-07</a>
+        
+        <a href="/accounting/calculation-run/17/2026-08/" class="badge badge-blue">2026-08</a>
+        
+        <a href="/accounting/calculation-run/17/2026-09/" class="badge badge-blue">2026-09</a>
+        
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- SUPPORTING INFO: parcel attributes (left) + ledger (right). -->
+  <div class="page-grid-2col">
+
+    <!-- Left column: Parcel attributes & relationships -->
+    <div class="page-stack">
+
+      <!-- Parcel Info card -->
+      <div class="card-raised">
+        <h2 class="section-header">
+          Parcel information <span class="badge badge-pill badge-demo" title="Sample data — not a real legal action">DEMO</span>
+
+        </h2>
+
+        <div class="field-group">
+          <div class="field-label">Parcel number</div>
+          <div class="field-value">MER-APN-017</div>
+        </div>
+
+        
+        <div class="field-group">
+          <div class="field-label field-row">
+            Owner Name
+            
+          </div>
+          <div id="field-owner_name" class="field-row">
+            <span class="field-value" style="flex: 1;">
+              
+                Saddlebow Ag Holdings
+              
+            </span>
+            <button
+              hx-get="/parcels/17/edit-field/?field=owner_name"
+              hx-target="#field-owner_name"
+              hx-swap="innerHTML"
+              class="edit-btn"
+              title="Edit Owner Name">
+              &#9998;
+            </button>
+          </div>
+        </div>
+        
+        <div class="field-group">
+          <div class="field-label field-row">
+            Area (Acres)
+            
+              <span class="help-tooltip">
+  <button type="button" class="help-icon" aria-label="Help: Area (acres)">?</button>
+  <span class="help-text" role="tooltip">Calculated from the parcel geometry. Used for per-acre allocation calculations.</span>
+</span>
+
+            
+          </div>
+          <div id="field-area_acres" class="field-row">
+            <span class="field-value" style="flex: 1;">
+              
+                89.84
+              
+            </span>
+            <button
+              hx-get="/parcels/17/edit-field/?field=area_acres"
+              hx-target="#field-area_acres"
+              hx-swap="innerHTML"
+              class="edit-btn"
+              title="Edit Area (Acres)">
+              &#9998;
+            </button>
+          </div>
+        </div>
+        
+        <div class="field-group">
+          <div class="field-label field-row">
+            Status
+            
+              <span class="help-tooltip">
+  <button type="button" class="help-icon" aria-label="Help: Status">?</button>
+  <span class="help-text" role="tooltip">Active use areas are included in your water data and reports. Inactive use areas are excluded.</span>
+</span>
+
+            
+          </div>
+          <div id="field-status" class="field-row">
+            <span class="field-value" style="flex: 1;">
+              
+                
+  <span class="badge badge-pill badge-green">Active</span>
+
+
+              
+            </span>
+            <button
+              hx-get="/parcels/17/edit-field/?field=status"
+              hx-target="#field-status"
+              hx-swap="innerHTML"
+              class="edit-btn"
+              title="Edit Status">
+              &#9998;
+            </button>
+          </div>
+        </div>
+        
+        <div class="field-group">
+          <div class="field-label field-row">
+            Address
+            
+          </div>
+          <div id="field-address" class="field-row">
+            <span class="field-value" style="flex: 1;">
+              
+                25462 Westside Rd, El Nido, CA 95317
+              
+            </span>
+            <button
+              hx-get="/parcels/17/edit-field/?field=address"
+              hx-target="#field-address"
+              hx-swap="innerHTML"
+              class="edit-btn"
+              title="Edit Address">
+              &#9998;
+            </button>
+          </div>
+        </div>
+        
+        <div class="field-group">
+          <div class="field-label field-row">
+            Notes
+            
+          </div>
+          <div id="field-notes" class="field-row">
+            <span class="field-value" style="flex: 1;">
+              
+                DWR field 2420641 | Field crops (F16) | Merced | source=conjunctive
+              
+            </span>
+            <button
+              hx-get="/parcels/17/edit-field/?field=notes"
+              hx-target="#field-notes"
+              hx-swap="innerHTML"
+              class="edit-btn"
+              title="Edit Notes">
+              &#9998;
+            </button>
+          </div>
+        </div>
+        
+
+        <div class="border-separator">
+          <div class="text-tertiary text-xs">
+            Created Aug 05, 2026 &middot; Updated Aug 05, 2026
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone Memberships card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Zone memberships</h2>
+        
+          
+          <div class="item-row row-start">
+            <span class="field-value-sm">Halvern Valley GSA</span>
+            
+            <span class="pill-tag">Management Area</span>
+            
+          </div>
+          
+          <div class="item-row row-start">
+            <span class="field-value-sm">MER Surface Service Area — Saddlebow Irrigation District (MER-WR-009-DEMO)</span>
+            
+            <span class="pill-tag">Custom</span>
+            
+          </div>
+          
+        
+      </div>
+
+      <!-- Related Wells card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Related wells</h2>
+        
+          
+          <div class="item-row row-between">
+            <a href="/wells/38/" class="data-table-link text-base">
+              Ag well on MER-APN-017
+            </a>
+            <span class="text-tertiary text-xs">1.00 fraction</span>
+          </div>
+          
+        
+      </div>
+
+    </div>
+
+    <!-- Right column: ledger activity -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+          <h2 class="section-header-flush">Recent ledger entries</h2>
+          <div class="row-start">
+            <a href="/accounting/ledger/?q=MER-APN-017"
+               class="text-tertiary back-link text-xs">
+              View All
+            </a>
+            <a href="/accounting/ledger/create/?parcel=17"
+               class="btn-primary btn-sm">
+              + Add entry
+            </a>
+          </div>
+        </div>
+        
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th class="th-right">Amount (AF)</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="text-secondary">Sep 15, 2026</td>
+              <td class="td-num ">-47.48</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Aug 15, 2026</td>
+              <td class="td-num ">-85.58</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Jul 15, 2026</td>
+              <td class="td-num ">-79.55</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Jun 15, 2026</td>
+              <td class="td-num ">-22.53</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">May 15, 2026</td>
+              <td class="td-num ">-29.81</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Apr 15, 2026</td>
+              <td class="td-num ">-49.99</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Mar 15, 2026</td>
+              <td class="td-num ">-26.88</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Feb 15, 2026</td>
+              <td class="td-num ">-12.53</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Jan 15, 2026</td>
+              <td class="td-num ">-7.31</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">Dec 15, 2025</td>
+              <td class="td-num ">-2.68</td>
+              <td class="text-tertiary">Meter Reading</td>
+            </tr>
+            
+          </tbody>
+        </table>
+        
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script id="parcel-geojson-data" type="application/json">{"type": "FeatureCollection", "features": [{"type": "Feature", "id": 17, "properties": {"parcel_number": "MER-APN-017", "owner_name": "Saddlebow Ag Holdings"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[-120.39427828221635, 37.217152134201726], [-120.39731195581291, 37.21800604505408], [-120.39755541542458, 37.21831228258129], [-120.39761559536207, 37.21931420534839], [-120.39763259148727, 37.21959714722948], [-120.39765103210341, 37.22135194133532], [-120.39764389319184, 37.22145544845354], [-120.39762961626705, 37.221494708701144], [-120.39758678459431, 37.22154110936018], [-120.3973762024237, 37.22158750784471], [-120.39418177530708, 37.221619631891684], [-120.39083087154943, 37.221659673193734], [-120.38430225383097, 37.221737416608676], [-120.38415591557623, 37.22171243159689], [-120.38401314812478, 37.22165532327415], [-120.38397388635696, 37.22160178655179], [-120.38397031735035, 37.22154111079087], [-120.38397388635696, 37.221476864762316], [-120.38520653033532, 37.2197954002746], [-120.38533252534212, 37.21962728989237], [-120.38710567035558, 37.21726136504649], [-120.39427828221635, 37.217152134201726]]]]}}]}</script>
+<script>
+(function () {
+  function boot() {
+    if (typeof maplibregl === 'undefined' || !window.OH2O || !OH2O.basemapStyle) {
+      return window.setTimeout(boot, 50);
+    }
+    var card = document.getElementById('detail-map-card');
+    var host = document.getElementById('detail-map');
+    var dataEl = document.getElementById('parcel-geojson-data');
+    if (!card || !host) return;            // page has no map host
+    if (!dataEl) { card.style.display = 'none'; return; }  // parcel has no geometry
+    card.style.display = '';
+
+    var geojson = JSON.parse(dataEl.textContent);
+
+    // Flatten every vertex to frame the parcel.
+    var coords = [];
+    geojson.features.forEach(function (f) {
+      if (f.geometry && f.geometry.coordinates) {
+        f.geometry.coordinates.forEach(function (poly) {
+          poly.forEach(function (ring) { ring.forEach(function (pt) { coords.push(pt); }); });
+        });
+      }
+    });
+    var bounds = null, center = [-120.5, 37.3];
+    if (coords.length) {
+      var lons = coords.map(function (c) { return c[0]; });
+      var lats = coords.map(function (c) { return c[1]; });
+      bounds = [[Math.min.apply(null, lons), Math.min.apply(null, lats)],
+                [Math.max.apply(null, lons), Math.max.apply(null, lats)]];
+      center = [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+    }
+
+    var map = window._parcelPaneMap;
+    if (map && map.__oh2oReady) {
+      // UPDATE the existing map in place — no rebuild, no flash.
+      map.getSource('parcel').setData(geojson);
+      map.resize();  // card may have been display:none (zeroes the canvas)
+      if (bounds) map.fitBounds(bounds, { padding: 32, maxZoom: 16, duration: 0 });
+      return;
+    }
+    if (map) return;  // a map is mid-build; its load handler will use current data
+
+    // CREATE once.
+    map = new maplibregl.Map({
+      container: 'detail-map',
+      style: OH2O.basemapStyle('aerial'),
+      center: center,
+      zoom: 13,
+      fadeDuration: 0   // no tile cross-fade flicker
+    });
+    window._parcelPaneMap = map;
+    map.on('load', function () {
+      map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+      OH2O.mountBasemapToggle(map, 'aerial');
+      map.addSource('parcel', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'parcel-fill', type: 'fill', source: 'parcel',
+        paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.35 }
+      });
+      map.addLayer({
+        id: 'parcel-outline', type: 'line', source: 'parcel',
+        paint: { 'line-color': OH2O.colors.blue, 'line-width': 2 }
+      });
+      OH2O.addDetailLabel(map, 'parcel', 'parcel', { id: 'parcel-label', anchor: 'center', offset: [0, 0] });
+      OH2O.attachPopup(map, 'parcel-fill', function (p) {
+        return '<strong>' + (p.parcel_number || 'Parcel') + '</strong><br>' +
+               'Owner: ' + (p.owner_name || '—');
+      });
+      // Re-read the CURRENT data element — the user may have switched parcels
+      // while tiles were loading, so honour the latest selection.
+      var latest = document.getElementById('parcel-geojson-data');
+      if (latest) {
+        try {
+          var gj = JSON.parse(latest.textContent);
+          map.getSource('parcel').setData(gj);
+          var cs = [];
+          gj.features.forEach(function (f) { if (f.geometry && f.geometry.coordinates) f.geometry.coordinates.forEach(function (poly) { poly.forEach(function (ring) { ring.forEach(function (pt) { cs.push(pt); }); }); }); });
+          if (cs.length) {
+            var lo = cs.map(function (c) { return c[0]; }), la = cs.map(function (c) { return c[1]; });
+            map.fitBounds([[Math.min.apply(null, lo), Math.min.apply(null, la)], [Math.max.apply(null, lo), Math.max.apply(null, la)]], { padding: 32, maxZoom: 16, duration: 0 });
+          }
+        } catch (e) {}
+      } else if (bounds) {
+        map.fitBounds(bounds, { padding: 32, maxZoom: 16, duration: 0 });
+      }
+      map.__oh2oReady = true;
+    });
+  }
+  boot();
+})();
+</script>
+
+  </div>
+</div>
+
+            </main>
+
+            <footer class="app-footer">
+                <div>
+                    OpenH2O — Open Water Accounting Platform ·
+                    <a href="/about/">About</a> ·
+                    <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer">Source code (AGPL-3.0)</a>
+                </div>
+            </footer>
+
+            
+            
+
+
+        </div>
+    </div>
+
+    
+    
+
+<!-- Libraries only; the map is built by the guarded init inside _detail_pane. -->
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="/static/js/map-core.js"></script>
+
+
+    
+
+    <script>
+    (function() {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var COLLAPSED_KEY = 'sidebar-collapsed';
+
+        // Restore saved state
+        if (localStorage.getItem(COLLAPSED_KEY) === 'true') {
+            sidebar.setAttribute('data-collapsed', 'true');
+        }
+
+        toggle.addEventListener('click', function() {
+            var isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
+            sidebar.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+            localStorage.setItem(COLLAPSED_KEY, isCollapsed ? 'false' : 'true');
+        });
+
+        // Close sidebar on mobile when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth < 768 &&
+                sidebar.getAttribute('data-collapsed') === 'false' &&
+                !sidebar.contains(e.target) &&
+                !toggle.contains(e.target)) {
+                sidebar.setAttribute('data-collapsed', 'true');
+                localStorage.setItem(COLLAPSED_KEY, 'true');
+            }
+        });
+    })();
+    </script>
+
+    <script>
+    // HTMX loading bar
+    (function() {
+        var bar = document.getElementById('loading-bar');
+        document.body.addEventListener('htmx:beforeRequest', function() {
+            bar.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            bar.style.transform = 'scaleX(0.7)';
+        });
+        document.body.addEventListener('htmx:afterRequest', function() {
+            bar.style.transform = 'scaleX(1)';
+            setTimeout(function() {
+                bar.style.transition = 'none';
+                bar.style.transform = 'scaleX(0)';
+                setTimeout(function() {
+                    bar.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                }, 50);
+            }, 300);
+        });
+    })();
+
+    // Toast notification system
+    window.showToast = function(message, type, duration) {
+        type = type || 'success';
+        duration = duration || 3000;
+        var container = document.getElementById('toast-container');
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        // Trigger show animation
+        requestAnimationFrame(function() {
+            toast.classList.add('show');
+        });
+        // Auto-dismiss
+        setTimeout(function() {
+            toast.classList.remove('show');
+            setTimeout(function() { toast.remove(); }, 200);
+        }, duration);
+    };
+
+    // Listen for server-driven toasts via HX-Trigger
+    document.body.addEventListener('showToast', function(e) {
+        var detail = e.detail || {};
+        window.showToast(detail.message || 'Done', detail.type || 'success', detail.duration || 3000);
+    });
+    </script>
+
+    <script>
+    // Global search dropdown (E2): open/close state + keyboard navigation.
+    // HTMX fills #global-search-results; this only manages dismissal and the
+    // up/down/enter affordances over whatever links it rendered.
+    (function() {
+        var wrap = document.getElementById('global-search');
+        if (!wrap) return;  // only present for signed-in users
+        var input = document.getElementById('global-search-input');
+        var results = document.getElementById('global-search-results');
+
+        function options() { return results.querySelectorAll('.search-result'); }
+        function clearActive() {
+            results.querySelectorAll('.search-result.is-active')
+                   .forEach(function(el) { el.classList.remove('is-active'); });
+        }
+        function close() {
+            results.innerHTML = '';
+            input.setAttribute('aria-expanded', 'false');
+        }
+
+        // After each HTMX swap, reflect whether the dropdown actually has content.
+        results.addEventListener('htmx:afterSwap', function() {
+            input.setAttribute('aria-expanded', results.children.length ? 'true' : 'false');
+        });
+
+        input.addEventListener('keydown', function(e) {
+            var opts = options();
+            if (e.key === 'Escape') { close(); input.blur(); return; }
+            if (!opts.length) return;
+            var active = results.querySelector('.search-result.is-active');
+            var idx = Array.prototype.indexOf.call(opts, active);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                clearActive();
+                opts[(idx + 1) % opts.length].classList.add('is-active');
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                clearActive();
+                opts[(idx - 1 + opts.length) % opts.length].classList.add('is-active');
+            } else if (e.key === 'Enter') {
+                var target = active || opts[0];
+                if (target) { e.preventDefault(); window.location.href = target.href; }
+            }
+        });
+
+        // Dismiss when focus/click leaves the search component entirely.
+        document.addEventListener('click', function(e) {
+            if (!wrap.contains(e.target)) close();
+        });
+    })();
+    </script>
+
+    
+</body>
+</html>

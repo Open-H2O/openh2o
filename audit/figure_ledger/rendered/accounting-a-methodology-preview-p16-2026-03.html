@@ -1,0 +1,87 @@
+
+<div class="card-raised mt-md">
+  
+
+    <!-- Header: parcel + period + the final number -->
+    <div class="row-between mb-md" style="align-items: flex-start;">
+      <div>
+        <h2 class="section-header" style="margin-bottom: var(--space-xs);">
+          Preview &middot; MER-APN-016 &middot; 2026-03
+        </h2>
+        <div class="text-tertiary text-sm">
+          Uses the currently-saved methodology. Nothing is billed or banked — this writes no data.
+        </div>
+      </div>
+      <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
+        27.9945 AF
+        <div class="field-label" style="text-align: right;">Billable groundwater</div>
+      </div>
+    </div>
+
+    <!-- Honesty label -->
+    <div class="card-raised card-inset honesty-note" style="margin-bottom: var(--space-md);">
+      <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
+        <strong>Derived extraction estimate — not measured pumping.</strong>
+        Computed from satellite evapotranspiration via the saved chain below.
+      </p>
+    </div>
+
+    
+    <table class="data-table text-sm">
+      <thead>
+        <tr>
+          <th style="width: 1%; white-space: nowrap;">#</th>
+          <th>Step</th>
+          <th>Detail</th>
+          <th class="th-right">In (AF)</th>
+          <th class="th-right">Out (AF)</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td class="text-tertiary">1</td>
+          <td style="font-weight: 600;">Gross ET (OpenET ensemble)</td>
+          <td class="text-secondary">81.12 mm × 149.73 ac</td>
+          <td class="td-num text-tertiary">0.0000</td>
+          <td class="td-num">39.8491</td>
+        </tr>
+        
+        <tr>
+          <td class="text-tertiary">2</td>
+          <td style="font-weight: 600;">Subtract effective precipitation (USDA-SCS)</td>
+          <td class="text-secondary">usda_scs: −11.8546 AF effective precip</td>
+          <td class="td-num text-tertiary">39.8491</td>
+          <td class="td-num">27.9945</td>
+        </tr>
+        
+        <tr>
+          <td class="text-tertiary">3</td>
+          <td style="font-weight: 600;">Subtract surface water delivered</td>
+          <td class="text-secondary">−0.0000 AF surface water delivered</td>
+          <td class="td-num text-tertiary">27.9945</td>
+          <td class="td-num">27.9945</td>
+        </tr>
+        
+        <tr>
+          <td class="text-tertiary">4</td>
+          <td style="font-weight: 600;">Zero out facility-only parcels</td>
+          <td class="text-secondary">has irrigation — unchanged</td>
+          <td class="td-num text-tertiary">27.9945</td>
+          <td class="td-num">27.9945</td>
+        </tr>
+        
+        <tr>
+          <td class="text-tertiary">5</td>
+          <td style="font-weight: 600;">Clamp at floor</td>
+          <td class="text-secondary">floor 0.00</td>
+          <td class="td-num text-tertiary">27.9945</td>
+          <td class="td-num">27.9945</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+
+  
+</div>

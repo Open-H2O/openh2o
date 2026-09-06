@@ -1,0 +1,22 @@
+[
+  {
+    "slug": "parcel-detail-agree-mer-apn-017",
+    "url": "/parcels/17/",
+    "note": "PINNED INSTANCE A for ledger section 2, the AGREEING case. MER-APN-017, Saddlebow Ag Holdings (parcel id 17). The two balances on this pane agree: the Supplies-minus-consumptive-use card and the mass-balance residual are the same number, because this parcel banked no incidental recharge in the period. The pane has no period control (parcels/views.py:181 builds its context without reading the request), so the period is whatever parcels/views.py:118-127 resolves for this parcel: WY 2025-2026, the dry year, reporting period id 2."
+  },
+  {
+    "slug": "parcel-detail-disagree-mer-apn-032",
+    "url": "/parcels/32/",
+    "note": "PINNED INSTANCE B for ledger section 2, the DISAGREEING case (ISS-148). MER-APN-032, Ashvale Orchards Inc. (parcel id 32). The Supplies-minus-consumptive-use card reads a large positive surplus while the mass-balance residual immediately below reads 0.00 and the badge reads Balanced. Same period resolution as instance A: WY 2025-2026, the dry year, reporting period id 2."
+  },
+  {
+    "slug": "parcel-detail-disagree-mer-apn-032-periodparam-2",
+    "url": "/parcels/32/?period=2",
+    "note": "The same parcel with an explicit ?period=2. Captured to OBSERVE whether the parcel pane honours a period parameter at all, rather than asserting it from reading the view. Compare byte-for-byte against parcel-detail-disagree-mer-apn-032."
+  },
+  {
+    "slug": "parcel-detail-disagree-mer-apn-032-periodparam-1",
+    "url": "/parcels/32/?period=1",
+    "note": "The same parcel with ?period=1, the wet year. The other half of the same observation: if the pane honoured a period parameter these bytes would differ from the ?period=2 capture."
+  }
+]

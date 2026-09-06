@@ -1,0 +1,65 @@
+[
+  {
+    "slug": "surface-pod-detail-snelling",
+    "url": "/surface/diversion/9/",
+    "status": 200,
+    "bytes": 45335,
+    "sha256": "7a0f5041e2fa3ded7972fe21911ca0753ab42af85212c030f6e501b5458ffae2",
+    "note": "PINNED for FIG-surface-001..005. MER-POD-011-DEMO Snelling Re-Diversion (point of diversion id 9), on water right MER-WR-010-DEMO. Chosen over the first row on the diversion list because it is the ONLY point of diversion in the demonstration whose return flow is neither zero nor the whole volume: its 2026-05-15 record is 250.0000 diverted / 100.0000 returned / 150.0000 consumed, so Diverted, Return Flow and Consumptive Use are three distinct numbers and a wrong subtraction can actually fail. Everywhere else consumed equals diverted and a zero column would match any formula. The diversion-records table is pinned to the 2026-05-15 row (fourth row on screen); the table itself is NOT period-scoped, so ?period= would change nothing here.",
+    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+  },
+  {
+    "slug": "surface-pod-detail-bpod001",
+    "url": "/surface/diversion/10/",
+    "status": 200,
+    "bytes": 44487,
+    "sha256": "65945b9f3e8ee57f36bbb41c522781828ccd8d1f9a27e6a699719fad4c8c7e33",
+    "note": "Evidence, not a figure pin. MER-BPOD-001 El Nido Canal Recharge Intake (id 10) carries no water right and no maximum rate, so both of this template's figures are inside {% if %} guards that do not fire. Captured to record what the screen says instead, because the same diversion point IS shown on the CalWATRS worksheet and is withheld from the generated state file.",
+    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+  },
+  {
+    "slug": "surface-right-detail-wr010",
+    "url": "/surface/rights/7/",
+    "status": 200,
+    "bytes": 45180,
+    "sha256": "6813a57b75bd9478a39d114d7b4475130f26d4903023408fe538f38271075745",
+    "note": "PINNED for FIG-surface-007..009. MER-WR-010-DEMO, Halvern Hydroelectric Co., face value 60,000 AF. Same right as the diversion-point pin above, so the two screens can be read against each other. Points of diversion are ordered by name, so the pinned Max rate row is MER-POD-010-DEMO Merced Falls Hydroelectric Diversion. Recent diversion records are pinned to the FIRST row, 2026-09-15 on MER-POD-010-DEMO -- unambiguous because the other diversion point on this right has no September 2026 record.",
+    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+  },
+  {
+    "slug": "surface-rights-list",
+    "url": "/surface/rights/",
+    "status": 200,
+    "bytes": 37016,
+    "sha256": "e178cb4588a32f4cebdd74b17af774deb363d1db25f85cc17d8ecd3a319863d7",
+    "note": "PINNED for FIG-surface-006. The water rights list, ordered by right identifier, so the pinned Face Value cell is the first row: MER-WR-004-DEMO, Halvern Irrigation District. All six rights are also checked whole-column in SQL.",
+    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+  },
+  {
+    "slug": "reporting-shared-supply-wy2026",
+    "url": "/reporting/reports/shared-supply-check/?period=2",
+    "status": 200,
+    "bytes": 67053,
+    "sha256": "0b9269d3c3894f0209b7e7f55206e85ab5c08ee6e545dfaaea84f96c0a6bc6dc",
+    "note": "PINNED for FIG-reporting-003..005. WY 2025-2026, the dry year, matching section 1's pin. Groups sort by kind then source name, so the first group is Point of diversion: MER-POD-004-DEMO Atwater Canal Headgate, five use areas, every share hand-set to 0.2000. The pinned row is named by its use-area number, read out of the captured page, because the code orders rows only by the database's own row order.",
+    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+  },
+  {
+    "slug": "reporting-shared-supply-default",
+    "url": "/reporting/reports/shared-supply-check/",
+    "status": 200,
+    "bytes": 67053,
+    "sha256": "e2a686af266ca00b1edb0a387dfb05b203b6e7dbdb4f9628a667fde2936f62bf",
+    "note": "No period parameter. Captured to RECORD which period the activity-based default resolves to, rather than asserting it from reading the code -- the same method section 1 used for the accounting dashboard.",
+    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+  },
+  {
+    "slug": "reporting-calwatrs-worksheet-sub4",
+    "url": "/reporting/reports/4/calwatrs-worksheet/",
+    "status": 200,
+    "bytes": 37121,
+    "sha256": "019cd9833386d6b120482e90895d13a78624a543cc12dbd67315acac6effba8d",
+    "note": "PINNED for FIG-reporting-001..002. Report submission 4, CalWATRS To Storage (report type calwatrs_a2), reporting period WY 2025-2026 -- the same dry year as the pin above. Blocks are ordered by diversion point name, so the first block is MER-BPOD-001 El Nido Canal Recharge Intake, which has no linked water right. Its first row is 2026-01-15.",
+    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+  }
+]

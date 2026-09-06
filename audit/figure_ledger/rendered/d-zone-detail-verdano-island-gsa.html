@@ -1,0 +1,1072 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verdano Island Water District GSA - Open Water Accounting Platform</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png?v=3">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/img/favicon-192.png?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png?v=3">
+
+    
+
+    <!-- Google Fonts: Public Sans (single sitewide typeface) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Design tokens (loaded separately for cache control) -->
+    <link rel="stylesheet" href="/static/css/tokens.css?v=11">
+    <!-- Compiled Tailwind CSS -->
+    <link rel="stylesheet" href="/static/css/output.css">
+    <!-- App layout and component styles -->
+    <link rel="stylesheet" href="/static/css/app.css?v=71">
+
+    <!-- MapLibre GL JS (available in map pages via block) -->
+    
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/map-engine.css">
+
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous" defer></script>
+
+    <!-- Explainer pop-out positioning (escapes the content scroll box) -->
+    <script src="/static/js/explainer-popout.js?v=1" defer></script>
+
+    
+    
+
+    
+</head>
+<body class="section-overview" hx-headers='{"X-CSRFToken": "PtzQ6vtwEDdCxFNoiqaxUsjF6VZlBrSyWKFVHFfaVmKLHPagRq7HNvfETYDfAdq2"}'>
+    
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="loading-bar" class="loading-bar"></div>
+    <div id="toast-container" class="toast-container"></div>
+    <div class="app-shell">
+        
+<aside id="sidebar" aria-label="Main navigation"
+       class="sidebar"
+       data-collapsed="false">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+        <span class="sidebar-brand-icon">
+            <img src="/static/img/favicon-192.png?v=3" alt="" height="36" style="width: auto;">
+        </span>
+        <span class="sidebar-brand-text">Open<span class="sidebar-brand-accent">H2O</span></span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+
+        <!-- OVERVIEW (no label) -->
+        <a href="/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span class="sidebar-link-text">Home</span>
+        </a>
+
+        <a href="/accounting/dashboard/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Dashboard</span>
+        </a>
+        <a href="/map/"
+           class="sidebar-link active">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                <line x1="8" y1="2" x2="8" y2="18"/>
+                <line x1="16" y1="6" x2="16" y2="22"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Map</span>
+        </a>
+        <!-- WATER DATA -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Water Data</span>
+        </div>
+        <a href="/accounting/ledger/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <line x1="10" y1="9" x2="8" y2="9"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Use Ledger</span>
+        </a>
+        <a href="/parcels/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="3" x2="9" y2="21"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Use Areas</span>
+        </a>
+        <a href="/wells/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v4"/>
+                <path d="M12 18v4"/>
+                <path d="M4.93 4.93l2.83 2.83"/>
+                <path d="M16.24 16.24l2.83 2.83"/>
+                <path d="M2 12h4"/>
+                <path d="M18 12h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Wells</span>
+        </a>
+        <a href="/surface/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Surface Diversions</span>
+        </a>
+        <a href="/recharge/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Recharge Areas</span>
+        </a>
+        <a href="/datasync/stations/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M3 12h3"/>
+                <path d="M18 12h3"/>
+                <path d="M12 3v3"/>
+                <path d="M12 18v3"/>
+                <path d="M5.64 5.64l2.12 2.12"/>
+                <path d="M16.24 16.24l2.12 2.12"/>
+                <path d="M5.64 18.36l2.12-2.12"/>
+                <path d="M16.24 7.76l2.12-2.12"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Monitoring Stations</span>
+        </a>
+        <hr class="sidebar-divider">
+        <a href="/drinking/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3h12l-1.4 16.2a2 2 0 0 1-2 1.8H9.4a2 2 0 0 1-2-1.8z"/>
+                <path d="M6.8 10h10.4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Drinking Water</span>
+        </a>
+        <a href="/drinking/facilities/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="7" height="9" rx="1"/>
+                <rect x="14" y="5" width="7" height="15" rx="1"/>
+                <path d="M2 20h20"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Facilities</span>
+        </a>
+        <a href="/drinking/sampling-points/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 2h6"/>
+                <path d="M10 2v15a2 2 0 0 0 4 0V2"/>
+                <path d="M10 13h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Sampling Points</span>
+        </a>
+        <a href="/drinking/results/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 2v6.5L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 8.5V2"/>
+                <path d="M8.5 2h7"/>
+                <path d="M7 14h10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Sample Results</span>
+        </a>
+        <a href="/drinking/onboard/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 3h9l-1.1 12.6a2 2 0 0 1-2 1.8H9.1a2 2 0 0 1-2-1.8z"/>
+                <path d="M6.7 9h7.6"/>
+                <path d="M18 15v6"/>
+                <path d="M15 18h6"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Onboard System</span>
+        </a>
+        <!-- ADMINISTRATION (Admin view only) -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Administration</span>
+        </div>
+        <a href="/surface/rights/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="6"/>
+                <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Water Rights</span>
+        </a>
+        <a href="/accounting/accounts/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="M2 10h20"/>
+                <path d="M6 16h4"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Accounts</span>
+        </a>
+        <a href="/accounting/reporting-periods/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Water Years</span>
+        </a>
+        <a href="/accounting/allocations/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 2a10 10 0 0 1 0 20"/>
+                <path d="M12 2v20"/>
+                <path d="M2 12h10"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Allocations</span>
+        </a>
+        <a href="/map/zones/"
+           class="sidebar-link active">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Zones</span>
+        </a>
+        <a href="/users/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Users</span>
+        </a>
+        <a href="/accounting/methodology/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"/>
+                <line x1="4" y1="10" x2="4" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12" y2="3"/>
+                <line x1="20" y1="21" x2="20" y2="16"/>
+                <line x1="20" y1="12" x2="20" y2="3"/>
+                <line x1="1" y1="14" x2="7" y2="14"/>
+                <line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="17" y1="16" x2="23" y2="16"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Methodology</span>
+        </a>
+        <a href="/accounting/delivery-settings/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12h20"/>
+                <path d="M2 6h20"/>
+                <path d="M2 18h20"/>
+                <circle cx="8" cy="6" r="2" fill="currentColor"/>
+                <circle cx="16" cy="12" r="2" fill="currentColor"/>
+                <circle cx="7" cy="18" r="2" fill="currentColor"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Delivery Settings</span>
+        </a>
+        <a href="/health/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Site Health</span>
+        </a>
+        <a href="/setup/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.07 4.93a10 10 0 0 1 1.36 13.37"/>
+                <path d="M4.93 4.93a10 10 0 0 0-1.36 13.37"/>
+                <path d="M12 2v3"/>
+                <path d="M12 19v3"/>
+                <path d="M2 12h3"/>
+                <path d="M19 12h3"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Setup Wizard</span>
+        </a>
+        <!-- REPORTING -->
+        <div class="sidebar-section">
+            <span class="sidebar-link-text sidebar-section-label">Reporting</span>
+        </div>
+        <a href="/reporting/reports/"
+           class="sidebar-link">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+                <line x1="9" y1="11" x2="13" y2="11"/>
+            </svg>
+
+
+            <span class="sidebar-link-text">Reports</span>
+        </a>
+
+        <!-- HELP (collapsed by default; auto-opens on a help/about page) -->
+        <details class="sidebar-collapsible">
+        <summary class="sidebar-section sidebar-collapsible-summary">
+            <span class="sidebar-link-text sidebar-section-label">Help</span>
+            <svg class="sidebar-collapsible-chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </summary>
+        <a href="/help/getting-started/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span class="sidebar-link-text">Getting Started</span>
+        </a>
+        <a href="/help/water-balances/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v18"/>
+                <path d="M5 7h14"/>
+                <path d="M5 7l-3 6a3 3 0 0 0 6 0z"/>
+                <path d="M19 7l-3 6a3 3 0 0 0 6 0z"/>
+                <path d="M8 21h8"/>
+            </svg>
+            <span class="sidebar-link-text">Water Balance Info</span>
+        </a>
+        <a href="/help/methods/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span class="sidebar-link-text">Methods</span>
+        </a>
+        <a href="/help/settings/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span class="sidebar-link-text">Configs Explained</span>
+        </a>
+        <a href="/help/glossary/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="4" y1="12" x2="14" y2="12"/>
+                <line x1="4" y1="18" x2="18" y2="18"/>
+            </svg>
+            <span class="sidebar-link-text">Glossary</span>
+        </a>
+        <a href="/about/"
+           class="sidebar-link">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span class="sidebar-link-text">About</span>
+        </a>
+        </details>
+
+        <!-- VIEW MODE — segmented toggle, tucked at the foot of the nav -->
+        <div class="nav-mode-toggle" role="group" aria-label="Sidebar view mode">
+            <a href="/nav-mode/?mode=operations"
+               class="nav-mode-option"
+               title="Everyday tools only">Operations</a>
+            <a href="/nav-mode/?mode=admin"
+               class="nav-mode-option active"
+               title="Show setup &amp; administration tools">Admin</a>
+        </div>
+    </nav>
+</aside>
+<script>
+    // On a phone the sidebar is a fixed overlay that sits on top of the page,
+    // so it must start closed or it covers the content on every load. Run this
+    // inline right after the sidebar markup (before the main content paints) to
+    // avoid a flash of the open sidebar. The hamburger opens it; an outside tap
+    // closes it (wired in base.html). We deliberately do NOT write localStorage
+    // here, so the desktop open/collapsed preference is left untouched.
+    (function () {
+        if (window.matchMedia('(max-width: 767px)').matches) {
+            document.getElementById('sidebar').setAttribute('data-collapsed', 'true');
+        }
+    })();
+</script>
+
+
+        <div class="app-main">
+            <header class="app-header">
+    <!-- Left group: sidebar toggle + global search -->
+    <div class="app-header-left">
+        <!-- Sidebar toggle (hamburger) -->
+        <button id="sidebar-toggle"
+                class="sidebar-toggle"
+                type="button"
+                aria-label="Toggle sidebar">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
+
+        
+        <div class="global-search" id="global-search">
+            <svg class="global-search-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search"
+                   id="global-search-input"
+                   name="q"
+                   class="global-search-input"
+                   placeholder="Search parcels, wells, accounts…"
+                   autocomplete="off"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-controls="global-search-results"
+                   aria-label="Search records"
+                   hx-get="/search/"
+                   hx-target="#global-search-results"
+                   hx-swap="innerHTML"
+                   hx-trigger="keyup changed delay:250ms, focus">
+            <div id="global-search-results" class="global-search-results"></div>
+        </div>
+        
+    </div>
+
+    
+    <div></div>
+
+    <!-- User menu -->
+    <div class="app-header-user">
+        
+            <a href="/nav-mode/?mode=operations" class="header-mode-badge"
+               title="You are in Admin mode — click to return to Operations">Admin mode</a>
+        
+        
+            <a href="/profile/" class="app-header-email">render-crawl@example.invalid</a>
+            <a href="/accounts/logout/" class="btn-secondary btn-sm">Sign out</a>
+        
+    </div>
+</header>
+
+
+            
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/map/zones/">Administration</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="/map/zones/">Zones</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Verdano Island Water District GSA</span>
+  </nav>
+</div>
+
+
+            <main class="app-content" id="main-content">
+                
+                <h1 class="sr-only">Verdano Island Water District GSA</h1>
+                
+                
+<div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
+  <span class="badge badge-pill notice-badge">Demo</span>
+  <p class="demo-notice-text">
+    This demo mixes <strong>invented sample data</strong> with <strong>real published records</strong> to show what the platform can do.
+    <a href="/about/demonstration-data/" class="prose-link">See the difference</a>.
+    <strong>For testing purposes only.</strong>
+  </p>
+</div>
+
+
+                
+<div class="page-stack">
+  <div>
+    <a href="/map/zones/" class="back-link">&larr; Back to Zones</a>
+  </div>
+  <!-- Persistent map host (the shared body partial builds the map into this). -->
+  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
+  </div>
+  <div id="detail-body">
+    
+
+
+<!-- Detail header: which zone you're looking at. -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">Verdano Island Water District GSA</div>
+    <div class="pane-header-sub">Management Area</div>
+  </div>
+</div>
+
+
+
+<div class="pane-stack">
+  <div class="page-grid-2col">
+
+    <!-- Left column: Zone Info + Use Areas + Assign -->
+    <div class="page-stack">
+
+      <!-- Zone Info card -->
+      <div class="card-raised">
+        <h2 class="section-header">Zone information</h2>
+
+        <div class="field-group">
+          <div class="field-label">Name</div>
+          <div class="field-value">Verdano Island Water District GSA</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Type</div>
+          <div class="field-value">Management Area</div>
+        </div>
+
+        
+        <div class="field-group">
+          <div class="field-label">Description</div>
+          <div class="text-secondary text-base">Groundwater Sustainability Agency governing part of the Merced Subbasin under SGMA. Groundwater authority (distinct from the surface-water district).</div>
+        </div>
+        
+
+        <div class="field-group">
+          
+<div id="zone-recovery-horizon">
+  <p class="text-secondary text-base" style="margin: 0 0 var(--space-sm) 0;">
+    Year-end unused water:
+    
+      <strong style="color: var(--color-text-primary);">Using agency default (carry forward)</strong>
+    
+  </p>
+  <p class="text-tertiary text-sm" style="margin: 0 0 var(--space-sm) 0;">
+    What happens to this district's unused surface-water allotment at the end of the water year. Change it just for this district, or leave it on the agency default.
+  </p>
+  <div class="flex" style="gap: var(--space-xs); flex-wrap: wrap;">
+    <button type="button"
+            class="btn-xs btn-primary"
+            hx-post="/map/zones/3/year-end-policy/"
+            hx-vars="recovery_horizon: 'default'"
+            hx-target="#zone-recovery-horizon" hx-swap="outerHTML">
+      Use agency default
+    </button>
+    <button type="button"
+            class="btn-xs btn-secondary"
+            hx-post="/map/zones/3/year-end-policy/"
+            hx-vars="recovery_horizon: 'carry_forward'"
+            hx-target="#zone-recovery-horizon" hx-swap="outerHTML">
+      Carry it forward as a credit
+    </button>
+    <button type="button"
+            class="btn-xs btn-secondary"
+            hx-post="/map/zones/3/year-end-policy/"
+            hx-vars="recovery_horizon: 'same_water_year'"
+            hx-target="#zone-recovery-horizon" hx-swap="outerHTML">
+      Let it expire (use-it-or-lose-it)
+    </button>
+  </div>
+</div>
+
+        </div>
+
+        <div class="border-separator">
+          <div class="text-tertiary text-xs">
+            Created Jul 21, 2026 &middot; Updated Aug 05, 2026
+          </div>
+        </div>
+      </div>
+
+      <!-- Assigned Use Areas card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Assigned use areas</h2>
+        <div id="zone-parcels">
+          
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Parcel</th>
+      <th>Owner</th>
+      <th class="th-right">Area (acres)</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td>
+        <a href="/parcels/51/" class="data-table-link">
+          MER-APN-051
+        </a>
+      </td>
+      <td class="text-secondary">Verdano Island Farms LLC</td>
+      <td class="td-num text-secondary">
+        76.26
+      </td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/map/zones/3/remove/51/"
+          hx-target="#zone-parcels"
+          hx-confirm="Remove parcel MER-APN-051 from this zone?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/52/" class="data-table-link">
+          MER-APN-052
+        </a>
+      </td>
+      <td class="text-secondary">Verdano Island Farms LLC</td>
+      <td class="td-num text-secondary">
+        46.74
+      </td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/map/zones/3/remove/52/"
+          hx-target="#zone-parcels"
+          hx-confirm="Remove parcel MER-APN-052 from this zone?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/53/" class="data-table-link">
+          MER-APN-053
+        </a>
+      </td>
+      <td class="text-secondary">Verdano Island Farms LLC</td>
+      <td class="td-num text-secondary">
+        42.25
+      </td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/map/zones/3/remove/53/"
+          hx-target="#zone-parcels"
+          hx-confirm="Remove parcel MER-APN-053 from this zone?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/54/" class="data-table-link">
+          MER-APN-054
+        </a>
+      </td>
+      <td class="text-secondary">Verdano Island Farms LLC</td>
+      <td class="td-num text-secondary">
+        41.23
+      </td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/map/zones/3/remove/54/"
+          hx-target="#zone-parcels"
+          hx-confirm="Remove parcel MER-APN-054 from this zone?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/55/" class="data-table-link">
+          MER-APN-055
+        </a>
+      </td>
+      <td class="text-secondary">Muddy Bar Growers</td>
+      <td class="td-num text-secondary">
+        75.10
+      </td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/map/zones/3/remove/55/"
+          hx-target="#zone-parcels"
+          hx-confirm="Remove parcel MER-APN-055 from this zone?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/56/" class="data-table-link">
+          MER-APN-056
+        </a>
+      </td>
+      <td class="text-secondary">Muddy Bar Growers</td>
+      <td class="td-num text-secondary">
+        41.79
+      </td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/map/zones/3/remove/56/"
+          hx-target="#zone-parcels"
+          hx-confirm="Remove parcel MER-APN-056 from this zone?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        <a href="/parcels/57/" class="data-table-link">
+          MER-APN-057
+        </a>
+      </td>
+      <td class="text-secondary">Muddy Bar Growers</td>
+      <td class="td-num text-secondary">
+        42.50
+      </td>
+      <td style="text-align: right;">
+        <button
+          hx-post="/map/zones/3/remove/57/"
+          hx-target="#zone-parcels"
+          hx-confirm="Remove parcel MER-APN-057 from this zone?"
+          class="btn-secondary btn-sm"
+          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
+          Remove
+        </button>
+      </td>
+    </tr>
+    
+  </tbody>
+</table>
+
+
+        </div>
+      </div>
+
+      <!-- Assign Use Area search card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Assign use area</h2>
+
+        <div class="field-group">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by parcel number or owner..."
+            hx-get="/map/zones/3/parcels/"
+            hx-target="#zone-parcel-search-results"
+            hx-trigger="keyup changed delay:300ms"
+            class="form-input"
+          >
+        </div>
+
+        <div id="zone-parcel-search-results">
+          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: Allocation vs. Use -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Allocation vs. use</h2>
+        
+        <table class="data-table text-sm">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Water Type</th>
+              <th class="th-right">Allocation (AF)</th>
+              <th class="th-right">Used (AF)</th>
+              <th class="th-right">Remaining (AF)</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="text-secondary">WY 2025-2026</td>
+              <td class="text-secondary">Groundwater</td>
+              <td class="td-num">731.74</td>
+              <td class="td-num">1092.73 <span class="text-tertiary text-xs">pumped</span></td>
+              <td class="td-num">-360.99</td>
+            </tr>
+            
+            <tr>
+              <td class="text-secondary">WY 2024-2025</td>
+              <td class="text-secondary">Groundwater</td>
+              <td class="td-num">731.74</td>
+              <td class="td-num">1028.48 <span class="text-tertiary text-xs">pumped</span></td>
+              <td class="td-num">-296.74</td>
+            </tr>
+            
+          </tbody>
+        </table>
+        
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script id="detail-geojson-data" type="application/json">{"type": "FeatureCollection", "features": [{"type": "Feature", "id": 3, "properties": {"name": "Verdano Island Water District GSA", "zone_type": "management_area"}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[-120.67069518442034, 37.21542285903932], [-120.67058935299838, 37.22998340460972], [-120.68870392202516, 37.2301010353603], [-120.7019669839515, 37.229855246598895], [-120.69767508145901, 37.21820121120001], [-120.69757139162068, 37.217726478029114], [-120.69753550662004, 37.2172445831483], [-120.69766873216658, 37.21657329700557], [-120.69831160071988, 37.215264432451455], [-120.69836257112908, 37.214988591048034], [-120.69783561309521, 37.2097867756863], [-120.69769406645422, 37.209371621311256], [-120.69654005021603, 37.20746862716384], [-120.69641720021103, 37.20712041494425], [-120.69634431180722, 37.20653029576011], [-120.69630477784987, 37.20597877417319], [-120.69620795832687, 37.205362421425335], [-120.69506664696175, 37.20204139283369], [-120.69466592647983, 37.201013009531515], [-120.75678277278162, 37.2012974546687], [-120.75666313425376, 37.19373033412273], [-120.75667607448541, 37.19351197517676], [-120.76218302116325, 37.193492611848676], [-120.76225460970488, 37.19335437203983], [-120.76331794281175, 37.19274737147616], [-120.76350474208516, 37.19259437166283], [-120.76361980279835, 37.192288920693], [-120.76365933226411, 37.19189902348183], [-120.7636593367557, 37.19189901417888], [-120.76365934124725, 37.19189897124219], [-120.76379819923064, 37.191638523168535], [-120.763793932233, 37.191214957060666], [-120.76379394211448, 37.19121493201403], [-120.76379394211448, 37.1912149048205], [-120.7639417302501, 37.1908446029464], [-120.76387079927525, 37.190136156964], [-120.76377453221613, 37.189825223616516], [-120.76373059920886, 37.1891859566507], [-120.76372793211078, 37.188332356596575], [-120.76372794289054, 37.18833230721699], [-120.76372794289054, 37.18833230435442], [-120.7638579425869, 37.18770070512331], [-120.7641506083166, 37.18718050407673], [-120.76438574144389, 37.18692030380661], [-120.76613220918833, 37.18644550409796], [-120.7663268085334, 37.18625137082967], [-120.76645599076282, 37.18590935217432], [-120.76623579931366, 37.18578482359751], [-120.76615319922328, 37.18554882397972], [-120.76555973262069, 37.184966756425446], [-120.7651315326742, 37.18446562379434], [-120.76513155603043, 37.18446558801026], [-120.7651315416574, 37.18446557083387], [-120.76540760921556, 37.18405817192092], [-120.76574580875034, 37.1837255725398], [-120.76588753146113, 37.183390929107965], [-120.76587493258928, 37.18278795656061], [-120.76555639987099, 37.18160595682991], [-120.76520593204437, 37.18133315657124], [-120.76441319845051, 37.181070157036686], [-120.76337859885635, 37.18062795660959], [-120.76322739981764, 37.180496823966955], [-120.76289373228343, 37.179952356750086], [-120.76270379968628, 37.17943975635005], [-120.76268773241911, 37.17908442427347], [-120.76271513283191, 37.17887195713808], [-120.7627151373235, 37.17887194497059], [-120.76271514181505, 37.17887190560517], [-120.76308273332764, 37.17777233146331], [-120.76309593317242, 37.177137423755994], [-120.76291599972271, 37.17703562375993], [-120.76265279873435, 37.17702882339393], [-120.76176779827934, 37.177657623831564], [-120.76099593254958, 37.178112423683785], [-120.76072391459672, 37.17809834001879], [-120.76071243053411, 37.17809774523674], [-120.75969039926906, 37.17804482392876], [-120.7594331325515, 37.17797802431464], [-120.75821319973441, 37.17744142363225], [-120.75792133170872, 37.17722575748002], [-120.75776593214769, 37.1770107570781], [-120.75771513331668, 37.17680195664871], [-120.75771514948637, 37.17680193231301], [-120.75771514229986, 37.17680190439858], [-120.75786620838791, 37.1765833046805], [-120.7580301886565, 37.1764871913496], [-120.75803033957348, 37.176487149835694], [-120.75804693235507, 37.17647742411775], [-120.75825966509245, 37.17642394338313], [-120.7582617410991, 37.17642337149217], [-120.75906674208642, 37.176376904440716], [-120.75933694184917, 37.17609477109368], [-120.7599515431154, 37.17562710465497], [-120.76005820008909, 37.17539499141455], [-120.76005999941462, 37.17511235693995], [-120.75998799944459, 37.17498542417843], [-120.75976773253691, 37.17486415654876], [-120.75945693251663, 37.17482015724159], [-120.75923199886107, 37.174836824028425], [-120.75898179918978, 37.17491995677525], [-120.7588615992149, 37.17520642348629], [-120.75840713342784, 37.1754321569519], [-120.75809419901037, 37.17542982354879], [-120.75775173247798, 37.17526255772432], [-120.75756593213114, 37.1750664237634], [-120.75757193197894, 37.174820957476484], [-120.7575719409621, 37.174820943876824], [-120.7575719418604, 37.17482090450925], [-120.75783834174948, 37.174411371381446], [-120.75812994297556, 37.174195904871354], [-120.75818134188115, 37.17409897179783], [-120.75848340937861, 37.17385750502497], [-120.75882680836226, 37.173621371510215], [-120.75904654167064, 37.17349517135621], [-120.75986367440589, 37.17307813815186], [-120.75990499870561, 37.17291894554582], [-120.7599049807393, 37.17291857476577], [-120.75989134970318, 37.17275969891989], [-120.759891275143, 37.172759519255806], [-120.75969400241168, 37.17250344096358], [-120.75969239891887, 37.172501423851706], [-120.75959639955774, 37.1723365566226], [-120.75952099946437, 37.17224875760961], [-120.75936319960492, 37.172171757034675], [-120.75882819895432, 37.17183642392344], [-120.75856739916271, 37.17169355689059], [-120.75844393201513, 37.17159455694343], [-120.7583409994566, 37.171468157273445], [-120.75832059961482, 37.17140222369615], [-120.75831373199449, 37.17133082416179], [-120.75831374277426, 37.171330779781776], [-120.75831374187595, 37.17133077190787], [-120.75834820843676, 37.17118810506108], [-120.75840314221303, 37.17105077215621], [-120.75854057457002, 37.17085853845423], [-120.7585611980923, 37.17071584709401], [-120.75856119988893, 37.170715823472214], [-120.75856089625837, 37.17071476621712], [-120.75853396656278, 37.17062816573865], [-120.75853380935763, 37.17062778850504], [-120.75845222795677, 37.17052435627102], [-120.75845159913607, 37.170523623993], [-120.75825259894445, 37.17036975668527], [-120.75791653290845, 37.170188356581015], [-120.75751853252518, 37.17001782432361], [-120.75731273208685, 37.16994635690983], [-120.75692839867233, 37.169841757671094], [-120.75649613205256, 37.16974822345961], [-120.7560019993575, 37.16968202352733], [-120.75550793313774, 37.16963782363541], [-120.75519913276723, 37.16958822354777], [-120.75507559914432, 37.16954982391938], [-120.7548353986205, 37.16945082402685], [-120.75470746235436, 37.169382456315596], [-120.75469153971595, 37.16937394801761], [-120.7545677985822, 37.169307823635], [-120.75428653247347, 37.16913202376356], [-120.75416319917485, 37.16902755654169], [-120.7536419319683, 37.168527423416194], [-120.75333333192212, 37.168263757240105], [-120.75333215243418, 37.16826293760819], [-120.75319313005909, 37.16817321040908], [-120.75319246620413, 37.168172871818406], [-120.75295057684754, 37.16810625675216], [-120.75289419947865, 37.16809315692996], [-120.75281193266322, 37.1680657575349], [-120.75267459912091, 37.167972223988585], [-120.75245519998583, 37.16784582398622], [-120.75230433242544, 37.16777435666587], [-120.75209839903643, 37.16769182380637], [-120.7519337989303, 37.167570824365235], [-120.75188579924972, 37.16751042443216], [-120.75185940764499, 37.167462810845095], [-120.75181738804925, 37.16739797903598], [-120.75181709969003, 37.16739769126677], [-120.75172891028198, 37.16734068787735], [-120.75172799849194, 37.167340156720776], [-120.7515703333798, 37.16727415726312], [-120.75130953268989, 37.16720802388472], [-120.75102833215819, 37.16710362415615], [-120.75094519846853, 37.16705762383229], [-120.75060193243556, 37.16696435748122], [-120.75048519995764, 37.166915024082044], [-120.75042339945934, 37.16686562407672], [-120.75016919959013, 37.16655815701314], [-120.75003873276984, 37.166371423955866], [-120.74990799914991, 37.16610242357187], [-120.74988733340682, 37.16592122368634], [-120.74990779972394, 37.165772956481455], [-120.7499214981337, 37.16573999330024], [-120.74992150891347, 37.165739938894895], [-120.74992154933769, 37.16573987017238], [-120.74993519923841, 37.16570702366191], [-120.7499965766302, 37.16561389666867], [-120.74999680929385, 37.16561350509283], [-120.75006540914052, 37.165520105241065], [-120.75014774153296, 37.16543230475092], [-120.75032600860781, 37.1652673712723], [-120.75041190910855, 37.16522282518338], [-120.75041217051829, 37.16522273713205], [-120.75044259915191, 37.16520695732861], [-120.75057184067015, 37.16516876665414], [-120.75057300937833, 37.16516837149666], [-120.75070340792666, 37.165157304938106], [-120.75102300784351, 37.16515370413633], [-120.7512769418114, 37.16515390457856], [-120.75319160921133, 37.165116372473626], [-120.75343187531216, 37.16507533833405], [-120.75372034321451, 37.164847570929155], [-120.75417340942637, 37.16468857144949], [-120.75491494174396, 37.16428250478807], [-120.75561500962468, 37.16406857143613], [-120.7560132094339, 37.163772304363924], [-120.75634294324546, 37.16344837161715], [-120.756727342237, 37.16330017114952], [-120.75718720869557, 37.163080704807136], [-120.75737280871809, 37.16280617107145], [-120.75740719892214, 37.162636020190185], [-120.75743499998356, 37.162229623213314], [-120.75741439981745, 37.1620867566318], [-120.75727059930341, 37.1617791570155], [-120.75727759897609, 37.16156502400124], [-120.75727760885756, 37.16156497889958], [-120.75727760885756, 37.16156497174057], [-120.75731199726495, 37.1614001565373], [-120.75716799912152, 37.16129582395584], [-120.75706513303837, 37.16124082407009], [-120.75688673301283, 37.16110882375143], [-120.75680439972209, 37.16100442418879], [-120.7566607321587, 37.16061455735218], [-120.75653053303637, 37.16036722427543], [-120.75640019916672, 37.16024635772211], [-120.75631099915395, 37.16019695693767], [-120.75616699921392, 37.16005955752507], [-120.75578999874705, 37.159515623873], [-120.75552933280444, 37.15929022373056], [-120.75533039908814, 37.159224357564035], [-120.75509713265998, 37.15918022386418], [-120.75478139909215, 37.1592020236786], [-120.7543557997684, 37.15934462437846], [-120.75418419909124, 37.159443357584934], [-120.75402639923183, 37.15950375752157], [-120.75393019864804, 37.15956415740997], [-120.75373799960143, 37.15975622367985], [-120.7536143321295, 37.159849423754586], [-120.75361393507417, 37.15984960488116], [-120.75350455530683, 37.15991254599092], [-120.75349079940491, 37.15993182414281], [-120.75326090974394, 37.160070807387854], [-120.75324663461575, 37.16007943772248], [-120.75319606665177, 37.160128923777386], [-120.75319559952781, 37.16012942348448], [-120.75282479923305, 37.16027202315084], [-120.75255699887045, 37.16043662389322], [-120.75249533311946, 37.16051355767532], [-120.75249362182882, 37.16051451412989], [-120.75227567886282, 37.16064237825466], [-120.75226179899335, 37.16065622391239], [-120.752193200045, 37.16067815717585], [-120.75194599895016, 37.16082082381814], [-120.7519115943731, 37.16083182371643], [-120.75148721585984, 37.16114920141361], [-120.75148599954095, 37.16115015714428], [-120.75131439976211, 37.16124895671914], [-120.75119079876553, 37.16129275703278], [-120.75102599923339, 37.16136962408066], [-120.75080319907663, 37.16155435781871], [-120.7507485321, 37.161691623505], [-120.75063879929479, 37.16180702330673], [-120.75047433213933, 37.162010357076696], [-120.750412599913, 37.16206535711842], [-120.75030279883582, 37.162125757107724], [-120.7498911997558, 37.162274357198335], [-120.74967839964475, 37.16234035672674], [-120.74949999961925, 37.162367824059494], [-120.7492323995809, 37.16238442415141], [-120.74883439919766, 37.16232975723156], [-120.74861479883995, 37.16227495711624], [-120.74849813283737, 37.16223102349974], [-120.74830579904346, 37.162137756919705], [-120.7481683990258, 37.16203895707473], [-120.74803799957917, 37.16189622328958], [-120.74794859834378, 37.16164915642522], [-120.74787959964512, 37.161330623930574], [-120.74782439996754, 37.16090215716427], [-120.7477757319404, 37.160072956559624], [-120.7477823327611, 37.15967742344718], [-120.74780273260289, 37.15953462363384], [-120.74780273978942, 37.159534590701625], [-120.74780274248434, 37.15953457208776], [-120.74785753342847, 37.159287409446165], [-120.74789833221372, 37.15885355736697], [-120.74789833850193, 37.15885353588923], [-120.7478983411969, 37.15885350510442], [-120.74793896391235, 37.15871727522109], [-120.74806223343056, 37.15803570544922], [-120.74806233224525, 37.15803515704485], [-120.74810319840417, 37.15770555742258], [-120.74800693224337, 37.15738155715267], [-120.74784199886228, 37.15711802320362], [-120.74762219907853, 37.156892957417575], [-120.74762069529876, 37.15689206392016], [-120.7473753079025, 37.156755767499156], [-120.74737220242653, 37.15675477877951], [-120.7471709860911, 37.15669456565608], [-120.74715539942262, 37.156689957116036], [-120.74677300008089, 37.15658815749536], [-120.74636559882822, 37.15660442379367], [-120.7459767998884, 37.156698557050994], [-120.74533293240849, 37.157198824294184], [-120.74497615301867, 37.15751454195044], [-120.74497399885863, 37.15751644849206], [-120.74409979884831, 37.15829002361027], [-120.74371393200961, 37.15858762374915], [-120.74348739845452, 37.158704756535535], [-120.74318419997813, 37.15877462374712], [-120.74264339890571, 37.15879955728385], [-120.74210939897836, 37.158721424013], [-120.74168579930445, 37.15859682341533], [-120.74130179826655, 37.15840922374492], [-120.74112939898713, 37.15824435727343], [-120.74106833331075, 37.15811122412966], [-120.74108919937815, 37.15789975760201], [-120.74108920386973, 37.157899752590495], [-120.74108920836132, 37.157899705338856], [-120.74136770316737, 37.15758743151553], [-120.74207254289887, 37.15717117108646], [-120.74285605259138, 37.15658236548952], [-120.74328114346864, 37.15626290525287], [-120.74354994185954, 37.155699571267135], [-120.74378874190984, 37.155486905209855], [-120.74383792826491, 37.15538779883397], [-120.74377979828286, 37.15503702386606], [-120.74339173326662, 37.15428242441906], [-120.7432337986599, 37.15411582417715], [-120.74289119917684, 37.15402602362198], [-120.74195153264357, 37.153970356889864], [-120.74163859912446, 37.15399562422156], [-120.74095119928592, 37.15425902442875], [-120.74028759851417, 37.15474015650061], [-120.74002292698368, 37.15487515493546], [-120.74001365098005, 37.15487988601565], [-120.73998593256366, 37.15489402412549], [-120.73929693282558, 37.15505995680916], [-120.73902693248885, 37.15505262393852], [-120.73877419867017, 37.15485795679761], [-120.73868059960745, 37.154403157314086], [-120.73871599861954, 37.154048757116044], [-120.7385291993461, 37.153500824451896], [-120.73814693295505, 37.152983756603874], [-120.73797193305285, 37.15287342322206], [-120.73757499896983, 37.15292815712258], [-120.73721719999216, 37.15319735689392], [-120.73704059929214, 37.15352322374337], [-120.7369327331861, 37.15390262384605], [-120.73677539865398, 37.15415795683537], [-120.7362799319607, 37.15466255672374], [-120.73575879950144, 37.15494395747104], [-120.7338221323602, 37.15459375679593], [-120.7324775322463, 37.1544390236723], [-120.7319837993015, 37.15447442391938], [-120.73151853306979, 37.15469115735381], [-120.731216532946, 37.15490502345422], [-120.73069653326233, 37.15502895713311], [-120.72898013213043, 37.15504075760254], [-120.72731673339689, 37.154969823737275], [-120.72664399945369, 37.154895557000835], [-120.72618513192172, 37.154757957506604], [-120.7255827989473, 37.154387023712076], [-120.72532973275199, 37.154129024509665], [-120.72514179890635, 37.15364855726873], [-120.72513899975593, 37.1531887572767], [-120.72499833346389, 37.15285175690332], [-120.7244779996069, 37.15218242347266], [-120.72416784367866, 37.15167757218717], [-120.72416683576891, 37.15167593184766], [-120.72415910486757, 37.151663348988734], [-120.72377505621898, 37.151280213036095], [-120.72377279875269, 37.15127802351856], [-120.7233995990578, 37.15079155740378], [-120.72324433244745, 37.150602023774056], [-120.72300073269861, 37.150442423675365], [-120.72203213322666, 37.15005735690678], [-120.72136873277923, 37.1499492238472], [-120.72100999955367, 37.149990357130825], [-120.72053199970277, 37.15010042406849], [-120.72020719943876, 37.15022662390713], [-120.71997153271218, 37.15039222386718], [-120.7194535326783, 37.15061142417676], [-120.71933433971485, 37.15071677390604], [-120.7193316627353, 37.150719139576324], [-120.71915333188002, 37.15087675720194], [-120.71747359997804, 37.15164562386546], [-120.71690679896635, 37.151993557051675], [-120.7163199322862, 37.152185157114914], [-120.7160939332287, 37.152187957343905], [-120.71574833247428, 37.15209042325145], [-120.71494473285878, 37.1516886235353], [-120.7145255322348, 37.151364223730695], [-120.71376393245208, 37.15097855735255], [-120.7130093332404, 37.1507333572243], [-120.71185433244867, 37.15054542371663], [-120.71103773241437, 37.150523157435714], [-120.70963539937378, 37.15058422393769], [-120.70897739959784, 37.1504614235684], [-120.70847939875716, 37.150219223263115], [-120.70794299942966, 37.14956162417788], [-120.7078695998844, 37.14911195675334], [-120.70792179918894, 37.1480141570996], [-120.70792180727378, 37.1480141341867], [-120.70792180907041, 37.148014104829564], [-120.70810834244253, 37.14750110447703], [-120.70824295588616, 37.147292859786255], [-120.70843473452123, 37.14699618327222], [-120.70845359914219, 37.14639535699452], [-120.70830853290191, 37.14602275675203], [-120.70767039847016, 37.14524602363857], [-120.70766681958204, 37.145242917397525], [-120.70741926904257, 37.14503231352989], [-120.70740973252752, 37.145028357321905], [-120.70719119936837, 37.1449364235831], [-120.70691593310742, 37.14461402412671], [-120.70673179913543, 37.14452475720981], [-120.70630779971121, 37.14415802448948], [-120.7060327328763, 37.14403462364764], [-120.70563419889373, 37.14398155675554], [-120.705409390104, 37.14403512489326], [-120.7054052874981, 37.144036103038275], [-120.70515913294058, 37.14409475662834], [-120.70461533239346, 37.1445687576843], [-120.70262819969616, 37.146725224312554], [-120.70209573319298, 37.14691622407973], [-120.70055299976168, 37.147187624148906], [-120.70004173260088, 37.14747762362459], [-120.69959773218687, 37.147654756986654], [-120.69888439978268, 37.148150223681384], [-120.69747379954654, 37.14945582318258], [-120.6967119994395, 37.149254423257], [-120.6963683318596, 37.14908242319033], [-120.69608333325087, 37.14885535727074], [-120.69588139916152, 37.14877615759338], [-120.69521519866534, 37.14868662350088], [-120.69485479906493, 37.14870255711728], [-120.6940123994157, 37.1489463568537], [-120.69372179981116, 37.14886435691968], [-120.69315179900046, 37.14898375664742], [-120.69202139857279, 37.1490622243374], [-120.69156979930979, 37.149055557497555], [-120.69140173260496, 37.14926802397495], [-120.69122179915524, 37.14937515702014], [-120.69054959881127, 37.149447357750454], [-120.68988313331211, 37.14939835732181], [-120.68942659870493, 37.149168024451356], [-120.6892785320916, 37.149014557600815], [-120.68920479927138, 37.14884795720856], [-120.68894353325416, 37.1480321565965], [-120.68879894940919, 37.14699737905424], [-120.6887984346745, 37.14699369432713], [-120.68874739868828, 37.14662842427631], [-120.68790959931158, 37.14505615674953], [-120.68780213295582, 37.144711423218055], [-120.68757939927441, 37.14432315726024], [-120.68721040010178, 37.14392142368489], [-120.6868843323149, 37.14367615771109], [-120.68602119954888, 37.14336575710641], [-120.68549699934293, 37.14325482322833], [-120.68500033250042, 37.143229823699336], [-120.6847293323388, 37.143247823618836], [-120.68434293190079, 37.14334875756711], [-120.68403220015242, 37.14355462359296], [-120.68384552754144, 37.1437296859653], [-120.68384129467984, 37.14373365441436], [-120.68356599967281, 37.14399182370439], [-120.68255633281933, 37.14470682397248], [-120.68235533297786, 37.1450249574891], [-120.68228840938752, 37.14530511594698], [-120.68230580975457, 37.145625171689794], [-120.68236594297971, 37.145796371200674], [-120.6829217432224, 37.14626577103452], [-120.68477414210179, 37.14732730460937], [-120.6850340094421, 37.14752190449787], [-120.68526314182331, 37.14778517116113], [-120.68533320951717, 37.1479901057323], [-120.68530280873134, 37.14816450482264], [-120.68530279974819, 37.14816455709257], [-120.68481153267885, 37.148576223703216], [-120.68474593859513, 37.14870794517495], [-120.68471654212577, 37.149060772253776], [-120.68481374253446, 37.14957830441114], [-120.68525100827878, 37.149924704109225], [-120.68536160795824, 37.1502297048832], [-120.68535320871035, 37.150439704290235], [-120.68535320152382, 37.150439719326315], [-120.68535319972717, 37.150439757274555], [-120.68522979995325, 37.150665957085934], [-120.6849207327831, 37.150970024070894], [-120.68472493328883, 37.151056357093886], [-120.68432779888153, 37.151128357171594], [-120.68374253299918, 37.151078223690675], [-120.68282273181009, 37.15091562384101], [-120.68255333334459, 37.150895956749864], [-120.68238173266747, 37.15093095697984], [-120.68226433274128, 37.151082424453634], [-120.68220834344456, 37.15132811032734], [-120.68228300871604, 37.15203090450309], [-120.68244040882517, 37.15232050450115], [-120.68244041331674, 37.15232059041956], [-120.68246099910981, 37.152370024274255], [-120.68244385476261, 37.15239200433289], [-120.68241980955739, 37.15246877160119], [-120.68246100899125, 37.15267750465948], [-120.68246794308693, 37.15280937220754], [-120.68246793140884, 37.15280938437923], [-120.68246793320546, 37.15280942375822], [-120.68206979987156, 37.15322122403058], [-120.68180233278393, 37.15343542363779], [-120.6813835992839, 37.153660557710374], [-120.68117779974388, 37.15370995775429], [-120.6805261321924, 37.1538479565203], [-120.6799183994448, 37.15389082391492], [-120.67974672690242, 37.15387192798354], [-120.67978341589524, 37.154279305661795], [-120.68084996137759, 37.164278750031826], [-120.6809398288386, 37.16550868867758], [-120.68095448036088, 37.16628791457053], [-120.68118332078961, 37.168654593945455], [-120.68053172240838, 37.168433511765016], [-120.68040712967175, 37.168136295423345], [-120.68042843591365, 37.167631570001625], [-120.6801459687574, 37.16724447330856], [-120.67959340334804, 37.166929890822225], [-120.67880375277228, 37.16636332120798], [-120.67827322932503, 37.165841414077086], [-120.67725793093302, 37.16508591811582], [-120.67722355061049, 37.16483362438586], [-120.67715451328426, 37.16421187525019], [-120.67697333836281, 37.16378856840052], [-120.67672521469821, 37.163626721071566], [-120.67636480431797, 37.16360022850884], [-120.67600488082469, 37.16378101731783], [-120.67536856637969, 37.16443630574391], [-120.67481158664903, 37.1644242239716], [-120.67401920339816, 37.164376631348134], [-120.67347945964286, 37.16429959125328], [-120.67303148777697, 37.164201711984866], [-120.67250483067872, 37.16396061018066], [-120.67198889856664, 37.16351344735021], [-120.67160807307329, 37.163406504717436], [-120.67127222802286, 37.163389080154055], [-120.67112701984877, 37.163523669410324], [-120.6709708225838, 37.16374786069653], [-120.67073657429704, 37.16410654146107], [-120.67050193703977, 37.164295012527674], [-120.6702336569768, 37.164456655118066], [-120.6696945007197, 37.16455857657901], [-120.66946131693655, 37.16446673530802], [-120.66904733282945, 37.16454796092986], [-120.66870035046611, 37.16455742116346], [-120.66820766855021, 37.164486462581614], [-120.66769575370411, 37.16427304094069], [-120.66484040018304, 37.164273041656514], [-120.66474522098373, 37.172934279232514], [-120.66484040018304, 37.18606890386726], [-120.66978967902067, 37.18606890386726], [-120.67099868473065, 37.1861893219065], [-120.67088362850906, 37.20085856107001], [-120.67069518442034, 37.21542285903932]]]]}}]}</script>
+<script>
+(function () {
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
+      source: 'zone',
+      popup: function (p) {
+        return '<strong>' + (p.name || 'Zone') + '</strong><br>' +
+               'Type: ' + (p.zone_type || '—');
+      }
+    });
+  }
+  go();
+})();
+</script>
+
+  </div>
+</div>
+
+            </main>
+
+            <footer class="app-footer">
+                <div>
+                    OpenH2O — Open Water Accounting Platform ·
+                    <a href="/about/">About</a> ·
+                    <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer">Source code (AGPL-3.0)</a>
+                </div>
+            </footer>
+
+            
+            
+
+
+        </div>
+    </div>
+
+    
+    
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="/static/js/map-core.js"></script>
+
+    
+
+    <script>
+    (function() {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var COLLAPSED_KEY = 'sidebar-collapsed';
+
+        // Restore saved state
+        if (localStorage.getItem(COLLAPSED_KEY) === 'true') {
+            sidebar.setAttribute('data-collapsed', 'true');
+        }
+
+        toggle.addEventListener('click', function() {
+            var isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
+            sidebar.setAttribute('data-collapsed', isCollapsed ? 'false' : 'true');
+            localStorage.setItem(COLLAPSED_KEY, isCollapsed ? 'false' : 'true');
+        });
+
+        // Close sidebar on mobile when clicking outside
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth < 768 &&
+                sidebar.getAttribute('data-collapsed') === 'false' &&
+                !sidebar.contains(e.target) &&
+                !toggle.contains(e.target)) {
+                sidebar.setAttribute('data-collapsed', 'true');
+                localStorage.setItem(COLLAPSED_KEY, 'true');
+            }
+        });
+    })();
+    </script>
+
+    <script>
+    // HTMX loading bar
+    (function() {
+        var bar = document.getElementById('loading-bar');
+        document.body.addEventListener('htmx:beforeRequest', function() {
+            bar.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            bar.style.transform = 'scaleX(0.7)';
+        });
+        document.body.addEventListener('htmx:afterRequest', function() {
+            bar.style.transform = 'scaleX(1)';
+            setTimeout(function() {
+                bar.style.transition = 'none';
+                bar.style.transform = 'scaleX(0)';
+                setTimeout(function() {
+                    bar.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                }, 50);
+            }, 300);
+        });
+    })();
+
+    // Toast notification system
+    window.showToast = function(message, type, duration) {
+        type = type || 'success';
+        duration = duration || 3000;
+        var container = document.getElementById('toast-container');
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        toast.textContent = message;
+        container.appendChild(toast);
+        // Trigger show animation
+        requestAnimationFrame(function() {
+            toast.classList.add('show');
+        });
+        // Auto-dismiss
+        setTimeout(function() {
+            toast.classList.remove('show');
+            setTimeout(function() { toast.remove(); }, 200);
+        }, duration);
+    };
+
+    // Listen for server-driven toasts via HX-Trigger
+    document.body.addEventListener('showToast', function(e) {
+        var detail = e.detail || {};
+        window.showToast(detail.message || 'Done', detail.type || 'success', detail.duration || 3000);
+    });
+    </script>
+
+    <script>
+    // Global search dropdown (E2): open/close state + keyboard navigation.
+    // HTMX fills #global-search-results; this only manages dismissal and the
+    // up/down/enter affordances over whatever links it rendered.
+    (function() {
+        var wrap = document.getElementById('global-search');
+        if (!wrap) return;  // only present for signed-in users
+        var input = document.getElementById('global-search-input');
+        var results = document.getElementById('global-search-results');
+
+        function options() { return results.querySelectorAll('.search-result'); }
+        function clearActive() {
+            results.querySelectorAll('.search-result.is-active')
+                   .forEach(function(el) { el.classList.remove('is-active'); });
+        }
+        function close() {
+            results.innerHTML = '';
+            input.setAttribute('aria-expanded', 'false');
+        }
+
+        // After each HTMX swap, reflect whether the dropdown actually has content.
+        results.addEventListener('htmx:afterSwap', function() {
+            input.setAttribute('aria-expanded', results.children.length ? 'true' : 'false');
+        });
+
+        input.addEventListener('keydown', function(e) {
+            var opts = options();
+            if (e.key === 'Escape') { close(); input.blur(); return; }
+            if (!opts.length) return;
+            var active = results.querySelector('.search-result.is-active');
+            var idx = Array.prototype.indexOf.call(opts, active);
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                clearActive();
+                opts[(idx + 1) % opts.length].classList.add('is-active');
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                clearActive();
+                opts[(idx - 1 + opts.length) % opts.length].classList.add('is-active');
+            } else if (e.key === 'Enter') {
+                var target = active || opts[0];
+                if (target) { e.preventDefault(); window.location.href = target.href; }
+            }
+        });
+
+        // Dismiss when focus/click leaves the search component entirely.
+        document.addEventListener('click', function(e) {
+            if (!wrap.contains(e.target)) close();
+        });
+    })();
+    </script>
+
+    
+</body>
+</html>

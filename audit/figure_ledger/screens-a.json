@@ -1,0 +1,37 @@
+[
+  {
+    "slug": "accounting-a-account-78-p2",
+    "url": "/accounting/accounts/78/?period=2",
+    "note": "THE PINNED INSTANCE for ledger section A's account balance pane (FIG-accounting-009..020). MER-ACCT-001 Ashvale Orchards Inc. (account id 78), WY 2025-2026 (period id 2, the dry year), the SAME account and period section 1 pinned on the dashboard, so the two screens' figures can be compared to each other as well as to the rows. Requested without the HTMX header, so the full account_detail page renders and _account_balances.html is reached through _account_detail_pane.html with the identical context. The per-parcel table's pinned row is named in the section: every one of this account's 18 assignments carries added_date 2026-09-05, so '-added_date' does not order them and 'the first row' is not reproducible. The row is pinned by parcel number instead, read out of this capture."
+  },
+  {
+    "slug": "accounting-a-calcrun-p16-2026-03",
+    "url": "/accounting/calculation-run/16/2026-03/",
+    "note": "THE PINNED INSTANCE for the calculation-run audit page (FIG-accounting-001..008). Parcel 16, MER-APN-016, March 2026, inside WY 2025-2026. Chosen because it is the run in that period where effective precipitation actually bites: gross 39.8491 AF, effective precip 11.8546 AF, final 27.9945 AF, so the waterfall's In and Out columns differ instead of showing five identical numbers. Calculation run id 19548."
+  },
+  {
+    "slug": "accounting-a-methodology-preview-p16-2026-03",
+    "url": "/accounting/methodology/preview/?parcel_id=16&period=2026-03",
+    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-050..053). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month."
+  },
+  {
+    "slug": "accounting-a-ledger-p2",
+    "url": "/accounting/ledger/?period=2",
+    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-046..049). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture."
+  },
+  {
+    "slug": "accounting-a-allocations-p2",
+    "url": "/accounting/allocations/?period=2",
+    "note": "THE PINNED INSTANCE for the allocations table (FIG-accounting-021, 022). Period filtered to WY 2025-2026 to line up with every other pin in this section. Ordered by reporting period start date descending then name; page 1 of 25. The pinned allocation row is named in the section."
+  },
+  {
+    "slug": "accounting-a-period-2",
+    "url": "/accounting/reporting-periods/2/",
+    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-054). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses."
+  },
+  {
+    "slug": "accounting-a-account-78-p1",
+    "url": "/accounting/accounts/78/?period=1",
+    "note": "The same account balance pane in WY 2024-2025, the wet year. Captured as a second instance so a later plan can check the same twelve sites against a different period without re-deriving the pin, and so the wet-year and dry-year figures for one account sit side by side in the record."
+  }
+]

@@ -1,0 +1,59 @@
+id,label,recomputed
+CHECK-account-parcels,Parcels on the pinned account,18
+CHECK-account-runs,Calculation runs behind the pinned account pane,216
+CHECK-alloc-count,Allocation rows in the pinned period (the count pill),8
+CHECK-credit-draws,WaterCreditDraw rows (the draws table on the run page needs one),0
+CHECK-credits-held,WaterCredit rows held,5
+CHECK-enabled-steps,Enabled steps on the active methodology (the preview fallback needs 0),5
+CHECK-estimate-rows-all-time,et_estimate rows anywhere in the ledger,0
+CHECK-estimate-rows-in-period,et_estimate rows in the pinned period (the suppression has nothing to bite on at 0),0
+CHECK-ledger-credits-plus-debits,Ledger footer credits + debits MINUS net (0 = internally consistent),0.00
+CHECK-ledger-entries,"Ledger entries in the pinned period (the footer says ""All N entries"")",1130
+CHECK-ledger-first-row,"The first ledger row: parcel id, restating the view ORDER BY",65
+CHECK-ledger-net-billable,The same footer net on the BILLABLE basis the balance panes use,-1504.32
+CHECK-ledger-rows-suppressed,Ledger rows the suppression predicate removes in this period,0
+CHECK-parcels-sum-gross,Per-parcel Consumptive Use summed MINUS the pane Consumptive use,0.00
+CHECK-parcels-sum-precip,Per-parcel Precip summed MINUS the pane Rain,0.00
+CHECK-parcels-sum-supplies,Per-parcel Supplies summed MINUS the pane Supplies (0 = additive),0.00
+CHECK-parcels-sum-surface,Per-parcel Surface summed MINUS the pane Surface,0.00
+CHECK-raw-account-months,Parcel-months the raw recomputation covered (18 parcels x 12 = 216),216
+CHECK-raw-gross-vs-account-pane,Raw-row gross ET over the account year MINUS the pane Consumptive use,0.00
+CHECK-raw-gross-vs-stored-run,"Raw-row gross ET MINUS stored gross_et_af, pinned run (0 = agree)",0.0000
+CHECK-raw-precip-vs-account-pane,Raw-row TR-21 effective precip over the account year MINUS the pane Rain,0.00
+CHECK-raw-precip-vs-stored-run,Raw-row TR-21 effective precip MINUS stored effective_precip_af (0 = agree),0.0000
+CHECK-run-final-vs-last-step,Run final_af MINUS last waterfall step Out (0 = agree),0.0000
+CHECK-run-final-vs-ledger,Run final_af MINUS magnitude of its calculated ledger row (0 = agree),0.0000
+CHECK-runs-total,Calculation runs in the database,1824
+CHECK-runs-with-banking,Calculation runs with a non-zero banked or drawn figure,0
+CHECK-waterfall-breaks,Steps whose In differs from the previous Out (0 = continuous),0
+FIG-accounting-001,Run page: parcel acreage (MER-APN-016),149.73
+FIG-accounting-002,Run page: header final billable groundwater,27.9945
+FIG-accounting-003,Run page: step 1 In (AF),0.0000
+FIG-accounting-004,"Run page: step 1 Out (AF), from raw satellite rows",39.8491
+FIG-accounting-005,Run page: banked this month (block does not render),0.0000
+FIG-accounting-006,Run page: drawn this month (block does not render),0.0000
+FIG-accounting-007,Run page: one credit draw (no draw rows exist),
+FIG-accounting-008,Run page: result card final billable groundwater,27.9945
+FIG-accounting-009,Account pane: Supplies,5921.09
+FIG-accounting-010,Account pane: Consumptive use,4589.61
+FIG-accounting-011,Account pane: Balance,1331.48
+FIG-accounting-012,Account pane foot: Surface,5500.97
+FIG-accounting-013,Account pane foot: Groundwater,0.00
+FIG-accounting-014,Account pane foot: Rain,420.12
+FIG-accounting-015,Per-parcel MER-APN-021: Consumptive Use,177.23
+FIG-accounting-016,Per-parcel MER-APN-021: Surface,210.17
+FIG-accounting-017,Per-parcel MER-APN-021: Groundwater,0.00
+FIG-accounting-018,Per-parcel MER-APN-021: Precip,17.92
+FIG-accounting-019,Per-parcel MER-APN-021: Supplies,228.09
+FIG-accounting-020,Per-parcel MER-APN-021: Net,50.87
+FIG-accounting-021,Allocations list: Halvern Irrigation-Urban GSA — Groundwater WY 2025-2026,750.32
+FIG-accounting-022,"Allocations list: footer total, all 8 allocations",159671.46
+FIG-accounting-046,Use ledger: first row Amount (AF),-8.56
+FIG-accounting-047,Use ledger footer: net,-1504.32
+FIG-accounting-048,Use ledger footer: credits,14280.77
+FIG-accounting-049,Use ledger footer: debits,-15785.09
+FIG-accounting-050,Preview: billable groundwater (vs the stored run),27.9945
+FIG-accounting-051,Preview: step 1 In (AF),0.0000
+FIG-accounting-052,"Preview: step 1 Out (AF), from raw satellite rows",39.8491
+FIG-accounting-053,"Preview: no-steps fallback final (branch cannot render, see checks)",
+FIG-accounting-054,Period detail: Halvern Valley GSA — Groundwater WY 2025-2026,9689.40

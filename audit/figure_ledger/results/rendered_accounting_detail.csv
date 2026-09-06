@@ -1,0 +1,32 @@
+id,screen_slug,label,rendered,note
+FIG-accounting-001,accounting-a-calcrun-p16-2026-03,parcel acres,149.73,
+FIG-accounting-002,accounting-a-calcrun-p16-2026-03,header Billable groundwater,27.9945,
+FIG-accounting-003,accounting-a-calcrun-p16-2026-03,step 1 In (AF),0.0000,
+FIG-accounting-004,accounting-a-calcrun-p16-2026-03,step 1 Out (AF),39.8491,
+FIG-accounting-005,accounting-a-calcrun-p16-2026-03,Deposited this month,,NOT RENDERED
+FIG-accounting-006,accounting-a-calcrun-p16-2026-03,Drawn down this month,,NOT RENDERED
+FIG-accounting-007,accounting-a-calcrun-p16-2026-03,one credit draw Drawn (AF),,NOT RENDERED
+FIG-accounting-008,accounting-a-calcrun-p16-2026-03,result card final,27.9945,
+FIG-accounting-009,accounting-a-account-78-p2,Supplies,5921.09,
+FIG-accounting-010,accounting-a-account-78-p2,Consumptive use,4589.61,
+FIG-accounting-011,accounting-a-account-78-p2,Balance,1331.48,
+FIG-accounting-012,accounting-a-account-78-p2,Surface,5500.97,
+FIG-accounting-013,accounting-a-account-78-p2,Groundwater,0.00,
+FIG-accounting-014,accounting-a-account-78-p2,Rain,420.12,
+FIG-accounting-015,accounting-a-account-78-p2,MER-APN-021 Consumptive Use,177.23,
+FIG-accounting-016,accounting-a-account-78-p2,MER-APN-021 Surface,210.17,
+FIG-accounting-017,accounting-a-account-78-p2,MER-APN-021 Groundwater,0.00,
+FIG-accounting-018,accounting-a-account-78-p2,MER-APN-021 Precip,17.92,
+FIG-accounting-019,accounting-a-account-78-p2,MER-APN-021 Supplies,228.09,
+FIG-accounting-020,accounting-a-account-78-p2,MER-APN-021 Net,50.87,
+FIG-accounting-021,accounting-a-allocations-p2,Halvern Irrigation-Urban GSA — Groundwater WY 2025-2026,750.32,
+FIG-accounting-022,accounting-a-allocations-p2,footer total allocated,159671.46,
+FIG-accounting-046,accounting-a-ledger-p2,first row Amount (AF),-8.56,
+FIG-accounting-047,accounting-a-ledger-p2,footer net,-1504.32,
+FIG-accounting-048,accounting-a-ledger-p2,footer credits,14280.77,
+FIG-accounting-049,accounting-a-ledger-p2,footer debits,-15785.09,
+FIG-accounting-050,accounting-a-methodology-preview-p16-2026-03,preview Billable groundwater,27.9945,
+FIG-accounting-051,accounting-a-methodology-preview-p16-2026-03,step 1 In (AF),0.0000,
+FIG-accounting-052,accounting-a-methodology-preview-p16-2026-03,step 1 Out (AF),39.8491,
+FIG-accounting-053,accounting-a-methodology-preview-p16-2026-03,no-steps fallback final,,NOT RENDERED
+FIG-accounting-054,accounting-a-period-2,Halvern Valley GSA — Groundwater WY 2025-2026,9689.40,
