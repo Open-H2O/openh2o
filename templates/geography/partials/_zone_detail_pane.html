@@ -5,7 +5,7 @@
   builds it once and points it at this zone's geometry. A zone is a MultiPolygon
   boundary; OH2O.detailPaneMap auto-detects polygon and draws fill + outline.
 {% endcomment %}
-{% load static placeholders %}
+{% load static placeholders humanize %}
 
 <!-- Detail header: which zone you're looking at. -->
 <div class="pane-header">
@@ -126,7 +126,7 @@
             <tr>
               <td class="text-secondary">{{ b.period.name }}</td>
               <td class="text-secondary">{{ b.water_type.name }}</td>
-              <td class="td-num">{{ b.budget|floatformat:2 }}</td>
+              <td class="td-num">{{ b.budget|floatformat:2|intcomma }}</td>
               {% comment %}
                 Signed, and dashed on a surface row — the same treatment the
                 dashboard's zone table gives the same quantity. A surface
@@ -134,11 +134,11 @@
                 read as "nothing left over" rather than "not a cell here".
               {% endcomment %}
               <td class="td-num {% if b.carryover is None %}text-tertiary{% elif b.carryover > 0 %}text-surplus{% elif b.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
-                {% if b.carryover is None %}&mdash;{% else %}{% if b.carryover > 0 %}+{% endif %}{{ b.carryover|floatformat:2 }}{% endif %}
+                {% if b.carryover is None %}&mdash;{% else %}{% if b.carryover > 0 %}+{% endif %}{{ b.carryover|floatformat:2|intcomma }}{% endif %}
               </td>
-              <td class="td-num">{{ b.used|floatformat:2 }} <span class="text-tertiary text-xs">{{ b.used_label }}</span></td>
+              <td class="td-num">{{ b.used|floatformat:2|intcomma }} <span class="text-tertiary text-xs">{{ b.used_label }}</span></td>
               <td class="td-num {% if b.remaining is None %}text-tertiary{% elif b.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-                {% if b.remaining is None %}&mdash;{% else %}{{ b.remaining|floatformat:2 }}{% endif %}
+                {% if b.remaining is None %}&mdash;{% else %}{{ b.remaining|floatformat:2|intcomma }}{% endif %}
               </td>
             </tr>
             {% endfor %}

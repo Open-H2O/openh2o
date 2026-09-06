@@ -300,7 +300,13 @@
 {% endcomment %}
 {% if not engine_has_never_run and 'parcels' in enabled_modules %}
 {% url 'water_balances' as wb_help_url %}
-<h2 class="content-section-label" id="unmet-demand">Fields with water use recorded and no supply reported</h2>
+{% comment %}
+  The section label is short and the card header carries the full phrase — the
+  same shape as "Account details" over "Active Water Accounts" and "Zone details"
+  over "Zones". Repeating the whole sentence twice, half a line apart, reads as a
+  rendering fault rather than as emphasis.
+{% endcomment %}
+<h2 class="content-section-label" id="unmet-demand">Field details</h2>
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
