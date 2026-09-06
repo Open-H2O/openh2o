@@ -94,7 +94,10 @@ def dashboard_html(db):
         end_date=date(2026, 9, 30),
     )
     zone = ZoneFactory(name="Golden Fixture Zone")
-    water_type = WaterTypeFactory()
+    # A GROUNDWATER plan (136-01): the budget columns count groundwater plans
+    # only, so any other type would render the dashed no-budget branch instead
+    # of the populated structure this fixture exists to protect.
+    water_type = WaterTypeFactory(name="Groundwater", code="GW")
     parcel = ParcelFactory()
     ParcelZoneFactory(parcel=parcel, zone=zone)
     account = WaterAccountFactory(account_number="GF-0001", name="Golden Fixture Account")

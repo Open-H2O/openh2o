@@ -131,7 +131,8 @@ class TestDashboardAllocationProRating:
             start_date=date(2025, 10, 1), end_date=date(2026, 9, 30)
         )
         zone = ZoneFactory()
-        water_type = WaterTypeFactory()
+        # Groundwater plan (136-01): the allocation column counts GW plans only.
+        water_type = WaterTypeFactory(name="Groundwater", code="GW")
 
         # Create 4 parcels in the zone
         parcels = [ParcelFactory() for _ in range(4)]

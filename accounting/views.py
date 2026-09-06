@@ -126,6 +126,16 @@ def dashboard(request):
             reporting_period=selected_period,
         ).exists()
 
+        # 136-01 (ISS-151, option A, Brent 2026-09-05): the budget columns on
+        # both tables are the GROUNDWATER budget, so only groundwater plans
+        # count towards an allocation and only groundwater use is subtracted
+        # from it. Like with like. Resolved once, by code, because the water
+        # types are seeded reference data whose ids differ between deployments
+        # (STATE.md records exactly this for another table). A deployment with
+        # no groundwater type has no groundwater budget to show: allocations
+        # read as absent rather than guessed.
+        groundwater_type = WaterType.objects.filter(code__iexact="GW").first()
+
         # Account summaries — the Budget Summary grand totals below roll up ONLY
         # active accounts (an inactive account is not a live water user), whereas
         # the Zone Details block sums every parcel in each zone regardless of
@@ -136,10 +146,16 @@ def dashboard(request):
         for account in active_accounts:
             cu = account_consumptive_balance(account, reporting_period=selected_period)
 
-            if has_allocations:
+            if has_allocations and groundwater_type is not None:
                 # Allocation: pro-rated by account's parcel count in each zone.
                 # Formula: for each zone, allocation * (account_parcels / total_parcels).
                 # Uses parcel count (not area) because area data may be incomplete.
+                # GROUNDWATER plans only (136-01): six of the eleven demonstration
+                # accounts also sit in a surface-water service area, and summing
+                # every plan gave MER-ACCT-001 2,901.42 AF of groundwater
+                # allocation plus 16,200.00 AF of surface entitlement as one
+                # number. Subtracting pumping from that would print a surface
+                # entitlement as spare groundwater.
                 parcel_ids = WaterAccountParcel.objects.filter(
                     water_account=account,
                     removed_date__isnull=True,
@@ -147,11 +163,15 @@ def dashboard(request):
                 zone_ids = ParcelZone.objects.filter(
                     parcel_id__in=parcel_ids
                 ).values_list("zone_id", flat=True).distinct()
+                groundwater_plans = AllocationPlan.objects.filter(
+                    zone_id__in=zone_ids,
+                    reporting_period=selected_period,
+                    water_type=groundwater_type,
+                )
                 allocation = Decimal("0")
                 for zone_id in zone_ids:
-                    zone_alloc = AllocationPlan.objects.filter(
+                    zone_alloc = groundwater_plans.filter(
                         zone_id=zone_id,
-                        reporting_period=selected_period,
                     ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
                     total_parcels_in_zone = ParcelZone.objects.filter(zone_id=zone_id).count()
                     account_parcels_in_zone = ParcelZone.objects.filter(
@@ -163,12 +183,24 @@ def dashboard(request):
                             * Decimal(account_parcels_in_zone)
                             / Decimal(total_parcels_in_zone)
                         )
-                # Budget basis (57-02): a budget is consumed by measured
-                # consumptive use (gross ET), NOT by the old groundwater-only
-                # "usage". net-of-rainfall is a secondary display, not the budget
-                # basis. Allocation/carryover logic itself is unchanged — only the
-                # quantity subtracted.
-                remaining = allocation - cu["consumptive_use_gross"]
+                # Budget basis, 136-01 (ISS-151; option A, Brent 2026-09-05): a
+                # groundwater budget is spent by GROUNDWATER USE, the metered or
+                # calculated pumping the Groundwater column already shows. This
+                # REVERSES 57-02, which deliberately subtracted gross ET on the
+                # reasoning that "a budget is consumed by measured consumptive
+                # use (gross ET), NOT by the old groundwater-only usage". Gross
+                # ET is what the crop transpires whatever the water's source,
+                # and it FALLS in a drought (every demonstration zone, 2026-09-05
+                # measurement), so no basin could ever cross its budget because
+                # of one. Pumping rises in a drought; that is what the column is
+                # for. An account whose zones carry no groundwater plan has no
+                # groundwater budget: absent, not zero, so the template dashes it
+                # rather than printing its pumping as an overdraft of nothing.
+                if groundwater_plans.exists():
+                    remaining = allocation - cu["supplies"]["groundwater"]
+                else:
+                    allocation = None
+                    remaining = None
             else:
                 allocation = None
                 remaining = None
@@ -205,11 +237,19 @@ def dashboard(request):
         # Zone summaries
         for zone in Zone.objects.order_by("name"):
             zcu = zone_consumptive_balance(zone, reporting_period=selected_period)
-            if has_allocations:
+            # 136-01: groundwater plans only, and a zone that carries none (the
+            # five surface service areas hold SW plans only) has no groundwater
+            # budget. Its three budget cells are absent rather than zero, so the
+            # template renders a dash; a surface allocation minus pumping is not
+            # a number anyone manages.
+            zone_allocation = None
+            if has_allocations and groundwater_type is not None:
                 zone_allocation = AllocationPlan.objects.filter(
                     zone=zone,
                     reporting_period=selected_period,
-                ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
+                    water_type=groundwater_type,
+                ).aggregate(total=Sum("allocation_acre_feet"))["total"]
+            if zone_allocation is not None:
                 # Prior-year carry-over (signed): + surplus rolled in, − debt
                 # borrowed against this year. available_with_carryover applies the
                 # surplus-depreciates / debt-doesn't rule centrally; periods
@@ -219,10 +259,10 @@ def dashboard(request):
                 zone_available = available_with_carryover(
                     zone_allocation, zone_carryover_af
                 )
-                # Same allocation basis as accounts: subtract estimated consumptive use.
-                zone_remaining = zone_available - zcu["consumptive_use_gross"]
+                # Same basis as the account rows (136-01, ISS-151): the
+                # groundwater budget is spent by groundwater use.
+                zone_remaining = zone_available - zcu["supplies"]["groundwater"]
             else:
-                zone_allocation = None
                 zone_carryover_af = None
                 zone_remaining = None
             zone_summaries.append({
@@ -319,9 +359,10 @@ def dashboard(request):
             == "dead"
         )
 
-    # Active accounts whose consumptive use has passed their allocation this
-    # period (only meaningful once the period has allocations; remaining is None
-    # otherwise, so those accounts never count).
+    # Active accounts whose groundwater use has passed their groundwater
+    # allocation this period (136-01). Only meaningful once the period has
+    # groundwater allocations; remaining is None otherwise, so those accounts
+    # never count.
     accounts_over_budget = sum(
         1
         for s in account_summaries

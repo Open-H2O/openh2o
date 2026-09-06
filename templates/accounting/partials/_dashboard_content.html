@@ -167,10 +167,10 @@
         </td>
         {% if has_allocations %}
         <td class="td-num">
-          {{ row.allocation|floatformat:2|intcomma }}
+          {% if row.allocation is None %}&mdash;{% else %}{{ row.allocation|floatformat:2|intcomma }}{% endif %}
         </td>
-        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {% if row.has_calculations %}{{ row.remaining|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+        <td class="td-num-bold {% if not row.has_calculations or row.remaining is None %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+          {% if row.has_calculations and row.remaining is not None %}{{ row.remaining|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% endif %}
       </tr>
@@ -215,9 +215,18 @@
         <td class="font-semibold">{{ row.zone.name }}</td>
         {% comment %}
           ISS-099, same three demand-derived columns as the account table above.
-          Carried forward is NOT dashed: it is last year's closing position,
-          already computed and stored, and true whatever this period's engine has
-          or has not done.
+          Carried forward is NOT dashed for that reason: it is last year's
+          closing position, already computed and stored, and true whatever this
+          period's engine has or has not done.
+
+          A second reason for a dash, 136-01: the three budget cells are the
+          GROUNDWATER budget, and a zone with no groundwater plan (the surface
+          service areas carry surface plans only) has none. Its allocation,
+          carry-over and remaining are absent, not zero, so all three dash.
+          Remaining keeps the ISS-099 dash as well: it now subtracts groundwater
+          use, which includes the `calculated` rows the engine writes, so with
+          no engine run it would understate pumping on every unmetered field and
+          read as a fuller budget than the truth.
         {% endcomment %}
         <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
           {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
@@ -239,13 +248,13 @@
         </td>
         {% if has_allocations %}
         <td class="td-num">
-          {{ row.allocation|floatformat:2|intcomma }}
+          {% if row.allocation is None %}&mdash;{% else %}{{ row.allocation|floatformat:2|intcomma }}{% endif %}
         </td>
-        <td class="td-num {% if row.carryover > 0 %}text-surplus{% elif row.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
-          {% if row.carryover > 0 %}+{% endif %}{{ row.carryover|floatformat:2|intcomma }}
+        <td class="td-num {% if row.carryover is None %}text-tertiary{% elif row.carryover > 0 %}text-surplus{% elif row.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
+          {% if row.carryover is None %}&mdash;{% else %}{% if row.carryover > 0 %}+{% endif %}{{ row.carryover|floatformat:2|intcomma }}{% endif %}
         </td>
-        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {% if row.has_calculations %}{{ row.remaining|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+        <td class="td-num-bold {% if not row.has_calculations or row.remaining is None %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+          {% if row.has_calculations and row.remaining is not None %}{{ row.remaining|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% endif %}
       </tr>

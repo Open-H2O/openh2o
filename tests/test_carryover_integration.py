@@ -315,10 +315,11 @@ class TestDashboardCarryover:
             water_type=gw,
             reporting_period=period,
         )
-        # 57-02 budget basis: the dashboard's zone "remaining" is now consumed by
-        # measured CONSUMPTIVE USE (gross ET from CalculationRuns), not the pumped
-        # row alone. Record 200 AF of ET in a month inside the period so remaining
-        # = budget(+carryover) − 200, exactly as the assertions below expect.
+        # 136-01 budget basis (ISS-151, option A): the zone "remaining" is
+        # budget(+carryover) minus GROUNDWATER USE, which is the 200 AF meter row
+        # above. The 200 AF calculation run below is kept so the row has
+        # calculations (ISS-099 dashes Remaining without one); its gross ET no
+        # longer enters the subtraction. 57-02 had subtracted gross ET instead.
         from accounting.models import CalculationRun
 
         CalculationRun.objects.create(
