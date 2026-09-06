@@ -41,10 +41,27 @@
 --       removed_date IS NULL.
 --   accounting/services.py:926  a zone's parcels are its ParcelZone rows.
 --   accounting/views.py:135     the grand totals roll up ACTIVE accounts only.
---   accounting/views.py:140-166 an account's allocation is pro-rated by PARCEL
---       COUNT within each zone: Σ_zones zone_allocation × (this account's rows in
---       that zone ÷ all rows in that zone). Arithmetic in the view, not in any
---       service — the kind of figure a ledger exists to catch.
+--
+-- BUDGET BASIS AFTER 136-01 (read 2026-09-06; ISS-151, option A, Brent 2026-09-05):
+--   accounting/views.py         the account allocation is pro-rated by PARCEL
+--       COUNT within each zone, over GROUNDWATER plans only: a plan counts when
+--       its accounting_watertype.code is 'GW' (matched case-insensitively, as the
+--       view does). Σ_zones zone_gw_allocation × (this account's rows in that
+--       zone ÷ all rows in that zone). Still arithmetic in the view, not in any
+--       service.
+--   accounting/views.py         remaining = allocation − groundwater use, where
+--       groundwater use is the same "usage" magnitude the Groundwater column
+--       shows (negative non-surface_diversion billable rows).
+--   accounting/views.py         zone_allocation sums GW plans only; a zone with
+--       none renders a dash in all three budget cells. zone_remaining =
+--       available_with_carryover(zone_allocation, carry-over) − groundwater use.
+--
+-- BEFORE 136-01 (the basis this file recomputed on 2026-09-05, kept for the
+-- record; the ledger's before-picture rows were measured on it):
+--   accounting/views.py:140-166 the account allocation summed EVERY plan in every
+--       zone the account touched, whatever its water type, so MER-ACCT-001 read
+--       2,901.42 AF of groundwater allocation plus 16,200.00 AF of surface
+--       entitlement as one 19,101.42 AF figure.
 --   accounting/views.py:171     remaining = allocation − consumptive_use_gross.
 --   accounting/views.py:223     zone_remaining = zone_available − gross.
 --   accounting/carryover_math.py:51  water_year_of — a water year is named by the
@@ -159,10 +176,15 @@ balance AS (
 ),
 
 -- The account allocation, pro-rated by parcel-row count within each zone.
+-- GROUNDWATER plans only (136-01): the join on accounting_watertype is the
+-- like-with-like rule, and a zone with no GW plan has NO row here, which is
+-- what makes the zone table's dash below an absence rather than a zero.
 zone_period_alloc AS (
     SELECT ap.zone_id, SUM(ap.allocation_acre_feet) AS zone_alloc
       FROM accounting_allocationplan ap
       JOIN period p ON ap.reporting_period_id = p.id
+      JOIN accounting_watertype wt ON wt.id = ap.water_type_id
+                                  AND upper(wt.code) = 'GW'
      GROUP BY ap.zone_id
 ),
 zone_row_counts AS (
@@ -188,8 +210,11 @@ account_allocation AS (
      GROUP BY azr.account_id
 ),
 zone_budget AS (
+    -- zpa.zone_alloc is NULL for a zone with no groundwater plan; the view
+    -- renders that as a dash, and this recomputation carries the NULL through
+    -- rather than coercing it to 0.
     SELECT z.id AS zone_id,
-           COALESCE(zpa.zone_alloc, 0) AS allocation,
+           zpa.zone_alloc AS allocation,
            COALESCE((SELECT SUM(ac.amount_af)
                        FROM accounting_allocationcarryover ac
                        JOIN period p ON ac.water_year = p.water_year
@@ -201,7 +226,8 @@ zone_budget AS (
 -- The account row and the zone row the ledger pins.
 pinned_account AS (
     SELECT b.*, round(aa.allocation, 4) AS allocation,
-           round(aa.allocation, 4) - b.gross AS remaining
+           -- 136-01: minus groundwater use, not gross ET.
+           round(aa.allocation, 4) - b.groundwater AS remaining
       FROM balance b
       JOIN pin ON b.set_id = pin.account_id
       LEFT JOIN account_allocation aa ON aa.account_id = b.set_id
@@ -210,7 +236,8 @@ pinned_account AS (
 pinned_zone AS (
     SELECT b.*, zb.allocation, zb.carryover,
            round(zb.allocation + zb.carryover, 4) AS available,
-           round(zb.allocation + zb.carryover, 4) - b.gross AS remaining
+           -- 136-01: minus groundwater use, not gross ET.
+           round(zb.allocation + zb.carryover, 4) - b.groundwater AS remaining
       FROM balance b
       JOIN pin ON b.set_id = pin.zone_id
       JOIN zone_budget zb ON zb.zone_id = b.set_id

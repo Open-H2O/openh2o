@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Read section A's 31 figures out of the SERVED HTML.
+"""Read section A's 30 figures out of the SERVED HTML (31 until 136-01 retired the use-ledger footer's net).
 
 The ledger's `rendered` column has to be what a person sees, so it is read back
 out of the saved pages rather than re-asked of the application. Standard library
@@ -264,7 +264,7 @@ def calculation_run(html, slug):
 
 
 def methodology_preview(html, slug):
-    """FIG-accounting-050..053: the live preview fragment."""
+    """FIG-accounting-049..052: the live preview fragment."""
     out = []
     header = re.search(
         r"<div class=\"td-num-bold\"[^>]*>\s*(.*?)\s*AF\s*<div class=\"field-label\"[^>]*>"
@@ -274,22 +274,26 @@ def methodology_preview(html, slug):
     )
     if header is None:
         raise AssertionError("the preview no longer states a Billable groundwater figure")
-    out.append(("FIG-accounting-050", slug, "preview Billable groundwater", _number(header.group(1))))
+    out.append(("FIG-accounting-049", slug, "preview Billable groundwater", _number(header.group(1))))
     out.extend(
-        _waterfall(html, slug, ("FIG-accounting-051", "FIG-accounting-052"), "Uses the currently-saved")
+        _waterfall(html, slug, ("FIG-accounting-050", "FIG-accounting-051"), "Uses the currently-saved")
     )
     # The fourth site lives in the {% else %} arm, reached only when the saved
     # methodology yields no steps at all.
     fallback = re.search(r"No enabled steps produced a breakdown.*?final (.*?) AF", html, re.S)
     out.append((
-        "FIG-accounting-053", slug, "no-steps fallback final",
+        "FIG-accounting-052", slug, "no-steps fallback final",
         _number(fallback.group(1)) if fallback else NOT_RENDERED,
     ))
     return out
 
 
 def use_ledger(html, slug):
-    """FIG-accounting-046..049: one entry row and the three footer totals."""
+    """FIG-accounting-046..048: one entry row and the two footer subtotals.
+
+    136-01 retired the footer's net (paper and water are not addable) and named
+    the two subtotals by kind: Credits, and Delivered and pumped as a magnitude.
+    """
     table = _table_after(html, 'id="ledger-results"' if 'id="ledger-results"' in html else "<tbody>")
     headers, rows = _rows(table)
     _assert_headers(headers, LEDGER_HEADERS, "use ledger")
@@ -301,17 +305,15 @@ def use_ledger(html, slug):
     if foot is None:
         raise AssertionError("the use ledger no longer carries a footer total row")
     cells = re.findall(r"<td[^>]*>(.*?)</td>", foot.group(0), re.S)
-    out.append(("FIG-accounting-047", slug, "footer net", _number(cells[1])))
-    split = _text(cells[2])
-    credits = re.search(r"\+([\d,]+\.\d+)\s*credits", split)
-    debits = re.search(r"([\-−][\d,]+\.\d+)\s*debits", split)
-    if credits is None or debits is None:
-        raise AssertionError(f"the footer's credits/debits line reads {split!r}")
-    out.append(("FIG-accounting-048", slug, "footer credits", credits.group(1).replace(",", "")))
-    out.append((
-        "FIG-accounting-049", slug, "footer debits",
-        debits.group(1).replace(",", "").replace("−", "-"),
-    ))
+    split = _text(cells[1])
+    credits = re.search(r"Credits \(allocation and recharge entries\) \+([\d,]+\.\d+)", split)
+    water = re.search(r"Delivered and pumped ([\d,]+\.\d+)", split)
+    if credits is None or water is None:
+        raise AssertionError(f"the footer's subtotal line reads {split!r}")
+    if re.search(r"\bdebits\b|\bnet\b", split):
+        raise AssertionError(f"the footer has regrown a net or a debits label: {split!r}")
+    out.append(("FIG-accounting-047", slug, "footer Credits", credits.group(1).replace(",", "")))
+    out.append(("FIG-accounting-048", slug, "footer Delivered and pumped", water.group(1).replace(",", "")))
     return out
 
 
@@ -333,14 +335,14 @@ def allocations(html, slug):
 
 
 def period_detail(html, slug):
-    """FIG-accounting-054: one allocation row on the reporting-period page."""
+    """FIG-accounting-053: one allocation row on the reporting-period page."""
     table = _table_after(html, "Allocations</h2>")
     headers, rows = _rows(table)
     _assert_headers(headers, PERIOD_ALLOC_HEADERS, "period detail allocations")
     match = next((r for r in rows if _text(r[0]) == PINNED_ALLOC_PERIOD), None)
     if match is None:
         raise AssertionError(f"the pinned allocation {PINNED_ALLOC_PERIOD!r} is not on this page")
-    return [("FIG-accounting-054", slug, PINNED_ALLOC_PERIOD, _number(match[3]))]
+    return [("FIG-accounting-053", slug, PINNED_ALLOC_PERIOD, _number(match[3]))]
 
 
 PAGES = [
@@ -364,10 +366,10 @@ def main():
         records.extend(reader(_read(args.rendered, slug), slug))
     records.sort(key=lambda r: r[0])
 
-    if len(records) != 31:
+    if len(records) != 30:
         print(
-            f"expected 31 sites, read {len(records)}. The section covers exactly "
-            "the 31 figures inventory.json records for these six templates.",
+            f"expected 30 sites, read {len(records)}. The section covers exactly "
+            "the 30 figures inventory.json records for these six templates.",
             file=sys.stderr,
         )
         return 1

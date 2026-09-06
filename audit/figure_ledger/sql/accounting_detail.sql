@@ -1,17 +1,20 @@
--- FIG-accounting-001..022, FIG-accounting-046..054. The accounting money layer:
+-- FIG-accounting-001..022, FIG-accounting-046..053. The accounting money layer:
 -- the account balance pane, the calculation-run audit page, the methodology live
--- preview, the use-ledger table and its footer totals, the allocations table, and
--- the reporting-period detail page. 31 rendered figures across six templates.
+-- preview, the use-ledger table and its footer subtotals, the allocations table,
+-- and the reporting-period detail page. 30 rendered figures across six templates
+-- (31 until 136-01 retired the use-ledger footer's net, 2026-09-06: paper and
+-- water are not addable, so the platform stopped printing their sum; DESIGN.md
+-- rule 12, review question 3, ISS-155. Every id after it moved up by one.)
 --
 -- Screens, all pinned to WY 2025-2026 (reporting period id 2, the dry year), the
 -- same water year section 1 pinned on the dashboard:
 --   /accounting/accounts/78/?period=2                       FIG-009..020
 --   /accounting/calculation-run/16/2026-03/                 FIG-001..008
 --   /accounting/methodology/preview/?parcel_id=16&period=2026-03
---                                                           FIG-050..053
---   /accounting/ledger/?period=2                            FIG-046..049
+--                                                           FIG-049..052
+--   /accounting/ledger/?period=2                            FIG-046..048
 --   /accounting/allocations/?period=2                       FIG-021..022
---   /accounting/reporting-periods/2/                        FIG-054
+--   /accounting/reporting-periods/2/                        FIG-053
 --
 -- Pinned rows:
 --   Account   MER-ACCT-001 Ashvale Orchards Inc. (id 78), the same account
@@ -448,28 +451,29 @@ figures AS (
     -- ── The use ledger ───────────────────────────────────────────────────────
     UNION ALL SELECT 'FIG-accounting-046', 'Use ledger: first row Amount (AF)',
            round((SELECT amount_acre_feet FROM ledger_first_row), 2)
-    UNION ALL SELECT 'FIG-accounting-047', 'Use ledger footer: net',
-           round((SELECT net FROM ledger_totals), 2)
-    UNION ALL SELECT 'FIG-accounting-048', 'Use ledger footer: credits',
+    -- 136-01: the footer names its two subtotals by kind and prints no net.
+    -- Credits are the non-negative rows (allocation and recharge entries);
+    -- "Delivered and pumped" is the magnitude of the negative rows.
+    UNION ALL SELECT 'FIG-accounting-047', 'Use ledger footer: Credits',
            round((SELECT credits FROM ledger_totals), 2)
-    UNION ALL SELECT 'FIG-accounting-049', 'Use ledger footer: debits',
-           round((SELECT debits FROM ledger_totals), 2)
+    UNION ALL SELECT 'FIG-accounting-048', 'Use ledger footer: Delivered and pumped (magnitude)',
+           round(abs((SELECT debits FROM ledger_totals)), 2)
 
     -- ── The methodology live preview ─────────────────────────────────────────
     -- The preview stores nothing, so the independent thing to hold it against is
     -- the persisted run for the same parcel-month, and the raw rows underneath it.
-    UNION ALL SELECT 'FIG-accounting-050', 'Preview: billable groundwater (vs the stored run)',
+    UNION ALL SELECT 'FIG-accounting-049', 'Preview: billable groundwater (vs the stored run)',
            round((SELECT final_af FROM run_row), 4)
-    UNION ALL SELECT 'FIG-accounting-051', 'Preview: step 1 In (AF)',
+    UNION ALL SELECT 'FIG-accounting-050', 'Preview: step 1 In (AF)',
            round((SELECT input_af FROM run_steps WHERE ord = 1), 4)
-    UNION ALL SELECT 'FIG-accounting-052', 'Preview: step 1 Out (AF), from raw satellite rows',
+    UNION ALL SELECT 'FIG-accounting-051', 'Preview: step 1 Out (AF), from raw satellite rows',
            round((SELECT gross_af FROM raw_run_pin), 4)
-    UNION ALL SELECT 'FIG-accounting-053',
+    UNION ALL SELECT 'FIG-accounting-052',
            'Preview: no-steps fallback final (branch cannot render, see checks)',
            NULL::numeric
 
     -- ── The reporting-period detail page ─────────────────────────────────────
-    UNION ALL SELECT 'FIG-accounting-054',
+    UNION ALL SELECT 'FIG-accounting-053',
            'Period detail: Halvern Valley GSA — Groundwater WY 2025-2026',
            round((SELECT allocation_acre_feet FROM alloc_scope
                    WHERE name = 'Halvern Valley GSA — Groundwater WY 2025-2026'), 2)

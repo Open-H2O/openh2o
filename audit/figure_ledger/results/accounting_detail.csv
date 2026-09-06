@@ -49,11 +49,10 @@ FIG-accounting-020,Per-parcel MER-APN-021: Net,50.87,50.87,MATCH
 FIG-accounting-021,Allocations list: Halvern Irrigation-Urban GSA — Groundwater WY 2025-2026,750.32,750.32,MATCH
 FIG-accounting-022,"Allocations list: footer total, all 8 allocations",159671.46,159671.46,MATCH
 FIG-accounting-046,Use ledger: first row Amount (AF),-8.56,-8.56,MATCH
-FIG-accounting-047,Use ledger footer: net,-1504.32,-1504.32,MATCH
-FIG-accounting-048,Use ledger footer: credits,14280.77,14280.77,MATCH
-FIG-accounting-049,Use ledger footer: debits,-15785.09,-15785.09,MATCH
-FIG-accounting-050,Preview: billable groundwater (vs the stored run),27.9945,27.9945,MATCH
-FIG-accounting-051,Preview: step 1 In (AF),0.0000,0.0000,MATCH
-FIG-accounting-052,"Preview: step 1 Out (AF), from raw satellite rows",39.8491,39.8491,MATCH
-FIG-accounting-053,"Preview: no-steps fallback final (branch cannot render, see checks)",,,NO VALUE
-FIG-accounting-054,Period detail: Halvern Valley GSA — Groundwater WY 2025-2026,9689.40,9689.40,MATCH
+FIG-accounting-047,Use ledger footer: Credits,14280.77,14280.77,MATCH
+FIG-accounting-048,Use ledger footer: Delivered and pumped (magnitude),15785.09,15785.09,MATCH
+FIG-accounting-049,Preview: billable groundwater (vs the stored run),27.9945,27.9945,MATCH
+FIG-accounting-050,Preview: step 1 In (AF),0.0000,0.0000,MATCH
+FIG-accounting-051,"Preview: step 1 Out (AF), from raw satellite rows",39.8491,39.8491,MATCH
+FIG-accounting-052,"Preview: no-steps fallback final (branch cannot render, see checks)",,,NO VALUE
+FIG-accounting-053,Period detail: Halvern Valley GSA — Groundwater WY 2025-2026,9689.40,9689.40,MATCH

@@ -93,7 +93,7 @@ def extract(rendered):
 
     rows = _table_after(
         pod, "Diversion records",
-        ["Month", "Diverted (AF)", "Return Flow (AF)", "Consumptive Use (AF)", "Period"],
+        ["Month", "Diverted (AF)", "Return Flow (AF)", "Retained (AF)", "Period"],
         "pod diversion records",
     )
     pinned = [r for r in rows if _text(_cells(r)[0]) == "May 2026"]

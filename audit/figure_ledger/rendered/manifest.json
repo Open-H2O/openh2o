@@ -3,46 +3,46 @@
     "slug": "accounting-dashboard-wy2026",
     "url": "/accounting/dashboard/?period=2",
     "status": 200,
-    "bytes": 56847,
-    "sha256": "910506e95c0c734e0747b84ce834f9662e5463609b63fe89fb14cf24c8c1feac",
+    "bytes": 57053,
+    "sha256": "33bd3e85b63b5833775924bf7d4ac58aa98e330157ea87d9ebd2c2c740fa281a",
     "note": "THE PINNED INSTANCE for ledger section 1. WY 2025-2026, the dry year, and the period the bare /accounting/dashboard/ URL resolves to on this data. Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row on screen). Pinned zone row: Halvern Irrigation-Urban GSA (id 2, first row on screen, 23 parcels).",
-    "commit": "d12d778a56f5eaad1192744160d1a1f003b385ff"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-dashboard-wy2025",
     "url": "/accounting/dashboard/?period=1",
     "status": 200,
-    "bytes": 56861,
-    "sha256": "dd533d08ab8bb4ba7d7b9b46ba059a4531a8a95aa1633b1f34f23e881115f1bc",
+    "bytes": 57070,
+    "sha256": "547628f861df277396ba1d3c0d3b811bd513e09848166c8127967b6d504b367a",
     "note": "WY 2024-2025, the wet year. Captured as the second instance so a later plan can check the same 23 sites against a different period without re-deriving the pin.",
-    "commit": "d12d778a56f5eaad1192744160d1a1f003b385ff"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-dashboard-default",
     "url": "/accounting/dashboard/",
     "status": 200,
-    "bytes": 56847,
-    "sha256": "db0f2f8cfed0cadefef80c1fadcef9ec35e9f7b9bfb3bdaca1286a6ce5d17842",
+    "bytes": 57053,
+    "sha256": "277165b72c31b2875ab1b8368e86ef9662094901b81ec3bdc1220080aa445578",
     "note": "No period parameter. Captured to RECORD which period the view's activity-based default actually resolves to, rather than asserting it from reading the code.",
-    "commit": "d12d778a56f5eaad1192744160d1a1f003b385ff"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-a-account-78-p2",
     "url": "/accounting/accounts/78/?period=2",
     "status": 200,
     "bytes": 58886,
-    "sha256": "1663ed5344e81ff08fffb9fc35c7236a8618fd5402f9ee7585a2913ab167d2fd",
-    "note": "THE PINNED INSTANCE for ledger section A's account balance pane (FIG-accounting-009..020). MER-ACCT-001 Ashvale Orchards Inc. (account id 78), WY 2025-2026 (period id 2, the dry year) \u2014 the SAME account and period section 1 pinned on the dashboard, so the two screens' figures can be compared to each other as well as to the rows. Requested without the HTMX header, so the full account_detail page renders and _account_balances.html is reached through _account_detail_pane.html with the identical context. The per-parcel table's pinned row is named in the section: every one of this account's 18 assignments carries added_date 2026-09-05, so '-added_date' does not order them and 'the first row' is not reproducible \u2014 the row is pinned by parcel number instead, read out of this capture.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "sha256": "66883e09a17eab7fd1d42f9f016e2d127873b34ee139736a346d61ac6bc2017a",
+    "note": "THE PINNED INSTANCE for ledger section A's account balance pane (FIG-accounting-009..020). MER-ACCT-001 Ashvale Orchards Inc. (account id 78), WY 2025-2026 (period id 2, the dry year), the SAME account and period section 1 pinned on the dashboard, so the two screens' figures can be compared to each other as well as to the rows. Requested without the HTMX header, so the full account_detail page renders and _account_balances.html is reached through _account_detail_pane.html with the identical context. The per-parcel table's pinned row is named in the section: every one of this account's 18 assignments carries added_date 2026-09-05, so '-added_date' does not order them and 'the first row' is not reproducible. The row is pinned by parcel number instead, read out of this capture.",
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-a-calcrun-p16-2026-03",
     "url": "/accounting/calculation-run/16/2026-03/",
     "status": 200,
     "bytes": 36175,
-    "sha256": "0aaf80930c1e1f894326483283858a716c54486261a29bb30ed6b862d394507e",
-    "note": "THE PINNED INSTANCE for the calculation-run audit page (FIG-accounting-001..008). Parcel 16, MER-APN-016, March 2026 \u2014 inside WY 2025-2026. Chosen because it is the run in that period where effective precipitation actually bites: gross 39.8491 AF, effective precip 11.8546 AF, final 27.9945 AF, so the waterfall's In and Out columns differ instead of showing five identical numbers. Calculation run id 19548.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "sha256": "76fd1d90ac50a319986f88677e3997959a058d816633628093ed5d1d161999db",
+    "note": "THE PINNED INSTANCE for the calculation-run audit page (FIG-accounting-001..008). Parcel 16, MER-APN-016, March 2026, inside WY 2025-2026. Chosen because it is the run in that period where effective precipitation actually bites: gross 39.8491 AF, effective precip 11.8546 AF, final 27.9945 AF, so the waterfall's In and Out columns differ instead of showing five identical numbers. Calculation run id 19548.",
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-a-methodology-preview-p16-2026-03",
@@ -50,161 +50,161 @@
     "status": 200,
     "bytes": 3094,
     "sha256": "cd15bd63ce088039224b7db7b1bb02e7a752f0b326584353327948393b0945f2",
-    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-050..053). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-049..052). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month.",
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-a-ledger-p2",
     "url": "/accounting/ledger/?period=2",
     "status": 200,
-    "bytes": 124644,
-    "sha256": "fc444fe866c9fda45d95b9a1e9d04d73c4a19ee369b8c52baa3ed163a5efbbd7",
-    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-046..049). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "bytes": 124897,
+    "sha256": "0d8c5b838ab4db7b3f5185ddd5c06e4b0daeb23886d8039c9b924f8c9e644a2b",
+    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-046..048). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture.",
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-a-allocations-p2",
     "url": "/accounting/allocations/?period=2",
     "status": 200,
     "bytes": 38000,
-    "sha256": "880c13e8f959d1dc185015e97b4a6541960c13db838a194b2bc88de6574a4629",
+    "sha256": "ed0fcc02975191d69526d50280e6fec8a99edfd5b039c223ede89ef8c65df6a4",
     "note": "THE PINNED INSTANCE for the allocations table (FIG-accounting-021, 022). Period filtered to WY 2025-2026 to line up with every other pin in this section. Ordered by reporting period start date descending then name; page 1 of 25. The pinned allocation row is named in the section.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-a-period-2",
     "url": "/accounting/reporting-periods/2/",
     "status": 200,
     "bytes": 38127,
-    "sha256": "7c4c192a828813df18d88940e5c6a7954fb8c90ca2d9980dbb037d0a385308b9",
-    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-054). Reporting period 2, WY 2025-2026. This page takes no period parameter \u2014 the period IS the page \u2014 so the pin is the same water year the rest of section A uses.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "sha256": "c1895ca9881978f9c1b6359b21948f32243678791f3f22fae3dfba3e14e32d80",
+    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-053). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses.",
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "accounting-a-account-78-p1",
     "url": "/accounting/accounts/78/?period=1",
     "status": 200,
     "bytes": 58892,
-    "sha256": "86abd6ceb9ad79454fe33bb22fab321b988a1417983d4b43c0fb5e7cfad07848",
+    "sha256": "6b72ade5e1ad1f0ffad039ae7bd8845a42c8ac212fe7499837faaf3bbf703efd",
     "note": "The same account balance pane in WY 2024-2025, the wet year. Captured as a second instance so a later plan can check the same twelve sites against a different period without re-deriving the pin, and so the wet-year and dry-year figures for one account sit side by side in the record.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "parcel-detail-agree-mer-apn-017",
     "url": "/parcels/17/",
     "status": 200,
-    "bytes": 53822,
-    "sha256": "996d07fe291de18205be8826f57d4dddc0ebdbec3452f948ed4dd6b0daf69d46",
-    "note": "PINNED INSTANCE A for ledger section 2 \u2014 the AGREEING case. MER-APN-017, Saddlebow Ag Holdings (parcel id 17). The two balances on this pane agree: the Supplies-minus-consumptive-use card and the mass-balance residual are the same number, because this parcel banked no incidental recharge in the period. The pane has no period control (parcels/views.py:181 builds its context without reading the request), so the period is whatever parcels/views.py:118-127 resolves for this parcel: WY 2025-2026, the dry year, reporting period id 2.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "bytes": 53824,
+    "sha256": "174dc4dca1a77760d42ee3dd3d5caabc7dcd0b1943bcce7755f63dcb505ca867",
+    "note": "PINNED INSTANCE A for ledger section 2, the AGREEING case. MER-APN-017, Saddlebow Ag Holdings (parcel id 17). The two balances on this pane agree: the Supplies-minus-consumptive-use card and the mass-balance residual are the same number, because this parcel banked no incidental recharge in the period. The pane has no period control (parcels/views.py:181 builds its context without reading the request), so the period is whatever parcels/views.py:118-127 resolves for this parcel: WY 2025-2026, the dry year, reporting period id 2.",
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "parcel-detail-disagree-mer-apn-032",
     "url": "/parcels/32/",
     "status": 200,
     "bytes": 57679,
-    "sha256": "c635bea09a6ba56a3dfe6b6af3ee1c322d4e5e7e34341155ea6cb988d5f0cf71",
-    "note": "PINNED INSTANCE B for ledger section 2 \u2014 the DISAGREEING case (ISS-148). MER-APN-032, Ashvale Orchards Inc. (parcel id 32). The Supplies-minus-consumptive-use card reads a large positive surplus while the mass-balance residual immediately below reads 0.00 and the badge reads Balanced. Same period resolution as instance A: WY 2025-2026, the dry year, reporting period id 2.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "sha256": "2b19da8004c3b30b023daa6bffd731e4ccfb12d6164b1a9469a5e62d77d1d34d",
+    "note": "PINNED INSTANCE B for ledger section 2, the DISAGREEING case (ISS-148). MER-APN-032, Ashvale Orchards Inc. (parcel id 32). The Supplies-minus-consumptive-use card reads a large positive surplus while the mass-balance residual immediately below reads 0.00 and the badge reads Balanced. Same period resolution as instance A: WY 2025-2026, the dry year, reporting period id 2.",
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "parcel-detail-disagree-mer-apn-032-periodparam-2",
     "url": "/parcels/32/?period=2",
     "status": 200,
     "bytes": 57679,
-    "sha256": "4a18b5f277c6f33385a65b3d463c3c33efe164b8c398c46a978ed1125b09bd89",
+    "sha256": "73a6431df07e8f4a1530374cd582f32886b138e111ff33746fafac92ec05e34a",
     "note": "The same parcel with an explicit ?period=2. Captured to OBSERVE whether the parcel pane honours a period parameter at all, rather than asserting it from reading the view. Compare byte-for-byte against parcel-detail-disagree-mer-apn-032.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "parcel-detail-disagree-mer-apn-032-periodparam-1",
     "url": "/parcels/32/?period=1",
     "status": 200,
     "bytes": 57679,
-    "sha256": "8309c11315cfc1b20fd5ac7d7920ec8d1756a5139b8a1faa55a194615b4bdd55",
+    "sha256": "df1a51a8727f3f342607f244df29048e4d30bbef20c619e6dda0ebb0b347ad91",
     "note": "The same parcel with ?period=1, the wet year. The other half of the same observation: if the pane honoured a period parameter these bytes would differ from the ?period=2 capture.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "surface-pod-detail-snelling",
     "url": "/surface/diversion/9/",
     "status": 200,
-    "bytes": 45335,
-    "sha256": "7a0f5041e2fa3ded7972fe21911ca0753ab42af85212c030f6e501b5458ffae2",
+    "bytes": 45400,
+    "sha256": "68d9c761feac720ca42cea825a774f3a391e637812c9e5cc12767e18618a8e3d",
     "note": "PINNED for FIG-surface-001..005. MER-POD-011-DEMO Snelling Re-Diversion (point of diversion id 9), on water right MER-WR-010-DEMO. Chosen over the first row on the diversion list because it is the ONLY point of diversion in the demonstration whose return flow is neither zero nor the whole volume: its 2026-05-15 record is 250.0000 diverted / 100.0000 returned / 150.0000 consumed, so Diverted, Return Flow and Consumptive Use are three distinct numbers and a wrong subtraction can actually fail. Everywhere else consumed equals diverted and a zero column would match any formula. The diversion-records table is pinned to the 2026-05-15 row (fourth row on screen); the table itself is NOT period-scoped, so ?period= would change nothing here.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "surface-pod-detail-bpod001",
     "url": "/surface/diversion/10/",
     "status": 200,
-    "bytes": 44487,
-    "sha256": "65945b9f3e8ee57f36bbb41c522781828ccd8d1f9a27e6a699719fad4c8c7e33",
+    "bytes": 45512,
+    "sha256": "e58812ec49854a8dccc18e7ad84d1c6a8af51ac004f31ed2548790e9fc73deab",
     "note": "Evidence, not a figure pin. MER-BPOD-001 El Nido Canal Recharge Intake (id 10) carries no water right and no maximum rate, so both of this template's figures are inside {% if %} guards that do not fire. Captured to record what the screen says instead, because the same diversion point IS shown on the CalWATRS worksheet and is withheld from the generated state file.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "surface-right-detail-wr010",
     "url": "/surface/rights/7/",
     "status": 200,
     "bytes": 45180,
-    "sha256": "6813a57b75bd9478a39d114d7b4475130f26d4903023408fe538f38271075745",
+    "sha256": "db85390e8d06a5d60e3a33eb4d1dea87fc32c0218450a22ff43d1b45c0aa9749",
     "note": "PINNED for FIG-surface-007..009. MER-WR-010-DEMO, Halvern Hydroelectric Co., face value 60,000 AF. Same right as the diversion-point pin above, so the two screens can be read against each other. Points of diversion are ordered by name, so the pinned Max rate row is MER-POD-010-DEMO Merced Falls Hydroelectric Diversion. Recent diversion records are pinned to the FIRST row, 2026-09-15 on MER-POD-010-DEMO -- unambiguous because the other diversion point on this right has no September 2026 record.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "surface-rights-list",
     "url": "/surface/rights/",
     "status": 200,
     "bytes": 37016,
-    "sha256": "e178cb4588a32f4cebdd74b17af774deb363d1db25f85cc17d8ecd3a319863d7",
+    "sha256": "6fea5da17f14019fcb15d2eb79316dcf35ced82f44192891989fe25587d98d9c",
     "note": "PINNED for FIG-surface-006. The water rights list, ordered by right identifier, so the pinned Face Value cell is the first row: MER-WR-004-DEMO, Halvern Irrigation District. All six rights are also checked whole-column in SQL.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "reporting-shared-supply-wy2026",
     "url": "/reporting/reports/shared-supply-check/?period=2",
     "status": 200,
     "bytes": 67053,
-    "sha256": "0b9269d3c3894f0209b7e7f55206e85ab5c08ee6e545dfaaea84f96c0a6bc6dc",
+    "sha256": "cac35d977e5dd71185e63b867a3649fc8d099cc6d9f921ccb36ce8ae5c15d02b",
     "note": "PINNED for FIG-reporting-003..005. WY 2025-2026, the dry year, matching section 1's pin. Groups sort by kind then source name, so the first group is Point of diversion: MER-POD-004-DEMO Atwater Canal Headgate, five use areas, every share hand-set to 0.2000. The pinned row is named by its use-area number, read out of the captured page, because the code orders rows only by the database's own row order.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "reporting-shared-supply-default",
     "url": "/reporting/reports/shared-supply-check/",
     "status": 200,
     "bytes": 67053,
-    "sha256": "e2a686af266ca00b1edb0a387dfb05b203b6e7dbdb4f9628a667fde2936f62bf",
+    "sha256": "00aeb02c030405ddcf7361f3c4aca28953b1df4c1ccfe022b4ec59012ee9ffd2",
     "note": "No period parameter. Captured to RECORD which period the activity-based default resolves to, rather than asserting it from reading the code -- the same method section 1 used for the accounting dashboard.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "reporting-calwatrs-worksheet-sub4",
     "url": "/reporting/reports/4/calwatrs-worksheet/",
     "status": 200,
     "bytes": 37121,
-    "sha256": "019cd9833386d6b120482e90895d13a78624a543cc12dbd67315acac6effba8d",
+    "sha256": "412b12df712a8772cc843d95ce2a474cd8a8d8885465254d8a74a8cddd1c383e",
     "note": "PINNED for FIG-reporting-001..002. Report submission 4, CalWATRS To Storage (report type calwatrs_a2), reporting period WY 2025-2026 -- the same dry year as the pin above. Blocks are ordered by diversion point name, so the first block is MER-BPOD-001 El Nido Canal Recharge Intake, which has no linked water right. Its first row is 2026-01-15.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-zone-detail-halvern-irrigation-urban",
     "url": "/map/zones/2/",
     "status": 200,
     "bytes": 162820,
-    "sha256": "6e522f5399004e777be2a745ea89a51404310a9995334e2d86b3bd14020617eb",
+    "sha256": "fd23772d3bd24e6612f680e10d00e749336020a0af7aaf35e7191132e23caa14",
     "note": "SECTION D PIN for FIG-geography-001..003. Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row - WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-004, the parcel-area column, is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-datasync-station-list",
     "url": "/datasync/stations/",
     "status": 200,
     "bytes": 44029,
-    "sha256": "1c59de160ca9d78d24ca1d9aac656d778062d7323bfbfb04a716da2882cfe510",
+    "sha256": "0aba23523d287a4183b6e3a31accac62efabf66f6db358779e03d3a875432430",
     "note": "SECTION D EVIDENCE, not a figure site. The station detail pane cannot be reached on this data: datasync_monitoredstation holds ZERO rows. This capture records what the station list actually says, so the four UNVERIFIED datasync rows rest on the served page and not only on a row count.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-datasync-station-detail-lowest-id",
@@ -213,43 +213,43 @@
     "bytes": 4823,
     "sha256": "72843b99a98e3f7deecf058b127c19f133a5da98eefca65a3a5f71b3263a1d94",
     "note": "SECTION D EVIDENCE for FIG-datasync-001..004. Expected to be a non-200: no MonitoredStation row exists with any primary key, so the pane that carries all four datasync figures has no instance to render. Recorded as a finding, not retried.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-well-detail-mer-w-001",
     "url": "/wells/32/",
     "status": 200,
     "bytes": 46889,
-    "sha256": "bd2dfc63c3d49ca120461dade0a7585739bbf6ed9d0e30ffaa7cfca7cca19bae",
+    "sha256": "e485e7eb996a072772010c88e11df20b7d51b958d5e2142ad763500ef0a26c67",
     "note": "SECTION D PIN for FIG-wells-001..004. Well id 32, registration MER-W-001, 'Ag well on MER-APN-002'. Chosen because one screen carries all four wells figures: it has an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order).",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-recharge-detail-el-nido-basin-1",
     "url": "/recharge/6/",
     "status": 200,
     "bytes": 43338,
-    "sha256": "c2676c8a568541ba315d7c57c3cca4b9a22a8888f1af370cc35d7495c2cd8d9c",
+    "sha256": "f186d588a0fb71875a33bb16b47fdd668da9721865bf189b7f4ec21781df603c",
     "note": "SECTION D PIN for FIG-recharge-001, -002 and -003. El Nido Recharge Basin 1 (site id 6), the first site by name on the list page, so the list figure and the detail figures describe the same basin. Pinned measurement row: the newest, 2026-02-18 water quality, 315.2601 mg/L. Pinned event row: the newest by start date, 2026-02-15 to 2026-02-18, 127.4200 AF.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-recharge-list",
     "url": "/recharge/",
     "status": 200,
     "bytes": 44007,
-    "sha256": "32c9e5f97bb73e2550dc96e880a9755c80e6e9731a143a1a56355abba680696c",
+    "sha256": "4629846f75971d8f9c2c54459809369646e3809d298f5e1bdc1e355ebdef708a",
     "note": "SECTION D PIN for FIG-recharge-004. The list is ordered by name and shows every site on one page, so the pinned row is the first: El Nido Recharge Basin 1, capacity 637.10 AF rendered to whole acre-feet.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-setup-wizard",
     "url": "/setup/",
     "status": 200,
     "bytes": 36518,
-    "sha256": "eb519b33bbeda8e1ade07751f1d5ddce0d6147694430a9abd257e8ca2a6f3dae",
+    "sha256": "471946f5e282a6a9b2093b419c9cbef047607677efb010404a0cd50ed3df965b",
     "note": "SECTION D PIN for FIG-setup-002. The figure renders inside an <option> of the 'District boundary' dropdown. One Boundary row exists, Merced Subbasin, so the pinned option is the only one: stated area 800.948 square miles.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-setup-confirm",
@@ -258,33 +258,33 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "note": "SECTION D, FIG-setup-001. Expected to redirect: the confirmation step reads a boundary out of the visitor's session, which is written by the wizard's POST, and this capture performs GETs only. Recorded as a finding so the row says why the screen could not be read rather than borrowing a number from the wizard page.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-zone-detail-halvern-valley-gsa",
     "url": "/map/zones/1/",
     "status": 200,
     "bytes": 513294,
-    "sha256": "dd4e197694247aae3562e9ff2d6d770569141b30d06afe217f278ebc357a04a1",
+    "sha256": "56b281f188846586aaf0e65867da3f98fd510e385924c6dc1c93b7fb62518cc9",
     "note": "SECTION D whole-column check on FIG-geography-001..003. Halvern Valley GSA (zone id 1), 46 parcels, the largest groundwater zone. Captured so the Used column's finding rests on every groundwater zone's screen rather than on one.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-zone-detail-verdano-island-gsa",
     "url": "/map/zones/3/",
     "status": 200,
     "bytes": 67148,
-    "sha256": "616e6d53c256d44b9427f6ffec1590be420e410b7dd78263ddb158d2edf76db4",
+    "sha256": "b46b9eaa12458e8ce71bdd1cd881038aadf0f69ca6bc2d2327cb572b819636ed",
     "note": "SECTION D whole-column check on FIG-geography-001..003. Verdano Island Water District GSA (zone id 3), 7 parcels. The one groundwater zone whose parcels take no surface canal delivery, so its Used figure is the control case.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   },
   {
     "slug": "d-zone-detail-surface-service-area-halvern",
     "url": "/map/zones/39/",
     "status": 200,
     "bytes": 78695,
-    "sha256": "97cc25b7767f01a9c847d7fd576098e9fd50f5557420743f4054bb52467e180e",
+    "sha256": "a326188e44485dfe4378285a536100df833aa0d3e77f98aad43cfc96e073decb",
     "note": "SECTION D whole-column check on FIG-geography-001..003. MER Surface Service Area - Halvern Irrigation District (zone id 39), a surface-water allocation, so the page takes the other branch (geography/views.py:205) and labels the figure 'delivered'. Captured to show that branch does filter on source type where the groundwater branch does not.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "e22cb844750a0c8481187199a7b4f52065099b31"
   }
 ]

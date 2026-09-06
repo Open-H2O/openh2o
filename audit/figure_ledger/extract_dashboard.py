@@ -35,8 +35,8 @@ ACCOUNT_COLUMNS = [
     ("FIG-accounting-032", "Precip (AF)"),
     ("FIG-accounting-033", "Supplies (AF)"),
     ("FIG-accounting-034", "Net (AF)"),
-    ("FIG-accounting-035", "Allocation (AF)"),
-    ("FIG-accounting-036", "Remaining (AF)"),
+    ("FIG-accounting-035", "GW allocation (AF)"),
+    ("FIG-accounting-036", "GW remaining (AF)"),
 ]
 ZONE_COLUMNS = [
     ("FIG-accounting-037", "Consumptive Use (AF)"),
@@ -45,9 +45,9 @@ ZONE_COLUMNS = [
     ("FIG-accounting-040", "Precip (AF)"),
     ("FIG-accounting-041", "Supplies (AF)"),
     ("FIG-accounting-042", "Net (AF)"),
-    ("FIG-accounting-043", "Allocation (AF)"),
+    ("FIG-accounting-043", "GW allocation (AF)"),
     ("FIG-accounting-044", "Carried fwd (AF)"),
-    ("FIG-accounting-045", "Remaining (AF)"),
+    ("FIG-accounting-045", "GW remaining (AF)"),
 ]
 
 PINNED_ACCOUNT = "MER-ACCT-001"
