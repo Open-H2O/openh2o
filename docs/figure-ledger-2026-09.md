@@ -1216,7 +1216,7 @@ trusted.
 
 | Reason | Field-years | Direction | Is it a defect? |
 |---|---:|---|---|
-| **The junior canal right was curtailed, and the field kept its crop** | 6 | Deficit, −81.8% to −90.9% of gross ET | **Yes, in the demonstration's content.** Filed as ISS-157 |
+| **The junior canal right was curtailed, and the field kept its crop** | 6 | Deficit, −81.8% to −90.9% of gross ET | **Not a defect. It is water use with no accountable supply, which the platform already measures and no screen shows.** ISS-157 |
 | **The same curtailment, caught part-way through the earlier year** | 5 | Deficit, −36.8% to −51.7% | No. This is the scarcity demonstration behaving as designed |
 | **The meter measures pumping, and the books have nowhere to put the difference** | 10 | Surplus, +31.6% to +55.8% | No new issue. It is ISS-148's shape with the sign reversed, and it belongs to Phase 137 |
 
@@ -1254,24 +1254,53 @@ essentially unchanged from the wet year:
 | MER-APN-014 | Grapes | 506.24 | 496.09 | −2.0% | **0.00** |
 | MER-APN-019 | Grapes | 457.41 | 448.46 | −2.0% | **0.00** |
 
-**That is the finding, and it is about the demonstration's content rather than
-its arithmetic.** A field cannot grow a full crop on no water. Either those six
-growers pumped, and the demonstration owes them meter rows, or they fallowed,
-and the satellite record should show it. As it stands the pane tells a grower
-their books are short by the entire year's crop, which is true of the rows and
-impossible in the field.
+**The first reading of this was wrong, and the correction is worth more than the
+finding was.** It was written up on 2026-09-05 as a defect in the demonstration's
+data: a field cannot grow a full crop on no water, so the seed owed these six
+either meter rows or a collapsed crop. That is true as far as it goes, and it
+misses what the pattern actually is.
 
-**A corrected sizing.** The three fields that substituted pumped between 195 and
-388 acre-feet over twelve months. Giving these six the same treatment (monthly
-groundwater rows covering the post-curtailment demand) would put all six back
-inside the band and would tell the story the curtailment note already describes.
-The alternative, and the more interesting demonstration, is to fallow two of them
-and let the satellite record collapse, which is what a grower with no water and no
-well actually does.
+**A field consuming water with no water right and no groundwater source is a real
+thing, and finding it is a large part of what a water-rights regulator does.**
+Water gets used that nobody has reported. Reconciling satellite-measured crop
+water use against what was actually reported is how that becomes visible. So
+these six fields are not only a gap in the demonstration; they are the shape of
+the case the demonstration should be able to show.
+
+**And the platform already computes it.** Every monthly calculation carries an
+`unmet_demand_af` figure. Where a field has a well, the leftover after crop use
+minus rainfall minus surface water is booked as a calculated groundwater
+extraction. Where a field has **no** well, that same leftover is recorded as
+unmet demand instead, and the platform's own help page states the principle:
+*"It is never phantom pumping. The platform refuses to invent groundwater out of
+a missing meter"* (`templates/help/water_balances.html:87`).
+
+**Measured over the dry year, it names exactly these six and nothing else.**
+Forty-seven fields carry the unmet-demand disposition, because 47 fields have no
+well. Only six carry an amount above zero, totalling **1,986.50 acre-feet**, and
+they are the six in the table above. The other 41 sit at zero because canal water
+covered them.
+
+**What is missing is the screen.** Nothing in the platform displays the number.
+Two help pages explain a concept no page shows.
+
+⚠ **A screen for this states arithmetic and stops:** *water use recorded, no
+supply reported*. It does not say unauthorized, unpermitted or unlawful, and it
+does not imply them. What the rows show is what a regulator's page may say; the
+conclusion belongs to the reader.
+
+**One thing the six do share that a real drought would not:** they carry on at
+full crop identically, all six. In a real dry year some of those growers fallow.
+Making them differ, so that some fallow and some pump and one or two remain
+genuinely unaccounted, would make the flag mean more, because it would stop
+firing on six identical cases. That is a change to the demonstration's seed data,
+it moves counts that are pinned exactly, and it is **not** a prerequisite for the
+screen.
 
 ⚠ **Not fixed here. Phase 135 is read-only on product code and on the seed.**
-Filed as **ISS-157** for Phase 136, which is already re-sizing this
-demonstration's allocations and rebuilding the golden dataset.
+Filed as **ISS-157** and scheduled for **Phase 137** with the rest of the page
+pass. Decided by Brent 2026-09-06: build the view first, on the field page and as
+a district-wide list, and leave the seed data as it stands for now.
 
 ---
 
