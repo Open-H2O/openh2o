@@ -446,19 +446,10 @@ def test_diversion_reach_journey_does_not_move_basin_closure():
 # word on screen changed. How the badge sits beside the figure is Phase 137's.
 
 
-def test_parcel_pane_renders_residual_in_green_and_never_surplus():
-    """One meter reading of 110 AF against 100 AF of gross ET.
-
-    Inputs 110 (pumped), outputs 100 (ET): residual +10.00 AF, which is 10% of
-    ET and inside REALISTIC_RESIDUAL_BAND (25%), so the badge is the green
-    Residual and the realistic-band cause line renders.
-    """
+def _pane_user():
+    """A logged-in user for a pane fetch, built without the fixtures app."""
     import factory
     from django.contrib.auth.hashers import make_password
-    from django.test import Client
-    from django.urls import reverse
-
-    from tests.factories import ParcelFactory, ParcelLedgerFactory, ReportingPeriodFactory
 
     class _User(factory.django.DjangoModelFactory):
         class Meta:
@@ -468,6 +459,42 @@ def test_parcel_pane_renders_residual_in_green_and_never_surplus():
         email = factory.Sequence(lambda n: f"paneuser{n}@example.com")
         password = factory.LazyFunction(lambda: make_password("testpass123"))
         is_active = True
+
+    return _User()
+
+
+def budget_segment(html, label):
+    """The markup of the one ``.budget-seg`` carrying ``label``.
+
+    Splitting on the segment's opening tag yields one chunk per segment, so
+    something found in a chunk is INSIDE that segment rather than merely later
+    on the page. That containment is the whole claim ISS-148 turns on: the
+    badge has to be part of the residual statement, not a verdict sitting
+    beside a different number.
+    """
+    chunks = html.split('<div class="budget-seg">')
+    matching = [chunk for chunk in chunks[1:] if f">{label}</div>" in chunk]
+    assert len(matching) == 1, (
+        f"expected exactly one .budget-seg labelled {label!r} on the parcel "
+        f"pane; found {len(matching)}"
+    )
+    return matching[0]
+
+
+def test_parcel_pane_states_one_subtraction_with_the_badge_inside_it():
+    """One meter reading of 110 AF against 100 AF of gross ET.
+
+    Inputs 110 (pumped), outputs 100 (ET), so the residual is +10.00 AF: 10% of
+    ET, inside REALISTIC_RESIDUAL_BAND (25%), so the badge is the green
+    Residual. The pane must state that subtraction ONCE — Supplies 110.00 −
+    Uses 100.00 = Residual 10.00 — with the badge inside the residual segment.
+    The literals are hand-computed from the fixture above and pasted, never
+    re-derived from the code under test (DESIGN.md rule 12, review question 2).
+    """
+    from django.test import Client
+    from django.urls import reverse
+
+    from tests.factories import ParcelFactory, ParcelLedgerFactory, ReportingPeriodFactory
 
     rp = ReportingPeriodFactory(
         name="Water Year 2025-2026",
@@ -489,14 +516,110 @@ def test_parcel_pane_renders_residual_in_green_and_never_surplus():
     )
 
     client = Client()
-    client.force_login(_User())
+    client.force_login(_pane_user())
     response = client.get(reverse("parcels:detail", args=[parcel.pk]), HTTP_HX_REQUEST="true")
     assert response.status_code == 200
     html = response.content.decode()
 
-    assert 'Residual: <span class="td-num">10.00</span> AF' in html
-    assert '<span class="badge badge-green">Residual</span>' in html
+    supplies = budget_segment(html, "Supplies")
+    uses = budget_segment(html, "Uses")
+    residual = budget_segment(html, "Residual")
+
+    assert (
+        '<div class="budget-seg-value text-supply">110.00'
+        '<span class="budget-seg-unit">AF</span></div>'
+    ) in supplies
+    assert (
+        '<div class="budget-seg-value text-usage">100.00'
+        '<span class="budget-seg-unit">AF</span></div>'
+    ) in uses
+    assert (
+        '<div class="budget-seg-value text-surplus">10.00'
+        '<span class="budget-seg-unit">AF</span></div>'
+    ) in residual
+
+    assert '<span class="badge badge-green">Residual</span>' in residual, (
+        "the badge is not inside the residual segment. ISS-148 is that the pane "
+        "gave the answer twice in two identities and put the badge beside the "
+        "one it does not judge; the badge belongs in the statement it judges."
+    )
+
+    assert "Supplies \u2212 consumptive use" not in html, (
+        "card 3 (supplies minus gross ET) is still on the pane. The panel states "
+        "the MASS BALANCE, which also carries recharge and storage change; two "
+        "identities on one pane is ISS-148."
+    )
     assert "Surplus" not in html, (
         "the parcel pane still says Surplus; the badge word is Residual "
         "(Brent, 2026-09-05; DESIGN.md rule 12)"
+    )
+
+
+def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
+    """The same 110 AF in and 100 AF of ET, plus 20 AF spread to recharge.
+
+    This is the shape ISS-148 was filed over. Card 3's identity (supplies minus
+    gross ET) prints +10.00 and reads as spare supply; the mass balance, which
+    also carries the water that left for the basin, is 110 − 120 = -10.00 and
+    reads as a deficit. The panel states the mass balance, so the sign and the
+    badge word agree, and the uses foot shows where the 20 AF went.
+
+    Recharge is read off the engine's own breakdown (the ``clamp_floor`` step's
+    ``incidental_recharge_af``), which is where ``parcel_mass_balance`` looks.
+    """
+    from django.test import Client
+    from django.urls import reverse
+
+    from tests.factories import ParcelFactory, ParcelLedgerFactory, ReportingPeriodFactory
+
+    rp = ReportingPeriodFactory(
+        name="Water Year 2025-2026",
+        start_date=dt.date(2025, 10, 1),
+        end_date=dt.date(2026, 9, 30),
+    )
+    parcel = ParcelFactory()
+    ParcelLedgerFactory(
+        parcel=parcel, reporting_period=rp, source_type="meter_reading",
+        amount_acre_feet=Decimal("-110.0000"),
+        transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
+    )
+    CalculationRun.objects.create(
+        parcel=parcel, period="2026-01",
+        gross_et_af=Decimal("100.0000"),
+        net_consumptive_use_af=Decimal("100.0000"),
+        effective_precip_af=Decimal("0.0000"),
+        final_af=Decimal("100.0000"),
+        breakdown=[
+            {
+                "step_type": "clamp_floor",
+                "detail": {"incidental_recharge_af": "20.0000"},
+            }
+        ],
+    )
+
+    client = Client()
+    client.force_login(_pane_user())
+    response = client.get(reverse("parcels:detail", args=[parcel.pk]), HTTP_HX_REQUEST="true")
+    assert response.status_code == 200
+    html = response.content.decode()
+
+    assert (
+        '<div class="budget-seg-value text-supply">110.00'
+        '<span class="budget-seg-unit">AF</span></div>'
+    ) in budget_segment(html, "Supplies")
+    assert (
+        '<div class="budget-seg-value text-usage">120.00'
+        '<span class="budget-seg-unit">AF</span></div>'
+    ) in budget_segment(html, "Uses")
+
+    residual = budget_segment(html, "Residual")
+    assert (
+        '<div class="budget-seg-value text-deficit">-10.00'
+        '<span class="budget-seg-unit">AF</span></div>'
+    ) in residual
+    assert '<span class="badge badge-orange">Deficit</span>' in residual
+
+    assert "<span>Recharge <b>20.00</b></span>" in html, (
+        "the uses foot does not show the 20.00 AF that left this field for the "
+        "basin, so the residual is not legible from the panel"
     )
