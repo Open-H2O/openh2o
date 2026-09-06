@@ -1,4 +1,4 @@
-{% load placeholders %}{% comment %}
+{% load placeholders humanize %}{% comment %}
   Per-parcel detail BODY, swapped into #detail-body on row click (and reused by
   the standalone detail.html page). The map itself is NOT here — it lives as a
   persistent element (#detail-map) in the pane shell so it is built ONCE and
@@ -21,126 +21,102 @@
 
 <div class="pane-stack">
 
-  <!-- Water Balance card -->
+  <!-- Water balance: ONE statement, stated once — the parcel MASS balance. -->
+  {% url 'methods' as methods_help_url %}
+  {% url 'water_balances' as wb_help_url %}
   <div class="card-raised">
-    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      {% url 'methods' as methods_help_url %}
-      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this is calculated" text="Billable groundwater is what's left after the platform subtracts effective rainfall and surface deliveries from the crop's satellite-estimated consumptive use (ET). The month links below show each step." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
-      {% if balance_period %}
-      <span class="text-tertiary text-xs">{{ balance_period.name }}</span>
-      {% endif %}
-    </div>
-
     {% if run_periods %}
-    <!-- ET has been computed: full consumptive-use + closing identity. -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-sm);">
-      <div class="inset-card">
-        <div class="stat-card-label">Consumptive use (ET)</div>
-        <div class="stat-card-value-sm text-usage">{{ consumptive_balance.consumptive_use_gross|floatformat:2 }}</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-      <div class="inset-card">
-        <div class="stat-card-label">Total supplies</div>
-        <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supply_total|floatformat:2 }}</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-      <div class="inset-card">
-        <div class="stat-card-label">Supplies − consumptive use</div>
-        <div class="stat-card-value-sm {% if consumptive_balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ consumptive_balance.net_vs_supply|floatformat:2 }}</div>
-        <div class="stat-card-unit">AF</div>
-      </div>
-    </div>
+    {% comment %}
+      ISS-148, answered as a design question in 137-01. The pane used to give
+      the answer twice, in two identities that disagree in sign on 32 of 76
+      wet-year and 24 of 76 dry-year parcels, with the answer given third and
+      smallest. This panel states the MASS balance — supplies minus uses, where
+      uses carry consumptive use, water spread to recharge and the change in
+      banked storage — and nothing else.
 
-    <div style="margin: 0 0 var(--space-lg);">
-      <p class="text-sm text-secondary" style="margin: 0 0 var(--space-sm);">
-        Net consumptive demand of
-        <span class="text-usage" style="font-weight: 600;">{{ consumptive_balance.consumptive_use_net|floatformat:2 }} AF</span>
-        (consumptive use after effective rainfall), met by these supplies:
-      </p>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-sm);">
-        <div class="inset-card">
-          <div class="stat-card-label">Surface water</div>
-          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.surface|floatformat:2 }}</div>
-          <div class="stat-card-unit">AF</div>
+      Why this identity and not the dashboard's (supplies minus gross ET): the
+      badge is DEFINED on this residual, DESIGN.md rule 12 defines "Residual"
+      this way, and on a Flood-MAR field the dashboard's identity prints water
+      that left for the basin as spare supply. The two differ by exactly the
+      recharge and storage terms, so on the 70 fields with neither they are
+      equal and this panel reads the same as the dashboard's.
+
+      Rejected: keep the dashboard identity and drop the mass balance (the badge
+      would then judge a number the panel does not show); keep both and reorder
+      the divs (Brent, 2026-09-06: "Do not fix this by moving three divs").
+
+      This is the house .budget-panel component, the same one the dashboard and
+      the account pane use (DESIGN.md → House "concept" components). Do not
+      write a second panel for the same idea.
+    {% endcomment %}
+    <div class="budget-panel">
+      <div class="budget-panel-head">
+        <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss." link=methods_help_url link_label="Methods behind the numbers" %}</span>
+        {% if balance_period %}<span class="budget-panel-period">{{ balance_period.name }}</span>{% endif %}
+      </div>
+      <div class="budget-panel-row">
+        <div class="budget-seg">
+          <div class="budget-seg-label">Supplies</div>
+          <div class="budget-seg-value text-supply">{{ mass_balance.inputs_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         </div>
-        <div class="inset-card">
-          <div class="stat-card-label">Groundwater</div>
-          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.groundwater|floatformat:2 }}</div>
-          <div class="stat-card-unit">AF</div>
+        <div class="budget-op">&minus;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Uses</div>
+          <div class="budget-seg-value text-usage">{{ mass_balance.outputs_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         </div>
-        <div class="inset-card">
-          <div class="stat-card-label">Precipitation</div>
-          <div class="stat-card-value-sm text-supply">{{ consumptive_balance.supplies.precip|floatformat:2 }}</div>
-          <div class="stat-card-unit">AF</div>
+        <div class="budget-op">&equals;</div>
+        <div class="budget-seg">
+          <div class="budget-seg-label">Residual</div>
+          <div class="budget-seg-value {% if mass_balance.is_surplus %}text-surplus{% else %}text-deficit{% endif %}">{{ mass_balance.residual_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          {% comment %}
+            Three words only: Balanced / Residual / Deficit (Brent, 2026-09-05;
+            DESIGN.md rule 12). "Surplus" read as good news to a water manager,
+            and a positive residual here is the opposite: water recorded
+            arriving that the field's uses do not account for (ISS-143). The
+            COLOUR carries the size — a deficit is orange at any size; a
+            positive residual is green until it passes REALISTIC_RESIDUAL_BAND,
+            then orange. The badge sits INSIDE this segment because it judges
+            THIS number; that placement is the half of ISS-143 that closes with
+            ISS-148 (its NUMBER still waits on ISS-139).
+
+            This block tag is required for a note this long: Django's hash-style
+            template comment is SINGLE-LINE only, and a multi-line one renders
+            onto the page as visible text. That shipped to Brent's screen on
+            2026-09-05.
+          {% endcomment %}
+          <div class="mt-sm">
+            {% if mass_balance.band_status == "closes" %}
+            <span class="badge badge-grey">Balanced</span>
+            {% elif not mass_balance.is_surplus %}
+            <span class="badge badge-orange">Deficit</span>
+            {% elif mass_balance.band_status == "realistic" %}
+            <span class="badge badge-green">Residual</span>
+            {% else %}
+            <span class="badge badge-orange">Residual</span>
+            {% endif %}
+          </div>
         </div>
       </div>
-    </div>
-
-    <h3 class="section-header-sm">Supply vs. use summary</h3>
-    <table class="data-table text-sm">
-      <thead>
-        <tr>
-          <th>Supplies</th><th class="th-right">AF</th>
-          <th>Uses</th><th class="th-right">AF</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="text-secondary">Surface</td>
-          <td class="td-num text-supply">{{ mass_balance.inputs.surface|floatformat:2 }}</td>
-          <td class="text-secondary">ET</td>
-          <td class="td-num text-usage">{{ mass_balance.outputs.et|floatformat:2 }}</td>
-        </tr>
-        <tr>
-          <td class="text-secondary">Precip</td>
-          <td class="td-num text-supply">{{ mass_balance.inputs.precip|floatformat:2 }}</td>
-          <td class="text-secondary">Recharge</td>
-          <td class="td-num">{{ mass_balance.outputs.recharge|floatformat:2 }}</td>
-        </tr>
-        <tr>
-          <td class="text-secondary">Groundwater pumped</td>
-          <td class="td-num text-supply">{{ mass_balance.inputs.gw_recovered|floatformat:2 }}</td>
-          <td class="text-secondary">Runoff</td>
-          <td class="td-num">{{ mass_balance.outputs.runoff|floatformat:2 }}</td>
-        </tr>
-        <tr>
-          <td></td><td></td>
-          <td class="text-secondary">Net Banked/Drawn (credits)</td>
-          <td class="td-num">{{ mass_balance.outputs.delta_storage|floatformat:2 }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="row-between mb-md mt-sm">
-      <span class="text-secondary text-sm">Residual: <span class="td-num">{{ mass_balance.residual_af|floatformat:2 }}</span> AF</span>
       {% comment %}
-        Three words only: Balanced / Residual / Deficit (Brent, 2026-09-05;
-        DESIGN.md rule 12). "Surplus" read as good news to a water manager, and
-        a positive residual here is the opposite: water recorded arriving that
-        the parcel's uses do not account for (ISS-143). The COLOUR carries the
-        size, so the vocabulary stays short without losing the one thing an
-        operator needs to see: a gap of a quarter of consumptive use does not
-        read the same as a rounding difference. A deficit is orange at any
-        size; a positive residual is green until it passes
-        REALISTIC_RESIDUAL_BAND, then orange. How the badge sits beside the
-        Residual figure is Phase 137's.
-
-        This block tag is required for a note this long: Django's hash-style
-        template comment is SINGLE-LINE only, and a multi-line one renders onto
-        the page as visible text. That shipped to Brent's screen on 2026-09-05.
+        The two operands, decomposed in the order they appear above. Runoff is
+        deliberately NOT here: FIG-parcels-013 is a fixed-zero bookkeeping
+        placeholder (verdict EXPLAINED in the 135-03 ledger) and a cell that can
+        only ever read 0.00 says nothing. The key stays in the dict.
       {% endcomment %}
-      {% if mass_balance.band_status == "closes" %}
-      <span class="badge badge-grey">Balanced</span>
-      {% elif not mass_balance.is_surplus %}
-      <span class="badge badge-orange">Deficit</span>
-      {% elif mass_balance.band_status == "realistic" %}
-      <span class="badge badge-green">Residual</span>
-      {% else %}
-      <span class="badge badge-orange">Residual</span>
-      {% endif %}
+      <div class="budget-panel-foot">
+        <span>Surface <b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></span>
+        <span>Groundwater <b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></span>
+        <span>Rain <b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></span>
+      </div>
+      <div class="budget-panel-foot">
+        <span>Consumptive use <b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></span>
+        <span>Recharge <b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></span>
+        <span>Storage change <b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></span>
+      </div>
     </div>
+
     {% if mass_balance.band_status == "realistic" %}
-    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+    <p class="text-tertiary text-xs" style="margin: var(--space-md) 0 var(--space-sm);">
       {% if mass_balance.is_surplus %}
       Supplies slightly exceed estimated consumptive use — the difference is on-farm
       loss or return flow, not unaccounted water.
@@ -151,7 +127,7 @@
       {% endif %}
     </p>
     {% elif mass_balance.band_status == "large" and mass_balance.is_surplus %}
-    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
+    <p class="text-tertiary text-xs" style="margin: var(--space-md) 0 var(--space-sm);">
       More water is recorded arriving here than this parcel's uses account for —
       by more than a quarter of estimated consumptive use, so it is flagged rather
       than treated as ordinary on-farm loss. A residual this size is a gap in the
@@ -159,10 +135,15 @@
       so ditch seepage and evaporation have nowhere to be recorded and land here.
     </p>
     {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
-    <p class="text-tertiary text-xs" style="margin-top: calc(-1 * var(--space-sm)); margin-bottom: var(--space-sm);">
-      Recorded supplies fell well short of estimated consumptive use this period —
-      expected where a junior surface right was curtailed going into peak season
-      and the parcel had no groundwater to substitute.
+    {% comment %}
+      This line used to finish "— expected where a junior surface right was
+      curtailed going into peak season and the parcel had no groundwater to
+      substitute". That is the Merced demonstration's story hardcoded into the
+      product: false on any other deployment, and it explains the water rather
+      than the software (DESIGN.md rule 11). It states the arithmetic and stops.
+    {% endcomment %}
+    <p class="text-tertiary text-xs" style="margin: var(--space-md) 0 var(--space-sm);">
+      Recorded supplies fell well short of estimated consumptive use this period.
     </p>
     {% endif %}
 
@@ -175,11 +156,15 @@
       </div>
     </div>
     {% else %}
+    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+      <h2 class="section-header-flush" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss." link=methods_help_url link_label="Methods behind the numbers" %}</h2>
+      {% if balance_period %}<span class="text-tertiary text-xs">{{ balance_period.name }}</span>{% endif %}
+    </div>
     <div class="alert-warning">
       ET has not been computed for this use area yet, so the closing balance
       can't be drawn. It will close once the accounting engine runs for it
       (Phase 58). Recorded supplies so far:
-      <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> ·
+      <span class="text-supply">surface {{ consumptive_balance.supplies.surface|floatformat:2 }}</span> &middot;
       <span class="text-supply">groundwater {{ consumptive_balance.supplies.groundwater|floatformat:2 }}</span> AF.
     </div>
     {% endif %}

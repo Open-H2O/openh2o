@@ -732,10 +732,11 @@ def parcel_mass_balance(parcel, reporting_period=None):
         reporting_period: Optional ReportingPeriod to scope to.
 
     Returns:
-        dict: ``{"inputs": {surface, precip, gw_recovered},
-        "outputs": {et, recharge, runoff, delta_storage}, "residual_af": Decimal,
-        "closes": bool}``. ``residual_af = sum(inputs) − sum(outputs)``;
-        ``closes`` iff ``abs(residual_af) <= MASS_BALANCE_TOLERANCE``.
+        dict: ``{"inputs": {surface, precip, gw_recovered}, "inputs_total":
+        Decimal, "outputs": {et, recharge, runoff, delta_storage},
+        "outputs_total": Decimal, "residual_af": Decimal, "closes": bool}``.
+        ``residual_af = inputs_total − outputs_total``; ``closes`` iff
+        ``abs(residual_af) <= MASS_BALANCE_TOLERANCE``.
     """
     # Ledger-sourced terms, on the SAME billable basis as parcel_balance_breakdown.
     qs = ParcelLedger.objects.filter(parcel=parcel)
@@ -773,11 +774,19 @@ def parcel_mass_balance(parcel, reporting_period=None):
         "runoff": runoff,
         "delta_storage": delta_storage,
     }
-    residual = sum(inputs.values()) - sum(outputs.values())
+    # 137-01: the two operands the parcel pane's balance panel states. Summed
+    # here rather than in the template so the screen adds the same rows the
+    # residual is computed from — a template that summed its own three cells
+    # could drift from `residual_af` without any test noticing.
+    inputs_total = sum(inputs.values())
+    outputs_total = sum(outputs.values())
+    residual = inputs_total - outputs_total
     closes = abs(residual) <= MASS_BALANCE_TOLERANCE
     return {
         "inputs": inputs,
+        "inputs_total": inputs_total,
         "outputs": outputs,
+        "outputs_total": outputs_total,
         "residual_af": residual,
         "closes": closes,
         # 58-03: presentation classification — "closes" / "realistic" / "large".
