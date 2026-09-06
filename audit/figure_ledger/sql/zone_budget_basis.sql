@@ -12,6 +12,21 @@
 -- zone table under the option-A basis (136-01): GW remaining = groundwater
 -- allocation (plus carry-over) minus groundwater use.
 --
+-- RE-POINTED, 137-02 (ISS-154). The district page's Allocation vs. use table
+-- (`templates/geography/partials/_zone_detail_pane.html`) used to be checked
+-- against nothing of its own -- it summed EVERY negative billable row, canal
+-- deliveries included, so its "Used" and "Remaining" cells disagreed with this
+-- file's `gw_use` and `gw_remaining` on purpose (that disagreement WAS
+-- ISS-154). `geography/views.py`'s GW branch now calls
+-- `accounting/services.py:zone_groundwater_budget`, the same helper the
+-- dashboard's zone row calls, so the district page's FIG-geography-001..004
+-- (Allocation, Carried forward, Used/pumped, Remaining) are the SAME sixteen
+-- rows this file already produced: `gw_use` is `b.used`, `carryover` is
+-- `b.carryover`, and `gw_remaining` is `b.remaining`. No arithmetic in this
+-- file changed -- it already partitioned by `source_type` and already added
+-- the carry-over (see the `gw_use`/`gw_remaining` columns below); the district
+-- page's screen was the one that did not.
+--
 -- INDEPENDENCE. Tables and columns only. Runs on the host through
 -- audit/figure_ledger/run_sql.sh, outside the process that owns the ORM.
 -- Selection rules transcribed from source (read 2026-09-06):

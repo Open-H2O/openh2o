@@ -498,6 +498,39 @@
     "id": "FIG-accounting-046",
     "app": "accounting",
     "kind": "figure",
+    "template": "templates/accounting/partials/_dashboard_content.html",
+    "line": 339,
+    "column": 55,
+    "expression": "{{ row.gross_et|floatformat:2|intcomma }}",
+    "enclosing_loop": "row in unmet_demand_rows",
+    "nearest_label": "{{ row.gross_et|"
+  },
+  {
+    "id": "FIG-accounting-047",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_dashboard_content.html",
+    "line": 340,
+    "column": 46,
+    "expression": "{{ row.unmet|floatformat:2|intcomma }}",
+    "enclosing_loop": "row in unmet_demand_rows",
+    "nearest_label": "{{ row.unmet|"
+  },
+  {
+    "id": "FIG-accounting-048",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_dashboard_content.html",
+    "line": 348,
+    "column": 55,
+    "expression": "{{ unmet_demand_total|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ unmet_demand_total|"
+  },
+  {
+    "id": "FIG-accounting-049",
+    "app": "accounting",
+    "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
     "line": 77,
     "column": 37,
@@ -506,7 +539,7 @@
     "nearest_label": "{{ entry.amount_acre_feet|"
   },
   {
-    "id": "FIG-accounting-047",
+    "id": "FIG-accounting-050",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
@@ -517,7 +550,7 @@
     "nearest_label": "+{{ ledger_total_credits|"
   },
   {
-    "id": "FIG-accounting-048",
+    "id": "FIG-accounting-051",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
@@ -528,7 +561,7 @@
     "nearest_label": "{{ ledger_total_water|"
   },
   {
-    "id": "FIG-accounting-049",
+    "id": "FIG-accounting-052",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -539,7 +572,7 @@
     "nearest_label": "{{ final_af|"
   },
   {
-    "id": "FIG-accounting-050",
+    "id": "FIG-accounting-053",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -550,7 +583,7 @@
     "nearest_label": "{{ step.input_af|"
   },
   {
-    "id": "FIG-accounting-051",
+    "id": "FIG-accounting-054",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -561,7 +594,7 @@
     "nearest_label": "{{ step.output_af|"
   },
   {
-    "id": "FIG-accounting-052",
+    "id": "FIG-accounting-055",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -572,7 +605,7 @@
     "nearest_label": "No enabled steps produced a breakdown for this parcel-month \u2014 final {{ final_af|"
   },
   {
-    "id": "FIG-accounting-053",
+    "id": "FIG-accounting-056",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/period_detail.html",
@@ -642,9 +675,9 @@
     "app": "geography",
     "kind": "figure",
     "template": "templates/geography/partials/_zone_detail_pane.html",
-    "line": 128,
+    "line": 129,
     "column": 46,
-    "expression": "{{ b.budget|floatformat:2 }}",
+    "expression": "{{ b.budget|floatformat:2|intcomma }}",
     "enclosing_loop": "b in budgets",
     "nearest_label": "{{ b.budget|"
   },
@@ -653,25 +686,36 @@
     "app": "geography",
     "kind": "figure",
     "template": "templates/geography/partials/_zone_detail_pane.html",
-    "line": 129,
-    "column": 44,
-    "expression": "{{ b.used|floatformat:2 }}",
+    "line": 137,
+    "column": 113,
+    "expression": "{{ b.carryover|floatformat:2|intcomma }}",
     "enclosing_loop": "b in budgets",
-    "nearest_label": "{{ b.used|"
+    "nearest_label": "{{ b.carryover|"
   },
   {
     "id": "FIG-geography-003",
     "app": "geography",
     "kind": "figure",
     "template": "templates/geography/partials/_zone_detail_pane.html",
-    "line": 130,
-    "column": 49,
-    "expression": "{{ b.remaining|floatformat:2 }}",
+    "line": 139,
+    "column": 44,
+    "expression": "{{ b.used|floatformat:2|intcomma }}",
+    "enclosing_loop": "b in budgets",
+    "nearest_label": "{{ b.used|"
+  },
+  {
+    "id": "FIG-geography-004",
+    "app": "geography",
+    "kind": "figure",
+    "template": "templates/geography/partials/_zone_detail_pane.html",
+    "line": 141,
+    "column": 77,
+    "expression": "{{ b.remaining|floatformat:2|intcomma }}",
     "enclosing_loop": "b in budgets",
     "nearest_label": "{{ b.remaining|"
   },
   {
-    "id": "FIG-geography-004",
+    "id": "FIG-geography-005",
     "app": "geography",
     "kind": "figure",
     "template": "templates/geography/partials/_zone_parcels.html",

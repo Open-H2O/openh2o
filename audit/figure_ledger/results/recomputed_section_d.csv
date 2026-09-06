@@ -3,10 +3,11 @@ FIG-datasync-001,"Station 1 location, latitude",37.18610
 FIG-datasync-002,"Station 1 location, longitude",-120.68290
 FIG-datasync-003,Current reading value (station 1 has no staged record),0
 FIG-datasync-004,Recent record value (station 1 has no staged record),0
-FIG-geography-001,Zone 2 WY 2025-2026 Allocation (AF),750.32
-FIG-geography-002,"Zone 2 WY 2025-2026 Used (AF), labelled pumped",1313.07
-FIG-geography-003,Zone 2 WY 2025-2026 Remaining (AF),-562.75
-FIG-geography-004,Zone 2 parcel MER-APN-026 Area (acres),12.74
+FIG-geography-001,"Zone 2 WY 2025-2026 Allocation (AF)",750.32
+FIG-geography-002,"Zone 2 WY 2025-2026 Carried forward (AF)",303.40
+FIG-geography-003,"Zone 2 WY 2025-2026 Used (AF), labelled pumped",142.14
+FIG-geography-004,"Zone 2 WY 2025-2026 Remaining (AF)",911.58
+FIG-geography-005,"Zone 2 parcel MER-APN-026 Area (acres)",12.74
 FIG-recharge-001,El Nido Recharge Basin 1 Capacity (AF),637.10
 FIG-recharge-002,El Nido Recharge Basin 1 newest measurement Value,315.26
 FIG-recharge-003,El Nido Recharge Basin 1 newest event Volume (AF),127.42

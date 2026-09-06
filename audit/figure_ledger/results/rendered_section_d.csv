@@ -4,9 +4,10 @@ FIG-datasync-002,Location longitude,-120.68290
 FIG-datasync-003,Current reading value,
 FIG-datasync-004,Recent record value,
 FIG-geography-001,Allocation (AF),750.32
-FIG-geography-002,Used (AF),1313.07
-FIG-geography-003,Remaining (AF),-562.75
-FIG-geography-004,Area (acres),12.74
+FIG-geography-002,Carried forward (AF),303.40
+FIG-geography-003,Used (AF),142.14
+FIG-geography-004,Remaining (AF),911.58
+FIG-geography-005,Area (acres),12.74
 FIG-recharge-001,Capacity (AF),637.10
 FIG-recharge-002,Value,315.26
 FIG-recharge-003,Volume (AF),127.42

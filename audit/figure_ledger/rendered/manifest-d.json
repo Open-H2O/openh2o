@@ -3,64 +3,64 @@
     "slug": "d-zone-detail-halvern-irrigation-urban",
     "url": "/map/zones/2/",
     "status": 200,
-    "bytes": 162820,
-    "sha256": "6e522f5399004e777be2a745ea89a51404310a9995334e2d86b3bd14020617eb",
-    "note": "SECTION D PIN for FIG-geography-001..003. Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row - WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-004, the parcel-area column, is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "bytes": 163860,
+    "sha256": "c2b3b89a0ba7ed01f5a3c1810eb45806e6d8e16075df5ea60cc4a7fb35e76b2a",
+    "note": "SECTION D PIN for FIG-geography-001..004 (137-02 renumbering: the 001..003 range above named this pin before the Carried forward column added a fourth site). Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row, WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-005, the parcel-area column (renumbered from FIG-geography-004 the same way), is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels.",
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-datasync-station-list",
     "url": "/datasync/stations/",
     "status": 200,
-    "bytes": 44029,
-    "sha256": "1c59de160ca9d78d24ca1d9aac656d778062d7323bfbfb04a716da2882cfe510",
+    "bytes": 167105,
+    "sha256": "ea791ce80912e4125054a1921b155a0ed9992a9bf25d0da84174b93446b6f682",
     "note": "SECTION D EVIDENCE, not a figure site. The station detail pane cannot be reached on this data: datasync_monitoredstation holds ZERO rows. This capture records what the station list actually says, so the four UNVERIFIED datasync rows rest on the served page and not only on a row count.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-datasync-station-detail-lowest-id",
     "url": "/datasync/stations/1/",
-    "status": 404,
-    "bytes": 4823,
-    "sha256": "72843b99a98e3f7deecf058b127c19f133a5da98eefca65a3a5f71b3263a1d94",
+    "status": 200,
+    "bytes": 50702,
+    "sha256": "367c81459a0e17643c05dc16c0a4a1b05043156f3a1451ca5256b3d1e467e20a",
     "note": "SECTION D EVIDENCE for FIG-datasync-001..004. Expected to be a non-200: no MonitoredStation row exists with any primary key, so the pane that carries all four datasync figures has no instance to render. Recorded as a finding, not retried.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-well-detail-mer-w-001",
-    "url": "/wells/32/",
+    "url": "/wells/10/",
     "status": 200,
     "bytes": 46889,
-    "sha256": "bd2dfc63c3d49ca120461dade0a7585739bbf6ed9d0e30ffaa7cfca7cca19bae",
+    "sha256": "3aeeeaa643af182aac9b036d1b92a6c89ef93a1a0235cd4bf97712f199db507a",
     "note": "SECTION D PIN for FIG-wells-001..004. Well id 32, registration MER-W-001, 'Ag well on MER-APN-002'. Chosen because one screen carries all four wells figures: it has an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order).",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-recharge-detail-el-nido-basin-1",
-    "url": "/recharge/6/",
+    "url": "/recharge/1/",
     "status": 200,
-    "bytes": 43338,
-    "sha256": "c2676c8a568541ba315d7c57c3cca4b9a22a8888f1af370cc35d7495c2cd8d9c",
+    "bytes": 43337,
+    "sha256": "c1fbe2ad6664058a191def7d5ebfbdef04ad89634f5a0318da6d1b43896196a5",
     "note": "SECTION D PIN for FIG-recharge-001, -002 and -003. El Nido Recharge Basin 1 (site id 6), the first site by name on the list page, so the list figure and the detail figures describe the same basin. Pinned measurement row: the newest, 2026-02-18 water quality, 315.2601 mg/L. Pinned event row: the newest by start date, 2026-02-15 to 2026-02-18, 127.4200 AF.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-recharge-list",
     "url": "/recharge/",
     "status": 200,
-    "bytes": 44007,
-    "sha256": "32c9e5f97bb73e2550dc96e880a9755c80e6e9731a143a1a56355abba680696c",
+    "bytes": 44001,
+    "sha256": "a6108219de6b60daa44bcfcf85bc3a8774936ccfb8bc5c626043ba72f0e1edf9",
     "note": "SECTION D PIN for FIG-recharge-004. The list is ordered by name and shows every site on one page, so the pinned row is the first: El Nido Recharge Basin 1, capacity 637.10 AF rendered to whole acre-feet.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-setup-wizard",
     "url": "/setup/",
     "status": 200,
     "bytes": 36518,
-    "sha256": "eb519b33bbeda8e1ade07751f1d5ddce0d6147694430a9abd257e8ca2a6f3dae",
+    "sha256": "8af770b92a6dc04c27c1ee397e5dac08df5c10f516c8ef1e90220980a1287dce",
     "note": "SECTION D PIN for FIG-setup-002. The figure renders inside an <option> of the 'District boundary' dropdown. One Boundary row exists, Merced Subbasin, so the pinned option is the only one: stated area 800.948 square miles.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-setup-confirm",
@@ -69,33 +69,33 @@
     "bytes": 0,
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "note": "SECTION D, FIG-setup-001. Expected to redirect: the confirmation step reads a boundary out of the visitor's session, which is written by the wizard's POST, and this capture performs GETs only. Recorded as a finding so the row says why the screen could not be read rather than borrowing a number from the wizard page.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-zone-detail-halvern-valley-gsa",
     "url": "/map/zones/1/",
     "status": 200,
-    "bytes": 513294,
-    "sha256": "dd4e197694247aae3562e9ff2d6d770569141b30d06afe217f278ebc357a04a1",
+    "bytes": 514342,
+    "sha256": "0bfab4d1a0493dffc7887a37a3588a13072d0dc74de2482cc3de71b776b8581b",
     "note": "SECTION D whole-column check on FIG-geography-001..003. Halvern Valley GSA (zone id 1), 46 parcels, the largest groundwater zone. Captured so the Used column's finding rests on every groundwater zone's screen rather than on one.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-zone-detail-verdano-island-gsa",
     "url": "/map/zones/3/",
     "status": 200,
-    "bytes": 67148,
-    "sha256": "616e6d53c256d44b9427f6ffec1590be420e410b7dd78263ddb158d2edf76db4",
+    "bytes": 68189,
+    "sha256": "b9a8445440bc2106c2c55a4e3fd27eda8ae6ccc1b5cce8abb331fc0323a3866e",
     "note": "SECTION D whole-column check on FIG-geography-001..003. Verdano Island Water District GSA (zone id 3), 7 parcels. The one groundwater zone whose parcels take no surface canal delivery, so its Used figure is the control case.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
     "slug": "d-zone-detail-surface-service-area-halvern",
-    "url": "/map/zones/39/",
+    "url": "/map/zones/9/",
     "status": 200,
-    "bytes": 78695,
-    "sha256": "97cc25b7767f01a9c847d7fd576098e9fd50f5557420743f4054bb52467e180e",
+    "bytes": 79725,
+    "sha256": "3cccdf6238a42350bd6c08d71eeb34bd819a4f1a4483838765c8a6d28f30471b",
     "note": "SECTION D whole-column check on FIG-geography-001..003. MER Surface Service Area - Halvern Irrigation District (zone id 39), a surface-water allocation, so the page takes the other branch (geography/views.py:205) and labels the figure 'delivered'. Captured to show that branch does filter on source type where the groundwater branch does not.",
-    "commit": "9f9e27b2543516a95cdc15743070e3746d04ddbe"
+    "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   }
 ]

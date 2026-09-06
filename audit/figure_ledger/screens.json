@@ -2,7 +2,7 @@
   {
     "slug": "accounting-dashboard-wy2026",
     "url": "/accounting/dashboard/?period=2",
-    "note": "THE PINNED INSTANCE for ledger section 1. WY 2025-2026, the dry year, and the period the bare /accounting/dashboard/ URL resolves to on this data. Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row on screen). Pinned zone row: Halvern Irrigation-Urban GSA (id 2, first row on screen, 23 parcels)."
+    "note": "THE PINNED INSTANCE for ledger section 1. WY 2025-2026, the dry year, and the period the bare /accounting/dashboard/ URL resolves to on this data. Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row on screen). Pinned zone row: Halvern Irrigation-Urban GSA (id 2, first row on screen, 23 parcels). THE PINNED INSTANCE also for FIG-accounting-046..048 (137-02, ISS-157 surface 2): the new Fields with water use recorded and no supply reported section, pinned to MER-APN-011, the fourth of the six rows the dry year lists (450.51, 406.26, 360.43, 330.37, 288.80, 150.12), District total 1,986.50."
   },
   {
     "slug": "accounting-dashboard-wy2025",
@@ -112,7 +112,7 @@
   {
     "slug": "d-zone-detail-halvern-irrigation-urban",
     "url": "/map/zones/2/",
-    "note": "SECTION D PIN for FIG-geography-001..003. Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row - WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-004, the parcel-area column, is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels."
+    "note": "SECTION D PIN for FIG-geography-001..004 (137-02 renumbering: the 001..003 range above named this pin before the Carried forward column added a fourth site). Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row, WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-005, the parcel-area column (renumbered from FIG-geography-004 the same way), is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels."
   },
   {
     "slug": "d-datasync-station-list",

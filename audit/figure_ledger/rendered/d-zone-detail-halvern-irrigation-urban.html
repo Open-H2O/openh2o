@@ -40,7 +40,7 @@
 
     
 </head>
-<body class="section-overview" hx-headers='{"X-CSRFToken": "qr5HI0Bth3oXAJUcCXdqpACQ2TLHlEUhhqXegRVIzCe95KKAu4gJZulGZTmwlYYB"}'>
+<body class="section-overview" hx-headers='{"X-CSRFToken": "xSqDprCb3IFN4BGO3igzeItTcIac7BmIVRTsDrt6Whl4rc8uvZHPEbrOLfsOEDgw"}'>
     
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
@@ -1212,8 +1212,20 @@
               <th>Period</th>
               <th>Water Type</th>
               <th class="th-right">Allocation (AF)</th>
+              <th class="th-right">Carried Forward (AF)</th>
               <th class="th-right">Used (AF)</th>
-              <th class="th-right">Remaining (AF)</th>
+              <th class="th-right">Remaining (AF)
+<span class="explainer-popout">
+  <button type="button" class="explainer-icon" aria-label="Explain: Remaining (AF)">?</button>
+  <span class="explainer-panel" role="tooltip">
+    <span class="explainer-title">Remaining (AF)</span>
+    <span class="explainer-text">Groundwater rows: allocation plus last year's carry-over, minus groundwater use, metered or calculated — the same figure as the dashboard's zone row for this zone and period. Surface rows: allocation minus water delivered. Canal water never counts against a groundwater allocation.</span>
+    
+    <a href="/accounting/dashboard/" class="explainer-link">See it on the dashboard &rarr;</a>
+    
+  </span>
+</span>
+</th>
             </tr>
           </thead>
           <tbody>
@@ -1222,16 +1234,28 @@
               <td class="text-secondary">WY 2025-2026</td>
               <td class="text-secondary">Groundwater</td>
               <td class="td-num">750.32</td>
-              <td class="td-num">1313.07 <span class="text-tertiary text-xs">pumped</span></td>
-              <td class="td-num">-562.75</td>
+              
+              <td class="td-num text-surplus">
+                +303.40
+              </td>
+              <td class="td-num">142.14 <span class="text-tertiary text-xs">pumped</span></td>
+              <td class="td-num text-surplus">
+                911.58
+              </td>
             </tr>
             
             <tr>
               <td class="text-secondary">WY 2024-2025</td>
               <td class="text-secondary">Groundwater</td>
               <td class="td-num">750.32</td>
-              <td class="td-num">1267.62 <span class="text-tertiary text-xs">pumped</span></td>
-              <td class="td-num">-517.30</td>
+              
+              <td class="td-num text-surplus">
+                +407.93
+              </td>
+              <td class="td-num">137.59 <span class="text-tertiary text-xs">pumped</span></td>
+              <td class="td-num text-surplus">
+                1,020.66
+              </td>
             </tr>
             
           </tbody>
