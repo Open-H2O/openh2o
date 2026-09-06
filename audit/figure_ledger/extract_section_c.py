@@ -151,8 +151,15 @@ def extract(rendered):
     first_block = ws.find("MER-BPOD-001 El Nido Canal Recharge Intake")
     if first_block < 0:
         raise SystemExit("worksheet: the pinned first block is not on the page")
-    if "No linked water right" not in ws[first_block:first_block + 900]:
-        raise SystemExit("worksheet: the pinned block no longer reads 'No linked water right'")
+    # 136-02 (ISS-152 a): the intake diverts under MER-WR-011-DEMO, so the block
+    # heading is the right id where it read the red "No linked water right".
+    # Re-pinned, not deleted: the block must still be FIRST and still carry the
+    # intake's records, and the heading must be the linked right, not a blank.
+    window = ws[first_block:first_block + 900]
+    if "MER-WR-011-DEMO" not in window:
+        raise SystemExit("worksheet: the pinned block does not read 'MER-WR-011-DEMO'")
+    if "No linked water right" in window:
+        raise SystemExit("worksheet: the pinned block still reads 'No linked water right'")
     rows = _table_after(
         ws[first_block:], "<table",
         ["Month", "Volume (AF)", "Max Rate (CFS)"], "worksheet block 1",
