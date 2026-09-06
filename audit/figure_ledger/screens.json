@@ -16,7 +16,7 @@
   },
   {
     "slug": "accounting-a-account-78-p2",
-    "url": "/accounting/accounts/78/?period=2",
+    "url": "/accounting/accounts/12/?period=2",
     "note": "THE PINNED INSTANCE for ledger section A's account balance pane (FIG-accounting-009..020). MER-ACCT-001 Ashvale Orchards Inc. (account id 78), WY 2025-2026 (period id 2, the dry year), the SAME account and period section 1 pinned on the dashboard, so the two screens' figures can be compared to each other as well as to the rows. Requested without the HTMX header, so the full account_detail page renders and _account_balances.html is reached through _account_detail_pane.html with the identical context. The per-parcel table's pinned row is named in the section: every one of this account's 18 assignments carries added_date 2026-09-05, so '-added_date' does not order them and 'the first row' is not reproducible. The row is pinned by parcel number instead, read out of this capture."
   },
   {
@@ -46,7 +46,7 @@
   },
   {
     "slug": "accounting-a-account-78-p1",
-    "url": "/accounting/accounts/78/?period=1",
+    "url": "/accounting/accounts/12/?period=1",
     "note": "The same account balance pane in WY 2024-2025, the wet year. Captured as a second instance so a later plan can check the same twelve sites against a different period without re-deriving the pin, and so the wet-year and dry-year figures for one account sit side by side in the record."
   },
   {
@@ -71,17 +71,17 @@
   },
   {
     "slug": "surface-pod-detail-snelling",
-    "url": "/surface/diversion/9/",
+    "url": "/surface/diversion/8/",
     "note": "PINNED for FIG-surface-001..005. MER-POD-011-DEMO Snelling Re-Diversion (point of diversion id 9), on water right MER-WR-010-DEMO. Chosen over the first row on the diversion list because it is the ONLY point of diversion in the demonstration whose return flow is neither zero nor the whole volume: its 2026-05-15 record is 250.0000 diverted / 100.0000 returned / 150.0000 consumed, so Diverted, Return Flow and Consumptive Use are three distinct numbers and a wrong subtraction can actually fail. Everywhere else consumed equals diverted and a zero column would match any formula. The diversion-records table is pinned to the 2026-05-15 row (fourth row on screen); the table itself is NOT period-scoped, so ?period= would change nothing here."
   },
   {
     "slug": "surface-pod-detail-bpod001",
-    "url": "/surface/diversion/10/",
+    "url": "/surface/diversion/9/",
     "note": "Evidence, not a figure pin. MER-BPOD-001 El Nido Canal Recharge Intake (id 10) carries no water right and no maximum rate, so both of this template's figures are inside {% if %} guards that do not fire. Captured to record what the screen says instead, because the same diversion point IS shown on the CalWATRS worksheet and is withheld from the generated state file."
   },
   {
     "slug": "surface-right-detail-wr010",
-    "url": "/surface/rights/7/",
+    "url": "/surface/rights/6/",
     "note": "PINNED for FIG-surface-007..009. MER-WR-010-DEMO, Halvern Hydroelectric Co., face value 60,000 AF. Same right as the diversion-point pin above, so the two screens can be read against each other. Points of diversion are ordered by name, so the pinned Max rate row is MER-POD-010-DEMO Merced Falls Hydroelectric Diversion. Recent diversion records are pinned to the FIRST row, 2026-09-15 on MER-POD-010-DEMO -- unambiguous because the other diversion point on this right has no September 2026 record."
   },
   {
@@ -121,12 +121,12 @@
   },
   {
     "slug": "d-well-detail-mer-w-001",
-    "url": "/wells/32/",
+    "url": "/wells/10/",
     "note": "SECTION D PIN for FIG-wells-001..004. Well id 32, registration MER-W-001, 'Ag well on MER-APN-002'. Chosen because one screen carries all four wells figures: it has an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order)."
   },
   {
     "slug": "d-recharge-detail-el-nido-basin-1",
-    "url": "/recharge/6/",
+    "url": "/recharge/1/",
     "note": "SECTION D PIN for FIG-recharge-001, -002 and -003. El Nido Recharge Basin 1 (site id 6), the first site by name on the list page, so the list figure and the detail figures describe the same basin. Pinned measurement row: the newest, 2026-02-18 water quality, 315.2601 mg/L. Pinned event row: the newest by start date, 2026-02-15 to 2026-02-18, 127.4200 AF."
   },
   {
@@ -156,7 +156,7 @@
   },
   {
     "slug": "d-zone-detail-surface-service-area-halvern",
-    "url": "/map/zones/39/",
+    "url": "/map/zones/9/",
     "note": "SECTION D whole-column check on FIG-geography-001..003. MER Surface Service Area - Halvern Irrigation District (zone id 39), a surface-water allocation, so the page takes the other branch (geography/views.py:205) and labels the figure 'delivered'. Captured to show that branch does filter on source type where the groundwater branch does not."
   }
 ]

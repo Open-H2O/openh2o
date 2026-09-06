@@ -47,7 +47,7 @@ FIG-accounting-018,Per-parcel MER-APN-021: Precip,17.92
 FIG-accounting-019,Per-parcel MER-APN-021: Supplies,228.09
 FIG-accounting-020,Per-parcel MER-APN-021: Net,50.87
 FIG-accounting-021,Allocations list: Halvern Irrigation-Urban GSA — Groundwater WY 2025-2026,750.32
-FIG-accounting-022,"Allocations list: footer total, all 8 allocations",159671.46
+FIG-accounting-022,"Allocations list: footer total, all 8 allocations",153121.27
 FIG-accounting-046,Use ledger: first row Amount (AF),-8.56
 FIG-accounting-047,Use ledger footer: Credits,14280.77
 FIG-accounting-048,Use ledger footer: Delivered and pumped (magnitude),15785.09
@@ -55,4 +55,4 @@ FIG-accounting-049,Preview: billable groundwater (vs the stored run),27.9945
 FIG-accounting-050,Preview: step 1 In (AF),0.0000
 FIG-accounting-051,"Preview: step 1 Out (AF), from raw satellite rows",39.8491
 FIG-accounting-052,"Preview: no-steps fallback final (branch cannot render, see checks)",
-FIG-accounting-053,Period detail: Halvern Valley GSA — Groundwater WY 2025-2026,9689.40
+FIG-accounting-053,Period detail: Halvern Valley GSA — Groundwater WY 2025-2026,2809.93

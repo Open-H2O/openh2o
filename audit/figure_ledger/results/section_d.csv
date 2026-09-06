@@ -1,8 +1,8 @@
 id,label,rendered,recomputed,delta
-FIG-datasync-001,"Station location, latitude (no station exists)",,0,NO VALUE
-FIG-datasync-002,"Station location, longitude (no station exists)",,0,NO VALUE
-FIG-datasync-003,Current reading value (no station exists),,0,NO VALUE
-FIG-datasync-004,Recent record value (no published record exists),,0,NO VALUE
+FIG-datasync-001,"Station 1 location, latitude",37.18610,37.18610,MATCH
+FIG-datasync-002,"Station 1 location, longitude",-120.68290,-120.68290,MATCH
+FIG-datasync-003,Current reading value (station 1 has no staged record),,0,NO VALUE
+FIG-datasync-004,Recent record value (station 1 has no staged record),,0,NO VALUE
 FIG-geography-001,Zone 2 WY 2025-2026 Allocation (AF),750.32,750.32,MATCH
 FIG-geography-002,"Zone 2 WY 2025-2026 Used (AF), labelled pumped",1313.07,1313.07,MATCH
 FIG-geography-003,Zone 2 WY 2025-2026 Remaining (AF),-562.75,-562.75,MATCH

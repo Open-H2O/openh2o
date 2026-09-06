@@ -1,17 +1,17 @@
 [
   {
     "slug": "surface-pod-detail-snelling",
-    "url": "/surface/diversion/9/",
+    "url": "/surface/diversion/8/",
     "note": "PINNED for FIG-surface-001..005. MER-POD-011-DEMO Snelling Re-Diversion (point of diversion id 9), on water right MER-WR-010-DEMO. Chosen over the first row on the diversion list because it is the ONLY point of diversion in the demonstration whose return flow is neither zero nor the whole volume: its 2026-05-15 record is 250.0000 diverted / 100.0000 returned / 150.0000 consumed, so Diverted, Return Flow and Consumptive Use are three distinct numbers and a wrong subtraction can actually fail. Everywhere else consumed equals diverted and a zero column would match any formula. The diversion-records table is pinned to the 2026-05-15 row (fourth row on screen); the table itself is NOT period-scoped, so ?period= would change nothing here."
   },
   {
     "slug": "surface-pod-detail-bpod001",
-    "url": "/surface/diversion/10/",
+    "url": "/surface/diversion/9/",
     "note": "Evidence, not a figure pin. MER-BPOD-001 El Nido Canal Recharge Intake (id 10) carries no water right and no maximum rate, so both of this template's figures are inside {% if %} guards that do not fire. Captured to record what the screen says instead, because the same diversion point IS shown on the CalWATRS worksheet and is withheld from the generated state file."
   },
   {
     "slug": "surface-right-detail-wr010",
-    "url": "/surface/rights/7/",
+    "url": "/surface/rights/6/",
     "note": "PINNED for FIG-surface-007..009. MER-WR-010-DEMO, Halvern Hydroelectric Co., face value 60,000 AF. Same right as the diversion-point pin above, so the two screens can be read against each other. Points of diversion are ordered by name, so the pinned Max rate row is MER-POD-010-DEMO Merced Falls Hydroelectric Diversion. Recent diversion records are pinned to the FIRST row, 2026-09-15 on MER-POD-010-DEMO -- unambiguous because the other diversion point on this right has no September 2026 record."
   },
   {

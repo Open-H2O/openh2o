@@ -2,7 +2,7 @@
 -- all 14 rendered figures in section C of the figure ledger.
 --
 -- SCREENS AND PINS (each also recorded in audit/figure_ledger/screens-c.json):
---   /surface/diversion/9/                            FIG-surface-001..005
+--   /surface/diversion/8/                            FIG-surface-001..005
 --       MER-POD-011-DEMO Snelling Re-Diversion, point of diversion id 9.
 --       Diversion-records row pinned to 2026-05-15, the ONLY record in the
 --       demonstration whose return flow is neither zero nor the whole volume
@@ -10,7 +10,7 @@
 --       columns are three distinct numbers and a wrong subtraction can fail.
 --       Everywhere else consumed equals diverted and a zero column would match
 --       any formula at all.
---   /surface/rights/7/                               FIG-surface-007..009
+--   /surface/rights/6/                               FIG-surface-007..009
 --       MER-WR-010-DEMO, Halvern Hydroelectric Co. Points of diversion order by
 --       name, so the pinned Max rate is MER-POD-010-DEMO's. Recent diversion
 --       records order by month descending; the pinned first row is 2026-09-15,
@@ -116,8 +116,8 @@ WITH
 -- in one place: the dry year, the water right, the diversion point.
 pin AS (
     SELECT 2::bigint  AS period_id,      -- WY 2025-2026
-           7::bigint  AS water_right_id, -- MER-WR-010-DEMO, Halvern Hydroelectric Co.
-           9::bigint  AS pod_id,         -- MER-POD-011-DEMO Snelling Re-Diversion
+           6::bigint  AS water_right_id, -- MER-WR-010-DEMO, Halvern Hydroelectric Co. (candidate id; was 7 on the dev db, 136-02)
+           8::bigint  AS pod_id,         -- MER-POD-011-DEMO Snelling Re-Diversion (candidate id; was 9, 136-02)
            DATE '2026-05-15' AS pod_record_month,
            4::bigint  AS submission_id,  -- CalWATRS To Storage, period 2
            58::bigint AS shared_parcel_id -- MER-APN-058, first row of the first group

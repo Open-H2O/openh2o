@@ -40,7 +40,7 @@
 
     
 </head>
-<body class="section-water_data" hx-headers='{"X-CSRFToken": "R2hx1588eZaVRANyqCYv4lUlyOY8Un4cUvlnZl2Q0vA8ogtz79cZBFr8rXpAFNox"}'>
+<body class="section-water_data" hx-headers='{"X-CSRFToken": "9RlSF94YhokhDxNIEXaW5QKOK28fPb2o0Qdpd0odzXat8yD6w4dfFKtEH2J4Pv6I"}'>
     
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
@@ -648,21 +648,3623 @@
     <!-- Count badge -->
 <div class="result-count-bar">
   <span class="text-secondary text-sm">
-    <span class="count-pill">0</span>
+    <span class="count-pill">42</span>
     stations
   </span>
 </div>
 
 
-<div class="card-raised empty-state">
-  <div class="empty-state-icon">
-    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-    </svg>
-  </div>
-  <p class="empty-state-text">No stations found.</p>
+<div class="card-raised table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 28px;"></th>
+        <th>Station</th>
+        <th>Source</th>
+        <th>Last Data</th>
+        <th>Trend</th>
+        <th style="width: 60px;" title="Whether this station is wired up for scheduled data pulls.">Syncing</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/108/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/108/" class="data-table-link">
+            206
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">372806N1205241W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 54.75 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-108" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 54.75 ft bgs</title>
+              <polygon
+                points="0.0,21.46 39.67,17.38 79.33,4.0 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-108)"
+              />
+              <polyline
+                points="0.0,21.46 39.67,17.38 79.33,4.0 119.0,38.0"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/108/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/105/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/105/" class="data-table-link">
+            212
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">372617N1204747W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 99.58 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-105" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 99.58 ft bgs</title>
+              <polygon
+                points="0.0,38.0 59.5,4.0 119.0,36.01 119,40 0,40"
+                fill="url(#spk-grad-105)"
+              />
+              <polyline
+                points="0.0,38.0 59.5,4.0 119.0,36.01"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/105/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/115/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/115/" class="data-table-link">
+            50
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">373166N1207091W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 3 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 60.42 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-115" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 60.42 ft bgs</title>
+              <polygon
+                points="0.0,18.85 39.67,38.0 79.33,4.0 119.0,25.6 119,40 0,40"
+                fill="url(#spk-grad-115)"
+              />
+              <polyline
+                points="0.0,18.85 39.67,38.0 79.33,4.0 119.0,25.6"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/115/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/107/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/107/" class="data-table-link">
+            98A
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">372734N1203071W002</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 98.25 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-107" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 98.25 ft bgs</title>
+              <polygon
+                points="0.0,4.0 39.67,37.18 79.33,27.49 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-107)"
+              />
+              <polyline
+                points="0.0,4.0 39.67,37.18 79.33,27.49 119.0,38.0"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/107/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/102/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/102/" class="data-table-link">
+            CH2
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">371902N1201985W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 294.25 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-102" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 294.25 ft bgs</title>
+              <polygon
+                points="0.0,4.0 39.67,32.41 79.33,16.97 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-102)"
+              />
+              <polyline
+                points="0.0,4.0 39.67,32.41 79.33,16.97 119.0,38.0"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/102/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/103/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/103/" class="data-table-link">
+            Dejager #3
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">372292N1204837W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 90.47 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-103" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 90.47 ft bgs</title>
+              <polygon
+                points="0.0,4.0 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-103)"
+              />
+              <polyline
+                points="0.0,4.0 119.0,38.0"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/103/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/122/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/122/" class="data-table-link">
+            DW16
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">373262N1208920W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 11.31 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-122" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 11.31 ft bgs</title>
+              <polygon
+                points="0.0,35.54 59.5,4.0 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-122)"
+              />
+              <polyline
+                points="0.0,35.54 59.5,4.0 119.0,38.0"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/122/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/125/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/125/" class="data-table-link">
+            DW18
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">373306N1208433W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 17.23 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-125" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 17.23 ft bgs</title>
+              <polygon
+                points="0.0,38.0 59.5,4.0 119.0,26.34 119,40 0,40"
+                fill="url(#spk-grad-125)"
+              />
+              <polyline
+                points="0.0,38.0 59.5,4.0 119.0,26.34"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/125/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/94/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/94/" class="data-table-link">
+            El Nido Fire Station - Above Corcoran Shallow
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">371347N1204928W002</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 65.73 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-94" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 65.73 ft bgs</title>
+              <polygon
+                points="0.0,4.0 13.22,4.35 26.44,5.21 39.67,5.65 52.89,5.73 66.11,6.08 79.33,6.69 92.56,7.3 105.78,18.48 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-94)"
+              />
+              <polyline
+                points="0.0,4.0 13.22,4.35 26.44,5.21 39.67,5.65 52.89,5.73 66.11,6.08 79.33,6.69 92.56,7.3 105.78,18.48 119.0,38.0"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/94/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/85/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--fresh" title="fresh"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/85/" class="data-table-link">
+            Jefferson Road - Above Corcoran Shallow
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">370985N1204894W002</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 88.56 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-85" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#22c55e" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 88.56 ft bgs</title>
+              <polygon
+                points="0.0,21.52 13.22,23.01 26.44,22.55 39.67,23.48 52.89,30.23 66.11,38.0 79.33,34.91 92.56,4.0 105.78,5.22 119.0,30.23 119,40 0,40"
+                fill="url(#spk-grad-85)"
+              />
+              <polyline
+                points="0.0,21.52 13.22,23.01 26.44,22.55 39.67,23.48 52.89,30.23 66.11,38.0 79.33,34.91 92.56,4.0 105.78,5.22 119.0,30.23"
+                stroke="#22c55e"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/85/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/127/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--stale" title="stale"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/127/" class="data-table-link">
+            MW1013
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">373496N1205890W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            6 months ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 122.61 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-127" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 122.61 ft bgs</title>
+              <polygon
+                points="0.0,14.1 39.67,38.0 79.33,4.0 119.0,15.43 119,40 0,40"
+                fill="url(#spk-grad-127)"
+              />
+              <polyline
+                points="0.0,14.1 39.67,38.0 79.33,4.0 119.0,15.43"
+                stroke="#f59e0b"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/127/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/131/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--stale" title="stale"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/131/" class="data-table-link">
+            MW1-Well Site 21
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">373603N1204695W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            6 months ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 116.00 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-131" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 116.00 ft bgs</title>
+              <polygon
+                points="0.0,4.0 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-131)"
+              />
+              <polyline
+                points="0.0,4.0 119.0,38.0"
+                stroke="#f59e0b"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/131/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/117/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--stale" title="stale"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/117/" class="data-table-link">
+            MW1-Well Site 7
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">373260N1204432W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            6 months ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 105.90 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-117" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 105.90 ft bgs</title>
+              <polygon
+                points="0.0,9.17 39.67,38.0 79.33,4.0 119.0,23.22 119,40 0,40"
+                fill="url(#spk-grad-117)"
+              />
+              <polyline
+                points="0.0,9.17 39.67,38.0 79.33,4.0 119.0,23.22"
+                stroke="#f59e0b"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/117/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/118/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--stale" title="stale"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/118/" class="data-table-link">
+            MW2-Well Site 7
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">373260N1204432W002</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            6 months ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 111.30 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-118" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 111.30 ft bgs</title>
+              <polygon
+                points="0.0,10.85 39.67,38.0 79.33,4.0 119.0,29.57 119,40 0,40"
+                fill="url(#spk-grad-118)"
+              />
+              <polyline
+                points="0.0,10.85 39.67,38.0 79.33,4.0 119.0,29.57"
+                stroke="#f59e0b"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/118/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/111/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--stale" title="stale"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/111/" class="data-table-link">
+            MW3-Well Site 2
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">372904N1204529W002</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            6 months ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 104.90 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-111" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 104.90 ft bgs</title>
+              <polygon
+                points="0.0,4.0 39.67,30.37 79.33,26.56 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-111)"
+              />
+              <polyline
+                points="0.0,4.0 39.67,30.37 79.33,26.56 119.0,38.0"
+                stroke="#f59e0b"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/111/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/112/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--stale" title="stale"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/112/" class="data-table-link">
+            MW4-Well Site 2
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">372904N1204529W003</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            6 months ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 104.80 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-112" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 104.80 ft bgs</title>
+              <polygon
+                points="0.0,4.0 39.67,27.69 79.33,31.51 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-112)"
+              />
+              <polyline
+                points="0.0,4.0 39.67,27.69 79.33,31.51 119.0,38.0"
+                stroke="#f59e0b"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/112/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/120/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--stale" title="stale"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/120/" class="data-table-link">
+            MW4-Well Site 7
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">373260N1204432W004</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources SGMA Portal</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            6 months ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 110.70 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-120" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 110.70 ft bgs</title>
+              <polygon
+                points="0.0,25.56 39.67,38.0 79.33,4.0 119.0,34.58 119,40 0,40"
+                fill="url(#spk-grad-120)"
+              />
+              <polyline
+                points="0.0,25.56 39.67,38.0 79.33,4.0 119.0,34.58"
+                stroke="#f59e0b"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/120/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/7/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/7/" class="data-table-link">
+            BEAR CK BLW EASTSIDE CANAL
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">BSD</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 86.80 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-7" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 86.80 FEET</title>
+              <polygon
+                points="0.0,38.0 13.22,4.0 26.44,4.0 39.67,38.0 52.89,38.0 66.11,4.0 79.33,38.0 92.56,4.0 105.78,38.0 119.0,4.0 119,40 0,40"
+                fill="url(#spk-grad-7)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,4.0 26.44,4.0 39.67,38.0 52.89,38.0 66.11,4.0 79.33,38.0 92.56,4.0 105.78,38.0 119.0,4.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/7/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/22/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/22/" class="data-table-link">
+            BEAR CREEK AT MC KEE ROAD
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">MCK</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 6.13 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-22" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 6.13 FEET</title>
+              <polygon
+                points="0.0,7.87 13.22,37.97 26.44,37.95 39.67,4.0 52.89,6.84 66.11,37.96 79.33,37.98 92.56,10.37 105.78,13.78 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-22)"
+              />
+              <polyline
+                points="0.0,7.87 13.22,37.97 26.44,37.95 39.67,4.0 52.89,6.84 66.11,37.96 79.33,37.98 92.56,10.37 105.78,13.78 119.0,38.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/22/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/4/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/4/" class="data-table-link">
+            BLACK RASCAL DIVERSION
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">BDV</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 4.33 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-4" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 4.33 FEET</title>
+              <polygon
+                points="0.0,4.0 13.22,38.0 26.44,38.0 39.67,4.31 52.89,4.31 66.11,38.0 79.33,38.0 92.56,4.31 105.78,38.0 119.0,4.31 119,40 0,40"
+                fill="url(#spk-grad-4)"
+              />
+              <polyline
+                points="0.0,4.0 13.22,38.0 26.44,38.0 39.67,4.31 52.89,4.31 66.11,38.0 79.33,38.0 92.56,4.31 105.78,38.0 119.0,4.31"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/4/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/8/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/8/" class="data-table-link">
+            BURNS CREEK DAM
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">BUR</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 0.00 CFS" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-8" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 0.00 CFS</title>
+              <polygon
+                points="0.0,38.0 13.22,38.0 26.44,4.0 39.67,27.65 52.89,38.0 66.11,38.0 79.33,4.0 92.56,27.65 105.78,38.0 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-8)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,38.0 26.44,4.0 39.67,27.65 52.89,38.0 66.11,38.0 79.33,4.0 92.56,27.65 105.78,38.0 119.0,38.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/8/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/11/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/11/" class="data-table-link">
+            DEADMAN CREEK NEAR LE GRAND
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">DML</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: -0.84 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-11" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: -0.84 FEET</title>
+              <polygon
+                points="0.0,38.0 13.22,19.35 26.44,17.16 39.67,35.81 52.89,4.0 66.11,34.71 79.33,31.42 92.56,33.61 105.78,16.06 119.0,25.94 119,40 0,40"
+                fill="url(#spk-grad-11)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,19.35 26.44,17.16 39.67,35.81 52.89,4.0 66.11,34.71 79.33,31.42 92.56,33.61 105.78,16.06 119.0,25.94"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/11/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/12/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/12/" class="data-table-link">
+            EASTSIDE BYPASS BLW MARIPOSA BYPASS
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">EBM</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 80.23 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-12" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 80.23 FEET</title>
+              <polygon
+                points="0.0,33.66 13.22,4.0 26.44,4.03 39.67,34.53 52.89,34.53 66.11,4.03 79.33,4.04 92.56,34.96 105.78,38.0 119.0,4.05 119,40 0,40"
+                fill="url(#spk-grad-12)"
+              />
+              <polyline
+                points="0.0,33.66 13.22,4.0 26.44,4.03 39.67,34.53 52.89,34.53 66.11,4.03 79.33,4.04 92.56,34.96 105.78,38.0 119.0,4.05"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/12/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/19/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/19/" class="data-table-link">
+            MARIPOSSA BYPASS NEAR CRANES ROAD
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">MBM</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 88.99 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-19" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 88.99 FEET</title>
+              <polygon
+                points="0.0,38.0 13.22,38.0 26.44,38.0 39.67,38.0 52.89,38.0 66.11,38.0 79.33,38.0 92.56,38.0 105.78,38.0 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-19)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,38.0 26.44,38.0 39.67,38.0 52.89,38.0 66.11,38.0 79.33,38.0 92.56,38.0 105.78,38.0 119.0,38.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/19/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/2/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/2/" class="data-table-link">
+            MERCED R AT AMSTERDAM RD
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">AMR</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 5.84 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 5.84 FEET</title>
+              <polygon
+                points="0.0,38.0 13.22,37.77 26.44,35.27 39.67,4.0 52.89,35.32 66.11,4.71 79.33,37.77 92.56,5.65 105.78,35.15 119.0,37.77 119,40 0,40"
+                fill="url(#spk-grad-2)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,37.77 26.44,35.27 39.67,4.0 52.89,35.32 66.11,4.71 79.33,37.77 92.56,5.65 105.78,35.15 119.0,37.77"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/2/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/15/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/15/" class="data-table-link">
+            MERCED R AT HWY 59 (MID)
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">H59</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 7.93 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-15" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 7.93 FEET</title>
+              <polygon
+                points="0.0,38.0 13.22,37.66 26.44,38.0 39.67,4.0 52.89,38.0 66.11,4.59 79.33,37.67 92.56,5.51 105.78,38.0 119.0,37.67 119,40 0,40"
+                fill="url(#spk-grad-15)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,37.66 26.44,38.0 39.67,4.0 52.89,38.0 66.11,4.59 79.33,37.67 92.56,5.51 105.78,38.0 119.0,37.67"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/15/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/38/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/38/" class="data-table-link">
+            MERCED RIVER NEAR SNELLING
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">MSN</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 7.31 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-38" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 7.31 FEET</title>
+              <polygon
+                points="0.0,4.35 13.22,38.0 26.44,38.0 39.67,4.0 52.89,4.0 66.11,38.0 79.33,4.35 92.56,38.0 105.78,5.23 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-38)"
+              />
+              <polyline
+                points="0.0,4.35 13.22,38.0 26.44,38.0 39.67,4.0 52.89,4.0 66.11,38.0 79.33,4.35 92.56,38.0 105.78,5.23 119.0,38.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/38/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/42/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/42/" class="data-table-link">
+            OWENS CK BLW EASTSIDE CNL NR CRANE RNCH
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">OCD</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 19.14 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-42" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 19.14 FEET</title>
+              <polygon
+                points="0.0,15.33 13.22,19.11 26.44,4.0 39.67,17.22 52.89,26.67 66.11,38.0 79.33,28.56 92.56,22.89 105.78,32.33 119.0,30.44 119,40 0,40"
+                fill="url(#spk-grad-42)"
+              />
+              <polyline
+                points="0.0,15.33 13.22,19.11 26.44,4.0 39.67,17.22 52.89,26.67 66.11,38.0 79.33,28.56 92.56,22.89 105.78,32.33 119.0,30.44"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/42/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/43/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/43/" class="data-table-link">
+            OWENS CREEK DAM
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">OWN</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 0.00 AF" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-43" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 0.00 AF</title>
+              <polygon
+                points="0.0,36.72 13.22,38.0 26.44,4.0 39.67,38.0 52.89,38.0 66.11,36.72 79.33,38.0 92.56,4.0 105.78,38.0 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-43)"
+              />
+              <polyline
+                points="0.0,36.72 13.22,38.0 26.44,4.0 39.67,38.0 52.89,38.0 66.11,36.72 79.33,38.0 92.56,4.0 105.78,38.0 119.0,38.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/43/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/46/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/46/" class="data-table-link">
+            SAN JOAQUIN RIVER NEAR HWY 152
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">SJH</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 9.88 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-46" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 9.88 FEET</title>
+              <polygon
+                points="0.0,13.59 13.22,38.0 26.44,37.9 39.67,10.39 52.89,10.39 66.11,37.89 79.33,37.84 92.56,7.2 105.78,4.0 119.0,37.76 119,40 0,40"
+                fill="url(#spk-grad-46)"
+              />
+              <polyline
+                points="0.0,13.59 13.22,38.0 26.44,37.9 39.67,10.39 52.89,10.39 66.11,37.89 79.33,37.84 92.56,7.2 105.78,4.0 119.0,37.76"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/46/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/51/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/51/" class="data-table-link">
+            SAN JOAQUIN R NR WASHINGTON RD
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">SWA</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 98.64 FEET" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-51" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 98.64 FEET</title>
+              <polygon
+                points="0.0,37.59 13.22,4.02 26.44,37.59 39.67,4.03 52.89,37.18 66.11,4.01 79.33,38.0 92.56,4.03 105.78,37.18 119.0,4.0 119,40 0,40"
+                fill="url(#spk-grad-51)"
+              />
+              <polyline
+                points="0.0,37.59 13.22,4.02 26.44,37.59 39.67,4.03 52.89,37.18 66.11,4.01 79.33,38.0 92.56,4.03 105.78,37.18 119.0,4.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/51/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/53/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/53/" class="data-table-link">
+            UC MERCED WEATHER STATION
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">UCM</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">CDEC</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 12.68 INCHES" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-53" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 12.68 INCHES</title>
+              <polygon
+                points="0.0,38.0 13.22,38.0 26.44,38.0 39.67,38.0 52.89,38.0 66.11,4.0 79.33,4.0 92.56,4.0 105.78,4.0 119.0,4.0 119,40 0,40"
+                fill="url(#spk-grad-53)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,38.0 26.44,38.0 39.67,38.0 52.89,38.0 66.11,4.0 79.33,4.0 92.56,4.0 105.78,4.0 119.0,4.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/53/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/166/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/166/" class="data-table-link">
+            Well #13 Tok &amp; Thom
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">370000N1200000W001</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources Water Data Library</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            2 years, 5 months ago
+          
+        </td>
+        <td>
+          
+          <span class="text-tertiary text-xs">--</span>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/166/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/167/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/167/" class="data-table-link">
+            Well #16 Jon &amp; Eucal
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">370000N1200000W002</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">Department of Water Resources Water Data Library</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 year, 5 months ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 65.50 ft bgs" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-167" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 65.50 ft bgs</title>
+              <polygon
+                points="0.0,4.0 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-167)"
+              />
+              <polyline
+                points="0.0,4.0 119.0,38.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/167/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/268/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/268/" class="data-table-link">
+            MERCED 1.2 NE, CA US
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">US1CAME0006</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">NOAA NCEI</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            3 months, 1 week ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 0.23 mm" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-268" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 0.23 mm</title>
+              <polygon
+                points="0.0,4.0 13.22,38.0 26.44,32.46 39.67,6.96 52.89,34.3 66.11,24.7 79.33,6.22 92.56,30.61 105.78,31.35 119.0,31.35 119,40 0,40"
+                fill="url(#spk-grad-268)"
+              />
+              <polyline
+                points="0.0,4.0 13.22,38.0 26.44,32.46 39.67,6.96 52.89,34.3 66.11,24.7 79.33,6.22 92.56,30.61 105.78,31.35 119.0,31.35"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/268/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/274/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/274/" class="data-table-link">
+            MERCED, CA US
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">USC00045532</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">NOAA NCEI</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            5 months, 2 weeks ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 1.28 deg C" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-274" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 1.28 deg C</title>
+              <polygon
+                points="0.0,28.78 13.22,27.56 26.44,10.22 39.67,38.0 52.89,38.0 66.11,6.56 79.33,25.0 92.56,4.0 105.78,38.0 119.0,23.78 119,40 0,40"
+                fill="url(#spk-grad-274)"
+              />
+              <polyline
+                points="0.0,28.78 13.22,27.56 26.44,10.22 39.67,38.0 52.89,38.0 66.11,6.56 79.33,25.0 92.56,4.0 105.78,38.0 119.0,23.78"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/274/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/280/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/280/" class="data-table-link">
+            MERCED MUNICIPAL AIRPORT, CA US
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">USW00023257</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">NOAA NCEI</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month, 1 week ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 0.00 mm" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-280" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 0.00 mm</title>
+              <polygon
+                points="0.0,4.0 13.22,38.0 26.44,23.87 39.67,4.0 52.89,38.0 66.11,23.87 79.33,4.0 92.56,4.47 105.78,23.87 119.0,38.0 119,40 0,40"
+                fill="url(#spk-grad-280)"
+              />
+              <polyline
+                points="0.0,4.0 13.22,38.0 26.44,23.87 39.67,4.0 52.89,38.0 66.11,23.87 79.33,4.0 92.56,4.47 105.78,23.87 119.0,38.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/280/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/300/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/300/" class="data-table-link">
+            MUD SLOUGH NR GUSTINE CA
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">11262900</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">USGS NWIS</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 10.60 ft3/s" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-300" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 10.60 ft3/s</title>
+              <polygon
+                points="0.0,16.76 13.22,25.71 26.44,28.46 39.67,29.65 52.89,31.8 66.11,38.0 79.33,36.45 92.56,32.51 105.78,24.76 119.0,4.0 119,40 0,40"
+                fill="url(#spk-grad-300)"
+              />
+              <polyline
+                points="0.0,16.76 13.22,25.71 26.44,28.46 39.67,29.65 52.89,31.8 66.11,38.0 79.33,36.45 92.56,32.51 105.78,24.76 119.0,4.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/300/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/298/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/298/" class="data-table-link">
+            SALT SLOUGH A HWY 165 NR STEVINSON CA
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">11261100</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">USGS NWIS</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 42.80 ft3/s" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-298" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 42.80 ft3/s</title>
+              <polygon
+                points="0.0,21.61 13.22,38.0 26.44,29.81 39.67,34.31 52.89,32.67 66.11,10.76 79.33,15.27 92.56,18.13 105.78,9.12 119.0,4.0 119,40 0,40"
+                fill="url(#spk-grad-298)"
+              />
+              <polyline
+                points="0.0,21.61 13.22,38.0 26.44,29.81 39.67,34.31 52.89,32.67 66.11,10.76 79.33,15.27 92.56,18.13 105.78,9.12 119.0,4.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/298/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/305/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/305/" class="data-table-link">
+            SAN JOAQUIN R AB MERCED R NR NEWMAN CA
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">11273400</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">USGS NWIS</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 27.80 deg C" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-305" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 27.80 deg C</title>
+              <polygon
+                points="0.0,38.0 13.22,7.65 26.44,37.96 39.67,37.9 52.89,7.21 66.11,5.53 79.33,37.92 92.56,37.96 105.78,4.0 119.0,37.96 119,40 0,40"
+                fill="url(#spk-grad-305)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,7.65 26.44,37.96 39.67,37.9 52.89,7.21 66.11,5.53 79.33,37.92 92.56,37.96 105.78,4.0 119.0,37.96"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/305/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/299/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/299/" class="data-table-link">
+            SAN JOAQUIN R A FREMONT FORD BRIDGE CA
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">11261500</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">USGS NWIS</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 45.60 ft3/s" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-299" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 45.60 ft3/s</title>
+              <polygon
+                points="0.0,38.0 13.22,13.55 26.44,36.49 39.67,4.0 52.89,34.82 66.11,31.3 79.33,5.0 92.56,7.35 105.78,36.33 119.0,8.19 119,40 0,40"
+                fill="url(#spk-grad-299)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,13.55 26.44,36.49 39.67,4.0 52.89,34.82 66.11,31.3 79.33,5.0 92.56,7.35 105.78,36.33 119.0,8.19"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/299/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='/datasync/stations/306/';}">
+        <td style="padding-right: 0;">
+          <span class="freshness-dot freshness-dot--dead" title="dead"></span>
+        </td>
+        <td>
+          <a href="/datasync/stations/306/" class="data-table-link">
+            SAN JOAQUIN R NR NEWMAN CA
+          </a>
+          <div class="text-tertiary text-xs" style="font-family: var(--font-mono);">11274000</div>
+        </td>
+        <td>
+          <span style="
+            display: inline-flex; align-items: center;
+            background: var(--color-elevated);
+            border: 1px solid var(--color-border-hover);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+          ">USGS NWIS</span>
+        </td>
+        <td class="text-secondary text-sm">
+          
+            1 month ago
+          
+        </td>
+        <td>
+          
+          <div class="sparkline-container" title="Latest: 692.00 ft3/s" style="cursor: default;">
+            <svg viewBox="0 0 120 40" width="120" height="40" fill="none" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="spk-grad-306" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#9ca3af" stop-opacity="0.10"/>
+                  <stop offset="100%" stop-color="#9ca3af" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <title>Latest: 692.00 ft3/s</title>
+              <polygon
+                points="0.0,38.0 13.22,30.28 26.44,20.53 39.67,15.59 52.89,9.95 66.11,6.85 79.33,7.61 92.56,7.36 105.78,5.52 119.0,4.0 119,40 0,40"
+                fill="url(#spk-grad-306)"
+              />
+              <polyline
+                points="0.0,38.0 13.22,30.28 26.44,20.53 39.67,15.59 52.89,9.95 66.11,6.85 79.33,7.61 92.56,7.36 105.78,5.52 119.0,4.0"
+                stroke="#9ca3af"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          
+        </td>
+        
+        <td onclick="event.stopPropagation();" style="cursor: default;">
+          <button
+  hx-post="/datasync/stations/306/toggle/"
+  hx-target="this"
+  hx-swap="outerHTML"
+  title="Deactivate station"
+  style="
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: var(--forest-400);
+    position: relative;
+  ">
+  <span style="
+    display: block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    transition: left 0.2s;
+    left: 19px;
+  "></span>
+</button>
+
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
 </div>
+
+<!-- Pagination (graceful fallback only — the page size shows the whole network) -->
+
+
 
 
   </div>

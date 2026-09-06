@@ -3,7 +3,11 @@
 -- Screen: /accounting/dashboard/?period=2  (WY 2025-2026, the dry year; the same
 -- page the bare /accounting/dashboard/ URL resolves to on this data — observed,
 -- not inferred: the two captures differ only in their cross-site request token).
--- Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row).
+-- Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 12, first row).
+-- IDS ARE THE CANDIDATE'S (136-02, 2026-09-06): the ledger re-measure runs on the
+-- restored candidate.dump, whose keys are a clean sequence and are what the
+-- golden and therefore production will carry; the development database this was
+-- first written against had gaps (this account was id 78 there).
 -- Pinned zone row:    Halvern Irrigation-Urban GSA (id 2, first row, 23 parcels).
 --
 -- INDEPENDENCE. This file references tables and columns only. It does not
@@ -73,7 +77,7 @@
 \set ON_ERROR_STOP on
 
 WITH pin AS (
-    SELECT 2::bigint AS period_id, 78::bigint AS account_id, 2::bigint AS zone_id
+    SELECT 2::bigint AS period_id, 12::bigint AS account_id, 2::bigint AS zone_id
 ),
 period AS (
     SELECT rp.id,

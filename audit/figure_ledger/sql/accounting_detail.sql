@@ -8,7 +8,7 @@
 --
 -- Screens, all pinned to WY 2025-2026 (reporting period id 2, the dry year), the
 -- same water year section 1 pinned on the dashboard:
---   /accounting/accounts/78/?period=2                       FIG-009..020
+--   /accounting/accounts/12/?period=2                       FIG-009..020
 --   /accounting/calculation-run/16/2026-03/                 FIG-001..008
 --   /accounting/methodology/preview/?parcel_id=16&period=2026-03
 --                                                           FIG-049..052
@@ -17,7 +17,7 @@
 --   /accounting/reporting-periods/2/                        FIG-053
 --
 -- Pinned rows:
---   Account   MER-ACCT-001 Ashvale Orchards Inc. (id 78), the same account
+--   Account   MER-ACCT-001 Ashvale Orchards Inc. (id 12 on the candidate, 136-02), the same account
 --             section 1 pinned, so the two screens can be held against each other.
 --   Parcel    MER-APN-021 (id 21), the first row of that account's per-parcel
 --             table. Pinned BY PARCEL NUMBER, not by position: all 18 of this
@@ -105,7 +105,7 @@
 
 WITH pin AS (
     SELECT 2::bigint   AS period_id,      -- WY 2025-2026, the dry year
-           78::bigint  AS account_id,     -- MER-ACCT-001 Ashvale Orchards Inc.
+           12::bigint  AS account_id,     -- MER-ACCT-001 Ashvale Orchards Inc. (candidate id; was 78 on the dev db, 136-02)
            21::bigint  AS parcel_row_id,  -- MER-APN-021, the pinned per-parcel row
            16::bigint  AS run_parcel_id,  -- MER-APN-016, the pinned calculation run
            '2026-03'::text AS run_period

@@ -40,7 +40,7 @@
 
     
 </head>
-<body class="section-water_data" hx-headers='{"X-CSRFToken": "TbfZXKyVZ0Lrt0BFVKVUy0IoKGIo2e8YWEjPV0sDLwbE0GhGCh9o5kfbDP9QNEsj"}'>
+<body class="section-water_data" hx-headers='{"X-CSRFToken": "vYKYkJdyirMH84ig42HRJngzBVNRB7vSmXCvSAxNA0CTD58EW9KajhZpyVoGBrzc"}'>
     
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
@@ -740,12 +740,12 @@
 </table>
 
 
-<form hx-post="/surface/diversion/10/record/"
+<form hx-post="/surface/diversion/9/record/"
       hx-target="#diversion-records-section"
       hx-swap="innerHTML"
       class="form-stack"
       style="padding: var(--space-md) 0; border-top: 1px solid var(--color-border);">
-  <input type="hidden" name="csrfmiddlewaretoken" value="TbfZXKyVZ0Lrt0BFVKVUy0IoKGIo2e8YWEjPV0sDLwbE0GhGCh9o5kfbDP9QNEsj">
+  <input type="hidden" name="csrfmiddlewaretoken" value="vYKYkJdyirMH84ig42HRJngzBVNRB7vSmXCvSAxNA0CTD58EW9KajhZpyVoGBrzc">
   <div class="row-between" style="align-items: flex-start;">
     <h3 class="text-sm font-semibold text-secondary m-0">Add diversion record</h3>
   </div>
@@ -810,7 +810,45 @@
           </summary>
           <div class="mt-md">
             
-              <p class="text-secondary text-sm">Recharge diversion. It feeds a recharge basin rather than a consumptive use, and no water right is linked.</p>
+              <div class="field-group">
+                <div class="field-label">Right ID</div>
+                <div class="field-value">
+                  <a href="/surface/rights/7/" class="data-table-link text-mono" style="font-size: 0.8125rem;">
+                    MER-WR-011-DEMO
+                  </a>
+                </div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Holder</div>
+                <div class="field-value">Halvern Irrigation District</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Right type</div>
+                <div class="field-value">Post-1914 Appropriative</div>
+              </div>
+              
+              <div class="field-group">
+                <div class="field-label">Priority date</div>
+                <div class="field-value">Nov 15, 2016</div>
+              </div>
+              
+              
+              <div class="field-group">
+                <div class="field-label">Face value (AF)</div>
+                <div class="field-value">3500.00</div>
+              </div>
+              
+              <div class="field-group">
+                <div class="field-label">Status</div>
+                <div style="margin-top: 2px;">
+  <span class="badge badge-pill badge-green">Active</span>
+
+</div>
+              </div>
+              
+              
+              <p class="text-secondary text-sm mt-xs">Recharge diversion. Water retained here is taken to storage in the basins below, not consumed.</p>
+              
             
           </div>
         </details>
@@ -849,7 +887,7 @@
             
             <tr>
               <td>
-                <a href="/recharge/6/" class="data-table-link">
+                <a href="/recharge/1/" class="data-table-link">
                   El Nido Recharge Basin 1
                 </a>
               </td>
@@ -858,7 +896,7 @@
             
             <tr>
               <td>
-                <a href="/recharge/7/" class="data-table-link">
+                <a href="/recharge/2/" class="data-table-link">
                   El Nido Recharge Basin 2
                 </a>
               </td>
@@ -867,7 +905,7 @@
             
             <tr>
               <td>
-                <a href="/recharge/8/" class="data-table-link">
+                <a href="/recharge/3/" class="data-table-link">
                   El Nido Recharge Basin 3
                 </a>
               </td>
@@ -876,7 +914,7 @@
             
             <tr>
               <td>
-                <a href="/recharge/9/" class="data-table-link">
+                <a href="/recharge/4/" class="data-table-link">
                   El Nido Recharge Basin 4
                 </a>
               </td>
@@ -885,7 +923,7 @@
             
             <tr>
               <td>
-                <a href="/recharge/10/" class="data-table-link">
+                <a href="/recharge/5/" class="data-table-link">
                   El Nido Recharge Basin 5
                 </a>
               </td>
@@ -905,7 +943,7 @@
 </div>
 
 
-<script id="detail-geojson-data" type="application/json">{"type": "FeatureCollection", "features": [{"type": "Feature", "id": 10, "properties": {"name": "MER-BPOD-001 El Nido Canal Recharge Intake", "stream_name": "El Nido Canal"}, "geometry": {"type": "Point", "coordinates": [-120.407779363557, 37.19143051314042]}}]}</script>
+<script id="detail-geojson-data" type="application/json">{"type": "FeatureCollection", "features": [{"type": "Feature", "id": 9, "properties": {"name": "MER-BPOD-001 El Nido Canal Recharge Intake", "stream_name": "El Nido Canal"}, "geometry": {"type": "Point", "coordinates": [-120.407779363557, 37.19143051314042]}}]}</script>
 <script>
 // Wait for the map toolkit: on a full-page load this body renders BEFORE the
 // map scripts at end of page, so poll on window.OH2O (safe access) until ready.

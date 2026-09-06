@@ -15,15 +15,16 @@
 --                     WY 2025-2026 (reporting period id 2, the dry year), GW.
 --                     Pinned parcel row: MER-APN-026 (parcel id 26), first by
 --                     parcel number among the zone's 23.
---   /wells/32/        Well id 32, registration MER-W-001. One screen carries all
+--   /wells/10/        Well id 10 on the candidate (32 on the dev db), registration MER-W-001. One screen carries all
 --                     four wells figures.
---   /recharge/6/      El Nido Recharge Basin 1, first by name on the list page.
+--   /recharge/1/      El Nido Recharge Basin 1, first by name on the list page.
 --                     Pinned measurement: the newest, 2026-02-18 water quality.
 --                     Pinned event: the newest by start date, 2026-02-15.
 --   /recharge/        The list; ordered by name, every site on one page, so the
 --                     pinned row is El Nido Recharge Basin 1 again.
 --   /setup/           Boundary id 1, Merced Subbasin, the only Boundary row.
---   /datasync/stations/1/   404. See the datasync block below.
+--   /datasync/stations/1/   SAN JOAQUIN R - MONITORING WELL #142, the lowest id
+--                     (200 on the candidate; 404 on the old dev db). See the datasync block below.
 --   /setup/confirm/         302. See the setup block below.
 --
 -- INDEPENDENCE. This file names tables and columns only. It imports nothing,
@@ -91,8 +92,8 @@ WITH pin AS (
     SELECT 2::bigint  AS zone_id,
            2::bigint  AS period_id,
            26::bigint AS parcel_id,
-           32::bigint AS well_id,
-           6::bigint  AS recharge_site_id,
+           10::bigint AS well_id,           -- MER-W-001 (candidate id; was 32 on the dev db, 136-02)
+           1::bigint  AS recharge_site_id,  -- El Nido Recharge Basin 1 (candidate id; was 6, 136-02)
            1::bigint  AS boundary_id
 ),
 
@@ -201,31 +202,42 @@ pinned_boundary AS (
 ),
 
 -- ── Datasync ────────────────────────────────────────────────────────────────
--- There is nothing to recompute: the tables behind the station detail pane are
--- empty, so the pane has no instance and the four figures never render. These
--- rows carry the COUNTS instead of a value, which is the finding itself.
+-- 136-02 (2026-09-06): re-measured on the restored CANDIDATE, which carries the
+-- 335 stations and 30,217 staged records the shape file pins; the development
+-- database this file was first written against had none, so the pane had no
+-- instance and these four rows carried counts. The pinned station is id 1, the
+-- lowest id (SAN JOAQUIN R - MONITORING WELL #142). Its location is a stored
+-- point (ST_Y = latitude, ST_X = longitude, shown to five places). It has NO
+-- staged records, so the two reading figures still do not render; those rows
+-- carry the pinned station's record count, which is the finding.
 datasync_shape AS (
     SELECT (SELECT count(*) FROM datasync_monitoredstation)  AS stations,
            (SELECT count(*) FROM datasync_datarecordstaging) AS records,
-           (SELECT count(*) FROM datasync_datasource)        AS sources
+           (SELECT count(*) FROM datasync_datasource)        AS sources,
+           (SELECT round(ST_Y(location::geometry)::numeric, 5)
+              FROM datasync_monitoredstation WHERE id = 1)   AS pinned_lat,
+           (SELECT round(ST_X(location::geometry)::numeric, 5)
+              FROM datasync_monitoredstation WHERE id = 1)   AS pinned_lon,
+           (SELECT count(*) FROM datasync_datarecordstaging
+             WHERE station_id = 1)                            AS pinned_records
 ),
 
 -- ── The eighteen figures ────────────────────────────────────────────────────
 figures AS (
-    -- Datasync: four figures with no instance to render. `recomputed` is the
-    -- number of station rows that exist, which is zero.
+    -- Datasync: the pinned station's stored coordinates; the two reading
+    -- figures have no instance on this station and carry its record count (0).
     SELECT 'FIG-datasync-001' AS id,
-           'Station location, latitude (no station exists)' AS label,
-           stations::numeric AS recomputed FROM datasync_shape
+           'Station 1 location, latitude' AS label,
+           pinned_lat AS recomputed FROM datasync_shape
     UNION ALL SELECT 'FIG-datasync-002',
-           'Station location, longitude (no station exists)',
-           stations::numeric FROM datasync_shape
+           'Station 1 location, longitude',
+           pinned_lon FROM datasync_shape
     UNION ALL SELECT 'FIG-datasync-003',
-           'Current reading value (no station exists)',
-           stations::numeric FROM datasync_shape
+           'Current reading value (station 1 has no staged record)',
+           pinned_records::numeric FROM datasync_shape
     UNION ALL SELECT 'FIG-datasync-004',
-           'Recent record value (no published record exists)',
-           records::numeric FROM datasync_shape
+           'Recent record value (station 1 has no staged record)',
+           pinned_records::numeric FROM datasync_shape
 
     -- Geography
     UNION ALL SELECT 'FIG-geography-001',

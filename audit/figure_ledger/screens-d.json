@@ -16,12 +16,12 @@
   },
   {
     "slug": "d-well-detail-mer-w-001",
-    "url": "/wells/32/",
+    "url": "/wells/10/",
     "note": "SECTION D PIN for FIG-wells-001..004. Well id 32, registration MER-W-001, 'Ag well on MER-APN-002'. Chosen because one screen carries all four wells figures: it has an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order)."
   },
   {
     "slug": "d-recharge-detail-el-nido-basin-1",
-    "url": "/recharge/6/",
+    "url": "/recharge/1/",
     "note": "SECTION D PIN for FIG-recharge-001, -002 and -003. El Nido Recharge Basin 1 (site id 6), the first site by name on the list page, so the list figure and the detail figures describe the same basin. Pinned measurement row: the newest, 2026-02-18 water quality, 315.2601 mg/L. Pinned event row: the newest by start date, 2026-02-15 to 2026-02-18, 127.4200 AF."
   },
   {
@@ -51,7 +51,7 @@
   },
   {
     "slug": "d-zone-detail-surface-service-area-halvern",
-    "url": "/map/zones/39/",
+    "url": "/map/zones/9/",
     "note": "SECTION D whole-column check on FIG-geography-001..003. MER Surface Service Area - Halvern Irrigation District (zone id 39), a surface-water allocation, so the page takes the other branch (geography/views.py:205) and labels the figure 'delivered'. Captured to show that branch does filter on source type where the groundwater branch does not."
   }
 ]

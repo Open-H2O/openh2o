@@ -45,19 +45,23 @@ idea of what the number is. Every row says which kind it is, in its Notes.
 
 ## What the ledger found
 
-**86 of the 105 figures agree with the rows behind them to the cent, and nothing
-in this platform computes a number wrongly** (84 of 106 on 2026-09-05; the
-2026-09-06 re-measure after 136-01 is set out at the top of section 1). Not one figure disagrees with its
-own arithmetic. What the ledger found instead is figures that are correct and
+**88 of the 105 figures agree with the rows behind them to the cent, and nothing
+in this platform computes a number wrongly**, as of 2026-09-06 after 136-02 (86
+after 136-01 the same day, and 84 of 106 on 2026-09-05; both 2026-09-06
+re-measures are set out at the top of section 1). Not one figure disagrees with
+its own arithmetic. What the ledger found instead is figures that are correct and
 labelled wrongly, and figures that no screen can currently show.
+
+The verdict counts, recounted from the five section ledgers on 2026-09-06 after
+136-02:
 
 | Verdict | Count of 105 | Meaning |
 |---|---:|---|
-| `MATCH` | 86 | The screen and the independent recomputation agree to the cent |
+| `MATCH` | 88 | The screen and the independent recomputation agree to the cent |
 | `MATCH · ISS-###` | 1 | The number is right; a separate issue is raised against the words beside it |
 | `ISS-###` | 4 | The screen states two things that cannot both be true |
 | `EXPLAINED` | 1 | The two agree for a stated reason that is not a measurement |
-| `UNVERIFIED` | 13 | The screen never rendered it, or nothing derives it |
+| `UNVERIFIED` | 11 | The screen never rendered it, or nothing derives it |
 
 Five rows carry an issue number, and they name three problems (eight rows and
 four problems on 2026-09-05; ISS-155 was resolved by 136-01 on 2026-09-06 and
@@ -67,10 +71,13 @@ its three rows now read `MATCH`):
 and filed by the next plan). A district's Allocation vs. use table has a column
 headed Used with the word *pumped* beside it. It adds every negative entry in the
 district's ledger, and canal deliveries are stored as negative numbers, so they
-land inside it. Two of the three groundwater districts read as over budget when
-their groundwater draw alone is comfortably under — not by a margin, but with the
-opposite sign. The third takes no canal water, which is why the fault is
-invisible to anyone reading one page. Section 5, finding 1.
+land inside it. One of the three groundwater districts reads as 562.75 acre-feet
+over budget when its groundwater draw alone leaves 608.18 in hand: not a margin,
+the opposite sign. A second reads 10,569.36 over when its groundwater draw alone
+is 332.58 over, an overstatement of about thirty-two times. The third takes no
+canal water, which is why the fault is invisible to anyone reading one page. On
+2026-09-05, before 136-02 re-sized the allocations, the sign was reversed on two
+of the three rather than one. Section 5, finding 1.
 
 **The parcel pane states two balances that disagree** ([ISS-148](#), already
 filed). A card at the top of the pane says 174.13 acre-feet of water arrived and
@@ -86,20 +93,23 @@ correct. The footer no longer prints a net: it names its two subtotals by kind.
 Section 3, finding 3.
 
 **The allocations footer adds surface water to groundwater** ([ISS-156](#),
-reserved). 148,500.00 acre-feet of surface-water allocation plus 11,171.46 of
+reserved). 148,500.00 acre-feet of surface-water allocation plus 4,621.27 of
 groundwater allocation, printed as one number in acre-feet that no agency
-manages. Section 3, finding 4.
+manages. 136-02 changed the size of the groundwater half on 2026-09-06 and not
+the mixture: the total is now 153,121.27, and it was 159,671.46. Section 3, finding 4.
 
-Thirteen figures could not be independently recomputed, and they are named rather
-than omitted: four monitoring-station figures (this audit ran against a
-development database, which by design loads no stations; the shipping build loads
-all 335, and the reasoning is in `audit/figure_ledger/triage.md` section B1),
-four on the calculation page's banked-water block (no run in this database
-carries a deposit or a draw, and the five credit rows that do exist all hold
-0.0000 acre-feet), two in a notice shown only to a parcel with no calculations
-yet (every parcel has them, in both years), two well fields a person types by
-hand, and the setup wizard's confirmation step, which needs a form submission to
-reach.
+Eleven figures could not be independently recomputed, and they are named rather
+than omitted: four on the calculation page's banked-water block (no run in this
+database carries a deposit or a draw, and the five credit rows that do exist all
+hold 0.0000 acre-feet), two in a notice shown only to a parcel with no
+calculations yet (every parcel has them, in both years), two well fields a person
+types by hand, two monitoring-station reading figures, and the setup wizard's
+confirmation step, which needs a form submission to reach. It was thirteen on
+2026-09-05, when the monitoring station page could not be opened at all: 136-02's
+rebuilt data carries all 335 stations and 30,217 staged readings, so that page
+now renders and its two location figures agree to five decimal places. The two
+reading figures stay unverified because the station with the lowest id happens to
+carry no staged record.
 
 **Every one of those eight was then re-derived a THIRD time before it was
 filed**, by an identity neither of the first two derivations used, and the
@@ -163,6 +173,32 @@ docker compose exec -T web python -m pytest tests/test_figure_ledger_independenc
 **The count of collected tests is the tell.** Six recomputation files means
 twenty cases; if it says eight, it read two. Eight files means twenty-six.
 
+**Captured again at commit `2555a68`**, 2026-09-06, after 136-02 changed the
+demonstration's seed data: every district's groundwater allocation is now its own
+demonstration sustainable-yield rate, and the El Nido recharge intake diverts
+under a water right of its own. This capture was taken on the rebuilt
+demonstration database restored into the development database, not on the
+hand-seeded copy the 2026-09-05 and 136-01 captures ran against. The hand-seeded copy had
+gaps in its primary keys; the rebuilt data numbers its rows in a clean sequence,
+and that sequence is what the promoted demonstration and any new deployment will
+carry. So eight pinned addresses changed number without a single figure changing
+meaning: `/accounting/accounts/78/` became `/accounting/accounts/12/`
+(MER-ACCT-001), `/surface/diversion/9/` became `/surface/diversion/8/`
+(MER-POD-011-DEMO Snelling Re-Diversion), `/surface/diversion/10/` became
+`/surface/diversion/9/` (MER-BPOD-001 El Nido Canal Recharge Intake),
+`/surface/rights/7/` became `/surface/rights/6/` (MER-WR-010-DEMO), `/wells/32/`
+became `/wells/10/` (MER-W-001), `/recharge/6/` became `/recharge/1/` (El Nido
+Recharge Basin 1), and `/map/zones/39/` became `/map/zones/9/` (MER Surface
+Service Area, Halvern Irrigation District). The parcels, the three groundwater
+districts, the monitoring station and the report submission kept the numbers they
+had. `audit/figure_ledger/screens.json` and its four per-section files were
+repointed to the new addresses, the pins inside the recomputation SQL with them,
+and the `screen` column of every ledger row now carries the rebuilt data's
+numbers.
+Two addresses answer differently as a result: `/datasync/stations/1/` returns a
+page (SAN JOAQUIN R - MONITORING WELL #142) where it returned 404 before, and
+`/setup/confirm/` still redirects.
+
 **Captured again at commit `e22cb84`**, 2026-09-06, after 136-01 changed the
 budget basis and the words on five templates (the first product-code change
 since `v2.15`). The 2026-09-05 capture below is kept in the row notes as the
@@ -222,6 +258,44 @@ refuses it.
 
 ## Section 1 — The accounting dashboard (23 figures)
 
+**Re-measured 2026-09-06 after 136-02 re-sized the groundwater allocations.**
+Before this plan the three groundwater districts shared one flat rate. Each now
+carries its own demonstration sustainable-yield rate: Halvern Valley GSA 0.58
+acre-feet per acre, which takes its allocation from 9,689.40 to **2,809.93 AF**;
+Verdano Island Water District GSA 2.90, which takes it from 731.74 to
+**1,061.02 AF**; Halvern Irrigation-Urban GSA 2.00, which is the rate it already
+had, so its 750.32 AF did not move. Two of the 23 rows moved in value and all 23
+still match to the cent: `FIG-accounting-035` 2,901.42 to **957.22** and
+`FIG-accounting-036` 2,901.42 to **957.22**, both because the pinned account's
+share is pro-rated from the re-sized Halvern Valley plan. Rows `043`, `044` and
+`045` did not move, because the pinned zone is the one district whose rate was
+already right.
+
+Here is what the three districts now read, in both years. **GW remaining** is the
+figure the dashboard's zone table prints, allocation plus carry-over minus
+groundwater use. **On allocation alone** drops the carry-over, which is the basis
+the account rows and the attention strip use.
+
+| District | Year | GW allocation | Carry-over | GW remaining | On allocation alone |
+|---|---|---:|---:|---:|---:|
+| Halvern Valley GSA | WY 2024-2025 | 2,809.93 | 5,109.01 | 5,400.48 | +291.47 |
+| Halvern Valley GSA | WY 2025-2026 | 2,809.93 | 3,336.08 | 3,003.50 | −332.58 |
+| Halvern Irrigation-Urban GSA | WY 2024-2025 | 750.32 | 407.93 | 1,020.66 | +612.73 |
+| Halvern Irrigation-Urban GSA | WY 2025-2026 | 750.32 | 303.40 | 911.58 | +608.18 |
+| Verdano Island Water District GSA | WY 2024-2025 | 1,061.02 | 0.00 | 32.54 | +32.54 |
+| Verdano Island Water District GSA | WY 2025-2026 | 1,061.02 | 0.00 | −31.71 | −31.71 |
+
+Two things that table is worth reading for. Halvern Valley GSA's zone row cannot
+go negative at any rate the plan could have chosen, because its recharge-pool
+carry-over of 3,336.08 AF in the dry year is larger than the 3,142.51 AF it
+pumped; on allocation alone it crosses, from 291.47 AF under in the wet year to
+332.58 AF over in the dry one. Verdano Island holds no pool at all, so its zone
+row is the same figure on either basis, and it crosses too: 32.54 under, then
+31.71 over. The attention strip above these tables counts **4 accounts over
+groundwater budget in WY 2024-2025 and 5 in WY 2025-2026**. The fifth is
+MER-ACCT-007, the curtailed Saddlebow growers, which crosses only in the dry year
+because its pumping more than doubles when the canal stops.
+
 **Re-measured 2026-09-06 after 136-01 changed the budget basis (ISS-151, option
 A).** The two budget columns on both tables are now the groundwater budget: an
 account's allocation counts groundwater plans only, and Remaining is allocation
@@ -262,17 +336,17 @@ whole-column in SQL where doing so cost nothing.
 | `FIG-accounting-032` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:160` | Precip (AF) | `row.precip` | `accounting/views.py:187` | `account_consumptive_balance` | `accounting_calculationrun` | 420.12 | 420.12 | MATCH | MATCH | Independence: restatement. |
 | `FIG-accounting-033` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:163` | Supplies (AF) | `row.supply_total` | `accounting/views.py:188` | `account_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 5921.09 | 5921.09 | MATCH | MATCH | Independence: restatement. The three supply columns added. |
 | `FIG-accounting-034` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:166` | Net (AF) | `row.net_vs_supply` | `accounting/views.py:189` | `account_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 1331.48 | 1331.48 | MATCH | MATCH | Independence: restatement. |
-| `FIG-accounting-035` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:170` | GW allocation (AF) | `row.allocation` | `accounting/views.py:181` | `— (arithmetic in the view)` | `accounting_allocationplan, accounting_watertype, geography_parcelzone, accounting_wateraccountparcel` | 2901.42 | 2901.42 | MATCH | MATCH | Re-measured 2026-09-06 after 136-01 (was 19,101.42): groundwater plans only, so the 16,200.00 AF surface entitlement this account also holds is no longer added in (like with like; DESIGN.md rule 12). Independence: restatement. Pro-rated by how many of the account's parcel-zone rows fall in each zone. The only figure on this screen computed in the view itself, and the reconciliation had to transcribe that division to reproduce it. |
-| `FIG-accounting-036` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:173` | GW remaining (AF) | `row.remaining` | `accounting/views.py:200` | `— (arithmetic in the view)` | `accounting_allocationplan, accounting_watertype, geography_parcelzone, parcels_parcelledger` | 2901.42 | 2901.42 | MATCH | MATCH | Re-measured 2026-09-06 after 136-01 (was 14,511.81): groundwater allocation minus groundwater use, and this account pumps 0.00 (`FIG-accounting-031`), so it equals the allocation. Before 136-01 the column subtracted gross evapotranspiration (ISS-151). Independence: restatement. |
+| `FIG-accounting-035` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:170` | GW allocation (AF) | `row.allocation` | `accounting/views.py:181` | `— (arithmetic in the view)` | `accounting_allocationplan, accounting_watertype, geography_parcelzone, accounting_wateraccountparcel` | 957.22 | 957.22 | MATCH | MATCH | Re-measured 2026-09-06 after 136-02 (was 2,901.42): the two groundwater plans this account's share is pro-rated from were re-sized to their own demonstration sustainable-yield rates, and Halvern Valley GSA's fell from 9,689.40 to 2,809.93 at 0.58 AF/acre. Thirteen of that district's 46 parcel-zone rows and five of Halvern Irrigation-Urban GSA's 23 belong to this account, so 13/46 of 2,809.93 plus 5/23 of 750.32 gives 957.22. Re-measured 2026-09-06 after 136-01 (was 19,101.42): groundwater plans only, so the 16,200.00 AF surface entitlement this account also holds is no longer added in (like with like; DESIGN.md rule 12). Independence: restatement. Pro-rated by how many of the account's parcel-zone rows fall in each zone. The only figure on this screen computed in the view itself, and the reconciliation had to transcribe that division to reproduce it. |
+| `FIG-accounting-036` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:173` | GW remaining (AF) | `row.remaining` | `accounting/views.py:200` | `— (arithmetic in the view)` | `accounting_allocationplan, accounting_watertype, geography_parcelzone, parcels_parcelledger` | 957.22 | 957.22 | MATCH | MATCH | Re-measured 2026-09-06 after 136-02 (was 2,901.42): the re-sized allocation above, and this account still pumps 0.00 (`FIG-accounting-031`), so Remaining moved with it and nothing else changed. Re-measured 2026-09-06 after 136-01 (was 14,511.81): groundwater allocation minus groundwater use, and this account pumps 0.00 (`FIG-accounting-031`), so it equals the allocation. Before 136-01 the column subtracted gross evapotranspiration (ISS-151). Independence: restatement. |
 | `FIG-accounting-037` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:232` | Consumptive Use (AF) | `row.consumptive_use_gross` | `accounting/views.py:235` | `zone_consumptive_balance` | `accounting_calculationrun` | 1189.75 | 1189.75 | MATCH | MATCH | Independence: restatement. |
 | `FIG-accounting-038` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:235` | Surface (AF) | `row.surface` | `accounting/views.py:237` | `zone_consumptive_balance` | `parcels_parcelledger` | 1170.93 | 1170.93 | MATCH | MATCH | Independence: restatement. |
 | `FIG-accounting-039` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:238` | Groundwater (AF) | `row.groundwater` | `accounting/views.py:238` | `zone_consumptive_balance` | `parcels_parcelledger` | 142.14 | 142.14 | MATCH | MATCH | Independence: restatement. |
 | `FIG-accounting-040` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:241` | Precip (AF) | `row.precip` | `accounting/views.py:239` | `zone_consumptive_balance` | `accounting_calculationrun` | 110.56 | 110.56 | MATCH | MATCH | Independence: restatement. |
 | `FIG-accounting-041` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:244` | Supplies (AF) | `row.supply_total` | `accounting/views.py:240` | `zone_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 1423.63 | 1423.63 | MATCH | MATCH | Independence: restatement. |
 | `FIG-accounting-042` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:247` | Net (AF) | `row.net_vs_supply` | `accounting/views.py:241` | `zone_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 233.88 | 233.88 | MATCH | MATCH | Independence: restatement. |
-| `FIG-accounting-043` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:251` | GW allocation (AF) | `row.allocation` | `accounting/views.py:209` | `— (model aggregate)` | `accounting_allocationplan` | 750.32 | 750.32 | MATCH | MATCH | Independence: restatement. |
-| `FIG-accounting-044` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:254` | Carried fwd (AF) | `row.carryover` | `accounting/views.py:218` | `zone_carryover` | `accounting_allocationcarryover` | 303.40 | 303.40 | MATCH | MATCH | Independence: restatement. Looked up by water year, which is named for the calendar year the year ENDS in. This zone's rows for that label sum to the figure shown. |
-| `FIG-accounting-045` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:257` | GW remaining (AF) | `row.remaining` | `accounting/views.py:264` | `available_with_carryover` | `accounting_allocationplan, accounting_watertype, accounting_allocationcarryover, parcels_parcelledger` | 911.58 | 911.58 | MATCH | MATCH | Re-measured 2026-09-06 after 136-01 (was −136.03): allocation 750.32 plus carry-over 303.40 (`FIG-accounting-044`) minus 142.14 of groundwater use (`FIG-accounting-039`). This is ISS-154's "groundwater alone" column reproduced on a second screen: the district page still reads this zone at −562.75 because it counts canal water as pumping (Phase 137). Without the carry-over the figure would be 608.18. Before 136-01 the column subtracted gross evapotranspiration and this was the one row on the pinned screen that landed negative. Independence: restatement. |
+| `FIG-accounting-043` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:251` | GW allocation (AF) | `row.allocation` | `accounting/views.py:209` | `— (model aggregate)` | `accounting_allocationplan` | 750.32 | 750.32 | MATCH | MATCH | 136-02 left this where it was: Halvern Irrigation-Urban GSA's demonstration sustainable-yield rate is 2.00 AF/acre, which is the rate the plan already carried, so its allocation stayed 750.32 while the other two districts moved. Independence: restatement. |
+| `FIG-accounting-044` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:254` | Carried fwd (AF) | `row.carryover` | `accounting/views.py:218` | `zone_carryover` | `accounting_allocationcarryover` | 303.40 | 303.40 | MATCH | MATCH | 136-02 changed allocations only, not the recharge pool this column reads, so the carry-over did not move. Independence: restatement. Looked up by water year, which is named for the calendar year the year ENDS in. This zone's rows for that label sum to the figure shown. |
+| `FIG-accounting-045` | `/accounting/dashboard/?period=2` | `templates/accounting/partials/_dashboard_content.html:257` | GW remaining (AF) | `row.remaining` | `accounting/views.py:264` | `available_with_carryover` | `accounting_allocationplan, accounting_watertype, accounting_allocationcarryover, parcels_parcelledger` | 911.58 | 911.58 | MATCH | MATCH | 136-02 moved none of this row's three terms, so it still reads 911.58 and the district page still reads the same zone at −562.75. Re-measured 2026-09-06 after 136-01 (was −136.03): allocation 750.32 plus carry-over 303.40 (`FIG-accounting-044`) minus 142.14 of groundwater use (`FIG-accounting-039`). This is ISS-154's "groundwater alone" column reproduced on a second screen: the district page still reads this zone at −562.75 because it counts canal water as pumping (Phase 137). Without the carry-over the figure would be 608.18. Before 136-01 the column subtracted gross evapotranspiration and this was the one row on the pinned screen that landed negative. Independence: restatement. |
 
 ### What section 1 found
 
@@ -319,8 +393,19 @@ allocation, leaving 14,511.81 AF — a budget three quarters unused. Halvern
 Irrigation-Urban GSA, on the other hand, ended the year at **−136.03 AF**. Both
 were correct arithmetic on the numbers seeded. 136-01 changed what "Remaining"
 subtracts and which plans count (the paragraph at the top of this section):
-those two rows now read 2,901.42 and 911.58. 136-02 re-sizes the allocations,
-and these are the figures it is judged against.
+those two rows read 2,901.42 and 911.58 after it.
+
+136-02 then re-sized the allocations, and the gap closed. Ashvale Orchards now
+holds **957.22 AF** of groundwater allocation and pumps none of it, so its
+Remaining is the whole 957.22: still unused, but a plausible district-scale
+figure rather than a budget nobody could spend. Halvern Irrigation-Urban GSA is
+unchanged at 750.32 AF and 911.58 AF, because it is the one district whose rate
+was already 2.00 acre-feet per acre. Two of the six district-years now sit over
+budget on allocation alone, and both are the dry one: Halvern Valley GSA by
+332.58 AF and Verdano Island by 31.71 AF. The attention strip counts 4 accounts
+over budget in the wet year and 5
+in the dry one, which is what a demonstration of a groundwater budget needs to
+show and what the 2026-09-05 figures could not.
 
 ---
 
@@ -553,14 +638,14 @@ not only against the database.
 
 | Screen | Figures | Pinned to |
 |---|---|---|
-| `/accounting/accounts/78/?period=2` | `009`–`020` | MER-ACCT-001, Ashvale Orchards Inc., the same account section 1 pinned. Per-parcel row: MER-APN-021. |
+| `/accounting/accounts/12/?period=2` | `009`–`020` | MER-ACCT-001, Ashvale Orchards Inc., the same account section 1 pinned. Per-parcel row: MER-APN-021. |
 | `/accounting/calculation-run/16/2026-03/` | `001`–`008` | MER-APN-016, March 2026. Chosen because effective rainfall actually bites there, so the step table's In and Out columns differ instead of repeating one number. |
 | `/accounting/methodology/preview/?parcel_id=16&period=2026-03` | `049`–`052` (`050`–`053` until 136-01) | The same parcel-month as the run page, deliberately. |
 | `/accounting/ledger/?period=2` | `046`–`048` (`046`–`049` until 136-01 retired the footer's net) | First entry row on screen; default sort, page size 100. |
 | `/accounting/allocations/?period=2` | `021`, `022` | The Halvern Irrigation-Urban GSA groundwater allocation for WY 2025-2026. |
 | `/accounting/reporting-periods/2/` | `053` (`054` until 136-01) | The Halvern Valley GSA groundwater allocation for WY 2025-2026. |
 
-The wet year, `/accounting/accounts/78/?period=1`, was captured as a second
+The wet year, `/accounting/accounts/12/?period=1`, was captured as a second
 instance of the account pane and is recorded at the end of this section. All
 seven pages answered 200. Sizes and content fingerprints are in
 `audit/figure_ledger/rendered/manifest-a.json`.
@@ -597,9 +682,15 @@ live link back to the working copy. The recomputation runs on the host, against
 the same database the pages rendered from, and cannot reach a line of the
 platform's own code.
 
-**Captured at commit `9f9e27b2543516a95cdc15743070e3746d04ddbe`**, 2026-09-05.
-The database was left exactly as found: 4 user rows before the capture and 4
-after.
+**Re-captured at commit `2555a68`**, 2026-09-06, after 136-02 re-sized the
+groundwater allocations and the rebuilt demonstration data renumbered the pinned
+account from 78 to 12. Two figures in this section moved,
+`FIG-accounting-022` and `FIG-accounting-053`, and both are allocation totals;
+nothing on the calculation, balance or ledger screens changed by a cent.
+
+**First captured at commit `9f9e27b2543516a95cdc15743070e3746d04ddbe`**,
+2026-09-05. The database was left exactly as found: 4 user rows before the
+capture and 4 after.
 
 **Two notes on how to read the ledger.**
 
@@ -631,20 +722,20 @@ they have to match.
 | `FIG-accounting-006` | `/accounting/calculation-run/16/2026-03/` | `templates/accounting/calculation_run_detail.html:98` | Drawn down this month | `run.drawn_af` | `accounting/views.py:1232` | `— (model field)` | `accounting_calculationrun` | *(not rendered)* | 0.0000 | NO VALUE | UNVERIFIED | Same block, same reason. |
 | `FIG-accounting-007` | `/accounting/calculation-run/16/2026-03/` | `templates/accounting/calculation_run_detail.html:114` | Drawn (AF) | `draw.amount_af` | `accounting/views.py:1273` | `— (queryset)` | `accounting_watercreditdraw` | *(not rendered)* | *(no rows)* | NO VALUE | UNVERIFIED | Nested one level deeper still: the draws table needs a `WaterCreditDraw` row and **there are none**, though five water-credit rows are held. |
 | `FIG-accounting-008` | `/accounting/calculation-run/16/2026-03/` | `templates/accounting/calculation_run_detail.html:132` | Final billable groundwater | `run.final_af` | `accounting/views.py:1232` | `— (model field)` | `accounting_calculationrun` | 27.9945 | 27.9945 | MATCH | MATCH | Independence: different identity, as `FIG-accounting-002`. The page states this figure twice, at the top and at the foot; both render the same value, which is a thing the page could get wrong and does not. |
-| `FIG-accounting-009` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:11` | Supplies | `balance.supply_total` | `accounting/views.py:630` | `account_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun, accounting_wateraccountparcel` | 5,921.09 | 5921.09 | MATCH | MATCH | Independence: restatement. The gross-estimate suppression is stated as its own predicate in the recomputation; it removes 0 rows here, for the reason in finding 2. |
-| `FIG-accounting-010` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:16` | Consumptive use | `balance.consumptive_use_gross` | `accounting/views.py:630` | `account_consumptive_balance` | `accounting_calculationrun` | 4,589.61 | 4589.61 | MATCH | MATCH | Independence: **different identity**. Rebuilt over all 216 of this account's parcel-months from the raw satellite readings and the parcels' acreage, never touching the stored evapotranspiration column. Agrees to the cent. |
-| `FIG-accounting-011` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:21` | Balance | `balance.net_vs_supply` | `accounting/views.py:630` | `account_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 1,331.48 | 1331.48 | MATCH | MATCH | Independence: restatement. Supplies minus consumptive use, both above. |
-| `FIG-accounting-012` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:25` | Surface | `balance.supplies.surface` | `accounting/views.py:630` | `account_consumptive_balance` | `parcels_parcelledger` | 5,500.97 | 5500.97 | MATCH | MATCH | Independence: restatement. Magnitude of the canal-delivery rows, which the platform stores as negative numbers by its own production convention. |
-| `FIG-accounting-013` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:26` | Groundwater | `balance.supplies.groundwater` | `accounting/views.py:630` | `account_consumptive_balance` | `parcels_parcelledger` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. A real zero, not a suppression: 216 calculation runs sit behind this account in the period and not one groundwater or meter row. |
-| `FIG-accounting-014` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:27` | Rain | `balance.supplies.precip` | `accounting/views.py:630` | `account_consumptive_balance` | `accounting_calculationrun` | 420.12 | 420.12 | MATCH | MATCH | Independence: **different identity**. Rebuilt over the same 216 parcel-months from raw rainfall and evapotranspiration through the published USDA-SCS TR-21 formula, transcribed into the recomputation with its source lines. Agrees to the cent. |
-| `FIG-accounting-015` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:56` | Consumptive Use | `pb.consumptive_use_gross` | `accounting/views.py:645` | `parcel_consumptive_balance` | `accounting_calculationrun` | 177.23 | 177.23 | MATCH | MATCH | Independence: restatement. Pinned to MER-APN-021. The whole column was also summed and held against the panel above it; see `FIG-accounting-019`'s note. |
-| `FIG-accounting-016` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:59` | Surface | `pb.surface` | `accounting/views.py:647` | `parcel_consumptive_balance` | `parcels_parcelledger` | 210.17 | 210.17 | MATCH | MATCH | Independence: restatement. |
-| `FIG-accounting-017` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:62` | Groundwater | `pb.groundwater` | `accounting/views.py:648` | `parcel_consumptive_balance` | `parcels_parcelledger` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. |
-| `FIG-accounting-018` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:65` | Precip | `pb.precip` | `accounting/views.py:649` | `parcel_consumptive_balance` | `accounting_calculationrun` | 17.92 | 17.92 | MATCH | MATCH | Independence: restatement. |
-| `FIG-accounting-019` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:68` | Supplies | `pb.supply_total` | `accounting/views.py:650` | `parcel_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 228.09 | 228.09 | MATCH | MATCH | Independence: restatement, plus a **different identity** the code could fail. The per-parcel table is built one parcel at a time while the panel above it is built in a single pass over all eighteen; the two agree only if the gross-estimate suppression really is per-parcel. Summed whole-column, all four supply and use columns land on the panel exactly: difference 0.00. |
-| `FIG-accounting-020` | `/accounting/accounts/78/?period=2` | `templates/accounting/partials/_account_balances.html:71` | Net | `pb.net_vs_supply` | `accounting/views.py:651` | `parcel_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 50.87 | 50.87 | MATCH | MATCH | Independence: restatement. |
+| `FIG-accounting-009` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:11` | Supplies | `balance.supply_total` | `accounting/views.py:630` | `account_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun, accounting_wateraccountparcel` | 5,921.09 | 5921.09 | MATCH | MATCH | Independence: restatement. The gross-estimate suppression is stated as its own predicate in the recomputation; it removes 0 rows here, for the reason in finding 2. |
+| `FIG-accounting-010` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:16` | Consumptive use | `balance.consumptive_use_gross` | `accounting/views.py:630` | `account_consumptive_balance` | `accounting_calculationrun` | 4,589.61 | 4589.61 | MATCH | MATCH | Independence: **different identity**. Rebuilt over all 216 of this account's parcel-months from the raw satellite readings and the parcels' acreage, never touching the stored evapotranspiration column. Agrees to the cent. |
+| `FIG-accounting-011` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:21` | Balance | `balance.net_vs_supply` | `accounting/views.py:630` | `account_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 1,331.48 | 1331.48 | MATCH | MATCH | Independence: restatement. Supplies minus consumptive use, both above. |
+| `FIG-accounting-012` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:25` | Surface | `balance.supplies.surface` | `accounting/views.py:630` | `account_consumptive_balance` | `parcels_parcelledger` | 5,500.97 | 5500.97 | MATCH | MATCH | Independence: restatement. Magnitude of the canal-delivery rows, which the platform stores as negative numbers by its own production convention. |
+| `FIG-accounting-013` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:26` | Groundwater | `balance.supplies.groundwater` | `accounting/views.py:630` | `account_consumptive_balance` | `parcels_parcelledger` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. A real zero, not a suppression: 216 calculation runs sit behind this account in the period and not one groundwater or meter row. |
+| `FIG-accounting-014` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:27` | Rain | `balance.supplies.precip` | `accounting/views.py:630` | `account_consumptive_balance` | `accounting_calculationrun` | 420.12 | 420.12 | MATCH | MATCH | Independence: **different identity**. Rebuilt over the same 216 parcel-months from raw rainfall and evapotranspiration through the published USDA-SCS TR-21 formula, transcribed into the recomputation with its source lines. Agrees to the cent. |
+| `FIG-accounting-015` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:56` | Consumptive Use | `pb.consumptive_use_gross` | `accounting/views.py:645` | `parcel_consumptive_balance` | `accounting_calculationrun` | 177.23 | 177.23 | MATCH | MATCH | Independence: restatement. Pinned to MER-APN-021. The whole column was also summed and held against the panel above it; see `FIG-accounting-019`'s note. |
+| `FIG-accounting-016` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:59` | Surface | `pb.surface` | `accounting/views.py:647` | `parcel_consumptive_balance` | `parcels_parcelledger` | 210.17 | 210.17 | MATCH | MATCH | Independence: restatement. |
+| `FIG-accounting-017` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:62` | Groundwater | `pb.groundwater` | `accounting/views.py:648` | `parcel_consumptive_balance` | `parcels_parcelledger` | 0.00 | 0.00 | MATCH | MATCH | Independence: restatement. |
+| `FIG-accounting-018` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:65` | Precip | `pb.precip` | `accounting/views.py:649` | `parcel_consumptive_balance` | `accounting_calculationrun` | 17.92 | 17.92 | MATCH | MATCH | Independence: restatement. |
+| `FIG-accounting-019` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:68` | Supplies | `pb.supply_total` | `accounting/views.py:650` | `parcel_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 228.09 | 228.09 | MATCH | MATCH | Independence: restatement, plus a **different identity** the code could fail. The per-parcel table is built one parcel at a time while the panel above it is built in a single pass over all eighteen; the two agree only if the gross-estimate suppression really is per-parcel. Summed whole-column, all four supply and use columns land on the panel exactly: difference 0.00. |
+| `FIG-accounting-020` | `/accounting/accounts/12/?period=2` | `templates/accounting/partials/_account_balances.html:71` | Net | `pb.net_vs_supply` | `accounting/views.py:651` | `parcel_consumptive_balance` | `parcels_parcelledger, accounting_calculationrun` | 50.87 | 50.87 | MATCH | MATCH | Independence: restatement. |
 | `FIG-accounting-021` | `/accounting/allocations/?period=2` | `templates/accounting/partials/_allocations_list_results.html:34` | Allocation (AF) | `alloc.allocation_acre_feet` | `accounting/views.py:478` | `— (model field; queryset built at accounting/views.py:454)` | `accounting_allocationplan` | 750.32 | 750.32 | MATCH | MATCH | Independence: restatement. The same 750.32 the dashboard's zone table shows for this zone, on a second screen. |
-| `FIG-accounting-022` | `/accounting/allocations/?period=2` | `templates/accounting/partials/_allocations_list_results.html:50` | All 8 allocations | `allocation_total` | `accounting/views.py:474` | `— (queryset aggregate)` | `accounting_allocationplan` | 159,671.46 | 159671.46 | MATCH | MATCH · ISS-156 | Independence: restatement. The sum is right. It adds **148,500.00 AF of surface-water allocation to 11,171.46 AF of groundwater allocation** and prints one number in acre-feet, and no agency manages that quantity. See finding 4. |
+| `FIG-accounting-022` | `/accounting/allocations/?period=2` | `templates/accounting/partials/_allocations_list_results.html:50` | All 8 allocations | `allocation_total` | `accounting/views.py:474` | `— (queryset aggregate)` | `accounting_allocationplan` | 153,121.27 | 153121.27 | MATCH | MATCH · ISS-156 | Re-measured 2026-09-06 after 136-02 (was 159,671.46): the three groundwater plans were re-sized to per-district demonstration sustainable-yield rates, so the groundwater half of this sum falls from 11,171.46 to 4,621.27 while the surface half is untouched. The mixture ISS-156 is about is unchanged in kind, only in size. Independence: restatement. The sum is right. It adds **148,500.00 AF of surface-water allocation to 4,621.27 AF of groundwater allocation** and prints one number in acre-feet, and no agency manages that quantity. See finding 4. |
 | `FIG-accounting-046` | `/accounting/ledger/?period=2` | `templates/accounting/partials/_ledger_list_results.html:77` | Amount (AF) | `entry.amount_acre_feet` | `accounting/views.py:1009` | `— (model field)` | `parcels_parcelledger` | -8.56 | -8.56 | MATCH | MATCH | Independence: restatement, including the view's ordering. Pinned to the first row on screen, a metered groundwater reading on MER-APN-065 dated 15 September 2026, reproduced by restating the sort rather than by naming a row and hoping. |
 | `FIG-accounting-047` | `/accounting/ledger/?period=2` | `templates/accounting/partials/_ledger_list_results.html:119` | Credits (allocation and recharge entries) | `ledger_total_credits` | `accounting/views.py:1057` | `— (queryset aggregate)` | `parcels_parcelledger` | 14,280.77 | 14280.77 | MATCH | MATCH | Was `FIG-accounting-048` until 136-01 retired the net row above it on 2026-09-06 (ISS-155 resolved; the value did not move). Independence: restatement. The 14,280.77 is 13,819.63 AF of allocation entries plus 461.14 AF of recharge. Not one drop of it is water delivered to anybody, and the footer now says so: credits are paper or banked water and are not a supply. Finding 3. |
 | `FIG-accounting-048` | `/accounting/ledger/?period=2` | `templates/accounting/partials/_ledger_list_results.html:121` | Delivered and pumped | `ledger_total_water` | `accounting/views.py:1058` | `— (queryset aggregate)` | `parcels_parcelledger` | 15,785.09 | 15785.09 | MATCH | MATCH | Re-measured 2026-09-06 after 136-01 (was −15,785.09 under the label *debits*, as `FIG-accounting-049`): the same rows, shown as a magnitude and named for what they are. Independence: restatement. The 15,785.09 is 11,407.71 AF of canal deliveries plus 4,377.38 AF of pumping, and the dashboard calls both of those supplies, in those exact figures. Finding 3. |
@@ -652,9 +743,9 @@ they have to match.
 | `FIG-accounting-050` | `/accounting/methodology/preview/?parcel_id=16&period=2026-03` | `templates/accounting/partials/_methodology_preview.html:52` | In (AF) | `step.input_af` | `accounting/views.py:1563` | `evaluate_chain` | `accounting_calculationstep, datasync_openetcache` | 0.0000 | 0.0000 | MATCH | MATCH | Independence: different identity, as above. Pinned to step 1. |
 | `FIG-accounting-051` | `/accounting/methodology/preview/?parcel_id=16&period=2026-03` | `templates/accounting/partials/_methodology_preview.html:53` | Out (AF) | `step.output_af` | `accounting/views.py:1564` | `evaluate_chain` | `accounting_calculationstep, datasync_openetcache, parcels_parcel` | 39.8491 | 39.8491 | MATCH | MATCH | Independence: **different identity**. Same raw-satellite rebuild as `FIG-accounting-004`. The live preview reproduces all five stored steps identically, which is the thing this screen exists to promise and the thing nothing else tests. |
 | `FIG-accounting-052` | `/accounting/methodology/preview/?parcel_id=16&period=2026-03` | `templates/accounting/partials/_methodology_preview.html:60` | final … AF | `final_af` | `accounting/views.py:1559` | `evaluate_chain` | `accounting_calculationplan, accounting_calculationstep` | *(not rendered)* | *(unreachable)* | NO VALUE | UNVERIFIED | This is the fallback sentence shown when the saved method produces no steps at all. **All 5 steps on the active method are enabled**, so the branch cannot be reached without turning every one of them off, a configuration change this phase is not permitted to make. |
-| `FIG-accounting-053` | `/accounting/reporting-periods/2/` | `templates/accounting/period_detail.html:136` | Allocation (AF) | `alloc.allocation_acre_feet` | `accounting/views.py:404` | `— (model field; queryset built at accounting/views.py:397)` | `accounting_allocationplan` | 9689.40 | 9689.40 | MATCH | MATCH | Independence: restatement. The same database row the allocations list shows as **9,689.40**, printed here as **9689.40** with no thousands separator. See finding 5. |
+| `FIG-accounting-053` | `/accounting/reporting-periods/2/` | `templates/accounting/period_detail.html:136` | Allocation (AF) | `alloc.allocation_acre_feet` | `accounting/views.py:404` | `— (model field; queryset built at accounting/views.py:397)` | `accounting_allocationplan` | 2809.93 | 2809.93 | MATCH | MATCH | Re-measured 2026-09-06 after 136-02 (was 9,689.40): this is the Halvern Valley GSA groundwater plan, re-sized to that district's own demonstration sustainable-yield rate of 0.58 AF/acre. Independence: restatement. The same database row the allocations list shows as **2,809.93**, printed here as **2809.93** with no thousands separator. See finding 5. |
 
-**Second instance, the wet year.** `/accounting/accounts/78/?period=1`, WY
+**Second instance, the wet year.** `/accounting/accounts/12/?period=1`, WY
 2024-2025, captured so a later plan can check the same twelve sites against a
 different year without re-deriving the pin: Supplies **5,966.10**, Consumptive
 use **4,667.86**, Balance **1,298.24**; Surface **5,177.09**, Groundwater
@@ -760,8 +851,9 @@ The two surviving figures are `FIG-accounting-047` and `048`.
 
 #### 4. The allocations footer adds surface water to groundwater
 
-The allocations table for WY 2025-2026 ends with **159,671.46 AF**. That is
-148,500.00 AF of surface-water allocation plus 11,171.46 AF of groundwater
+The allocations table for WY 2025-2026 ends with **153,121.27 AF** (159,671.46
+before 136-02 re-sized the groundwater plans on 2026-09-06). That is
+148,500.00 AF of surface-water allocation plus 4,621.27 AF of groundwater
 allocation, added together. They are separate budgets, held by separate agencies
 under separate law, and there is no decision anyone makes for which their sum is
 the input.
@@ -773,12 +865,13 @@ question of whether two kinds of water belong in one total.
 
 Worth having beside it: **the district's surface allocation for the year is 13
 times the surface water it actually delivered**, 148,500.00 AF allocated against
-11,407.71 AF delivered. Section 1 found the same shape at account level and Phase
-136 re-sizes these; this is the district-wide version of that before-picture.
+11,407.71 AF delivered. 136-02 re-sized the groundwater plans and left the
+surface ones alone, so that ratio is untouched and the mixture is now a much
+more lopsided one: 97 percent of this total is surface entitlement.
 
 One more caution for anyone reading across these screens. The word *allocation*
 names two different things in this platform: the zone-level plans on the
-allocations page, which total 159,671.46 AF for this year, and the per-parcel
+allocations page, which total 153,121.27 AF for this year, and the per-parcel
 ledger entries of the same name, which total 13,819.63 AF for the same year. Both
 figures are correct. Neither screen mentions the other.
 
@@ -792,9 +885,10 @@ per-parcel table for a different reason: it sorts by a date that is identical on
 all eighteen rows, so the sort settles nothing.
 
 **And the same allocation figure is printed two ways.** Halvern Valley GSA's
-groundwater allocation for this year is **9,689.40** on the allocations list and
-**9689.40** on the reporting-period page: the same database row, one screen using
-a thousands separator and the other not.
+groundwater allocation for this year is **2,809.93** on the allocations list and
+**2809.93** on the reporting-period page: the same database row, one screen using
+a thousands separator and the other not. 136-02 moved the value and not the
+formatting, so the difference is still there.
 
 #### 6. What could not be checked, and why
 
@@ -850,12 +944,12 @@ and content fingerprint in `manifest-c.json`.
 
 | Screen | Figures | What is pinned |
 |---|---|---|
-| `/surface/diversion/9/` | `FIG-surface-001` to `005` | MER-POD-011-DEMO Snelling Re-Diversion. Records row pinned to **May 2026**. |
-| `/surface/rights/7/` | `FIG-surface-007` to `009` | MER-WR-010-DEMO, Halvern Hydroelectric Co. |
+| `/surface/diversion/8/` | `FIG-surface-001` to `005` | MER-POD-011-DEMO Snelling Re-Diversion. Records row pinned to **May 2026**. |
+| `/surface/rights/6/` | `FIG-surface-007` to `009` | MER-WR-010-DEMO, Halvern Hydroelectric Co. |
 | `/surface/rights/` | `FIG-surface-006` | First row by right identifier: MER-WR-004-DEMO. |
 | `/reporting/reports/4/calwatrs-worksheet/` | `FIG-reporting-001`, `002` | Submission 4, CalWATRS To Storage, WY 2025-2026. First block, first row. |
 | `/reporting/reports/shared-supply-check/?period=2` | `FIG-reporting-003` to `005` | First group, MER-POD-004-DEMO Atwater Canal Headgate; row MER-APN-058. |
-| `/surface/diversion/10/` | none | MER-BPOD-001 El Nido Canal Recharge Intake. Captured as evidence, see finding 3. |
+| `/surface/diversion/9/` | none | MER-BPOD-001 El Nido Canal Recharge Intake. Captured as evidence, see finding 3. Since 136-02 it renders one of its template's two figures, the linked right's face value of 3,500.00 AF, and still not a maximum rate. |
 | `/reporting/reports/shared-supply-check/` | none | No period chosen. Captured to record which period the page picks by itself. |
 
 **Why the May 2026 row and not the first row on screen.** A diversion record
@@ -872,7 +966,12 @@ section 1's pin. The diversion point's own records table is not scoped to a
 period at all (`surface/views.py:104-108`), so the choice does not reach
 `FIG-surface-001` to `005`.
 
-**Captured** at commit `9f9e27b2543516a95cdc15743070e3746d04ddbe`, 2026-09-05.
+**Re-captured at commit `2555a68`**, 2026-09-06, after 136-02 gave the El Nido
+recharge intake a water right of its own and the rebuilt demonstration data
+renumbered the pinned pages. The screen addresses in the table above are the new
+ones; no figure in this section changed value.
+
+**First captured** at commit `9f9e27b2543516a95cdc15743070e3746d04ddbe`, 2026-09-05.
 That commit is one past `v2.15`, the tag section 1 was captured at, and it added
 only this ledger's own tooling: no template, view, service or model differs
 between the two captures.
@@ -891,17 +990,17 @@ skipping it.
 
 | `id` | `screen` | `site` | `label` | `context_var` | `view` | `service` | `raw_tables` | `rendered` | `recomputed` | `delta` | `verdict` | `notes` |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `FIG-surface-001` | `/surface/diversion/9/` | `templates/surface/partials/_detail_pane.html:57` | Max rate (CFS) | `pod.max_rate_cfs` | `surface/views.py:166` | `—` | `surface_pointofdiversion` | 150.00 | 150.00 | MATCH | MATCH | Independence: different identity. Model field on the diversion point the view fetched at `surface/views.py:186`. Wrapped in a conditional, so it renders only where a rate is recorded; see finding 3. |
-| `FIG-surface-002` | `/surface/diversion/9/` | `templates/surface/partials/_detail_pane.html:159` | Face value (AF) | `water_right.face_value_acre_feet` | `surface/views.py:172` | `—` | `surface_waterright, surface_pointofdiversion` | 60000.00 | 60000.00 | MATCH | MATCH | Independence: different identity. The linked right's field, reached through the diversion point. Also conditional: no linked right, or a right with no face value, and nothing renders. |
-| `FIG-surface-003` | `/surface/diversion/9/` | `templates/surface/partials/_diversion_records.html:20` | Diverted (AF) | `record.volume_acre_feet` | `surface/views.py:167` | `—` | `surface_diversionrecord` | 250.00 | 250.00 | MATCH | MATCH | Independence: different identity. Whole column also checked, all 8 records on this diversion point, cross-check 3. |
-| `FIG-surface-004` | `/surface/diversion/9/` | `templates/surface/partials/_diversion_records.html:21` | Return Flow (AF) | `record.returned_af` | `surface/views.py:167` | `—` | `surface_diversionrecord` | 100.00 | 100.00 | MATCH | MATCH | Independence: different identity. This is one of only two records in the whole demonstration where this column is neither 0 nor the full diverted volume, which is why the row was pinned here. |
-| `FIG-surface-005` | `/surface/diversion/9/` | `templates/surface/partials/_diversion_records.html:23` | Retained (AF) | `record.consumed_acre_feet` | `surface/views.py:167` | `DiversionRecord.consumed_acre_feet` (`surface/models.py:162`) | `surface_diversionrecord` | 150.00 | 150.00 | MATCH | MATCH | Re-checked 2026-09-06 after 136-01: the value did not move; the column heading changed from *Consumptive Use (AF)* to *Retained (AF)* and a `to_storage` record now carries a *To storage* badge (ISS-153 resolved; the method keeps its name). Independence: restatement of one subtraction, `abs(volume) - returned`. Strengthened by cross-check 1, which applies the identity to all 173 records and finds 0 breaks and 0 rows where the return exceeds the volume. A method on the model, not a service. |
-| `FIG-surface-006` | `/surface/rights/` | `templates/surface/partials/_list_results.html:30` | Face Value | `right.face_value_acre_feet` | `surface/views.py:288` | `—` | `surface_waterright` | 120000 | 120000 | MATCH | MATCH | Independence: different identity. Shown to zero decimal places, with the unit "AF" as template text beside it rather than part of the figure. All six rights checked whole-column, cross-check 2. |
-| `FIG-surface-007` | `/surface/rights/7/` | `templates/surface/partials/_water_right_detail_pane.html:64` | Face value (AF) | `water_right.face_value_acre_feet` | `surface/views.py:343` | `—` | `surface_waterright` | 60000.00 | 60000.00 | MATCH | MATCH | Independence: different identity. The same stored column as `FIG-surface-006`, shown to two decimal places instead of none; the two screens agree. |
-| `FIG-surface-008` | `/surface/rights/7/` | `templates/surface/partials/_water_right_detail_pane.html:113` | Max rate: N cfs | `pod.max_rate_cfs` | `surface/views.py:344` | `—` | `surface_pointofdiversion` | 400.00 | 400.00 | MATCH | MATCH | Independence: different identity. Renders once per diversion point on the right, ordered by name; the pin is the first, MER-POD-010-DEMO Merced Falls Hydroelectric Diversion. |
-| `FIG-surface-009` | `/surface/rights/7/` | `templates/surface/partials/_water_right_detail_pane.html:174` | Volume (AF) | `record.volume_acre_feet` | `surface/views.py:345` | `—` | `surface_diversionrecord, surface_pointofdiversion` | 1200.00 | 1200.00 | MATCH | MATCH | Independence: different identity. First row of a 12-row list ordered by month alone; two diversion points sharing a month would be in an unspecified order, so the pin sits on September 2026, which only one has. This figure is a **diverted** volume with no return-flow column beside it, and all 1200.00 AF of it was returned to the stream: see finding 4. |
-| `FIG-reporting-001` | `/reporting/reports/4/calwatrs-worksheet/` | `templates/reporting/calwatrs_worksheet.html:84` | Volume (AF) | `row.volume_af` | `reporting/views.py:443` | `—` | `surface_diversionrecord, surface_pointofdiversion, reporting_reportsubmission` | 877.47 | 877.47 | MATCH | MATCH | Independence: different identity. The stored volume, copied into a display dictionary at `reporting/views.py:437`. The worksheet shows this block; the generated state file withholds it, correctly, because the diversion point has no water right. See finding 2. |
-| `FIG-reporting-002` | `/reporting/reports/4/calwatrs-worksheet/` | `templates/reporting/calwatrs_worksheet.html:85` | Max Rate (CFS) | `row.max_rate_cfs` | `reporting/views.py:443` | `—` | `surface_diversionrecord` | 312.07 | 312.07 | MATCH | MATCH | Independence: different identity. Stored as 312.0662 and shown to two places. Conditional: a record with no rate shows a dash. Note this is a peak rate stated against a whole month's volume, because a diversion record is monthly by design (`surface/models.py:160`). |
+| `FIG-surface-001` | `/surface/diversion/8/` | `templates/surface/partials/_detail_pane.html:57` | Max rate (CFS) | `pod.max_rate_cfs` | `surface/views.py:166` | `—` | `surface_pointofdiversion` | 150.00 | 150.00 | MATCH | MATCH | Independence: different identity. Model field on the diversion point the view fetched at `surface/views.py:186`. Wrapped in a conditional, so it renders only where a rate is recorded; see finding 3. |
+| `FIG-surface-002` | `/surface/diversion/8/` | `templates/surface/partials/_detail_pane.html:159` | Face value (AF) | `water_right.face_value_acre_feet` | `surface/views.py:172` | `—` | `surface_waterright, surface_pointofdiversion` | 60000.00 | 60000.00 | MATCH | MATCH | Independence: different identity. The linked right's field, reached through the diversion point. Also conditional: no linked right, or a right with no face value, and nothing renders. |
+| `FIG-surface-003` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:20` | Diverted (AF) | `record.volume_acre_feet` | `surface/views.py:167` | `—` | `surface_diversionrecord` | 250.00 | 250.00 | MATCH | MATCH | Independence: different identity. Whole column also checked, all 8 records on this diversion point, cross-check 3. |
+| `FIG-surface-004` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:21` | Return Flow (AF) | `record.returned_af` | `surface/views.py:167` | `—` | `surface_diversionrecord` | 100.00 | 100.00 | MATCH | MATCH | Independence: different identity. This is one of only two records in the whole demonstration where this column is neither 0 nor the full diverted volume, which is why the row was pinned here. |
+| `FIG-surface-005` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:23` | Retained (AF) | `record.consumed_acre_feet` | `surface/views.py:167` | `DiversionRecord.consumed_acre_feet` (`surface/models.py:162`) | `surface_diversionrecord` | 150.00 | 150.00 | MATCH | MATCH | Re-checked 2026-09-06 after 136-01: the value did not move; the column heading changed from *Consumptive Use (AF)* to *Retained (AF)* and a `to_storage` record now carries a *To storage* badge (ISS-153 resolved; the method keeps its name). Independence: restatement of one subtraction, `abs(volume) - returned`. Strengthened by cross-check 1, which applies the identity to all 173 records and finds 0 breaks and 0 rows where the return exceeds the volume. A method on the model, not a service. |
+| `FIG-surface-006` | `/surface/rights/` | `templates/surface/partials/_list_results.html:30` | Face Value | `right.face_value_acre_feet` | `surface/views.py:288` | `—` | `surface_waterright` | 120000 | 120000 | MATCH | MATCH | Independence: different identity. Shown to zero decimal places, with the unit "AF" as template text beside it rather than part of the figure. All seven rights checked whole-column, cross-check 2. 136-02 added a seventh right, `MER-WR-011-DEMO` at 3,500 AF, which sorts last on this list, so the pinned first row and its value did not move. |
+| `FIG-surface-007` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:64` | Face value (AF) | `water_right.face_value_acre_feet` | `surface/views.py:343` | `—` | `surface_waterright` | 60000.00 | 60000.00 | MATCH | MATCH | Independence: different identity. The same stored column as `FIG-surface-006`, shown to two decimal places instead of none; the two screens agree. |
+| `FIG-surface-008` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:113` | Max rate: N cfs | `pod.max_rate_cfs` | `surface/views.py:344` | `—` | `surface_pointofdiversion` | 400.00 | 400.00 | MATCH | MATCH | Independence: different identity. Renders once per diversion point on the right, ordered by name; the pin is the first, MER-POD-010-DEMO Merced Falls Hydroelectric Diversion. |
+| `FIG-surface-009` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:174` | Volume (AF) | `record.volume_acre_feet` | `surface/views.py:345` | `—` | `surface_diversionrecord, surface_pointofdiversion` | 1200.00 | 1200.00 | MATCH | MATCH | Independence: different identity. First row of a 12-row list ordered by month alone; two diversion points sharing a month would be in an unspecified order, so the pin sits on September 2026, which only one has. This figure is a **diverted** volume with no return-flow column beside it, and all 1200.00 AF of it was returned to the stream: see finding 4. |
+| `FIG-reporting-001` | `/reporting/reports/4/calwatrs-worksheet/` | `templates/reporting/calwatrs_worksheet.html:84` | Volume (AF) | `row.volume_af` | `reporting/views.py:443` | `—` | `surface_diversionrecord, surface_pointofdiversion, reporting_reportsubmission` | 877.47 | 877.47 | MATCH | MATCH | 136-02 took ISS-152 option (a) and gave this diversion point a water right, `MER-WR-011-DEMO`, held by Halvern Irrigation District: the value did not move, but the block it sits in is now headed with that right identifier instead of a red *No linked water right*, and the generated state file carries these rows instead of withholding them. Independence: different identity. The stored volume, copied into a display dictionary at `reporting/views.py:437`. See finding 2. |
+| `FIG-reporting-002` | `/reporting/reports/4/calwatrs-worksheet/` | `templates/reporting/calwatrs_worksheet.html:85` | Max Rate (CFS) | `row.max_rate_cfs` | `reporting/views.py:443` | `—` | `surface_diversionrecord` | 312.07 | 312.07 | MATCH | MATCH | Same block as the row above, now headed `MER-WR-011-DEMO` and no longer withheld from the generated file; the value did not move. Independence: different identity. Stored as 312.0662 and shown to two places. Conditional: a record with no rate shows a dash. Note this is a peak rate stated against a whole month's volume, because a diversion record is monthly by design (`surface/models.py:160`). |
 | `FIG-reporting-003` | `/reporting/reports/shared-supply-check/?period=2` | `templates/reporting/shared_supply_check.html:105` | Your share | `row.your_weight` | `reporting/views.py:296` | `build_shared_supply_comparison` then `apportion_shared_supply` | `surface_pointofdiversionparcel, parcels_parcel` | 0.2000 | 0.2000 | MATCH | MATCH | Independence: restatement. Reproduces the four-rung ladder, including which rung fires: some stored share here differs from the untouched default, so the whole group counts as hand-set and the stored shares are used as written. Cross-check 7 adds a different identity, that each group's shares sum to exactly 1.0000, and all 8 groups do. |
 | `FIG-reporting-004` | `/reporting/reports/shared-supply-check/?period=2` | `templates/reporting/shared_supply_check.html:107` | ET-implied share | `row.et_weight` | `reporting/views.py:296` | `build_shared_supply_comparison` then `apportion_shared_supply` | `accounting_calculationrun, accounting_reportingperiod, surface_pointofdiversionparcel` | 0.1196 | 0.1196 | MATCH | MATCH | Independence: restatement, including the rule that the rounding residual lands on the last use area sorted as TEXT, not as a number. That rule is visible on this very screen: MER-APN-064 shows 0.0647 and MER-APN-063 shows 0.0648 although MER-APN-064's demand is fractionally the higher of the two. Cross-check 6 confirms no value in this data sits on an exact rounding tie, so the two rounding rules in play cannot differ here. |
 | `FIG-reporting-005` | `/reporting/reports/shared-supply-check/?period=2` | `templates/reporting/shared_supply_check.html:110` | Gap | `row.divergence` | `reporting/views.py:296` | `build_shared_supply_comparison` (`reporting/generators.py:225`) | `accounting_calculationrun, surface_pointofdiversionparcel` | 0.0804 | 0.0804 | MATCH | MATCH | Independence: restatement. The absolute difference of the two shares above, not rounded again. Below the 0.15 flag threshold, so the pinned row carries no badge; one row in this group is flagged. |
@@ -927,36 +1026,64 @@ Re-Diversion, and the ledger pins one of them deliberately. Nobody should read
 `FIG-surface-005` as evidence that this arithmetic is exercised; it is evidence
 that it is correct where it is exercised, which on this data is twice.
 
-**2. The transcription worksheet and the file the state receives disagree about
-87 percent of the volume, correctly, and the worksheet does not say so.** For
-WY 2025-2026's To Storage filing the worksheet lays out **1,675.50 AF**. The
-generated file carries **213.05 AF**. The missing **1,462.45 AF** all belongs to
-MER-BPOD-001 El Nido Canal Recharge Intake, which has no water right, and the
-generator withholds any row with a blank Water Right ID because that is what the
-state flags as an unauthorized diversion (`reporting/generators.py:573-578`,
-ISS-031b). That is the right behaviour. The gap is that the worksheet is a
-page for a person to copy figures into the portal by hand, and it presents that
-block exactly like the others, with a red "No linked water right" label and no
-statement that these rows are absent from the file. The warning that does say so
-lives on the report page, produced by `reporting/validators.py:318-328`, one
-screen away from the person doing the typing.
+**2. The worksheet and the file the state receives disagreed about 87 percent of
+the volume; 136-02 closed that on the data, and the worksheet still does not say
+when it happens.** As measured on 2026-09-05, WY 2025-2026's To Storage filing
+laid out **1,675.50 AF** on the worksheet and the generated file carried
+**213.05 AF**. The missing **1,462.45 AF** all belonged to MER-BPOD-001 El Nido
+Canal Recharge Intake, which had no water right, and the generator withholds any
+row with a blank Water Right ID because that is what the state flags as an
+unauthorized diversion (`reporting/generators.py:573-578`, ISS-031b). The
+withholding was right; the demonstration was the thing that was wrong, because a
+real district's recharge intake diverts under a permit.
 
-**3. The one warning about an unpermitted diversion cannot appear on this data.**
-`templates/surface/partials/_detail_pane.html:170` carries the line "CalWATRS
-reports will flag this diversion as [INCOMPLETE]". It sits on the branch for a
-diversion point with no water right and no recharge basin behind it. Exactly one
-of the demonstration's nine diversion points has no water right, MER-BPOD-001,
-and it has five recharge basin links, so it takes the branch above instead and
-reads "Recharge diversion. It feeds a recharge basin rather than a consumptive
-use, and no water right is linked." Confirmed by capturing the page: the string
-"INCOMPLETE" does not appear on it. **0 of 9** diversion points can reach that
-warning today. Nothing is broken; it is an untested guard, and no reader should
-take it as a warning that has ever been seen.
+136-02 took ISS-152 option (a) and gave the intake one: `MER-WR-011-DEMO`, held
+by Halvern Irrigation District, a Post-1914 appropriative right on the El Nido
+Canal with a face value of 3,500.00 AF, one diversion point and no use area
+attached to it. Cross-check 4 re-run on 2026-09-06 reads **worksheet 1,675.50 AF,
+generated file 1,675.50 AF, withheld 0.00 AF, 0 diversion points withheld**.
+Queried directly, **0 of the demonstration's 9 diversion points now lack a water
+right**, so the generator has nothing left to withhold in either year. The To
+Storage records behind the file are 4 for the intake and 4 for MER-POD-009-DEMO
+in WY 2024-2025, and 2 and 2 in WY 2025-2026; MER-POD-009-DEMO is linked to ten
+use areas and the generator writes one row per use area, which is how the wetter
+year's 8 records become 44 data rows in the file and the drier year's 4 become
+22.
 
-The same diversion point renders **neither** of its template's two figures, for
-the same reason: it has no maximum rate recorded and no linked right, and both
-figures sit inside conditionals. Its detail page is the platform's own recharge
-intake and it shows zero of that template's numbers.
+What did not change is the worksheet page. It still presents every block the same
+way and still says nothing about a block being absent from the generated file,
+because the code that would say it does not exist. On this data no block is
+withheld, so nobody can see the omission today; the warning that does say so
+still lives on the report page, produced by `reporting/validators.py:318-328`,
+one screen away from the person doing the typing. That half of the finding stands
+and is now untestable on the demonstration, which is worth knowing before anyone
+reads the closed cross-check as a fix.
+
+**3. Two branches of the diversion point template are now unreachable on this
+data, not one.** `templates/surface/partials/_detail_pane.html:170` carries the
+line "CalWATRS reports will flag this diversion as [INCOMPLETE]". It sits on the
+branch for a diversion point with no water right and no recharge basin behind it.
+On 2026-09-05, exactly one of the demonstration's nine diversion points had no
+water right, MER-BPOD-001, and it had five recharge basin links, so it took the
+branch above and read "Recharge diversion. It feeds a recharge basin rather than
+a consumptive use, and no water right is linked."
+
+Since 136-02 that point has a water right, so it takes the first of the
+template's three branches, the one that names the right, and that branch carries
+its own recharge sentence: "Recharge diversion. Water retained here is taken to
+storage in the basins below, not consumed." The other two branches are now dead
+on this data. **0 of 9** diversion points reach the `elif` sentence, "It feeds a
+recharge basin rather than a consumptive use, and no water right is linked", and
+**0 of 9** reach the `else` branch that carries the "[INCOMPLETE]" line.
+Confirmed by capturing the page again: the string "INCOMPLETE" does not appear on
+it. Nothing is broken; two untested branches where there was one, and no reader
+should take either as a warning that has ever been seen.
+
+The same page renders **one** of its template's two figures now rather than
+neither: the linked right's face value, 3,500.00 AF, appears where before nothing
+did. The maximum rate still does not, because no rate is recorded on this
+diversion point and that figure sits inside its own conditional. Its records
+table carries To storage badges.
 
 **4. The same diverted volume reads very differently on two screens one click
 apart.** A water right's page lists Recent diversion records with a single
@@ -1005,17 +1132,20 @@ is pinned to a named instance and the pin is recorded in
 | Screen | What is pinned |
 |---|---|
 | `/map/zones/2/` | Halvern Irrigation-Urban GSA, the same district section 1 pinned on the dashboard, so the two screens can be laid side by side. The page has no year selector: its Allocation vs. use table lists every year at once, newest first, so the pinned row is the first, the water year running October 2025 to September 2026. Pinned parcel row: MER-APN-026, first by parcel number of the district's 23. |
-| `/map/zones/1/`, `/map/zones/3/`, `/map/zones/39/` | The same three figures on every other district, captured so the finding below rests on four screens rather than one. |
-| `/wells/32/` | Well MER-W-001, "Ag well on MER-APN-002". One screen carries all four wells figures: an irrigated parcel, a monitoring record with a reference elevation, a whole-number field and a two-decimal field. |
-| `/recharge/6/` | El Nido Recharge Basin 1, first by name on the list. Pinned reading: the newest, 18 February 2026. Pinned recharge event: the newest, starting 15 February 2026. |
+| `/map/zones/1/`, `/map/zones/3/`, `/map/zones/9/` | The same three figures on every other district, captured so the finding below rests on four screens rather than one. |
+| `/wells/10/` | Well MER-W-001, "Ag well on MER-APN-002". One screen carries all four wells figures: an irrigated parcel, a monitoring record with a reference elevation, a whole-number field and a two-decimal field. |
+| `/recharge/1/` | El Nido Recharge Basin 1, first by name on the list. Pinned reading: the newest, 18 February 2026. Pinned recharge event: the newest, starting 15 February 2026. |
 | `/recharge/` | The list shows every basin on one page in name order, so the pinned row is El Nido Recharge Basin 1 again. |
 | `/setup/` | Merced Subbasin, the only district boundary on file. |
-| `/datasync/stations/` and `/datasync/stations/1/` | Captured as evidence, not as figure sites. There is no station to open. |
+| `/datasync/stations/1/` | SAN JOAQUIN R - MONITORING WELL #142, the lowest station id. Since 136-02 rebuilt the demonstration data this page opens and prints the station's stored location, so it is a figure site for `FIG-datasync-001` and `002`. It holds no staged data record, so the two reading figures still have nothing to show. `/datasync/stations/` is captured as evidence, not as a figure site. |
 | `/setup/confirm/` | Captured to record that it redirects rather than rendering. |
 
-Captured at commit `9f9e27b25435`, 2026-09-05, into
+First captured at commit `9f9e27b25435`, 2026-09-05, and re-captured at
+`2555a68` on 2026-09-06 after 136-02 rebuilt the demonstration data, into
 `audit/figure_ledger/rendered/`, with each page's size and fingerprint in
-`manifest-d.json`. Recomputed by
+`manifest-d.json`. Three of this section's pinned addresses changed number in the
+rebuild and none of them changed meaning, and a fourth, the monitoring station,
+went from a 404 to a page: see the capture note under "How to reproduce it". Recomputed by
 `bash audit/figure_ledger/run_sql.sh audit/figure_ledger/sql/remaining_subsystems.sql`.
 
 **One column needs a word of warning before the table.** `verdict` and `delta`
@@ -1029,31 +1159,33 @@ they are right.
 
 | `id` | `screen` | `site` | `label` | `context_var` | `view` | `service` | `raw_tables` | `rendered` | `recomputed` | `delta` | `verdict` | `notes` |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `FIG-datasync-001` | `/datasync/stations/<pk>/` | `templates/datasync/partials/_station_detail_pane.html:104` | Location (latitude, first half of the pair) | `station.location.y` | `datasync/views.py:318` | `— (model field)` | `datasync_monitoredstation` | not rendered | — | NO VALUE | UNVERIFIED | No station exists to open. `datasync_monitoredstation` holds zero rows, `/datasync/stations/` answers "No stations found.", and `/datasync/stations/1/` answered 404 at capture. This site and the next share one template line, one of the two lines in the platform that carry two figures. |
-| `FIG-datasync-002` | `/datasync/stations/<pk>/` | `templates/datasync/partials/_station_detail_pane.html:104` | Location (longitude, second half of the pair) | `station.location.x` | `datasync/views.py:318` | `— (model field)` | `datasync_monitoredstation` | not rendered | — | NO VALUE | UNVERIFIED | Same line, same reason. |
-| `FIG-datasync-003` | `/datasync/stations/<pk>/` | `templates/datasync/partials/_station_detail_pane.html:157` | Current readings, the newest published value per sensor | `r.value` | `datasync/views.py:320`, assembled at `:296-315` | `— (selection in the view: newest published reading per measured parameter)` | `datasync_datarecordstaging` | not rendered | — | NO VALUE | UNVERIFIED | Zero published readings exist, so this card would show its empty state even if a station did. |
-| `FIG-datasync-004` | `/datasync/stations/<pk>/` | `templates/datasync/partials/_station_detail_pane.html:241` | Recent records, Value | `record.value` | `datasync/views.py:319`, queryset at `:237` | `— (model field)` | `datasync_datarecordstaging` | not rendered | — | NO VALUE | UNVERIFIED | Same reason. |
+| `FIG-datasync-001` | `/datasync/stations/1/` | `templates/datasync/partials/_station_detail_pane.html:104` | Location (latitude, first half of the pair) | `station.location.y` | `datasync/views.py:318` | `— (model field)` | `datasync_monitoredstation` | 37.18610 | 37.18610 | MATCH | MATCH | Re-measured 2026-09-06 after 136-02 (was *not rendered*): the candidate's data carries all 335 monitoring stations, so the pinned lowest-id station, SAN JOAQUIN R - MONITORING WELL #142, now opens and prints its stored location. The old development database held zero station rows and `/datasync/stations/1/` answered 404. Independence: transcription. This site and the next share one template line, one of the two lines in the platform that carry two figures. |
+| `FIG-datasync-002` | `/datasync/stations/1/` | `templates/datasync/partials/_station_detail_pane.html:104` | Location (longitude, second half of the pair) | `station.location.x` | `datasync/views.py:318` | `— (model field)` | `datasync_monitoredstation` | -120.68290 | -120.68290 | MATCH | MATCH | Re-measured 2026-09-06 after 136-02 (was *not rendered*): same line, same station, same reason. Independence: transcription. |
+| `FIG-datasync-003` | `/datasync/stations/1/` | `templates/datasync/partials/_station_detail_pane.html:157` | Current readings, the newest published value per sensor | `r.value` | `datasync/views.py:320`, assembled at `:296-315` | `— (selection in the view: newest published reading per measured parameter)` | `datasync_datarecordstaging` | not rendered | — | NO VALUE | UNVERIFIED | Still unverified after 136-02, for a different reason: the page now opens, and the Current readings card prints its empty state, "No published readings yet.", because this particular station carries no staged data record. 30,217 staged records exist on other stations. |
+| `FIG-datasync-004` | `/datasync/stations/1/` | `templates/datasync/partials/_station_detail_pane.html:241` | Recent records, Value | `record.value` | `datasync/views.py:319`, queryset at `:237` | `— (model field)` | `datasync_datarecordstaging` | not rendered | — | NO VALUE | UNVERIFIED | Same station, same reason: the Recent records table has no staged row on station 1 to pin. |
 | `FIG-geography-001` | `/map/zones/2/` | `templates/geography/partials/_zone_detail_pane.html:128` | Allocation (AF) | `b.budget` | `geography/views.py:220`, assigned at `:216` | `— (arithmetic in the view)` | `accounting_allocationplan` | 750.32 | 750.32 | MATCH | MATCH | Independence: transcription. One stored allocation column, read back and rounded the same way. Agrees with the dashboard's Allocation for this district in section 1, which is a second screen showing the same stored number. |
 | `FIG-geography-002` | `/map/zones/2/` | `templates/geography/partials/_zone_detail_pane.html:129` | Used (AF), with the word "pumped" beside it | `b.used` | `geography/views.py:221`, computed at `:197-204` | `billable_ledger` (`accounting/services.py:377`), then summed in the view | `parcels_parcelledger, geography_parcelzone` | 1313.07 | 1313.07 | MATCH | ISS-154 | Independence: restatement for the number, different identity for the finding. The page computes what it says it computes. What it says it is, it is not: of the 1,313.07 AF labelled "pumped", only 142.14 AF is groundwater. The other 1,170.93 AF is surface water delivered by canal, which the platform stores as a negative number and this figure therefore sweeps in. Detail below. |
 | `FIG-geography-003` | `/map/zones/2/` | `templates/geography/partials/_zone_detail_pane.html:130` | Remaining (AF) | `b.remaining` | `geography/views.py:223` | `— (arithmetic in the view)` | `accounting_allocationplan, parcels_parcelledger, geography_parcelzone` | -562.75 | -562.75 | MATCH | ISS-154 | Independence: restatement. Allocation minus the figure above, so it inherits the same problem and turns it into a verdict: the page says this district is 562.75 AF over its groundwater budget. On its groundwater draw alone it is 608.18 AF under. The sign is wrong, not just the size. |
 | `FIG-geography-004` | `/map/zones/2/` | `templates/geography/partials/_zone_parcels.html:30` | Area (acres) | `pz.parcel.area_acres` | `geography/views.py:275`, queryset at `:165-170` | `— (model field)` | `parcels_parcel, geography_parcelzone` | 12.74 | 12.74 | MATCH | MATCH | Independence: transcription. This partial has exactly one route that renders it for reading: as an include on the district page. Its two other routes both change data and accept POST only. |
-| `FIG-recharge-001` | `/recharge/6/` | `templates/recharge/partials/_detail_pane.html:56` | Capacity (AF) | `site.capacity_acre_feet` | `recharge/views.py:119` | `— (model field)` | `recharge_rechargesite` | 637.10 | 637.10 | MATCH | MATCH | Independence: transcription. |
-| `FIG-recharge-002` | `/recharge/6/` | `templates/recharge/partials/_detail_pane.html:128` | Recent measurements, Value | `m.value` | `recharge/views.py:122`, queryset at `:95-97` | `— (model field)` | `recharge_rechargemeasurement` | 315.26 | 315.26 | MATCH | MATCH | Independence: transcription. One column serves four different kinds of reading, each with its own unit, so the same figure is milligrams per litre on one row and feet on the next. The pinned row is a water quality reading in milligrams per litre. |
-| `FIG-recharge-003` | `/recharge/6/` | `templates/recharge/partials/_event_history.html:22` | Volume (AF) | `event.volume_acre_feet` | `recharge/views.py:120`, queryset at `:82-84` | `— (model field)` | `recharge_rechargeevent` | 127.42 | 127.42 | MATCH | MATCH | Independence: transcription. |
+| `FIG-recharge-001` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:56` | Capacity (AF) | `site.capacity_acre_feet` | `recharge/views.py:119` | `— (model field)` | `recharge_rechargesite` | 637.10 | 637.10 | MATCH | MATCH | Independence: transcription. |
+| `FIG-recharge-002` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:128` | Recent measurements, Value | `m.value` | `recharge/views.py:122`, queryset at `:95-97` | `— (model field)` | `recharge_rechargemeasurement` | 315.26 | 315.26 | MATCH | MATCH | Independence: transcription. One column serves four different kinds of reading, each with its own unit, so the same figure is milligrams per litre on one row and feet on the next. The pinned row is a water quality reading in milligrams per litre. |
+| `FIG-recharge-003` | `/recharge/1/` | `templates/recharge/partials/_event_history.html:22` | Volume (AF) | `event.volume_acre_feet` | `recharge/views.py:120`, queryset at `:82-84` | `— (model field)` | `recharge_rechargeevent` | 127.42 | 127.42 | MATCH | MATCH | Independence: transcription. |
 | `FIG-recharge-004` | `/recharge/` | `templates/recharge/partials/_list_results.html:31` | Capacity | `site.capacity_acre_feet` | `recharge/views.py:60`, queryset at `:45` | `— (model field)` | `recharge_rechargesite` | 637 | 637 | MATCH | MATCH | Independence: transcription. Rounded to whole acre-feet here and to hundredths on the basin's own page, so the same basin reads 637 in the list and 637.10 one click later. Both are right; the list is choosing not to show the tenths. |
 | `FIG-setup-001` | `/setup/confirm/` | `templates/setup/confirm.html:61` | Area, square miles | `area_sq_miles` | `setup/services.py:247` | `— (model field)` | `geography_boundary` | not rendered | 800.9 | NO VALUE | UNVERIFIED | The confirmation step reads the chosen boundary out of the visitor's session, which only the previous step's form submission writes. The capture performs page requests only, so this screen redirected rather than rendering. The recomputed value is recorded because the same stored field renders on the previous step and is verified there. |
 | `FIG-setup-002` | `/setup/` | `templates/setup/wizard.html:66` | The district boundary dropdown: "Merced Subbasin (800.9 sq mi)" | `b.area_sq_miles` | `setup/views.py:115`, queryset at `:113` | `— (model field)` | `geography_boundary` | 800.9 | 800.9 | MATCH | MATCH | Independence: transcription, plus one genuinely independent check. The platform deliberately never computes this area, taking it from the uploaded file instead, on the reasoning that a computed figure would be OpenH2O's number rather than the district's. The database can compute it: the stored outline measures 800.949 square miles against the 800.948 the file states, a difference of about half an acre across an 800 square mile basin. |
-| `FIG-wells-001` | `/wells/32/` | `templates/wells/partials/_detail_pane.html:146` | "1.00 fraction", beside the parcel the well irrigates | `wip.fraction` | `wells/views.py:188`, queryset at `:157` | `— (model field)` | `wells_wellirrigatedparcel` | 1.00 | 1.00 | MATCH | MATCH | Independence: transcription. The pinned well has one irrigated parcel, so "first row" is unambiguous. |
-| `FIG-wells-002` | `/wells/32/` | `templates/wells/partials/_detail_pane.html:178` | Reference elevation, ft | `monitoring.reference_elevation_ft` | `wells/views.py:189`, fetched at `:158` | `— (model field)` | `wells_monitoringwell` | 182.4 | 182.4 | MATCH | MATCH | Independence: transcription. Only three of the district's 45 wells carry a monitoring record, and only two of those three carry a reference elevation, so this card is absent from most well pages. |
-| `FIG-wells-003` | `/wells/32/` | `templates/wells/partials/_editable_field.html:24` | Year Pumping Began | `ef.value` (whole-number branch) | `wells/views.py:180` | `— (model field, read straight off the well)` | `wells_well` | 1987 | 1987 | MATCH | UNVERIFIED | Independence: transcription, and that is all it can be. This template renders whichever well field the page hands it, and every one of them is a value a person typed through the pencil control beside it. There is nothing to recompute it against. The two numbers agreeing shows the platform redisplays what was entered; it says nothing about whether 1987 is the year. This is the only whole-number field the platform has. |
-| `FIG-wells-004` | `/wells/32/` | `templates/wells/partials/_editable_field.html:24` | Capacity (gpm) | `ef.value` (two-decimal branch) | `wells/views.py:180` | `— (model field, read straight off the well)` | `wells_well` | 2000.00 | 2000.00 | MATCH | UNVERIFIED | Same line as the row above, the second of the platform's two double-figure lines. Six well fields take this branch: capacity, depth, casing diameter, screen top, screen bottom and tested yield. The pin is capacity, the first of them in the page's own order. Same reasoning as above: nothing derives any of the six. |
+| `FIG-wells-001` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:146` | "1.00 fraction", beside the parcel the well irrigates | `wip.fraction` | `wells/views.py:188`, queryset at `:157` | `— (model field)` | `wells_wellirrigatedparcel` | 1.00 | 1.00 | MATCH | MATCH | Independence: transcription. The pinned well has one irrigated parcel, so "first row" is unambiguous. |
+| `FIG-wells-002` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:178` | Reference elevation, ft | `monitoring.reference_elevation_ft` | `wells/views.py:189`, fetched at `:158` | `— (model field)` | `wells_monitoringwell` | 182.4 | 182.4 | MATCH | MATCH | Independence: transcription. Only three of the district's 45 wells carry a monitoring record, and only two of those three carry a reference elevation, so this card is absent from most well pages. |
+| `FIG-wells-003` | `/wells/10/` | `templates/wells/partials/_editable_field.html:24` | Year Pumping Began | `ef.value` (whole-number branch) | `wells/views.py:180` | `— (model field, read straight off the well)` | `wells_well` | 1987 | 1987 | MATCH | UNVERIFIED | Independence: transcription, and that is all it can be. This template renders whichever well field the page hands it, and every one of them is a value a person typed through the pencil control beside it. There is nothing to recompute it against. The two numbers agreeing shows the platform redisplays what was entered; it says nothing about whether 1987 is the year. This is the only whole-number field the platform has. |
+| `FIG-wells-004` | `/wells/10/` | `templates/wells/partials/_editable_field.html:24` | Capacity (gpm) | `ef.value` (two-decimal branch) | `wells/views.py:180` | `— (model field, read straight off the well)` | `wells_well` | 2000.00 | 2000.00 | MATCH | UNVERIFIED | Same line as the row above, the second of the platform's two double-figure lines. Six well fields take this branch: capacity, depth, casing diameter, screen top, screen bottom and tested yield. The pin is capacity, the first of them in the page's own order. Same reasoning as above: nothing derives any of the six. |
 
 ### What section 5 found
 
-**Thirteen of the eighteen figures agree with the rows behind them to the cent.
-The other five could not be put on a screen at all.** No figure in this section
-disagrees with its own arithmetic. One of them disagrees with its label, and
-that is the finding worth acting on.
+**Fifteen of the eighteen figures agree with the rows behind them to the cent.
+The other three showed nothing on screen** (thirteen and five on 2026-09-05; the
+monitoring station's two location figures rendered for the first time on
+2026-09-06, after 136-02 rebuilt the demonstration data). No figure in this
+section disagrees with its own arithmetic. One of them disagrees with its label,
+and that is the finding worth acting on.
 
 Six things the reconciliation turned up that a matching column does not show.
 
@@ -1077,16 +1209,25 @@ Here is what that costs, read off all four district pages captured, water year
 
 | District | Allocation | "Used ... pumped" as shown | Of which is canal water | Remaining as shown | Remaining on groundwater alone |
 |---|---:|---:|---:|---:|---:|
-| Halvern Valley GSA | 9,689.40 | 13,379.29 | 10,236.78 | **−3,689.89** | **+6,546.89** |
+| Halvern Valley GSA | 2,809.93 | 13,379.29 | 10,236.78 | **−10,569.36** | **−332.58** |
 | Halvern Irrigation-Urban GSA | 750.32 | 1,313.07 | 1,170.93 | **−562.75** | **+608.18** |
-| Verdano Island Water District GSA | 731.74 | 1,092.73 | 0.00 | −360.99 | −360.99 |
+| Verdano Island Water District GSA | 1,061.02 | 1,092.73 | 0.00 | −31.71 | −31.71 |
 | MER Surface Service Area, Halvern ID (surface allocation) | 108,000.00 | 1,993.82 | n/a | 106,006.18 | n/a |
 
-On two of the three groundwater districts the page reports a deficit where the
-groundwater draw alone is a surplus. Not a rounding difference and not a
-percentage: the sign is opposite. The third district takes no canal water, so
-its figure is honest, which is why the fault is invisible to anyone who only
-looks at one page.
+Re-measured 2026-09-06 after 136-02 re-sized the groundwater allocations. Two
+rows moved: Halvern Valley GSA's allocation went from 9,689.40 to 2,809.93 and
+Verdano Island's from 731.74 to 1,061.02. The "Used" column did not move at all,
+because 136-02 changed no ledger entry.
+
+The defect the smaller allocations expose more sharply is the size of the error
+rather than its sign. Halvern Irrigation-Urban GSA still reports a 562.75 AF
+deficit where its groundwater draw alone leaves 608.18 AF in hand, the sign
+reversed outright. Halvern Valley GSA now reads over budget on both bases, but by
+10,569.36 AF as shown against 332.58 AF on its groundwater draw, an overstatement
+of thirty-two times. Verdano Island takes no canal water, so its two figures are
+the same number, which is why the fault stays invisible to anyone who only looks
+at one page. Before 136-02 the first two districts each showed a deficit where
+the groundwater draw alone was a surplus; that is now true of one of them.
 
 This is the other end of the problem section 1 recorded on the dashboard. There,
 adding the district table's Supplies column gave 31,223.56 AF against the panel's
@@ -1099,40 +1240,48 @@ Both numbers in each row are correct arithmetic on the rows stored. Recorded as
 `ISS-154` against `FIG-geography-002` and `FIG-geography-003`, a number reserved
 here and filed by Plan 135-03. This section does not diagnose it further and changes nothing.
 
-#### 2. A quarter of this section's figures have no screen to appear on
+#### 2. Three of this section's figures still have nothing to show, and it used to be five
 
-Four of the eighteen belong to the monitoring station page, and there is no
-station. `datasync_monitoredstation` holds zero rows and
-`datasync_datarecordstaging` holds zero readings. The station list renders its
-empty state, "No stations found."; a request for the lowest possible station
-answered 404 at capture.
+**Re-measured 2026-09-06 after 136-02.** On 2026-09-05 four of the eighteen
+belonged to the monitoring station page and there was no station:
+`datasync_monitoredstation` held zero rows, `datasync_datarecordstaging` held
+zero readings, the station list rendered its empty state "No stations found.",
+and a request for the lowest possible station answered 404. The cause was the
+development database, a hand-seeded copy that never loaded the telemetry.
 
-That is worth stating precisely, because it is not the demonstration being
-deliberately thin. The file that pins what this demonstration must contain,
+The rebuilt demonstration data does load it, and the counts now reproduce the
+pins. The file that says what this demonstration must contain,
 `data/demo/expected_shape.json`, requires **335** stations and **30,217**
 readings, both at tolerance zero, and describes them as "the demonstration's
-frozen telemetry". Every other count this section touches reproduces its pin
-exactly: 135 parcel-to-district memberships, 8 districts, 5,658 stream lines,
-760 cached evapotranspiration records, 45 wells, 3 monitoring wells, 29
-irrigated-parcel links, 12 meters, 7 recharge basins, 42 recharge events, 126
-basin readings, 8 external data sources, 1 boundary. Two counts out of fifteen
-are wrong and they are the two that would have populated this page.
+frozen telemetry". Cross-check 6 re-run against the rebuilt data reads **335
+stations, 30,217 staged records and 8 external data sources**, all three on their
+pins. Every other count this section touches still reproduces its pin exactly:
+135 parcel-to-district memberships, 8 districts, 5,658 stream lines, 760 cached
+evapotranspiration records, 45 wells, 3 monitoring wells, 29 irrigated-parcel
+links, 12 meters, 7 recharge basins, 42 recharge events, 126 basin readings, 1
+boundary. Fifteen counts out of fifteen now hold, where two were wrong before,
+and the two that were wrong are exactly the two that populate this page.
 
-So the monitoring section of this platform is, on this database, a set of pages
-with nothing in them, and four figures nobody has ever seen render. Whether the
-running database is meant to satisfy that file is Plan 135-03's question; what
-is measured here is that it does not, in exactly two places.
+So the station page renders. `/datasync/stations/1/` opens SAN JOAQUIN R -
+MONITORING WELL #142 and prints its stored location, 37.18610 and −120.68290,
+which is `FIG-datasync-001` and `002` seen for the first time. The two reading
+figures still show nothing, and the reason has changed: this particular station
+carries no staged data record, so the Current readings card prints "No published
+readings yet." and the Recent records table has no row. That is a property of
+which station has the lowest id, not of the database being empty.
 
-The fifth unrendered figure is the setup wizard's confirmation step. It reads
-the boundary a visitor chose out of their session, and only the previous step's
-form submission puts it there, so a page request alone lands back at the start.
-The figure itself is the same stored field the previous step shows, and that one
-is verified.
+The third figure with nothing to show is the setup wizard's confirmation step. It
+reads the boundary a visitor chose out of their session, and only the previous
+step's form submission puts it there, so a page request alone lands back at the
+start; `/setup/confirm/` still answered a redirect at capture. The figure itself
+is the same stored field the previous step shows, and that one is recomputed and
+agrees.
 
 #### 3. Two thirds of these figures are values shown back, not values worked out
 
-Twelve of the eighteen are a single stored column passed through a display
-formatter. There is no calculation, no service, and nothing for a second opinion
+Fourteen of the eighteen are a single stored column passed through a display
+formatter (twelve before 136-02, which added the monitoring station's two
+location figures to the set). There is no calculation, no service, and nothing for a second opinion
 to disagree with. For those rows the check reads the column, applies the same
 rounding, and confirms the screen reports the row faithfully. Every one did.
 
@@ -1141,8 +1290,8 @@ for, and a reader should not read twelve MATCH verdicts as twelve audited
 numbers. The two well fields are marked UNVERIFIED to make the distinction
 impossible to miss, because those are typed in by a person through the pencil
 control on the page, and the platform will store and redisplay whatever is
-typed. The other ten are the same in kind: a basin's capacity, a parcel's
-acreage, a well's reference elevation. Each is a fact about the district that
+typed. The other twelve are the same in kind: a basin's capacity, a parcel's
+acreage, a well's reference elevation, a monitoring station's coordinates. Each is a fact about the district that
 arrived with the district's own data.
 
 The place this actually bites is the recharge basins. A basin's capacity, every

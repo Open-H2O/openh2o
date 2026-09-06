@@ -1,6 +1,6 @@
 id,label,rendered
-FIG-datasync-001,Location latitude,
-FIG-datasync-002,Location longitude,
+FIG-datasync-001,Location latitude,37.18610
+FIG-datasync-002,Location longitude,-120.68290
 FIG-datasync-003,Current reading value,
 FIG-datasync-004,Recent record value,
 FIG-geography-001,Allocation (AF),750.32
