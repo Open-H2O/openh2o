@@ -22,7 +22,12 @@
         hx-get="{% url 'parcels:detail' parcel.pk %}"
         hx-target="#detail-body"
         hx-trigger="change"
-        style="min-width: 190px;">
+        {% comment %}
+          .form-select is width:100% (app.css), and this sits in a flex head
+          that lets it grow — measured 620px wide for a 12-character period
+          name. width:auto sizes it to its longest option instead.
+        {% endcomment %}
+        style="width: auto; min-width: 190px;">
   {% for p in all_periods %}
   <option value="{{ p.pk }}" {% if balance_period and balance_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
   {% endfor %}

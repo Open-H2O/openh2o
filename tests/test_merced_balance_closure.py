@@ -623,3 +623,50 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
         "the uses foot does not show the 20.00 AF that left this field for the "
         "basin, so the residual is not legible from the panel"
     )
+
+
+def test_a_balanced_field_does_not_paint_its_residual_as_a_deficit():
+    """A residual of -0.0020 AF: inside MASS_BALANCE_TOLERANCE, so it CLOSES.
+
+    `is_surplus` is `residual >= 0`, which makes a hair-below-zero closing
+    residual "not a surplus" and painted it deficit orange under a grey Balanced
+    badge. Observed on the served page for MER-APN-032 (residual -0.0001 AF)
+    while building the panel. The colour and the badge word describe the same
+    number and may not disagree.
+    """
+    from django.test import Client
+    from django.urls import reverse
+
+    from tests.factories import ParcelFactory, ParcelLedgerFactory, ReportingPeriodFactory
+
+    rp = ReportingPeriodFactory(
+        name="Water Year 2025-2026",
+        start_date=dt.date(2025, 10, 1),
+        end_date=dt.date(2026, 9, 30),
+    )
+    parcel = ParcelFactory()
+    ParcelLedgerFactory(
+        parcel=parcel, reporting_period=rp, source_type="meter_reading",
+        amount_acre_feet=Decimal("-100.0000"),
+        transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
+    )
+    CalculationRun.objects.create(
+        parcel=parcel, period="2026-01",
+        gross_et_af=Decimal("100.0020"),
+        net_consumptive_use_af=Decimal("100.0020"),
+        effective_precip_af=Decimal("0.0000"),
+        final_af=Decimal("100.0020"),
+    )
+
+    client = Client()
+    client.force_login(_pane_user())
+    response = client.get(reverse("parcels:detail", args=[parcel.pk]), HTTP_HX_REQUEST="true")
+    assert response.status_code == 200
+
+    residual = budget_segment(response.content.decode(), "Residual")
+    assert '<span class="badge badge-grey">Balanced</span>' in residual
+    assert "budget-seg-value text-deficit" not in residual, (
+        "a field whose books CLOSE is painting its residual deficit orange under "
+        "a grey Balanced badge"
+    )
+    assert "budget-seg-value text-neutral" in residual

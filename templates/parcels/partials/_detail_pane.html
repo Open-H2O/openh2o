@@ -67,7 +67,16 @@
         <div class="budget-op">&equals;</div>
         <div class="budget-seg">
           <div class="budget-seg-label">Residual</div>
-          <div class="budget-seg-value {% if mass_balance.is_surplus %}text-surplus{% else %}text-deficit{% endif %}">{{ mass_balance.residual_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          {% comment %}
+            The colour must agree with the badge word. `is_surplus` is
+            `residual >= 0`, so a field that CLOSES on a residual of a few
+            ten-thousandths below zero — MER-APN-032 sits at -0.0001 — took
+            deficit orange while its badge read the grey Balanced. Found on the
+            served page during 137-01 and fixed here: a balanced residual is
+            neutral, matching badge-grey, and only a residual outside the
+            closing tolerance takes a direction colour.
+          {% endcomment %}
+          <div class="budget-seg-value {% if mass_balance.band_status == "closes" %}text-neutral{% elif mass_balance.is_surplus %}text-surplus{% else %}text-deficit{% endif %}">{{ mass_balance.residual_af|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
           {% comment %}
             Three words only: Balanced / Residual / Deficit (Brent, 2026-09-05;
             DESIGN.md rule 12). "Surplus" read as good news to a water manager,
