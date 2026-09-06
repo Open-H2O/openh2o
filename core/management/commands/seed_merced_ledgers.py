@@ -216,7 +216,32 @@ CROP_SCATTER_SPAN = Decimal("0.06")
 # surface.services.allocate_district_delivery, which READS efficiency from
 # SiteConfig — so the seed sets it here rather than carrying its own constant.
 SEED_IRRIGATION_EFFICIENCY = Decimal("0.750")
-GSA_SUSTAINABLE_RATE = 2.0  # GSA groundwater budget — SGMA sustainable-yield proxy
+GSA_SUSTAINABLE_RATE = 2.0  # fallback for a GSA not named in the table below
+# 136-02 — one demonstration sustainable-yield rate per GSA, AF per acre of the
+# GSA's demonstration parcels, keyed by zone NAME (the zones are created by
+# seed_merced_gsas before this command runs and are looked up by name elsewhere
+# in this file). A GSP's number is set by the agency; these are the
+# demonstration's, chosen 2026-09-06 from the measured groundwater use so the
+# dashboard shows a budget under pressure that the dry year crosses because
+# pumping rose (ISS-151's story), and every plan row says so in its notes.
+#   Halvern Valley GSA          4,844.7 ac × 0.58 = 2,809.93 AF against 2,518.46 AF
+#       pumped in WY 2024-2025 (+291.47 under) and 3,142.51 AF in WY 2025-2026
+#       (−332.58 over): the allocation is identical in both years and pumping
+#       is the only thing that moved. The curtailed Saddlebow growers'
+#       groundwater substitution is most of the rise.
+#   Verdano Island Water District GSA   365.9 ac × 2.90 = 1,061.11 AF against
+#       1,028.48 AF (+32.63) and 1,092.73 AF (−31.62): a groundwater-only GSA
+#       within 3% of its budget in the wet year and over it in the dry, with no
+#       recharge pool to carry over.
+#   Halvern Irrigation-Urban GSA   375.2 ac × 2.00 = 750.32 AF, unchanged: its
+#       demonstration parcels are canal-served and pump 137.59 / 142.14 AF, so
+#       it is the GSA that is NOT under pressure. GSA_BUDGET_FLOOR (500 AF) is
+#       above twice its pumping, so no rate could bring it within 2x.
+GSA_SUSTAINABLE_RATE_AF_PER_ACRE = {
+    "Halvern Valley GSA": Decimal("0.58"),
+    "Verdano Island Water District GSA": Decimal("2.90"),
+    "Halvern Irrigation-Urban GSA": Decimal("2.00"),
+}
 GSA_BUDGET_FLOOR = Decimal("500.0")   # a GSA with no demo parcels still gets a budget
 SURFACE_BUDGET_FRACTION = Decimal("0.9")    # district surface budget ~ 90% of face
 CURTAILED_OPEN_FRACTION = Decimal("0.1")    # curtailed district's current-year budget collapses
@@ -622,15 +647,26 @@ class Command(BaseCommand):
         ).select_related("parcel"):
             acres_by_gsa[pz.zone_id] += Decimal(str(pz.parcel.area_acres or 0))
         for zone in gsa_zones:
-            budget = max(GSA_BUDGET_FLOOR,
-                         _q(acres_by_gsa[zone.id] * Decimal(str(GSA_SUSTAINABLE_RATE))))
+            # 136-02: per-GSA rate by zone name, the scalar as the fallback.
+            rate = GSA_SUSTAINABLE_RATE_AF_PER_ACRE.get(
+                zone.name, Decimal(str(GSA_SUSTAINABLE_RATE)))
+            budget = max(GSA_BUDGET_FLOOR, _q(acres_by_gsa[zone.id] * rate))
             for rp in periods:
                 AllocationPlan.objects.update_or_create(
                     zone=zone, water_type=gw, reporting_period=rp,
                     defaults={
                         "name": f"{zone.name} — Groundwater {rp.name}",
                         "allocation_acre_feet": budget,
-                        "notes": "SGMA sustainable-yield groundwater allocation (demo).",
+                        # Label demo data as demo, per row: the rate is the
+                        # demonstration's, not a GSP's, and the row says so.
+                        "notes": (
+                            f"Groundwater allocation for the demonstration: "
+                            f"{acres_by_gsa[zone.id]:.1f} acres of demonstration "
+                            f"parcels x {rate} AF/acre, a demonstration "
+                            f"sustainable-yield rate chosen for the demonstration "
+                            f"(not a GSP figure), floored at {GSA_BUDGET_FLOOR} AF. "
+                            f"Same figure in both water years; only use moves."
+                        ),
                     },
                 )
 

@@ -373,6 +373,44 @@ def test_each_gsa_zone_has_a_groundwater_budget_in_both_periods(seeded):
 
 
 @pytest.mark.django_db
+def test_each_gsa_groundwater_budget_is_its_acreage_times_its_own_rate(seeded):
+    """136-02: one demonstration sustainable-yield rate per GSA, by zone name.
+
+    The literals are computed BY HAND from the fixture, not from the seed's
+    arithmetic: `_build_physical_merced` gives every parcel 80.00 acres and
+    files them into the three GSAs by `gsa_list` index, so the acreage per GSA
+    is a parcel count times 80. The rate per GSA is the table in
+    `seed_merced_ledgers.GSA_SUSTAINABLE_RATE_AF_PER_ACRE`, transcribed here as
+    a number so a silent change to either side goes red. Observed RED against
+    the 2.0 AF/acre scalar (Halvern Valley read 640.0000, Verdano Island
+    1,120.0000) before the seed changed.
+    """
+    gw = WaterType.objects.get(code="GW")
+    periods = list(ReportingPeriod.objects.filter(name__in=[PRIOR_WY, OPEN_WY]))
+    assert len(periods) == 2
+    expected = {
+        # Halvern Valley GSA: 3 surface-only + 1 groundwater-only = 4 parcels
+        # x 80.00 ac = 320.0 ac x 0.58 AF/ac = 185.6000 AF, which is UNDER the
+        # 500 AF floor (GSA_BUDGET_FLOOR), so the plan carries the floor.
+        "Halvern Valley GSA": Decimal("500.0000"),
+        # Halvern Irrigation-Urban GSA: 2 conjunctive + 2 shared-well = 4 parcels
+        # x 80.00 ac = 320.0 ac x 2.00 AF/ac = 640.0000 AF.
+        "Halvern Irrigation-Urban GSA": Decimal("640.0000"),
+        # Verdano Island Water District GSA: 2 surface-only + 2 conjunctive +
+        # 3 shared-well = 7 parcels x 80.00 ac = 560.0 ac x 2.90 AF/ac = 1624.0000 AF.
+        "Verdano Island Water District GSA": Decimal("1624.0000"),
+    }
+    for name, amount in expected.items():
+        zone = Zone.objects.get(name=name, zone_type="management_area")
+        for rp in periods:
+            plan = AllocationPlan.objects.get(zone=zone, water_type=gw, reporting_period=rp)
+            assert plan.allocation_acre_feet == amount, (
+                f"{name} {rp.name}: {plan.allocation_acre_feet} AF, expected {amount}")
+            # Demo data is labelled as demo, per row (the memory rule).
+            assert "demonstration sustainable-yield rate" in plan.notes, plan.notes
+
+
+@pytest.mark.django_db
 def test_each_surface_district_zone_has_a_surface_budget_in_both_periods(seeded):
     sw = WaterType.objects.get(code="SW")
     periods = list(ReportingPeriod.objects.filter(name__in=[PRIOR_WY, OPEN_WY]))
