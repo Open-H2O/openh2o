@@ -56,6 +56,7 @@ from accounting.services import (
     parcel_consumptive_balance,
     parse_ledger_csv,
     runs_in_period,
+    unmet_demand_by_parcel,
     zone_carryover,
     zone_consumptive_balance,
 )
@@ -325,6 +326,23 @@ def dashboard(request):
         # the engine walks straight into that.
         has_calculation_plan = CalculationPlan.active() is not None
 
+    # ISS-157, surface 2: WHICH fields recorded water use that no reported supply
+    # explains. The figure has been stored on every calculation run since the
+    # engine was written and the field's own page shows it (137-01); this is the
+    # district-wide list, which is the half a water master acts on.
+    #
+    # Stood down when the engine has never run here, on the same rule as the
+    # attention strip (ISS-099): the shortfall is an engine OUTPUT, so with no
+    # run there is nothing to list — and "no field recorded water use without a
+    # reported supply" would then be a claim the database never made.
+    unmet_demand_rows = []
+    unmet_demand_total = Decimal("0")
+    if selected_period is not None and not engine_has_never_run:
+        unmet_demand_rows, unmet_demand_total = unmet_demand_by_parcel(
+            selected_period
+        )
+    unmet_demand_count = len(unmet_demand_rows)
+
     # "What needs attention" strip (E1): three exception counts a returning admin
     # should see at a glance, each derived from data the dashboard already has.
     # Lives inside the HTMX-swapped content so the period-dependent over-budget
@@ -369,7 +387,12 @@ def dashboard(request):
         if s["remaining"] is not None and s["remaining"] < 0
     )
 
-    attention_total = periods_to_close + stations_down + accounts_over_budget
+    attention_total = (
+        periods_to_close
+        + stations_down
+        + accounts_over_budget
+        + unmet_demand_count
+    )
 
     context = {
         "periods": periods,
@@ -387,6 +410,9 @@ def dashboard(request):
         "has_allocations": has_allocations,
         "periods_to_close": periods_to_close,
         "accounts_over_budget": accounts_over_budget,
+        "unmet_demand_rows": unmet_demand_rows,
+        "unmet_demand_total": unmet_demand_total,
+        "unmet_demand_count": unmet_demand_count,
         "attention_total": attention_total,
     }
     if is_enabled("datasync"):

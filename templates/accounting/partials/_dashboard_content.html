@@ -266,6 +266,79 @@
   <p class="text-tertiary text-sm">No zones configured yet.</p>
   {% endif %}
 </div>
+
+{% comment %}
+  ISS-157, surface 2. The engine writes `unmet_demand_af` on any month where a
+  field with no well used more water than its deliveries, its rainfall and its
+  pumping on record explain — it books the leftover as a figure rather than
+  inventing pumping through a well that does not exist. Two help pages have
+  explained the concept since Phase 130 and the field's own page has shown its
+  own number since 137-01. This is the list.
+
+  ⛔ THE WORDING IS SETTLED (Brent, 2026-09-06) and it is arithmetic, then stop.
+  The platform knows the books did not close; it knows nothing whatever about
+  why. Under-irrigation, a delivery filed against the wrong field and a surface
+  allocation error all land here identically, so a word that leans toward any of
+  them — flagged, unexplained, unauthorized — is a claim this figure cannot
+  carry to the regulator who reads it. `tests/test_water_vocabulary.py` holds
+  five of those words and `tests/test_dashboard_unmet_demand.py` holds the rest
+  on this section.
+
+  Absent entirely when the engine has never run here (ISS-099, view-side): the
+  shortfall is an engine output, so with no run there is nothing to list and the
+  empty state below would be a claim rather than a finding.
+{% endcomment %}
+{% if not engine_has_never_run %}
+{% url 'water_balances' as wb_help_url %}
+<h2 class="content-section-label" id="unmet-demand">Fields with water use recorded and no supply reported</h2>
+<div class="card-raised">
+  <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+    <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
+    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="Fields with water use recorded and no supply reported" text="Each row is one field, for the period shown. The platform subtracts the deliveries, pumping and rainfall on record from the consumptive use it estimated, and stores whatever is left over as a figure on that field. Every row is the same stored quantity in acre-feet from a single field, so the column adds." link=wb_help_url link_label="How water balances work" %}</span>
+  </div>
+  {% if unmet_demand_rows %}
+  <div class="table-scroll">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="min-width: 200px;">Field</th>
+        <th class="th-right">Consumptive Use (AF)</th>
+        {% comment %}
+          Sentence case, deliberately, against the data-table Title-Case
+          exception (DESIGN.md rule 4). The phrase is a settled product term and
+          the field's own page prints it exactly this way; Title-Casing it here
+          would make one quantity read as two names on two screens, which is the
+          defect rule 12 exists to end. The neighbouring column keeps the
+          platform-wide "Consumptive Use (AF)" it carries on every other table.
+        {% endcomment %}
+        <th class="th-right">Water use recorded, no supply reported (AF)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in unmet_demand_rows %}
+      <tr>
+        <td class="font-semibold">
+          <a href="{% url 'parcels:detail' row.parcel %}?period={{ selected_period.pk }}" class="link-accent">{{ row.parcel_number }}</a>
+        </td>
+        <td class="td-num text-usage">{{ row.gross_et|floatformat:2|intcomma }}</td>
+        <td class="td-num-bold">{{ row.unmet|floatformat:2|intcomma }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td class="font-semibold">District total</td>
+        <td></td>
+        <td class="td-num-bold">{{ unmet_demand_total|floatformat:2|intcomma }}</td>
+      </tr>
+    </tfoot>
+  </table>
+  </div>
+  {% else %}
+  <p class="text-tertiary text-sm">No field recorded water use without a reported supply in {{ selected_period.name }}.</p>
+  {% endif %}
+</div>
+{% endif %}
 {% endif %}
 {% comment %}
   Module-contributed dashboard cards used to render here. 78-02 moved them up to

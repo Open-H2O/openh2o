@@ -850,6 +850,50 @@ def parcel_unmet_demand(parcel, reporting_period=None):
     return total.quantize(Decimal("0.0001"))
 
 
+def unmet_demand_by_parcel(reporting_period):
+    """Fields whose water use no reported supply explains, one row per field.
+
+    The district-wide half of ``parcel_unmet_demand`` (ISS-157). Same rows, same
+    ``runs_in_period`` membership rule, grouped by parcel instead of summed for
+    one — so the dashboard's list and a field's own page can never name different
+    fields or different amounts.
+
+    **Only a NON-ZERO shortfall is a row.** In the demonstration 47 fields carry
+    the unmet-demand disposition and 41 of them sit at exactly zero, because
+    canal water covered the whole year. Listing those 41 would send a water
+    master to ask about nothing, forty-one times.
+
+    It is a figure, not a finding — see ``parcel_unmet_demand`` for the settled
+    wording and why the reason is unknowable from here.
+
+    Returns:
+        tuple: ``(rows, total)``. ``rows`` is a list of plain dicts
+        ``{"parcel", "parcel_number", "gross_et", "unmet"}`` ordered by ``unmet``
+        descending; ``total`` is the summed shortfall (``Decimal("0")`` when
+        there are no rows). Plain dicts, not model instances, so the template
+        names no column of its own (DESIGN.md rule 9).
+    """
+    grouped = (
+        runs_in_period(CalculationRun.objects.all(), reporting_period)
+        .filter(residual_disposition="unmet_demand", unmet_demand_af__gt=0)
+        .values("parcel_id", "parcel__parcel_number")
+        .annotate(unmet=Sum("unmet_demand_af"), gross_et=Sum("gross_et_af"))
+        .order_by("-unmet")
+    )
+    rows = []
+    total = Decimal("0")
+    for row in grouped:
+        unmet = row["unmet"] or Decimal("0")
+        rows.append({
+            "parcel": row["parcel_id"],
+            "parcel_number": row["parcel__parcel_number"],
+            "gross_et": row["gross_et"] or Decimal("0"),
+            "unmet": unmet,
+        })
+        total += unmet
+    return rows, total
+
+
 # ---------------------------------------------------------------------------
 # Consumptive-use balance read (Phase 57-01, the corrected v1.10 lens)
 # ---------------------------------------------------------------------------

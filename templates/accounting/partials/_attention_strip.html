@@ -42,6 +42,18 @@
   </a>
   {% endif %}
 
+  {% comment %}
+    ISS-157, surface 2. Counted into `attention_total` in the view, so "All
+    clear" stays a true claim on a period that has six of these. The words are
+    the settled ones and say only what the arithmetic says.
+  {% endcomment %}
+  {% if unmet_demand_count %}
+  <a href="#unmet-demand" class="attention-pill attention-pill-over">
+    <span class="attention-pill-count">{{ unmet_demand_count }}</span>
+    field{{ unmet_demand_count|pluralize }} with water use recorded, no supply reported
+  </a>
+  {% endif %}
+
   {% else %}
   <span class="attention-strip-clear">
     <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
