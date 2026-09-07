@@ -396,6 +396,7 @@
 
   // Initialize map
   var map = new maplibregl.Map({
+    cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
     container: 'infra-map',
     style: OH2O.basemapStyle('aerial'),
     zoom: 8,

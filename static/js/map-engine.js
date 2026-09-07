@@ -268,6 +268,7 @@ buildLegend();
 var currentBase = MAP_CONFIG.basemap || 'aerial';
 
 var map = new maplibregl.Map({
+    cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
     container: 'map',
     style: OH2O.basemapStyle(currentBase),
     center: MAP_CONFIG.center,

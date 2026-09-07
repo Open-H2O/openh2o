@@ -386,6 +386,7 @@ OH2O.detailPaneMap = function (opts) {
 
         // CREATE once.
         map = new maplibregl.Map({
+            cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
             container: opts.host, style: OH2O.basemapStyle('aerial'),
             center: center, zoom: 13, fadeDuration: 0
         });
