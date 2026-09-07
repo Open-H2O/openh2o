@@ -1,4 +1,4 @@
-{% load placeholders %}{% comment %}
+{% load placeholders humanize %}{% comment %}
   Per-well detail BODY, swapped into #detail-body on row click (and reused by the
   standalone detail.html page). The map itself is NOT here — it lives as a
   persistent element (#detail-map) in the pane shell so it is built ONCE and
@@ -130,6 +130,78 @@
           {% endfor %}
         {% else %}
           <p class="text-tertiary text-base">No active meters on this well.</p>
+        {% endif %}
+      </div>
+
+      {% comment %}
+        Measurement history (ISS-145, 137-03). The page description above has
+        promised this section since the page was written. Two tables: each
+        current meter's totalizer reads with the delta the read produced, and
+        a monthly digest of depth to water from the well's logger or, failing
+        that, its hand-entered record. Both come from wells/measurement_history.py
+        grouped by water year, newest first; nothing is computed here. A table,
+        not a chart: this page loads no charting library and gains none.
+      {% endcomment %}
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Measurement history</h2>
+        {% if meter_history or water_levels %}
+          {% for group in meter_history %}
+            <div class="field-label">Meter {{ group.meter }} totalizer reads</div>
+            {% for year in group.years %}
+              <div class="text-tertiary text-xs mt-sm">{{ year.label }}</div>
+              <table class="data-table text-sm">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th class="th-right">Totalizer</th>
+                    <th class="th-right">Delta ({{ group.unit }})</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for read in year.reads %}
+                  <tr>
+                    <td class="text-secondary">{{ read.reading_date|date:"M d, Y" }}</td>
+                    <td class="td-num">{{ read.current_value|floatformat:2|intcomma }}</td>
+                    <td class="td-num">
+                      {{ read.calculated_volume|floatformat:2|intcomma }}
+                      {% if read.quality != "approved" %}<span class="text-tertiary text-xs">{{ read.get_quality_display|lower }}</span>{% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% endfor %}
+          {% endfor %}
+
+          {% if water_levels %}
+            <div class="field-label{% if meter_history %} mt-md{% endif %}">Depth to water, ft below land surface</div>
+            <p class="text-tertiary text-xs" style="margin-bottom: 0;">
+              Monthly close from the well's {{ water_levels.source }} record; change is against the previous month's close, so a positive change is a deeper water table.
+            </p>
+            {% for year in water_levels.years %}
+              <div class="text-tertiary text-xs mt-sm">{{ year.label }}</div>
+              <table class="data-table text-sm">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th class="th-right">Close (ft)</th>
+                    <th class="th-right">Change (ft)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in year.months %}
+                  <tr>
+                    <td class="text-secondary">{{ row.month|date:"M Y" }}</td>
+                    <td class="td-num">{{ row.close|floatformat:2 }}</td>
+                    <td class="td-num">{% if row.change is None %}<span class="text-tertiary">&mdash;</span>{% else %}{{ row.change|floatformat:2 }}{% endif %}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% endfor %}
+          {% endif %}
+        {% else %}
+          <p class="text-tertiary text-base">No meter reads or water-level readings recorded for this well.</p>
         {% endif %}
       </div>
 

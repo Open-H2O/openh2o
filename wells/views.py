@@ -22,6 +22,7 @@ from core.access import public_in_open_demo
 
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from core.workspace import detail_response, list_response
+from wells import measurement_history
 from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES, Well
 
 
@@ -156,6 +157,11 @@ def _well_detail_context(well):
     current_meters = well.wellmeter_set.filter(is_current=True).select_related("meter")
     irrigated_parcels = well.wellirrigatedparcel_set.select_related("parcel").all()
     monitoring = getattr(well, "monitoringwell", None)
+    # ISS-145 (137-03). The page's own description promises "measurement
+    # history"; these two are it. Both are built in wells/measurement_history.py,
+    # grouped by water year and newest first, never assembled in the template.
+    meter_history = measurement_history.meter_history(well)
+    water_levels = measurement_history.water_level_history(well)
 
     geojson = None
     if well.location:
@@ -187,6 +193,8 @@ def _well_detail_context(well):
         "current_meters": current_meters,
         "irrigated_parcels": irrigated_parcels,
         "monitoring": monitoring,
+        "meter_history": meter_history,
+        "water_levels": water_levels,
         "ef": editable_fields_map,
         # Pass the Python object (or None); the template escapes it via
         # json_script so a malicious place-name can't break out of <script>.
