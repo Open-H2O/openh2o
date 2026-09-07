@@ -10,7 +10,13 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Allocations</span>
   </nav>
-  <p class="page-description">Allocations set the volume of water assigned per zone and water type for a period. Compare actual usage against the allocated amount.</p>
+  {% comment %}
+    137-03 page pass. This sentence used to end "Compare actual usage against
+    the allocated amount", a comparison this page has never drawn: the table
+    lists the plans and nothing else. The comparison lives on the dashboard's
+    zone table, so the sentence now says where instead of promising it here.
+  {% endcomment %}
+  <p class="page-description">Allocations set the volume of water assigned per zone and water type for a period. Use against each zone's allocation is on the <a href="{% url 'accounting:dashboard' %}" class="prose-link">dashboard</a>.</p>
 </div>
 {% endblock %}
 
