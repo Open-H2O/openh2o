@@ -149,9 +149,9 @@ disposition below is on disk in this repository, not only in this table.
 
 | Page | # | Verdict | Which line failed | Disposition |
 |---|---|---|---|---|
-| `accounting/allocations_list.html` | 15 | CHANGE: small | Purpose | Fixed this plan, one template: `templates/accounting/allocations_list.html` no longer promises a usage comparison; it says the comparison is on the dashboard and links there. |
-| `recharge/site_detail.html` | 65 | CHANGE: ISS-146 | What leaves | Fixed this plan (ISS-146): `templates/recharge/partials/_detail_pane.html`; value tests in `tests/test_recharge_measurement_notes.py`. |
-| `wells/detail.html` | 80 | CHANGE: ISS-145 | Lead figure | Fixed this plan (ISS-145): `wells/measurement_history.py`, `wells/views.py`, `templates/wells/partials/_detail_pane.html`; value tests in `tests/test_wells_measurement_history.py`; ledger rows `FIG-wells-001..004`. |
+| `accounting/allocations_list.html` | 15 | CHANGE: small | Purpose | Fixed this plan (`21e0939`), one template: `templates/accounting/allocations_list.html` no longer promises a usage comparison; it says the comparison is on the dashboard and links there. |
+| `recharge/site_detail.html` | 65 | CHANGE: ISS-146 | What leaves | Fixed this plan (ISS-146, `54edc81` red → `80ad5ac`): `templates/recharge/partials/_detail_pane.html`; row counts asserted exactly in `tests/test_recharge_measurement_notes.py`. |
+| `wells/detail.html` | 80 | CHANGE: ISS-145 | Lead figure | Fixed this plan (ISS-145, `45d600d` red → `cf7dcfc` → ledger `c9aa4ac`): `wells/measurement_history.py`, `wells/views.py`, `templates/wells/partials/_detail_pane.html`; eight value tests in `tests/test_wells_measurement_history.py`; ledger rows `FIG-wells-001..004`, all MATCH. |
 
 ## What the pass found
 
