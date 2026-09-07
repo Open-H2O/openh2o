@@ -128,6 +128,18 @@
               <td class="td-num">{{ m.value|floatformat:2 }}</td>
               <td class="text-tertiary">{{ m.unit }}</td>
             </tr>
+            {% if m.notes %}
+            {% comment %}
+              ISS-146 (137-03). The reading's field note, on its own line under
+              the row it belongs to. This card sits in the narrow right-hand
+              column, so a fifth column would not fit; a second row wraps inside
+              the width the four columns already have. Rendered only when there
+              is a note, so a reading without one adds nothing.
+            {% endcomment %}
+            <tr>
+              <td colspan="4" class="text-tertiary text-xs" style="padding-top: 0;">{{ m.notes }}</td>
+            </tr>
+            {% endif %}
             {% endfor %}
           </tbody>
         </table>
