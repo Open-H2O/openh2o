@@ -243,11 +243,12 @@ Phase 140-02's readers propose rows in this format; the rank is computed, not ch
 
 **The ranking rule.** It is mechanical so that the rank is a measurement.
 
-1. Band by audience: `both` outranks `L` and `E`, which are equal.
-2. Within a band, order by blast radius, pages descending.
-3. A fault Brent already named (ISS-159 #1, #2, #4, #5) is pinned to the top of its band.
+1. Band by audience: `both` outranks `L` and `E`, which tie.
+2. Within a band, by blast radius, pages descending.
+3. A fault Brent already named is pinned to the top of its band, in ISS-159's item order.
 4. Ties break on the page-pass table's verdict: a page whose purpose is a lead figure
-   outranks one with several figures and none leading, which outranks a router page.
+   outranks one with several figures and none leading, which outranks a router page;
+   then filing order.
 
 **The per-page verdict.** Each of the 80 pages gets one: `PASS`, `FAIL-L`, `FAIL-E` or
 `FAIL-both`, with the register ids that make it fail. A page fails an audience when any
