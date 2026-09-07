@@ -2,7 +2,7 @@
 -- FIG-geography-001 .. FIG-geography-004
 -- FIG-recharge-001 .. FIG-recharge-004
 -- FIG-setup-001 .. FIG-setup-002
--- FIG-wells-001 .. FIG-wells-004
+-- FIG-wells-005 .. FIG-wells-008
 --
 -- Section D of the figure ledger: the long tail. Eighteen figures across ten
 -- templates and five subsystems, most of them one or two to a screen.
@@ -278,16 +278,16 @@ figures AS (
            round(area_sq_miles::numeric, 1) FROM pinned_boundary
 
     -- Wells
-    UNION ALL SELECT 'FIG-wells-001',
+    UNION ALL SELECT 'FIG-wells-005',
            'Well MER-W-001 irrigated parcel Fraction',
            round(fraction, 2) FROM pinned_wip
-    UNION ALL SELECT 'FIG-wells-002',
+    UNION ALL SELECT 'FIG-wells-006',
            'Well MER-W-001 Reference elevation (ft)',
            round(reference_elevation_ft, 1) FROM pinned_monitoring
-    UNION ALL SELECT 'FIG-wells-003',
+    UNION ALL SELECT 'FIG-wells-007',
            'Well MER-W-001 Year Pumping Began',
            round(year_pumping_began::numeric, 0) FROM pinned_well
-    UNION ALL SELECT 'FIG-wells-004',
+    UNION ALL SELECT 'FIG-wells-008',
            'Well MER-W-001 Capacity (gpm)',
            round(capacity_gpm, 2) FROM pinned_well
 ),

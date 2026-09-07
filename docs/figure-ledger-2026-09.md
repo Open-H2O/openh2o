@@ -3,19 +3,23 @@
 Every number this platform puts on a screen, traced to the rows it came from and
 then worked out a second way, independently, to see whether the two agree.
 
-**This ledger is complete.** All 104 figures the platform renders have a row, and
+**This ledger is complete.** All 108 figures the platform renders have a row, and
 a test in the build refuses to let that stay true by accident: add a figure to a
 template without tracing it, or leave a row behind after deleting a template, and
 the suite goes red.
 
 ## What this is, and what it is not
 
-The platform renders 104 figures across 24 page templates (100 until 2026-09-06,
-when 137-02 added the dashboard's district-wide "Fields with water use recorded
-and no supply reported" list, surface 2 of ISS-157, three sites (a per-row
-Consumptive Use cell, a per-row shortfall cell, and the District total footer),
-and the district page's Allocation vs. use table gained a Carried Forward cell of
-its own, one site, for a net four sites more; 105 until earlier that day, when
+The platform renders 108 figures across 24 page templates (104 until later that
+day, 2026-09-06, when 137-03 gave the well page a Measurement history card
+(ISS-145), Totalizer and Delta per meter read and Close and Change per
+water-level month, FIG-wells-001..004, one template, for a net four sites more;
+100 until 2026-09-06, when 137-02 added the dashboard's district-wide "Fields
+with water use recorded and no supply reported" list, surface 2 of ISS-157,
+three sites (a per-row Consumptive Use cell, a per-row shortfall cell, and the
+District total footer), and the district page's Allocation vs. use table gained
+a Carried Forward cell of its own, one site, for a net four sites more; 105
+until earlier that day, when
 137-01 replaced the parcel pane's two-balance display, namely three stat
 cards, a "Net consumptive demand" sentence, three supply-composition cards, a
 seven-row supply-vs-use table and a free-standing residual row (20 figure sites
@@ -1155,14 +1159,17 @@ than by reading the code that picks the default.
 
 ---
 
-## Section 5: The remaining subsystems (18 figures)
+## Section 5: The remaining subsystems (22 figures)
 
-Eighteen figures across ten page templates and five parts of the platform: the
-zone page, the monitoring stations, the wells, the recharge basins, and the
+Twenty-two figures across ten page templates and five parts of the platform:
+the zone page, the monitoring stations, the wells, the recharge basins, and the
 first two steps of the setup wizard. They are the long tail of the figure
 ledger. Most of these screens carry one or two numbers, not twenty, and most of
 those numbers are a stored value shown back to the reader rather than the
-result of a calculation.
+result of a calculation. Four of the twenty-two are new: 137-03 (ISS-145) gave
+the well page a Measurement history card, and two of its four figures, the
+meter Delta and the water-level Change, are the first figures on this page
+whose derivation is arithmetic rather than a column shown back unchanged.
 
 **Screens and pins.** A figure inside a table renders once per row, so each one
 is pinned to a named instance and the pin is recorded in
@@ -1172,7 +1179,8 @@ is pinned to a named instance and the pin is recorded in
 |---|---|
 | `/map/zones/2/` | Halvern Irrigation-Urban GSA, the same district section 1 pinned on the dashboard, so the two screens can be laid side by side. The page has no year selector: its Allocation vs. use table lists every year at once, newest first, so the pinned row is the first, the water year running October 2025 to September 2026. Pinned parcel row: MER-APN-026, first by parcel number of the district's 23. |
 | `/map/zones/1/`, `/map/zones/3/`, `/map/zones/9/` | The same three figures on every other district, captured so the finding below rests on four screens rather than one. |
-| `/wells/10/` | Well MER-W-001, "Ag well on MER-APN-002". One screen carries all four wells figures: an irrigated parcel, a monitoring record with a reference elevation, a whole-number field and a two-decimal field. |
+| `/wells/10/` | Well MER-W-001, "Ag well on MER-APN-002". One screen carries all eight wells figures: the newest meter read's Totalizer and Delta and the newest water-level month's Close and Change (137-03, ISS-145), an irrigated parcel, a monitoring record with a reference elevation, a whole-number field and a two-decimal field. |
+| `/wells/13/` | Evidence, not a figure site. MER-W-004, "Ag well on MER-APN-006", the transducer well the ISS-145 finding's two-year decline is measured on. Its water-level digest reads a September 2025 close of 94.15 ft and a September 2026 close of 109.65 ft. |
 | `/recharge/1/` | El Nido Recharge Basin 1, first by name on the list. Pinned reading: the newest, 18 February 2026. Pinned recharge event: the newest, starting 15 February 2026. |
 | `/recharge/` | The list shows every basin on one page in name order, so the pinned row is El Nido Recharge Basin 1 again. |
 | `/setup/` | Merced Subbasin, the only district boundary on file. |
@@ -1186,6 +1194,16 @@ First captured at commit `9f9e27b25435`, 2026-09-05, and re-captured at
 rebuild and none of them changed meaning, and a fourth, the monitoring station,
 went from a 404 to a page: see the capture note under "How to reproduce it". Recomputed by
 `bash audit/figure_ledger/run_sql.sh audit/figure_ledger/sql/remaining_subsystems.sql`.
+
+Re-captured again at commit `54edc81`, 2026-09-06, after 137-03 (ISS-145) gave
+the well page its Measurement history card. `/wells/10/` is the same pinned
+address as before, now with the four new figures on it, and `/wells/13/` joins
+the section's screens for the first time, as evidence rather than a figure
+site. FIG-wells-001..004, the four new figures, are recomputed separately, by
+`bash audit/figure_ledger/run_sql.sh audit/figure_ledger/sql/well_measurement_history.sql`,
+because they did not exist when `remaining_subsystems.sql` was written; that
+file's own four wells figures were renumbered FIG-wells-005..008 to make room
+ahead of them and did not otherwise change.
 
 **One column needs a word of warning before the table.** `verdict` and `delta`
 answer different questions. `delta` is arithmetic: did the number on the screen
@@ -1213,17 +1231,22 @@ they are right.
 | `FIG-recharge-004` | `/recharge/` | `templates/recharge/partials/_list_results.html:31` | Capacity | `site.capacity_acre_feet` | `recharge/views.py:60`, queryset at `:45` | `— (model field)` | `recharge_rechargesite` | 637 | 637 | MATCH | MATCH | Independence: transcription. Rounded to whole acre-feet here and to hundredths on the basin's own page, so the same basin reads 637 in the list and 637.10 one click later. Both are right; the list is choosing not to show the tenths. |
 | `FIG-setup-001` | `/setup/confirm/` | `templates/setup/confirm.html:61` | Area, square miles | `area_sq_miles` | `setup/services.py:247` | `— (model field)` | `geography_boundary` | not rendered | 800.9 | NO VALUE | UNVERIFIED | The confirmation step reads the chosen boundary out of the visitor's session, which only the previous step's form submission writes. The capture performs page requests only, so this screen redirected rather than rendering. The recomputed value is recorded because the same stored field renders on the previous step and is verified there. |
 | `FIG-setup-002` | `/setup/` | `templates/setup/wizard.html:66` | The district boundary dropdown: "Merced Subbasin (800.9 sq mi)" | `b.area_sq_miles` | `setup/views.py:115`, queryset at `:113` | `— (model field)` | `geography_boundary` | 800.9 | 800.9 | MATCH | MATCH | Independence: transcription, plus one genuinely independent check. The platform deliberately never computes this area, taking it from the uploaded file instead, on the reasoning that a computed figure would be OpenH2O's number rather than the district's. The database can compute it: the stored outline measures 800.949 square miles against the 800.948 the file states, a difference of about half an acre across an 800 square mile basin. |
-| `FIG-wells-001` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:165` | "1.00 fraction", beside the parcel the well irrigates | `wip.fraction` | `wells/views.py:188`, queryset at `:157` | `— (model field)` | `wells_wellirrigatedparcel` | 1.00 | 1.00 | MATCH | MATCH | Independence: transcription. The pinned well has one irrigated parcel, so "first row" is unambiguous. |
-| `FIG-wells-002` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:197` | Reference elevation, ft | `monitoring.reference_elevation_ft` | `wells/views.py:189`, fetched at `:158` | `— (model field)` | `wells_monitoringwell` | 182.4 | 182.4 | MATCH | MATCH | Independence: transcription. Only three of the district's 45 wells carry a monitoring record, and only two of those three carry a reference elevation, so this card is absent from most well pages. |
-| `FIG-wells-003` | `/wells/10/` | `templates/wells/partials/_editable_field.html:24` | Year Pumping Began | `ef.value` (whole-number branch) | `wells/views.py:180` | `— (model field, read straight off the well)` | `wells_well` | 1987 | 1987 | MATCH | UNVERIFIED | Independence: transcription, and that is all it can be. This template renders whichever well field the page hands it, and every one of them is a value a person typed through the pencil control beside it. There is nothing to recompute it against. The two numbers agreeing shows the platform redisplays what was entered; it says nothing about whether 1987 is the year. This is the only whole-number field the platform has. |
-| `FIG-wells-004` | `/wells/10/` | `templates/wells/partials/_editable_field.html:24` | Capacity (gpm) | `ef.value` (two-decimal branch) | `wells/views.py:180` | `— (model field, read straight off the well)` | `wells_well` | 2000.00 | 2000.00 | MATCH | UNVERIFIED | Same line as the row above, the second of the platform's two double-figure lines. Six well fields take this branch: capacity, depth, casing diameter, screen top, screen bottom and tested yield. The pin is capacity, the first of them in the page's own order. Same reasoning as above: nothing derives any of the six. |
+| `FIG-wells-001` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:164` | Totalizer | `read.current_value` | `wells/views.py:163` | `meter_history` (`wells/measurement_history.py:60-77`) | `measurements_meterreading, wells_wellmeter` | 41,241.64 | 41241.64 | MATCH | MATCH | New figure, 137-03 (ISS-145): the Measurement history card's meter table. Pinned to the well's one current meter, MTR-MER-W-001, its newest read, 30 September 2026. Independence: transcription, one stored column read back and rounded the same way the template does. |
+| `FIG-wells-002` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:166` | Delta (AF) | `read.calculated_volume` | `wells/views.py:163` | `meter_history` reads the stored column; no arithmetic in the view | `measurements_meterreading` | 65.91 | 65.91 | MATCH | MATCH | Same pinned read as the row above. Independence: different identity, recomputed two ways that could disagree with the stored column and with each other: current_value minus this row's own previous_value, and current_value minus the prior read's current_value. Both read 65.9112 AF against the stored 65.9112, on this read and, whole-column, on all 24 reads on this meter (`audit/figure_ledger/sql/well_measurement_history.sql`, cross-check X1). |
+| `FIG-wells-003` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:195` | Close (ft) | `row.close` | `wells/views.py:164` | `water_level_history` (`wells/measurement_history.py:103-126`) | `measurements_watermeasurement` | 101.92 | 101.92 | MATCH | MATCH | New figure, 137-03 (ISS-145): the Measurement history card's water-level digest. No stored column holds a month's close; the view builds it in Python as the last reading in the month, taken in America/Los_Angeles. Well 10 carries no Sensor row, so the digest reads the hand-entered WaterMeasurement record, 24 monthly rows; pinned to the newest, September 2026. Independence: restatement, the check re-derives the same selection rule rather than reading a number back. |
+| `FIG-wells-004` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:196` | Change (ft) | `row.change` | `wells/views.py:164` | `water_level_history` (`wells/measurement_history.py:128-132`) | `measurements_watermeasurement` | 3.13 | 3.13 | MATCH | MATCH | Same pinned month as the row above: September 2026's close (101.9163) minus August 2026's close (98.7905). Independence: restatement, same reasoning as FIG-wells-003. A second well, MER-W-004 (well id 13, `/wells/13/`, captured as evidence rather than a figure site), carries the two-year dry-year decline ISS-145 names: its logger's close moves from 94.15 ft in September 2025 to 109.65 ft in September 2026, a 15.50 ft rise, now visible on a screen rather than only in a seed note. |
+| `FIG-wells-005` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:218` | "1.00 fraction", beside the parcel the well irrigates | `wip.fraction` | `wells/views.py:188`, queryset at `:157` | `— (model field)` | `wells_wellirrigatedparcel` | 1.00 | 1.00 | MATCH | MATCH | Independence: transcription. The pinned well has one irrigated parcel, so "first row" is unambiguous. Was `FIG-wells-001` until 137-03 added the measurement-history figures above it. |
+| `FIG-wells-006` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:250` | Reference elevation, ft | `monitoring.reference_elevation_ft` | `wells/views.py:189`, fetched at `:158` | `— (model field)` | `wells_monitoringwell` | 182.4 | 182.4 | MATCH | MATCH | Independence: transcription. Only three of the district's 45 wells carry a monitoring record, and only two of those three carry a reference elevation, so this card is absent from most well pages. Was `FIG-wells-002` until 137-03 added the measurement-history figures above it. |
+| `FIG-wells-007` | `/wells/10/` | `templates/wells/partials/_editable_field.html:24` | Year Pumping Began | `ef.value` (whole-number branch) | `wells/views.py:180` | `— (model field, read straight off the well)` | `wells_well` | 1987 | 1987 | MATCH | UNVERIFIED | Independence: transcription, and that is all it can be. This template renders whichever well field the page hands it, and every one of them is a value a person typed through the pencil control beside it. There is nothing to recompute it against. The two numbers agreeing shows the platform redisplays what was entered; it says nothing about whether 1987 is the year. This is the only whole-number field the platform has. Was `FIG-wells-003` until 137-03 added the measurement-history figures above it. |
+| `FIG-wells-008` | `/wells/10/` | `templates/wells/partials/_editable_field.html:24` | Capacity (gpm) | `ef.value` (two-decimal branch) | `wells/views.py:180` | `— (model field, read straight off the well)` | `wells_well` | 2000.00 | 2000.00 | MATCH | UNVERIFIED | Same line as the row above, the second of the platform's two double-figure lines. Six well fields take this branch: capacity, depth, casing diameter, screen top, screen bottom and tested yield. The pin is capacity, the first of them in the page's own order. Same reasoning as above: nothing derives any of the six. Was `FIG-wells-004` until 137-03 added the measurement-history figures above it. |
 
 ### What section 5 found
 
-**Fifteen of the eighteen figures agree with the rows behind them to the cent.
-The other three showed nothing on screen** (thirteen and five on 2026-09-05; the
-monitoring station's two location figures rendered for the first time on
-2026-09-06, after 136-02 rebuilt the demonstration data). No figure in this
+**Nineteen of the twenty-two figures agree with the rows behind them to the
+cent. The other three showed nothing on screen** (thirteen and five on
+2026-09-05; the monitoring station's two location figures rendered for the
+first time on 2026-09-06, after 136-02 rebuilt the demonstration data; 137-03
+then added four figures on 2026-09-06, all four MATCH). No figure in this
 section disagrees with its own arithmetic. One of them disagrees with its label,
 and that is the finding worth acting on.
 
@@ -1383,6 +1406,34 @@ because each carries its own name; only the index of what was captured, at what
 size, with what fingerprint, is lost. This section's copy was preserved before
 the overwrite as `manifest-d.json`, and the other three sections' copies are
 beside it.
+
+#### 7. ISS-145 is closed: the well page now renders the measurement history it promised
+
+The well page's description has said "measurement history" since it was
+written, and until 137-03 the page rendered none. That is closed by rendering,
+not by argument: `/wells/10/` now shows a table of meter reads with a Totalizer
+and a Delta column, and a table of monthly water-level closes with a Change
+column, both pulled straight off the stored rows with no chart and no library.
+FIG-wells-001 through FIG-wells-004 are those four figures, and all four
+MATCH.
+
+The Delta figure is the more interesting of the two new kinds. It looks like a
+transcription, one stored column shown back, but the recomputation checks it
+two ways that could have disagreed with each other and with the stored value:
+current_value minus the row's own previous_value, and current_value minus the
+prior read's current_value. On the pinned meter, MTR-MER-W-001, both read
+65.9112 AF against a stored 65.9112, and the same holds on all 24 reads on that
+meter with zero breaks in the chain. Close and Change have no stored column at
+all behind them; `wells/measurement_history.py` builds both in Python from the
+month's last reading, so the check re-derives that selection rule rather than
+reading a number back.
+
+The card also puts a number behind the finding ISS-145 was written to surface.
+MER-W-004 (well id 13, `/wells/13/`), the one well on a pressure transducer
+that the seed data runs dry, now shows its own water-level table: a September
+2025 close of 94.15 ft against a September 2026 close of 109.65 ft, a 15.50 ft
+drop in one dry year, on a screen a reader can open rather than only in a
+seed-data note.
 
 #### On the drinking-water module, which has no rows here
 

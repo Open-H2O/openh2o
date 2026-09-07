@@ -17,7 +17,12 @@
   {
     "slug": "d-well-detail-mer-w-001",
     "url": "/wells/10/",
-    "note": "SECTION D PIN for FIG-wells-001..004. Well id 32, registration MER-W-001, 'Ag well on MER-APN-002'. Chosen because one screen carries all four wells figures: it has an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order)."
+    "note": "SECTION D PIN for FIG-wells-001..008 (Plan 137-03 added the Measurement history card's FIG-wells-001..004 ahead of the four figures already on this page, renumbered FIG-wells-005..008 in remaining_subsystems.sql). Well id 10, registration MER-W-001, 'Ag well on MER-APN-002'. Pinned meter read: the newest, 30 September 2026, on meter MTR-MER-W-001 -- Totalizer 41,241.64, Delta 65.91 AF. Pinned water-level month: the newest, September 2026 -- Close 101.92 ft, Change 3.13 ft; well 10 has no Sensor row, so the digest reads the hand-entered WaterMeasurement record. Also carries the four pre-existing wells figures: an irrigated-parcel row (MER-APN-002), a monitoring record with a reference elevation (182.40 ft), an integer number field (Year Pumping Began 1987) and a two-decimal number field (Capacity 2000.00 gpm, the first such field in the pane's own order)."
+  },
+  {
+    "slug": "d-well-detail-mer-w-004",
+    "url": "/wells/13/",
+    "note": "SECTION D EVIDENCE, not a figure site -- no FIG- row cites this well. MER-W-004 (well id 13), 'Ag well on MER-APN-006', the transducer well ISS-145's dry-year decline lives on (Sensor id 2, 730 daily SensorMeasurement rows, 4 marked anomalous and dropped). Its water-level digest reads 94.15 ft at the September 2025 close and 109.65 ft at the September 2026 close, a 15.50 ft two-year decline, recomputed in audit/figure_ledger/sql/well_measurement_history.sql (cross-checks X3-well-13-sept-2025-close, X3-well-13-sept-2026-close, X3-well-13-two-year-decline). Captured so the finding names a screen a reader can open, not only a row in a recomputation file."
   },
   {
     "slug": "d-recharge-detail-el-nido-basin-1",

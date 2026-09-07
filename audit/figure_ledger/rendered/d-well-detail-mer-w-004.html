@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Setup Wizard - OpenH2O</title>
+    <title>Well Ag well on MER-APN-006 - Open Water Accounting Platform</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png?v=3">
     <link rel="icon" type="image/png" sizes="192x192" href="/static/img/favicon-192.png?v=3">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png?v=3">
@@ -25,6 +25,9 @@
 
     <!-- MapLibre GL JS (available in map pages via block) -->
     
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/map-engine.css">
+
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous" defer></script>
@@ -37,7 +40,7 @@
 
     
 </head>
-<body class="section-administration" hx-headers='{"X-CSRFToken": "q0cL6GQH4DJiWkDJt9zKs581pegh0yZKK2oc4UfYwUPPqSFuYWKJpwMfRMyiJQ4Q"}'>
+<body class="section-water_data" hx-headers='{"X-CSRFToken": "7nvTcmlruuOYx21I7vvtOIJMeQ9Qv1RCrpHkaAKIWLUv1A3tCiGsL9n0GorRejWI"}'>
     
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div id="loading-bar" class="loading-bar"></div>
@@ -120,7 +123,7 @@
             <span class="sidebar-link-text">Use Areas</span>
         </a>
         <a href="/wells/"
-           class="sidebar-link">
+           class="sidebar-link active">
                         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M12 2v4"/>
@@ -340,7 +343,7 @@
             <span class="sidebar-link-text">Site Health</span>
         </a>
         <a href="/setup/"
-           class="sidebar-link active">
+           class="sidebar-link">
                         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.07 4.93a10 10 0 0 1 1.36 13.37"/>
@@ -525,17 +528,19 @@
             
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <a href="/">Home</a>
+    <a href="/wells/">Water Data</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Setup Wizard</span>
+    <a href="/wells/">Wells</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Ag well on MER-APN-006</span>
   </nav>
-  <p class="page-description">Upload your district boundary or select an existing one to auto-populate wells, use areas, basins, and monitoring stations.</p>
+  <p class="page-description">Well details, linked meters, and measurement history. Click any editable field to update it.</p>
 </div>
 
 
             <main class="app-content" id="main-content">
                 
-                <h1 class="sr-only">Setup Wizard</h1>
+                <h1 class="sr-only">Ag well on MER-APN-006</h1>
                 
                 
 <div class="card-raised demo-notice" role="note" aria-label="Demonstration data notice">
@@ -549,115 +554,759 @@
 
 
                 
-<div class="page-stack page-medium">
-
-  <!-- Step indicator -->
-  <div class="row-start" style="gap: var(--space-lg);">
-    <div class="row-start">
-      <span class="step-badge step-badge-active">1</span>
-      <span class="text-base" style="font-weight: 600; color: var(--color-accent);">Boundary</span>
-    </div>
-    <span class="text-tertiary">›</span>
-    <div class="row-start">
-      <span class="step-badge">2</span>
-      <span class="text-base text-tertiary">Confirm</span>
-    </div>
-    <span class="text-tertiary">›</span>
-    <div class="row-start">
-      <span class="step-badge">3</span>
-      <span class="text-base text-tertiary">Populate</span>
-    </div>
+<div class="page-stack">
+  <div>
+    <a href="/wells/" class="back-link">&larr; Back to Wells</a>
   </div>
-
-  
-
-  <!-- Select Existing Boundary -->
-  
-  <div class="card-raised">
-    <h2 class="card-header-ruled">Select existing boundary</h2>
-    <form method="post" enctype="multipart/form-data">
-      <input type="hidden" name="csrfmiddlewaretoken" value="q0cL6GQH4DJiWkDJt9zKs581pegh0yZKK2oc4UfYwUPPqSFuYWKJpwMfRMyiJQ4Q">
-      <input type="hidden" name="action" value="select">
-      <div class="form-group">
-        <label class="form-label" for="boundary_id">District boundary</label>
-        <select name="boundary_id" id="boundary_id" class="form-select">
-          <option value="">— Choose a boundary —</option>
-          
-          <option value="1">Merced Subbasin (800.9 sq mi)</option>
-          
-        </select>
-        <p class="form-help">Select the boundary that defines your district or agency service area.</p>
-      </div>
-      <div class="form-footer">
-        <button type="submit" class="btn-primary" id="btn-select">
-          Use this boundary →
-        </button>
-      </div>
-    </form>
+  <!-- Persistent map host (the shared body partial builds the map into this). -->
+  <div id="detail-map-card" class="card-raised" style="padding: 0; overflow: hidden; display: none;">
+    <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
+  <div id="detail-body">
+    
 
-  <div class="row-between" style="color: var(--color-text-tertiary); font-size: 0.8125rem;">
-    <hr style="flex: 1; border: none; border-top: 1px solid var(--color-border);">
-    <span style="padding: 0 var(--space-md);">or upload a new one</span>
-    <hr style="flex: 1; border: none; border-top: 1px solid var(--color-border);">
+<!-- Pane header: which well you're looking at (the workspace has no breadcrumb). -->
+<div class="pane-header">
+  <div>
+    <div class="pane-header-title">Ag well on MER-APN-006</div>
+    <div class="pane-header-sub">MER-W-004</div>
   </div>
-  
+  <div class="pane-header-meta">
+    
+  <span class="badge badge-pill badge-green">Active</span>
 
-  <!-- Upload GeoJSON -->
-  <div class="card-raised">
-    <h2 class="card-header-ruled">Upload the district's service-area boundary</h2>
-    <form method="post" enctype="multipart/form-data" id="upload-form">
-      <input type="hidden" name="csrfmiddlewaretoken" value="q0cL6GQH4DJiWkDJt9zKs581pegh0yZKK2oc4UfYwUPPqSFuYWKJpwMfRMyiJQ4Q">
-      <input type="hidden" name="action" value="upload">
 
-      <div class="form-group">
-        <label class="form-label" for="geojson_file">Boundary map file (GeoJSON)</label>
-        <div
-          class="upload-zone"
-          id="upload-zone"
-          onclick="document.getElementById('geojson_file').click()"
-          ondragover="event.preventDefault(); this.classList.add('dragover');"
-          ondragleave="this.classList.remove('dragover');"
-          ondrop="event.preventDefault(); this.classList.remove('dragover'); document.getElementById('geojson_file').files = event.dataTransfer.files; updateZoneLabel(event.dataTransfer.files[0]);"
-        >
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto var(--space-sm); display: block; opacity: 0.5;">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-          <p id="zone-label" style="margin: 0; font-size: 0.875rem;">
-            Drag and drop a <strong>.geojson</strong> or <strong>.json</strong> file here, or click to browse
-          </p>
-        </div>
-        <input
-          type="file"
-          name="geojson_file"
-          id="geojson_file"
-          accept=".geojson,.json"
-          style="display: none;"
-          onchange="updateZoneLabel(this.files[0])"
-        >
-        <p class="form-help">This is one shape drawn on a map: the outline of the area this deployment covers. A GIS consultant, or whoever handles the district's mapping, can export one — and if a file is rejected here, they are the people to send it back to.</p>
-        <p class="form-help">For whoever prepares the file: a GeoJSON Feature or FeatureCollection whose geometry is a Polygon or MultiPolygon, in WGS84 (EPSG:4326).</p>
-      </div>
-
-      <div class="form-footer">
-        <button type="submit" class="btn-primary" id="btn-upload">
-          Upload &amp; continue →
-        </button>
-      </div>
-    </form>
+    <a href="/wells/13/" class="text-tertiary text-xs back-link" title="Open this well on its own page">Open full page &rarr;</a>
   </div>
-
 </div>
 
+<div class="pane-stack">
+  <div class="page-grid-2col">
+
+    <!-- Left column: Well Info -->
+    <div class="page-stack">
+
+      <div class="card-raised">
+
+        
+        <!-- ── Identification ── -->
+        <h2 class="section-header">Identification <span class="badge badge-pill badge-demo" title="Sample data — not a real legal action">DEMO</span>
+</h2>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Name
+    
+  </div>
+  <div id="field-name" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        Ag well on MER-APN-006
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=name"
+      hx-target="#field-name"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Name">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+
+        <!-- Static field: well_registration_id (local registry id) -->
+        <div class="field-group">
+          <div class="field-label field-row">
+            Registration ID
+            <span class="help-tooltip">
+  <button type="button" class="help-icon" aria-label="Help: Registration ID">?</button>
+  <span class="help-text" role="tooltip">This agency's local registry identifier for the well. The statewide DWR identifier is the State Well Number field below.</span>
+</span>
+
+            
+            
+          </div>
+          <div class="field-value-mono">MER-W-004</div>
+        </div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    WCR Number
+    
+  </div>
+  <div id="field-wcr_number" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        E798715
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=wcr_number"
+      hx-target="#field-wcr_number"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit WCR Number">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    State Well Number
+    
+  </div>
+  <div id="field-state_well_number" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        09S016E09D003M
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=state_well_number"
+      hx-target="#field-state_well_number"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit State Well Number">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+
+        <!-- Static field: well_type -->
+        <div class="field-group">
+          <div class="field-label">Well type</div>
+          <div class="field-value">Agricultural</div>
+        </div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Owner Name
+    
+  </div>
+  <div id="field-owner_name" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        Brayfield Family Ranch
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=owner_name"
+      hx-target="#field-owner_name"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Owner Name">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+
+        <!-- ── State Reporting (GEARS) ── -->
+        <h2 class="section-header mt-lg">State reporting (GEARS)</h2>
+        <p class="text-tertiary text-xs" style="margin-bottom: var(--space-sm);">
+          These fields feed a GEARS extraction filing.
+        </p>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Status
+    
+      <span class="help-tooltip">
+  <button type="button" class="help-icon" aria-label="Help: Status">?</button>
+  <span class="help-text" role="tooltip">Active wells are included in extraction reporting. Inactive wells are excluded.</span>
+</span>
+
+    
+  </div>
+  <div id="field-status" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        
+  <span class="badge badge-pill badge-green">Active</span>
+
+
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=status"
+      hx-target="#field-status"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Status">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Capacity (gpm)
+    
+  </div>
+  <div id="field-capacity_gpm" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        700.00
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=capacity_gpm"
+      hx-target="#field-capacity_gpm"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Capacity (gpm)">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Year Pumping Began
+    
+  </div>
+  <div id="field-year_pumping_began" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        2009
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=year_pumping_began"
+      hx-target="#field-year_pumping_began"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Year Pumping Began">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Measurement Method
+    
+      <span class="help-tooltip">
+  <button type="button" class="help-icon" aria-label="Help: Measurement Method">?</button>
+  <span class="help-text" role="tooltip">How extraction volume is determined. Feeds the GEARS filing; certified-meter readings carry a calibration date.</span>
+</span>
+
+    
+  </div>
+  <div id="field-measurement_method" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        Unmetered Estimate
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=measurement_method"
+      hx-target="#field-measurement_method"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Measurement Method">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+
+        <!-- ── Construction (DWR Well Completion Report) ── -->
+        <h2 class="section-header mt-lg">Construction (DWR Well Completion Report)</h2>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Depth (ft)
+    
+      <span class="help-tooltip">
+  <button type="button" class="help-icon" aria-label="Help: Total Depth">?</button>
+  <span class="help-text" role="tooltip">Depth of the well bore in feet below ground surface.</span>
+</span>
+
+    
+  </div>
+  <div id="field-depth_ft" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        420.00
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=depth_ft"
+      hx-target="#field-depth_ft"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Depth (ft)">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Casing Diameter (in)
+    
+  </div>
+  <div id="field-casing_diameter_in" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        14.00
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=casing_diameter_in"
+      hx-target="#field-casing_diameter_in"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Casing Diameter (in)">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Casing Material
+    
+  </div>
+  <div id="field-casing_material" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        Stainless Steel
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=casing_material"
+      hx-target="#field-casing_material"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Casing Material">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Screen Top (ft)
+    
+  </div>
+  <div id="field-screen_top_ft" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        219.00
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=screen_top_ft"
+      hx-target="#field-screen_top_ft"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Screen Top (ft)">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Screen Bottom (ft)
+    
+  </div>
+  <div id="field-screen_bottom_ft" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        383.00
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=screen_bottom_ft"
+      hx-target="#field-screen_bottom_ft"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Screen Bottom (ft)">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Tested Yield (gpm)
+    
+  </div>
+  <div id="field-tested_yield_gpm" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        731.00
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=tested_yield_gpm"
+      hx-target="#field-tested_yield_gpm"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Tested Yield (gpm)">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+        
+<div class="field-group">
+  <div class="field-label field-row">
+    Pump Type
+    
+  </div>
+  <div id="field-pump_type" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        Submersible
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=pump_type"
+      hx-target="#field-pump_type"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Pump Type">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+
+        <!-- Notes + timestamps -->
+        <div class="border-separator">
+          
+<div class="field-group">
+  <div class="field-label field-row">
+    Notes
+    
+  </div>
+  <div id="field-notes" class="field-row">
+    <span class="field-value" style="flex: 1;">
+      
+        <span class="value-empty">Not recorded</span>
+      
+    </span>
+    <button
+      hx-get="/wells/13/edit-field/?field=notes"
+      hx-target="#field-notes"
+      hx-swap="innerHTML"
+      class="edit-btn"
+      title="Edit Notes">
+      &#9998;
+    </button>
+  </div>
+</div>
+
+          <div class="text-tertiary text-xs">
+            Created Sep 06, 2026 &middot; Updated Sep 06, 2026
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column: Meters, Parcels, Monitoring -->
+    <div class="page-stack">
+
+      <!-- Current Meters card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Current meters</h2>
+        
+          <p class="text-tertiary text-base">No active meters on this well.</p>
+        
+      </div>
+
+      
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Measurement history</h2>
+        
+          
+
+          
+            <div class="field-label">Depth to water, ft below land surface</div>
+            <p class="text-tertiary text-xs" style="margin-bottom: 0;">
+              Monthly close from the well's logger record; change is against the previous month's close, so a positive change is a deeper water table.
+            </p>
+            
+              <div class="text-tertiary text-xs mt-sm">WY 2025-2026</div>
+              <table class="data-table text-sm">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th class="th-right">Close (ft)</th>
+                    <th class="th-right">Change (ft)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  
+                  <tr>
+                    <td class="text-secondary">Sep 2026</td>
+                    <td class="td-num">109.65</td>
+                    <td class="td-num">1.60</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Aug 2026</td>
+                    <td class="td-num">108.06</td>
+                    <td class="td-num">3.39</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Jul 2026</td>
+                    <td class="td-num">104.67</td>
+                    <td class="td-num">4.60</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Jun 2026</td>
+                    <td class="td-num">100.06</td>
+                    <td class="td-num">5.27</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">May 2026</td>
+                    <td class="td-num">94.79</td>
+                    <td class="td-num">5.92</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Apr 2026</td>
+                    <td class="td-num">88.87</td>
+                    <td class="td-num">3.60</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Mar 2026</td>
+                    <td class="td-num">85.26</td>
+                    <td class="td-num">-1.43</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Feb 2026</td>
+                    <td class="td-num">86.69</td>
+                    <td class="td-num">-1.86</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Jan 2026</td>
+                    <td class="td-num">88.55</td>
+                    <td class="td-num">-2.47</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Dec 2025</td>
+                    <td class="td-num">91.02</td>
+                    <td class="td-num">-1.81</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Nov 2025</td>
+                    <td class="td-num">92.82</td>
+                    <td class="td-num">-0.69</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Oct 2025</td>
+                    <td class="td-num">93.51</td>
+                    <td class="td-num">-0.64</td>
+                  </tr>
+                  
+                </tbody>
+              </table>
+            
+              <div class="text-tertiary text-xs mt-sm">WY 2024-2025</div>
+              <table class="data-table text-sm">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th class="th-right">Close (ft)</th>
+                    <th class="th-right">Change (ft)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  
+                  <tr>
+                    <td class="text-secondary">Sep 2025</td>
+                    <td class="td-num">94.15</td>
+                    <td class="td-num">1.08</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Aug 2025</td>
+                    <td class="td-num">93.07</td>
+                    <td class="td-num">3.03</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Jul 2025</td>
+                    <td class="td-num">90.04</td>
+                    <td class="td-num">3.88</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Jun 2025</td>
+                    <td class="td-num">86.15</td>
+                    <td class="td-num">4.28</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">May 2025</td>
+                    <td class="td-num">81.88</td>
+                    <td class="td-num">5.19</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Apr 2025</td>
+                    <td class="td-num">76.69</td>
+                    <td class="td-num">2.82</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Mar 2025</td>
+                    <td class="td-num">73.87</td>
+                    <td class="td-num">-2.69</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Feb 2025</td>
+                    <td class="td-num">76.56</td>
+                    <td class="td-num">-3.80</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Jan 2025</td>
+                    <td class="td-num">80.36</td>
+                    <td class="td-num">-4.86</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Dec 2024</td>
+                    <td class="td-num">85.22</td>
+                    <td class="td-num">-3.49</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Nov 2024</td>
+                    <td class="td-num">88.70</td>
+                    <td class="td-num">-1.46</td>
+                  </tr>
+                  
+                  <tr>
+                    <td class="text-secondary">Oct 2024</td>
+                    <td class="td-num">90.16</td>
+                    <td class="td-num"><span class="text-tertiary">&mdash;</span></td>
+                  </tr>
+                  
+                </tbody>
+              </table>
+            
+          
+        
+      </div>
+
+      <!-- Irrigated Parcels card -->
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Irrigated parcels</h2>
+        
+          
+          <div class="item-row row-between">
+            <a href="/parcels/6/" class="data-table-link text-base">
+              MER-APN-006
+            </a>
+            <div style="text-align: right;">
+              <span class="text-secondary text-sm">1.00 fraction</span>
+              
+                <div class="text-tertiary text-xs">Brayfield Family Ranch</div>
+              
+            </div>
+          </div>
+          
+        
+      </div>
+
+      <!-- Monitoring Data card -->
+      
+      <div class="card-raised">
+        <h2 class="section-header mb-md">Monitoring data</h2>
+        <div class="page-stack" style="gap: var(--space-sm);">
+          
+          <div class="field-group mb-0">
+            <span class="field-label">Agency</span>
+            <div class="field-value-sm">DWR</div>
+          </div>
+          
+          
+          <div class="field-group mb-0">
+            <span class="field-label">Frequency</span>
+            <div class="field-value-sm">Continuous</div>
+          </div>
+          
+          
+          <div class="field-group mb-0">
+            <span class="field-label">Reference elevation</span>
+            <div class="field-value-sm">169.9 ft</div>
+          </div>
+          
+          
+          <div class="field-group mb-0">
+            <span class="field-label">Notes</span>
+            <div class="text-secondary text-base">Legacy DWR record; transducer logs daily, datum not yet converted to NAVD88.</div>
+          </div>
+          
+        </div>
+      </div>
+      
+
+    </div>
+  </div>
+</div>
+
+
+<script id="detail-geojson-data" type="application/json">{"type": "FeatureCollection", "features": [{"type": "Feature", "id": 13, "properties": {"well_registration_id": "MER-W-004", "name": "Ag well on MER-APN-006"}, "geometry": {"type": "Point", "coordinates": [-120.49687377511101, 37.109374043259535]}}]}</script>
 <script>
-function updateZoneLabel(file) {
-  if (file) {
-    document.getElementById('zone-label').textContent = 'Selected: ' + file.name;
+// Wait for the map toolkit: on a full-page load this body renders BEFORE the
+// map scripts at end of page, so poll on window.OH2O (safe access) until ready.
+// On an HTMX row-swap the toolkit is already loaded, so this runs immediately.
+(function () {
+  function go() {
+    if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
+    OH2O.detailPaneMap({
+      card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
+      source: 'well',
+      popup: function (p) {
+        return '<strong>' + (p.name || 'Unnamed Well') + '</strong><br>' +
+               'Reg ID: ' + (p.well_registration_id || '—');
+      }
+    });
   }
-}
+  go();
+})();
 </script>
+
+  </div>
+</div>
 
             </main>
 
@@ -678,6 +1327,10 @@ function updateZoneLabel(file) {
 
     
     
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="/static/js/map-core.js"></script>
+
     
 
     <script>

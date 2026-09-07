@@ -1115,25 +1115,69 @@
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 146,
-    "column": 68,
-    "expression": "{{ wip.fraction|floatformat:2 }}",
-    "enclosing_loop": "wip in irrigated_parcels",
-    "nearest_label": "{{ wip.fraction|"
+    "line": 164,
+    "column": 62,
+    "expression": "{{ read.current_value|floatformat:2|intcomma }}",
+    "enclosing_loop": "read in year.reads",
+    "nearest_label": "{{ read.current_value|"
   },
   {
     "id": "FIG-wells-002",
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 178,
+    "line": 166,
+    "column": 49,
+    "expression": "{{ read.calculated_volume|floatformat:2|intcomma }}",
+    "enclosing_loop": "read in year.reads",
+    "nearest_label": "{{ read.calculated_volume|"
+  },
+  {
+    "id": "FIG-wells-003",
+    "app": "wells",
+    "kind": "figure",
+    "template": "templates/wells/partials/_detail_pane.html",
+    "line": 195,
+    "column": 53,
+    "expression": "{{ row.close|floatformat:2 }}",
+    "enclosing_loop": "row in year.months",
+    "nearest_label": "{{ row.close|"
+  },
+  {
+    "id": "FIG-wells-004",
+    "app": "wells",
+    "kind": "figure",
+    "template": "templates/wells/partials/_detail_pane.html",
+    "line": 196,
+    "column": 133,
+    "expression": "{{ row.change|floatformat:2 }}",
+    "enclosing_loop": "row in year.months",
+    "nearest_label": "{{ row.change|"
+  },
+  {
+    "id": "FIG-wells-005",
+    "app": "wells",
+    "kind": "figure",
+    "template": "templates/wells/partials/_detail_pane.html",
+    "line": 218,
+    "column": 68,
+    "expression": "{{ wip.fraction|floatformat:2 }}",
+    "enclosing_loop": "wip in irrigated_parcels",
+    "nearest_label": "{{ wip.fraction|"
+  },
+  {
+    "id": "FIG-wells-006",
+    "app": "wells",
+    "kind": "figure",
+    "template": "templates/wells/partials/_detail_pane.html",
+    "line": 250,
     "column": 78,
     "expression": "{{ monitoring.reference_elevation_ft|floatformat:1 }}",
     "enclosing_loop": null,
     "nearest_label": "{{ monitoring.reference_elevation_ft|"
   },
   {
-    "id": "FIG-wells-003",
+    "id": "FIG-wells-007",
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_editable_field.html",
@@ -1144,7 +1188,7 @@
     "nearest_label": "{{ ef.value|"
   },
   {
-    "id": "FIG-wells-004",
+    "id": "FIG-wells-008",
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_editable_field.html",
