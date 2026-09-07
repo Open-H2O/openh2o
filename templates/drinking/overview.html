@@ -12,9 +12,11 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Drinking Water</span>
   </nav>
-  {# Phase 88 softened `drinking.requires` to ("standards",), so this page runs #}
-  {# on a deployment with no Wells module. The clause naming wells goes with it #}
-  {# — with `wells` on, the sentence is byte-identical to what it replaced.     #}
+  {% comment %}
+    Phase 88 softened `drinking.requires` to ("standards",), so this page runs
+    on a deployment with no Wells module. The clause naming wells goes with it
+    — with `wells` on, the sentence is byte-identical to what it replaced.
+  {% endcomment %}
   {% comment %}89-02: two defects in one sentence, and the vocabulary gate could
   see neither. 88-03 guarded ", and the wells behind them" and left the comma
   before "its facilities" doing the work of a three-item list, so a wells-less
@@ -269,10 +271,12 @@
     </div>
   </div>
   {% empty %}
-  {# Same softening as the page description above. Branched rather than guarded #}
-  {# inline because `{% if %}` cannot live inside an `{% include ... with %}`   #}
-  {# argument — the wells-on branch is byte-identical to the single line it     #}
-  {# replaced.                                                                  #}
+  {% comment %}
+    Same softening as the page description above. Branched rather than guarded
+    inline because `{% if %}` cannot live inside an `{% include ... with %}`
+    argument — the wells-on branch is byte-identical to the single line it
+    replaced.
+  {% endcomment %}
   {% if 'wells' in enabled_modules %}
   {% include "drinking/partials/_empty_drinking.html" with what="A water system is the public water system this agency operates — its PWSID, the facilities that make it up, and the wells behind them." onboard_link=True %}
   {% else %}

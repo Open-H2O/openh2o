@@ -313,11 +313,13 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
         Object.assign(OH2O.makeLabelLayer('wells-label', 'wells', 'well', {}), { panelHidden: true, section: 'Land Use' }),{% endif %}
 
         // ── Surface Water ──
-        {# The whole Surface Water section is guarded with its source above. The  #}
-        {# POD layers would reference a removed source (a MapLibre console error, #}
-        {# not a clean absence), and the SW tie lines are drawn from              #}
-        {# PointOfDiversionParcel — without the module the section would be an    #}
-        {# empty panel heading with two permanently blank toggles.                #}
+        {% comment %}
+          The whole Surface Water section is guarded with its source above. The
+          POD layers would reference a removed source (a MapLibre console error,
+          not a clean absence), and the SW tie lines are drawn from
+          PointOfDiversionParcel — without the module the section would be an
+          empty panel heading with two permanently blank toggles.
+        {% endcomment %}
         {% if 'surface' in enabled_modules %}
         {
             id: 'pods-points', type: 'circle', source: 'pods',
@@ -360,9 +362,11 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             minzoom: 12, field: ['concat', ['to-string', ['round', ['*', ['get', 'fraction'], 100]]], '% GW'],
             layout: { 'symbol-placement': 'line-center', 'text-size': 11 }, offset: [0, -0.8]
         }), { panelHidden: true, group: 'gw-tie-lines', section: 'Infrastructure', filter: ['==', ['get', 'source_type'], 'gw'] }),{% endif %}
-        {# All four recharge layers are guarded together with their source above. A #}
-        {# source removed with its layers left behind produces a MapLibre console  #}
-        {# error ("source 'recharge' not found"), not a clean absence.             #}
+        {% comment %}
+          All four recharge layers are guarded together with their source above. A
+          source removed with its layers left behind produces a MapLibre console
+          error ("source 'recharge' not found"), not a clean absence.
+        {% endcomment %}
         {% if 'recharge' in enabled_modules %}
         {
             id: 'recharge-fill', type: 'fill', source: 'recharge',

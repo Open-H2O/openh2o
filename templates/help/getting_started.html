@@ -251,13 +251,15 @@
     </div>
   </div>{% endif %}
 
-  {# Phase 87: the WHOLE card is guarded on `surface`, unlike the piece-by-piece #}
-  {# recharge guard inside it. `recharge.requires` contains `surface`, so with   #}
-  {# surface off recharge is off too and this step has no subject left — an      #}
-  {# unguarded card would onboard the operator into a module the deployment does #}
-  {# not have. The cost is a visible Step 8 → Step 10 gap, which is the better   #}
-  {# of the two defects. The inner recharge guard still matters: recharge can be #}
-  {# dropped on its own, and then the surface onboarding must survive.           #}
+  {% comment %}
+    Phase 87: the WHOLE card is guarded on `surface`, unlike the piece-by-piece
+    recharge guard inside it. `recharge.requires` contains `surface`, so with
+    surface off recharge is off too and this step has no subject left — an
+    unguarded card would onboard the operator into a module the deployment does
+    not have. The cost is a visible Step 8 → Step 10 gap, which is the better
+    of the two defects. The inner recharge guard still matters: recharge can be
+    dropped on its own, and then the surface onboarding must survive.
+  {% endcomment %}
   {% if 'surface' in enabled_modules %}
   <div class="card-raised step-card">
     <span class="step-number">
@@ -266,9 +268,11 @@
       </svg>
     </span>
     <div class="step-body">
-      {# This step serves TWO modules, so it is guarded piece by piece rather than #}
-      {# as a whole card: dropping `recharge` must not also delete the surface     #}
-      {# diversion onboarding.                                                     #}
+      {% comment %}
+        This step serves TWO modules, so it is guarded piece by piece rather than
+        as a whole card: dropping `recharge` must not also delete the surface
+        diversion onboarding.
+      {% endcomment %}
       {% if 'recharge' in enabled_modules %}
       <span class="step-eyebrow">Step {{ steps.surface }} &middot; the Setup Wizard imports recharge basins for you</span>
       <h2 class="section-header">Add surface diversions and recharge areas</h2>
