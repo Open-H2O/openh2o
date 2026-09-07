@@ -84,8 +84,9 @@
 --       filtered queryset. They do NOT pass through billable_ledger, so the ledger
 --       page and the balance panes are on different bases by design. Both bases are
 --       computed below so the size of that difference is on the record.
---   accounting/views.py:474     allocation_total is a plain SUM over the filtered
---       allocation rows, unsigned.
+--   accounting/views.py:474     the allocations footer is a SUM over the filtered
+--       allocation rows GROUPED BY water type, unsigned, with no total across the
+--       groups (138-02, ISS-156).
 --   accounting/views.py:1232    the run page takes the most recent run for
 --       (parcel, period); the banking block renders only when banked_af > 0 or
 --       drawn_af > 0.
@@ -350,6 +351,20 @@ alloc_total AS (
     SELECT COUNT(*) AS n, COALESCE(SUM(allocation_acre_feet), 0) AS total
       FROM alloc_scope
 ),
+-- 138-02 (ISS-156): the footer no longer prints `alloc_total`. It prints one
+-- subtotal per water type and nothing across them, because a surface-water
+-- district's diversion entitlement and a groundwater sustainability agency's
+-- pumping allowance are managed by different agencies under different law.
+-- `alloc_total` is KEPT above as the cross-check it always was — the row count
+-- below still reads `n` — and the rendered figure is now the surface subtotal.
+alloc_by_water_type AS (
+    SELECT wt.name AS water_type, COUNT(*) AS n,
+           COALESCE(SUM(ap.allocation_acre_feet), 0) AS total
+      FROM accounting_allocationplan ap
+      JOIN period p ON ap.reporting_period_id = p.id
+      JOIN accounting_watertype wt ON ap.water_type_id = wt.id
+     GROUP BY wt.name
+),
 
 -- ── Cross-checks that can disagree ────────────────────────────────────────────
 checks AS (
@@ -445,8 +460,10 @@ figures AS (
            'Allocations list: Halvern Irrigation-Urban GSA — Groundwater WY 2025-2026',
            round((SELECT allocation_acre_feet FROM alloc_scope
                    WHERE name = 'Halvern Irrigation-Urban GSA — Groundwater WY 2025-2026'), 2)
-    UNION ALL SELECT 'FIG-accounting-022', 'Allocations list: footer total, all 8 allocations',
-           round((SELECT total FROM alloc_total), 2)
+    UNION ALL SELECT 'FIG-accounting-022',
+           'Allocations list footer: Surface Water subtotal (the pinned one of two)',
+           round((SELECT total FROM alloc_by_water_type
+                   WHERE water_type = 'Surface Water'), 2)
 
     -- ── The use ledger ───────────────────────────────────────────────────────
     UNION ALL SELECT 'FIG-accounting-046', 'Use ledger: first row Amount (AF)',

@@ -1,4 +1,11 @@
 {% extends "base.html" %}
+{% comment %}
+  **The four-decimal figures in this table are WEIGHTS, not volumes — ISS-142,
+  ruled by Brent 2026-09-06.** An apportionment weight carries real information
+  in its third and fourth places; rounded to two it stops distinguishing shares
+  that are genuinely different. ISS-142 asked about four-decimal *volumes* on
+  reader-facing pages, and these are not volumes.
+{% endcomment %}
 
 {% block title %}Shared-supply check - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Shared-Supply Check{% endblock %}

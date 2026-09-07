@@ -1,4 +1,12 @@
 {% comment %}
+  **Four decimal places here are deliberate — ISS-142, ruled by Brent
+  2026-09-06.** This preview shows the same gross-to-net waterfall as
+  `calculation_run_detail.html` and must agree with it digit for digit. Rounding
+  the preview alone would make the two screens print different values for the
+  same number, which is worse than the precision it removes. See that template's
+  comment for the whole ruling.
+{% endcomment %}
+{% comment %}
 Live preview output — swapped into #preview-pane by the picker form. Reflects the
 currently-SAVED methodology (evaluate_chain reads the DB plan) and persists
 nothing. Reuses the gross→net waterfall shape from calculation_run_detail.html.

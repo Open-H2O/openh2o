@@ -1,6 +1,27 @@
 {% extends "base.html" %}
 
 {% load placeholders %}
+{% comment %}
+  **Four decimal places on this page are deliberate — ISS-142, ruled by Brent
+  2026-09-06 and closed as a decision, not a sweep.**
+
+  This page is the gross-to-net audit trail behind one calculated figure, and
+  its whole point is that the steps sum exactly to the final number below them.
+  Rounding each step to two places would leave the arithmetic visibly not
+  closing to a reader checking it by hand — a worse defect than the tidiness it
+  would buy.
+
+  The complaint ISS-142 was raised on is already fixed and was a different
+  thing: the parcel detail panel showed a four-decimal residual beside
+  two-decimal neighbours on a SUMMARY screen. Nothing on this page is a summary
+  screen. If you are here because a long number looked odd, that is the answer;
+  please do not sweep the four-place formatting off this page.
+
+  (Written without naming the template filter it is about, on purpose:
+  `scripts/figure_inventory.py` treats any comment mentioning that filter as an
+  inventory entry, and one more entry at the top of this file would renumber
+  every accounting row in `docs/figure-ledger-2026-09.md`.)
+{% endcomment %}
 {% block title %}How {{ parcel.parcel_number }} {{ period }} was calculated - Open Water Accounting Platform{% endblock %}
 {% block page_title %}How was this calculated?{% endblock %}
 
