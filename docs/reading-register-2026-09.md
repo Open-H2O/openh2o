@@ -4,6 +4,26 @@
 
 **146 findings across 80 pages. Pages failing: 74 for the reader who does not work in water (L), 70 for the district engineer (E), 68 for both; 4 pass. Rows per owner phase: 141 → 4 · 142 → 8 · 143 → 99 · 144 → 35; ISS-143 is `decided: keep`.**
 
+## The short version
+
+What the walk found, in a page, before any table. Read this and skip the rest unless you are planning a phase.
+
+**Three faults are on every signed-in page.** No page has a visible title: the only thing that reads as one is the last word of the breadcrumb, so a facility page is titled "012". The floating Feedback button sits over content, including a column header and one page's lead figure. And the sidebar carries an entry, "Onboard System", that a layperson cannot place. On 26 pages the sidebar lights nothing at all, so a reader cannot tell where they are.
+
+**The dashboard's faults are the ones Brent named, and they rank 1 to 3.** The accounts table prints eight number columns as equals when three are the parts of a fourth and one is a balance; the panel above it is titled for an operation ("Supply vs. use") rather than the thing; its three figures are huge and the result is no bigger than its inputs. The account pages repeat all three faults in a second template, so the dashboard's fix carries to three more pages.
+
+**Tables have one recurring fault: figures related by arithmetic printed as a flat row.** It appears on the dashboard, the account breakdown, the zone's allocation table, the diversion records (Diverted, Return flow, Retained), the shared-supply check's Gap column and the monitoring dashboard's tiles. Seven record pages bury the one figure they exist to show (a zone's Remaining, a right's Face value, a lab result) as a cell like any other. Elsewhere a table's biggest number is unnamed: a depth with no word for what is measured, a count nobody calls a count, a Totalizer with no unit.
+
+**Maps: dots with no legend, and maps that ignore the list.** Surface Diversions and Recharge Areas open on unlabelled marks; four maps keep showing every mark after the list beside them is filtered; the main map's legend names three of eight zones and its Layers panel is cut off mid-word.
+
+**Words: nine pages explain the water to an engineer, and one thing is called two names.** Sentences like "A crop drinks part of the water; the rest sinks past the roots" fail copy rule 11 on six Help pages, the dashboard, Water Years and Delivery Settings. A parcel is also a use area; a water year is also a period and a reporting period; Wells is also Extraction Wells; three Help entries carry different names from the pages they open. The About page spends four paragraphs praising another platform. Fourteen glossary entries point at Help pages by names the menu does not use.
+
+**Two arithmetic defects fell out of reading.** The Allocations footer adds one 108,000 AF entitlement across two water years and prints 304,200 AF (ISS-164). The use-area page's ledger card ignores the selected period (ISS-165).
+
+**What passes.** The login page, both import forms and the layout shell pass whole; and every page has surfaces that pass, recorded as PASS lines in the slice files (248 of them), so the register is not a list of everything.
+
+**Who fixes what.** Phase 141 (4 rows): one stylesheet rule that flattens every table, plus two account-page templates that name utilities the stylesheet lacks. Phase 142 (8 rows): the dashboard, all of it, then Brent sees the whole page. Phase 143 (99 rows): every other table, tile row, filter bar, page head and map, in rank order below. Phase 144 (35 rows): the words and the sidebar, independent of the rest.
+
 ## How the rows were produced
 
 Every one of the 80 census pages (`.planning/phases/137-water-balance-panel-and-page-pass/137-03-census.json`) was captured from staging at the production commit `241c22b` on 2026-09-07 with `scripts/reading_capture.py` (a real browser at 1440 pixels wide; a screenshot, the visible text and the rendered page for each). Four readers (Opus), one per census slice, judged the screenshots against the standard's Parts 2 and 3 and proposed rows; the three calibration pages kept their 140-01 rows, re-read and confirmed (0 disagreements of 22 on the dashboard and the ledger; one measurement corrected on Surface Diversions). One adjudicator (Fable) decided every proposed row against the standard: kept, merged (one cause across templates is one row, as ISS-162 is), reworded, or rejected (three, listed at the end). 
