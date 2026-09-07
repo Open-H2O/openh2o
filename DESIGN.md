@@ -74,9 +74,36 @@ Three OKLCH tonal ramps (8 stops each, 100-800):
 
 ## Border Radius
 
-- Small: 6px (buttons, inputs)
-- Medium: 10px (cards)
-- Large: 12px (modals, large containers, budget/result panels)
+The surface is square. Five tokens are the only place a corner is decided.
+`static/css/tokens.css` is the authority; this section mirrors it.
+
+| Token | Value | Used by |
+|---|---|---|
+| `--radius-sm` | 2px | buttons, inputs, chips, focus rings, swatches |
+| `--radius-md` | 2px | cards, popups, map panels |
+| `--radius-lg` | 2px | large containers, budget/result panels |
+| `--radius-xl` | 2px | the largest surfaces |
+| `--radius-pill` | 100px | status chips and switches only |
+
+**The four non-pill tokens are deliberately the same value.** The scale is flat,
+not a ladder. They keep separate names so a later pass can differentiate an
+input from a modal by editing one line in `tokens.css` rather than re-pointing
+100+ call sites. Do not "simplify" them into one token.
+
+**Two exemptions, and a sweep must not touch either.**
+
+1. **`border-radius: 50%` is a circle, not a radius.** Avatars, status dots,
+   the data-freshness pips, the map legend's swatch dot. Squaring a circle is
+   the exact blind-sweep failure ISS-149 named. Leave every `50%` alone.
+2. **Pills stay pills.** A status chip and a switch read as a different kind of
+   thing from a panel, and a squared pill reads as a different control. They
+   read `--radius-pill`, not a literal.
+
+**Never write a literal radius.** Every corner reads one of the five tokens.
+Two deliberate `0` values remain (an input nested inside an already-bordered
+wrapper, and MapLibre's scale bar); both are square by intent and carry a
+comment saying so. `tests/test_radius_drift.py` fails the build on a new
+hardcoded value.
 
 ## Spacing Scale
 
@@ -84,7 +111,7 @@ Three OKLCH tonal ramps (8 stops each, 100-800):
 
 ## Components
 
-- Cards: `.card-raised` — var(--color-card) background, 1px border, 10px radius.
+- Cards: `.card-raised`: var(--color-card) background, 1px border, `--radius-lg`.
   Add `.card-inset` for a quieter, recessed variant (references, secondary aids).
 - Form inputs: .form-input, .form-select, .form-textarea utility classes
 - Tables: .table-scroll wrapper for horizontal overflow

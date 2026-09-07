@@ -26,7 +26,7 @@
     display:flex;
     background: color-mix(in oklch, var(--color-card) 88%, transparent);
     border:1px solid var(--color-border-hover, rgba(100,140,180,0.13));
-    border-radius:var(--radius-md, 10px);
+    border-radius:var(--radius-md);
     overflow:hidden;
     backdrop-filter:blur(14px) saturate(1.1);
     -webkit-backdrop-filter:blur(14px) saturate(1.1);
@@ -62,7 +62,7 @@
     position:absolute; top:10px; right:10px; z-index:10;
     background: color-mix(in oklch, var(--color-card) 90%, transparent);
     border:1px solid var(--color-border-hover, rgba(100,140,180,0.13));
-    border-radius:var(--radius-lg, 12px);
+    border-radius:var(--radius-lg);
     padding:0;
     min-width:248px; max-width:288px;
     backdrop-filter:blur(14px) saturate(1.1);
@@ -89,7 +89,7 @@
     display:flex; align-items:center; gap:7px;
 }
 #controls h3::before, .panel-head h3::before {
-    content:''; width:3px; height:13px; border-radius:2px;
+    content:''; width:3px; height:13px; border-radius:var(--radius-sm);
     background:var(--color-accent, #46B3C4);
 }
 .panel-toggle-all {
@@ -97,7 +97,7 @@
     letter-spacing:0.4px; text-transform:uppercase;
     color:var(--color-text-tertiary, #6b7f94);
     background:transparent; border:1px solid var(--color-border-hover, rgba(100,140,180,0.13));
-    border-radius:6px; padding:3px 8px; cursor:pointer; transition:all .18s;
+    border-radius:var(--radius-sm); padding:3px 8px; cursor:pointer; transition:all .18s;
 }
 .panel-toggle-all:hover { color:var(--color-text-primary, #e8edf4); border-color:var(--color-accent, #46B3C4); }
 
@@ -105,7 +105,7 @@
 
 .layer-toggle {
     display:flex; align-items:center; gap:9px;
-    padding:5px 7px; margin:1px -7px; border-radius:7px; cursor:pointer;
+    padding:5px 7px; margin:1px -7px; border-radius:var(--radius-sm); cursor:pointer;
     font-size:12.5px; color:var(--color-text-secondary, #8899aa);
     transition:color .15s, background .15s;
 }
@@ -114,7 +114,7 @@
 .layer-toggle input[type="checkbox"] {
     appearance:none; width:15px; height:15px;
     border:1.5px solid var(--color-text-tertiary, #6b7f94);
-    border-radius:4px; cursor:pointer;
+    border-radius:var(--radius-sm); cursor:pointer;
     position:relative; transition:all .18s; flex-shrink:0;
 }
 .layer-toggle input[type="checkbox"]:checked {
@@ -128,20 +128,20 @@
 .layer-count {
     font-family:var(--font-mono, monospace); font-size:10px; font-weight:600;
     color:var(--color-text-tertiary, #6b7f94);
-    background:var(--color-inset, #12151b); border-radius:5px;
+    background:var(--color-inset, #12151b); border-radius:var(--radius-sm);
     padding:1px 6px; min-width:20px; text-align:center; flex-shrink:0;
 }
 
 /* Swatches */
-.swatch { width:12px; height:4px; border-radius:2px; flex-shrink:0; }
-.swatch-line { width:20px; height:0; flex-shrink:0; border-top:3px solid; border-radius:2px; }
+.swatch { width:12px; height:4px; border-radius:var(--radius-sm); flex-shrink:0; }
+.swatch-line { width:20px; height:0; flex-shrink:0; border-top:3px solid; border-radius:var(--radius-sm); }
 .swatch-line-dash { border-top-style:dashed; }
 .swatch-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; box-shadow:0 0 0 1.5px rgba(255,255,255,0.85), 0 0 7px currentColor; }
-.swatch-square { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
-.swatch-letter { width:14px; height:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:var(--color-text-secondary, #8899aa); border:1.5px solid var(--color-text-tertiary, #6b7f94); border-radius:3px; line-height:1; }
+.swatch-square { width:12px; height:12px; border-radius:var(--radius-sm); flex-shrink:0; }
+.swatch-letter { width:14px; height:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:var(--color-text-secondary, #8899aa); border:1.5px solid var(--color-text-tertiary, #6b7f94); border-radius:var(--radius-sm); line-height:1; }
 .swatch-triangle { flex-shrink:0; font-size:15px; line-height:1; }
 .swatch-diamond { flex-shrink:0; font-size:15px; line-height:1; }
-.swatch-fill { width:15px; height:15px; border-radius:4px; flex-shrink:0; border:1px solid rgba(255,255,255,0.18); }
+.swatch-fill { width:15px; height:15px; border-radius:var(--radius-sm); flex-shrink:0; border:1px solid rgba(255,255,255,0.18); }
 
 /* ── Layer section groupings ── */
 .layer-section { margin-bottom: 6px; padding-bottom:6px; border-bottom:1px solid var(--color-border, rgba(100,140,180,0.06)); }
@@ -162,7 +162,7 @@
     position:absolute; bottom:10px; left:10px; z-index:10;
     background: color-mix(in oklch, var(--color-card) 90%, transparent);
     border:1px solid var(--color-border-hover, rgba(100,140,180,0.13));
-    border-radius:var(--radius-md, 10px);
+    border-radius:var(--radius-md);
     padding:12px 16px 13px;
     min-width:194px;
     /* The legend holds one row per management-area zone, and an agency can have
@@ -188,7 +188,7 @@
     letter-spacing:1.2px; text-transform:uppercase; margin-bottom:9px;
     display:flex; align-items:center; gap:6px;
 }
-#legend h4::before { content:''; width:3px; height:11px; border-radius:2px; background:var(--color-accent, #46B3C4); }
+#legend h4::before { content:''; width:3px; height:11px; border-radius:var(--radius-sm); background:var(--color-accent, #46B3C4); }
 .legend-row {
     display:flex; align-items:center; gap:9px;
     padding:3px 0; font-size:11.5px; color:var(--color-text-secondary, #8899aa);
@@ -200,7 +200,7 @@
     color:var(--color-text-secondary, #8899aa) !important;
     border:1px solid var(--color-border-hover, rgba(100,140,180,0.13)) !important;
     border-left:3px solid var(--color-accent, #46B3C4) !important;
-    border-radius:var(--radius-md, 10px) !important;
+    border-radius:var(--radius-md) !important;
     font-family:var(--font-display);
     font-size:12.5px; line-height:1.65;
     /* Horizontal inset so body text (bare text nodes after <br>) doesn't sit
@@ -232,11 +232,11 @@
 .maplibregl-popup-close-button:hover { color:var(--color-accent, #46B3C4) !important; background:transparent !important; }
 
 /* ── MapLibre native controls ── */
-.maplibregl-ctrl-group { background: color-mix(in oklch, var(--color-card) 90%, transparent) !important; border:1px solid var(--color-border-hover, rgba(100,140,180,0.13)) !important; border-radius:8px !important; box-shadow:var(--shadow-pop-sm) !important; }
+.maplibregl-ctrl-group { background: color-mix(in oklch, var(--color-card) 90%, transparent) !important; border:1px solid var(--color-border-hover, rgba(100,140,180,0.13)) !important; border-radius:var(--radius-md) !important; box-shadow:var(--shadow-pop-sm) !important; }
 .maplibregl-ctrl-group button { background:transparent !important; }
 .maplibregl-ctrl-group button:hover { background:var(--color-elevated, #242a33) !important; }
 .maplibregl-ctrl-group button span { filter:invert(0.7); }
-.maplibregl-ctrl-attrib { background:color-mix(in oklch, var(--color-base) 85%, transparent) !important; color:var(--color-text-tertiary, #6b7f94) !important; font-size:10px !important; border-radius:6px 0 0 0 !important; }
+.maplibregl-ctrl-attrib { background:color-mix(in oklch, var(--color-base) 85%, transparent) !important; color:var(--color-text-tertiary, #6b7f94) !important; font-size:10px !important; border-radius:var(--radius-sm) 0 0 0 !important; }
 .maplibregl-ctrl-attrib a { color:var(--color-blue-bright, #5A95BC) !important; }
 /* Scale bar: centered along the MAP's bottom edge, anchored to the map container
    itself. The old `position:fixed` pinned it to the viewport, which dropped it
@@ -250,6 +250,9 @@
    coords readout. */
 .maplibregl-ctrl-top-left { top:75px !important; left:0 !important; }
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl-scale { position:static !important; bottom:auto !important; left:auto !important; transform:none !important; margin:0 !important; }
+/* Deliberately square, and one of only two literals DESIGN.md allows: the scale
+   bar is a RULER. Its ends mark the measured distance, so a corner would round
+   away the two points the reader is asked to measure between. */
 .maplibregl-ctrl-scale { background:color-mix(in oklch, var(--color-card) 88%, transparent) !important; color:var(--color-text-secondary, #8899aa) !important; border:none !important; border-bottom:2px solid var(--color-accent, #46B3C4) !important; font-family:var(--font-mono); font-size:10px !important; letter-spacing:0.3px; padding:4px 11px !important; border-radius:0 !important; backdrop-filter:blur(10px); }
 
 /* ── Coordinate display ── */
@@ -257,7 +260,7 @@
     position:absolute; top:52px; left:10px; z-index:10;
     background: color-mix(in oklch, var(--color-card) 88%, transparent);
     border:1px solid var(--color-border-hover, rgba(100,140,180,0.13));
-    border-radius:8px;
+    border-radius:var(--radius-md);
     padding:5px 12px;
     font-family:var(--font-mono);
     font-size:11px;
@@ -281,7 +284,7 @@
 #coord-toast {
     position:fixed; bottom:80px; left:50%; transform:translateX(-50%) scale(1);
     background:var(--color-accent, #46B3C4); color:var(--color-base, #040608);
-    padding:6px 16px; border-radius:6px; font-size:13px; font-weight:700;
+    padding:6px 16px; border-radius:var(--radius-sm); font-size:13px; font-weight:700;
     font-family:var(--font-display);
     opacity:0; transition:opacity .3s, transform .2s; pointer-events:none; z-index:100;
 }

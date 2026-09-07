@@ -37,7 +37,7 @@ etc.) are gathered silently at submit time.
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0 0.7rem; box-sizing: border-box;
     border: 1px solid rgba(255,255,255,0.16);
-    border-radius: 8px; cursor: pointer;
+    border-radius: var(--radius-md); cursor: pointer;
     background: linear-gradient(180deg, #2090c2 0%, #1B7FAF 100%);
     color: #fff; font: 600 0.78rem/1 'Public Sans', sans-serif;
     box-shadow: 0 3px 12px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.12);
@@ -55,7 +55,7 @@ etc.) are gathered silently at submit time.
     position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 901;
     width: min(360px, calc(100vw - 2rem));
     max-height: calc(100vh - 3rem); overflow-y: auto;
-    background: var(--color-elevated,#1A2633); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+    background: var(--color-elevated,#1A2633); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg);
     box-shadow: 0 12px 40px rgba(0,0,0,0.5); padding: 1.1rem 1.1rem 1.2rem;
     color: var(--color-text-primary,#E7EEF2); font-family: 'Public Sans', sans-serif;
     opacity: 0; transform: translateY(12px) scale(.98); pointer-events: none;
@@ -71,7 +71,7 @@ etc.) are gathered silently at submit time.
   .oh2o-fb-panel label { display: block; font-size: .75rem; color: var(--color-text-secondary,#8FA3AE); margin: .55rem 0 .2rem; }
   .oh2o-fb-panel input[type=text], .oh2o-fb-panel input[type=email], .oh2o-fb-panel textarea {
     width: 100%; box-sizing: border-box; background: var(--color-card,#141E2A); color: var(--color-text-primary,#E7EEF2);
-    border: 1px solid rgba(255,255,255,0.12); border-radius: 7px; padding: .5rem .6rem;
+    border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm); padding: .5rem .6rem;
     font: 400 .85rem 'Public Sans', sans-serif; resize: vertical;
   }
   .oh2o-fb-panel input:focus, .oh2o-fb-panel textarea:focus { outline: none; border-color: var(--color-blue-bright,#3DB4E0); }
@@ -80,7 +80,7 @@ etc.) are gathered silently at submit time.
   .oh2o-fb-cats { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; margin-top: .15rem; }
   .oh2o-fb-cat {
     display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
-    background: var(--color-card,#141E2A); border: 1px solid rgba(255,255,255,0.12); border-radius: 7px;
+    background: var(--color-card,#141E2A); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm);
     color: var(--color-text-secondary,#8FA3AE); padding: .4rem .3rem; font: 600 .78rem 'Public Sans', sans-serif;
     cursor: pointer; text-align: center; transition: border-color .12s, color .12s, background .12s;
   }
@@ -91,13 +91,13 @@ etc.) are gathered silently at submit time.
   /* Attach row + thumbnails */
   .oh2o-fb-attach {
     display: inline-flex; align-items: center; gap: .4rem; margin-top: .35rem;
-    background: none; border: 1px dashed rgba(255,255,255,0.2); border-radius: 7px;
+    background: none; border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius-sm);
     color: var(--color-text-secondary,#8FA3AE); padding: .45rem .6rem; font: 600 .78rem 'Public Sans', sans-serif; cursor: pointer;
   }
   .oh2o-fb-attach:hover { color: var(--color-text-primary,#E7EEF2); border-color: var(--color-blue-bright,#3DB4E0); }
   .oh2o-fb-hint { font-size: .68rem; color: var(--color-text-tertiary,#7E93A4); margin: .3rem 0 0; }
   .oh2o-fb-thumbs { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
-  .oh2o-fb-thumb { position: relative; width: 54px; height: 54px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); }
+  .oh2o-fb-thumb { position: relative; width: 54px; height: 54px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid rgba(255,255,255,0.12); }
   .oh2o-fb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .oh2o-fb-thumb button {
     position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
@@ -105,7 +105,7 @@ etc.) are gathered silently at submit time.
   }
 
   .oh2o-fb-send {
-    width: 100%; margin-top: .9rem; padding: .6rem; border: none; border-radius: 7px; cursor: pointer;
+    width: 100%; margin-top: .9rem; padding: .6rem; border: none; border-radius: var(--radius-sm); cursor: pointer;
     background: #1B7FAF; color: #fff; font: 600 .9rem 'Public Sans', sans-serif; transition: background .15s;
   }
   .oh2o-fb-send:hover { background: var(--color-blue-bright,#3DB4E0); }

@@ -76,7 +76,7 @@ html { color-scheme: dark; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
     background: var(--color-elevated);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     border: 2px solid var(--color-base);
 }
 *::-webkit-scrollbar-thumb:hover { background: var(--color-hover); }
@@ -252,7 +252,7 @@ html { color-scheme: dark; }
 }
 
 .sidebar-brand-icon img {
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-raised-sm), 0 0 0 1px var(--ring);
 }
 
@@ -959,7 +959,7 @@ html { color-scheme: dark; }
 .data-table-link:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 1px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
 }
 
 /* -- Sortable headers + scroll-away filters (Phase 63; revised 73-02) ------ */
@@ -1015,7 +1015,7 @@ html { color-scheme: dark; }
 .breadcrumb a:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
 }
 
 /* -- Forms --------------------------------------------------------------- */
@@ -1668,7 +1668,7 @@ html { color-scheme: dark; }
 }
 
 .badge-pill {
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     padding: 2px 10px;
     border: 1px solid transparent;
 }
@@ -1978,7 +1978,7 @@ html { color-scheme: dark; }
     background: rgba(0, 0, 0, 0.28);
     border: 1px solid var(--color-border);
     padding: 3px 10px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
 }
 .budget-panel-row {
     display: grid;
@@ -2355,7 +2355,7 @@ div[id$="-map"] {
     display: inline-block;
     background: var(--color-elevated);
     border: 1px solid var(--color-border-hover);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 2px 8px;
     font-size: 0.75rem;
     font-family: var(--font-mono);
@@ -2654,7 +2654,7 @@ div[id$="-map"] {
     justify-content: center;
     background: var(--color-elevated);
     border: 1px solid var(--color-border-hover);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     padding: 1px 10px;
     font-size: 0.75rem;
     font-weight: 600;
@@ -3050,7 +3050,7 @@ div[id$="-map"] {
     bottom: 0;
     width: 2px;
     background: var(--color-accent);
-    border-radius: 1px;
+    border-radius: var(--radius-sm);
 }
 
 .timeline-entry {
@@ -3834,6 +3834,9 @@ div[id$="-map"] {
 .input-suffix .form-input {
     border: none;
     background: transparent;
+    /* Deliberately square, and one of only two literals DESIGN.md allows: this
+       input sits INSIDE .input-suffix, which already draws the corner. A second
+       corner nested in the first reads as a seam, not as a control. */
     border-radius: 0;
     text-align: right;
 }
@@ -4190,7 +4193,7 @@ div[id$="-map"] {
     align-items: center;
     gap: var(--space-xs);
     padding: 4px 12px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 0.8125rem;
     font-weight: 600;
     text-decoration: none;
@@ -4258,7 +4261,7 @@ div[id$="-map"] {
     display: inline-flex;
     align-items: center;
     padding: 4px 14px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-family: var(--font-display);
     font-size: 0.8125rem;
     font-weight: 600;
@@ -4314,7 +4317,7 @@ div[id$="-map"] {
     color: var(--color-ink-on-gold);
     font-weight: 700;
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     transition: top 130ms ease;
 }
 

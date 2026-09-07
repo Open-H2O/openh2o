@@ -52,7 +52,7 @@ Variables:
   legend.style.cssText =
     'position:absolute;bottom:10px;left:10px;z-index:1;' +
     'background:var(--color-card,#141E2A);border:1px solid var(--color-border,rgba(255,255,255,0.07));' +
-    'border-radius:var(--radius-md,6px);padding:8px 10px;' +
+    'border-radius:var(--radius-md);padding:8px 10px;' +
     'font-family:var(--font-display,sans-serif);font-size:11px;' +
     'box-shadow:0 2px 8px rgba(0,0,0,0.35);';
   legend.innerHTML =
@@ -67,6 +67,7 @@ Variables:
   el.appendChild(legend);
 
   var map = new maplibregl.Map({
+    cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
     container: '{{ map_id }}',
     style: OH2O.basemapStyle('aerial'),
     zoom: 7,
@@ -154,7 +155,7 @@ Variables:
           new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
             .setLngLat(e.lngLat)
             .setHTML(
-              '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+              '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
               '<div style="font-weight:600;font-size:13px;">' + p.station_name + '</div>' +
               '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' +
                 (p.data_source_code || '').toUpperCase() + ' &middot; ' + p.external_station_id + '</div>' +

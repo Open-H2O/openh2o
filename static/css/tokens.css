@@ -56,7 +56,12 @@
     --color-warning: #fbbf24;
 
     /* -- Borders & edges ---------------------------------------------------- */
-    --color-border: rgba(255, 255, 255, 0.07);        /* hairline */
+    /* 0.07 -> 0.11 on 2026-09-06 with the squaring (ISS-149). The rounded corner
+       had been doing part of the work of telling a card from the page behind it;
+       at a 2px radius that job falls on this hairline and on the card/base
+       surface step. Still a hairline, and still below --color-border-hover, so
+       the hover step continues to move light rather than geometry. */
+    --color-border: rgba(255, 255, 255, 0.11);        /* hairline */
     --color-border-hover: rgba(255, 255, 255, 0.13);
     /* Interactive controls keep a >=3:1 perceivable boundary (a11y F6). */
     --color-border-interactive: rgba(125, 165, 205, 0.6);
@@ -194,9 +199,22 @@
     --color-entity-hydro-casing: #06140e;  /* Dark casing under the canal */
 
     /* -- Border radius --------------------------------------------------- */
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 16px;
+    /* Squared 2026-09-06 (ISS-149, Brent's call at the 138-01 checkpoint after
+       comparing three scales rendered on four real pages). The four non-pill
+       tokens are DELIBERATELY the same value: the scale is flat, not a ladder.
+       They keep separate names so a future pass can differentiate an input from
+       a modal by editing one line here, instead of re-pointing 100+ call sites.
+       Anything wanting a corner reads one of these — never a literal, which is
+       what `tests/test_radius_drift.py` holds.
+
+       ⛔ Two things this scale does NOT touch, both on purpose:
+         - `border-radius: 50%` — circles. Avatars, status dots, pips, the map's
+           swatch dot. Squaring those is the blind-sweep failure ISS-149 warns of.
+         - --radius-pill — status chips and switches stay pills. A squared pill
+           reads as a different kind of control. */
+    --radius-sm: 2px;
+    --radius-md: 2px;
+    --radius-lg: 2px;
+    --radius-xl: 2px;
     --radius-pill: 100px;
 }

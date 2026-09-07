@@ -32,6 +32,7 @@ Variables:
     var COLOR = OH2O.colors.purple;   // matches the recharge symbology on the big map
 
     var map = new maplibregl.Map({
+      cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
       container: '{{ map_id }}',
       style: OH2O.basemapStyle('aerial'),
       zoom: 7,
@@ -65,7 +66,7 @@ Variables:
       new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
         .setLngLat(lngLat)
         .setHTML(
-          '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:6px;font-size:12px;min-width:180px;">' +
+          '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
           '<div style="font-weight:600;font-size:13px;">' + (p.name || 'Recharge site') + '</div>' +
           (sub ? '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
           '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
