@@ -516,14 +516,26 @@ def allocations_list(request):
     if period_id:
         queryset = queryset.filter(reporting_period_id=period_id)
 
-    # Total allocated volume over the WHOLE filtered set (every matching row, not
-    # just the visible page) — the dense-table "how much, in total?" answer that
-    # makes this a Bucket-2 data table (docs/2.0-UX-PATTERN-SPEC.md). Unlike the
-    # ledger, allocations are unsigned positive volumes (no credit/debit polarity),
-    # so this is a single sum, not a credits/debits split. Zone is a ForeignKey,
-    # not an M2M, so the queryset has no row duplication and aggregates directly
-    # without the ledger's pk-refilter.
-    allocation_total = queryset.aggregate(total=Sum("allocation_acre_feet"))["total"]
+    # Allocated volume over the WHOLE filtered set (every matching row, not just
+    # the visible page) — the dense-table "how much, in total?" answer that makes
+    # this a Bucket-2 data table (docs/2.0-UX-PATTERN-SPEC.md). Zone is a
+    # ForeignKey, not an M2M, so the queryset has no row duplication and
+    # aggregates directly without the ledger's pk-refilter.
+    #
+    # **Subtotalled by water type, and never summed across them (ISS-156).** This
+    # footer printed one number until 2026-09-06: 159,671.46 AF for WY 2025-2026,
+    # which was 148,500.00 AF of a surface-water district's diversion entitlement
+    # plus 11,171.46 AF of a groundwater sustainability agency's pumping
+    # allowance. Different agencies, different law, and nobody manages the sum —
+    # so a reader could not act on the one figure the footer gave them. The
+    # arithmetic was never wrong; the label was. Any figure that adds rows has to
+    # be able to say what makes them addable, and "both are measured in acre-feet"
+    # is not an answer.
+    allocation_subtotals = list(
+        queryset.values("water_type__name")
+        .annotate(total=Sum("allocation_acre_feet"), plans=Count("pk"))
+        .order_by("water_type__name")
+    )
 
     paginator = Paginator(queryset, 25)
     page_number = request.GET.get("page", 1)
@@ -534,7 +546,7 @@ def allocations_list(request):
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
-        "allocation_total": allocation_total or 0,
+        "allocation_subtotals": allocation_subtotals,
         "q": q,
         "period_id": period_id,
         "periods": periods,

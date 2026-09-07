@@ -36,20 +36,32 @@
       </tr>
       {% endfor %}
     </tbody>
-    {% comment %} Total allocated volume for the WHOLE filtered set (all pages, not
-       just the rows shown) — the dense-table "how much, in total?" footer (Bucket 2,
-       docs/2.0-UX-PATTERN-SPEC.md). Allocations are unsigned positive volumes, so
-       this is a single sum, not the use ledger's two subtotals. {% endcomment %}
-    {% if total_count %}
+    {% comment %}
+      Allocated volume for the WHOLE filtered set (all pages, not just the rows
+      shown) — the dense-table "how much, in total?" footer (Bucket 2,
+      docs/2.0-UX-PATTERN-SPEC.md), subtotalled BY WATER TYPE and never summed
+      across them.
+
+      ISS-156: this printed one figure until 2026-09-06. For WY 2025-2026 it read
+      159,671.46 AF, which was a surface-water district's diversion entitlement
+      (148,500.00 AF) added to a groundwater sustainability agency's pumping
+      allowance (11,171.46 AF). Different agencies, different law; nobody manages
+      the sum, so nobody could act on the number. The arithmetic was right and
+      the label was wrong — and shared units are not what makes two rows addable.
+    {% endcomment %}
+    {% if allocation_subtotals %}
     <tfoot>
-      <tr style="border-top: 2px solid var(--color-border); background: var(--color-elevated);">
+      {% for subtotal in allocation_subtotals %}
+      <tr {% if forloop.first %}style="border-top: 2px solid var(--color-border); background: var(--color-elevated);"{% else %}style="background: var(--color-elevated);"{% endif %}>
         <td colspan="4" class="text-secondary" style="font-weight: 600; white-space: nowrap;">
-          All {{ total_count }} allocation{{ total_count|pluralize }}
+          {{ subtotal.water_type__name }} &middot;
+          <span class="text-tertiary" style="font-weight: 400;">{{ subtotal.plans }} allocation{{ subtotal.plans|pluralize }}</span>
         </td>
         <td class="th-right td-num-bold" style="white-space: nowrap;">
-          {{ allocation_total|floatformat:2|intcomma }} AF
+          {{ subtotal.total|floatformat:2|intcomma }} AF
         </td>
       </tr>
+      {% endfor %}
     </tfoot>
     {% endif %}
   </table>
