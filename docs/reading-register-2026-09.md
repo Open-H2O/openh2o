@@ -297,6 +297,8 @@ The dashboard only. Everything here is on `/accounting/dashboard/`; the checkpoi
 | 94 | R-011 | c1 | The Drinking Water card's corner code 'CA2410009' is not named as the state's public water system number, so a reader cannot say what the code is. |
 | 95 | R-027 | c1 | The Drinking Water card is titled 'CITY OF MERCED', a place name, so nothing says what its four figures are before the reader has read them, and the biggest of them, 22,367, is a count of stored sample rows. |
 
+Resolved by 142-01 (2026-09-08, commits `73aec22`..`c361d48`, staging only): all 8 rows, plus R-006 from §Phase 144 whose sentence became the panel captions and the group headers. Measured on staging after the deploy: both tables fit 1440 (scrollWidth 1032 = clientWidth 1032, against 1073 and 1253 before), Balance 32px against its two inputs at 22px, title "District water balance", no inset, two header rows in equation order, footer on the accounts table only. Pattern awaiting Brent's approval at the checkpoint.
+
 ## Phase 143: The approved pattern applied everywhere else
 
 Tables, tile rows, filter bars, page heads and maps on every other page, in rank order. The rows that repeat a dashboard fault in another template (R-037, R-038, R-039, R-108) wait for 142's pattern. **99 rows.**
@@ -416,6 +418,9 @@ Prose, the wording of descriptions and names, and the sidebar. Independent of 14
 | 15 | R-012 | c1 | The crumb reads 'Accounting / Dashboard' but the sidebar has no section called Accounting; the lit entry sits in an unlabelled group with Home and Map, so a reader looking for Accounting in the sidebar cannot find it. |
 | 25 | R-014 | c10, c11 | Four sentences across two screens give four conventions for the same numbers: the ledger's description says positive amounts are supply, its inset says the running balance is allocation minus usage, its footer says credits are paper and never netted, and the New Entry form says positive amounts 'represent supply (recharge, allocation)', a flat contradiction of the footer. The reader is left to reconcile them. |
 | 29 | R-006 | c1 | The inset 'How this summary works' states the relation the table beneath it does not show (three supplies meet consumptive use), in prose between the panel and the table, belonging to neither; once R-007 is fixed this sentence is either redundant or the caption. |
+
+R-006 was taken by 142-01 (2026-09-08): the inset is deleted, and its two claims live in the panel's segment captions and the tables' group headers. Nothing remains for Phase 144 on this row.
+
 | 35 | R-104 | c43 | The zone's year-end setting calls the zone 'this district' and describes its unused surface-water allotment, while the head calls the same thing a Management Area and the only table on the page shows groundwater, so a reader cannot say what the setting acts on. |
 | 38 | R-109 | c45 | The same 330.37 AF appears twice within a hand's width on the use-area page, once as the Residual marked Deficit and once as 'Water use recorded, no supply reported', and nothing says the two are one quantity, so a reader may read the shortfall as counted twice. (A reading finding, not ISS-158's data question: the arithmetic is right and the screen is what misleads.) |
 | 43 | R-127 | c53 | The recharge basin's Site information card says the basin is filled by a canal intake while every row of Event history is labelled Water type 'Groundwater', and nothing on the page says which sense of the phrase is meant, so a reader cannot say where the water in those events came from. |
