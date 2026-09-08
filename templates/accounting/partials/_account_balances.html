@@ -80,7 +80,18 @@
 <table class="data-table data-table--grouped">
   <thead>
     <tr class="th-group">
-      <th rowspan="2" style="min-width: 150px;">Use area</th>
+      {% comment %}
+        NO min-width here, deliberately, and it is not an oversight: the
+        dashboard's equivalent column carries one because that table spans the
+        page, while this card sits in a `.page-grid-2col` column. A min-width
+        raises the whole grid item's MIN-CONTENT width, and `1fr 1fr` resolves
+        to `minmax(auto, 1fr)` -- so the minimum wins and the neighbouring
+        column pays for it. Measured 2026-09-08 with `min-width: 150px` here:
+        the grid went 137px / 955px and the Account information card beside this
+        one was crushed until "MER-ACCT-001" wrapped mid-token. Without it,
+        parity is restored.
+      {% endcomment %}
+      <th rowspan="2">Use area</th>
       <th colspan="4" class="th-group-label">Supplies</th>
       <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
       <th rowspan="2" class="th-right col-sep">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus consumptive use, for this use area and period. Positive means the supplies on record exceeded the estimated use." link=wb_help_url link_label="How water balances work" %}</th>
