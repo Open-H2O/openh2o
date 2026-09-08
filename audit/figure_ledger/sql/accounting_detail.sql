@@ -1,4 +1,4 @@
--- FIG-accounting-001..022, FIG-accounting-046..053. The accounting money layer:
+-- FIG-accounting-001..022, FIG-accounting-052..053. The accounting money layer:
 -- the account balance pane, the calculation-run audit page, the methodology live
 -- preview, the use-ledger table and its footer subtotals, the allocations table,
 -- and the reporting-period detail page. 30 rendered figures across six templates
@@ -466,31 +466,31 @@ figures AS (
                    WHERE water_type = 'Surface Water'), 2)
 
     -- ── The use ledger ───────────────────────────────────────────────────────
-    UNION ALL SELECT 'FIG-accounting-046', 'Use ledger: first row Amount (AF)',
+    UNION ALL SELECT 'FIG-accounting-052', 'Use ledger: first row Amount (AF)',
            round((SELECT amount_acre_feet FROM ledger_first_row), 2)
     -- 136-01: the footer names its two subtotals by kind and prints no net.
     -- Credits are the non-negative rows (allocation and recharge entries);
     -- "Delivered and pumped" is the magnitude of the negative rows.
-    UNION ALL SELECT 'FIG-accounting-047', 'Use ledger footer: Credits',
+    UNION ALL SELECT 'FIG-accounting-053', 'Use ledger footer: Credits',
            round((SELECT credits FROM ledger_totals), 2)
-    UNION ALL SELECT 'FIG-accounting-048', 'Use ledger footer: Delivered and pumped (magnitude)',
+    UNION ALL SELECT 'FIG-accounting-054', 'Use ledger footer: Delivered and pumped (magnitude)',
            round(abs((SELECT debits FROM ledger_totals)), 2)
 
     -- ── The methodology live preview ─────────────────────────────────────────
     -- The preview stores nothing, so the independent thing to hold it against is
     -- the persisted run for the same parcel-month, and the raw rows underneath it.
-    UNION ALL SELECT 'FIG-accounting-049', 'Preview: billable groundwater (vs the stored run)',
+    UNION ALL SELECT 'FIG-accounting-055', 'Preview: billable groundwater (vs the stored run)',
            round((SELECT final_af FROM run_row), 4)
-    UNION ALL SELECT 'FIG-accounting-050', 'Preview: step 1 In (AF)',
+    UNION ALL SELECT 'FIG-accounting-056', 'Preview: step 1 In (AF)',
            round((SELECT input_af FROM run_steps WHERE ord = 1), 4)
-    UNION ALL SELECT 'FIG-accounting-051', 'Preview: step 1 Out (AF), from raw satellite rows',
+    UNION ALL SELECT 'FIG-accounting-057', 'Preview: step 1 Out (AF), from raw satellite rows',
            round((SELECT gross_af FROM raw_run_pin), 4)
-    UNION ALL SELECT 'FIG-accounting-052',
+    UNION ALL SELECT 'FIG-accounting-058',
            'Preview: no-steps fallback final (branch cannot render, see checks)',
            NULL::numeric
 
     -- ── The reporting-period detail page ─────────────────────────────────────
-    UNION ALL SELECT 'FIG-accounting-053',
+    UNION ALL SELECT 'FIG-accounting-059',
            'Period detail: Halvern Valley GSA — Groundwater WY 2025-2026',
            round((SELECT allocation_acre_feet FROM alloc_scope
                    WHERE name = 'Halvern Valley GSA — Groundwater WY 2025-2026'), 2)

@@ -12,12 +12,12 @@
   {
     "slug": "accounting-a-methodology-preview-p16-2026-03",
     "url": "/accounting/methodology/preview/?parcel_id=16&period=2026-03",
-    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-050..053). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month."
+    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-056..053). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month."
   },
   {
     "slug": "accounting-a-ledger-p2",
     "url": "/accounting/ledger/?period=2",
-    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-046..049). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture."
+    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-052..049). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture."
   },
   {
     "slug": "accounting-a-allocations-p2",
@@ -27,7 +27,7 @@
   {
     "slug": "accounting-a-period-2",
     "url": "/accounting/reporting-periods/2/",
-    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-054). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses."
+    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-060). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses."
   },
   {
     "slug": "accounting-a-account-78-p1",

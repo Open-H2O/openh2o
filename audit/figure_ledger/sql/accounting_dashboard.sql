@@ -273,15 +273,15 @@ figures AS (
     UNION ALL SELECT 'FIG-accounting-028', 'Rain (panel foot)',
            round(precip, 2) FROM grand
 
-    UNION ALL SELECT 'FIG-accounting-029', 'Account MER-ACCT-001 Consumptive Use',
+    UNION ALL SELECT 'FIG-accounting-033', 'Account MER-ACCT-001 Consumptive Use',
            round(gross, 2) FROM pinned_account
-    UNION ALL SELECT 'FIG-accounting-030', 'Account MER-ACCT-001 Surface',
+    UNION ALL SELECT 'FIG-accounting-029', 'Account MER-ACCT-001 Surface',
            round(surface, 2) FROM pinned_account
-    UNION ALL SELECT 'FIG-accounting-031', 'Account MER-ACCT-001 Groundwater',
+    UNION ALL SELECT 'FIG-accounting-030', 'Account MER-ACCT-001 Groundwater',
            round(groundwater, 2) FROM pinned_account
-    UNION ALL SELECT 'FIG-accounting-032', 'Account MER-ACCT-001 Precip',
+    UNION ALL SELECT 'FIG-accounting-031', 'Account MER-ACCT-001 Precip',
            round(precip, 2) FROM pinned_account
-    UNION ALL SELECT 'FIG-accounting-033', 'Account MER-ACCT-001 Supplies',
+    UNION ALL SELECT 'FIG-accounting-032', 'Account MER-ACCT-001 Supplies',
            round(supply_total, 2) FROM pinned_account
     UNION ALL SELECT 'FIG-accounting-034', 'Account MER-ACCT-001 Net',
            round(net_vs_supply, 2) FROM pinned_account
@@ -290,23 +290,23 @@ figures AS (
     UNION ALL SELECT 'FIG-accounting-036', 'Account MER-ACCT-001 Remaining',
            round(remaining, 2) FROM pinned_account
 
-    UNION ALL SELECT 'FIG-accounting-037', 'Zone Halvern Irrigation-Urban GSA Consumptive Use',
+    UNION ALL SELECT 'FIG-accounting-047', 'Zone Halvern Irrigation-Urban GSA Consumptive Use',
            round(gross, 2) FROM pinned_zone
-    UNION ALL SELECT 'FIG-accounting-038', 'Zone Halvern Irrigation-Urban GSA Surface',
+    UNION ALL SELECT 'FIG-accounting-043', 'Zone Halvern Irrigation-Urban GSA Surface',
            round(surface, 2) FROM pinned_zone
-    UNION ALL SELECT 'FIG-accounting-039', 'Zone Halvern Irrigation-Urban GSA Groundwater',
+    UNION ALL SELECT 'FIG-accounting-044', 'Zone Halvern Irrigation-Urban GSA Groundwater',
            round(groundwater, 2) FROM pinned_zone
-    UNION ALL SELECT 'FIG-accounting-040', 'Zone Halvern Irrigation-Urban GSA Precip',
+    UNION ALL SELECT 'FIG-accounting-045', 'Zone Halvern Irrigation-Urban GSA Precip',
            round(precip, 2) FROM pinned_zone
-    UNION ALL SELECT 'FIG-accounting-041', 'Zone Halvern Irrigation-Urban GSA Supplies',
+    UNION ALL SELECT 'FIG-accounting-046', 'Zone Halvern Irrigation-Urban GSA Supplies',
            round(supply_total, 2) FROM pinned_zone
-    UNION ALL SELECT 'FIG-accounting-042', 'Zone Halvern Irrigation-Urban GSA Net',
+    UNION ALL SELECT 'FIG-accounting-048', 'Zone Halvern Irrigation-Urban GSA Net',
            round(net_vs_supply, 2) FROM pinned_zone
-    UNION ALL SELECT 'FIG-accounting-043', 'Zone Halvern Irrigation-Urban GSA Allocation',
+    UNION ALL SELECT 'FIG-accounting-049', 'Zone Halvern Irrigation-Urban GSA Allocation',
            round(allocation, 2) FROM pinned_zone
-    UNION ALL SELECT 'FIG-accounting-044', 'Zone Halvern Irrigation-Urban GSA Carried fwd',
+    UNION ALL SELECT 'FIG-accounting-050', 'Zone Halvern Irrigation-Urban GSA Carried fwd',
            round(carryover, 2) FROM pinned_zone
-    UNION ALL SELECT 'FIG-accounting-045', 'Zone Halvern Irrigation-Urban GSA Remaining',
+    UNION ALL SELECT 'FIG-accounting-051', 'Zone Halvern Irrigation-Urban GSA Remaining',
            round(remaining, 2) FROM pinned_zone
 )
 SELECT id, label, recomputed FROM figures ORDER BY id;

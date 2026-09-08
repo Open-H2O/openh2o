@@ -29,25 +29,25 @@ import sys
 #: order here is asserted against the rendered table header before any value is
 #: read, so this list cannot silently drift out of step with the screen.
 ACCOUNT_COLUMNS = [
-    ("FIG-accounting-029", "Consumptive Use (AF)"),
-    ("FIG-accounting-030", "Surface (AF)"),
-    ("FIG-accounting-031", "Groundwater (AF)"),
-    ("FIG-accounting-032", "Precip (AF)"),
-    ("FIG-accounting-033", "Supplies (AF)"),
+    ("FIG-accounting-033", "Consumptive Use (AF)"),
+    ("FIG-accounting-029", "Surface (AF)"),
+    ("FIG-accounting-030", "Groundwater (AF)"),
+    ("FIG-accounting-031", "Precip (AF)"),
+    ("FIG-accounting-032", "Supplies (AF)"),
     ("FIG-accounting-034", "Net (AF)"),
     ("FIG-accounting-035", "GW allocation (AF)"),
     ("FIG-accounting-036", "GW remaining (AF)"),
 ]
 ZONE_COLUMNS = [
-    ("FIG-accounting-037", "Consumptive Use (AF)"),
-    ("FIG-accounting-038", "Surface (AF)"),
-    ("FIG-accounting-039", "Groundwater (AF)"),
-    ("FIG-accounting-040", "Precip (AF)"),
-    ("FIG-accounting-041", "Supplies (AF)"),
-    ("FIG-accounting-042", "Net (AF)"),
-    ("FIG-accounting-043", "GW allocation (AF)"),
-    ("FIG-accounting-044", "Carried fwd (AF)"),
-    ("FIG-accounting-045", "GW remaining (AF)"),
+    ("FIG-accounting-047", "Consumptive Use (AF)"),
+    ("FIG-accounting-043", "Surface (AF)"),
+    ("FIG-accounting-044", "Groundwater (AF)"),
+    ("FIG-accounting-045", "Precip (AF)"),
+    ("FIG-accounting-046", "Supplies (AF)"),
+    ("FIG-accounting-048", "Net (AF)"),
+    ("FIG-accounting-049", "GW allocation (AF)"),
+    ("FIG-accounting-050", "Carried fwd (AF)"),
+    ("FIG-accounting-051", "GW remaining (AF)"),
 ]
 
 PINNED_ACCOUNT = "MER-ACCT-001"

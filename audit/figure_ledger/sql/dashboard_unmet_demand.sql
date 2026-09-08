@@ -1,4 +1,4 @@
--- FIG-accounting-046, FIG-accounting-047, FIG-accounting-048: the dashboard's
+-- FIG-accounting-052, FIG-accounting-053, FIG-accounting-054: the dashboard's
 -- "Fields with water use recorded and no supply reported" section (ISS-157,
 -- surface 2, 137-02): the per-row Consumptive Use cell, the per-row "water use
 -- recorded, no supply reported" cell, and the District total footer.
@@ -83,22 +83,22 @@ SELECT water_year,
  ORDER BY period_id;
 
 \echo ''
-\echo '== B. FIG-accounting-046 / 047: the pinned instance. MER-APN-011, WY 2025-2026. =='
+\echo '== B. FIG-accounting-052 / 047: the pinned instance. MER-APN-011, WY 2025-2026. =='
 
-SELECT 'FIG-accounting-046' AS id,
+SELECT 'FIG-accounting-052' AS id,
        'Consumptive Use (AF)' AS label,
        round(gross_et_af, 2) AS recomputed
   FROM _unmet
  WHERE parcel_number = 'MER-APN-011' AND period_id = 2
 UNION ALL
-SELECT 'FIG-accounting-047' AS id,
+SELECT 'FIG-accounting-053' AS id,
        'Water use recorded, no supply reported (AF)' AS label,
        round(unmet_demand_af, 2) AS recomputed
   FROM _unmet
  WHERE parcel_number = 'MER-APN-011' AND period_id = 2;
 
 \echo ''
-\echo '== C. FIG-accounting-048: the District total footer, both periods. Expect 1986.50 and 962.67. =='
+\echo '== C. FIG-accounting-054: the District total footer, both periods. Expect 1986.50 and 962.67. =='
 
 SELECT water_year,
        round(sum(unmet_demand_af), 2) AS district_total_af

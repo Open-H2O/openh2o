@@ -23,7 +23,7 @@
     "status": 200,
     "bytes": 3094,
     "sha256": "cd15bd63ce088039224b7db7b1bb02e7a752f0b326584353327948393b0945f2",
-    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-049..052). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month.",
+    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-055..052). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month.",
     "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
@@ -32,7 +32,7 @@
     "status": 200,
     "bytes": 124896,
     "sha256": "3695e2d97cda58ebd1fd9c30318962e0bac470c500744bc01afa2adb43aab224",
-    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-046..048). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture.",
+    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-052..048). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture.",
     "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {
@@ -50,7 +50,7 @@
     "status": 200,
     "bytes": 38128,
     "sha256": "9fbc48f78c50ab4ff643bd34e7a1989773a0b7493701da7bef0e2a5050a25087",
-    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-053). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses.",
+    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-059). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses.",
     "commit": "c4883b855eedc49a6ed9e5f0c6cc424bf3b52200"
   },
   {

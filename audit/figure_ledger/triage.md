@@ -99,8 +99,8 @@ already applies.
 
 #### CONFIRMED 2: the use ledger and the dashboard state the year with opposite signs
 
-**Rows:** `FIG-accounting-047` (net), `FIG-accounting-048` (credits),
-`FIG-accounting-049` (debits).
+**Rows:** `FIG-accounting-053` (net), `FIG-accounting-054` (credits),
+`FIG-accounting-055` (debits).
 **Screen:** the use ledger, WY 2025-2026. **Filed as ISS-155.**
 
 **The first derivation** summed the ledger footer over the account-and-zone
@@ -115,9 +115,9 @@ this route would disagree with both.
 |---|---:|---|
 | Rows in the period | 1,130 | n/a |
 | Distinct parcels | 76 | n/a |
-| Credits (positive rows) | +14,280.77 | `FIG-accounting-048` ✓ |
-| Debits (negative rows) | -15,785.09 | `FIG-accounting-049` ✓ |
-| **Ledger footer, net** | **-1,504.32** | `FIG-accounting-047` ✓ |
+| Credits (positive rows) | +14,280.77 | `FIG-accounting-054` ✓ |
+| Debits (negative rows) | -15,785.09 | `FIG-accounting-055` ✓ |
+| **Ledger footer, net** | **-1,504.32** | `FIG-accounting-053` ✓ |
 | Canal deliveries, magnitude | 11,407.71 | n/a |
 | Groundwater, magnitude | 4,377.38 | n/a |
 | Effective rainfall | 1,673.2659 | n/a |
@@ -205,7 +205,7 @@ against source, or against the database, on a route the ledger did not use.
 | `FIG-parcels-013` (in both tables) | A fixed zero written into the code; the platform models no surface hydrology | Read the source: `accounting/services.py:767`, `runoff = Decimal("0")  # bookkeeping boundary: no surface-hydrology model.` The mass-balance identity at `:702` carries it as a named term | ✅ |
 | `FIG-parcels-016`, `FIG-parcels-017` (in both tables) | The branch shows only when a parcel has no calculation runs for the year, and every parcel has them | Counted parcels with zero runs, per year, across all 76 MER parcels: **zero in both years**. The branch cannot be reached on this data | ✅ |
 | `FIG-accounting-005`, `FIG-accounting-006`, `FIG-accounting-007` | The banked-water block, and no run in this database carries a deposit or a draw | 1,824 calculation runs: **0** with a non-zero `banked_af`, **0** with a non-zero `drawn_af`. Five `WaterCredit` rows exist, and **all five hold 0.0000 AF**, so there is nothing for the block to show even from the credit table | ✅ |
-| `FIG-accounting-053` | The fallback sentence for a method that produces no steps; all five steps on the active method are enabled | Confirmed against `accounting_calculationstep`. Reaching it would need a configuration change this phase may not make | ✅ |
+| `FIG-accounting-059` | The fallback sentence for a method that produces no steps; all five steps on the active method are enabled | Confirmed against `accounting_calculationstep`. Reaching it would need a configuration change this phase may not make | ✅ |
 | `FIG-setup-001` | The confirmation step reads the boundary out of the visitor's session, which only the previous step's form submission writes | The capture performs page requests only, so the screen redirected. The same stored field renders on the previous step, and is verified there | ✅ |
 | `FIG-wells-003`, `FIG-wells-004` | Values a person typed; nothing on the platform derives them | Confirmed at `wells/views.py:173-182`: every editable field is a plain `getattr` off the model. The two numbers agreeing shows the platform redisplays what was entered, and nothing more | ✅ |
 | `FIG-datasync-001`, `FIG-datasync-002`, `FIG-datasync-003`, `FIG-datasync-004` | "No station exists to open" | **The verdict is right and the ledger's stated reason is misleading.** See B1 | ⚠️ reason corrected |
@@ -276,8 +276,8 @@ this file exists to prevent.
 they name four problems." The verdict table sixteen lines above it says
 `MATCH · ISS-###` = 4 and `ISS-###` = 4. Parsing every row in the document gives
 **eight**: `FIG-parcels-003`, `FIG-parcels-015` (ISS-148); `FIG-geography-002`,
-`FIG-geography-003` (ISS-154); `FIG-accounting-047`, `FIG-accounting-048`,
-`FIG-accounting-049` (ISS-155);
+`FIG-geography-003` (ISS-154); `FIG-accounting-053`, `FIG-accounting-054`,
+`FIG-accounting-055` (ISS-155);
 and `FIG-accounting-022` (ISS-156). Four problems is right. Nine rows is not.
 Corrected to eight in this plan.
 

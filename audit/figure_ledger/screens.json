@@ -2,7 +2,7 @@
   {
     "slug": "accounting-dashboard-wy2026",
     "url": "/accounting/dashboard/?period=2",
-    "note": "THE PINNED INSTANCE for ledger section 1. WY 2025-2026, the dry year, and the period the bare /accounting/dashboard/ URL resolves to on this data. Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row on screen). Pinned zone row: Halvern Irrigation-Urban GSA (id 2, first row on screen, 23 parcels). THE PINNED INSTANCE also for FIG-accounting-046..048 (137-02, ISS-157 surface 2): the new Fields with water use recorded and no supply reported section, pinned to MER-APN-011, the fourth of the six rows the dry year lists (450.51, 406.26, 360.43, 330.37, 288.80, 150.12), District total 1,986.50."
+    "note": "THE PINNED INSTANCE for ledger section 1. WY 2025-2026, the dry year, and the period the bare /accounting/dashboard/ URL resolves to on this data. Pinned account row: MER-ACCT-001 Ashvale Orchards Inc. (id 78, first row on screen). Pinned zone row: Halvern Irrigation-Urban GSA (id 2, first row on screen, 23 parcels). THE PINNED INSTANCE also for FIG-accounting-052..048 (137-02, ISS-157 surface 2): the new Fields with water use recorded and no supply reported section, pinned to MER-APN-011, the fourth of the six rows the dry year lists (450.51, 406.26, 360.43, 330.37, 288.80, 150.12), District total 1,986.50."
   },
   {
     "slug": "accounting-dashboard-wy2025",
@@ -27,12 +27,12 @@
   {
     "slug": "accounting-a-methodology-preview-p16-2026-03",
     "url": "/accounting/methodology/preview/?parcel_id=16&period=2026-03",
-    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-049..052). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month."
+    "note": "THE PINNED INSTANCE for the methodology live preview (FIG-accounting-055..052). Same parcel and month as the calculation-run page above, deliberately: the preview computes the chain fresh from the currently-saved methodology and stores nothing, so the only independent thing to compare it against is the stored calculation run for the same parcel-month."
   },
   {
     "slug": "accounting-a-ledger-p2",
     "url": "/accounting/ledger/?period=2",
-    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-046..048). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture."
+    "note": "THE PINNED INSTANCE for the use-ledger table and its footer totals (FIG-accounting-052..048). Period explicitly set to WY 2025-2026 so the view's activity-based auto-default does not choose the period for us. No other filter, default sort (newest effective_date first, created_at as tiebreak), default page size 100. The pinned entry row is named in the section, read out of this capture."
   },
   {
     "slug": "accounting-a-allocations-p2",
@@ -42,7 +42,7 @@
   {
     "slug": "accounting-a-period-2",
     "url": "/accounting/reporting-periods/2/",
-    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-053). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses."
+    "note": "THE PINNED INSTANCE for the reporting-period detail page's allocation table (FIG-accounting-059). Reporting period 2, WY 2025-2026. This page takes no period parameter (the period IS the page), so the pin is the same water year the rest of section A uses."
   },
   {
     "slug": "accounting-a-account-78-p1",
