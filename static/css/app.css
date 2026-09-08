@@ -886,6 +886,17 @@ html { color-scheme: dark; }
 .page-grid-2col-wide-right > * {
     min-width: 0;
 }
+/* Two columns need room for two columns. The accounts WORKSPACE gives this pane
+   675px, and splitting that 217/434 left the use-area table 384px to render 606
+   in -- a worse scroll than the 698-in-625 it had before 143-01 touched it.
+   Stacked, the table gets the pane's full 627 and does not scroll at all.
+   Queried against `.pane-stack`, the grid's parent, because the viewport is
+   1440 on both the roomy page and the cramped pane. */
+@container (max-width: 800px) {
+    .page-grid-2col-wide-right {
+        grid-template-columns: 1fr;
+    }
+}
 
 /* -- Section and field --------------------------------------------------- */
 
@@ -4381,7 +4392,11 @@ div[id$="-map"] {
     gap: var(--space-xs);
     white-space: nowrap;
 }
+/* A query container so the panes inside can respond to the PANE's width rather
+   than the window's -- a detail pane is ~675px wide in a workspace and ~1080 on
+   its own page, at the same 1440 viewport. */
 .pane-stack {
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
     gap: var(--space-md);
