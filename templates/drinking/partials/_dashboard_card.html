@@ -12,15 +12,23 @@
   **Counts only, no verdicts.** How many facilities, points and results exist,
   and when the last sample was taken. Nothing here compares a result to a limit
   or summarises "compliance", because the platform does not determine it.
+
+  Phase 142 (R-011, R-027): the corner names the code (a bare "CA2410009" said
+  nothing about what it was), one line under the header says what the four
+  figures count (the card is titled with a place name, as DDW publishes it,
+  which DESIGN.md rule 2 keeps), and each tile label says what its number is a
+  count OF. "Sample results stored" because 22,367 is a count of stored rows,
+  not of anything in the water.
 {% endcomment %}{% drinking_summary as summary %}{% if summary %}
 <h2 class="content-section-label">Drinking water</h2>
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">{{ summary.system.name }}</h2>
     <span class="text-tertiary text-xs">
-      {{ summary.system.pwsid }}{% if summary.system_count > 1 %} · {{ summary.system_count }} systems carried{% endif %}
+      Public water system ID (PWSID) {{ summary.system.pwsid }}{% if summary.system_count > 1 %} · {{ summary.system_count }} systems carried{% endif %}
     </span>
   </div>
+  <p class="text-secondary text-sm" style="margin: 0 0 var(--space-md);">Records this platform holds for the system: counts, and the date of the latest sample.</p>
 
   {% comment %}
     Each count links to the page that holds the rows behind it, in the same
@@ -45,15 +53,15 @@
   {% endcomment %}
   <div class="stat-grid-4col">
     <div class="card-raised card-inset stat-card">
-      <div class="stat-card-label">Facilities</div>
+      <div class="stat-card-label">Facilities on record</div>
       <div class="stat-card-value-sm"><a href="{% url 'drinking:facilities' %}" class="data-table-link">{{ summary.facility_count|intcomma }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
-      <div class="stat-card-label">Sampling points</div>
+      <div class="stat-card-label">Sampling points on record</div>
       <div class="stat-card-value-sm"><a href="{% url 'drinking:sampling_points' %}" class="data-table-link">{{ summary.sampling_point_count|intcomma }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
-      <div class="stat-card-label">Sample results</div>
+      <div class="stat-card-label">Sample results stored</div>
       <div class="stat-card-value-sm"><a href="{% url 'drinking:results' %}" class="data-table-link">{{ summary.result_count|intcomma }}</a></div>
     </div>
     <div class="card-raised card-inset stat-card">
