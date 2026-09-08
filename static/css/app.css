@@ -845,6 +845,22 @@ html { color-scheme: dark; }
     grid-template-columns: 1fr 1fr;
     gap: var(--space-lg);
 }
+/* `1fr` is `minmax(auto, 1fr)`, and a grid item's automatic minimum is its
+   MIN-CONTENT width -- so a column holding a wide data table does not get half
+   the row, it gets whatever its table demands, and its neighbour gets the
+   remainder. Measured 2026-09-08 on the account detail page: 137px / 955px,
+   with the Account information card squeezed until "MER-ACCT-001" wrapped
+   mid-token, while `/parcels/11/` (whose tables are narrow) sat at a healthy
+   528 / 528.
+
+   `min-width: 0` restores what `1fr 1fr` already says, and hands the overflow
+   to `.table-scroll`, which exists for exactly that and was being bypassed:
+   the wrapper can only scroll a table if something upstream stops the table
+   dictating the layout. 143-01 made the imbalance visible and worse; it did not
+   introduce it. */
+.page-grid-2col > * {
+    min-width: 0;
+}
 
 .page-grid-2col-wide {
     display: grid;
