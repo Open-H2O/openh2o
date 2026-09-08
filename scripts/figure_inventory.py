@@ -9,11 +9,14 @@ measurement rather than a transcription.
 One record per OCCURRENCE, not per line: ``_station_detail_pane.html:104``
 renders latitude and longitude in a single line and is two figures on screen.
 
-Stable ids. ``FIG-<app>-<NNN>`` numbers within each app in (template, line,
-column) order after a deterministic sort. A re-run that renumbered would break
-every ledger row written by an earlier plan, so the sort key must not depend on
-filesystem walk order -- ``sorted()`` over the collected records, never
-``os.walk`` order.
+Stable ids, against WALK ORDER ONLY. ``FIG-<app>-<NNN>`` numbers within each
+app in (template, line, column) order after a deterministic sort, so a re-run
+over unchanged templates never renumbers. An EDIT that adds or removes a site,
+or reorders columns, DOES renumber every later id in that app (142-01,
+2026-09-08: six footer sites moved 25 accounting ids). That is by design; the
+cure is ``audit/figure_ledger/remap_ids.py``, which pairs the k-th occurrence
+of an expression per template and refuses to guess at a gained or lost site.
+Regenerate, remap, then give each new site its ledger row.
 
 Usage::
 

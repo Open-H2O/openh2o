@@ -179,6 +179,47 @@ default option** is Title Case ("All Statuses"). Those are what 19 of 19
 Water Data breadcrumbs, 20-plus back-links and 18 of 20 default options already
 do.
 
+### Tables that explain their numbers (Phase 142, approved by Brent 2026-09-08)
+
+The dashboard's tables were the worked example (`templates/accounting/partials/_dashboard_content.html`,
+`.data-table--grouped` in `app.css`). Four consistency passes never reached these faults because none is a
+design-system violation; the test is *can a reader say from the layout what the numbers mean*. Every rule
+below was judged on the whole page, not a table in isolation, and Phase 143 carries them to every other table.
+
+1. **Columns run in the order of the equation the page states.** Supplies (Surface, Groundwater, Rain,
+   Total) → Consumptive use → Balance, then the groundwater budget. A reader must be able to say why the
+   columns are in that order.
+2. **Where columns sum, a group header names the sum** and its underline brackets exactly its own columns
+   (`.th-group-label`). Structure, not a caption sentence: the "How this summary works" inset that used to
+   say it in prose is gone.
+3. **One vertical rule where the kind of number changes** (`.col-sep`), and only there. The groundwater
+   budget is paper from a different framework; the rule keeps a reader from reading across it as one row of
+   like quantities. No rule before Balance; the Supplies bracket already marks where measured water ends.
+4. **A unit is stated once per single-unit table**, in the card's subtitle ("All figures in acre-feet
+   (AF)."), never on each column. A table mixing units keeps the unit on each column. Short leaf headers
+   are also what makes a nine-column table fit a 1440-pixel window.
+5. **A footer only where rows are addable**, and its label says what makes them addable ("All 11 active
+   accounts": one quantity, one period, every active account). The Zones table has none, because a parcel
+   can lie in more than one zone, and its subtitle says so. A footer sits on a tinted band with the header's
+   accent rule and a header-styled label (`.tfoot-total`); bold alone did not call it out.
+6. **One name per thing, matching the panel above:** Balance, not Net; Rain, not Precip; Total under the
+   Supplies group. The word *groundwater* stays beside the budget columns, in the group header.
+7. **Two kinds of row are said once**, with a divider row (`tr.row-group`) left-aligned over the names,
+   not a note repeated on five rows. The divider names the condition (a groundwater budget exists for the
+   period), never the deployment's zone types.
+8. **The lead panel names the thing, not the operation** ("District water balance"), leads with its result
+   at the only large size (`.budget-seg--result`), captions each figure with where the platform got it,
+   breaks a total down "by source" beside it, and names its population in a foot line when the total is not
+   the whole basin.
+9. **Two-word headers that wrap stack the second word centred under the first** (`.th-stack`), and the same
+   word has the same shape on every table. **A header cell that spans both rows is bottom-aligned**, so
+   every leaf-level word sits on one line; a spanning cell otherwise centres over the two-row height and
+   floats half a line above its neighbours.
+10. **Adding a figure to a template renumbers the figure ledger.** Ids in `audit/figure_ledger/inventory.json`
+    number by position, so an inserted `floatformat` site moves every later id in that app. Regenerate the
+    inventory, run `audit/figure_ledger/remap_ids.py`, and give the new site a row that names the figure it
+    repeats or the recomputation that covers it. The build refuses until it is done.
+
 ## Copy rules
 
 House rules for the words on screen. Written 2026-07-30 during the drinking
@@ -432,3 +473,14 @@ the number; nothing in this table asks for a new calculation.
 | **Diverted / Returned to stream / Retained** | A diversion record's volume; the part returned to the stream; the difference. Retained water is delivered (direct use) or taken to storage (recharge) according to the record's `diversion_type`, and only delivered water can be consumed. The method keeps its name because 173 records and the CalWATRS generator read it; the column does not. | `volume_acre_feet`; `returned_af`; `consumed_acre_feet()` | `Consumptive Use` in `templates/surface/` |
 | **Water use recorded, no supply reported** | The part of a field's consumptive use in the period that no supply on record explains, on a field with no well. The platform's stored unmet demand (`residual_disposition = "unmet_demand"`). It states what the rows show and stops: it is never a finding about the grower, and it is never invented pumping (the help pages already say so). Zero renders nothing. | sum of `CalculationRun.unmet_demand_af` over the runs `runs_in_period()` selects for the parcel and period, where `residual_disposition == "unmet_demand"` | `unauthorized` in `templates/parcels/`, `unauthorized` in `templates/accounting/`, `unauthorized` in `templates/geography/`, `Unauthorized` in `templates/parcels/`, `Unauthorized` in `templates/accounting/`, `Unauthorized` in `templates/geography/`, `unpermitted` anywhere, `Unpermitted` anywhere, `unlawful` anywhere, `Unlawful` anywhere, `illegal` anywhere, `Illegal` anywhere, `stolen` anywhere, `Stolen` anywhere |
 <!-- vocabulary: end -->
+
+### 13. A label under a heading says the remainder, never the heading again
+
+Brent, 2026-09-08, at the Phase 142 checkpoint: the fields table's column header repeated its card title
+word for word ("Water use recorded, no supply reported" under "Fields with water use recorded and no
+supply reported"), and the panel's breakdown was titled "Supplies, of which", an idiom he had to ask about.
+A label is read under the heading above it. If the heading already says the thing, the label says what is
+left to say: the arithmetic ("Not met by supplies"), the unit, the scope ("by source"). The settled phrase
+stays the quantity's NAME where it stands alone (the field's own page prints "Water use recorded, no supply
+reported: 330.37 AF"); only the repeat under its own title goes. Rule 4 still holds: this stops a restating,
+it never renames a quantity. Platform-wide sweep: ISS-168, Phase 144.
