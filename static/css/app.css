@@ -955,6 +955,25 @@ html { color-scheme: dark; }
     background-color: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
+/* A reading and the note under it are ONE entry (ISS-146 put the note on its
+   own row). No rule between the two, the rule comes after the note, and the
+   zebra stripe, which counts physical rows, must not split the pair. Brent at
+   the 141-01 checkpoint, 2026-09-08: "the explanations are pressed up into the
+   separating line above". */
+.data-table tr.row-has-note td {
+    border-bottom: none;
+    padding-bottom: 2px;
+}
+
+.data-table tr.row-note td {
+    padding-top: 0;
+}
+
+.data-table tbody tr.row-has-note:nth-child(even) td,
+.data-table tbody tr.row-note:nth-child(even) td {
+    background-color: transparent;
+}
+
 /* A row the page has flagged for the reader's attention (the shared-supply
    check marks parcels drawing on a supply claimed by more than one account).
    Warning amber, per the severity ladder in tokens.css — it was a hardcoded

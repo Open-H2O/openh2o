@@ -122,7 +122,7 @@
           </thead>
           <tbody>
             {% for m in recent_measurements %}
-            <tr>
+            <tr{% if m.notes %} class="row-has-note"{% endif %}>
               <td class="text-secondary">{{ m.measurement_date|date:"M d, Y H:i" }}</td>
               <td class="text-secondary">{{ m.get_measurement_type_display }}</td>
               <td class="td-num">{{ m.value|floatformat:2 }}</td>
@@ -136,8 +136,8 @@
               the width the four columns already have. Rendered only when there
               is a note, so a reading without one adds nothing.
             {% endcomment %}
-            <tr>
-              <td colspan="4" class="text-tertiary text-xs" style="padding-top: 0;">{{ m.notes }}</td>
+            <tr class="row-note">
+              <td colspan="4" class="text-tertiary text-xs">{{ m.notes }}</td>
             </tr>
             {% endif %}
             {% endfor %}
