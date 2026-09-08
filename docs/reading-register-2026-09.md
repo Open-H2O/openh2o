@@ -405,6 +405,10 @@ Tables, tile rows, filter bars, page heads and maps on every other page, in rank
 | 143 | R-130 | c55 | The bulk-import page is fixed to one record type ('Bulk import — Well') and unlike the Add page offers no way to switch, so a reader who arrived to import diversions has no route on the screen to the import they want. |
 | 144 | R-131 | c56 | The user roster's Actions column's only content is the word 'You', so a reader cannot say what actions a row offers or why this row offers none. |
 
+Resolved by 143-01 (2026-09-08, staging only, not yet deployed or checkpointed): 8 of the 99 rows. R-037, R-038, R-039, R-040 by commit `1a043d5`; R-035, R-036 by commit `b8bb296`; R-107, R-108 by commit `a6d96bf`. No after-probe is on file yet: 143-01's Task 7 (deploy, re-probe, `143-01-EVIDENCE.md`) has not run, so these read as fixed-in-template, not measured-on-staging, and the pattern still awaits Brent's approval at the checkpoint.
+
+Two corrections found while closing these rows. **R-036's page scope was wrong.** Filed against c5, c6, c7; measured 2026-09-08 on staging, `/accounting/accounts/create/` (c6) carries no period control at all, and `/accounting/accounts/` (c5) grows one only once an account is selected (`?selected=`); bare, it renders `_account_detail_empty.html`. The control exists in one partial, `_account_detail_pane.html`, reached from the account detail page and from the workspace with a selection. **R-035's page scope was incomplete.** Filed against c7, c36; this plan's own probe found the identical self-referential "Open full page →" link on c45 `/parcels/11/` too, fixed there in the same commit, `b8bb296`. The report page (c36) still carries it and is left for a later plan.
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**

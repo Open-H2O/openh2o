@@ -92,8 +92,8 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 11,
-    "column": 73,
+    "line": 23,
+    "column": 75,
     "expression": "{{ balance.supply_total|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.supply_total|"
@@ -103,8 +103,8 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 16,
-    "column": 81,
+    "line": 29,
+    "column": 83,
     "expression": "{{ balance.consumptive_use_gross|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.consumptive_use_gross|"
@@ -114,8 +114,8 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 21,
-    "column": 143,
+    "line": 35,
+    "column": 145,
     "expression": "{{ balance.net_vs_supply|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.net_vs_supply|"
@@ -125,8 +125,8 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 25,
-    "column": 50,
+    "line": 47,
+    "column": 92,
     "expression": "{{ balance.supplies.surface|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.supplies.surface|"
@@ -136,8 +136,8 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 26,
-    "column": 58,
+    "line": 48,
+    "column": 100,
     "expression": "{{ balance.supplies.groundwater|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.supplies.groundwater|"
@@ -147,8 +147,8 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 27,
-    "column": 46,
+    "line": 49,
+    "column": 88,
     "expression": "{{ balance.supplies.precip|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ balance.supplies.precip|"
@@ -158,62 +158,62 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 56,
-    "column": 37,
-    "expression": "{{ pb.consumptive_use_gross|floatformat:2|intcomma }}",
-    "enclosing_loop": "pb in parcel_balances",
-    "nearest_label": "{{ pb.consumptive_use_gross|"
-  },
-  {
-    "id": "FIG-accounting-016",
-    "app": "accounting",
-    "kind": "figure",
-    "template": "templates/accounting/partials/_account_balances.html",
-    "line": 59,
+    "line": 104,
     "column": 23,
     "expression": "{{ pb.surface|floatformat:2|intcomma }}",
     "enclosing_loop": "pb in parcel_balances",
     "nearest_label": "{{ pb.surface|"
   },
   {
-    "id": "FIG-accounting-017",
+    "id": "FIG-accounting-016",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 62,
+    "line": 107,
     "column": 27,
     "expression": "{{ pb.groundwater|floatformat:2|intcomma }}",
     "enclosing_loop": "pb in parcel_balances",
     "nearest_label": "{{ pb.groundwater|"
   },
   {
-    "id": "FIG-accounting-018",
+    "id": "FIG-accounting-017",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 65,
+    "line": 110,
     "column": 22,
     "expression": "{{ pb.precip|floatformat:2|intcomma }}",
     "enclosing_loop": "pb in parcel_balances",
     "nearest_label": "{{ pb.precip|"
   },
   {
-    "id": "FIG-accounting-019",
+    "id": "FIG-accounting-018",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 68,
+    "line": 113,
     "column": 28,
     "expression": "{{ pb.supply_total|floatformat:2|intcomma }}",
     "enclosing_loop": "pb in parcel_balances",
     "nearest_label": "{{ pb.supply_total|"
   },
   {
+    "id": "FIG-accounting-019",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_account_balances.html",
+    "line": 116,
+    "column": 37,
+    "expression": "{{ pb.consumptive_use_gross|floatformat:2|intcomma }}",
+    "enclosing_loop": "pb in parcel_balances",
+    "nearest_label": "{{ pb.consumptive_use_gross|"
+  },
+  {
     "id": "FIG-accounting-020",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_account_balances.html",
-    "line": 71,
+    "line": 119,
     "column": 29,
     "expression": "{{ pb.net_vs_supply|floatformat:2|intcomma }}",
     "enclosing_loop": "pb in parcel_balances",
@@ -221,6 +221,72 @@
   },
   {
     "id": "FIG-accounting-021",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_account_balances.html",
+    "line": 140,
+    "column": 66,
+    "expression": "{{ balance.supplies.surface|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ balance.supplies.surface|"
+  },
+  {
+    "id": "FIG-accounting-022",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_account_balances.html",
+    "line": 141,
+    "column": 70,
+    "expression": "{{ balance.supplies.groundwater|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ balance.supplies.groundwater|"
+  },
+  {
+    "id": "FIG-accounting-023",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_account_balances.html",
+    "line": 142,
+    "column": 65,
+    "expression": "{{ balance.supplies.precip|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ balance.supplies.precip|"
+  },
+  {
+    "id": "FIG-accounting-024",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_account_balances.html",
+    "line": 143,
+    "column": 67,
+    "expression": "{{ balance.supply_total|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ balance.supply_total|"
+  },
+  {
+    "id": "FIG-accounting-025",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_account_balances.html",
+    "line": 144,
+    "column": 70,
+    "expression": "{{ balance.consumptive_use_gross|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ balance.consumptive_use_gross|"
+  },
+  {
+    "id": "FIG-accounting-026",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_account_balances.html",
+    "line": 145,
+    "column": 145,
+    "expression": "{{ balance.net_vs_supply|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ balance.net_vs_supply|"
+  },
+  {
+    "id": "FIG-accounting-027",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_allocations_list_results.html",
@@ -231,7 +297,7 @@
     "nearest_label": "{{ alloc.allocation_acre_feet|"
   },
   {
-    "id": "FIG-accounting-022",
+    "id": "FIG-accounting-028",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_allocations_list_results.html",
@@ -242,7 +308,7 @@
     "nearest_label": "{{ subtotal.total|"
   },
   {
-    "id": "FIG-accounting-023",
+    "id": "FIG-accounting-029",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -253,7 +319,7 @@
     "nearest_label": "{{ grand_supply_total|"
   },
   {
-    "id": "FIG-accounting-024",
+    "id": "FIG-accounting-030",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -264,7 +330,7 @@
     "nearest_label": "{{ grand_consumptive_use|"
   },
   {
-    "id": "FIG-accounting-025",
+    "id": "FIG-accounting-031",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -275,7 +341,7 @@
     "nearest_label": "{{ grand_net|"
   },
   {
-    "id": "FIG-accounting-026",
+    "id": "FIG-accounting-032",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -286,7 +352,7 @@
     "nearest_label": "{{ grand_supply_surface|"
   },
   {
-    "id": "FIG-accounting-027",
+    "id": "FIG-accounting-033",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -297,7 +363,7 @@
     "nearest_label": "{{ grand_supply_groundwater|"
   },
   {
-    "id": "FIG-accounting-028",
+    "id": "FIG-accounting-034",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -308,7 +374,7 @@
     "nearest_label": "{{ grand_supply_precip|"
   },
   {
-    "id": "FIG-accounting-029",
+    "id": "FIG-accounting-035",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -319,7 +385,7 @@
     "nearest_label": "{{ row.surface|"
   },
   {
-    "id": "FIG-accounting-030",
+    "id": "FIG-accounting-036",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -330,7 +396,7 @@
     "nearest_label": "{{ row.groundwater|"
   },
   {
-    "id": "FIG-accounting-031",
+    "id": "FIG-accounting-037",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -341,7 +407,7 @@
     "nearest_label": "{{ row.precip|"
   },
   {
-    "id": "FIG-accounting-032",
+    "id": "FIG-accounting-038",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -352,7 +418,7 @@
     "nearest_label": "{{ row.supply_total|"
   },
   {
-    "id": "FIG-accounting-033",
+    "id": "FIG-accounting-039",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -363,7 +429,7 @@
     "nearest_label": "{{ row.consumptive_use_gross|"
   },
   {
-    "id": "FIG-accounting-034",
+    "id": "FIG-accounting-040",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -374,7 +440,7 @@
     "nearest_label": "{{ row.net_vs_supply|"
   },
   {
-    "id": "FIG-accounting-035",
+    "id": "FIG-accounting-041",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -385,7 +451,7 @@
     "nearest_label": "{{ row.allocation|"
   },
   {
-    "id": "FIG-accounting-036",
+    "id": "FIG-accounting-042",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -396,7 +462,7 @@
     "nearest_label": "{{ row.remaining|"
   },
   {
-    "id": "FIG-accounting-037",
+    "id": "FIG-accounting-043",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -407,7 +473,7 @@
     "nearest_label": "{{ grand_supply_surface|"
   },
   {
-    "id": "FIG-accounting-038",
+    "id": "FIG-accounting-044",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -418,7 +484,7 @@
     "nearest_label": "{{ grand_supply_groundwater|"
   },
   {
-    "id": "FIG-accounting-039",
+    "id": "FIG-accounting-045",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -429,7 +495,7 @@
     "nearest_label": "{{ grand_supply_precip|"
   },
   {
-    "id": "FIG-accounting-040",
+    "id": "FIG-accounting-046",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -440,7 +506,7 @@
     "nearest_label": "{{ grand_supply_total|"
   },
   {
-    "id": "FIG-accounting-041",
+    "id": "FIG-accounting-047",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -451,7 +517,7 @@
     "nearest_label": "{{ grand_consumptive_use|"
   },
   {
-    "id": "FIG-accounting-042",
+    "id": "FIG-accounting-048",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -462,7 +528,7 @@
     "nearest_label": "{{ grand_net|"
   },
   {
-    "id": "FIG-accounting-043",
+    "id": "FIG-accounting-049",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -473,7 +539,7 @@
     "nearest_label": "{{ row.surface|"
   },
   {
-    "id": "FIG-accounting-044",
+    "id": "FIG-accounting-050",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -484,7 +550,7 @@
     "nearest_label": "{{ row.groundwater|"
   },
   {
-    "id": "FIG-accounting-045",
+    "id": "FIG-accounting-051",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -495,7 +561,7 @@
     "nearest_label": "{{ row.precip|"
   },
   {
-    "id": "FIG-accounting-046",
+    "id": "FIG-accounting-052",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -506,7 +572,7 @@
     "nearest_label": "{{ row.supply_total|"
   },
   {
-    "id": "FIG-accounting-047",
+    "id": "FIG-accounting-053",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -517,7 +583,7 @@
     "nearest_label": "{{ row.consumptive_use_gross|"
   },
   {
-    "id": "FIG-accounting-048",
+    "id": "FIG-accounting-054",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -528,7 +594,7 @@
     "nearest_label": "{{ row.net_vs_supply|"
   },
   {
-    "id": "FIG-accounting-049",
+    "id": "FIG-accounting-055",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -539,7 +605,7 @@
     "nearest_label": "{{ row.allocation|"
   },
   {
-    "id": "FIG-accounting-050",
+    "id": "FIG-accounting-056",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -550,7 +616,7 @@
     "nearest_label": "{{ row.carryover|"
   },
   {
-    "id": "FIG-accounting-051",
+    "id": "FIG-accounting-057",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -561,7 +627,7 @@
     "nearest_label": "{{ row.remaining|"
   },
   {
-    "id": "FIG-accounting-052",
+    "id": "FIG-accounting-058",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -572,7 +638,7 @@
     "nearest_label": "{{ row.gross_et|"
   },
   {
-    "id": "FIG-accounting-053",
+    "id": "FIG-accounting-059",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -583,7 +649,7 @@
     "nearest_label": "{{ row.unmet|"
   },
   {
-    "id": "FIG-accounting-054",
+    "id": "FIG-accounting-060",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_dashboard_content.html",
@@ -594,7 +660,7 @@
     "nearest_label": "{{ unmet_demand_total|"
   },
   {
-    "id": "FIG-accounting-055",
+    "id": "FIG-accounting-061",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
@@ -605,7 +671,7 @@
     "nearest_label": "{{ entry.amount_acre_feet|"
   },
   {
-    "id": "FIG-accounting-056",
+    "id": "FIG-accounting-062",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
@@ -616,7 +682,7 @@
     "nearest_label": "+{{ ledger_total_credits|"
   },
   {
-    "id": "FIG-accounting-057",
+    "id": "FIG-accounting-063",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
@@ -627,7 +693,7 @@
     "nearest_label": "{{ ledger_total_water|"
   },
   {
-    "id": "FIG-accounting-058",
+    "id": "FIG-accounting-064",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -638,7 +704,7 @@
     "nearest_label": "{{ final_af|"
   },
   {
-    "id": "FIG-accounting-059",
+    "id": "FIG-accounting-065",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -649,7 +715,7 @@
     "nearest_label": "{{ step.input_af|"
   },
   {
-    "id": "FIG-accounting-060",
+    "id": "FIG-accounting-066",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -660,7 +726,7 @@
     "nearest_label": "{{ step.output_af|"
   },
   {
-    "id": "FIG-accounting-061",
+    "id": "FIG-accounting-067",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -671,7 +737,7 @@
     "nearest_label": "No enabled steps produced a breakdown for this parcel-month \u2014 final {{ final_af|"
   },
   {
-    "id": "FIG-accounting-062",
+    "id": "FIG-accounting-068",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/period_detail.html",
@@ -796,7 +862,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 60,
+    "line": 69,
     "column": 82,
     "expression": "{{ mass_balance.inputs_total|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -807,7 +873,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 65,
+    "line": 74,
     "column": 82,
     "expression": "{{ mass_balance.outputs_total|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -818,7 +884,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 79,
+    "line": 88,
     "column": 206,
     "expression": "{{ mass_balance.residual_af|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -829,7 +895,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 126,
+    "line": 135,
     "column": 57,
     "expression": "{{ mass_balance.inputs.surface|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -840,7 +906,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 127,
+    "line": 136,
     "column": 66,
     "expression": "{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -851,7 +917,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 128,
+    "line": 137,
     "column": 53,
     "expression": "{{ mass_balance.inputs.precip|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -862,7 +928,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 131,
+    "line": 140,
     "column": 61,
     "expression": "{{ mass_balance.outputs.et|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -873,7 +939,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 132,
+    "line": 141,
     "column": 60,
     "expression": "{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -884,7 +950,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 133,
+    "line": 142,
     "column": 71,
     "expression": "{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -895,7 +961,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 158,
+    "line": 167,
     "column": 47,
     "expression": "{{ unmet_demand_af|floatformat:2|intcomma }}",
     "enclosing_loop": null,
@@ -906,7 +972,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 211,
+    "line": 220,
     "column": 81,
     "expression": "{{ consumptive_balance.supplies.surface|floatformat:2 }}",
     "enclosing_loop": null,
@@ -917,7 +983,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 212,
+    "line": 221,
     "column": 89,
     "expression": "{{ consumptive_balance.supplies.groundwater|floatformat:2 }}",
     "enclosing_loop": null,
@@ -928,7 +994,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 249,
+    "line": 258,
     "column": 58,
     "expression": "{{ ef.value|floatformat:2 }}",
     "enclosing_loop": "ef in editable_fields_with_values",
@@ -939,7 +1005,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 299,
+    "line": 308,
     "column": 65,
     "expression": "{{ wip.fraction|floatformat:2 }}",
     "enclosing_loop": "wip in related_wells",
@@ -950,7 +1016,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 339,
+    "line": 373,
     "column": 119,
     "expression": "{{ entry.amount_acre_feet|floatformat:2 }}",
     "enclosing_loop": "entry in recent_ledger",
