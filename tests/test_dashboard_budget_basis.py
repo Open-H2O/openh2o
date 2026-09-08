@@ -230,13 +230,14 @@ def test_the_result_segment_is_marked_as_the_lead():
 
 
 def test_the_breakdown_says_of_which():
-    """R-005: the three supply parts are titled as parts of the Supplies figure,
+    """R-005: the three supply parts are titled as parts of the Supplies figure
+    ("by source": Brent at the checkpoint asked what "of which" meant),
     and carry the fixture's figures: surface 0.00, groundwater 37.50, rain 0.00."""
     period, _zone, _parcel, _account = _basin()
 
     html = _dashboard(period).content.decode()
 
-    assert "Supplies, of which" in html
+    assert "Supplies by source" in html
     assert "<span>Surface</span><b>0.00</b>" in html
     assert "<span>Groundwater</span><b>37.50</b>" in html
     assert "<span>Rain</span><b>0.00</b>" in html
@@ -285,6 +286,7 @@ def _zones_table(html):
 def _header_rows(table_html):
     """The leading text of every <th>, row by row: the word before any popout."""
     thead = table_html[table_html.index("<thead>"):table_html.index("</thead>")]
+    thead = thead.replace('<span class="th-stack">', "").replace("</span></th>", "</th>")
     rows = [r for r in thead.split("<tr")[1:]]
     return [[t.strip() for t in re.findall(r"<th\b[^>]*>\s*([^<]*)", r)] for r in rows]
 
@@ -347,7 +349,7 @@ def test_the_accounts_footer_equals_the_panel():
 
     accounts = _accounts_table(html)
     tfoot = accounts[accounts.index("<tfoot>"):accounts.index("</tfoot>")]
-    assert "<td>All 1 active account</td>" in tfoot
+    assert '<td class="tfoot-total">All 1 active account</td>' in tfoot
     assert '<td class="td-num text-supply">0.00</td>' in tfoot
     assert '<td class="td-num text-supply">37.50</td>' in tfoot
     assert '<td class="td-num-bold text-supply">37.50</td>' in tfoot

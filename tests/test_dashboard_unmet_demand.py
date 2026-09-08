@@ -49,7 +49,7 @@ X_UNMET_TOTAL = Decimal("330.3700")
 X_GROSS_TOTAL = Decimal("363.2600")
 
 SECTION_HEADING = "Fields with water use recorded and no supply reported"
-COLUMN_HEADING = "Water use recorded, no supply reported"
+COLUMN_HEADING = "Not met by supplies"  # 142-01: the card title carries the settled phrase
 SECTION_ANCHOR = "unmet-demand"
 PILL_WORDS = "field with water use recorded, no supply reported"
 
