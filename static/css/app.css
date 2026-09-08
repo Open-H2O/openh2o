@@ -915,7 +915,18 @@ html { color-scheme: dark; }
     background-color: color-mix(in srgb, var(--color-accent) 7%, var(--color-card));
 }
 
-.data-table td {
+/* `:where()` contributes ZERO specificity, so this base rule ranks at (0,1,0),
+   the same as a bare utility class. The text utilities declared LATER in this
+   file (.text-xs, .text-sm, .text-base, .text-tertiary, .text-secondary,
+   .text-mono, .td-num, .text-supply and friends) therefore win by source order
+   and a template's `<td class="text-tertiary text-xs">` finally renders as
+   asked. Before this the plain `.data-table td` (0,1,1) silently discarded
+   every one of them: 105 template cells across 36 templates, measured on
+   /recharge/1/ 2026-09-07 (ISS-162). Two things follow: never an importance
+   override here, and THE UTILITIES MUST STAY DECLARED AFTER THIS RULE -- moving .text-sm
+   or .text-tertiary above this block re-breaks 36 templates without a single
+   test noticing. Changed 2026-09-08, Phase 141. */
+.data-table :where(td) {
     padding: 10px var(--space-md);
     border-bottom: 1px solid var(--color-border);
     font-size: 0.875rem;
@@ -2441,24 +2452,6 @@ div[id$="-map"] {
 }
 
 .text-neutral {
-    color: var(--color-text-secondary);
-}
-
-/* Inside data tables the base `.data-table td` rule (a class + an element)
-   out-ranks a bare semantic utility class, so the color never shows. Re-assert
-   the semantic utilities with matching specificity. Green for positive
-   supply/surplus; red reserved for an actual overdraft (negative net/remaining).
-   text-usage stays neutral — a usage figure is a plain total, not a warning. */
-.data-table td.text-supply,
-.data-table td.text-surplus {
-    color: var(--color-supply);
-}
-
-.data-table td.text-deficit {
-    color: var(--color-deficit);
-}
-
-.data-table td.text-usage {
     color: var(--color-text-secondary);
 }
 
