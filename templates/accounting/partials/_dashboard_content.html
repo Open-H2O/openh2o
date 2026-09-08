@@ -154,15 +154,12 @@
         {% comment %}
           ISS-099: three of these columns are demand-derived, and all three are
           dashed together when this row has no calculation runs. Consumptive use
-          is the missing measurement itself; Net is supplies minus it, so with no
-          measurement it silently equals the full supply and reads as surplus;
+          is the missing measurement itself; Balance is supplies minus it, so with
+          no measurement it silently equals the full supply and reads as surplus;
           Remaining is allocation minus it, so it reads as a completely unused
           budget. The supply columns keep their figures — those are ledger rows,
           measured whether or not the engine has ever run.
         {% endcomment %}
-        <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
-          {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-        </td>
         <td class="td-num text-supply">
           {{ row.surface|floatformat:2|intcomma }}
         </td>
@@ -175,11 +172,14 @@
         <td class="td-num-bold text-supply">
           {{ row.supply_total|floatformat:2|intcomma }}
         </td>
+        <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
+          {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+        </td>
         <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
           {% if row.has_calculations %}{{ row.net_vs_supply|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% if has_allocations %}
-        <td class="td-num">
+        <td class="td-num col-sep">
           {% if row.allocation is None %}&mdash;{% else %}{{ row.allocation|floatformat:2|intcomma }}{% endif %}
         </td>
         <td class="td-num-bold {% if not row.has_calculations or row.remaining is None %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
@@ -189,6 +189,29 @@
       </tr>
       {% endfor %}
     </tbody>
+    {% comment %}
+      The footer IS the panel: the same grand_* context values, so the panel and
+      the table are visibly one thing. What makes these rows addable (DESIGN.md
+      rule 12): one quantity, one period, every active account, and the label
+      says so. Dashed for the two demand-derived cells when the engine has never
+      run, for the same reason the rows above are (ISS-099). Blank in the budget
+      cells: an allocation is not a total of anything on this table.
+    {% endcomment %}
+    <tfoot>
+      <tr>
+        <td>All {{ account_summaries|length }} active account{{ account_summaries|length|pluralize }}</td>
+        <td class="td-num text-supply">{{ grand_supply_surface|floatformat:2|intcomma }}</td>
+        <td class="td-num text-supply">{{ grand_supply_groundwater|floatformat:2|intcomma }}</td>
+        <td class="td-num text-supply">{{ grand_supply_precip|floatformat:2|intcomma }}</td>
+        <td class="td-num-bold text-supply">{{ grand_supply_total|floatformat:2|intcomma }}</td>
+        <td class="td-num {% if engine_has_never_run %}text-tertiary{% else %}text-usage{% endif %}">{% if engine_has_never_run %}&mdash;{% else %}{{ grand_consumptive_use|floatformat:2|intcomma }}{% endif %}</td>
+        <td class="td-num-bold {% if engine_has_never_run %}text-tertiary{% elif grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{% if engine_has_never_run %}&mdash;{% else %}{{ grand_net|floatformat:2|intcomma }}{% endif %}</td>
+        {% if has_allocations %}
+        <td class="col-sep"></td>
+        <td></td>
+        {% endif %}
+      </tr>
+    </tfoot>
   </table>
   </div>
   {% else %}
@@ -201,29 +224,50 @@
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Zones</h2>
-    <span class="text-tertiary text-xs">Geographic management areas with allocations</span>
+    <span class="text-tertiary text-xs">One row per zone, {{ selected_period.name }}. A parcel can lie in more than one zone, so rows are not added. All figures in acre-feet (AF).</span>
   </div>
   {% if zone_summaries %}
   <div class="table-scroll">
-  <table class="data-table">
+  <table class="data-table data-table--grouped">
     <thead>
-      <tr>
-        <th style="min-width: 240px;">Zone</th>
-        <th class="th-right">Consumptive Use (AF)</th>
-        <th class="th-right">Surface (AF)</th>
-        <th class="th-right">Groundwater (AF)</th>
-        <th class="th-right">Precip (AF)</th>
-        <th class="th-right">Supplies (AF)</th>
-        <th class="th-right">Net (AF)</th>
+      <tr class="th-group">
+        <th rowspan="2" style="min-width: 190px;">Zone</th>
+        <th colspan="4" class="th-group-label">Supplies</th>
+        <th rowspan="2" class="th-right">Consumptive use</th>
+        <th rowspan="2" class="th-right">Balance</th>
         {% if has_allocations %}
-        <th class="th-right">GW allocation (AF)</th>
-        <th class="th-right">Carried fwd (AF)</th>
-        <th class="th-right">GW remaining (AF)</th>
+        <th colspan="3" class="th-group-label col-sep">Groundwater budget</th>
+        {% endif %}
+      </tr>
+      <tr>
+        <th class="th-right">Surface</th>
+        <th class="th-right">Groundwater</th>
+        <th class="th-right">Rain</th>
+        <th class="th-right">Total</th>
+        {% if has_allocations %}
+        <th class="th-right col-sep">Allocation</th>
+        <th class="th-right">Carried fwd</th>
+        <th class="th-right">Remaining</th>
         {% endif %}
       </tr>
     </thead>
     <tbody>
       {% for row in zone_summaries %}
+      {% comment %}
+        R-010 (142-01): two kinds of row, said once. The view orders budgeted
+        zones first, so one divider opens each group. Only when the budget
+        columns exist: with no allocations at all every row is unbudgeted and
+        the columns are absent, so there is nothing to explain. Nothing here
+        names GSAs or service areas; the demo's two kinds are not every
+        deployment's. Centred (Brent, 2026-09-08, on the mock-up).
+      {% endcomment %}
+      {% if has_allocations %}
+      {% ifchanged row.has_groundwater_budget %}
+      <tr class="row-group">
+        <td colspan="10">{% if row.has_groundwater_budget %}Zones with a groundwater budget for {{ selected_period.name }}{% else %}Zones with no groundwater budget for {{ selected_period.name }}: allocation, carry-over and remaining are not applicable{% endif %}</td>
+      </tr>
+      {% endifchanged %}
+      {% endif %}
       <tr>
         <td><a href="{% url 'geography:zone_detail' row.zone.pk %}" class="data-table-link">{{ row.zone.name }}</a></td>
         {% comment %}
@@ -241,9 +285,6 @@
           no engine run it would understate pumping on every unmetered field and
           read as a fuller budget than the truth.
         {% endcomment %}
-        <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
-          {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-        </td>
         <td class="td-num text-supply">
           {{ row.surface|floatformat:2|intcomma }}
         </td>
@@ -256,11 +297,14 @@
         <td class="td-num-bold text-supply">
           {{ row.supply_total|floatformat:2|intcomma }}
         </td>
+        <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
+          {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
+        </td>
         <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
           {% if row.has_calculations %}{{ row.net_vs_supply|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
         </td>
         {% if has_allocations %}
-        <td class="td-num">
+        <td class="td-num col-sep">
           {% if row.allocation is None %}&mdash;{% else %}{{ row.allocation|floatformat:2|intcomma }}{% endif %}
         </td>
         <td class="td-num {% if row.carryover is None %}text-tertiary{% elif row.carryover > 0 %}text-surplus{% elif row.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
@@ -323,7 +367,7 @@
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
-    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="Fields with water use recorded and no supply reported" text="Each row is one field, for the period shown. The platform subtracts the deliveries, pumping and rainfall on record from the consumptive use it estimated, and stores whatever is left over as a figure on that field. Every row is the same stored quantity in acre-feet from a single field, so the column adds." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="Fields with water use recorded and no supply reported" text="Each row is one field, for the period shown. The platform subtracts the deliveries, pumping and rainfall on record from the consumptive use it estimated, and stores whatever is left over as a figure on that field. Every row is the same stored quantity in acre-feet from a single field, so the column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>
   </div>
   {% if unmet_demand_rows %}
   <div class="table-scroll">
@@ -331,16 +375,16 @@
     <thead>
       <tr>
         <th style="min-width: 200px;">Field</th>
-        <th class="th-right">Consumptive Use (AF)</th>
+        <th class="th-right">Consumptive use</th>
         {% comment %}
           Sentence case, deliberately, against the data-table Title-Case
           exception (DESIGN.md rule 4). The phrase is a settled product term and
           the field's own page prints it exactly this way; Title-Casing it here
           would make one quantity read as two names on two screens, which is the
-          defect rule 12 exists to end. The neighbouring column keeps the
-          platform-wide "Consumptive Use (AF)" it carries on every other table.
+          defect rule 12 exists to end. No unit on either header (Phase 142): the
+          card's subtitle states it once for the whole table.
         {% endcomment %}
-        <th class="th-right">Water use recorded, no supply reported (AF)</th>
+        <th class="th-right">Water use recorded, no supply reported</th>
       </tr>
     </thead>
     <tbody>

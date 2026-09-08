@@ -268,7 +268,16 @@ def dashboard(request):
                 "allocation": zone_allocation,
                 "carryover": zone_carryover_af,
                 "remaining": zone_remaining,
+                # 142-01 (R-010): the generic, truthful grouping key is not the
+                # zone's type but whether a groundwater plan exists for the
+                # period -- exactly what dashes the three budget cells above.
+                "has_groundwater_budget": zone_allocation is not None,
             })
+        # Budgeted zones first, alphabetical within each group, so the template
+        # can put one divider row before each group instead of a "no budget"
+        # note on five rows. Tests that read these rows select by zone identity,
+        # never by position.
+        zone_summaries.sort(key=lambda z: (not z["has_groundwater_budget"], z["zone"].name))
 
     # Bottom-line: supplies minus estimated consumptive use.
     grand_net = grand_supply_total - grand_consumptive_use

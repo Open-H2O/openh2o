@@ -974,6 +974,26 @@ html { color-scheme: dark; }
     background-color: transparent;
 }
 
+/* A full-width divider naming the kind of row that follows (Phase 142, R-010:
+   the Zones table mixes zones with a groundwater budget and zones without,
+   and the second kind dashes three cells; the divider says why, once, instead
+   of five times). Centred (Brent, 2026-09-08, on the mock-up). Excluded from
+   the zebra stripe, same shape as `tr.row-note`. */
+.data-table tr.row-group td {
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background-color: color-mix(in srgb, var(--color-elevated) 60%, transparent);
+    border-bottom: 1px solid var(--color-border-hover);
+    padding-block: 6px;
+}
+.data-table tbody tr.row-group:nth-child(even) td {
+    background-color: color-mix(in srgb, var(--color-elevated) 60%, transparent);
+}
+
 /* A row the page has flagged for the reader's attention (the shared-supply
    check marks parcels drawing on a supply claimed by more than one account).
    Warning amber, per the severity ladder in tokens.css — it was a hardcoded
@@ -1022,6 +1042,74 @@ html { color-scheme: dark; }
     /* th already carries an opaque background so rows can't bleed through;
        add depth on the stuck header. */
     box-shadow: 0 2px 4px rgba(5, 8, 12, 0.45);
+}
+
+/* -- Grouped headers, the column separator and the footer (Phase 142) ------ */
+/* R-007 / R-008 (ISS-159 #1): a two-row header whose top row names the group
+   a run of columns belongs to (Supplies; Groundwater budget) and whose bottom
+   row carries the leaf labels, so a table can show that three columns sum to a
+   fourth and that the budget columns are a different kind of number. Both
+   header rows are sticky, so the second row's `top` is the first row's height
+   or they overlap on scroll; `--th-group-h` is that height. Declared AFTER the
+   base `.data-table :where(td)` rule and BEFORE the text utilities, so a
+   `<td class="text-tertiary text-xs">` still wins (141-01). */
+.data-table--grouped :where(td),
+.data-table--grouped th {
+    padding-inline: 6px;
+}
+.data-table--grouped thead tr.th-group th {
+    top: 0;
+    /* border-box, no block padding: the row is EXACTLY the token, so the leaf
+       row's `top` below lands on its edge with nothing to overlap. */
+    box-sizing: border-box;
+    height: var(--th-group-h, 36px);
+    padding-block: 0;
+    vertical-align: middle;
+}
+/* Plus the 2px collapsed border that sits BETWEEN the rows, outside the cell
+   box: measured 2026-09-08, a 36px border-box row lands the next row at 38.25. */
+.data-table--grouped thead tr.th-group ~ tr th {
+    top: calc(var(--th-group-h, 36px) + 2px);
+}
+/* The group label is centred over its columns and its underline spans only
+   its own cell, so it reads as a bracket rather than as one more column.
+   (0,2,1) beats the base `.data-table th` left-align without an importance
+   override; the pseudo-element positions against the sticky cell. */
+.data-table--grouped th.th-group-label {
+    text-align: center;
+    border-bottom-color: transparent;
+}
+.data-table--grouped th.th-group-label::after {
+    content: "";
+    position: absolute;
+    left: var(--space-sm);
+    right: var(--space-sm);
+    bottom: 0;
+    height: 2px;
+    background: var(--color-accent);
+    opacity: 0.7;
+}
+/* One vertical rule where the kind of number changes (Brent, 2026-09-06: the
+   groundwater budget belongs to a different regulatory framework). On the
+   first budget cell in both header rows, every body row and the footer. */
+.data-table--grouped th.col-sep,
+.data-table--grouped td.col-sep {
+    border-left: 2px solid var(--color-border-hover);
+}
+/* A figure never breaks across two lines; fit is the wrapper's problem. */
+.td-num,
+.td-num-bold {
+    white-space: nowrap;
+}
+/* A totals row: ruled off from the body, no rule under it. Weight only on the
+   grouped dashboard tables; the ledger and allocation footers carry their own
+   inline weights until Phase 143 reaches them. */
+.data-table tfoot td {
+    border-top: 2px solid var(--color-border-hover);
+    border-bottom: none;
+}
+.data-table--grouped tfoot td {
+    font-weight: 600;
 }
 
 .th-sortable {
