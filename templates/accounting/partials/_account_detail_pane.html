@@ -30,7 +30,16 @@
     {% else %}
       <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
     {% endif %}
+    {% comment %}
+      R-035 (143-01): this fragment is the workspace pane AND the standalone
+      page's body, so on the standalone page the only forward link in the head
+      pointed at the page the reader was already on. `on_full_page` is passed by
+      `account_detail.html`; in the workspace it is absent and the escape shows,
+      which is the one place it means anything.
+    {% endcomment %}
+    {% if not on_full_page %}
     <a href="{% url 'accounting:account_detail' account.pk %}" class="text-tertiary text-xs back-link" title="Open this account on its own page">Open full page &rarr;</a>
+    {% endif %}
   </div>
 </div>
 
@@ -115,7 +124,15 @@
                   hx-get="{% url 'accounting:account_detail' account.pk %}"
                   hx-target="#balance-section"
                   hx-trigger="change"
-                  class="form-select" style="width: auto; padding: 4px var(--space-sm); font-size: 0.8125rem;">
+                  {% comment %}
+                    R-036: the width/padding/font-size used to be an inline
+                    style here, and its `padding` SHORTHAND wiped the right-hand
+                    allowance `.form-select` reserves for its dropdown arrow, so
+                    the water year rendered under the arrow. Fixed at the class
+                    (app.css → `.form-select--compact`) because the same control
+                    appears on the workspace and the full page both.
+                  {% endcomment %}
+                  class="form-select form-select--compact">
             <option value="">All Time</option>
             {% for p in periods %}
             <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>

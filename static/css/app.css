@@ -1229,6 +1229,33 @@ html { color-scheme: dark; }
     box-shadow: 0 0 0 2px var(--color-accent-muted);
 }
 
+/* A select sized to its own longest option, for a card header rather than a
+   form row — the water-year control beside "Account balance".
+
+   R-036 (143-01): this used to be an inline `padding: 4px var(--space-sm)` on
+   the template. The SHORTHAND is the bug: it overwrites `.form-select`'s
+   `padding-right: calc(var(--space-md) * 2 + 12px)`, which is not decoration
+   but the space reserved for the dropdown-arrow background image. Measured
+   2026-09-08 on staging: padding-right computed 8px while the 12px arrow sits
+   at `calc(100% - 16px)`, so the arrow occupied the band 16-28px in from the
+   right edge and the option text ran straight underneath it. The year the whole
+   page depends on was the hardest thing on it to read.
+
+   Nothing overflowed, so a scrollWidth check could not see this: the control is
+   `width: auto` and sizes itself to its text. The arithmetic below is
+   `.form-select`'s own formula at the small spacing token — arrow inset 8px,
+   arrow 12px, text stopping 28px in — so the two rules stay in step. Set the
+   padding LONGHANDS; a shorthand here would reintroduce exactly this fault. */
+.form-select--compact {
+    width: auto;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: var(--space-sm);
+    padding-right: calc(var(--space-sm) * 2 + 12px);
+    background-position: right var(--space-sm) center;
+    font-size: 0.8125rem;
+}
+
 .form-textarea {
     width: 100%;
     padding: var(--space-sm) var(--space-md);

@@ -31,7 +31,8 @@
     </a>
   </div>
   <div id="detail-body">
-    {% include "accounting/partials/_account_detail_pane.html" %}
+    {# R-035: this IS the full page, so the pane's "open full page" escape is suppressed. #}
+    {% include "accounting/partials/_account_detail_pane.html" with on_full_page=True %}
   </div>
 </div>
 {% endblock %}

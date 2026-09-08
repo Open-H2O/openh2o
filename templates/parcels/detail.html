@@ -39,7 +39,8 @@
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
   <div id="detail-body">
-    {% include "parcels/partials/_detail_pane.html" %}
+    {# R-035 (same fault, found by this plan's probe on /parcels/11/): this IS the full page. #}
+    {% include "parcels/partials/_detail_pane.html" with on_full_page=True %}
   </div>
 </div>
 {% endblock %}
