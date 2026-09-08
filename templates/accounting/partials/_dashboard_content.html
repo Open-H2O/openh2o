@@ -13,55 +13,68 @@
 
 {% url 'water_balances' as wb_help_url %}
 {% url 'budgets_allocations' as budgets_help_url %}
+{% comment %}
+  Phase 142 (R-003, R-004, R-005, R-006; ISS-159 #2). The panel is named for
+  the thing it summarises, the result is the only lead figure, the supply
+  breakdown reads as "of which", and the population is stated in the foot
+  because these totals are the sum of ACTIVE ACCOUNTS ONLY (views.py, grand_*
+  accumulate inside the active-accounts loop), not the basin. The "How this
+  summary works" inset that used to follow is gone: its two claims now live in
+  the captions here and in the tables' group headers below.
+
+  Captions explain where the platform got each number (DESIGN.md rule 11),
+  never what the water is.
+{% endcomment %}
 <div class="budget-panel">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Supply vs. use{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use, estimated here from satellite evapotranspiration, is the demand. Surface deliveries, groundwater, and rainfall are the supplies counted against it: water that arrived, delivered, pumped or rain, never allocation paper. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use, estimated here from satellite evapotranspiration, is the demand. Surface deliveries, groundwater, and rainfall are the supplies counted against it: water that arrived, delivered, pumped or rain, never allocation paper. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
     <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
-  <div class="budget-panel-row">
-    <div class="budget-seg">
-      <div class="budget-seg-label">Supplies</div>
-      <div class="budget-seg-value text-supply">{{ grand_supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+  <div class="budget-panel-body">
+    <div class="budget-panel-row">
+      <div class="budget-seg">
+        <div class="budget-seg-label">Supplies</div>
+        <div class="budget-seg-value text-supply">{{ grand_supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-caption">water on record for the period</div>
+      </div>
+      <div class="budget-op">&minus;</div>
+      <div class="budget-seg">
+        <div class="budget-seg-label">Consumptive use</div>
+        {% comment %}
+          ISS-099: with no calculation runs behind it this is not a zero, it is a
+          blank. Rendering 0.00 here is what made the balance below read as a
+          healthy surplus on an unmeasured basin. The supplies term keeps its real
+          figure — ledger rows exist and are genuinely measured — so the panel
+          shows what is known beside what is not, rather than blanking the lot.
+        {% endcomment %}
+        {% if engine_has_never_run %}
+        <div class="budget-seg-value text-tertiary">Not calculated</div>
+        {% else %}
+        <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        {% endif %}
+        <div class="budget-seg-caption">estimated from satellite ET</div>
+      </div>
+      <div class="budget-op">&equals;</div>
+      <div class="budget-seg budget-seg--result">
+        <div class="budget-seg-label">Balance</div>
+        {% if engine_has_never_run %}
+        <div class="budget-seg-value text-tertiary">&mdash;</div>
+        {% else %}
+        <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        {% endif %}
+        <div class="budget-seg-caption">supplies minus consumptive use</div>
+      </div>
     </div>
-    <div class="budget-op">&minus;</div>
-    <div class="budget-seg">
-      <div class="budget-seg-label">Consumptive use</div>
-      {% comment %}
-        ISS-099: with no calculation runs behind it this is not a zero, it is a
-        blank. Rendering 0.00 here is what made the balance below read as a
-        healthy surplus on an unmeasured basin. The supplies term keeps its real
-        figure — ledger rows exist and are genuinely measured — so the panel
-        shows what is known beside what is not, rather than blanking the lot.
-      {% endcomment %}
-      {% if engine_has_never_run %}
-      <div class="budget-seg-value text-tertiary">Not calculated</div>
-      {% else %}
-      <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-      {% endif %}
-    </div>
-    <div class="budget-op">&equals;</div>
-    <div class="budget-seg">
-      <div class="budget-seg-label">Balance</div>
-      {% if engine_has_never_run %}
-      <div class="budget-seg-value text-tertiary">&mdash;</div>
-      {% else %}
-      <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-      {% endif %}
+    <div class="budget-panel-breakdown">
+      <div class="budget-breakdown-title">Supplies, of which</div>
+      <div class="budget-breakdown-row"><span>Surface</span><b>{{ grand_supply_surface|floatformat:2|intcomma }}</b></div>
+      <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ grand_supply_groundwater|floatformat:2|intcomma }}</b></div>
+      <div class="budget-breakdown-row"><span>Rain</span><b>{{ grand_supply_precip|floatformat:2|intcomma }}</b></div>
     </div>
   </div>
-  <div class="budget-panel-foot">
-    <span>Surface <b>{{ grand_supply_surface|floatformat:2|intcomma }}</b></span>
-    <span>Groundwater <b>{{ grand_supply_groundwater|floatformat:2|intcomma }}</b></span>
-    <span>Rain <b>{{ grand_supply_precip|floatformat:2|intcomma }}</b></span>
-  </div>
-</div>
-
-<!-- Consumptive-use model explainer -->
-<div class="card-raised card-inset">
-  <p class="text-tertiary text-sm m-0">
-    <strong class="text-secondary">How this summary works:</strong>
-    <span class="text-supply">Consumptive use</span>, estimated here from satellite evapotranspiration (ET), is the demand. It is met by three supplies: surface-water deliveries, groundwater pumping, and effective rainfall. Each area's consumptive use is shown below beside the supplies that met it; the balance is the supplies minus consumptive use.
-  </p>
+  {% if account_summaries %}
+  <div class="budget-panel-note">Totals across the {{ account_summaries|length }} active water account{{ account_summaries|length|pluralize }} below.</div>
+  {% endif %}
 </div>
 
 {% if engine_has_never_run %}
