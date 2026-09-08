@@ -2248,10 +2248,21 @@ html { color-scheme: dark; }
         padding-left: 0;
         padding-top: var(--space-md);
     }
-    /* Three figures and two operators do not sit on one line in a 408px pane. */
+    /* Three figures and two operators do not sit on one line in a 696px panel,
+       let alone a 408px one. Wrapping them left the "=" orphaned at the end of
+       the first line with Balance alone on the second, which reads as a layout
+       fault rather than as an equation. Stacked, it stays an equation and simply
+       runs down instead of across: Supplies, minus, Consumptive use, equals,
+       Balance. The operator's tall top padding exists to sit it on the figures'
+       baseline in a row, so it comes off in a column. */
     .budget-panel-body .budget-panel-row {
-        flex-wrap: wrap;
-        gap: var(--space-lg);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+    .budget-panel-body .budget-op {
+        padding: 0;
+        text-align: left;
     }
 }
 .budget-panel-row {
