@@ -2209,13 +2209,50 @@ html { color-scheme: dark; }
     border-radius: var(--radius-pill);
 }
 /* Equation left, breakdown right. `minmax(240px, auto)` is the width the
-   142-01 mock-up was approved at; the breakdown never squeezes below it. */
+   142-01 mock-up was approved at; the breakdown never squeezes below it.
+
+   ⚠ 143-01: that two-column body only fits a panel as wide as the dashboard's.
+   The account pane's panel is 696px on the detail page and 408px in the
+   workspace, and there the `1fr` column took its own min-content, pushed the
+   breakdown past the panel's right edge, and `.budget-panel` clips
+   (`overflow: hidden`) -- so "Supplies by source" rendered, measured 255px
+   wide, and was invisible to a reader. R-037 would have read as fixed in the
+   markup and unfixed on the screen.
+
+   A CONTAINER query, not a media query: the existing `max-width: 767px` rule
+   below keys on the VIEWPORT, which is 1440 here while the panel is 408. The
+   thing that is too narrow is the panel, so the panel is what must be asked. */
+.budget-panel {
+    container-type: inline-size;
+}
 .budget-panel-body {
     display: grid;
     grid-template-columns: 1fr minmax(240px, auto);
     gap: var(--space-xl);
     align-items: start;
     padding: var(--space-lg);
+}
+.budget-panel-body > * {
+    min-width: 0;
+}
+@container (max-width: 760px) {
+    .budget-panel-body {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+    }
+    /* Stacked, the rule that separated the two columns becomes a rule between
+       the equation above and its breakdown below. */
+    .budget-panel-body .budget-panel-breakdown {
+        border-left: none;
+        border-top: 1px solid var(--color-border);
+        padding-left: 0;
+        padding-top: var(--space-md);
+    }
+    /* Three figures and two operators do not sit on one line in a 408px pane. */
+    .budget-panel-body .budget-panel-row {
+        flex-wrap: wrap;
+        gap: var(--space-lg);
+    }
 }
 .budget-panel-row {
     display: flex;
