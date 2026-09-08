@@ -863,6 +863,16 @@ html { color-scheme: dark; }
     border-bottom: 1px solid var(--color-border);
 }
 
+/* The login page's heading, named. The ten templates under templates/account/
+   share this one definition instead of an inline style or Tailwind classes the
+   served build does not define (R-141, R-143; Phase 141, 2026-09-08). */
+.auth-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    margin: 0 0 var(--space-sm) 0;
+}
+
 .field-group {
     margin-bottom: var(--space-md);
 }

@@ -6,8 +6,8 @@
    Accent contract: gold is for the primary CTA button only — page headings
    carry the teal identity accent, matching the login page.
     {% endcomment %}
-<h1 class="text-xl font-extrabold mb-sm text-accent">Create account</h1>
-    <p class="text-sm mb-lg text-secondary">Set up your water-data access.</p>
+<h1 class="auth-title">Create account</h1>
+    <p class="text-sm mb-md text-secondary">Set up your water-data access.</p>
     {% if form.errors %}
     <div class="form-error-box">
         {% for field in form %}
@@ -22,17 +22,17 @@
     {% endif %}
     <form method="post" action="{% url 'account_signup' %}">
         {% csrf_token %}
-        <div class="mb-md">
-            <label class="block text-sm mb-xs text-secondary">Email</label>
-            <input type="email" name="email" required autofocus class="form-input">
+        <div class="form-group">
+            <label class="form-label" for="id_email">Email</label>
+            <input type="email" id="id_email" name="email" required autofocus class="form-input">
         </div>
-        <div class="mb-md">
-            <label class="block text-sm mb-xs text-secondary">Password</label>
-            <input type="password" name="password1" required class="form-input">
+        <div class="form-group">
+            <label class="form-label" for="id_password1">Password</label>
+            <input type="password" id="id_password1" name="password1" required class="form-input">
         </div>
-        <div class="mb-lg">
-            <label class="block text-sm mb-xs text-secondary">Confirm password</label>
-            <input type="password" name="password2" required class="form-input">
+        <div class="form-group">
+            <label class="form-label" for="id_password2">Confirm password</label>
+            <input type="password" id="id_password2" name="password2" required class="form-input">
         </div>
         <button type="submit" class="btn-primary w-full mb-md">Create account</button>
     </form>
