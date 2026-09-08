@@ -646,6 +646,29 @@ def accounts_list(request):
     return render(request, "accounting/accounts_list.html", context)
 
 
+def _account_assignments(account):
+    """This account's live use-area assignments, in use-area-number order.
+
+    One definition because THREE views render the same rows — the detail
+    context, and the assign / remove handlers that re-render the assignment card
+    over HTMX. They each held their own copy of this queryset, so an ordering
+    fixed in one place would have left the table re-shuffling itself the moment
+    an operator assigned or removed a use area.
+
+    R-040 (143-01): the order used to be ``-added_date``, which is not an order a
+    reader can name. Measured 2026-09-08 on the demonstration data: all 18 of
+    account 12's assignments carry the same ``added_date``, so the tie broke
+    however PostgreSQL liked and two use areas were stranded at the end of both
+    tables, reading as an error. They are not a different kind of row — same
+    period, same day, same everything.
+    """
+    return (
+        WaterAccountParcel.objects.filter(water_account=account, removed_date__isnull=True)
+        .select_related("parcel", "reporting_period")
+        .order_by("parcel__parcel_number")
+    )
+
+
 def _account_detail_context(account, period_param=None):
     """Build the per-account detail context.
 
@@ -658,11 +681,7 @@ def _account_detail_context(account, period_param=None):
       * ``""``    → All Time (no period filter; an explicit user choice).
       * ``"<pk>"`` → that specific period.
     """
-    assignments = (
-        WaterAccountParcel.objects.filter(water_account=account, removed_date__isnull=True)
-        .select_related("parcel", "reporting_period")
-        .order_by("-added_date")
-    )
+    assignments = _account_assignments(account)
     acct_parcel_ids = list(assignments.values_list("parcel_id", flat=True))
 
     # Period selector
@@ -835,11 +854,7 @@ def assign_parcel(request, pk):
         wap.added_date = timezone.now().date()
         wap.save(update_fields=["removed_date", "added_date"])
 
-    assignments = (
-        WaterAccountParcel.objects.filter(water_account=account, removed_date__isnull=True)
-        .select_related("parcel", "reporting_period")
-        .order_by("-added_date")
-    )
+    assignments = _account_assignments(account)
 
     return render(
         request,
@@ -857,11 +872,7 @@ def remove_parcel(request, pk, wap_pk):
     wap.removed_date = timezone.now().date()
     wap.save(update_fields=["removed_date"])
 
-    assignments = (
-        WaterAccountParcel.objects.filter(water_account=account, removed_date__isnull=True)
-        .select_related("parcel", "reporting_period")
-        .order_by("-added_date")
-    )
+    assignments = _account_assignments(account)
 
     return render(
         request,

@@ -1,47 +1,95 @@
 {% load humanize %}
 {% url 'water_balances' as wb_help_url %}
-{% comment %} Balance as the house budget-panel: supplies − consumptive use = balance,
-     the same equation skin as the dashboard, with the supply breakdown in the
-     foot. Head-less because the card already titles it + carries the period
-     selector. {% endcomment %}
+{% comment %}
+  Phase 143 (R-037, R-038, R-039, R-040), carrying the pattern DESIGN.md →
+  *Tables that explain their numbers* records from the dashboard.
+
+  HEAD-LESS on purpose. The card around this fragment already carries the
+  heading "Account balance" and the water-year control, so a
+  `.budget-panel-title` here would repeat the heading half a line under itself
+  (copy rule 13). The dashboard's panel titles itself because nothing above it
+  does.
+
+  The captions say where the platform got each figure (copy rule 11) and never
+  what the water is. Balance is the only lead figure (rule 8): it is the number
+  this card exists to produce, and it used to be set at the same 22px/700 as its
+  own two inputs.
+{% endcomment %}
 <div class="budget-panel" style="margin-bottom: var(--space-md);">
-  <div class="budget-panel-row">
-    <div class="budget-seg">
-      <div class="budget-seg-label">Supplies</div>
-      <div class="budget-seg-value text-supply">{{ balance.supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+  <div class="budget-panel-body">
+    <div class="budget-panel-row">
+      <div class="budget-seg">
+        <div class="budget-seg-label">Supplies</div>
+        <div class="budget-seg-value text-supply">{{ balance.supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-caption">water on record for the period</div>
+      </div>
+      <div class="budget-op">&minus;</div>
+      <div class="budget-seg">
+        <div class="budget-seg-label">Consumptive use</div>
+        <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-caption">estimated from satellite ET</div>
+      </div>
+      <div class="budget-op">&equals;</div>
+      <div class="budget-seg budget-seg--result">
+        <div class="budget-seg-label" style="display: flex; align-items: center; justify-content: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use here is the satellite ET estimate. Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
+        <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+        <div class="budget-seg-caption">supplies minus consumptive use</div>
+      </div>
     </div>
-    <div class="budget-op">&minus;</div>
-    <div class="budget-seg">
-      <div class="budget-seg-label">Consumptive use</div>
-      <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+    {% comment %}
+      R-037: these three used to sit in a bare `.budget-panel-foot` with nothing
+      saying they are the parts of the Supplies figure above them. Titled "by
+      source", not "of which" — Brent overturned that idiom at the 142-01
+      checkpoint.
+    {% endcomment %}
+    <div class="budget-panel-breakdown">
+      <div class="budget-breakdown-title">Supplies by source</div>
+      <div class="budget-breakdown-row"><span>Surface</span><b>{{ balance.supplies.surface|floatformat:2|intcomma }}</b></div>
+      <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ balance.supplies.groundwater|floatformat:2|intcomma }}</b></div>
+      <div class="budget-breakdown-row"><span>Rain</span><b>{{ balance.supplies.precip|floatformat:2|intcomma }}</b></div>
     </div>
-    <div class="budget-op">&equals;</div>
-    <div class="budget-seg">
-      <div class="budget-seg-label" style="display: flex; align-items: center; justify-content: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use here is the satellite ET estimate. Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
-      <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-    </div>
-  </div>
-  <div class="budget-panel-foot">
-    <span>Surface <b>{{ balance.supplies.surface|floatformat:2|intcomma }}</b></span>
-    <span>Groundwater <b>{{ balance.supplies.groundwater|floatformat:2|intcomma }}</b></span>
-    <span>Rain <b>{{ balance.supplies.precip|floatformat:2|intcomma }}</b></span>
   </div>
 </div>
 
-<!-- Per-parcel breakdown -->
 {% if parcel_balances %}
-<h3 class="section-header-sm">Per-Parcel breakdown</h3>
+{% comment %}
+  R-039: the table reads as the equation the panel above states — Supplies
+  (Surface, Groundwater, Rain, Total) minus Consumptive use equals Balance —
+  with the group header bracketing exactly the columns that sum to Total, and
+  one rule where the kind of number changes from measured water to a derived
+  result. Six identically-headed columns used to say none of that.
+
+  The unit is stated once in the subtitle, never on a column (rule 4). Short
+  leaf headers are also what keeps this inside a 1440-pixel window.
+
+  "Use area" in the heading AND the column: the card beside this one says
+  "Assigned use areas" and the pane header offers to open one, so "Per-Parcel"
+  here was a second name for the one thing (copy rule 12). The wider divergence
+  between "use area" and the dashboard's "Field" is ISS-168, not this plan.
+
+  R-040: the rows are ordered in the VIEW, by use-area number. They used to come
+  back by date added, and all 18 of this account's assignments were added on one
+  day, so the database broke the tie however it liked and two use areas were
+  stranded at the end looking like an error.
+{% endcomment %}
+<div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+  <h3 class="section-header-sm">Use area breakdown</h3>
+  <span class="text-tertiary text-xs">One row per assigned use area{% if selected_period %}, {{ selected_period.name }}{% endif %}. All figures in acre-feet (AF).</span>
+</div>
 <div class="table-scroll">
-<table class="data-table">
+<table class="data-table data-table--grouped">
   <thead>
+    <tr class="th-group">
+      <th rowspan="2" style="min-width: 150px;">Use area</th>
+      <th colspan="4" class="th-group-label">Supplies</th>
+      <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
+      <th rowspan="2" class="th-right col-sep">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus consumptive use, for this use area and period. Positive means the supplies on record exceeded the estimated use." link=wb_help_url link_label="How water balances work" %}</th>
+    </tr>
     <tr>
-      <th>Parcel</th>
-      <th class="th-right">Consumptive Use</th>
       <th class="th-right">Surface</th>
       <th class="th-right">Groundwater</th>
-      <th class="th-right">Precip</th>
-      <th class="th-right">Supplies</th>
-      <th class="th-right">Net</th>
+      <th class="th-right">Rain</th>
+      <th class="th-right">Total</th>
     </tr>
   </thead>
   <tbody>
@@ -51,9 +99,6 @@
         <a href="{% url 'parcels:detail' pb.parcel.pk %}" class="data-table-link">
           {{ pb.parcel.parcel_number }}
         </a>
-      </td>
-      <td class="td-num text-usage">
-        {{ pb.consumptive_use_gross|floatformat:2|intcomma }}
       </td>
       <td class="td-num text-supply">
         {{ pb.surface|floatformat:2|intcomma }}
@@ -67,14 +112,41 @@
       <td class="td-num-bold text-supply">
         {{ pb.supply_total|floatformat:2|intcomma }}
       </td>
-      <td class="td-num-bold {% if pb.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
+      <td class="td-num text-usage">
+        {{ pb.consumptive_use_gross|floatformat:2|intcomma }}
+      </td>
+      <td class="td-num-bold col-sep {% if pb.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
         {{ pb.net_vs_supply|floatformat:2|intcomma }}
       </td>
     </tr>
     {% endfor %}
   </tbody>
+  {% comment %}
+    A footer because these rows ADD, and the label says what makes them addable
+    (rule 5): one quantity, one period, every use area assigned to this account.
+    Measured 2026-09-08 on the demonstration data — all six columns sum exactly
+    to the panel above, and no use area is assigned to one account twice.
+
+    The cells are the PANEL's own context values rather than a template sum, so
+    the footer and the panel are visibly one thing and cannot drift. ⚠ That is
+    also the guard: `WaterAccountParcel` is unique on (account, parcel, PERIOD)
+    and `assignments` is not filtered by the selected period, so a use area
+    assigned under two periods would render twice and the rows would then
+    exceed this footer. `tests/test_account_balances.py` holds rows == footer.
+  {% endcomment %}
+  <tfoot>
+    <tr>
+      <td class="tfoot-total">All {{ parcel_balances|length }} assigned use area{{ parcel_balances|length|pluralize }}</td>
+      <td class="td-num text-supply">{{ balance.supplies.surface|floatformat:2|intcomma }}</td>
+      <td class="td-num text-supply">{{ balance.supplies.groundwater|floatformat:2|intcomma }}</td>
+      <td class="td-num text-supply">{{ balance.supplies.precip|floatformat:2|intcomma }}</td>
+      <td class="td-num-bold text-supply">{{ balance.supply_total|floatformat:2|intcomma }}</td>
+      <td class="td-num text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}</td>
+      <td class="td-num-bold col-sep {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}</td>
+    </tr>
+  </tfoot>
 </table>
 </div>
 {% else %}
-<p class="text-tertiary text-sm">No parcels assigned to this account.</p>
+<p class="text-tertiary text-sm">No use areas assigned to this account.</p>
 {% endif %}
