@@ -868,6 +868,25 @@ html { color-scheme: dark; }
     gap: var(--space-lg);
 }
 
+/* The mirror of the above, for a detail pane whose LEFT card is a short list of
+   fields and whose RIGHT card carries a data table. `1fr 1fr` cannot serve that
+   page: with the automatic minimum in play the table takes what it wants and
+   the fields column is crushed (137px on the account page, wrapping
+   "MER-ACCT-001" mid-token), and with `min-width: 0` forcing a true half each,
+   the balance panel is clipped through the middle of its own lead figure.
+   Measured 2026-09-08, both states, on /accounting/accounts/12/.
+
+   1fr 2fr resolves to 352 / 705 at a 1440 viewport: the fields read, and the
+   705 clears the table's 676 so it does not scroll either. */
+.page-grid-2col-wide-right {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: var(--space-lg);
+}
+.page-grid-2col-wide-right > * {
+    min-width: 0;
+}
+
 /* -- Section and field --------------------------------------------------- */
 
 .section-header {
