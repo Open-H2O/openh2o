@@ -212,7 +212,7 @@
     <tbody>
       {% for row in zone_summaries %}
       <tr>
-        <td class="font-semibold">{{ row.zone.name }}</td>
+        <td><a href="{% url 'geography:zone_detail' row.zone.pk %}" class="data-table-link">{{ row.zone.name }}</a></td>
         {% comment %}
           ISS-099, same three demand-derived columns as the account table above.
           Carried forward is NOT dashed for that reason: it is last year's

@@ -181,3 +181,16 @@ def test_the_budget_columns_say_groundwater():
     assert html.count("GW allocation (AF)") == 2
     assert html.count("GW remaining (AF)") == 2
     assert "Allocation minus estimated consumptive use" not in html
+
+
+def test_zone_names_link_to_the_zone_page():
+    """ISS-163 (141-01): a zone's name in the Zones table is the same kind of
+    link as an account's number in the Accounts table above it -- an anchor
+    classed ``data-table-link`` whose href is that zone's own page. The exact
+    anchor is asserted, not "some href exists"."""
+    period, zone, _parcel, _account = _basin()
+
+    html = _dashboard(period).content.decode()
+
+    href = reverse("geography:zone_detail", args=[zone.pk])
+    assert f'<a href="{href}" class="data-table-link">{zone.name}</a>' in html
