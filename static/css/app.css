@@ -977,10 +977,11 @@ html { color-scheme: dark; }
 /* A full-width divider naming the kind of row that follows (Phase 142, R-010:
    the Zones table mixes zones with a groundwater budget and zones without,
    and the second kind dashes three cells; the divider says why, once, instead
-   of five times). Centred (Brent, 2026-09-08, on the mock-up). Excluded from
-   the zebra stripe, same shape as `tr.row-note`. */
+   of five times). Left-aligned so it sits over the zone names (Brent at the
+   142-01 checkpoint, overturning his centred call on the mock-up). Excluded
+   from the zebra stripe, same shape as `tr.row-note`. */
 .data-table tr.row-group td {
-    text-align: center;
+    text-align: left;
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--color-text-secondary);
@@ -1059,12 +1060,29 @@ html { color-scheme: dark; }
 }
 .data-table--grouped thead tr.th-group th {
     top: 0;
-    /* border-box, no block padding: the row is EXACTLY the token, so the leaf
-       row's `top` below lands on its edge with nothing to overlap. */
+}
+/* The group label's cell is the row: border-box, no block padding, so the row
+   is EXACTLY the token and the leaf row's `top` below lands on its edge. */
+.data-table--grouped thead tr.th-group th.th-group-label {
     box-sizing: border-box;
     height: var(--th-group-h, 36px);
     padding-block: 0;
     vertical-align: middle;
+}
+/* A cell that spans both header rows (Account, Consumptive use, Balance) would
+   centre its words over the two-row height and float half a line above the
+   leaf words beside it (Brent, 142-01 checkpoint). Bottom-aligned, every
+   leaf-level word sits on one line under the group brackets. */
+.data-table--grouped thead tr.th-group th[rowspan] {
+    vertical-align: bottom;
+}
+/* A two-word header that has to wrap stacks its second word centred under the
+   first, and the stack sits where the one-line header would (right, over its
+   numbers): an inline block as wide as its longest word. */
+.th-stack {
+    display: inline-block;
+    width: min-content;
+    text-align: center;
 }
 /* Plus the 2px collapsed border that sits BETWEEN the rows, outside the cell
    box: measured 2026-09-08, a 36px border-box row lands the next row at 38.25. */
@@ -1101,15 +1119,25 @@ html { color-scheme: dark; }
 .td-num-bold {
     white-space: nowrap;
 }
-/* A totals row: ruled off from the body, no rule under it. Weight only on the
-   grouped dashboard tables; the ledger and allocation footers carry their own
-   inline weights until Phase 143 reaches them. */
+/* A totals row: a tinted band ruled off from the body with the header's own
+   accent, no rule under it, and its label set like a column header so the row
+   reads as the table's closing line rather than one more entry (Brent, 142-01
+   checkpoint: bold alone did not call it out). The ledger and allocation
+   footers already tint themselves inline; Phase 143 folds them in. */
 .data-table tfoot td {
-    border-top: 2px solid var(--color-border-hover);
+    border-top: 2px solid var(--color-accent-muted);
     border-bottom: none;
+    background-color: color-mix(in srgb, var(--color-elevated) 85%, transparent);
 }
 .data-table--grouped tfoot td {
     font-weight: 600;
+}
+.data-table tfoot td.tfoot-total {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .th-sortable {

@@ -66,7 +66,7 @@
       </div>
     </div>
     <div class="budget-panel-breakdown">
-      <div class="budget-breakdown-title">Supplies, of which</div>
+      <div class="budget-breakdown-title">Supplies by source</div>
       <div class="budget-breakdown-row"><span>Surface</span><b>{{ grand_supply_surface|floatformat:2|intcomma }}</b></div>
       <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ grand_supply_groundwater|floatformat:2|intcomma }}</b></div>
       <div class="budget-breakdown-row"><span>Rain</span><b>{{ grand_supply_precip|floatformat:2|intcomma }}</b></div>
@@ -146,7 +146,7 @@
       <tr class="th-group">
         <th rowspan="2" style="min-width: 170px;">Account</th>
         <th colspan="4" class="th-group-label">Supplies</th>
-        <th rowspan="2" class="th-right">Consumptive use</th>
+        <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
         <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus consumptive use, for this account and period. Positive means the supplies on record exceeded the estimated use." link=wb_help_url link_label="How water balances work" %}</th>
         {% if has_allocations %}
         <th colspan="2" class="th-group-label col-sep">Groundwater budget</th>
@@ -222,7 +222,7 @@
     {% endcomment %}
     <tfoot>
       <tr>
-        <td>All {{ account_summaries|length }} active account{{ account_summaries|length|pluralize }}</td>
+        <td class="tfoot-total">All {{ account_summaries|length }} active account{{ account_summaries|length|pluralize }}</td>
         <td class="td-num text-supply">{{ grand_supply_surface|floatformat:2|intcomma }}</td>
         <td class="td-num text-supply">{{ grand_supply_groundwater|floatformat:2|intcomma }}</td>
         <td class="td-num text-supply">{{ grand_supply_precip|floatformat:2|intcomma }}</td>
@@ -256,7 +256,7 @@
       <tr class="th-group">
         <th rowspan="2" style="min-width: 190px;">Zone</th>
         <th colspan="4" class="th-group-label">Supplies</th>
-        <th rowspan="2" class="th-right">Consumptive use</th>
+        <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
         <th rowspan="2" class="th-right">Balance</th>
         {% if has_allocations %}
         <th colspan="3" class="th-group-label col-sep">Groundwater budget</th>
@@ -269,7 +269,7 @@
         <th class="th-right">Total</th>
         {% if has_allocations %}
         <th class="th-right col-sep">Allocation</th>
-        <th class="th-right">Carried fwd</th>
+        <th class="th-right"><span class="th-stack">Carried fwd</span></th>
         <th class="th-right">Remaining</th>
         {% endif %}
       </tr>
@@ -282,7 +282,8 @@
         columns exist: with no allocations at all every row is unbudgeted and
         the columns are absent, so there is nothing to explain. Nothing here
         names GSAs or service areas; the demo's two kinds are not every
-        deployment's. Centred (Brent, 2026-09-08, on the mock-up).
+        deployment's. Left-aligned over the zone names (Brent at the 142-01
+        checkpoint, 2026-09-08, overturning his centred call on the mock-up).
       {% endcomment %}
       {% if has_allocations %}
       {% ifchanged row.has_groundwater_budget %}
@@ -406,8 +407,13 @@
           would make one quantity read as two names on two screens, which is the
           defect rule 12 exists to end. No unit on either header (Phase 142): the
           card's subtitle states it once for the whole table.
+
+          142-01 checkpoint (Brent, 2026-09-08): the column used to repeat the
+          card's title word for word. The card title keeps the settled phrase,
+          which stays the quantity's name on the field's own page; this header
+          says the arithmetic in four words. Still nothing about why.
         {% endcomment %}
-        <th class="th-right">Water use recorded, no supply reported</th>
+        <th class="th-right">Not met by supplies</th>
       </tr>
     </thead>
     <tbody>
@@ -423,7 +429,7 @@
     </tbody>
     <tfoot>
       <tr>
-        <td class="font-semibold">District total</td>
+        <td class="tfoot-total">District total</td>
         <td></td>
         <td class="td-num-bold">{{ unmet_demand_total|floatformat:2|intcomma }}</td>
       </tr>
