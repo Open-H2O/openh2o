@@ -15,7 +15,16 @@
   </div>
   <div class="pane-header-meta">
     {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
+    {% comment %}
+      R-035's fault on a third surface, found by 143-01's own probe rather than
+      by the register (which recorded it on the account and report panes only):
+      this fragment is the workspace pane AND the standalone page's body, so on
+      /parcels/<pk>/ the only forward link in the head pointed at the page the
+      reader was already on. `on_full_page` comes from `parcels/detail.html`.
+    {% endcomment %}
+    {% if not on_full_page %}
     <a href="{% url 'parcels:detail' parcel.pk %}" class="text-tertiary text-xs back-link" title="Open this use area on its own page">Open full page &rarr;</a>
+    {% endif %}
   </div>
 </div>
 
@@ -323,12 +332,37 @@
             </a>
           </div>
         </div>
+        {% comment %}
+          R-107 / R-108 (143-01). Two faults, one line.
+
+          The card now SAYS which period it is showing, so a reader can see that
+          it agrees with the water balance above it rather than having to trust
+          that it does. The query behind it is bounded by the same period
+          (`parcels/views.py`, ISS-165) — before that fix these rows were the
+          parcel's whole history and routinely belonged to a different year than
+          the balance.
+
+          And the Amount column used to print 241.56 beside -36.55 with nothing
+          on the card saying which direction a minus sign meant. The sentence is
+          carried VERBATIM from the Use Ledger's own footer
+          (`accounting/partials/_ledger_list_results.html`), not reworded: one
+          quantity, one wording, wherever it is shown (copy rule 12).
+
+          ⚠ 143-03 is the plan that may change the Use Ledger's own wording. If
+          it does, this sentence moves with it — they are one sentence in two
+          places, and `tests/test_parcel_detail.py` asserts this copy exists.
+
+          The unit moved off the column header into this line with it, because
+          the card has one numeric column and rule 4 states a single-unit
+          table's unit once.
+        {% endcomment %}
+        <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-md);">{% if balance_period %}{{ balance_period.name }} &middot; {% endif %}All amounts in acre-feet (AF). Water leaving a canal or a well is stored as a negative entry. Credits are paper or banked water and are not a supply.</p>
         {% if recent_ledger %}
         <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Date</th>
-              <th class="th-right">Amount (AF)</th>
+              <th class="th-right">Amount</th>
               <th>Source</th>
             </tr>
           </thead>
@@ -343,7 +377,13 @@
           </tbody>
         </table>
         {% else %}
-          <p class="text-tertiary text-base">No ledger entries yet.</p>
+          {% comment %}
+            "yet" was true when this card showed the parcel's whole history. Now
+            that it is bounded by the period (ISS-165), an empty card means empty
+            FOR THIS YEAR — the use area may well have entries in another, and
+            the period control above is how a reader gets to them.
+          {% endcomment %}
+          <p class="text-tertiary text-base">No ledger entries{% if balance_period %} for {{ balance_period.name }}{% endif %}.</p>
         {% endif %}
       </div>
 

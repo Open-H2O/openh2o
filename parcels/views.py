@@ -113,9 +113,6 @@ def _parcel_detail_context(parcel, period_id=None):
     """
     zone_memberships = parcel.parcel_zones.select_related("zone").all()
     related_wells = parcel.wellirrigatedparcel_set.select_related("well").all()
-    recent_ledger = ParcelLedger.objects.filter(parcel=parcel).order_by(
-        "-effective_date", "-created_at"
-    )[:10]
 
     # Which period the pane opens on (ISS-147). Four steps, in order, and the
     # ORDER is the whole fix:
@@ -181,6 +178,23 @@ def _parcel_detail_context(parcel, period_id=None):
     run_periods = parcel_run_periods(parcel, balance_period)
     # ISS-157: what the platform already stored and no screen had ever shown.
     unmet_demand_af = parcel_unmet_demand(parcel, balance_period)
+
+    # ISS-165 / R-107. This queryset used to run above, before `balance_period`
+    # was resolved, and filtered on the parcel ONLY. So the water balance and the
+    # ledger card beside it — two surfaces a hand's width apart on one screen —
+    # answered for different years, and neither said which: measured 2026-09-08,
+    # the balance stood at WY 2025-2026 while nine of the card's ten rows were
+    # dated October 2024 to June 2025.
+    #
+    # It is built HERE, after the four-step period resolution above, because the
+    # period is the filter. `balance_period` is None only when no reporting
+    # period exists at all, and then there is nothing to bound by and the card
+    # falls back to the parcel's whole history — the same rows it would have
+    # shown anyway, on a deployment that has not set a period up yet.
+    recent_ledger = ParcelLedger.objects.filter(parcel=parcel)
+    if balance_period is not None:
+        recent_ledger = recent_ledger.filter(reporting_period=balance_period)
+    recent_ledger = recent_ledger.order_by("-effective_date", "-created_at")[:10]
 
     geojson = None
     if parcel.geometry:
