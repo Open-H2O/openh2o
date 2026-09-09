@@ -2193,9 +2193,9 @@ html { color-scheme: dark; }
    (`.budget-panel-breakdown`) instead of empty space. Before this the three
    figures sat at 2.5rem in a 1fr/auto/1fr/auto/1fr grid padded space-xl, all
    the same size, so nothing said which one the page leads with and the width
-   of the card was mostly gap. The account pages and the parcel pane share
-   `.budget-panel-row` / `.budget-seg-value` and move with this rule as a side
-   effect; their own redesign is Phase 143's. */
+   of the card was mostly gap. Phase 143 carried the same body to the account
+   pages and the use-area pane, so every live-figure panel now has the two
+   columns. */
 .budget-panel {
     background: linear-gradient(180deg, var(--color-card), var(--color-inset));
     border: 1px solid var(--color-border-hover);
@@ -2370,22 +2370,14 @@ html { color-scheme: dark; }
     padding: var(--space-sm) var(--space-lg);
     border-top: 1px solid var(--color-border);
 }
-/* Kept for the account pages and the parcel pane until Phase 143 carries the
-   breakdown pattern to them. */
-.budget-panel-foot {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: var(--space-lg);
-    padding: var(--space-md) var(--space-lg);
-    border-top: 1px solid var(--color-border);
-    font-size: 0.84rem;
-    color: var(--color-text-secondary);
-}
-.budget-panel-foot b {
-    color: var(--color-text-primary);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
+/* Two breakdowns in one column (the use-area pane: supplies, then uses). A
+   second `.budget-panel-breakdown` as a grid sibling would take a third column
+   the body does not define, so the groups nest and this is the gap between
+   them. `.budget-panel-foot` used to live here: the centred rows it styled were
+   the last of the account pages' and the pane's old footers, and 143-01 turned
+   every one into a titled breakdown, so the rule went with them. */
+.budget-breakdown-group + .budget-breakdown-group {
+    margin-top: var(--space-md);
 }
 @media (max-width: 767px) {
     .budget-panel-body {

@@ -63,6 +63,15 @@
         <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">Water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Supplies are water that reached the field: surface deliveries, groundwater pumped (metered or calculated), effective rainfall. Uses are the crop's consumptive use, water spread to recharge from this field, and the change in banked storage. The residual is what is left; a residual within a quarter of consumptive use is ordinary field loss." link=methods_help_url link_label="Methods behind the numbers" %}</span>
         {% include "parcels/partials/_period_control.html" %}
       </div>
+      {% comment %}
+        143-01, Brent's third finding on his own display (2026-09-08): the
+        equation packed left after Phase 142 and the rest of the panel was
+        empty -- 343px of text in a 2,214px row at 2560, and the two foot lines
+        below it were centred, aligned to nothing above them. This is the
+        dashboard's two-column body: equation left, the parts of each operand
+        on the right, stacked by the container query when the panel is narrow.
+      {% endcomment %}
+      <div class="budget-panel-body">
       <div class="budget-panel-row">
         <div class="budget-seg">
           <div class="budget-seg-label">Supplies</div>
@@ -74,7 +83,7 @@
           <div class="budget-seg-value text-usage">{{ mass_balance.outputs_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         </div>
         <div class="budget-op">&equals;</div>
-        <div class="budget-seg">
+        <div class="budget-seg budget-seg--result">
           <div class="budget-seg-label">Residual</div>
           {% comment %}
             The colour must agree with the badge word. `is_surplus` is
@@ -130,16 +139,29 @@
         deliberately NOT here: FIG-parcels-013 is a fixed-zero bookkeeping
         placeholder (verdict EXPLAINED in the 135-03 ledger) and a cell that can
         only ever read 0.00 says nothing. The key stays in the dict.
+
+        Titles: "by source" is Brent's own word for the supplies breakdown (he
+        overturned "of which" at the 142-01 checkpoint, DESIGN.md copy rule 13).
+        The uses side mirrors it with the one word that answers the opposite
+        question -- where the water went -- and repeats nothing from the
+        heading above it. One `.budget-panel-breakdown`, two groups inside it:
+        the body grid has exactly two columns, and a second breakdown as a
+        sibling would have become a third.
       {% endcomment %}
-      <div class="budget-panel-foot">
-        <span>Surface <b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></span>
-        <span>Groundwater <b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b>{% if mass_balance.gw_is_estimated %} <span class="text-tertiary">(estimated)</span>{% endif %}</span>
-        <span>Rain <b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></span>
+      <div class="budget-panel-breakdown">
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Supplies by source</div>
+          <div class="budget-breakdown-row"><span>Surface</span><b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Groundwater{% if mass_balance.gw_is_estimated %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Rain</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>
+        </div>
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Uses by destination</div>
+          <div class="budget-breakdown-row"><span>Consumptive use</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Recharge{% if mass_balance.outputs.recharge %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Storage change</span><b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></div>
+        </div>
       </div>
-      <div class="budget-panel-foot">
-        <span>Consumptive use <b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></span>
-        <span>Recharge <b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b>{% if mass_balance.outputs.recharge %} <span class="text-tertiary">(estimated)</span>{% endif %}</span>
-        <span>Storage change <b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></span>
       </div>
     </div>
 
