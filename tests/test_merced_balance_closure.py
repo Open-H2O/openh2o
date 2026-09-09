@@ -620,9 +620,9 @@ def test_parcel_pane_panel_reads_a_flood_mar_field_as_a_deficit():
     assert '<span class="badge badge-orange">Deficit</span>' in residual
 
     assert (
-        '<span>Recharge <b>20.00</b> <span class="text-tertiary">(estimated)</span></span>'
+        '<span>Recharge <span class="text-tertiary">(estimated)</span></span><b>20.00</b>'
     ) in html, (
-        "the uses foot does not show the 20.00 AF that left this field for the "
+        "the uses breakdown does not show the 20.00 AF that left this field for the "
         "basin, so the residual is not legible from the panel. Incidental "
         "recharge is always engine-derived, so it carries the (estimated) label "
         "whenever it is non-zero (ISS-158)."
@@ -724,7 +724,11 @@ def test_a_plugged_figure_says_it_is_an_estimate():
         transaction_date=dt.date(2026, 1, 15), effective_date=dt.date(2026, 1, 15),
     )
     run_for(plugged)
-    assert "Groundwater <b>100.00</b> <span class=\"text-tertiary\">(estimated)</span>" in render(plugged)
+    # 143-01: the figure sits in a titled breakdown row, marker beside the
+    # name and the number in the row's own <b>.
+    assert (
+        '<span>Groundwater <span class="text-tertiary">(estimated)</span></span><b>100.00</b>'
+    ) in render(plugged)
 
     # A meter owns this one: the engine had nothing to solve for.
     metered = ParcelFactory()
@@ -735,7 +739,7 @@ def test_a_plugged_figure_says_it_is_an_estimate():
     )
     run_for(metered)
     metered_html = render(metered)
-    assert "Groundwater <b>110.00</b></span>" in metered_html, (
+    assert "<span>Groundwater</span><b>110.00</b>" in metered_html, (
         "a metered groundwater figure is a recorded measurement and must not be "
         "labelled an estimate"
     )
