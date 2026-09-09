@@ -1141,7 +1141,14 @@ html { color-scheme: dark; }
    override; the pseudo-element positions against the sticky cell. */
 .data-table--grouped th.th-group-label {
     text-align: center;
-    border-bottom-color: transparent;
+    /* NOT `transparent`. `.data-table` is `border-collapse: collapse`, and a
+       collapsed border is not painted over by the cell's own background -- so a
+       transparent 2px border here showed the CARD behind it as a dark band
+       under the teal bracket, and wider than the bracket, because the `::after`
+       rule is inset by `--space-sm` on both sides while the border spans the
+       whole cell. Reported by Brent 2026-09-08. Matching the header's own
+       background hides the border and leaves only the bracket visible. */
+    border-bottom-color: color-mix(in srgb, var(--color-accent) 7%, var(--color-card));
 }
 .data-table--grouped th.th-group-label::after {
     content: "";
@@ -2246,7 +2253,19 @@ html { color-scheme: dark; }
 .budget-panel-body > * {
     min-width: 0;
 }
-@container (max-width: 760px) {
+/* 960px, and the number is measured rather than chosen. The equation row's
+   min-content is 584px on the demonstration data; the breakdown column is
+   `minmax(240px, auto)`; the body adds a `--space-xl` gap and `--space-lg`
+   padding either side. 584 + 240 + 32 + 48 = 904 is the floor, and 960 leaves
+   headroom for wider figures than this fixture happens to carry.
+
+   At 760 the two-column layout switched on ~150px before it fitted: measured
+   2026-09-08 at a 1680 viewport, the panel was 856px, the equation column
+   483.765px against that 584px min-content, and `1,331.48` was drawn straight
+   through the word "Groundwater" and across the separator. Reported by Brent,
+   who runs a wider display than the 1440 every check in this phase used --
+   which is why nothing here caught it. */
+@container (max-width: 960px) {
     .budget-panel-body {
         grid-template-columns: 1fr;
         gap: var(--space-md);
