@@ -4,6 +4,33 @@
 
 Inherits the VanderDev design token system. Dark mode only, OKLCH color ramps.
 
+## What a finished page is (read this before any visual change)
+
+**The page is balanced, filled out appropriately and logically, so that it looks
+right, at a 1,730-pixel viewport, to a reader with no plan.** Brent, 2026-09-11,
+the second time the overhaul was stopped over dead space. This is the acceptance
+criterion for every visual phase, above every rule below and above the reading
+standard (`docs/reading-standard-2026-09.md`), which asks whether a screen
+explains itself and cannot see whether it looks finished.
+
+Three things follow, and all three were missing on 2026-09-11:
+
+1. **The unit of acceptance is the page, not the component.** A shared panel
+   redesigned correctly on three pages was right on one page and wrong on two,
+   because a card that sits well beside a table leaves a quadrant of dead space
+   beside a short one. Every page a change touches is judged as a page.
+2. **The width is 1,730 CSS pixels.** Measured from his screenshots (an
+   effective device pixel ratio of 2.2; a panel that is 886 px in his capture
+   renders at 882 px in a 1,730 viewport). Not 2,560, which is the physical
+   display and at which the account page shows a layout he never sees. If his
+   window changes, re-measure from a screenshot; never assume.
+3. **The judge is not the author.** Before staging or a checkpoint, every
+   touched page gets `/page-verdict`: a context-free reader at 1,730 answering
+   *would you put this in front of a client?* DO NOT SHIP is a design task.
+   The ledger, the probes, the ratio sweep, the golden HTML and the tests stay
+   as regression checks; none of them is evidence that a page looks right.
+   Analysis and validation: `~/Documents/Infrastructure/Claude-Tooling/visual-judgment-rca-2026-09-11.md`.
+
 ## Colors
 
 ### Surfaces
