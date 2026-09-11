@@ -2339,14 +2339,6 @@ html { color-scheme: dark; }
     font-size: 0.95rem;
     color: var(--color-text-primary);
 }
-/* The period control in the panel head (143-04): label and select on one
-   line, never shrunk by a long title. */
-.budget-panel-control {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    flex-shrink: 0;
-}
 .budget-panel-period {
     flex-shrink: 0;
     font-size: 0.72rem;
@@ -2419,19 +2411,6 @@ html { color-scheme: dark; }
     font-size: 0.84rem;
     color: var(--color-text-secondary);
 }
-/* In a WIDE panel (the dashboard's is 1,428px at 1,730; the account page's is
-   882) the cells are wide enough that a left-packed pair leaves 100-300px of
-   nothing to the right of every number. The value column moves to the cell's
-   edge there, the way a statement's figures sit; a narrow panel keeps the
-   tight pair (143-04, 2026-09-11). */
-@container (min-width: 1100px) {
-    .budget-seg > .budget-breakdown-group {
-        justify-content: space-between;
-        /* Capped so a one-digit count in the wider result cell is not 460px
-           from its label: every cell's values sit about the same reach away. */
-        max-width: 24rem;
-    }
-}
 .budget-breakdown-title {
     grid-column: 1 / -1;
     font-size: 0.6875rem;
@@ -2471,6 +2450,90 @@ html { color-scheme: dark; }
     color: var(--color-text-tertiary);
     padding: var(--space-sm) var(--space-lg);
     border-top: 1px solid var(--color-border);
+}
+
+/* -- Dashboard top row: the panel and the period card (143-04) ----------- */
+/* The panel used to span the page: 1,428px at 1,730 for three figure
+   blocks of ~330px, so ~300px of nothing collected in its last cell. The
+   period card beside it gives the panel the width the component was built
+   for (~1,020px), the way the account page pairs Account information with
+   Account balance. The card sets the row's height; the panel seats its body
+   in the middle, the same rule as `.page-grid-account-balance`. */
+.page-grid-dashboard-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: var(--space-lg);
+    align-items: stretch;
+}
+@media (max-width: 1200px) {
+    .page-grid-dashboard-top {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+.page-grid-dashboard-top > .budget-panel {
+    display: flex;
+    flex-direction: column;
+}
+.page-grid-dashboard-top > .budget-panel > .budget-panel-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+/* Brent's ruling on the mock-up (12:54 PDT): "the District water balance
+   should still maintain our centered look so that it's actually balanced
+   and not left justified." Three equal cells, each figure block centred in
+   its cell, the block itself left-aligned so the parts still read as a list.
+   Inside the same container query as the row layout so the sub-700px stack
+   above keeps winning. */
+@container (min-width: 700px) {
+    .budget-panel--centered .budget-panel-body .budget-panel-row {
+        grid-template-columns: 1fr auto 1fr auto 1fr;
+    }
+    .budget-panel--centered .budget-panel-body .budget-seg {
+        display: grid;
+        justify-content: center;
+        padding-right: 0;
+    }
+}
+
+.period-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+.period-card-head {
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    gap: var(--space-sm);
+}
+.period-card-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-xs);
+}
+.period-card-facts {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    justify-content: space-between;
+    column-gap: var(--space-lg);
+    row-gap: 4px;
+    font-size: 0.84rem;
+    color: var(--color-text-secondary);
+}
+.period-card-facts > b {
+    color: var(--color-text-primary);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.period-card-actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: auto;
+    padding-top: var(--space-sm);
 }
 /* A CONTAINER query, not a media query: the account pane's panel is 696px on
    the detail page and 408px in the workspace while the viewport is 1440, so
@@ -4674,82 +4737,85 @@ div[id$="-map"] {
     }
 }
 
-/* -- "What needs attention" strip (dashboard E1) -------------------------- */
-/* A compact, single-row exception bar at the top of the dashboard. Each pill is
-   a clickable route to where you fix the thing; the strip collapses to a quiet
-   "all clear" line when every count is zero (the view hides zero counts). */
-.attention-strip {
+/* -- "Needs attention" rows (dashboard) ---------------------------------- */
+/* A band of the period card (143-04, 2026-09-11; was a full-width strip of
+   pills above the balance panel, E1). Each exception is a ROW: a count badge
+   and the words beside it, routing to where you act on it. A row wraps like
+   a list line; a pill at the card's width broke onto two chip lines. The
+   count colours are the E1 ladder unchanged: a period to close is the
+   calmest, over budget is burnt orange, a down station is the red that
+   tokens.css reserves for exactly that. */
+.attention-list {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-sm) var(--space-md);
-    padding: var(--space-sm) var(--space-md);
+    flex-direction: column;
+    gap: 6px;
 }
 
-.attention-strip-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--color-text-tertiary);
-}
-
-.attention-strip-clear {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-xs);
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-}
-
-.attention-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: 4px 12px;
-    border-radius: var(--radius-pill);
+.attention-row {
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    column-gap: 10px;
+    align-items: start;
     font-size: 0.8125rem;
-    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text-primary);
     text-decoration: none;
-    border: 1px solid transparent;
-    transition: filter 120ms ease, border-color 120ms ease;
 }
 
-.attention-pill:hover {
+.attention-row:hover .attention-count {
     filter: brightness(1.18);
 }
 
-.attention-pill:focus-visible {
+.attention-row:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 1px;
+    border-radius: var(--radius-sm);
 }
 
-.attention-pill-count {
+.attention-row-text {
+    padding-top: 3px;
+}
+
+.attention-count {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 38px;
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
+    border: 1px solid transparent;
+    transition: filter 120ms ease;
 }
 
 /* Periods to close — an administrative reminder, the calmest of the three. */
-.attention-pill-warn {
+.attention-count--warn {
     background-color: oklch(0.45 0.12 55 / 0.2);
     color: var(--furnace-400);
     border-color: oklch(0.45 0.12 55 / 0.35);
 }
 
 /* Accounts over budget — an attention item, burnt orange: "look at me next". */
-.attention-pill-over {
+.attention-count--over {
     background-color: color-mix(in srgb, var(--color-deficit) 16%, transparent);
     color: var(--color-deficit);
     border-color: color-mix(in srgb, var(--color-deficit) 40%, transparent);
 }
 
-/* Stations down — the hard-failure rung of the ladder. tokens.css reserves
-   red for exactly this ("a down station"), and two near-identical oranges
-   made the three pills read as one undifferentiated worry. */
-.attention-pill-down {
+/* Stations down — the hard-failure rung of the ladder. */
+.attention-count--down {
     background-color: color-mix(in srgb, var(--color-error) 14%, transparent);
     color: var(--color-error);
     border-color: color-mix(in srgb, var(--color-error) 38%, transparent);
+}
+
+.attention-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
 }
 
 /* -- Preset filter chips (ledger quick filters) --------------------------- */

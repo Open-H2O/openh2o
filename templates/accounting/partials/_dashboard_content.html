@@ -9,8 +9,6 @@
 </div>
 {% else %}
 
-{% include "accounting/partials/_attention_strip.html" %}
-
 {% url 'water_balances' as wb_help_url %}
 {% url 'budgets_allocations' as budgets_help_url %}
 {% comment %}
@@ -25,31 +23,19 @@
   Captions explain where the platform got each number (DESIGN.md rule 11),
   never what the water is.
 {% endcomment %}
-<div class="budget-panel">
+{% comment %}
+  143-04 (2026-09-11): the panel and the period card share the top row
+  (`.page-grid-dashboard-top`), the way the account page pairs its
+  information card with its balance panel. The panel's three figure blocks
+  are centred in equal cells (`.budget-panel--centered`), Brent's call on the
+  mock-up: "the District water balance should still maintain our centered
+  look so that it's actually balanced and not left justified."
+{% endcomment %}
+<div class="page-grid-dashboard-top">
+<div class="budget-panel budget-panel--centered">
   <div class="budget-panel-head">
     <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use, estimated here from satellite evapotranspiration, is the demand. Surface deliveries, groundwater, and rainfall are the supplies counted against it: water that arrived, delivered, pumped or rain, never allocation paper. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %} {% include "partials/_demo_marker.html" %}</span>
-    {% comment %}
-      143-04 (2026-09-11): the period control lives here, on the panel it
-      governs first, the way the account balance card carries its own
-      water-year control. It used to sit in a band of its own above the
-      attention strip -- a DEMO pill at the far left, this select at the far
-      right, nothing between -- which a context-free reader at 1,730 named the
-      worst fault on the page. The DEMO pill joined the panel title the way
-      the account card's does. The target is the whole swapped region, and
-      every table below carries the period in its subtitle.
-    {% endcomment %}
-    <label class="budget-panel-control text-secondary text-sm">
-      Period
-      <select name="period"
-              hx-get="{% url 'accounting:dashboard' %}"
-              hx-target="#dashboard-content"
-              hx-trigger="change"
-              class="form-select form-select--compact">
-        {% for p in periods %}
-        <option value="{{ p.pk }}" {% if selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
-        {% endfor %}
-      </select>
-    </label>
+    <span class="budget-panel-period">{{ selected_period.name }}</span>
   </div>
   <div class="budget-panel-body">
     <div class="budget-panel-row">
@@ -127,6 +113,8 @@
   {% if account_summaries %}
   <div class="budget-panel-note">Totals across the {{ account_summaries|length }} active water account{{ account_summaries|length|pluralize }} below.</div>
   {% endif %}
+</div>
+{% include "accounting/partials/_period_card.html" %}
 </div>
 
 {% if engine_has_never_run %}

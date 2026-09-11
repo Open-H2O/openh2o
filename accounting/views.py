@@ -19,7 +19,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -377,7 +377,9 @@ def dashboard(request):
     # is only set inside the guard, so the pill is absent rather than quietly
     # never true.
     stations_down = 0
+    stations_active = 0
     if is_enabled("datasync"):
+        stations_active = MonitoredStation.objects.filter(is_active=True).count()
         stations_down = sum(
             1
             for s in MonitoredStation.objects.filter(is_active=True).select_related(
@@ -388,6 +390,21 @@ def dashboard(request):
             )
             == "dead"
         )
+
+    # 143-04 (2026-09-11): the period card's "Latest data" band -- when water
+    # was last recorded and when it was last estimated, for THIS period. Both
+    # scoped the way the figures above are: the ledger by reporting period,
+    # the runs by `runs_in_period`, the one membership rule. None reads as
+    # "none yet" / "not calculated" in the template, never as a date.
+    last_ledger_date = None
+    last_run_at = None
+    if selected_period is not None:
+        last_ledger_date = ParcelLedger.objects.filter(
+            reporting_period=selected_period
+        ).aggregate(d=Max("transaction_date"))["d"]
+        last_run_at = runs_in_period(
+            CalculationRun.objects.all(), selected_period
+        ).aggregate(d=Max("created_at"))["d"]
 
     # Active accounts whose groundwater use has passed their groundwater
     # allocation this period (136-01). Only meaningful once the period has
@@ -430,9 +447,13 @@ def dashboard(request):
         "unmet_demand_total": unmet_demand_total,
         "unmet_demand_count": unmet_demand_count,
         "attention_total": attention_total,
+        "last_ledger_date": last_ledger_date,
+        "last_run_at": last_run_at,
     }
     if is_enabled("datasync"):
         context["stations_down"] = stations_down
+        context["stations_active"] = stations_active
+        context["stations_reporting"] = stations_active - stations_down
 
     if request.headers.get("HX-Request"):
         return render(request, "accounting/partials/_dashboard_content.html", context)

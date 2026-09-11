@@ -1,0 +1,70 @@
+{% comment %}
+  "Needs attention": the exception counts a returning admin should see first.
+  Each is a row that routes to the screen where you act on it, and only
+  renders when its count is non-zero; when everything's fine the band is one
+  quiet "All clear" line. Counts come from the dashboard view
+  (periods_to_close / stations_down / accounts_over_budget / unmet_demand_count
+  / attention_total). Included by the period card inside the HTMX-swapped
+  dashboard content, so the period-dependent counts stay correct.
+
+  143-04 (2026-09-11): this was a full-width strip of pills above the balance
+  panel (E1). It is a band of the period card now, and each item is a ROW --
+  a count badge and the words beside it -- because a pill wraps badly at the
+  card's width ("6 fields with water use recorded, no supply reported" broke
+  onto two chip lines in the mock-up) and a row wraps like any list line.
+
+  ISS-099: "All clear" is a CLAIM, and it is only true if the exception counters
+  above it could have seen a problem. When the calculation engine has never run,
+  every consumptive-use figure on the page is 0.00 for want of a measurement, so
+  `accounts_over_budget` is structurally zero — no account can exceed its
+  allocation by consuming nothing. The strip therefore has nothing to report and
+  says so, which read as reassurance on staging for two days. It now stands down
+  entirely and lets the banner below explain why, rather than certifying a basin
+  nobody has measured.
+{% endcomment %}
+{% if attention_total or not engine_has_never_run %}
+{% if attention_total %}
+<div class="period-card-label">Needs attention</div>
+<div class="attention-list">
+
+  {% if periods_to_close %}
+  <a href="{% url 'accounting:periods_list' %}" class="attention-row">
+    <span class="attention-count attention-count--warn">{{ periods_to_close }}</span>
+    <span class="attention-row-text">period{{ periods_to_close|pluralize }} to close</span>
+  </a>
+  {% endif %}
+
+  {% if stations_down and 'datasync' in enabled_modules %}
+  <a href="{% url 'datasync:station_list' %}" class="attention-row">
+    <span class="attention-count attention-count--down">{{ stations_down }}</span>
+    <span class="attention-row-text">station{{ stations_down|pluralize }} down</span>
+  </a>
+  {% endif %}
+
+  {% if accounts_over_budget %}
+  <a href="#active-accounts" class="attention-row">
+    <span class="attention-count attention-count--over">{{ accounts_over_budget }}</span>
+    <span class="attention-row-text">account{{ accounts_over_budget|pluralize }} over groundwater budget</span>
+  </a>
+  {% endif %}
+
+  {% comment %}
+    ISS-157, surface 2. Counted into `attention_total` in the view, so "All
+    clear" stays a true claim on a period that has six of these. The words are
+    the settled ones and say only what the arithmetic says.
+  {% endcomment %}
+  {% if unmet_demand_count %}
+  <a href="#unmet-demand" class="attention-row">
+    <span class="attention-count attention-count--over">{{ unmet_demand_count }}</span>
+    <span class="attention-row-text">field{{ unmet_demand_count|pluralize }} with water use recorded, no supply reported</span>
+  </a>
+  {% endif %}
+
+</div>
+{% else %}
+<div class="attention-clear">
+  <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  All clear — nothing needs attention right now.
+</div>
+{% endif %}
+{% endif %}

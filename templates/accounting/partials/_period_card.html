@@ -1,0 +1,46 @@
+{% comment %}
+  143-04 (2026-09-11): the card beside the District water balance panel, so
+  the panel has the width the component was built for (about 1,020px at
+  1,730) instead of spanning the page with 300px of nothing in its last cell.
+  Brent's ruling on the mock-up, 12:57 PDT.
+
+  The card is about the SELECTED PERIOD and has a job in every state, which
+  is the test it had to pass (a card that holds only the exception chips is
+  a giant empty box on an all-clear day): the period control and the
+  period's dates and status; what needs attention, or "All clear"; when
+  water was last recorded and last estimated, and how many stations are
+  reporting; and the two entry actions. The exception rows are a band of
+  this card, not a strip of their own.
+
+  The select targets the whole swapped region, as it did in the old band
+  above the strip; every table below carries the period in its subtitle.
+{% endcomment %}
+<div class="card-raised period-card">
+  <div class="row-between period-card-head">
+    <h2 class="section-header-flush">This period</h2>
+    <select name="period"
+            hx-get="{% url 'accounting:dashboard' %}"
+            hx-target="#dashboard-content"
+            hx-trigger="change"
+            class="form-select form-select--compact">
+      {% for p in periods %}
+      <option value="{{ p.pk }}" {% if selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="text-secondary text-sm">{{ selected_period.start_date|date:"M j, Y" }} to {{ selected_period.end_date|date:"M j, Y" }} &middot; {% if selected_period.is_finalized %}<span class="text-primary">Finalized{% if selected_period.finalized_at %} {{ selected_period.finalized_at|date:"M j, Y" }}{% endif %}</span>{% else %}<span class="text-primary">Open</span>{% endif %}</div>
+
+  {% include "accounting/partials/_needs_attention.html" %}
+
+  <div class="period-card-label">Latest data</div>
+  <div class="period-card-facts">
+    <span>Last ledger entry</span><b>{% if last_ledger_date %}{{ last_ledger_date|date:"M j, Y" }}{% else %}None yet{% endif %}</b>
+    <span>Last calculation run</span><b>{% if last_run_at %}{{ last_run_at|date:"M j, Y" }}{% else %}Not calculated{% endif %}</b>
+    {% if 'datasync' in enabled_modules %}<span>Stations reporting</span><b>{{ stations_reporting }} of {{ stations_active }}</b>{% endif %}
+  </div>
+
+  <div class="period-card-actions">
+    <a href="{% url 'accounting:ledger_create' %}" class="btn-secondary btn-sm">Add ledger entry</a>
+    <a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">Upload CSV</a>
+  </div>
+</div>
