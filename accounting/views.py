@@ -741,7 +741,17 @@ def _account_detail_context(account, period_param=None):
             "precip": pcb["supplies"]["precip"],
             "supply_total": pcb["supply_total"],
             "net_vs_supply": pcb["net_vs_supply"],
+            "calculation_runs": pcb["calculation_runs"],
         })
+
+    # The parts of the panel's other two figures (143-03, 2026-09-11): how many
+    # of the account's use areas the consumptive-use estimate actually covers,
+    # and how the balance splits across them. Counts, not AF: they are read off
+    # the per-use-area rows the table below already renders, so they cannot
+    # disagree with it.
+    use_areas_estimated = sum(1 for pb in parcel_balances if pb["calculation_runs"])
+    use_areas_in_surplus = sum(1 for pb in parcel_balances if pb["net_vs_supply"] >= 0)
+    use_areas_in_deficit = len(parcel_balances) - use_areas_in_surplus
 
     # Curtailment narrative (ISS / Phase 52-02): surface the cut as a story, not
     # just lower numbers. An account is "curtailed" when any of its parcels is
@@ -779,6 +789,9 @@ def _account_detail_context(account, period_param=None):
         "assignments": assignments,
         "balance": balance,
         "parcel_balances": parcel_balances,
+        "use_areas_estimated": use_areas_estimated,
+        "use_areas_in_surplus": use_areas_in_surplus,
+        "use_areas_in_deficit": use_areas_in_deficit,
         "periods": periods,
         "selected_period": selected_period,
         "is_curtailed": is_curtailed,

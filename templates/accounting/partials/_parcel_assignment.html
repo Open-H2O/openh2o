@@ -1,35 +1,27 @@
+{% comment %}
+  The account's assigned use areas, re-rendered here by assign / remove. A flow
+  of chips (143-03, 2026-09-11), one per use area, each with its own quiet
+  remove control: as a table, and then as a three-column grid, eighteen rows
+  of parcel / date / Remove were the heaviest thing on the page and a second
+  copy of the breakdown table above. The date a use area was added is on the
+  chip's title; the figures for it are in the table.
+{% endcomment %}
 {% if assignments %}
-<table class="data-table">
-  <thead>
-    <tr>
-      <th>Parcel</th>
-      <th>Added</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for wap in assignments %}
-    <tr>
-      <td>
-        <a href="{% url 'parcels:detail' wap.parcel.pk %}" class="data-table-link">
-          {{ wap.parcel.parcel_number }}
-        </a>
-      </td>
-      <td class="text-secondary">{{ wap.added_date|date:"M d, Y" }}</td>
-      <td style="text-align: right;">
-        <button
-          hx-post="{% url 'accounting:remove_parcel' account.pk wap.pk %}"
-          hx-target="#parcel-assignments"
-          hx-confirm="Remove parcel {{ wap.parcel.parcel_number }} from this account?"
-          class="btn-secondary btn-sm"
-          style="font-size: 0.75rem; padding: 1px 8px; color: var(--color-error); border-color: rgba(239,68,68,0.3);">
-          Remove
-        </button>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="assignment-chips">
+  {% for wap in assignments %}
+  <span class="assignment-chip" title="Added {{ wap.added_date|date:"M d, Y" }}">
+    <a href="{% url 'parcels:detail' wap.parcel.pk %}" class="assignment-chip-link">{{ wap.parcel.parcel_number }}</a>
+    <button
+      type="button"
+      hx-post="{% url 'accounting:remove_parcel' account.pk wap.pk %}"
+      hx-target="#parcel-assignments"
+      hx-confirm="Remove parcel {{ wap.parcel.parcel_number }} from this account?"
+      class="assignment-chip-remove"
+      aria-label="Remove {{ wap.parcel.parcel_number }} from this account"
+      title="Remove from this account">&times;</button>
+  </span>
+  {% endfor %}
+</div>
 {% else %}
-<p class="text-tertiary" style="font-size: 0.875rem;">No parcels assigned to this account.</p>
+<p class="text-tertiary text-sm">No parcels assigned to this account.</p>
 {% endif %}

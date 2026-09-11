@@ -4,18 +4,42 @@
   Phase 143 (R-037, R-038, R-039, R-040), carrying the pattern DESIGN.md →
   *Tables that explain their numbers* records from the dashboard.
 
-  HEAD-LESS on purpose. The card around this fragment already carries the
-  heading "Account balance" and the water-year control, so a
-  `.budget-panel-title` here would repeat the heading half a line under itself
-  (copy rule 13). The dashboard's panel titles itself because nothing above it
-  does.
+  143-03 (2026-09-11): this fragment renders TWO cards, the balance card (its
+  own heading and water-year control, then the panel) and the use-area
+  breakdown card, because the page places them differently -- the balance
+  beside Account information, the seven-column table full width beneath --
+  and one water-year change must replace both. `#balance-section` in the pane
+  is `display: contents`, so these cards are grid items of the page.
 
   The captions say where the platform got each figure (copy rule 11) and never
   what the water is. Balance is the only lead figure (rule 8): it is the number
   this card exists to produce, and it used to be set at the same 22px/700 as its
   own two inputs.
 {% endcomment %}
-<div class="budget-panel" style="margin-bottom: var(--space-md);">
+<div class="card-raised page-grid-account-balance">
+  <div class="row-between mb-md page-grid-account-head">
+    <h2 class="section-header-flush">Account balance</h2>
+    <select name="period"
+            hx-get="{% url 'accounting:account_detail' account.pk %}"
+            hx-target="#balance-section"
+            hx-trigger="change"
+            {% comment %}
+              R-036: the width/padding/font-size used to be an inline style
+              here, and its `padding` SHORTHAND wiped the right-hand allowance
+              `.form-select` reserves for its dropdown arrow, so the water year
+              rendered under the arrow. Fixed at the class (app.css →
+              `.form-select--compact`) because the same control appears on the
+              workspace and the full page both.
+            {% endcomment %}
+            class="form-select form-select--compact">
+      <option value="">All Time</option>
+      {% for p in periods %}
+      <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+<div class="budget-panel">
   <div class="budget-panel-body">
     <div class="budget-panel-row">
       <div class="budget-seg">
@@ -41,17 +65,35 @@
         <div class="budget-seg-label">Consumptive use</div>
         <div class="budget-seg-value text-usage">{{ balance.consumptive_use_gross|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         <div class="budget-seg-caption">estimated from satellite ET</div>
+        {% comment %}
+          143-03: the parts of this figure are its coverage -- how many of the
+          account's use areas the estimate reaches, and the calculation runs
+          the sum came from. The cell used to stop at its caption, beside a
+          Supplies cell three lines taller (the reader's worst fault, 10:55).
+        {% endcomment %}
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Estimate coverage</div>
+          <div class="budget-breakdown-row"><span>Use areas estimated</span><b>{{ use_areas_estimated }} of {{ parcel_balances|length }}</b></div>
+          <div class="budget-breakdown-row"><span>Calculation runs</span><b>{{ balance.calculation_runs }}</b></div>
+        </div>
       </div>
       <div class="budget-op">&equals;</div>
       <div class="budget-seg budget-seg--result">
         <div class="budget-seg-label" style="display: flex; align-items: center; gap: var(--space-xs);">Balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use here is the satellite ET estimate. Supplies are surface, groundwater, and rain. The balance is supplies minus that use — a small gap is normal, not an error." link=wb_help_url link_label="How water balances work" %}</div>
         <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         <div class="budget-seg-caption">supplies minus consumptive use</div>
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Balance by use area</div>
+          <div class="budget-breakdown-row"><span>In surplus</span><b>{{ use_areas_in_surplus }}</b></div>
+          <div class="budget-breakdown-row"><span>In deficit</span><b>{{ use_areas_in_deficit }}</b></div>
+        </div>
       </div>
     </div>
   </div>
 </div>
+</div>
 
+<div class="card-raised page-grid-account-full">
 {% if parcel_balances %}
 {% comment %}
   R-039: the table reads as the equation the panel above states — Supplies
@@ -160,5 +202,7 @@
 </table>
 </div>
 {% else %}
+<h3 class="section-header-sm">Use area breakdown</h3>
 <p class="text-tertiary text-sm">No use areas assigned to this account.</p>
 {% endif %}
+</div>

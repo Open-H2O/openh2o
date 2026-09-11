@@ -868,34 +868,164 @@ html { color-scheme: dark; }
     gap: var(--space-lg);
 }
 
-/* The mirror of the above, for a detail pane whose LEFT card is a short list of
-   fields and whose RIGHT card carries a data table. `1fr 1fr` cannot serve that
-   page: with the automatic minimum in play the table takes what it wants and
-   the fields column is crushed (137px on the account page, wrapping
-   "MER-ACCT-001" mid-token), and with `min-width: 0` forcing a true half each,
-   the balance panel is clipped through the middle of its own lead figure.
-   Measured 2026-09-08, both states, on /accounting/accounts/12/.
-
-   1fr 2fr resolves to 352 / 705 at a 1440 viewport: the fields read, and the
-   705 clears the table's 676 so it does not scroll either. */
-.page-grid-2col-wide-right {
+/* The account detail pane, composed as a PAGE (143-03, 2026-09-11; DESIGN.md
+   *What a finished page is*). Row one: Account information beside Account
+   balance, stretched to one height. Then the use-area breakdown table and the
+   assignment card, each the full width. The mirror grid this replaces
+   (`1fr 2fr`, balance AND table in the right column) left the information card
+   hanging over a quadrant of dead space and squeezed a seven-column table into
+   half the page at Brent's 1,730 viewport. `#balance-section`, the water-year
+   swap target, is `display: contents` so the two cards inside it are placed by
+   this grid. */
+.page-grid-account {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     gap: var(--space-lg);
+    align-items: stretch;
 }
-.page-grid-2col-wide-right > * {
+.page-grid-account > * {
     min-width: 0;
 }
-/* Two columns need room for two columns. The accounts WORKSPACE gives this pane
-   675px, and splitting that 217/434 left the use-area table 384px to render 606
-   in -- a worse scroll than the 698-in-625 it had before 143-01 touched it.
-   Stacked, the table gets the pane's full 627 and does not scroll at all.
-   Queried against `.pane-stack`, the grid's parent, because the viewport is
-   1440 on both the roomy page and the cramped pane. */
-@container (max-width: 800px) {
-    .page-grid-2col-wide-right {
-        grid-template-columns: 1fr;
+.page-grid-account-flow {
+    display: contents;
+}
+.page-grid-account-info {
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+}
+/* Four rows of fields at a slightly looser rhythm than the default 16px, so
+   the card's natural height meets the balance card's (measured 2026-09-11:
+   328 against 329) and neither is stretched over blank fill. The last row
+   sits on the card's padding. */
+.page-grid-account-info .field-grid-2 > .field-group {
+    margin-bottom: var(--space-lg);
+}
+.page-grid-account-info .field-grid-2 > .field-group:nth-last-child(-n+2) {
+    margin-bottom: 0;
+}
+/* The breakdown table spreads its seven columns evenly instead of handing the
+   label column every pixel the numbers did not claim. */
+.page-grid-account-full .data-table--grouped th:first-child {
+    width: 16%;
+}
+.page-grid-account-full .data-table--grouped tr:last-child > th.th-right {
+    width: 14%;
+}
+.page-grid-account-balance {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+}
+/* The information card's seven fields set the row's height; the panel takes
+   whatever the balance card has left and seats its body in the middle, so
+   neither card ends on a band of blank fill. */
+.page-grid-account-balance > .budget-panel {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.page-grid-account-full {
+    grid-column: 1 / -1;
+}
+.page-grid-account-head {
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+/* The assigned use areas as a flow of chips, one per use area, each with its
+   own quiet remove control (143-03). As a table, then as a three-column grid,
+   eighteen rows of parcel / date / Remove were the heaviest region on the page
+   and a second copy of the breakdown table above; the context-free reader
+   failed both. A chip is the `.badge` surface with a link in it. */
+/* Chips and the assign-search box in one wrapping flow, the box last, the
+   way a tag field works. The two wrappers between them are `display:
+   contents` so the HTMX-swapped chips and the box are items of one flex row. */
+.assignment-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+}
+.assignment-flow > #parcel-assignments,
+.assignment-chips {
+    display: contents;
+}
+.assignment-search {
+    flex: 1 1 18rem;
+    min-width: 16rem;
+    max-width: 24rem;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    font-size: 0.8125rem;
+}
+/* The assign-search results, empty until a search is typed. */
+.assignment-search-results:not(:empty) {
+    margin-top: var(--space-md);
+}
+.assignment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px 3px 10px;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+}
+.assignment-chip-link {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+.assignment-chip-link:hover {
+    color: var(--color-accent);
+}
+.assignment-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-tertiary);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.assignment-chip-remove:hover,
+.assignment-chip-remove:focus-visible {
+    color: var(--color-error);
+    background-color: rgba(239, 68, 68, 0.12);
+    outline: none;
+}
+/* Two columns need room for the balance panel's three cells: 700px of panel
+   plus the card's padding is ~750px, two thirds of a 1,150px grid. Below that
+   the row stacks, and the panel keeps its three cells at the full width,
+   instead of the column keeping two cards and the panel folding into a
+   column (measured 2026-09-11 in the accounts workspace at 1,730, where the
+   pane is 1,010px: a 655px balance card, a stacked panel, and a 525px
+   information card that was blank below its fields). Queried against
+   `.pane-stack`, the grid's parent, because the viewport is the same on the
+   roomy page and the cramped pane. */
+@container (max-width: 1150px) {
+    .page-grid-account {
+        grid-template-columns: minmax(0, 1fr);
     }
+    .page-grid-account-info,
+    .page-grid-account-balance,
+    .page-grid-account-full {
+        grid-column: 1;
+    }
+    /* Stacked, the balance and its table lead, the six fields follow: the
+       workspace opens an account "to open its balance", and the pane cuts
+       off at the fold, so what is cut is the least of it. */
+    .page-grid-account-balance { order: -2; }
+    #balance-section > .page-grid-account-full { order: -1; }
 }
 
 /* -- Section and field --------------------------------------------------- */
@@ -947,6 +1077,17 @@ html { color-scheme: dark; }
     display: flex;
     align-items: flex-start;
     gap: var(--space-xs);
+}
+
+/* Short fields set two abreast, for a card that stands beside a taller
+   neighbour (the account page, 143-03). A long field spans both columns. */
+.field-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-lg);
+}
+.field-grid-2-span {
+    grid-column: 1 / -1;
 }
 
 /* -- Tables -------------------------------------------------------------- */
@@ -2321,12 +2462,15 @@ html { color-scheme: dark; }
 }
 /* A CONTAINER query, not a media query: the account pane's panel is 696px on
    the detail page and 408px in the workspace while the viewport is 1440, so
-   the panel is what must be asked. Under 960px three cells and two operators
-   do not share a line; stacked, it stays an equation and runs down instead of
+   the panel is what must be asked. Under 700px three cells and two operators
+   do not share a line (660px of cell content plus the body's 48px of padding,
+   measured 2026-09-11); stacked, it stays an equation and runs down instead of
    across: Supplies and its parts, minus, Uses and its parts, equals, the
    result. The operator's tall top padding exists to sit it on the figures'
-   baseline in a row, so it comes off in a column. */
-@container (max-width: 960px) {
+   baseline in a row, so it comes off in a column. 960 was the earlier line,
+   and it stacked the account page's 882px panel at Brent's 1,730 viewport
+   (143-03). */
+@container (max-width: 700px) {
     /* A two-column grid, not a flex column: the operator takes the narrow
        left column and the figure it applies to takes the right, on the SAME
        row, so the stack reads as a vertical equation. The first cell is

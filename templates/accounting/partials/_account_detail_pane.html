@@ -54,133 +54,130 @@
   {% endif %}
 
   {% comment %}
-    Not the even `.page-grid-2col` the other detail panes use: this pane's left
-    card is six short fields and its right card carries the use-area breakdown
-    table, so an even split serves neither. See the class in app.css for the two
-    measured failure states it replaces.
+    143-03 (2026-09-11). The page is composed as a page at 1,730 CSS px
+    (DESIGN.md, *What a finished page is*): Account information and Account
+    balance side by side at matched height, then the use-area breakdown table
+    full width, then the assignment card full width. The previous
+    `.page-grid-2col-wide-right` put the balance AND the breakdown table in one
+    column beside six short fields, so the information card hung alone over a
+    quadrant of dead space and the seven-column table was squeezed into half
+    the page (Brent, 09-11: "completely wrong"; the context-free reader named
+    the same two faults).
+
+    `#balance-section` is the water-year swap target and is `display:
+    contents`, so the two cards the partial renders (balance, breakdown) are
+    placed by THIS grid while one HTMX request still replaces both.
   {% endcomment %}
-  <div class="page-grid-2col-wide-right">
+  <div class="page-grid-account">
 
-    <!-- Left column: Account Info -->
-    <div class="page-stack">
+    <div class="card-raised page-grid-account-info">
+      <h2 class="section-header">
+        Account information {% include "partials/_demo_marker.html" %}
+      </h2>
 
-      <div class="card-raised">
-        <h2 class="section-header">
-          Account information {% include "partials/_demo_marker.html" %}
-        </h2>
+      {% comment %}
+        Six short fields in two columns, so the card is the height of the
+        balance card beside it (143-03): stacked, it ran 100px taller and the
+        balance card carried the difference as blank fill under its panel.
+      {% endcomment %}
+      <div class="field-grid-2">
+      <div class="field-group">
+        <div class="field-label">Account number</div>
+        <div class="field-value">{{ account.account_number }}</div>
+      </div>
 
-        <div class="field-group">
-          <div class="field-label">Account number</div>
-          <div class="field-value">{{ account.account_number }}</div>
+      <div class="field-group">
+        <div class="field-label">Name</div>
+        <div class="field-value">{{ account.name }}</div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Status</div>
+        <div class="field-value">
+          {% if account.status == "active" %}
+            <span class="badge badge-pill badge-green">Active</span>
+          {% elif account.status == "inactive" %}
+            <span class="badge badge-pill badge-grey">Inactive</span>
+          {% elif account.status == "suspended" %}
+            <span class="badge badge-pill badge-red">Suspended</span>
+          {% else %}
+            <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
+          {% endif %}
         </div>
+      </div>
 
-        <div class="field-group">
-          <div class="field-label">Name</div>
-          <div class="field-value">{{ account.name }}</div>
-        </div>
+      <div class="field-group">
+        <div class="field-label">Contact name</div>
+        <div class="field-value">{{ account.contact_name|blank }}</div>
+      </div>
 
-        <div class="field-group">
-          <div class="field-label">Status</div>
-          <div class="field-value">
-            {% if account.status == "active" %}
-              <span class="badge badge-pill badge-green">Active</span>
-            {% elif account.status == "inactive" %}
-              <span class="badge badge-pill badge-grey">Inactive</span>
-            {% elif account.status == "suspended" %}
-              <span class="badge badge-pill badge-red">Suspended</span>
-            {% else %}
-              <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
-            {% endif %}
-          </div>
-        </div>
+      <div class="field-group">
+        <div class="field-label">Contact email</div>
+        <div class="field-value">{{ account.contact_email|blank }}</div>
+      </div>
 
-        <div class="field-group">
-          <div class="field-label">Contact name</div>
-          <div class="field-value">{{ account.contact_name|blank }}</div>
-        </div>
+      {# The sixth field fills the grid's third row; the count is the one fact about the account the other five do not carry. #}
+      <div class="field-group">
+        <div class="field-label">Use areas assigned</div>
+        <div class="field-value">{{ assignments|length }}</div>
+      </div>
 
-        <div class="field-group">
-          <div class="field-label">Contact email</div>
-          <div class="field-value">{{ account.contact_email|blank }}</div>
-        </div>
+      {# The record stamps are fields like the rest, so the card is dense to its last row instead of ending on a footer band above a gap (three readers named that gap, 11:30). #}
+      <div class="field-group">
+        <div class="field-label">Created</div>
+        <div class="field-value">{{ account.created_at|date:"M d, Y" }}</div>
+      </div>
 
-        {% if account.notes %}
-        <div class="field-group">
-          <div class="field-label">Notes</div>
-          <div class="field-value">{{ account.notes }}</div>
-        </div>
-        {% endif %}
+      <div class="field-group">
+        <div class="field-label">Updated</div>
+        <div class="field-value">{{ account.updated_at|date:"M d, Y" }}</div>
+      </div>
 
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ account.created_at|date:"M d, Y" }} &middot; Updated {{ account.updated_at|date:"M d, Y" }}
-          </div>
-        </div>
+      {% if account.notes %}
+      <div class="field-group field-grid-2-span">
+        <div class="field-label">Notes</div>
+        <div class="field-value">{{ account.notes }}</div>
+      </div>
+      {% endif %}
       </div>
     </div>
 
-    <!-- Right column: Balances + Use Areas -->
-    <div class="page-stack">
+    {# Balance card + use-area breakdown card, both rendered by the partial the water-year control swaps. #}
+    <div id="balance-section" class="page-grid-account-flow">
+      {% include "accounting/partials/_account_balances.html" %}
+    </div>
 
-      <!-- Balance card with period selector -->
-      <div class="card-raised">
-        <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-          <h2 class="section-header-flush">Account balance</h2>
-          <select name="period"
-                  hx-get="{% url 'accounting:account_detail' account.pk %}"
-                  hx-target="#balance-section"
-                  hx-trigger="change"
-                  {% comment %}
-                    R-036: the width/padding/font-size used to be an inline
-                    style here, and its `padding` SHORTHAND wiped the right-hand
-                    allowance `.form-select` reserves for its dropdown arrow, so
-                    the water year rendered under the arrow. Fixed at the class
-                    (app.css → `.form-select--compact`) because the same control
-                    appears on the workspace and the full page both.
-                  {% endcomment %}
-                  class="form-select form-select--compact">
-            <option value="">All Time</option>
-            {% for p in periods %}
-            <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
+    {% comment %}
+      One card for the assignment workflow, not two, and no toolbar band: the
+      chips and the assign-search box share one flow, the box last, the way a
+      tag field works. "Assign use area" used to be its own one-line card
+      beside an 18-row table; then a search box at the far right of this
+      card's head left the head band empty (the reader's worst fault, 11:20).
+      `#parcel-assignments` and `.assignment-chips` are `display: contents`,
+      so the re-rendered chips and the box stay one flow.
+    {% endcomment %}
+    <div class="card-raised page-grid-account-full">
+      <h2 class="section-header">Assigned use areas</h2>
 
-        <div id="balance-section">
-          {% include "accounting/partials/_account_balances.html" %}
-        </div>
-      </div>
-
-      <!-- Use Area Assignment card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Assigned use areas</h2>
-
+      <div class="assignment-flow">
         <div id="parcel-assignments">
           {% include "accounting/partials/_parcel_assignment.html" %}
         </div>
+        <input
+          type="text"
+          name="q"
+          placeholder="Assign a use area: parcel number or owner..."
+          aria-label="Assign a use area: search by parcel number or owner"
+          hx-get="{% url 'accounting:parcel_search_for_assignment' account.pk %}"
+          hx-target="#parcel-search-results"
+          hx-trigger="keyup changed delay:300ms"
+          class="form-input assignment-search"
+        >
       </div>
 
-      <!-- Assign Use Area search card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Assign use area</h2>
-
-        <div class="field-group">
-          <input
-            type="text"
-            name="q"
-            placeholder="Search by parcel number or owner..."
-            hx-get="{% url 'accounting:parcel_search_for_assignment' account.pk %}"
-            hx-target="#parcel-search-results"
-            hx-trigger="keyup changed delay:300ms"
-            class="form-input"
-          >
-        </div>
-
-        <div id="parcel-search-results">
-          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
-        </div>
-      </div>
-
+      {# Empty until a search is typed; the placeholder in the box already says what to type. #}
+      <div id="parcel-search-results" class="assignment-search-results"></div>
     </div>
+
   </div>
 </div>
