@@ -273,7 +273,9 @@ import re  # noqa: E402
 def _accounts_table(html):
     """The Active water accounts card's markup, from its heading to the next card."""
     start = html.index('<h2 class="section-header-flush">Active water accounts</h2>')
-    end = html.index("Zone details", start)
+    # The next card's own heading. The "Zone details" eyebrow that used to
+    # mark this boundary came off the page in 143-04 (2026-09-11).
+    end = html.index('<h2 class="section-header-flush">Zones</h2>', start)
     return html[start:end]
 
 

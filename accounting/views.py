@@ -118,6 +118,17 @@ def dashboard(request):
     grand_supply_surface = Decimal("0")
     grand_supply_groundwater = Decimal("0")
     grand_supply_precip = Decimal("0")
+    # 143-04 (2026-09-11): the parts of the panel's Consumptive use and Balance
+    # figures, as COUNTS over the same population as the totals (active
+    # accounts, this period). Coverage is how many of those accounts the
+    # estimate reaches and how many calculation runs the sum came from;
+    # surplus/deficit is judged ONLY among accounts with an estimate, on the
+    # ISS-099 rule the table below already applies: an account with no runs
+    # has no balance and is dashed, so it is neither in surplus nor in deficit.
+    accounts_with_estimates = 0
+    grand_calculation_runs = 0
+    accounts_in_surplus = 0
+    accounts_in_deficit = 0
 
     has_allocations = False
 
@@ -227,6 +238,13 @@ def dashboard(request):
             grand_supply_surface += cu["supplies"]["surface"]
             grand_supply_groundwater += cu["supplies"]["groundwater"]
             grand_supply_precip += cu["supplies"]["precip"]
+            grand_calculation_runs += cu["calculation_runs"]
+            if cu["calculation_runs"] > 0:
+                accounts_with_estimates += 1
+                if cu["net_vs_supply"] >= 0:
+                    accounts_in_surplus += 1
+                else:
+                    accounts_in_deficit += 1
 
         # Zone summaries
         for zone in Zone.objects.order_by("name"):
@@ -399,6 +417,10 @@ def dashboard(request):
         "grand_supply_groundwater": grand_supply_groundwater,
         "grand_supply_precip": grand_supply_precip,
         "grand_net": grand_net,
+        "accounts_with_estimates": accounts_with_estimates,
+        "grand_calculation_runs": grand_calculation_runs,
+        "accounts_in_surplus": accounts_in_surplus,
+        "accounts_in_deficit": accounts_in_deficit,
         "engine_has_never_run": engine_has_never_run,
         "has_calculation_plan": has_calculation_plan,
         "has_allocations": has_allocations,

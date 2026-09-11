@@ -27,8 +27,29 @@
 {% endcomment %}
 <div class="budget-panel">
   <div class="budget-panel-head">
-    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use, estimated here from satellite evapotranspiration, is the demand. Surface deliveries, groundwater, and rainfall are the supplies counted against it: water that arrived, delivered, pumped or rain, never allocation paper. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %}</span>
-    <span class="budget-panel-period">{{ selected_period.name }}</span>
+    <span class="budget-panel-title" style="display: flex; align-items: center; gap: var(--space-xs);">District water balance{% include "partials/_explainer_popout.html" with title="How this balance is built" text="Consumptive use, estimated here from satellite evapotranspiration, is the demand. Surface deliveries, groundwater, and rainfall are the supplies counted against it: water that arrived, delivered, pumped or rain, never allocation paper. This panel shows the demand, the supplies, and the gap between them." link=wb_help_url link_label="How water balances work" %} {% include "partials/_demo_marker.html" %}</span>
+    {% comment %}
+      143-04 (2026-09-11): the period control lives here, on the panel it
+      governs first, the way the account balance card carries its own
+      water-year control. It used to sit in a band of its own above the
+      attention strip -- a DEMO pill at the far left, this select at the far
+      right, nothing between -- which a context-free reader at 1,730 named the
+      worst fault on the page. The DEMO pill joined the panel title the way
+      the account card's does. The target is the whole swapped region, and
+      every table below carries the period in its subtitle.
+    {% endcomment %}
+    <label class="budget-panel-control text-secondary text-sm">
+      Period
+      <select name="period"
+              hx-get="{% url 'accounting:dashboard' %}"
+              hx-target="#dashboard-content"
+              hx-trigger="change"
+              class="form-select form-select--compact">
+        {% for p in periods %}
+        <option value="{{ p.pk }}" {% if selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
   </div>
   <div class="budget-panel-body">
     <div class="budget-panel-row">
@@ -65,6 +86,18 @@
         <div class="budget-seg-value text-usage">{{ grand_consumptive_use|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         {% endif %}
         <div class="budget-seg-caption">estimated from satellite ET</div>
+        {% comment %}
+          143-04: the parts of this figure are its coverage, as on the account
+          page -- how many of the active accounts the estimate reaches, and
+          the calculation runs the sum came from. Counts, not figures: no
+          new formatted-number site, so the figure ledger's ids hold. The cell
+          used to stop at its caption beside a Supplies cell three lines taller.
+        {% endcomment %}
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Estimate coverage</div>
+          <div class="budget-breakdown-row"><span>Accounts with estimates</span><b>{{ accounts_with_estimates }} of {{ account_summaries|length }}</b></div>
+          <div class="budget-breakdown-row"><span>Calculation runs</span><b>{{ grand_calculation_runs|intcomma }}</b></div>
+        </div>
       </div>
       <div class="budget-op">&equals;</div>
       <div class="budget-seg budget-seg--result">
@@ -75,6 +108,19 @@
         <div class="budget-seg-value {% if grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ grand_net|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         {% endif %}
         <div class="budget-seg-caption">supplies minus consumptive use</div>
+        {% comment %}
+          143-04: the balance judged account by account, counted only among
+          accounts with an estimate (the table below dashes the rest, ISS-099).
+          Absent while the engine has never run: with no estimate there is no
+          balance to sort, and the banner beneath says so.
+        {% endcomment %}
+        {% if not engine_has_never_run %}
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Balance by account</div>
+          <div class="budget-breakdown-row"><span>In surplus</span><b>{{ accounts_in_surplus }}</b></div>
+          <div class="budget-breakdown-row"><span>In deficit</span><b>{{ accounts_in_deficit }}</b></div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -139,8 +185,15 @@
   figures; the Zones table does not, because a parcel can lie in more than one
   zone, and its subtitle says so).
 {% endcomment %}
-<h2 class="content-section-label" id="active-accounts">Account details</h2>
-<div class="card-raised">
+{% comment %}
+  143-04 (2026-09-11): the "Account details" / "Zone details" / "Field
+  details" eyebrows that stood over these three cards are gone. Each labelled
+  ONE card whose own heading said the same thing a line below, and at 1,730
+  each sat alone in a 116px band between the panel and its table -- the
+  second fault a context-free reader named on the page. The anchors the
+  attention strip routes to moved onto the cards themselves.
+{% endcomment %}
+<div class="card-raised" id="active-accounts">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Active water accounts</h2>
     <span class="text-tertiary text-xs">One row per active water account, {{ selected_period.name }}. All figures in acre-feet (AF).</span>
@@ -249,7 +302,6 @@
   {% endif %}
 </div>
 
-<h2 class="content-section-label">Zone details</h2>
 <div class="card-raised">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Zones</h2>
@@ -387,14 +439,7 @@
 {% endcomment %}
 {% if not engine_has_never_run and 'parcels' in enabled_modules %}
 {% url 'water_balances' as wb_help_url %}
-{% comment %}
-  The section label is short and the card header carries the full phrase — the
-  same shape as "Account details" over "Active Water Accounts" and "Zone details"
-  over "Zones". Repeating the whole sentence twice, half a line apart, reads as a
-  rendering fault rather than as emphasis.
-{% endcomment %}
-<h2 class="content-section-label" id="unmet-demand">Field details</h2>
-<div class="card-raised">
+<div class="card-raised" id="unmet-demand">
   <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
     <h2 class="section-header-flush">Fields with water use recorded and no supply reported</h2>
     <span class="text-tertiary text-xs">{{ selected_period.name }}{% include "partials/_explainer_popout.html" with title="Fields with water use recorded and no supply reported" text="Each row is one field, for the period shown. The platform subtracts the deliveries, pumping and rainfall on record from the consumptive use it estimated, and stores whatever is left over as a figure on that field. Every row is the same stored quantity in acre-feet from a single field, so the column adds." link=wb_help_url link_label="How water balances work" %} · All figures in acre-feet (AF).</span>

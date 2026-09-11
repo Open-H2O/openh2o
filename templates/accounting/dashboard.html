@@ -17,10 +17,6 @@
 {% block content %}
 <div class="page-stack">
 
-  {% if site_config.demonstration_mode %}
-  <div>{% include "partials/_demo_marker.html" %}</div>
-  {% endif %}
-
   {% if needs_setup %}
   {% comment %} First run: no watershed configured yet. Point an admin straight at the
        Setup Wizard (which auto-populates parcels, basins, flowlines, and
@@ -69,23 +65,12 @@
   {% endif %}
   {% else %}
 
-  <!-- Period selector -->
-  <div style="display: flex; justify-content: flex-end;">
-    <label class="text-secondary text-sm" style="display: flex; align-items: center; gap: var(--space-sm);">
-      Period
-      <select name="period"
-              hx-get="{% url 'accounting:dashboard' %}"
-              hx-target="#dashboard-content"
-              hx-trigger="change"
-              class="form-select"
-              style="min-width: 200px;">
-        {% for p in periods %}
-        <option value="{{ p.pk }}" {% if selected_period and selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
-        {% endfor %}
-      </select>
-    </label>
-  </div>
-
+  {% comment %}
+    143-04 (2026-09-11): the period selector that stood here moved into the
+    District water balance panel head (`_dashboard_content.html`), and the
+    DEMO pill into that panel's title, so the page no longer opens on a band
+    with a pill at one end and a control at the other.
+  {% endcomment %}
   <!-- HTMX-swappable content area -->
   <div id="dashboard-content">
     {% include "accounting/partials/_dashboard_content.html" %}

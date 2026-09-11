@@ -2273,20 +2273,6 @@ html { color-scheme: dark; }
     gap: var(--space-lg);
 }
 
-/* Dashboard section rhythm: each section label (Budget Summary / Account Details
-   / Zone Details) needs clear air above it so it never presses into the card or
-   explainer that precedes it. The label keeps its tight margin-bottom to its own
-   card; only the gap ABOVE each section grows (the margin adds to the stack gap).
-   The first label hugs the period selector. Scoped to the dashboard so the help
-   pages are untouched. */
-#dashboard-content > .content-section-label {
-    margin-top: var(--space-xl);
-}
-
-#dashboard-content > .content-section-label:first-child {
-    margin-top: 0;
-}
-
 /* -- Stat cards ---------------------------------------------------------- */
 
 .stat-card {
@@ -2352,6 +2338,14 @@ html { color-scheme: dark; }
     font-weight: 700;
     font-size: 0.95rem;
     color: var(--color-text-primary);
+}
+/* The period control in the panel head (143-04): label and select on one
+   line, never shrunk by a long title. */
+.budget-panel-control {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-shrink: 0;
 }
 .budget-panel-period {
     flex-shrink: 0;
@@ -2424,6 +2418,19 @@ html { color-scheme: dark; }
     margin-top: var(--space-md);
     font-size: 0.84rem;
     color: var(--color-text-secondary);
+}
+/* In a WIDE panel (the dashboard's is 1,428px at 1,730; the account page's is
+   882) the cells are wide enough that a left-packed pair leaves 100-300px of
+   nothing to the right of every number. The value column moves to the cell's
+   edge there, the way a statement's figures sit; a narrow panel keeps the
+   tight pair (143-04, 2026-09-11). */
+@container (min-width: 1100px) {
+    .budget-seg > .budget-breakdown-group {
+        justify-content: space-between;
+        /* Capped so a one-digit count in the wider result cell is not 460px
+           from its label: every cell's values sit about the same reach away. */
+        max-width: 24rem;
+    }
 }
 .budget-breakdown-title {
     grid-column: 1 / -1;
