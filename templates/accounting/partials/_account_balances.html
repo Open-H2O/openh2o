@@ -22,6 +22,19 @@
         <div class="budget-seg-label">Supplies</div>
         <div class="budget-seg-value text-supply">{{ balance.supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         <div class="budget-seg-caption">water on record for the period</div>
+        {% comment %}
+          R-037: these three used to sit in a bare `.budget-panel-foot` with
+          nothing saying they are the parts of the Supplies figure above them;
+          then (143-01) in a column at the panel's far right. They sit under
+          their figure now (143-01 resumed, 2026-09-11). Titled "by source",
+          not "of which" -- Brent overturned that idiom at the 142-01 checkpoint.
+        {% endcomment %}
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Supplies by source</div>
+          <div class="budget-breakdown-row"><span>Surface</span><b>{{ balance.supplies.surface|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ balance.supplies.groundwater|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Rain</span><b>{{ balance.supplies.precip|floatformat:2|intcomma }}</b></div>
+        </div>
       </div>
       <div class="budget-op">&minus;</div>
       <div class="budget-seg">
@@ -35,18 +48,6 @@
         <div class="budget-seg-value {% if balance.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ balance.net_vs_supply|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         <div class="budget-seg-caption">supplies minus consumptive use</div>
       </div>
-    </div>
-    {% comment %}
-      R-037: these three used to sit in a bare `.budget-panel-foot` with nothing
-      saying they are the parts of the Supplies figure above them. Titled "by
-      source", not "of which" — Brent overturned that idiom at the 142-01
-      checkpoint.
-    {% endcomment %}
-    <div class="budget-panel-breakdown">
-      <div class="budget-breakdown-title">Supplies by source</div>
-      <div class="budget-breakdown-row"><span>Surface</span><b>{{ balance.supplies.surface|floatformat:2|intcomma }}</b></div>
-      <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ balance.supplies.groundwater|floatformat:2|intcomma }}</b></div>
-      <div class="budget-breakdown-row"><span>Rain</span><b>{{ balance.supplies.precip|floatformat:2|intcomma }}</b></div>
     </div>
   </div>
 </div>

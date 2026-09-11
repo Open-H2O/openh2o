@@ -2187,15 +2187,11 @@ html { color-scheme: dark; }
    account pages, the parcel pane and the Help explainers as the house
    "balance" card.
 
-   Phase 142 (R-003, R-004, R-005; ISS-159 #2): the equation packs to the LEFT
-   at a smaller scale, the result (`.budget-seg--result`) is the only lead
-   figure, and the right-hand side of the panel carries the supply breakdown
-   (`.budget-panel-breakdown`) instead of empty space. Before this the three
-   figures sat at 2.5rem in a 1fr/auto/1fr/auto/1fr grid padded space-xl, all
-   the same size, so nothing said which one the page leads with and the width
-   of the card was mostly gap. Phase 143 carried the same body to the account
-   pages and the use-area pane, so every live-figure panel now has the two
-   columns. */
+   Phase 142 (R-003, R-004, R-005; ISS-159 #2): the figures came down from
+   2.5rem, the result (`.budget-seg--result`) became the only lead figure, and
+   the supply breakdown joined the panel. Phase 143 (resumed 2026-09-11) gave
+   every live-figure panel the same body: one row of figure cells, each figure
+   with its own parts beneath it, the rules below. */
 .budget-panel {
     background: linear-gradient(180deg, var(--color-card), var(--color-inset));
     border: 1px solid var(--color-border-hover);
@@ -2226,73 +2222,139 @@ html { color-scheme: dark; }
     padding: 3px 10px;
     border-radius: var(--radius-pill);
 }
-/* Equation left, breakdown right. `minmax(240px, auto)` is the width the
-   142-01 mock-up was approved at; the breakdown never squeezes below it.
+/* One row of figure cells. Each cell carries a figure and, beneath it, that
+   figure's own parts: Supplies -> "by source"; on the use-area pane Uses ->
+   "by destination" and the result -> its badge and the lines that judge it.
+   The operators stay in the markup BETWEEN the cells, because the tests and
+   the figure-ledger extractors pin `.budget-seg-label` directly above
+   `.budget-seg-value`; CSS seats each operator against the figure it applies
+   to, on the rule that divides the cells.
 
-   ⚠ 143-01: that two-column body only fits a panel as wide as the dashboard's.
-   The account pane's panel is 696px on the detail page and 408px in the
-   workspace, and there the `1fr` column took its own min-content, pushed the
-   breakdown past the panel's right edge, and `.budget-panel` clips
-   (`overflow: hidden`) -- so "Supplies by source" rendered, measured 255px
-   wide, and was invisible to a reader. R-037 would have read as fixed in the
-   markup and unfixed on the screen.
-
-   A CONTAINER query, not a media query: the existing `max-width: 767px` rule
-   below keys on the VIEWPORT, which is 1440 here while the panel is 408. The
-   thing that is too narrow is the panel, so the panel is what must be asked. */
+   143-01, resumed 2026-09-11. The two-column body that stood here (equation
+   packed left, one breakdown at the far right) left ~1,300px of nothing between
+   the two at 2560 -- on the pane Brent photographed on 09-09 AND on the
+   dashboard, whose version had been approved from 1440 mock-ups where it
+   happened to fit. This shape was judged by eye at 2560 on the live staging
+   page before anything was measured (`143-01-resume-mock-b.png`); the ratio
+   sweep and the probes are regression checks, not the bar. */
 .budget-panel {
     container-type: inline-size;
 }
 .budget-panel-body {
-    display: grid;
-    grid-template-columns: 1fr minmax(240px, auto);
-    gap: var(--space-xl);
-    align-items: start;
     padding: var(--space-lg);
 }
-.budget-panel-body > * {
-    min-width: 0;
+.budget-panel-body .budget-panel-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1.3fr;
+    gap: 0;
+    align-items: start;
+    padding: 0;
 }
-/* 960px, and the number is measured rather than chosen. The equation row's
-   min-content is 584px on the demonstration data; the breakdown column is
-   `minmax(240px, auto)`; the body adds a `--space-xl` gap and `--space-lg`
-   padding either side. 584 + 240 + 32 + 48 = 904 is the floor, and 960 leaves
-   headroom for wider figures than this fixture happens to carry.
-
-   At 760 the two-column layout switched on ~150px before it fitted: measured
-   2026-09-08 at a 1680 viewport, the panel was 856px, the equation column
-   483.765px against that 584px min-content, and `1,331.48` was drawn straight
-   through the word "Groundwater" and across the separator. Reported by Brent,
-   who runs a wider display than the 1440 every check in this phase used --
-   which is why nothing here caught it. */
+.budget-panel-body .budget-seg {
+    min-width: 0;
+    padding-right: var(--space-xl);
+}
+/* The operator sits on the divider, beside the figure it applies to. It
+   stretches so the rule runs the full height of the row, breakdowns included. */
+.budget-panel-body .budget-op {
+    align-self: stretch;
+    border-left: 1px solid var(--color-border);
+    text-align: left;
+    padding: 1.55rem var(--space-sm) 0 var(--space-xl);
+}
+/* The "=" reads at the result figure's larger size. */
+.budget-panel-body .budget-op:has(+ .budget-seg--result) {
+    font-size: 1.5rem;
+    padding-top: 1.45rem;
+}
+/* A figure's parts, tight under it: label column, number column, nothing
+   stretched across the cell. `display: contents` lets the rows sit in the
+   group's two-column grid while the markup keeps one element per row. */
+.budget-seg > .budget-breakdown-group {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    column-gap: var(--space-xl);
+    justify-content: start;
+    margin-top: var(--space-md);
+    font-size: 0.84rem;
+    color: var(--color-text-secondary);
+}
+.budget-breakdown-title {
+    grid-column: 1 / -1;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: 6px;
+}
+.budget-breakdown-row {
+    display: contents;
+}
+.budget-breakdown-row > span {
+    padding: 2px 0;
+}
+.budget-breakdown-row > b {
+    padding: 2px 0;
+    text-align: right;
+    color: var(--color-text-primary);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+/* The lines that judge the result (the pane's unmet-demand figure and the
+   cause sentence) live in the result cell, under the number they are about. */
+.budget-seg-notes {
+    margin-top: var(--space-md);
+    max-width: 60ch;
+    font-size: 0.84rem;
+}
+.budget-seg-notes > p {
+    margin: 0 0 6px;
+    font-size: 0.84rem;
+}
+/* The population the totals cover, in one quiet line. */
+.budget-panel-note {
+    font-size: 0.78rem;
+    color: var(--color-text-tertiary);
+    padding: var(--space-sm) var(--space-lg);
+    border-top: 1px solid var(--color-border);
+}
+/* A CONTAINER query, not a media query: the account pane's panel is 696px on
+   the detail page and 408px in the workspace while the viewport is 1440, so
+   the panel is what must be asked. Under 960px three cells and two operators
+   do not share a line; stacked, it stays an equation and runs down instead of
+   across: Supplies and its parts, minus, Uses and its parts, equals, the
+   result. The operator's tall top padding exists to sit it on the figures'
+   baseline in a row, so it comes off in a column. */
 @container (max-width: 960px) {
-    .budget-panel-body {
-        grid-template-columns: 1fr;
-        gap: var(--space-md);
-    }
-    /* Stacked, the rule that separated the two columns becomes a rule between
-       the equation above and its breakdown below. */
-    .budget-panel-body .budget-panel-breakdown {
-        border-left: none;
-        border-top: 1px solid var(--color-border);
-        padding-left: 0;
-        padding-top: var(--space-md);
-    }
-    /* Three figures and two operators do not sit on one line in a 696px panel,
-       let alone a 408px one. Wrapping them left the "=" orphaned at the end of
-       the first line with Balance alone on the second, which reads as a layout
-       fault rather than as an equation. Stacked, it stays an equation and simply
-       runs down instead of across: Supplies, minus, Consumptive use, equals,
-       Balance. The operator's tall top padding exists to sit it on the figures'
-       baseline in a row, so it comes off in a column. */
+    /* A two-column grid, not a flex column: the operator takes the narrow
+       left column and the figure it applies to takes the right, on the SAME
+       row, so the stack reads as a vertical equation. The first cell is
+       forced into the right column, which leaves the left one empty on that
+       row; auto-placement then pairs each operator with the cell after it. A
+       flex column put each glyph alone on a line of its own (measured at a
+       1440 viewport, 2026-09-11). Three cells do not fit here: 660px of
+       content against a 598px body on the account page. */
     .budget-panel-body .budget-panel-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-sm);
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: var(--space-md);
+        row-gap: var(--space-md);
+        align-items: start;
     }
-    .budget-panel-body .budget-op {
-        padding: 0;
-        text-align: left;
+    .budget-panel-body .budget-seg {
+        grid-column: 2;
+        padding-right: 0;
+    }
+    .budget-panel-body .budget-op,
+    .budget-panel-body .budget-op:has(+ .budget-seg--result) {
+        grid-column: 1;
+        align-self: start;
+        border-left: none;
+        padding: 1.55rem 0 0;
+    }
+    .budget-panel-body .budget-op:has(+ .budget-seg--result) {
+        padding-top: 1.45rem;
     }
 }
 .budget-panel-row {
@@ -2300,10 +2362,6 @@ html { color-scheme: dark; }
     align-items: flex-start;
     gap: var(--space-xl);
     padding: var(--space-lg);
-}
-/* Inside the two-column body the body carries the padding, not the row. */
-.budget-panel-body .budget-panel-row {
-    padding: 0;
 }
 .budget-seg {
     text-align: left;
@@ -2338,55 +2396,7 @@ html { color-scheme: dark; }
     /* sits on the figures' baseline: label (0.8rem + 6px) above the 1.375rem figure */
     padding: 1.55rem var(--space-xs) 0;
 }
-.budget-panel-breakdown {
-    border-left: 1px solid var(--color-border);
-    padding-left: var(--space-lg);
-    font-size: 0.84rem;
-    color: var(--color-text-secondary);
-}
-.budget-breakdown-title {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-tertiary);
-    margin-bottom: 6px;
-}
-.budget-breakdown-row {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-lg);
-    padding: 2px 0;
-}
-.budget-breakdown-row b {
-    color: var(--color-text-primary);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-}
-/* The population the totals cover, in one quiet line. */
-.budget-panel-note {
-    font-size: 0.78rem;
-    color: var(--color-text-tertiary);
-    padding: var(--space-sm) var(--space-lg);
-    border-top: 1px solid var(--color-border);
-}
-/* Two breakdowns in one column (the use-area pane: supplies, then uses). A
-   second `.budget-panel-breakdown` as a grid sibling would take a third column
-   the body does not define, so the groups nest and this is the gap between
-   them. `.budget-panel-foot` used to live here: the centred rows it styled were
-   the last of the account pages' and the pane's old footers, and 143-01 turned
-   every one into a titled breakdown, so the rule went with them. */
-.budget-breakdown-group + .budget-breakdown-group {
-    margin-top: var(--space-md);
-}
 @media (max-width: 767px) {
-    .budget-panel-body {
-        grid-template-columns: 1fr;
-    }
-    .budget-panel-breakdown {
-        border-left: none;
-        padding-left: 0;
-    }
     .budget-panel-row {
         flex-direction: column;
         gap: var(--space-md);

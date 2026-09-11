@@ -64,23 +64,59 @@
         {% include "parcels/partials/_period_control.html" %}
       </div>
       {% comment %}
-        143-01, Brent's third finding on his own display (2026-09-08): the
-        equation packed left after Phase 142 and the rest of the panel was
-        empty -- 343px of text in a 2,214px row at 2560, and the two foot lines
-        below it were centred, aligned to nothing above them. This is the
-        dashboard's two-column body: equation left, the parts of each operand
-        on the right, stacked by the container query when the panel is narrow.
+        143-01, resumed 2026-09-11 after Brent stopped the project on 09-09:
+        the two-column body (equation packed left, both breakdowns at the far
+        right) left ~1,300px of nothing between them at 2560, the same dead
+        space he had filed on 09-06 as ISS-159 #2, after three fixes each
+        signed off by a check that cannot see bad. This is the shape he judged
+        by eye on the live page before anything was measured: three figure
+        cells, each figure with its own parts beneath it. Supplies carries "by
+        source", Uses carries "by destination", and the result carries its
+        badge plus the lines that judge it, which used to float below the
+        panel aligned to nothing.
+
+        ⚠ Two of the breakdown cells are the engine's OWN OUTPUT re-entering the
+        balance as an input, which is why they carry "(estimated)". On a field
+        with a well and no meter the leftover after crop use minus rainfall
+        minus surface water IS the pumping figure; on a field with no well an
+        over-delivery IS the recharge figure. Either way the books then close by
+        construction. Measured 2026-09-06: 113 of 152 field-years read 0.00, and
+        every one of them had one of those two plugs available -- not one
+        field-year carrying a meter closes. A bare 0.00 would read as a
+        reconciliation. See ISS-158; retiring the word "Balanced" is its own job.
+
+        Runoff is deliberately NOT here: FIG-parcels-013 is a fixed-zero
+        bookkeeping placeholder (verdict EXPLAINED in the 135-03 ledger) and a
+        cell that can only ever read 0.00 says nothing. The key stays in the dict.
+
+        Titles: "by source" is Brent's own word for the supplies breakdown (he
+        overturned "of which" at the 142-01 checkpoint, DESIGN.md copy rule 13).
+        The uses side mirrors it with the one word that answers the opposite
+        question -- where the water went -- and repeats nothing from the
+        heading above it.
       {% endcomment %}
       <div class="budget-panel-body">
       <div class="budget-panel-row">
         <div class="budget-seg">
           <div class="budget-seg-label">Supplies</div>
           <div class="budget-seg-value text-supply">{{ mass_balance.inputs_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          <div class="budget-breakdown-group">
+            <div class="budget-breakdown-title">Supplies by source</div>
+            <div class="budget-breakdown-row"><span>Surface</span><b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Groundwater{% if mass_balance.gw_is_estimated %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Rain</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>
+          </div>
         </div>
         <div class="budget-op">&minus;</div>
         <div class="budget-seg">
           <div class="budget-seg-label">Uses</div>
           <div class="budget-seg-value text-usage">{{ mass_balance.outputs_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+          <div class="budget-breakdown-group">
+            <div class="budget-breakdown-title">Uses by destination</div>
+            <div class="budget-breakdown-row"><span>Consumptive use</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Recharge{% if mass_balance.outputs.recharge %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></div>
+            <div class="budget-breakdown-row"><span>Storage change</span><b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></div>
+          </div>
         </div>
         <div class="budget-op">&equals;</div>
         <div class="budget-seg budget-seg--result">
@@ -122,105 +158,69 @@
             <span class="badge badge-orange">Residual</span>
             {% endif %}
           </div>
-        </div>
-      </div>
-      {% comment %}
-        ⚠ Two of these six cells are the engine's OWN OUTPUT re-entering the
-        balance as an input, which is why they carry "(estimated)". On a field
-        with a well and no meter the leftover after crop use minus rainfall
-        minus surface water IS the pumping figure; on a field with no well an
-        over-delivery IS the recharge figure. Either way the books then close by
-        construction. Measured 2026-09-06: 113 of 152 field-years read 0.00, and
-        every one of them had one of those two plugs available — not one
-        field-year carrying a meter closes. A bare 0.00 would read as a
-        reconciliation. See ISS-158; retiring the word "Balanced" is its own job.
+          <div class="budget-seg-notes">
+          {% comment %}
+            ISS-157, the field's surface. The platform has always recorded this — on a
+            field with no well the engine writes the leftover as unmet demand rather
+            than inventing pumping — and no screen had ever shown it.
 
-        The two operands, decomposed in the order they appear above. Runoff is
-        deliberately NOT here: FIG-parcels-013 is a fixed-zero bookkeeping
-        placeholder (verdict EXPLAINED in the 135-03 ledger) and a cell that can
-        only ever read 0.00 says nothing. The key stays in the dict.
+            ⛔ It is a figure, not a finding. The words are settled (Brent,
+            2026-09-06): *water use recorded, no supply reported*. Never unauthorized,
+            unpermitted, unlawful, illegal or stolen, never implying them, and no
+            editorialising either — "unexplained", "suspicious" and "should be
+            investigated" are all out. It states the arithmetic and stops. DESIGN.md
+            rule 12's row gates the words; the tone is on whoever edits this next.
 
-        Titles: "by source" is Brent's own word for the supplies breakdown (he
-        overturned "of which" at the 142-01 checkpoint, DESIGN.md copy rule 13).
-        The uses side mirrors it with the one word that answers the opposite
-        question -- where the water went -- and repeats nothing from the
-        heading above it. One `.budget-panel-breakdown`, two groups inside it:
-        the body grid has exactly two columns, and a second breakdown as a
-        sibling would have become a third.
-      {% endcomment %}
-      <div class="budget-panel-breakdown">
-        <div class="budget-breakdown-group">
-          <div class="budget-breakdown-title">Supplies by source</div>
-          <div class="budget-breakdown-row"><span>Surface</span><b>{{ mass_balance.inputs.surface|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Groundwater{% if mass_balance.gw_is_estimated %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.inputs.gw_recovered|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Rain</span><b>{{ mass_balance.inputs.precip|floatformat:2|intcomma }}</b></div>
-        </div>
-        <div class="budget-breakdown-group">
-          <div class="budget-breakdown-title">Uses by destination</div>
-          <div class="budget-breakdown-row"><span>Consumptive use</span><b>{{ mass_balance.outputs.et|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Recharge{% if mass_balance.outputs.recharge %} <span class="text-tertiary">(estimated)</span>{% endif %}</span><b>{{ mass_balance.outputs.recharge|floatformat:2|intcomma }}</b></div>
-          <div class="budget-breakdown-row"><span>Storage change</span><b>{{ mass_balance.outputs.delta_storage|floatformat:2|intcomma }}</b></div>
+            A zero renders NOTHING — not "0.00", not "none" (DESIGN.md rule 8). A zero
+            here would read as a clearance, and a clearance is a finding.
+
+            No colour accent, no badge, no icon: it sits in the house style of the
+            cause lines below it, because it is the same kind of sentence.
+          {% endcomment %}
+          {% if unmet_demand_af > 0 %}
+          <p class="text-secondary">
+            <strong>Water use recorded, no supply reported:</strong>
+            <span class="td-num">{{ unmet_demand_af|floatformat:2|intcomma }}</span> AF{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="On a field with no well, the platform records the part of consumptive use that no delivery, no pumping and no rainfall on record explains. It is stored as a figure, not booked as pumping." link=wb_help_url link_label="How water balances work" %}
+          </p>
+          {% endif %}
+
+          {% if mass_balance.band_status == "realistic" %}
+          <p class="text-tertiary">
+            {% if mass_balance.is_surplus %}
+            Supplies slightly exceed estimated consumptive use — the difference is on-farm
+            loss or return flow, not unaccounted water.
+            {% else %}
+            Estimated consumptive use slightly exceeds recorded supplies — a minor
+            supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
+            rootzone water the meters don't capture).
+            {% endif %}
+          </p>
+          {% elif mass_balance.band_status == "large" and mass_balance.is_surplus %}
+          <p class="text-tertiary">
+            More water is recorded arriving here than this parcel's uses account for —
+            by more than a quarter of estimated consumptive use, so it is flagged rather
+            than treated as ordinary on-farm loss. A residual this size is a gap in the
+            books, not spare water: conveyance loss is not yet a term in this platform,
+            so ditch seepage and evaporation have nowhere to be recorded and land here.
+          </p>
+          {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
+          {% comment %}
+            This line used to finish "— expected where a junior surface right was
+            curtailed going into peak season and the parcel had no groundwater to
+            substitute". That is the Merced demonstration's story hardcoded into the
+            product: false on any other deployment, and it explains the water rather
+            than the software (DESIGN.md rule 11). It states the arithmetic and stops.
+          {% endcomment %}
+          <p class="text-tertiary">
+            Recorded supplies fell well short of estimated consumptive use this period.
+          </p>
+          {% endif %}
+          </div>
         </div>
       </div>
       </div>
     </div>
 
-    {% comment %}
-      ISS-157, the field's surface. The platform has always recorded this — on a
-      field with no well the engine writes the leftover as unmet demand rather
-      than inventing pumping — and no screen had ever shown it.
-
-      ⛔ It is a figure, not a finding. The words are settled (Brent,
-      2026-09-06): *water use recorded, no supply reported*. Never unauthorized,
-      unpermitted, unlawful, illegal or stolen, never implying them, and no
-      editorialising either — "unexplained", "suspicious" and "should be
-      investigated" are all out. It states the arithmetic and stops. DESIGN.md
-      rule 12's row gates the words; the tone is on whoever edits this next.
-
-      A zero renders NOTHING — not "0.00", not "none" (DESIGN.md rule 8). A zero
-      here would read as a clearance, and a clearance is a finding.
-
-      No colour accent, no badge, no icon: it sits in the house style of the
-      cause lines below it, because it is the same kind of sentence.
-    {% endcomment %}
-    {% if unmet_demand_af > 0 %}
-    <p class="text-sm text-secondary" style="margin: var(--space-md) 0 0;">
-      <strong>Water use recorded, no supply reported:</strong>
-      <span class="td-num">{{ unmet_demand_af|floatformat:2|intcomma }}</span> AF{% include "partials/_explainer_popout.html" with title="Water use recorded, no supply reported" text="On a field with no well, the platform records the part of consumptive use that no delivery, no pumping and no rainfall on record explains. It is stored as a figure, not booked as pumping." link=wb_help_url link_label="How water balances work" %}
-    </p>
-    {% endif %}
-
-    {% if mass_balance.band_status == "realistic" %}
-    <p class="text-tertiary text-xs" style="margin: var(--space-md) 0 var(--space-sm);">
-      {% if mass_balance.is_surplus %}
-      Supplies slightly exceed estimated consumptive use — the difference is on-farm
-      loss or return flow, not unaccounted water.
-      {% else %}
-      Estimated consumptive use slightly exceeds recorded supplies — a minor
-      supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
-      rootzone water the meters don't capture).
-      {% endif %}
-    </p>
-    {% elif mass_balance.band_status == "large" and mass_balance.is_surplus %}
-    <p class="text-tertiary text-xs" style="margin: var(--space-md) 0 var(--space-sm);">
-      More water is recorded arriving here than this parcel's uses account for —
-      by more than a quarter of estimated consumptive use, so it is flagged rather
-      than treated as ordinary on-farm loss. A residual this size is a gap in the
-      books, not spare water: conveyance loss is not yet a term in this platform,
-      so ditch seepage and evaporation have nowhere to be recorded and land here.
-    </p>
-    {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
-    {% comment %}
-      This line used to finish "— expected where a junior surface right was
-      curtailed going into peak season and the parcel had no groundwater to
-      substitute". That is the Merced demonstration's story hardcoded into the
-      product: false on any other deployment, and it explains the water rather
-      than the software (DESIGN.md rule 11). It states the arithmetic and stops.
-    {% endcomment %}
-    <p class="text-tertiary text-xs" style="margin: var(--space-md) 0 var(--space-sm);">
-      Recorded supplies fell well short of estimated consumptive use this period.
-    </p>
-    {% endif %}
 
     <div class="border-separator">
       <div class="text-tertiary text-xs mb-sm">See the calculation for each month:</div>

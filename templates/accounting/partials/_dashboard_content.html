@@ -36,6 +36,18 @@
         <div class="budget-seg-label">Supplies</div>
         <div class="budget-seg-value text-supply">{{ grand_supply_total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
         <div class="budget-seg-caption">water on record for the period</div>
+        {% comment %}
+          The parts of the figure above, under it (143-01 resumed, 2026-09-11):
+          the breakdown used to sit in its own column at the panel's far right,
+          ~1,300px from the figure at 2560. "By source" is Brent's own word
+          (142-01 checkpoint, DESIGN.md copy rule 13).
+        {% endcomment %}
+        <div class="budget-breakdown-group">
+          <div class="budget-breakdown-title">Supplies by source</div>
+          <div class="budget-breakdown-row"><span>Surface</span><b>{{ grand_supply_surface|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ grand_supply_groundwater|floatformat:2|intcomma }}</b></div>
+          <div class="budget-breakdown-row"><span>Rain</span><b>{{ grand_supply_precip|floatformat:2|intcomma }}</b></div>
+        </div>
       </div>
       <div class="budget-op">&minus;</div>
       <div class="budget-seg">
@@ -64,12 +76,6 @@
         {% endif %}
         <div class="budget-seg-caption">supplies minus consumptive use</div>
       </div>
-    </div>
-    <div class="budget-panel-breakdown">
-      <div class="budget-breakdown-title">Supplies by source</div>
-      <div class="budget-breakdown-row"><span>Surface</span><b>{{ grand_supply_surface|floatformat:2|intcomma }}</b></div>
-      <div class="budget-breakdown-row"><span>Groundwater</span><b>{{ grand_supply_groundwater|floatformat:2|intcomma }}</b></div>
-      <div class="budget-breakdown-row"><span>Rain</span><b>{{ grand_supply_precip|floatformat:2|intcomma }}</b></div>
     </div>
   </div>
   {% if account_summaries %}
