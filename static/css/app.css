@@ -2413,8 +2413,13 @@ html { color-scheme: dark; }
    group's two-column grid while the markup keeps one element per row. */
 .budget-seg > .budget-breakdown-group {
     display: grid;
+    /* Content-sized tracks, a 24px gap. "Use areas estimated 18 of 18" at a
+       32px gap ran 30px past its cell and across the divider into the Balance
+       cell (Brent's screenshot, 2026-09-11 11:51); the label is "Use areas"
+       now and the widest pair, "Calculation runs 216", sits 190px in a 217px
+       cell. A shrinkable label track was tried and wrapped every label. */
     grid-template-columns: max-content max-content;
-    column-gap: var(--space-xl);
+    column-gap: var(--space-lg);
     justify-content: start;
     margin-top: var(--space-md);
     font-size: 0.84rem;
