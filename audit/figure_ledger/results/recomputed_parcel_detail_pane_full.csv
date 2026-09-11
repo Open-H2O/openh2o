@@ -13,38 +13,38 @@ FIG-parcels-001,MER-APN-011 p1,Supplies (segment),224.64
 FIG-parcels-001,MER-APN-011 p2,Supplies (segment),32.89
 FIG-parcels-001,MER-APN-017 p2,Supplies (segment),395.97
 FIG-parcels-001,MER-APN-032 p2,Supplies (segment),765.41
-FIG-parcels-002,MER-APN-011 p1,Uses (segment),406.21
-FIG-parcels-002,MER-APN-011 p2,Uses (segment),363.26
-FIG-parcels-002,MER-APN-017 p2,Uses (segment),263.07
-FIG-parcels-002,MER-APN-032 p2,Uses (segment),765.41
-FIG-parcels-003,MER-APN-011 p1,Residual (segment),-181.57
-FIG-parcels-003,MER-APN-011 p2,Residual (segment),-330.37
-FIG-parcels-003,MER-APN-017 p2,Residual (segment),132.90
-FIG-parcels-003,MER-APN-032 p2,Residual (segment),0.00
-FIG-parcels-004,MER-APN-011 p1,Foot: Surface,161.78
-FIG-parcels-004,MER-APN-011 p2,Foot: Surface,0.00
-FIG-parcels-004,MER-APN-017 p2,Foot: Surface,0.00
-FIG-parcels-004,MER-APN-032 p2,Foot: Surface,719.30
-FIG-parcels-005,MER-APN-011 p1,Foot: Groundwater,0.00
-FIG-parcels-005,MER-APN-011 p2,Foot: Groundwater,0.00
-FIG-parcels-005,MER-APN-017 p2,Foot: Groundwater,368.34
-FIG-parcels-005,MER-APN-032 p2,Foot: Groundwater,0.00
-FIG-parcels-006,MER-APN-011 p1,Foot: Rain,62.85
-FIG-parcels-006,MER-APN-011 p2,Foot: Rain,32.89
-FIG-parcels-006,MER-APN-017 p2,Foot: Rain,27.64
-FIG-parcels-006,MER-APN-032 p2,Foot: Rain,46.11
-FIG-parcels-007,MER-APN-011 p1,Foot: Consumptive use,370.26
-FIG-parcels-007,MER-APN-011 p2,Foot: Consumptive use,363.26
-FIG-parcels-007,MER-APN-017 p2,Foot: Consumptive use,263.07
-FIG-parcels-007,MER-APN-032 p2,Foot: Consumptive use,591.28
-FIG-parcels-008,MER-APN-011 p1,Foot: Recharge,35.95
-FIG-parcels-008,MER-APN-011 p2,Foot: Recharge,0.00
-FIG-parcels-008,MER-APN-017 p2,Foot: Recharge,0.00
-FIG-parcels-008,MER-APN-032 p2,Foot: Recharge,174.13
-FIG-parcels-009,MER-APN-011 p1,Foot: Storage change,0.00
-FIG-parcels-009,MER-APN-011 p2,Foot: Storage change,0.00
-FIG-parcels-009,MER-APN-017 p2,Foot: Storage change,0.00
-FIG-parcels-009,MER-APN-032 p2,Foot: Storage change,0.00
+FIG-parcels-005,MER-APN-011 p1,Uses (segment),406.21
+FIG-parcels-005,MER-APN-011 p2,Uses (segment),363.26
+FIG-parcels-005,MER-APN-017 p2,Uses (segment),263.07
+FIG-parcels-005,MER-APN-032 p2,Uses (segment),765.41
+FIG-parcels-009,MER-APN-011 p1,Residual (segment),-181.57
+FIG-parcels-009,MER-APN-011 p2,Residual (segment),-330.37
+FIG-parcels-009,MER-APN-017 p2,Residual (segment),132.90
+FIG-parcels-009,MER-APN-032 p2,Residual (segment),0.00
+FIG-parcels-002,MER-APN-011 p1,Foot: Surface,161.78
+FIG-parcels-002,MER-APN-011 p2,Foot: Surface,0.00
+FIG-parcels-002,MER-APN-017 p2,Foot: Surface,0.00
+FIG-parcels-002,MER-APN-032 p2,Foot: Surface,719.30
+FIG-parcels-003,MER-APN-011 p1,Foot: Groundwater,0.00
+FIG-parcels-003,MER-APN-011 p2,Foot: Groundwater,0.00
+FIG-parcels-003,MER-APN-017 p2,Foot: Groundwater,368.34
+FIG-parcels-003,MER-APN-032 p2,Foot: Groundwater,0.00
+FIG-parcels-004,MER-APN-011 p1,Foot: Rain,62.85
+FIG-parcels-004,MER-APN-011 p2,Foot: Rain,32.89
+FIG-parcels-004,MER-APN-017 p2,Foot: Rain,27.64
+FIG-parcels-004,MER-APN-032 p2,Foot: Rain,46.11
+FIG-parcels-006,MER-APN-011 p1,Foot: Consumptive use,370.26
+FIG-parcels-006,MER-APN-011 p2,Foot: Consumptive use,363.26
+FIG-parcels-006,MER-APN-017 p2,Foot: Consumptive use,263.07
+FIG-parcels-006,MER-APN-032 p2,Foot: Consumptive use,591.28
+FIG-parcels-007,MER-APN-011 p1,Foot: Recharge,35.95
+FIG-parcels-007,MER-APN-011 p2,Foot: Recharge,0.00
+FIG-parcels-007,MER-APN-017 p2,Foot: Recharge,0.00
+FIG-parcels-007,MER-APN-032 p2,Foot: Recharge,174.13
+FIG-parcels-008,MER-APN-011 p1,Foot: Storage change,0.00
+FIG-parcels-008,MER-APN-011 p2,Foot: Storage change,0.00
+FIG-parcels-008,MER-APN-017 p2,Foot: Storage change,0.00
+FIG-parcels-008,MER-APN-032 p2,Foot: Storage change,0.00
 FIG-parcels-011,MER-APN-032 p2,ET-not-computed branch: surface (branch not rendered),719.30
 FIG-parcels-012,MER-APN-032 p2,ET-not-computed branch: groundwater (branch not rendered),0.00
 FIG-parcels-013,MER-APN-011,Area (Acres),109.80

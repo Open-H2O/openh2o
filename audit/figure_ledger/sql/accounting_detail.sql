@@ -430,15 +430,15 @@ figures AS (
     -- ── The account balance pane ─────────────────────────────────────────────
     UNION ALL SELECT 'FIG-accounting-009', 'Account pane: Supplies',
            round((SELECT supply_total FROM account_balance), 2)
-    UNION ALL SELECT 'FIG-accounting-010', 'Account pane: Consumptive use',
+    UNION ALL SELECT 'FIG-accounting-013', 'Account pane: Consumptive use',
            round((SELECT gross FROM account_balance), 2)
-    UNION ALL SELECT 'FIG-accounting-011', 'Account pane: Balance',
+    UNION ALL SELECT 'FIG-accounting-014', 'Account pane: Balance',
            round((SELECT net_vs_supply FROM account_balance), 2)
-    UNION ALL SELECT 'FIG-accounting-012', 'Account pane foot: Surface',
+    UNION ALL SELECT 'FIG-accounting-010', 'Account pane foot: Surface',
            round((SELECT surface FROM account_balance), 2)
-    UNION ALL SELECT 'FIG-accounting-013', 'Account pane foot: Groundwater',
+    UNION ALL SELECT 'FIG-accounting-011', 'Account pane foot: Groundwater',
            round((SELECT groundwater FROM account_balance), 2)
-    UNION ALL SELECT 'FIG-accounting-014', 'Account pane foot: Rain',
+    UNION ALL SELECT 'FIG-accounting-012', 'Account pane foot: Rain',
            round((SELECT precip FROM account_balance), 2)
 
     -- ── The per-parcel table, pinned to MER-APN-021 ──────────────────────────

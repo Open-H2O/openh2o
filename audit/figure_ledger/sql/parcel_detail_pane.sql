@@ -277,21 +277,21 @@ figures AS (
     SELECT 'FIG-parcels-001' AS id, p.parcel_number || ' p' || p.period_id AS pin,
            'Supplies (segment)' AS label, round(p.supply_total, 2) AS recomputed
       FROM pinned p
-    UNION ALL SELECT 'FIG-parcels-002', p.parcel_number || ' p' || p.period_id,
-           'Uses (segment)', round(p.outputs_total, 2) FROM pinned p
-    UNION ALL SELECT 'FIG-parcels-003', p.parcel_number || ' p' || p.period_id,
-           'Residual (segment)', round(p.residual, 2) FROM pinned p
-    UNION ALL SELECT 'FIG-parcels-004', p.parcel_number || ' p' || p.period_id,
-           'Foot: Surface', round(p.surface, 2) FROM pinned p
     UNION ALL SELECT 'FIG-parcels-005', p.parcel_number || ' p' || p.period_id,
-           'Foot: Groundwater', round(p.groundwater, 2) FROM pinned p
-    UNION ALL SELECT 'FIG-parcels-006', p.parcel_number || ' p' || p.period_id,
-           'Foot: Rain', round(p.precip, 2) FROM pinned p
-    UNION ALL SELECT 'FIG-parcels-007', p.parcel_number || ' p' || p.period_id,
-           'Foot: Consumptive use', round(p.et, 2) FROM pinned p
-    UNION ALL SELECT 'FIG-parcels-008', p.parcel_number || ' p' || p.period_id,
-           'Foot: Recharge', round(p.recharge, 2) FROM pinned p
+           'Uses (segment)', round(p.outputs_total, 2) FROM pinned p
     UNION ALL SELECT 'FIG-parcels-009', p.parcel_number || ' p' || p.period_id,
+           'Residual (segment)', round(p.residual, 2) FROM pinned p
+    UNION ALL SELECT 'FIG-parcels-002', p.parcel_number || ' p' || p.period_id,
+           'Foot: Surface', round(p.surface, 2) FROM pinned p
+    UNION ALL SELECT 'FIG-parcels-003', p.parcel_number || ' p' || p.period_id,
+           'Foot: Groundwater', round(p.groundwater, 2) FROM pinned p
+    UNION ALL SELECT 'FIG-parcels-004', p.parcel_number || ' p' || p.period_id,
+           'Foot: Rain', round(p.precip, 2) FROM pinned p
+    UNION ALL SELECT 'FIG-parcels-006', p.parcel_number || ' p' || p.period_id,
+           'Foot: Consumptive use', round(p.et, 2) FROM pinned p
+    UNION ALL SELECT 'FIG-parcels-007', p.parcel_number || ' p' || p.period_id,
+           'Foot: Recharge', round(p.recharge, 2) FROM pinned p
+    UNION ALL SELECT 'FIG-parcels-008', p.parcel_number || ' p' || p.period_id,
            'Foot: Storage change', round(p.delta_storage, 2) FROM pinned p
 
     -- Same nine, for the WET-year instance of MER-APN-011 (the ISS-157
@@ -299,21 +299,21 @@ figures AS (
     -- matched to this row set by (pin, period) in the merge, not by id alone.
     UNION ALL SELECT 'FIG-parcels-001', p.parcel_number || ' p' || p.period_id,
            'Supplies (segment)', round(p.supply_total, 2) FROM pinned_wet p
-    UNION ALL SELECT 'FIG-parcels-002', p.parcel_number || ' p' || p.period_id,
-           'Uses (segment)', round(p.outputs_total, 2) FROM pinned_wet p
-    UNION ALL SELECT 'FIG-parcels-003', p.parcel_number || ' p' || p.period_id,
-           'Residual (segment)', round(p.residual, 2) FROM pinned_wet p
-    UNION ALL SELECT 'FIG-parcels-004', p.parcel_number || ' p' || p.period_id,
-           'Foot: Surface', round(p.surface, 2) FROM pinned_wet p
     UNION ALL SELECT 'FIG-parcels-005', p.parcel_number || ' p' || p.period_id,
-           'Foot: Groundwater', round(p.groundwater, 2) FROM pinned_wet p
-    UNION ALL SELECT 'FIG-parcels-006', p.parcel_number || ' p' || p.period_id,
-           'Foot: Rain', round(p.precip, 2) FROM pinned_wet p
-    UNION ALL SELECT 'FIG-parcels-007', p.parcel_number || ' p' || p.period_id,
-           'Foot: Consumptive use', round(p.et, 2) FROM pinned_wet p
-    UNION ALL SELECT 'FIG-parcels-008', p.parcel_number || ' p' || p.period_id,
-           'Foot: Recharge', round(p.recharge, 2) FROM pinned_wet p
+           'Uses (segment)', round(p.outputs_total, 2) FROM pinned_wet p
     UNION ALL SELECT 'FIG-parcels-009', p.parcel_number || ' p' || p.period_id,
+           'Residual (segment)', round(p.residual, 2) FROM pinned_wet p
+    UNION ALL SELECT 'FIG-parcels-002', p.parcel_number || ' p' || p.period_id,
+           'Foot: Surface', round(p.surface, 2) FROM pinned_wet p
+    UNION ALL SELECT 'FIG-parcels-003', p.parcel_number || ' p' || p.period_id,
+           'Foot: Groundwater', round(p.groundwater, 2) FROM pinned_wet p
+    UNION ALL SELECT 'FIG-parcels-004', p.parcel_number || ' p' || p.period_id,
+           'Foot: Rain', round(p.precip, 2) FROM pinned_wet p
+    UNION ALL SELECT 'FIG-parcels-006', p.parcel_number || ' p' || p.period_id,
+           'Foot: Consumptive use', round(p.et, 2) FROM pinned_wet p
+    UNION ALL SELECT 'FIG-parcels-007', p.parcel_number || ' p' || p.period_id,
+           'Foot: Recharge', round(p.recharge, 2) FROM pinned_wet p
+    UNION ALL SELECT 'FIG-parcels-008', p.parcel_number || ' p' || p.period_id,
            'Foot: Storage change', round(p.delta_storage, 2) FROM pinned_wet p
 
     -- FIG-parcels-011, -012 live in the pane's "ET has not been computed"

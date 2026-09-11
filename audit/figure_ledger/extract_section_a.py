@@ -158,8 +158,8 @@ def account_pane(html, slug):
     segs = _budget_segments(html)
     for fig, label in [
         ("FIG-accounting-009", "Supplies"),
-        ("FIG-accounting-010", "Consumptive use"),
-        ("FIG-accounting-011", "Balance"),
+        ("FIG-accounting-013", "Consumptive use"),
+        ("FIG-accounting-014", "Balance"),
     ]:
         if label not in segs:
             raise AssertionError(
@@ -176,9 +176,9 @@ def account_pane(html, slug):
         for m in re.finditer(r"<span>([^<]*?)\s*<b>(.*?)</b></span>", foot.group(1), re.S)
     )
     for fig, label in [
-        ("FIG-accounting-012", "Surface"),
-        ("FIG-accounting-013", "Groundwater"),
-        ("FIG-accounting-014", "Rain"),
+        ("FIG-accounting-010", "Surface"),
+        ("FIG-accounting-011", "Groundwater"),
+        ("FIG-accounting-012", "Rain"),
     ]:
         if label not in foot_pairs:
             raise AssertionError(

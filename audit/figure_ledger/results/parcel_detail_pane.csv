@@ -25,22 +25,22 @@ CHK-parcels-081,(all 76 parcels),Parcels whose pane resolves to WY 2025-2026 (pe
 CHK-parcels-090,(all 76 parcels),Total parcels,76
 FIG-parcels-001,MER-APN-017,Consumptive use (ET),263.07
 FIG-parcels-001,MER-APN-032,Consumptive use (ET),591.28
-FIG-parcels-002,MER-APN-017,Total supplies,395.97
-FIG-parcels-002,MER-APN-032,Total supplies,765.41
-FIG-parcels-003,MER-APN-017,Supplies minus consumptive use,132.90
-FIG-parcels-003,MER-APN-032,Supplies minus consumptive use,174.13
-FIG-parcels-004,MER-APN-017,Net consumptive demand,235.43
-FIG-parcels-004,MER-APN-032,Net consumptive demand,545.17
-FIG-parcels-005,MER-APN-017,Surface water (supply split),0.00
-FIG-parcels-005,MER-APN-032,Surface water (supply split),719.30
-FIG-parcels-006,MER-APN-017,Groundwater (supply split),368.34
-FIG-parcels-006,MER-APN-032,Groundwater (supply split),0.00
-FIG-parcels-007,MER-APN-017,Precipitation (supply split),27.64
-FIG-parcels-007,MER-APN-032,Precipitation (supply split),46.11
-FIG-parcels-008,MER-APN-017,Summary table: Surface,0.00
-FIG-parcels-008,MER-APN-032,Summary table: Surface,719.30
-FIG-parcels-009,MER-APN-017,Summary table: ET,263.07
-FIG-parcels-009,MER-APN-032,Summary table: ET,591.28
+FIG-parcels-005,MER-APN-017,Total supplies,395.97
+FIG-parcels-005,MER-APN-032,Total supplies,765.41
+FIG-parcels-009,MER-APN-017,Supplies minus consumptive use,132.90
+FIG-parcels-009,MER-APN-032,Supplies minus consumptive use,174.13
+FIG-parcels-002,MER-APN-017,Net consumptive demand,235.43
+FIG-parcels-002,MER-APN-032,Net consumptive demand,545.17
+FIG-parcels-003,MER-APN-017,Surface water (supply split),0.00
+FIG-parcels-003,MER-APN-032,Surface water (supply split),719.30
+FIG-parcels-004,MER-APN-017,Groundwater (supply split),368.34
+FIG-parcels-004,MER-APN-032,Groundwater (supply split),0.00
+FIG-parcels-006,MER-APN-017,Precipitation (supply split),27.64
+FIG-parcels-006,MER-APN-032,Precipitation (supply split),46.11
+FIG-parcels-007,MER-APN-017,Summary table: Surface,0.00
+FIG-parcels-007,MER-APN-032,Summary table: Surface,719.30
+FIG-parcels-008,MER-APN-017,Summary table: ET,263.07
+FIG-parcels-008,MER-APN-032,Summary table: ET,591.28
 FIG-parcels-010,MER-APN-017,Summary table: Precip,27.64
 FIG-parcels-010,MER-APN-032,Summary table: Precip,46.11
 FIG-parcels-011,MER-APN-017,Summary table: Recharge,0.00

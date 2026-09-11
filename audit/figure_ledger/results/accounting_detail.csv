@@ -35,11 +35,11 @@ FIG-accounting-006,Run page: drawn this month (block does not render),,0.0000,NO
 FIG-accounting-007,Run page: one credit draw (no draw rows exist),,,NO VALUE
 FIG-accounting-008,Run page: result card final billable groundwater,27.9945,27.9945,MATCH
 FIG-accounting-009,Account pane: Supplies,5921.09,5921.09,MATCH
-FIG-accounting-010,Account pane: Consumptive use,4589.61,4589.61,MATCH
-FIG-accounting-011,Account pane: Balance,1331.48,1331.48,MATCH
-FIG-accounting-012,Account pane foot: Surface,5500.97,5500.97,MATCH
-FIG-accounting-013,Account pane foot: Groundwater,0.00,0.00,MATCH
-FIG-accounting-014,Account pane foot: Rain,420.12,420.12,MATCH
+FIG-accounting-013,Account pane: Consumptive use,4589.61,4589.61,MATCH
+FIG-accounting-014,Account pane: Balance,1331.48,1331.48,MATCH
+FIG-accounting-010,Account pane foot: Surface,5500.97,5500.97,MATCH
+FIG-accounting-011,Account pane foot: Groundwater,0.00,0.00,MATCH
+FIG-accounting-012,Account pane foot: Rain,420.12,420.12,MATCH
 FIG-accounting-015,Per-parcel MER-APN-021: Consumptive Use,177.23,177.23,MATCH
 FIG-accounting-016,Per-parcel MER-APN-021: Surface,210.17,210.17,MATCH
 FIG-accounting-017,Per-parcel MER-APN-021: Groundwater,0.00,0.00,MATCH

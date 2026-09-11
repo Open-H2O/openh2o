@@ -51,20 +51,20 @@ _TAG = re.compile(r"<[^>]+>")
 #: each value. Order is not trusted: each is found by its own label text.
 SEGMENTS = [
     ("FIG-parcels-001", "Supplies"),
-    ("FIG-parcels-002", "Uses"),
-    ("FIG-parcels-003", "Residual"),
+    ("FIG-parcels-005", "Uses"),
+    ("FIG-parcels-009", "Residual"),
 ]
 
 #: The two-line foot, by the word printed beside each number. First line is
 #: supplies, second is uses — found by label text, not position, so the two
 #: lines could swap order in the template with nothing here going stale-quiet.
 FOOT_CELLS = [
-    ("FIG-parcels-004", "Surface"),
-    ("FIG-parcels-005", "Groundwater"),
-    ("FIG-parcels-006", "Rain"),
-    ("FIG-parcels-007", "Consumptive use"),
-    ("FIG-parcels-008", "Recharge"),
-    ("FIG-parcels-009", "Storage change"),
+    ("FIG-parcels-002", "Surface"),
+    ("FIG-parcels-003", "Groundwater"),
+    ("FIG-parcels-004", "Rain"),
+    ("FIG-parcels-006", "Consumptive use"),
+    ("FIG-parcels-007", "Recharge"),
+    ("FIG-parcels-008", "Storage change"),
 ]
 
 

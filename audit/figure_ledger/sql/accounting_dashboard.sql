@@ -273,17 +273,17 @@ figures AS (
     UNION ALL SELECT 'FIG-accounting-028', 'Rain (panel foot)',
            round(precip, 2) FROM grand
 
-    UNION ALL SELECT 'FIG-accounting-033', 'Account MER-ACCT-001 Consumptive Use',
+    UNION ALL SELECT 'FIG-accounting-031', 'Account MER-ACCT-001 Consumptive Use',
            round(gross, 2) FROM pinned_account
     UNION ALL SELECT 'FIG-accounting-029', 'Account MER-ACCT-001 Surface',
            round(surface, 2) FROM pinned_account
-    UNION ALL SELECT 'FIG-accounting-030', 'Account MER-ACCT-001 Groundwater',
+    UNION ALL SELECT 'FIG-accounting-033', 'Account MER-ACCT-001 Groundwater',
            round(groundwater, 2) FROM pinned_account
-    UNION ALL SELECT 'FIG-accounting-031', 'Account MER-ACCT-001 Precip',
+    UNION ALL SELECT 'FIG-accounting-034', 'Account MER-ACCT-001 Precip',
            round(precip, 2) FROM pinned_account
-    UNION ALL SELECT 'FIG-accounting-032', 'Account MER-ACCT-001 Supplies',
+    UNION ALL SELECT 'FIG-accounting-030', 'Account MER-ACCT-001 Supplies',
            round(supply_total, 2) FROM pinned_account
-    UNION ALL SELECT 'FIG-accounting-034', 'Account MER-ACCT-001 Net',
+    UNION ALL SELECT 'FIG-accounting-032', 'Account MER-ACCT-001 Net',
            round(net_vs_supply, 2) FROM pinned_account
     UNION ALL SELECT 'FIG-accounting-035', 'Account MER-ACCT-001 Allocation',
            round(allocation, 2) FROM pinned_account

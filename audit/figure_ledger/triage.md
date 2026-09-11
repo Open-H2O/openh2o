@@ -179,7 +179,7 @@ the total, or to print the two subtotals.
 
 ### A2. ALREADY KNOWN: one finding, two rows
 
-#### `FIG-parcels-003` and `FIG-parcels-015`, the pane's two balances
+#### `FIG-parcels-009` and `FIG-parcels-015`, the pane's two balances
 
 Both carry `ISS-148`, **already filed**. Not re-opened, not given a new number.
 
@@ -275,7 +275,7 @@ this file exists to prevent.
 `docs/figure-ledger-2026-09.md:69` reads "Nine rows carry an issue number, and
 they name four problems." The verdict table sixteen lines above it says
 `MATCH · ISS-###` = 4 and `ISS-###` = 4. Parsing every row in the document gives
-**eight**: `FIG-parcels-003`, `FIG-parcels-015` (ISS-148); `FIG-geography-002`,
+**eight**: `FIG-parcels-009`, `FIG-parcels-015` (ISS-148); `FIG-geography-002`,
 `FIG-geography-003` (ISS-154); `FIG-accounting-053`, `FIG-accounting-054`,
 `FIG-accounting-055` (ISS-155);
 and `FIG-accounting-022` (ISS-156). Four problems is right. Nine rows is not.
