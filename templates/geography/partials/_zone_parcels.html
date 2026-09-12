@@ -1,4 +1,4 @@
-{% load placeholders %}{% comment %}
+{% load placeholders humanize %}{% comment %}
   Phase 89. The guard is belt AND braces on purpose. Without `parcels` the
   ParcelZone rows cannot exist — the parcels tables are schema-resident and
   empty — so `parcel_zones` is already falsy and the loop would never reverse
@@ -42,6 +42,24 @@
     </tr>
     {% endfor %}
   </tbody>
+  {% comment %}
+    143-06 (R-103): a footer because these rows ADD -- one zone, every use
+    area assigned to it (rule 5). A parcel can lie in more than one zone, and
+    the zones table's own subtitle already says so; that does not make THIS
+    zone's rows unaddable. The acreage total is the view's own `Sum`, None
+    areas excluded, so it can never drift from what a reader would get adding
+    the column by hand; when a use area carries no area on record the count
+    beside it says so rather than the total silently reading low.
+  {% endcomment %}
+  <tfoot>
+    <tr>
+      <td class="tfoot-total" colspan="2">
+        All {{ use_area_count }} use area{{ use_area_count|pluralize }}{% if use_area_with_area_count < use_area_count %} &middot; {{ use_area_with_area_count }} of {{ use_area_count }} with an area on record{% endif %}
+      </td>
+      <td class="td-num-bold">{{ use_area_acreage_total|floatformat:2|intcomma }}</td>
+      <td></td>
+    </tr>
+  </tfoot>
 </table>
 {% else %}
 <p class="text-tertiary" style="font-size: 0.875rem;">No parcels assigned to this zone.</p>

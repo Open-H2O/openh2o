@@ -25,133 +25,204 @@
 </div>
 {% endif %}
 
+{% comment %}
+  143-06 (R-101, R-103, R-055, R-112). The page composed as a page at 1,730 CSS
+  px (DESIGN.md, *What a finished page is*), reusing the account page's grid
+  UNCHANGED (143-03's `.page-grid-account*`, `minmax(0, 1fr) minmax(0, 2fr)`):
+  Zone information beside Allocation vs. use at one height, then the use-areas
+  table and the assign-search card each full width below. The previous
+  `.page-grid-2col` (`1fr 1fr`) put the whole use-area column on the left and
+  the whole allocation column on the right, so a short information card and a
+  short allocation card each sat over their own column's leftover use-area or
+  allocation content running past them (R-112) -- no worked shape for 143-10
+  to copy. Checkpoint ruling, Brent 2026-09-12: zone-lead as mocked, including
+  the Available segment.
+{% endcomment %}
 <div class="pane-stack">
-  <div class="page-grid-2col">
+  <div class="page-grid-account">
 
-    <!-- Left column: Zone Info + Use Areas + Assign -->
-    <div class="page-stack">
+    <!-- Zone information card -->
+    <div class="card-raised page-grid-account-info">
+      <h2 class="section-header">Zone information</h2>
 
-      <!-- Zone Info card -->
-      <div class="card-raised">
-        <h2 class="section-header">Zone information</h2>
+      <div class="field-group">
+        <div class="field-label">Name</div>
+        <div class="field-value">{{ zone.name }}</div>
+      </div>
 
-        <div class="field-group">
-          <div class="field-label">Name</div>
-          <div class="field-value">{{ zone.name }}</div>
+      <div class="field-group">
+        <div class="field-label">Type</div>
+        <div class="field-value">{{ zone.get_zone_type_display|blank }}</div>
+      </div>
+
+      {% if zone.description %}
+      <div class="field-group">
+        <div class="field-label">Description</div>
+        <div class="text-secondary text-base">{{ zone.description }}</div>
+      </div>
+      {% endif %}
+
+      <div class="field-group">
+        {% include "geography/partials/_zone_recovery_horizon.html" %}
+      </div>
+
+      <div class="border-separator">
+        <div class="text-tertiary text-xs">
+          Created {{ zone.created_at|date:"M d, Y" }} &middot; Updated {{ zone.updated_at|date:"M d, Y" }}
         </div>
+      </div>
+    </div>
 
-        <div class="field-group">
-          <div class="field-label">Type</div>
-          <div class="field-value">{{ zone.get_zone_type_display|blank }}</div>
-        </div>
+    {% comment %}
+      Phase 89 (unchanged): allocations are Accounting's. Without the module
+      the card would render "No allocations for this zone." — a fact about
+      the agency's data rather than about what this deployment tracks — so
+      the whole card stays behind the same gate the use-area cards use below.
 
-        {% if zone.description %}
-        <div class="field-group">
-          <div class="field-label">Description</div>
-          <div class="text-secondary text-base">{{ zone.description }}</div>
-        </div>
-        {% endif %}
-
-        <div class="field-group">
-          {% include "geography/partials/_zone_recovery_horizon.html" %}
-        </div>
-
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ zone.created_at|date:"M d, Y" }} &middot; Updated {{ zone.updated_at|date:"M d, Y" }}
+      143-06: the lead panel is the CURRENT period's result(s) only
+      (`accounting.services.current_period_id`, the same helper the
+      allocations list and the ledger land on), Remaining as the ONLY
+      `.budget-seg--result` on the page (rule 8). Every period still prints in
+      the table underneath; the panel replaces the "?" popout, not a row.
+    {% endcomment %}{% if 'accounting' in enabled_modules %}{% url 'accounting:dashboard' as dashboard_url %}{% url 'accounting:ledger_list' as ledger_url %}<div class="card-raised page-grid-account-balance">
+      <div class="page-grid-account-head mb-md">
+        <h2 class="section-header-flush">Allocation vs. use</h2>
+        <div class="text-secondary text-base" style="margin-top: var(--space-xs);">Canal water never counts against a groundwater allocation.</div>
+      </div>
+      {% if budgets %}
+      {% if current_budgets %}
+      {% comment %}
+        ISS-155: a zone with two water types in one period gets two results
+        side by side, each named by its water type -- never summed into one
+        panel. Every zone in the demonstration data carries one water type, so
+        `.zone-budget-results` renders a single column there and the name
+        above the panel is skipped (the approved mock-up shows no such label).
+      {% endcomment %}
+      <div class="zone-budget-results">
+        {% for b in current_budgets %}
+        <div class="budget-panel">
+          {% if current_budgets|length > 1 %}<div class="text-secondary text-sm mb-xs">{{ b.water_type.name }}</div>{% endif %}
+          <div class="budget-panel-body">
+            <div class="budget-panel-row">
+              <div class="budget-seg">
+                <div class="budget-seg-label">Available</div>
+                <div class="budget-seg-value">{{ b.available|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+                <div class="budget-seg-caption">{{ b.available_caption }}</div>
+                {% if b.carryover is not None %}
+                <div class="budget-breakdown-group">
+                  <div class="budget-breakdown-title">Available by source</div>
+                  <div class="budget-breakdown-row"><span>Allocation</span><b>{{ b.budget|floatformat:2|intcomma }}</b></div>
+                  <div class="budget-breakdown-row"><span>Carried forward</span><b>{% if b.carryover > 0 %}+{% endif %}{{ b.carryover|floatformat:2|intcomma }}</b></div>
+                </div>
+                {% endif %}
+              </div>
+              <div class="budget-op">&minus;</div>
+              <div class="budget-seg">
+                <div class="budget-seg-label">Used</div>
+                <div class="budget-seg-value">{{ b.used|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+                <div class="budget-seg-caption">{{ b.used_caption }}</div>
+                <div class="budget-breakdown-group">
+                  <div class="budget-breakdown-title">Recorded in</div>
+                  <div class="budget-breakdown-row"><span>Use ledger</span><b><a href="{{ ledger_url }}?period={{ b.period.pk }}&amp;zone={{ zone.pk }}" class="data-table-link">{{ b.ledger_count }} entr{{ b.ledger_count|pluralize:"y,ies" }}</a></b></div>
+                </div>
+              </div>
+              <div class="budget-op">&equals;</div>
+              <div class="budget-seg budget-seg--result">
+                <div class="budget-seg-label">Remaining</div>
+                <div class="budget-seg-value {% if b.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ b.remaining|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+                <div class="budget-seg-caption">{{ b.remaining_caption }}</div>
+                <div class="budget-seg-notes"><p class="text-tertiary">The dashboard's zone row prints this same figure. <a href="{{ dashboard_url }}?period={{ b.period.pk }}" class="data-table-link">See it there</a></p></div>
+              </div>
+            </div>
           </div>
         </div>
+        {% endfor %}
       </div>
-
+      {% endif %}
       {% comment %}
-        Phase 89. Both cards are entirely about use areas, so they go with the
-        module rather than being emptied out. Found by guarding the link inside
-        `_zone_parcels.html` and then looking at what the card became: a
-        "Assigned Use Areas" heading over nothing, and a search box that can
-        only ever return nothing. The search input's own placeholder names the
-        dropped domain too ("Search by parcel number or owner..."), which is the
-        88-03 class of leak — prose the vocabulary gate could not see until the
-        gate was extended to attributes.
-      {% endcomment %}{% if 'parcels' in enabled_modules %}<!-- Assigned Use Areas card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Assigned use areas</h2>
-        <div id="zone-parcels">
-          {% include "geography/partials/_zone_parcels.html" %}
-        </div>
+        Rules 1, 2, 3, 9: columns run Period, Water type, then the equation's
+        order -- Available (Allocation, Carried forward) bracketed by a group
+        header because they sum, one `.col-sep` where the paper (Available)
+        gives way to a measured draw (Used), Used stacked with its label word
+        only when every row shares one (else the per-cell suffix stays, as
+        today). No "?" popout: the structure says what the old sentence said.
+      {% endcomment %}
+      <table class="data-table text-sm data-table--grouped zone-alloc-table">
+        <thead>
+          <tr class="th-group">
+            <th rowspan="2">Period</th>
+            <th rowspan="2">Water type</th>
+            <th colspan="2" class="th-group-label">Available</th>
+            <th rowspan="2" class="th-right col-sep">{% if used_label_uniform %}<span class="th-stack">Used {{ used_label_uniform }}</span>{% else %}Used{% endif %}</th>
+            <th rowspan="2" class="th-right">Remaining</th>
+          </tr>
+          <tr>
+            <th class="th-right">Allocation</th>
+            <th class="th-right"><span class="th-stack">Carried forward</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in budgets %}
+          <tr>
+            <td class="text-secondary" style="white-space: nowrap;">{{ b.period.name }}</td>
+            <td class="text-secondary">{{ b.water_type.name }}</td>
+            <td class="td-num">{{ b.budget|floatformat:2|intcomma }}</td>
+            {% comment %}
+              Signed, and dashed on a surface row — the same treatment the
+              dashboard's zone table gives the same quantity. A surface
+              allocation has no groundwater carry-over, and a 0.00 there would
+              read as "nothing left over" rather than "not a cell here".
+            {% endcomment %}
+            <td class="td-num {% if b.carryover is None %}text-tertiary{% elif b.carryover > 0 %}text-surplus{% elif b.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
+              {% if b.carryover is None %}&mdash;{% else %}{% if b.carryover > 0 %}+{% endif %}{{ b.carryover|floatformat:2|intcomma }}{% endif %}
+            </td>
+            <td class="td-num col-sep">{{ b.used|floatformat:2|intcomma }}{% if not used_label_uniform %} <span class="text-tertiary text-xs">{{ b.used_label }}</span>{% endif %}</td>
+            <td class="{% if b.remaining is None %}text-tertiary{% elif b.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %} td-num-bold">
+              {% if b.remaining is None %}&mdash;{% else %}{{ b.remaining|floatformat:2|intcomma }}{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-tertiary text-sm">No allocations for this zone.</p>
+      {% endif %}
+    </div>{% endif %}
+
+    {% comment %}
+      Row two: use areas full width, the search card under it. Task 2's
+      rendered choice (measurements.json, zone_row_two): beside a 1,129px
+      table a 182px search card leaves 947px of empty column under it, the
+      same R-112 fault row one just removed; under, nothing hangs.
+    {% endcomment %}{% if 'parcels' in enabled_modules %}<!-- Assigned Use Areas card -->
+    <div class="card-raised page-grid-account-full">
+      <h2 class="section-header mb-md">Assigned use areas</h2>
+      <div id="zone-parcels">
+        {% include "geography/partials/_zone_parcels.html" %}
+      </div>
+    </div>
+
+    <!-- Assign Use Area search card -->
+    <div class="card-raised page-grid-account-full">
+      <h2 class="section-header mb-md">Assign use area</h2>
+
+      <div class="field-group">
+        <input
+          type="text"
+          name="q"
+          placeholder="Search by parcel number or owner..."
+          hx-get="{% url 'geography:zone_parcel_search' zone.pk %}"
+          hx-target="#zone-parcel-search-results"
+          hx-trigger="keyup changed delay:300ms"
+          class="form-input"
+        >
       </div>
 
-      <!-- Assign Use Area search card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Assign use area</h2>
+      <div id="zone-parcel-search-results">
+        <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
+      </div>
+    </div>{% endif %}
 
-        <div class="field-group">
-          <input
-            type="text"
-            name="q"
-            placeholder="Search by parcel number or owner..."
-            hx-get="{% url 'geography:zone_parcel_search' zone.pk %}"
-            hx-target="#zone-parcel-search-results"
-            hx-trigger="keyup changed delay:300ms"
-            class="form-input"
-          >
-        </div>
-
-        <div id="zone-parcel-search-results">
-          <p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
-        </div>
-      </div>{% endif %}
-
-    </div>
-
-    <!-- Right column: Allocation vs. Use -->
-    <div class="page-stack">
-
-      {% comment %}Phase 89: allocations are Accounting's. Without the module
-      the card renders its empty state, "No allocations for this zone." — which
-      reads as a fact about the agency's data rather than about what this
-      deployment tracks.{% endcomment %}{% if 'accounting' in enabled_modules %}{% url 'accounting:dashboard' as dashboard_url %}<div class="card-raised">
-        <h2 class="section-header mb-md">Allocation vs. use</h2>
-        {% if budgets %}
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Period</th>
-              <th>Water Type</th>
-              <th class="th-right">Allocation (AF)</th>
-              <th class="th-right">Carried Forward (AF)</th>
-              <th class="th-right">Used (AF)</th>
-              <th class="th-right">Remaining (AF){% include "partials/_explainer_popout.html" with title="Remaining (AF)" text="Groundwater rows: allocation plus last year's carry-over, minus groundwater use, metered or calculated — the same figure as the dashboard's zone row for this zone and period. Surface rows: allocation minus water delivered. Canal water never counts against a groundwater allocation." link=dashboard_url link_label="See it on the dashboard" %}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for b in budgets %}
-            <tr>
-              <td class="text-secondary">{{ b.period.name }}</td>
-              <td class="text-secondary">{{ b.water_type.name }}</td>
-              <td class="td-num">{{ b.budget|floatformat:2|intcomma }}</td>
-              {% comment %}
-                Signed, and dashed on a surface row — the same treatment the
-                dashboard's zone table gives the same quantity. A surface
-                allocation has no groundwater carry-over, and a 0.00 there would
-                read as "nothing left over" rather than "not a cell here".
-              {% endcomment %}
-              <td class="td-num {% if b.carryover is None %}text-tertiary{% elif b.carryover > 0 %}text-surplus{% elif b.carryover < 0 %}text-deficit{% else %}text-tertiary{% endif %}">
-                {% if b.carryover is None %}&mdash;{% else %}{% if b.carryover > 0 %}+{% endif %}{{ b.carryover|floatformat:2|intcomma }}{% endif %}
-              </td>
-              <td class="td-num">{{ b.used|floatformat:2|intcomma }} <span class="text-tertiary text-xs">{{ b.used_label }}</span></td>
-              <td class="td-num {% if b.remaining is None %}text-tertiary{% elif b.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-                {% if b.remaining is None %}&mdash;{% else %}{{ b.remaining|floatformat:2|intcomma }}{% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p class="text-tertiary text-sm">No allocations for this zone.</p>
-        {% endif %}
-      </div>{% endif %}
-
-    </div>
   </div>
 </div>
 

@@ -5042,6 +5042,25 @@ div[id$="-map"] {
    `.budget-panel-body .budget-panel-row` is built for. */
 .period-panel .budget-panel-body .budget-panel-row { grid-template-columns: 1fr auto 1fr; }
 
+/* 143-06, Task 4: the zone page's allocation card. `.page-grid-account*`
+   (143-03) fits the zone page's row-one shape unchanged -- Zone information
+   beside Allocation vs. use, use areas and the assign-search card each full
+   width below as a second and third `.page-grid-account-full` -- so nothing
+   new was needed there. These two rules are the zone page's own: */
+.zone-alloc-table { margin-top: var(--space-lg); }
+/* A zone can hold two water types' allocations in one period (a GSA runs
+   groundwater, a surface service area runs surface water, but nothing stops
+   one zone carrying both), and the checkpoint ruling is never one sum
+   (ISS-155): two lead results side by side, each named by its own water
+   type. Every zone in the demonstration data carries one water type, so this
+   renders a single column there -- `auto-fit` rather than a fixed `1fr 1fr`
+   so a lone result is not stretched into a half-width panel beside nothing. */
+.zone-budget-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: var(--space-lg);
+}
+
 /* -- Screen-reader-only utility (a11y) ------------------------------------ */
 /* Visually removes an element while leaving it in the accessibility tree —
    used for the real per-page <h1> whose visible counterpart is the breadcrumb. */
