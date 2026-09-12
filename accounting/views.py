@@ -1007,10 +1007,31 @@ LEDGER_SOURCE_TYPE_OWNERS = {
 }
 
 
+#: 143-05: the Source filter's option words, sentence case, matching
+#: ``_source_badge.html``'s own labels exactly (that partial has always
+#: hardcoded its own strings independent of ``SOURCE_TYPE_CHOICES``. Compare
+#: "Meter reading" here to the model's "Meter Reading", which the parcel
+#: pane's Source column still prints verbatim via ``get_source_type_display``,
+#: unaffected by this table). Keep the two lists in sync by hand; a value
+#: missing here falls back to the model's own label below.
+LEDGER_SOURCE_TYPE_LABELS = {
+    "meter_reading": "Meter reading",
+    "et_estimate": "ET estimate",
+    "manual_entry": "Manual entry",
+    "csv_import": "CSV import",
+    "surface_diversion": "Surface diversion",
+    "recharge": "Recharge",
+    "allocation": "Allocation",
+    "adjustment": "Adjustment",
+    "calculated": "Calculated",
+}
+
+
 def ledger_source_type_choices():
-    """``SOURCE_TYPE_CHOICES`` minus the ones whose module this deployment lacks."""
+    """``SOURCE_TYPE_CHOICES`` minus the ones whose module this deployment lacks,
+    with the Source filter's own sentence-case words (``LEDGER_SOURCE_TYPE_LABELS``)."""
     return [
-        (value, label)
+        (value, LEDGER_SOURCE_TYPE_LABELS.get(value, label))
         for value, label in ParcelLedger.SOURCE_TYPE_CHOICES
         if value not in LEDGER_SOURCE_TYPE_OWNERS
         or is_enabled(LEDGER_SOURCE_TYPE_OWNERS[value])
@@ -1048,9 +1069,12 @@ def ledger_list(request):
     if page_size not in LEDGER_PAGE_SIZES:
         page_size = 100
 
+    # 143-05 (R-020): the tiebreak orders by use-area number ascending, not
+    # just -created_at, so within one date a reader sees a field's meter
+    # reading beside its delivery instead of raw seed-insertion order.
     queryset = ParcelLedger.objects.select_related(
         "parcel", "water_type", "reporting_period"
-    ).order_by("-effective_date", "-created_at")
+    ).order_by("-effective_date", "parcel__parcel_number", "-created_at")
 
     periods = ReportingPeriod.objects.order_by("-start_date")
     water_types = WaterType.objects.order_by("name")
@@ -1121,11 +1145,19 @@ def ledger_list(request):
         queryset = queryset.filter(parcel__parcel_zones__zone_id=zone_id).distinct()
 
     # Sort: only a whitelisted key re-orders; everything else keeps the
-    # newest-first default set on the queryset above. A stable -created_at
-    # tiebreak keeps pagination deterministic when the sort field ties.
+    # newest-first default set on the queryset above. A stable
+    # parcel__parcel_number, -created_at tiebreak (143-05) keeps pagination
+    # deterministic when the sort field ties, and reproduces the same
+    # use-area ordering the default view carries; skipped for the "parcel"
+    # key itself, which already sorts by that field.
     if sort in LEDGER_SORTABLE:
+        field = LEDGER_SORTABLE[sort]
         prefix = "-" if direction == "desc" else ""
-        queryset = queryset.order_by(f"{prefix}{LEDGER_SORTABLE[sort]}", "-created_at")
+        order_fields = [f"{prefix}{field}"]
+        if field != "parcel__parcel_number":
+            order_fields.append("parcel__parcel_number")
+        order_fields.append("-created_at")
+        queryset = queryset.order_by(*order_fields)
 
     # Two subtotals over the WHOLE filtered set (every matching row, not just the
     # visible page), named by kind and never netted (136-01, ISS-155). Credits

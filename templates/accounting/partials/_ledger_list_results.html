@@ -27,7 +27,11 @@
       <tr>
         {% comment %} Sortable columns re-request the partial carrying the full filter state
            (hx-include=#ledger-filters) with a toggled direction. ▲/▼ marks the
-           active column; Date also shows ▼ in the default newest-first state. {% endcomment %}
+           active column; Date also shows ▼ in the default newest-first state.
+           Column order (143-05, candidate B): Date, Use area, Source, Water
+           type, Amount, Description: a row reads as a sentence, naming when,
+           where, what kind of record, which water, how much, then the note.
+           Sort keys are unchanged; only their screen position moved. {% endcomment %}
         <th class="th-sortable" role="button" tabindex="0"
             hx-get="{% url 'accounting:ledger_list' %}"
             hx-target="#ledger-results"
@@ -44,16 +48,7 @@
             hx-trigger="click, keyup[key=='Enter']"
             hx-push-url="true"
             hx-vals='{"sort": "parcel", "dir": "{% if sort == "parcel" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
-          Parcel{% if sort == "parcel" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
-        </th>
-        <th class="th-right th-sortable" role="button" tabindex="0"
-            hx-get="{% url 'accounting:ledger_list' %}"
-            hx-target="#ledger-results"
-            hx-include="#ledger-filters"
-            hx-trigger="click, keyup[key=='Enter']"
-            hx-push-url="true"
-            hx-vals='{"sort": "amount", "dir": "{% if sort == "amount" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
-          Amount (AF){% if sort == "amount" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+          Use area{% if sort == "parcel" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
         </th>
         <th class="th-sortable" role="button" tabindex="0"
             hx-get="{% url 'accounting:ledger_list' %}"
@@ -73,24 +68,38 @@
             hx-vals='{"sort": "water_type", "dir": "{% if sort == "water_type" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
           Water Type{% if sort == "water_type" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
         </th>
+        <th class="th-right th-sortable" role="button" tabindex="0"
+            hx-get="{% url 'accounting:ledger_list' %}"
+            hx-target="#ledger-results"
+            hx-include="#ledger-filters"
+            hx-trigger="click, keyup[key=='Enter']"
+            hx-push-url="true"
+            hx-vals='{"sort": "amount", "dir": "{% if sort == "amount" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
+          {% comment %} No unit in the header (DESIGN.md rule 4): the subtitle
+               line above the table states it once for the whole table. {% endcomment %}
+          Amount{% if sort == "amount" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+        </th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
       {% for entry in page_obj %}
+      {% comment %} A calculated row at zero (R-043): the amount cell is
+           text-tertiary (a real zero, not a suppression), and the
+           Description cell explains it in the engine's own words instead of
+           the stored "Derived groundwater extraction estimate (calculation
+           engine)". The stored description is never rewritten (seed and
+           golden are pinned); this is a display-time substitution only. {% endcomment %}
       <tr>
         <td class="text-secondary" style="white-space: nowrap;">
           {{ entry.effective_date|date:"M d, Y" }}
         </td>
-        <td>
+        <td style="white-space: nowrap;">
           <a href="{% url 'parcels:detail' entry.parcel.pk %}" class="data-table-link">
             {{ entry.parcel.parcel_number }}
           </a>
         </td>
-        <td class="td-num-bold {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">
-          {{ entry.amount_acre_feet|floatformat:2|intcomma }}
-        </td>
-        <td>
+        <td style="white-space: nowrap;">
           {% include "accounting/partials/_source_badge.html" with source_type=entry.source_type %}
           {% if entry.source_type == "calculated" %}
           <a href="{% url 'accounting:calculation_run_detail' entry.parcel.id entry.effective_date|date:'Y-m' %}"
@@ -99,11 +108,23 @@
           </a>
           {% endif %}
         </td>
-        <td class="text-tertiary">
+        <td class="text-tertiary" style="white-space: nowrap;">
           {% if entry.water_type %}{{ entry.water_type.name }}{% else %}&mdash;{% endif %}
         </td>
-        <td class="text-secondary" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          {{ entry.description|truncatechars:60 }}
+        {% comment %} The vocabulary table names a credit "never a supply"
+             (DESIGN.md → Delivered / Pumped, Credit), so the green
+             .text-supply tint the ordinary rows used to carry (the one the
+             mock-ups dropped) is gone; a true minus sign (not a hyphen)
+             marks a negative amount instead. {% endcomment %}
+        <td class="td-num{% if entry.amount_acre_feet == 0 and entry.source_type == "calculated" %} text-tertiary{% endif %}">
+          {% if entry.amount_acre_feet < 0 %}&minus;{{ entry.amount_acre_feet|floatformat:2|intcomma|cut:"-" }}{% else %}{{ entry.amount_acre_feet|floatformat:2|intcomma }}{% endif %}
+        </td>
+        <td class="text-secondary" style="white-space: normal;">
+          {% if entry.amount_acre_feet == 0 and entry.source_type == "calculated" %}
+          No groundwater extraction was derived for this month; rainfall and delivered surface water covered the estimated use.
+          {% else %}
+          {{ entry.description }}
+          {% endif %}
         </td>
       </tr>
       {% empty %}

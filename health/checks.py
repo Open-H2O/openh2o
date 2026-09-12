@@ -246,16 +246,31 @@ def check_ledger_integrity():
     # Orphaned entries are real corruption and stay red everywhere. Zero-amount
     # entries are legitimate demo-seed artifacts (a parcel that booked no water in
     # a period); on the frozen demo they're static and shouldn't alarm.
+    #
+    # 143-05 (ISS-159 #4, R-043): the count is UNCHANGED (every zero-amount row
+    # in the live demo is a calculated row; the query stays a plain
+    # amount_acre_feet=0 filter), but the message now tells the same story the
+    # Use Ledger tells about those rows in its Description column, so a reader
+    # who meets the count here and the rows there reads one story instead of
+    # two different words for the same fact.
     demo = getattr(settings, "HEALTH_DEMO_MODE", False)
     if orphan_count > 0:
         status = "red"
         msg = f"{orphan_count} orphaned ledger entries (parcel deleted)"
     elif zero_count > 0 and not demo:
         status = "yellow"
-        msg = f"{zero_count} zero-amount ledger entries"
+        msg = (
+            f"{zero_count} calculated ledger rows where no groundwater "
+            "extraction was derived (rainfall and delivered surface water "
+            "covered the estimated use)"
+        )
     elif zero_count > 0:
         status = "green"
-        msg = f"{zero_count} zero-amount ledger entries (demo data; informational)"
+        msg = (
+            f"{zero_count} calculated ledger rows where no groundwater "
+            "extraction was derived (rainfall and delivered surface water "
+            "covered the estimated use; demo data, informational)"
+        )
     else:
         status = "green"
         msg = "All ledger entries valid"

@@ -368,13 +368,18 @@
 
           And the Amount column used to print 241.56 beside -36.55 with nothing
           on the card saying which direction a minus sign meant. The sentence is
-          carried VERBATIM from the Use Ledger's own footer
-          (`accounting/partials/_ledger_list_results.html`), not reworded: one
-          quantity, one wording, wherever it is shown (copy rule 12).
+          carried VERBATIM from the Use Ledger, not reworded: one quantity, one
+          wording, wherever it is shown (copy rule 12).
 
-          ⚠ 143-03 is the plan that may change the Use Ledger's own wording. If
-          it does, this sentence moves with it — they are one sentence in two
-          places, and `tests/test_parcel_detail.py` asserts this copy exists.
+          143-05 (candidate B, checkpoint decision) moved the Use Ledger's own
+          copy of this sentence OUT of its `<tfoot>` and into the subtitle line
+          above its table (`accounting/partials/_ledger_list_results.html`,
+          `.ledger-card-head`), because a reader now meets it before the rows
+          instead of after them. The words did not change, so this card's copy
+          did not need to move with it: a three-column card with one signed
+          Amount column still needs the sentence right here, beside the
+          numbers it explains. `tests/test_parcel_detail.py` asserts this copy
+          exists and is left exactly as it was.
 
           The unit moved off the column header into this line with it, because
           the card has one numeric column and rule 4 states a single-unit

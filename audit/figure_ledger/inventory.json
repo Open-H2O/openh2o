@@ -664,9 +664,9 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
-    "line": 91,
-    "column": 37,
-    "expression": "{{ entry.amount_acre_feet|floatformat:2|intcomma }}",
+    "line": 120,
+    "column": 79,
+    "expression": "{{ entry.amount_acre_feet|floatformat:2|intcomma|cut:\"-\" }}",
     "enclosing_loop": "entry in page_obj",
     "nearest_label": "{{ entry.amount_acre_feet|"
   },
@@ -675,25 +675,36 @@
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
-    "line": 135,
-    "column": 74,
-    "expression": "{{ ledger_total_credits|floatformat:2|intcomma }}",
-    "enclosing_loop": null,
-    "nearest_label": "+{{ ledger_total_credits|"
+    "line": 120,
+    "column": 148,
+    "expression": "{{ entry.amount_acre_feet|floatformat:2|intcomma }}",
+    "enclosing_loop": "entry in page_obj",
+    "nearest_label": "{{ entry.amount_acre_feet|"
   },
   {
     "id": "FIG-accounting-063",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_ledger_list_results.html",
-    "line": 137,
+    "line": 156,
+    "column": 74,
+    "expression": "{{ ledger_total_credits|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "+{{ ledger_total_credits|"
+  },
+  {
+    "id": "FIG-accounting-064",
+    "app": "accounting",
+    "kind": "figure",
+    "template": "templates/accounting/partials/_ledger_list_results.html",
+    "line": 158,
     "column": 59,
     "expression": "{{ ledger_total_water|floatformat:2|intcomma }}",
     "enclosing_loop": null,
     "nearest_label": "{{ ledger_total_water|"
   },
   {
-    "id": "FIG-accounting-064",
+    "id": "FIG-accounting-065",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -704,7 +715,7 @@
     "nearest_label": "{{ final_af|"
   },
   {
-    "id": "FIG-accounting-065",
+    "id": "FIG-accounting-066",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -715,7 +726,7 @@
     "nearest_label": "{{ step.input_af|"
   },
   {
-    "id": "FIG-accounting-066",
+    "id": "FIG-accounting-067",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -726,7 +737,7 @@
     "nearest_label": "{{ step.output_af|"
   },
   {
-    "id": "FIG-accounting-067",
+    "id": "FIG-accounting-068",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/partials/_methodology_preview.html",
@@ -737,7 +748,7 @@
     "nearest_label": "No enabled steps produced a breakdown for this parcel-month \u2014 final {{ final_af|"
   },
   {
-    "id": "FIG-accounting-068",
+    "id": "FIG-accounting-069",
     "app": "accounting",
     "kind": "figure",
     "template": "templates/accounting/period_detail.html",
@@ -1016,7 +1027,7 @@
     "app": "parcels",
     "kind": "figure",
     "template": "templates/parcels/partials/_detail_pane.html",
-    "line": 397,
+    "line": 402,
     "column": 119,
     "expression": "{{ entry.amount_acre_feet|floatformat:2 }}",
     "enclosing_loop": "entry in recent_ledger",
