@@ -18,7 +18,7 @@
 
        The facts line names no module-specific noun (no "canal", no "well"),
        so unlike the sentence it replaces it does not strictly need the
-       `{% if total_count %}` guard on droppability grounds alone — kept
+       `{% if total_count %}` guard on droppability grounds alone; kept
        anyway because a fact about the rows below it has nothing to say when
        there are no rows (tests/droppability/checks.py::
        test_kept_pages_never_name_a_dropped_module). {% endcomment %}
@@ -43,10 +43,9 @@
            which water and how it was recorded, how much, then the note. The
            Source and Water type columns merged into one "Water" column
            (`accounting/ledger_words.py::ledger_row_words`, task1-baseline's
-           second ruling) — two badge-styled columns read as "very confusing"
+           second ruling): two badge-styled columns read as "very confusing"
            to a reader who does not think in this platform's own field
-           names. The
-           merged header keeps the "source" sort key; there is no longer a
+           names. The merged header keeps the "source" sort key; there is no longer a
            separate water-type sort. {% endcomment %}
         <th class="th-sortable" role="button" tabindex="0"
             hx-get="{% url 'accounting:ledger_list' %}"
