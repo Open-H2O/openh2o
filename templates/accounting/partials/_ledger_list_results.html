@@ -149,7 +149,7 @@
     <tfoot>
       <tr style="border-top: 2px solid var(--color-border); background: var(--color-elevated);">
         <td colspan="2" class="text-secondary" style="font-weight: 600; white-space: nowrap;">
-          All {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
+          All {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
         </td>
         <td colspan="4" class="text-xs" style="white-space: nowrap;">
           <span class="text-secondary">Credits</span> <span class="text-tertiary">(allocation and recharge entries)</span>
