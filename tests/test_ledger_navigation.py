@@ -6,6 +6,7 @@ and the page-size selector. These exercise ``accounting.views.ledger_list``
 query handling directly; the sticky/HTMX UI is verified live in the checkpoint.
 """
 
+import re
 from datetime import date
 from decimal import Decimal
 
@@ -239,4 +240,11 @@ class TestLedgerFooter:
         assert "ledger_total_net" not in response.context
         assert "75.00" not in html
         assert "debits" not in html
-        assert "Credits are paper or banked water and are not a supply." in html
+        # 143-05: the sign sentence moved from the footer to the subtitle line
+        # above the table, where a reader meets it before the rows. It appears
+        # exactly once on the page, and never inside <tfoot>.
+        sentence = "Credits are paper or banked water and are not a supply."
+        assert html.count(sentence) == 1
+        tfoot = re.search(r"<tfoot>.*?</tfoot>", html, re.S)
+        assert tfoot, "footer should still render its two subtotals"
+        assert sentence not in tfoot.group(0)

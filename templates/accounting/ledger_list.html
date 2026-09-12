@@ -22,84 +22,31 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Use Ledger</span>
   </nav>
-  <p class="page-description">Water supply and usage records for every use area. Positive amounts are supply, negative are usage. Filter by period, source, or water type.</p>
+  {% comment %} "and recharge" drops on a deployment without the recharge
+       module (recharge_enabled, from core.modules.is_enabled) — the sentence
+       still reads as one clause either way (rule 11; ISS-082 module-vocabulary
+       guard). {% endcomment %}
+  <p class="page-description">Every entry the platform holds against a use area for the period: water delivered or pumped, and credits for allocations{% if recharge_enabled %} and recharge{% endif %}. Download CSV writes out the rows the filters select, Upload CSV adds entries from a file, and New entry records one by hand.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack">
 
-  <!-- Header row -->
-  <div class="row-start">
-    <div>
-      <span class="text-secondary text-base">
-        {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
-      </span>
-    </div>
-  </div>
-
-  <!-- Balance-sheet explainer -->
-  <div class="card-raised card-inset">
-    <p class="text-tertiary text-sm m-0">
-      <strong class="text-secondary">How the ledger works:</strong>
-      It's a balance sheet. <span class="text-supply">Allocation</span> entries are positive (water assigned to an area). Usage entries are negative (water consumed by extraction or evapotranspiration). The running balance is allocation minus usage.
-    </p>
-  </div>
-
   {% comment %} Filters form (single source of truth: every control submits the whole
        filter+sort+paging state via hx-include="#ledger-filters", so adding a
        facet never means editing every other control's include list). The form
-       pins on scroll (.ledger-filters-sticky); onsubmit is neutralized so an
-       Enter keypress fires the HTMX refresh, not a full-page GET reload. {% endcomment %}
+       does NOT pin on scroll (.ledger-filters-sticky is `position: static`,
+       Phase 75); onsubmit is neutralized so an Enter keypress fires the HTMX
+       refresh, not a full-page GET reload. One visible row (Period, Zone,
+       Search, More filters); the disclosed row (Source, Water type, dates,
+       Active use areas) opens automatically when one of its own filters is
+       set (143-05). {% endcomment %}
   <form id="ledger-filters" class="ledger-filters-sticky" onsubmit="return false;">
     <div class="card-raised">
-      {% comment %} Preset filter chips — one-click shortcuts for the two filters an
-           infrequent user reaches for most (USWDS recognition-over-recall). Each
-           chip just drives an existing control: "This Period" sets the period
-           select and fires its change; "Active Use Areas" toggles a hidden input
-           that carries its own HTMX trigger. Both ride the whole filter/sort/
-           paging state via hx-include and keep the URL shareable. {% endcomment %}
-      <div class="filter-chip-row">
-        <span class="filter-chip-label">Quick filters</span>
-        <button type="button" id="chip-this-period"
-                class="filter-chip{% if current_period_id and period_id == current_period_id|stringformat:'d' %} is-active{% endif %}"
-                {% if current_period_id %}data-period="{{ current_period_id }}"{% endif %}
-                aria-pressed="{% if current_period_id and period_id == current_period_id|stringformat:'d' %}true{% else %}false{% endif %}">
-          This period
-        </button>
-        <button type="button" id="chip-active-areas"
-                class="filter-chip{% if active_areas %} is-active{% endif %}"
-                aria-pressed="{% if active_areas %}true{% else %}false{% endif %}">
-          Active use areas
-        </button>
-      </div>
-      {% comment %} Hidden carrier for the Active-Use-Areas toggle; the chip flips its
-           value and dispatches change, which fires this element's HTMX GET. {% endcomment %}
-      <input type="hidden" name="active_areas" id="filter-active-areas"
-             value="{{ active_areas }}"
-             hx-get="{% url 'accounting:ledger_list' %}"
-             hx-target="#ledger-results"
-             hx-trigger="change"
-             hx-include="#ledger-filters"
-             hx-push-url="true">
-      <div class="toolbar-row">
-        <!-- Search = the parcel filter (always visible) -->
-        <div style="flex: 1; min-width: 200px;">
-          <label class="form-label" for="filter-search">Search</label>
-          <input type="text"
-                 id="filter-search" name="q"
-                 value="{{ q }}"
-                 placeholder="Parcel number or description..."
-                 hx-get="{% url 'accounting:ledger_list' %}"
-                 hx-target="#ledger-results"
-                 hx-trigger="keyup changed delay:300ms"
-                 hx-include="#ledger-filters"
-                 hx-push-url="true"
-                 class="form-input search-input-icon">
-        </div>
-
-        <!-- Reporting Period (always visible) -->
-        <div style="min-width: 160px;">
+      <div class="ledger-bar">
+        <!-- Reporting Period -->
+        <div style="width: 200px;">
           <label class="form-label" for="filter-period">Period</label>
           <select id="filter-period" name="period"
                   hx-get="{% url 'accounting:ledger_list' %}"
@@ -115,8 +62,8 @@
           </select>
         </div>
 
-        <!-- Zone facet (a primary facet, next to Period) -->
-        <div style="min-width: 160px;">
+        <!-- Zone facet -->
+        <div style="width: 260px;">
           <label class="form-label" for="filter-zone">Zone</label>
           <select id="filter-zone" name="zone"
                   hx-get="{% url 'accounting:ledger_list' %}"
@@ -132,17 +79,32 @@
           </select>
         </div>
 
+        <!-- Search = the use-area filter (always visible) -->
+        <div class="ledger-bar-search">
+          <label class="form-label" for="filter-search">Search</label>
+          <input type="text"
+                 id="filter-search" name="q"
+                 value="{{ q }}"
+                 placeholder="Use area number or description"
+                 hx-get="{% url 'accounting:ledger_list' %}"
+                 hx-target="#ledger-results"
+                 hx-trigger="keyup changed delay:300ms"
+                 hx-include="#ledger-filters"
+                 hx-push-url="true"
+                 class="form-input search-input-icon">
+        </div>
+
         <!-- Toggle advanced filters -->
         <div>
           <button type="button" class="btn-secondary btn-sm" id="toggle-filters"
-                  onclick="document.getElementById('advanced-filters').toggleAttribute('hidden'); this.textContent = document.getElementById('advanced-filters').hidden ? 'More Filters' : 'Fewer Filters'; if (window.syncLedgerHeaderOffset) window.syncLedgerHeaderOffset();">
+                  onclick="document.getElementById('advanced-filters').toggleAttribute('hidden'); this.textContent = document.getElementById('advanced-filters').hidden ? 'More filters' : 'Fewer filters';">
             More filters
           </button>
         </div>
       </div>
 
       <!-- Advanced filters (collapsed by default) -->
-      <div id="advanced-filters" class="toolbar-row pt-md" hidden>
+      <div id="advanced-filters" class="toolbar-row ledger-bar-more" hidden>
         <!-- Source Type -->
         <div style="min-width: 140px;">
           <label class="form-label" for="filter-source-type">Source</label>
@@ -202,41 +164,18 @@
                  hx-push-url="true"
                  class="form-input">
         </div>
-      </div>
 
-      {% comment %} Results controls: page size + jump-to-page (form-scoped, so they
-           ride along on every filter/sort change and persist) {% endcomment %}
-      <div class="toolbar-row pt-md" style="align-items: flex-end;">
-        <div style="min-width: 140px;">
-          <label class="form-label" for="filter-page-size">Rows per page</label>
-          <select id="filter-page-size" name="page_size"
-                  hx-get="{% url 'accounting:ledger_list' %}"
-                  hx-target="#ledger-results"
-                  hx-trigger="change"
-                  hx-include="#ledger-filters"
-                  hx-push-url="true"
-                  class="form-select">
-            {% for sz in page_sizes %}
-            <option value="{{ sz }}" {% if page_size == sz %}selected{% endif %}>{{ sz }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div style="min-width: 150px;">
-          <label class="form-label" for="filter-page">Jump to page</label>
-          <div class="row-start" style="align-items: center;">
-            <input type="number"
-                   id="filter-page" name="page" min="1"
-                   max="{{ page_obj.paginator.num_pages }}"
-                   value="{{ page_obj.number }}"
-                   hx-get="{% url 'accounting:ledger_list' %}"
-                   hx-target="#ledger-results"
-                   hx-trigger="change"
-                   hx-include="#ledger-filters"
-                   hx-push-url="true"
-                   class="form-input" style="width: 5rem;">
-            <span class="text-tertiary text-sm">of {{ page_obj.paginator.num_pages }}</span>
-          </div>
-        </div>
+        <!-- Active use areas only -->
+        <label class="ledger-check">
+          <input type="checkbox" name="active_areas" value="1"
+                 {% if active_areas %}checked{% endif %}
+                 hx-get="{% url 'accounting:ledger_list' %}"
+                 hx-target="#ledger-results"
+                 hx-trigger="change"
+                 hx-include="#ledger-filters"
+                 hx-push-url="true">
+          Active use areas only
+        </label>
       </div>
     </div>
 
@@ -256,72 +195,12 @@
 {% block extra_scripts %}
 <script>
 (function() {
-  // Auto-expand advanced filters when one is active on load.
-  var hasAdvanced = {{ source_type|yesno:"true,false" }} || {{ water_type_id|yesno:"true,false" }} || {{ start_date|yesno:"true,false" }} || {{ end_date|yesno:"true,false" }};
+  // Auto-expand advanced filters when one of its own filters is set on load.
+  var hasAdvanced = {{ source_type|yesno:"true,false" }} || {{ water_type_id|yesno:"true,false" }} || {{ start_date|yesno:"true,false" }} || {{ end_date|yesno:"true,false" }} || {{ active_areas|yesno:"true,false" }};
   if (hasAdvanced) {
     document.getElementById('advanced-filters').removeAttribute('hidden');
-    document.getElementById('toggle-filters').textContent = 'Fewer Filters';
+    document.getElementById('toggle-filters').textContent = 'Fewer filters';
   }
-
-  // Pin the table header flush under the sticky filter bar. The bar's height
-  // changes when the advanced filters expand, so we measure it (not a fixed px)
-  // and publish it as --ledger-header-offset, which .data-table thead th reads
-  // for its sticky `top`. Re-measure on resize, after each HTMX swap, and when
-  // the advanced filters toggle (via window.syncLedgerHeaderOffset in onclick).
-  window.syncLedgerHeaderOffset = function() {
-    var bar = document.getElementById('ledger-filters');
-    if (!bar) return;
-    document.documentElement.style.setProperty(
-      '--ledger-header-offset', bar.offsetHeight + 'px');
-  };
-  window.syncLedgerHeaderOffset();
-  window.addEventListener('resize', window.syncLedgerHeaderOffset);
-  document.body.addEventListener('htmx:afterSwap', window.syncLedgerHeaderOffset);
-
-  // Preset chips. "This Period" sets the period select to the current period and
-  // fires its existing change trigger; "Active Use Areas" toggles a hidden
-  // carrier input. Both reuse the form's HTMX wiring, so no new fetch logic.
-  //
-  // The chips live in the filter bar, OUTSIDE the #ledger-results region HTMX
-  // swaps — so their values persist across a filter refresh, but the server's
-  // is-active class would never re-render. syncChips() drives the on/off look
-  // from the live form values instead, called after every relevant change.
-  var chipPeriod = document.getElementById('chip-this-period');
-  var chipActive = document.getElementById('chip-active-areas');
-  var periodSel = document.getElementById('filter-period');
-  var activeHidden = document.getElementById('filter-active-areas');
-
-  function setChip(chip, on) {
-    if (!chip) return;
-    chip.classList.toggle('is-active', on);
-    chip.setAttribute('aria-pressed', on ? 'true' : 'false');
-  }
-  function syncChips() {
-    if (chipPeriod) {
-      var target = chipPeriod.getAttribute('data-period') || '';
-      setChip(chipPeriod, target !== '' && periodSel && periodSel.value === target);
-    }
-    setChip(chipActive, !!(activeHidden && activeHidden.value));
-  }
-
-  if (chipPeriod) {
-    chipPeriod.addEventListener('click', function() {
-      periodSel.value = this.getAttribute('data-period') || '';
-      periodSel.dispatchEvent(new Event('change', { bubbles: true }));
-      syncChips();
-    });
-  }
-  if (chipActive) {
-    chipActive.addEventListener('click', function() {
-      activeHidden.value = activeHidden.value ? '' : '1';
-      activeHidden.dispatchEvent(new Event('change', { bubbles: true }));
-      syncChips();
-    });
-  }
-  // Keep "This Period" honest when the period is changed via the select itself.
-  if (periodSel) periodSel.addEventListener('change', syncChips);
-  document.body.addEventListener('htmx:afterSwap', syncChips);
-  syncChips();
 })();
 </script>
 {% endblock %}

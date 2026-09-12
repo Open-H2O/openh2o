@@ -1150,6 +1150,47 @@ def ledger_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # 143-05: the subtitle line names the period and the active filters
+    # instead of the template re-deriving them from raw ids. period_name is
+    # "All periods" on an explicit ?period= (or no period at all); on a bare
+    # auto-defaulted landing the template folds in the separate auto-default
+    # sentence instead of using this value. active_filter_labels lists every
+    # OTHER facet currently narrowing the set, in filter-bar order, so
+    # "filtered: Zone Halvern, Active use areas" always names what changed.
+    source_type_choices = ledger_source_type_choices()
+    period_name = "All periods"
+    if period_id:
+        period_name = next(
+            (p.name for p in periods if str(p.pk) == period_id), period_name
+        )
+    active_filter_labels = []
+    if q:
+        active_filter_labels.append('Search "{}"'.format(q))
+    if zone_id:
+        zone_name = next((z.name for z in zones if str(z.pk) == zone_id), None)
+        if zone_name:
+            active_filter_labels.append(f"Zone {zone_name}")
+    if source_type:
+        source_type_label = next(
+            (label for val, label in source_type_choices if val == source_type),
+            source_type,
+        )
+        active_filter_labels.append(source_type_label)
+    if water_type_id:
+        water_type_name = next(
+            (wt.name for wt in water_types if str(wt.pk) == water_type_id), None
+        )
+        if water_type_name:
+            active_filter_labels.append(water_type_name)
+    if start_date and end_date:
+        active_filter_labels.append(f"{start_date} to {end_date}")
+    elif start_date:
+        active_filter_labels.append(f"From {start_date}")
+    elif end_date:
+        active_filter_labels.append(f"Through {end_date}")
+    if active_areas:
+        active_filter_labels.append("Active use areas")
+
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
@@ -1157,6 +1198,8 @@ def ledger_list(request):
         "ledger_total_water": abs(ledger_totals["water"] or Decimal("0")),
         "q": q,
         "period_id": period_id,
+        "period_name": period_name,
+        "active_filter_labels": active_filter_labels,
         "source_type": source_type,
         "water_type_id": water_type_id,
         "start_date": start_date,
@@ -1169,12 +1212,18 @@ def ledger_list(request):
         "direction": direction,
         "page_size": page_size,
         "page_sizes": LEDGER_PAGE_SIZES,
-        "source_type_choices": ledger_source_type_choices(),
+        "source_type_choices": source_type_choices,
         "period_auto_defaulted": period_auto_defaulted,
         "auto_default_period_name": auto_default_period_name,
         "auto_default_calculated": auto_default_calculated,
         "active_areas": active_areas,
         "current_period_id": current_period_id,
+        # The page description names "recharge" (copy rule 11's settled
+        # sentence); a deployment without the recharge module must not see
+        # that noun (tests/droppability/checks.py::
+        # test_kept_pages_never_name_a_dropped_module), so the template
+        # drops the clause rather than the view rewriting the whole sentence.
+        "recharge_enabled": is_enabled("recharge"),
     }
 
     if request.headers.get("HX-Request"):

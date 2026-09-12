@@ -1,13 +1,27 @@
 {% load humanize %}
-{% if period_auto_defaulted %}
-<p class="text-tertiary text-sm" style="margin: 0 0 var(--space-sm);">
-  Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong> &mdash;
-  the most recent period with {% if auto_default_calculated %}calculated records{% else %}activity{% endif %}.
-  Choose &ldquo;All Periods&rdquo; in the filter to see every entry.
-</p>
-{% endif %}
 {# overflow:hidden removed deliberately — it would clip the sticky <thead> (Phase 63). #}
 <div class="card-raised table-scroll-mobile" style="padding: 0;">
+  {% comment %} Subtitle line (143-05): names the period (or "All periods"), folds
+       in the auto-default note on a bare landing instead of a separate
+       paragraph, says "filtered" plus the active filter names when any facet
+       other than period is set, states the entry count once with intcomma,
+       and carries the sign sentence that used to live in the footer alone
+       (ISS-159 #4; the pane's own copy of this sentence, `_detail_pane.html`,
+       is Task 4's to reconcile). Re-renders on every swap, so the count and
+       period are always the swapped page's own.
+
+       The sign sentence names "canal" and "well" — real nouns from modules
+       this deployment may not have — so, exactly like the tfoot sentence it
+       replaces, it only prints when there is at least one row to explain
+       (`{% if total_count %}`). An empty ledger on a wells-less or
+       surface-less deployment would otherwise print a sentence about water
+       it does not have (tests/droppability/checks.py::
+       test_kept_pages_never_name_a_dropped_module). {% endcomment %}
+  <div class="ledger-card-head">
+    <span class="text-tertiary text-xs">
+      {% if period_auto_defaulted %}Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong>, the most recent period with {% if auto_default_calculated %}calculated records{% else %}activity{% endif %}{% else %}{{ period_name }}{% endif %}{% if active_filter_labels %} &middot; filtered: {{ active_filter_labels|join:", " }}{% endif %} &middot; {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }} &middot; All amounts in acre-feet (AF).{% if total_count %} Water leaving a canal or a well is stored as a negative entry. Credits are paper or banked water and are not a supply.{% endif %}
+    </span>
+  </div>
   <table class="data-table">
     <thead>
       <tr>
@@ -107,7 +121,9 @@
        are not addable, so the footer carries no net: it used to, and it stated
        the same year as the dashboard with the opposite sign (ISS-155; DESIGN.md
        rule 12, review question 3). The dense-table "how much, in total?" footer
-       (Bucket 2) still applies to each kind on its own. {% endcomment %}
+       (Bucket 2) still applies to each kind on its own. The sign sentence that
+       used to live here moved to the subtitle line above the table (143-05),
+       where a reader meets it before the rows. {% endcomment %}
     {% if total_count %}
     <tfoot>
       <tr style="border-top: 2px solid var(--color-border); background: var(--color-elevated);">
@@ -119,7 +135,6 @@
           <span class="td-num-bold text-supply">+{{ ledger_total_credits|floatformat:2|intcomma }}</span>
           &middot; <span class="text-secondary">Delivered and pumped</span>
           <span class="td-num-bold">{{ ledger_total_water|floatformat:2|intcomma }}</span>
-          <span class="block text-tertiary">Water leaving a canal or a well is stored as a negative entry. Credits are paper or banked water and are not a supply.</span>
         </td>
       </tr>
     </tfoot>
@@ -127,8 +142,13 @@
   </table>
 </div>
 
-{% if page_obj.has_other_pages %}
-<div class="pagination-row">
+{% comment %} One paging control (143-05): Previous / Page N of M / Next, plus
+     Rows per page (name="page_size", the same HTMX wiring the old filter-card
+     control carried). Rendered unconditionally, not just when there is more
+     than one page, so Rows per page stays reachable on a small filtered set;
+     Previous/Next are disabled rather than removed when there is nowhere to
+     go. The jump-to-page input is gone from the whole page (R-017). {% endcomment %}
+<div class="ledger-paging">
   {% if page_obj.has_previous %}
   {# HTMX paging swaps just the results, carrying sort+filters+page_size via the form. #}
   <button type="button" class="btn-secondary btn-sm"
@@ -139,6 +159,8 @@
           hx-push-url="true">
     &larr; Previous
   </button>
+  {% else %}
+  <button type="button" class="btn-secondary btn-sm" disabled>&larr; Previous</button>
   {% endif %}
   <span class="pagination-label text-tertiary text-sm">
     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
@@ -152,9 +174,23 @@
           hx-push-url="true">
     Next &rarr;
   </button>
+  {% else %}
+  <button type="button" class="btn-secondary btn-sm" disabled>Next &rarr;</button>
   {% endif %}
+  <label class="ledger-paging-size">
+    Rows per page
+    <select class="form-select form-select--compact" name="page_size"
+            hx-get="{% url 'accounting:ledger_list' %}"
+            hx-target="#ledger-results"
+            hx-trigger="change"
+            hx-include="#ledger-filters"
+            hx-push-url="true">
+      {% for sz in page_sizes %}
+      <option value="{{ sz }}" {% if page_size == sz %}selected{% endif %}>{{ sz }}</option>
+      {% endfor %}
+    </select>
+  </label>
 </div>
-{% endif %}
 
 {% comment %} The active sort lives in hidden inputs in the OUTER #ledger-filters form,
    which HTMX never re-renders on a results-only swap. This re-runs on every

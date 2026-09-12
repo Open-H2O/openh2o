@@ -1216,10 +1216,13 @@ html { color-scheme: dark; }
    so a tall 3-row filter (search/period/zone + paging) doesn't permanently eat
    the top of a laptop viewport (it left only 4-5 records). Only the column header
    stays pinned at the top of the scroll container, so data stays labeled while
-   you scroll; scroll back up to reach the filters. (--ledger-header-offset is no
-   longer consumed; the JS that sets it is harmless and left in place.) */
+   you scroll; scroll back up to reach the filters. (--ledger-header-offset was
+   never consumed here; the JS that set it, syncLedgerHeaderOffset, was removed
+   in 143-05 along with the property write.) */
 .ledger-filters-sticky {
-    /* intentionally not sticky — see note above; class retained for the JS hook */
+    /* intentionally not sticky — see note above; class retained because the
+       HTMX hx-include wiring on every filter control depends on the form's id,
+       not this class, but the class name documents the Phase 75 decision */
     position: static;
 }
 
@@ -1355,7 +1358,8 @@ html { color-scheme: dark; }
    normal whole-page scroll. The ledger now scrolls like every other list page
    (document scroll; the footer rides the content). The column header is no
    longer pinned here, matching the other list pages. Rule intentionally removed;
-   the harmless JS that set --ledger-header-offset is left in place. */
+   the JS that set --ledger-header-offset was removed in 143-05 (dead since
+   this phase). */
 
 .app-content:has(#ledger-filters) > .page-stack {
     padding-top: var(--space-lg);
@@ -4927,55 +4931,65 @@ div[id$="-map"] {
     color: var(--color-text-secondary);
 }
 
-/* -- Preset filter chips (ledger quick filters) --------------------------- */
-/* One-click toggles above the filter bar. Ghost (quiet outline) when off, a
-   gold-tinted pill when on, so the active preset is obvious at a glance. */
-.filter-chip-row {
+/* -- Use ledger: one filter row, subtitle line, one paging control (143-05) */
+/* Replaces the preset filter chips (This period / Active use areas), removed
+   because the chips only duplicated the Period select and the new Active-
+   use-areas checkbox in the disclosed row. The chrome mock-up settled these
+   class names (143-05-mockups/after-b.html); copied here verbatim. */
+.ledger-bar {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-md);
+    gap: var(--space-md);
+    align-items: flex-end;
 }
 
-.filter-chip-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+.ledger-bar .ledger-bar-search {
+    flex: 1;
+    min-width: 240px;
+}
+
+.ledger-bar-more {
+    padding-top: var(--space-md);
+}
+
+.ledger-check {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    padding-bottom: 10px;
+}
+
+/* The table card's header band: the subtitle line alone (the page title
+   above already says "Use ledger", copy rule 13). */
+.ledger-card-head {
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* One paging control, under the table: Previous / Page N of M / Next / Rows
+   per page. Centered like .pagination-row, plus the Rows-per-page label. */
+.ledger-paging {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+.ledger-paging .ledger-paging-size {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-left: var(--space-lg);
+    font-size: 0.8125rem;
     color: var(--color-text-tertiary);
 }
 
-.filter-chip {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 14px;
-    border-radius: var(--radius-pill);
-    font-family: var(--font-display);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    background-color: transparent;
-    border: 1px solid var(--color-border);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
-}
-
-.filter-chip:hover {
-    color: var(--color-text-primary);
-    border-color: var(--color-border-hover);
-}
-
-.filter-chip:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 1px;
-}
-
-.filter-chip.is-active {
-    background-color: var(--color-accent-muted);
-    color: var(--color-accent);
-    border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+.ledger-paging .btn-secondary[disabled] {
+    opacity: 0.45;
+    cursor: default;
 }
 
 /* -- Screen-reader-only utility (a11y) ------------------------------------ */
