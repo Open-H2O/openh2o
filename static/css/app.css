@@ -1631,6 +1631,47 @@ html { color-scheme: dark; }
 .page-head--medium > *,
 .page-head--medium .breadcrumb-bar > * { width: 100%; max-width: 800px; margin-inline: auto; }
 
+/* -- The feedback trigger in the sidebar (Phase 143-02, R-024) ---------------- */
+/* A .sidebar-link that is a <button>: same row, same type, no button chrome.
+   It sits at the foot of the nav under Help, where the sidebar is sticky and
+   full height, so it is always in view and never over content. */
+.sidebar-feedback {
+    width: 100%;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+}
+
+/* -- The signed-out shell's name (Phase 143-02, R-142) ------------------------ */
+.auth-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    width: 100%;
+    max-width: 420px;
+}
+.auth-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    text-decoration: none;
+}
+.auth-brand img {
+    width: auto;
+    height: 40px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-raised-sm), 0 0 0 1px var(--ring);
+}
+.auth-brand-name {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+}
+
 /* -- Help tooltip -------------------------------------------------------- */
 
 .help-tooltip {

@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Generate Report - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Generate Report{% endblock %}
+{% block title %}Generate report - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Generate report{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,17 +19,13 @@
 {% block content %}
 <div class="page-stack page-narrow">
 
-  {% if site_config.demonstration_mode %}
-  <div class="card-raised card-inset" style="border-left: 4px solid var(--color-error);">
-    <p style="margin: 0; color: var(--color-error); font-weight: 700; letter-spacing: 0.02em;">
-      DEMONSTRATION — NOT SUBMITTABLE
-    </p>
-    <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0;">
-      In-development demo data. Not a valid state filing.
-    </p>
-  </div>
-  {% endif %}
-
+  {% comment %}
+    The red DEMONSTRATION box that sat here (Phase 143-02, R-061) repeated the
+    site-wide demo notice directly under it, louder. What it said that the
+    notice did not, that the output is not a state filing, every export already
+    carries in its file name and header (DEMONSTRATION-NOT-SUBMITTABLE,
+    tests/test_state_exports.py), so nothing a reader can take away lost it.
+  {% endcomment %}
   {% comment %}
     `family_unavailable` means this deployment does not run the module that owns
     the requested filing family (ISS-082). The lead-in and the form below are

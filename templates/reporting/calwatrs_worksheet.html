@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 
 {% load placeholders %}
-{% block title %}CalWATRS Worksheet - Open Water Accounting Platform{% endblock %}
-{% block page_title %}CalWATRS Transcription Worksheet{% endblock %}
+{% block title %}CalWATRS transcription worksheet - Open Water Accounting Platform{% endblock %}
+{% block page_title %}CalWATRS transcription worksheet{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -26,12 +27,6 @@
   </div>
 
   <div class="card-raised" style="border-left: 3px solid var(--color-accent);">
-    {% if site_config.demonstration_mode %}
-    <div style="margin-bottom: var(--space-sm);">
-      {% include "partials/_demo_marker.html" %}
-      <span class="text-secondary text-sm">Demonstration worksheet — sample values, not a real CalWATRS submission.</span>
-    </div>
-    {% endif %}
     <p class="text-secondary text-sm m-0">
       <strong style="color: var(--color-text-primary);">Type these values into CalWATRS by hand.</strong>
       CalWATRS has no upload. Work top to bottom: one block per Point of Diversion, with

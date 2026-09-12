@@ -2,11 +2,8 @@
 {% block title %}Log in - Open Water Accounting Platform{% endblock %}
 {% block content %}
 {% load static %}
-<div style="display: flex; flex-direction: column; align-items: center; gap: var(--space-lg); width: 100%; max-width: 420px;">
-<a href="/" style="display: flex; align-items: center; gap: var(--space-sm); text-decoration: none;">
-    <img src="{% static 'img/favicon-192.png' %}?v=3" alt="" height="40" style="width: auto; border-radius: var(--radius-md); box-shadow: var(--shadow-raised-sm), 0 0 0 1px var(--ring);">
-    <span style="font-size: 1.6rem; font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.02em;">Open<span class="text-accent">H2O</span></span>
-</a>
+{% comment %} The OpenH2O mark that opened this page now comes from base_auth.html, for
+     every signed-out page alike (Phase 143-02, R-142). {% endcomment %}
 <div class="card-raised" style="width: 100%;">
     <h1 class="auth-title">Log in</h1>
     <p class="text-sm mb-md text-secondary">Sign in to your water-data dashboard.</p>
@@ -51,6 +48,5 @@
     <a href="{% provider_login_url 'google' %}" class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"><img src="{% static 'img/google-g.svg' %}" alt="" width="18" height="18">Continue with Google</a>
     </div>
     {% endif %}
-</div>
 </div>
 {% endblock %}

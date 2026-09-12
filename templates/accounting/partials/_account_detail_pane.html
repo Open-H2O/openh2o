@@ -14,6 +14,7 @@
     #parcel-search-results the assign-search results land here
 {% endcomment %}
 
+{% if not on_full_page %}
 <!-- Pane header: which account you're looking at. -->
 <div class="pane-header">
   <div>
@@ -42,6 +43,7 @@
     {% endif %}
   </div>
 </div>
+{% endif %}
 
 <div class="pane-stack">
 
@@ -72,7 +74,10 @@
 
     <div class="card-raised page-grid-account-info">
       <h2 class="section-header">
-        Account information {% include "partials/_demo_marker.html" %}
+        {% comment %} The DEMO pill that sat here was a second notice under the site-wide one (R-002,
+             Phase 143-02): every water account is invented, there is no published-record case for
+             it to distinguish, unlike the well pane's pill that flips to a source label. {% endcomment %}
+        Account information
       </h2>
 
       {% comment %}

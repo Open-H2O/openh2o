@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Monitoring Dashboard - OpenH2O{% endblock %}
-{% block page_title %}Monitoring Dashboard{% endblock %}
+{% block title %}Monitoring dashboard - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Monitoring dashboard{% endblock %}
 
 {% block map_styles %}
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
@@ -31,9 +31,6 @@
 <div style="margin-bottom: var(--space-md);">
   <a href="{% url 'datasync:station_list' %}" class="back-link">&larr; Back to Monitoring Stations</a>
 </div>
-{% if site_config.demonstration_mode %}
-<div style="margin-bottom: var(--space-md);">{% include "partials/_demo_marker.html" %}</div>
-{% endif %}
 <div
   id="monitoring-content"
   hx-get="{% url 'datasync:monitoring_dashboard' %}"

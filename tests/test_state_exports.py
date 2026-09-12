@@ -552,11 +552,17 @@ class TestDemonstrationFramingScreens:
     is on (the context processor injects site_config into every template)."""
 
     def test_generate_screen_shows_banner_when_demo_mode_on(self):
+        # Phase 143-02 (R-061): the screen carries ONE demonstration notice, the
+        # site-wide one from base.html, not a second red box under it. The
+        # DEMO_BANNER words stay on every export (asserted above); on the screen
+        # they were a louder repeat of the notice directly above them.
         SiteConfig.objects.create(agency_name="Demo GSA", demonstration_mode=True)
         client = _login()
         resp = client.get("/reporting/reports/generate/")
         assert resp.status_code == 200
-        assert DEMO_BANNER in resp.content.decode()
+        body = resp.content.decode()
+        assert body.count('class="card-raised demo-notice"') == 1
+        assert DEMO_BANNER not in body
 
     def test_generate_screen_hides_banner_when_demo_mode_off(self):
         SiteConfig.objects.create(agency_name="Real GSA", demonstration_mode=False)
@@ -581,7 +587,10 @@ class TestDemonstrationFramingScreens:
         resp = client.get(f"/reporting/reports/{submission.pk}/")
         assert resp.status_code == 200
         body = resp.content.decode()
-        assert DEMO_BANNER in body
+        # Phase 143-02 (R-061): one notice, the site-wide one; the red box that
+        # sat under it on this screen is gone. Exports keep DEMO_BANNER.
+        assert 'class="card-raised demo-notice"' in body
+        assert DEMO_BANNER not in body
         # The existing "who files" gold-box disclaimer must remain intact.
         assert "OpenH2O prepares your filing." in body
 

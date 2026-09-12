@@ -24,7 +24,20 @@
     {% endif %}
 </head>
 <body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: var(--space-lg);">
-    {% block content %}{% endblock %}
+    {% comment %}
+      The platform's name on every signed-out page (Phase 143-02, R-142): nine
+      of the ten account pages carried it only in the footer's smallest type,
+      so someone arriving at "Reset password" from an emailed link could not
+      say what they were resetting a password on. The same mark the login page
+      used to render for itself; that page now inherits it from here.
+    {% endcomment %}
+    <div class="auth-stack">
+        <a href="/" class="auth-brand">
+            <img src="{% static 'img/favicon-192.png' %}?v=3" alt="">
+            <span class="auth-brand-name">Open<span class="text-accent">H2O</span></span>
+        </a>
+        {% block content %}{% endblock %}
+    </div>
     <footer style="position: fixed; bottom: 0; left: 0; right: 0; padding: 0.6rem; text-align: center; font-size: 0.78rem;">
         <a href="https://github.com/Open-H2O/openh2o" target="_blank" rel="noopener noreferrer" style="color:var(--color-text-secondary); text-decoration:none;">OpenH2O — Source code (AGPL-3.0)</a>
     </footer>

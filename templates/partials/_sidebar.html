@@ -137,6 +137,19 @@
         </a>
         </details>
 
+        {% if feedback_enabled and 'feedback' in enabled_modules %}
+        {% comment %} The feedback trigger (Phase 143-02, R-024): here, at the foot of the
+             nav, because the sidebar is sticky and full height, so it is always in view
+             and never over the content the floating pill used to cover. The panel and
+             the script are in partials/_feedback_widget.html and find this by id. {% endcomment %}
+        <button type="button" class="sidebar-link sidebar-feedback" id="oh2o-fb-open" aria-haspopup="dialog">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="sidebar-link-text">Send feedback</span>
+        </button>
+        {% endif %}
+
         <!-- VIEW MODE — segmented toggle, tucked at the foot of the nav -->
         <div class="nav-mode-toggle" role="group" aria-label="Sidebar view mode">
             <a href="{% url 'set_nav_mode' %}?mode=operations"

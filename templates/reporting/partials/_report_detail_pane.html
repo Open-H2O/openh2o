@@ -23,6 +23,7 @@
     #status-section   approve / export / mark-filed re-render here
 {% endcomment %}
 
+{% if not on_full_page %}
 <!-- Pane header: which report you're looking at, with the full-page escape. -->
 <div class="pane-header">
   <div>
@@ -42,21 +43,16 @@
     <a href="{% url 'reporting:report_detail' pk=submission.pk %}" class="text-tertiary text-xs back-link" title="Open this report on its own page">Open full page &rarr;</a>
   </div>
 </div>
+{% endif %}
 
 <div class="pane-stack">
 
-  {% if site_config.demonstration_mode %}
-  <!-- DEMO framing (about the DATA): louder than the gold "who files" box below -->
-  <div class="card-raised card-inset" style="border-left: 6px solid var(--color-error);">
-    <p style="margin: 0; color: var(--color-error); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.03em;">
-      DEMONSTRATION — NOT SUBMITTABLE
-    </p>
-    <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0;">
-      In-development demo data. Not a valid state filing.
-    </p>
-  </div>
-  {% endif %}
-
+  {% comment %}
+    The red DEMONSTRATION box that sat here (Phase 143-02, R-061) was a second,
+    louder demo notice under the site-wide one; the box below says how filing
+    works on every deployment, and every export carries
+    DEMONSTRATION-NOT-SUBMITTABLE in its name and header.
+  {% endcomment %}
   <!-- How filing actually works (persistent, plain-language) -->
   <div class="card-raised" style="border-left: 3px solid var(--color-accent);">
     <p class="text-secondary text-sm m-0">
