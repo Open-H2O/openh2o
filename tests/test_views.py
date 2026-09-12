@@ -708,6 +708,72 @@ class TestAccountingPages:
         assert response.status_code == 200
 
 
+class TestPeriodDetailPage:
+    """143-06, R-034: the water-year page leads with the period, not a tile
+    row titled 'Summary' whose larger figure was a count of ledger rows."""
+
+    def test_no_summary_tile_and_the_ledger_count_links_to_the_ledger(self, auth_client):
+        from datetime import date
+        from decimal import Decimal
+
+        period = ReportingPeriodFactory(
+            name="WY 2025-2026",
+            start_date=date(2025, 10, 1),
+            end_date=date(2026, 9, 30),
+        )
+        # An allocation has to exist for the panel's ledger-count note to render
+        # at all (the "No allocations for this period" branch has no note and
+        # no link); the demonstration data always carries at least one.
+        AllocationPlanFactory(
+            zone=ZoneFactory(),
+            water_type=WaterTypeFactory(name="Groundwater", code="GW"),
+            reporting_period=period,
+            allocation_acre_feet=Decimal("500.0000"),
+        )
+        response = auth_client.get(
+            reverse("accounting:period_detail", kwargs={"pk": period.pk})
+        )
+        assert response.status_code == 200
+        html = response.content.decode()
+
+        assert ">Summary<" not in html
+        ledger_href = f"{reverse('accounting:ledger_list')}?period={period.pk}"
+        assert f'href="{ledger_href}"' in html
+
+    def test_the_panel_prints_per_type_totals_and_not_their_sum(self, auth_client):
+        from datetime import date
+        from decimal import Decimal
+
+        period = ReportingPeriodFactory(
+            name="WY 2025-2026",
+            start_date=date(2025, 10, 1),
+            end_date=date(2026, 9, 30),
+        )
+        surface = WaterTypeFactory(name="Surface Water", code="SW")
+        groundwater = WaterTypeFactory(name="Groundwater", code="GW")
+        AllocationPlanFactory(
+            zone=ZoneFactory(),
+            water_type=surface,
+            reporting_period=period,
+            allocation_acre_feet=Decimal("148500.0000"),
+        )
+        AllocationPlanFactory(
+            zone=ZoneFactory(),
+            water_type=groundwater,
+            reporting_period=period,
+            allocation_acre_feet=Decimal("11171.4600"),
+        )
+        response = auth_client.get(
+            reverse("accounting:period_detail", kwargs={"pk": period.pk})
+        )
+        assert response.status_code == 200
+        html = response.content.decode()
+
+        assert "148,500.00" in html
+        assert "11,171.46" in html
+        assert "159,671.46" not in html
+
+
 # ---------------------------------------------------------------------------
 # Parcels pages (login required)
 # ---------------------------------------------------------------------------

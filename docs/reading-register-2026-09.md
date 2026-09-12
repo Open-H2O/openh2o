@@ -415,6 +415,59 @@ Resolved by 143-05 (2026-09-12, approved by Brent 13:09 PDT on staging `ae0c1be`
 
 Revised at the 143-05 checkpoint (2026-09-12 11:16 to 13:09 PDT, Brent). The badge Source column and the Water type column became ONE column headed Water whose words come from the reporting systems (GEARS: Metered / Unmetered-Estimated; CalWATRS: the reported diversion): "Groundwater, metered", "Groundwater, estimated", "Surface water, diverted", "{type}, entered" (form or CSV, the same thing), "{type}, adjusted", "Groundwater allocation" / "Surface water allocation", "Recharge credit", written by `accounting/ledger_words.py::ledger_row_words` for the ledger and the use-area pane alike (commits `5f2c33d`, `ae0c1be`; six value guards observed red first). His reason: "Meter reading in the source sticks out compared to surface water diversion"; a metered headgate diversion is still a Surface diversion row, and the platform carries no measurement-method field on a point of diversion. R-018 is therefore closed by structure after all, not by the sentence: the row's own words say whether it is water or paper, and the sentence above the table shrank to two facts at 14px, "Acre-feet. Negative amounts are water delivered or pumped; positive amounts are credits." (his words: the 30-word sentence "covers from a liability standpoint" but "the font is so tiny I wouldn't notice it"). The pane card carries the same column and the same line, and `tests/test_parcel_detail.py` and `tests/test_ledger_navigation.py` pin them together. First data row on staging: y=535 of 1,000 (the facts line is two lines). What the readable Description column exposed, the engines' own labels on ~2,000 rows, is ISS-170, its own plan.
 
+Resolved by 143-06 (2026-09-12, local build only; staging deploy, the after-probe and Brent's
+approval are Task 6, not yet run): 8 of the 99 rows, before values from
+`143-06-probe-before-local.json` and `143-06-probe-before-staging.json` (identical), after values
+re-measured directly against the local build's rendered HTML in this task rather than copied from
+a builder's own claim (counts in `143-06-EVIDENCE.md`). Checkpoint rulings (`143-06-work/rulings.md`,
+14:08 PDT, Brent): "link-zone" (the allocation's row links to the zone page, no allocation page of
+its own), footer candidate "A" (each water year closes with its own subtotal, never a cross-year
+footer), and the zone-lead panel "as mocked, including the Available segment". R-032 and R-033 by
+commit `181fb16`: the Name column, which repeated the zone, water type and water year a row already
+stated in its own three columns, is gone from both the allocations list and the water-year page's
+table (before: the name contained all three on 10/10 and 8/8 measured rows; after: Zone, Water type,
+Allocation, each zone name printing once per row); the zone name is now each row's own link to the
+zone page (before: 16/8/0 anchors across the all-periods list, the one-period list and the
+period-detail table, all leading to the water year rather than the record the row is about; after:
+16/8/8 anchors, one per row on every surface, each `<a href="/map/zones/<pk>/" class="data-table-link">`).
+R-041 by the same commit, **closing ISS-164**: a bare landing now defaults to the current period
+(`accounting.services.current_period_id`, the helper this plan extracted for the ledger, the
+allocations list and the zone view to share) and an explicit "All periods" groups by water year,
+each year closing with its own subtotal rows inside the body instead of one footer spanning every
+row the filter matched (before: the landing's own Period select read "" (All Periods) and the
+footer read 304,200.00 AF, exactly 148,500.00 + 155,700.00; after: "All periods" prints
+148,500.00 and 155,700.00 each once, under "WY 2025-2026 · 8 allocations" and "WY 2024-2025 · 8
+allocations" respectively, and 304,200.00 nowhere on the page; `?period=2`'s tfoot reads "All 5
+surface-water allocations, WY 2025-2026" · 148,500.00 and "All 3 groundwater allocations, WY
+2025-2026" · 4,621.27). Proof: `tests/test_allocations_footer.py::TestAllocationsAcrossWaterYears`
+(added this task), a VALUE assertion against a fixture holding the same 108,000.00 AF entitlement
+in two years, observed red against the pre-plan tree (`02e0359`) before green. R-034 by commit
+`181fb16`: the "Summary" tile (Allocations 8, Ledger entries 1130, both plain text) is gone,
+replaced by an "Allocations by water type" panel (before: a count of ledger rows was the page's
+larger figure; after: Groundwater 4,621.27 AF and Surface Water 148,500.00 AF, a peer panel with
+no `--result` since the period holds two types) and the ledger's 1,130 entries as a link,
+`href="/accounting/ledger/?period=2"`, in the panel's foot line rather than a bare number. R-101,
+R-103, R-055 (zone) and R-112 (zone) by commit `1d365bb`. R-101: before, the table carried no
+`tr.th-group` and the Remaining header's "?" popout stated the equation (750.32 + 303.40 − 142.14 =
+911.58); after, a `th-group-label` "Available" (`colspan="2"`) brackets Allocation and Carried
+forward, one `.col-sep` separates Available from Used, and the popout markup (`class="explainer-popout"`)
+is gone from the table. R-103: before, 23 rows and no `tfoot`; after, `tfoot` reads "All 23 use
+areas" with 375.16 acres under Area, the view's own `Sum` over the same rows the table prints. R-055
+(zone): before, Remaining's computed size (14px) sat smaller than `h2.section-header` (16px); after,
+the page's one `.budget-seg--result`, "911.58" AF, renders at 32px, the largest text measured in the
+content area (24px, the `.budget-op` "=" sign, next largest); the dashboard and the zone page still
+read one `zone_groundwater_budget` call, so both print 911.58 for Halvern Irrigation-Urban GSA, WY
+2025-2026, unchanged (`tests/test_zone_budget_shared.py`, green with no edit). R-112 (zone): before,
+the two-column row's top sat at y=703 with the columns' own content spanning 1,740px and 314px, a
+1,426px run-out; after, the same two columns span 455px and 484px, a 29px run-out, the shape already
+measured and approved on the checkpoint's mock-up (`1d365bb`'s own commit message). The other six
+R-055 pages (Site Health, the lab result, the shared-supply check, the diversion, the water right,
+the recharge event) and the three R-112 pages (the well, POD and add-infrastructure pages) are not
+this plan's: the three water pages among them (the diversion, the water right and the recharge
+event's R-055, plus all three of R-112's) go to 143-10, which copies the lead-panel and group-header
+shapes this plan settled rather than redesigning them; the remaining three R-055 pages (Site Health,
+the lab result, the shared-supply check) go to 143-08 and 143-09.
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**
