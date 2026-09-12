@@ -1,26 +1,36 @@
-{% load humanize %}
+{% load humanize accounting_extras %}
 {# overflow:hidden removed deliberately — it would clip the sticky <thead> (Phase 63). #}
 <div class="card-raised table-scroll-mobile" style="padding: 0;">
-  {% comment %} Subtitle line (143-05): names the period (or "All periods"), folds
-       in the auto-default note on a bare landing instead of a separate
-       paragraph, says "filtered" plus the active filter names when any facet
-       other than period is set, states the entry count once with intcomma,
-       and carries the sign sentence that used to live in the footer alone
-       (ISS-159 #4; the pane's own copy of this sentence, `_detail_pane.html`,
-       is Task 4's to reconcile). Re-renders on every swap, so the count and
-       period are always the swapped page's own.
+  {% comment %} Subtitle line (143-05, second checkpoint 2026-09-12): the first
+       read (candidate B) put one sentence here at 12px; Brent called it
+       "tiny" and "unnecessarily wordy" and asked for "larger, more visible
+       facts that are just more clearly stated" rather than a header doing
+       math. The settled shape is two short facts at 14px (text-base, not
+       the 12px text-xs the first read used): a period/count line (names the
+       period or "All periods", folds in the auto-default note on a bare
+       landing, says "filtered" plus the active filter names when any facet
+       other than period is set, states the entry count once with intcomma),
+       then the sign facts line, carried VERBATIM in meaning from the ledger's
+       old tfoot sentence but shortened to two clauses (copy rule 12; the
+       pane's own copy of this line, `_detail_pane.html`, is the same text).
+       Re-renders on every swap, so the count and period are always the
+       swapped page's own.
 
-       The sign sentence names "canal" and "well" — real nouns from modules
-       this deployment may not have — so, exactly like the tfoot sentence it
-       replaces, it only prints when there is at least one row to explain
-       (`{% if total_count %}`). An empty ledger on a wells-less or
-       surface-less deployment would otherwise print a sentence about water
-       it does not have (tests/droppability/checks.py::
+       The facts line names no module-specific noun (no "canal", no "well"),
+       so unlike the sentence it replaces it does not strictly need the
+       `{% if total_count %}` guard on droppability grounds alone — kept
+       anyway because a fact about the rows below it has nothing to say when
+       there are no rows (tests/droppability/checks.py::
        test_kept_pages_never_name_a_dropped_module). {% endcomment %}
   <div class="ledger-card-head">
-    <span class="text-tertiary text-xs">
-      {% if period_auto_defaulted %}Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong>, the most recent period with {% if auto_default_calculated %}calculated records{% else %}activity{% endif %}{% else %}{{ period_name }}{% endif %}{% if active_filter_labels %} &middot; filtered: {{ active_filter_labels|join:", " }}{% endif %} &middot; {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }} &middot; All amounts in acre-feet (AF).{% if total_count %} Water leaving a canal or a well is stored as a negative entry. Credits are paper or banked water and are not a supply.{% endif %}
-    </span>
+    <div class="text-secondary text-base">
+      {% if period_auto_defaulted %}Showing <strong class="text-secondary">{{ auto_default_period_name }}</strong>, the most recent period with {% if auto_default_calculated %}calculated records{% else %}activity{% endif %}{% else %}{{ period_name }}{% endif %}{% if active_filter_labels %} &middot; filtered: {{ active_filter_labels|join:", " }}{% endif %} &middot; {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
+    </div>
+    {% if total_count %}
+    <div class="text-secondary text-base">
+      Acre-feet. Negative amounts are water delivered or pumped; positive amounts are credits.
+    </div>
+    {% endif %}
   </div>
   <table class="data-table">
     <thead>
@@ -28,10 +38,16 @@
         {% comment %} Sortable columns re-request the partial carrying the full filter state
            (hx-include=#ledger-filters) with a toggled direction. ▲/▼ marks the
            active column; Date also shows ▼ in the default newest-first state.
-           Column order (143-05, candidate B): Date, Use area, Source, Water
-           type, Amount, Description: a row reads as a sentence, naming when,
-           where, what kind of record, which water, how much, then the note.
-           Sort keys are unchanged; only their screen position moved. {% endcomment %}
+           Column order (143-05, second checkpoint): Date, Use area, Water,
+           Amount, Description: a row reads as a sentence, naming when, where,
+           which water and how it was recorded, how much, then the note. The
+           Source and Water type columns merged into one "Water" column
+           (`accounting/ledger_words.py::ledger_row_words`, task1-baseline's
+           second ruling) — two badge-styled columns read as "very confusing"
+           to a reader who does not think in this platform's own field
+           names. The
+           merged header keeps the "source" sort key; there is no longer a
+           separate water-type sort. {% endcomment %}
         <th class="th-sortable" role="button" tabindex="0"
             hx-get="{% url 'accounting:ledger_list' %}"
             hx-target="#ledger-results"
@@ -57,16 +73,7 @@
             hx-trigger="click, keyup[key=='Enter']"
             hx-push-url="true"
             hx-vals='{"sort": "source", "dir": "{% if sort == "source" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
-          Source{% if sort == "source" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
-        </th>
-        <th class="th-sortable" role="button" tabindex="0"
-            hx-get="{% url 'accounting:ledger_list' %}"
-            hx-target="#ledger-results"
-            hx-include="#ledger-filters"
-            hx-trigger="click, keyup[key=='Enter']"
-            hx-push-url="true"
-            hx-vals='{"sort": "water_type", "dir": "{% if sort == "water_type" and direction == "desc" %}asc{% else %}desc{% endif %}"}'>
-          Water Type{% if sort == "water_type" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+          Water{% if sort == "source" %} {% if direction == "asc" %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
         </th>
         <th class="th-right th-sortable" role="button" tabindex="0"
             hx-get="{% url 'accounting:ledger_list' %}"
@@ -99,17 +106,14 @@
             {{ entry.parcel.parcel_number }}
           </a>
         </td>
-        <td style="white-space: nowrap;">
-          {% include "accounting/partials/_source_badge.html" with source_type=entry.source_type %}
+        <td class="text-secondary" style="white-space: nowrap;">
+          {{ entry|ledger_row_words }}
           {% if entry.source_type == "calculated" %}
           <a href="{% url 'accounting:calculation_run_detail' entry.parcel.id entry.effective_date|date:'Y-m' %}"
              class="data-table-link text-xs" style="display: block; margin-top: 2px; white-space: nowrap;">
             How was this calculated?
           </a>
           {% endif %}
-        </td>
-        <td class="text-tertiary" style="white-space: nowrap;">
-          {% if entry.water_type %}{{ entry.water_type.name }}{% else %}&mdash;{% endif %}
         </td>
         {% comment %} The vocabulary table names a credit "never a supply"
              (DESIGN.md → Delivered / Pumped, Credit), so the green
@@ -129,7 +133,7 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="6" class="text-tertiary" style="padding: var(--space-lg) var(--space-md); text-align: center;">
+        <td colspan="5" class="text-tertiary" style="padding: var(--space-lg) var(--space-md); text-align: center;">
           No ledger entries found.
         </td>
       </tr>
@@ -151,7 +155,7 @@
         <td colspan="2" class="text-secondary" style="font-weight: 600; white-space: nowrap;">
           All {{ total_count|intcomma }} entr{{ total_count|pluralize:"y,ies" }}
         </td>
-        <td colspan="4" class="text-xs" style="white-space: nowrap;">
+        <td colspan="3" class="text-xs" style="white-space: nowrap;">
           <span class="text-secondary">Credits</span> <span class="text-tertiary">(allocation and recharge entries)</span>
           <span class="td-num-bold text-supply">+{{ ledger_total_credits|floatformat:2|intcomma }}</span>
           &middot; <span class="text-secondary">Delivered and pumped</span>

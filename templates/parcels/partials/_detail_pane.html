@@ -1,4 +1,4 @@
-{% load placeholders humanize %}{% comment %}
+{% load placeholders humanize accounting_extras %}{% comment %}
   Per-parcel detail BODY, swapped into #detail-body on row click (and reused by
   the standalone detail.html page). The map itself is NOT here — it lives as a
   persistent element (#detail-map) in the pane shell so it is built ONCE and
@@ -368,31 +368,34 @@
 
           And the Amount column used to print 241.56 beside -36.55 with nothing
           on the card saying which direction a minus sign meant. The sentence is
-          carried VERBATIM from the Use Ledger, not reworded: one quantity, one
-          wording, wherever it is shown (copy rule 12).
+          carried VERBATIM in meaning from the Use Ledger, not reworded: one
+          quantity, one wording, wherever it is shown (copy rule 12).
 
-          143-05 (candidate B, checkpoint decision) moved the Use Ledger's own
-          copy of this sentence OUT of its `<tfoot>` and into the subtitle line
-          above its table (`accounting/partials/_ledger_list_results.html`,
-          `.ledger-card-head`), because a reader now meets it before the rows
-          instead of after them. The words did not change, so this card's copy
-          did not need to move with it: a three-column card with one signed
-          Amount column still needs the sentence right here, beside the
-          numbers it explains. `tests/test_parcel_detail.py` asserts this copy
-          exists and is left exactly as it was.
+          143-05 second checkpoint (2026-09-12): the Use Ledger's own facts
+          line above its table shortened from one 30-word sentence to two
+          short facts at 14px, and this card's copy shortened with it — same
+          two clauses, same wording, both places. It also swapped its Source
+          column for the same merged "Water" column the ledger uses (the
+          `ledger_row_words` filter, loaded from `accounting_extras` and
+          backed by `accounting/ledger_words.py::ledger_row_words`), so a row
+          reads the same way on both screens instead of a plain badge word
+          here and the merged wording there.
+          `tests/test_parcel_detail.py` asserts the facts line's new wording;
+          `tests/test_ledger_navigation.py` asserts the ledger's copy of the
+          same text.
 
           The unit moved off the column header into this line with it, because
           the card has one numeric column and rule 4 states a single-unit
           table's unit once.
         {% endcomment %}
-        <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-md);">{% if balance_period %}{{ balance_period.name }} &middot; {% endif %}All amounts in acre-feet (AF). Water leaving a canal or a well is stored as a negative entry. Credits are paper or banked water and are not a supply.</p>
+        <p class="text-secondary text-base" style="margin: 0 0 var(--space-md);">{% if balance_period %}{{ balance_period.name }} &middot; {% endif %}Acre-feet. Negative amounts are water delivered or pumped; positive amounts are credits.</p>
         {% if recent_ledger %}
         <table class="data-table text-sm">
           <thead>
             <tr>
               <th>Date</th>
               <th class="th-right">Amount</th>
-              <th>Source</th>
+              <th>Water</th>
             </tr>
           </thead>
           <tbody>
@@ -400,7 +403,7 @@
             <tr>
               <td class="text-secondary">{{ entry.effective_date|date:"M d, Y" }}</td>
               <td class="td-num {% if entry.amount_acre_feet >= 0 %}text-supply{% endif %}">{{ entry.amount_acre_feet|floatformat:2 }}</td>
-              <td class="text-tertiary">{{ entry.get_source_type_display }}</td>
+              <td class="text-tertiary">{{ entry|ledger_row_words }}</td>
             </tr>
             {% endfor %}
           </tbody>

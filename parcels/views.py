@@ -191,7 +191,12 @@ def _parcel_detail_context(parcel, period_id=None):
     # period exists at all, and then there is nothing to bound by and the card
     # falls back to the parcel's whole history — the same rows it would have
     # shown anyway, on a deployment that has not set a period up yet.
-    recent_ledger = ParcelLedger.objects.filter(parcel=parcel)
+    # select_related("water_type"): 143-05's merged Water column
+    # (ledger_row_words) reads entry.water_type on every row, which this
+    # query did not join before that column existed.
+    recent_ledger = ParcelLedger.objects.filter(parcel=parcel).select_related(
+        "water_type"
+    )
     if balance_period is not None:
         recent_ledger = recent_ledger.filter(reporting_period=balance_period)
     recent_ledger = recent_ledger.order_by("-effective_date", "-created_at")[:10]

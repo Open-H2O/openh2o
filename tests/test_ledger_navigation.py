@@ -21,6 +21,7 @@ from tests.factories import (
     ParcelLedgerFactory,
     ParcelZoneFactory,
     ReportingPeriodFactory,
+    WaterTypeFactory,
     ZoneFactory,
 )
 
@@ -271,10 +272,17 @@ class TestLedgerFooter:
         assert "75.00" not in html
         assert "debits" not in html
         # 143-05: the sign sentence moved from the footer to the subtitle line
-        # above the table, where a reader meets it before the rows. It appears
-        # exactly once on the page, and never inside <tfoot>.
-        sentence = "Credits are paper or banked water and are not a supply."
+        # above the table, where a reader meets it before the rows. Its
+        # second checkpoint (2026-09-12) shortened it from one 30-word
+        # sentence to a two-clause facts line at 14px; the old sentence is
+        # gone from the page, and the new one appears exactly once, never
+        # inside <tfoot>.
+        sentence = (
+            "Negative amounts are water delivered or pumped; positive "
+            "amounts are credits."
+        )
         assert html.count(sentence) == 1
+        assert "Credits are paper or banked water and are not a supply." not in html
         tfoot = re.search(r"<tfoot>.*?</tfoot>", html, re.S)
         assert tfoot, "footer should still render its two subtotals"
         assert sentence not in tfoot.group(0)
@@ -351,20 +359,27 @@ class TestLedgerSubtitle:
 
 
 class TestLedgerSignSentenceInSubtitle:
-    """R-018 (candidate B, checkpoint 2026-09-12 08:04 PDT): the full settled
-    sentence lives in the subtitle line above the table exactly once, and
-    never inside <tfoot> -- the footer keeps its two subtotals and no
-    sentence."""
+    """R-018 (second checkpoint, 2026-09-12): the settled facts line lives in
+    the subtitle line above the table exactly once, and never inside
+    <tfoot> -- the footer keeps its two subtotals and no sentence. The first
+    checkpoint's candidate-B sentence was itself replaced at this second
+    checkpoint: "tiny", "unnecessarily wordy" (Brent), shortened from one
+    30-word sentence to two clauses at 14px."""
 
     def test_full_sentence_appears_once_in_the_subtitle_and_not_the_footer(self, auth_client):
         period = TestLedgerFooter()._four_rows()
         resp = auth_client.get(_ledger_url(period=str(period.pk)))
         html = resp.content.decode()
         sentence = (
+            "Negative amounts are water delivered or pumped; positive "
+            "amounts are credits."
+        )
+        assert html.count(sentence) == 1
+        old_sentence = (
             "Water leaving a canal or a well is stored as a negative entry. "
             "Credits are paper or banked water and are not a supply."
         )
-        assert html.count(sentence) == 1
+        assert old_sentence not in html
         head = re.search(r'<div class="ledger-card-head">.*?</div>\s*</div>', html, re.S)
         assert head, "subtitle region not found"
         assert sentence in head.group(0)
@@ -450,3 +465,95 @@ class TestLedgerZeroRowSentence:
         )
         assert html.count(sentence) == 1
         assert 'class="td-num text-tertiary"' in html
+
+
+# ---------------------------------------------------------------------------
+# 143-05 second checkpoint (2026-09-12): the merged "Water" column
+# ---------------------------------------------------------------------------
+
+
+class TestLedgerWaterColumnWords:
+    """The Source + Water type columns merged into one "Water" column,
+    computed by ``accounting/ledger_words.py::ledger_row_words`` and reached
+    from the template through the ``ledger_row_words`` filter. Observed RED
+    against the pre-change tree (155bfa7's ``_ledger_list_results.html``,
+    ``_source_badge.html`` and ``accounting/views.py``, checked out via
+    ``docker compose cp`` alongside this test): the old markup rendered
+    "Meter Read" as the badge column's word (truncated by CSS, the full
+    string being "Meter reading") and "Surface diversion" for a diverted row,
+    never "Groundwater, metered" or "Surface water, diverted" -- see
+    143-05-EVIDENCE.md for the quoted failing assertions.
+    """
+
+    def test_meter_reading_groundwater_row_reads_groundwater_metered(self, auth_client):
+        period = ReportingPeriodFactory()
+        gw = WaterTypeFactory(name="Groundwater", code="GW-T")
+        ParcelLedgerFactory(
+            reporting_period=period, source_type="meter_reading",
+            water_type=gw, amount_acre_feet=Decimal("-5.0000"),
+            effective_date=date(2024, 6, 1),
+        )
+        html = auth_client.get(_ledger_url(period=str(period.pk))).content.decode()
+        assert "Groundwater, metered" in html
+
+    def test_calculated_groundwater_row_reads_groundwater_estimated(self, auth_client):
+        period = ReportingPeriodFactory()
+        gw = WaterTypeFactory(name="Groundwater", code="GW-T2")
+        ParcelLedgerFactory(
+            reporting_period=period, source_type="calculated",
+            water_type=gw, amount_acre_feet=Decimal("-3.0000"),
+            effective_date=date(2024, 6, 2),
+        )
+        html = auth_client.get(_ledger_url(period=str(period.pk))).content.decode()
+        assert "Groundwater, estimated" in html
+
+    def test_surface_diversion_surface_water_row_reads_surface_water_diverted(self, auth_client):
+        period = ReportingPeriodFactory()
+        sw = WaterTypeFactory(name="Surface Water", code="SW-T")
+        ParcelLedgerFactory(
+            reporting_period=period, source_type="surface_diversion",
+            water_type=sw, amount_acre_feet=Decimal("-8.0000"),
+            effective_date=date(2024, 6, 3),
+        )
+        html = auth_client.get(_ledger_url(period=str(period.pk))).content.decode()
+        assert "Surface water, diverted" in html
+
+    def test_allocation_surface_water_row_reads_surface_water_allocation(self, auth_client):
+        period = ReportingPeriodFactory()
+        sw = WaterTypeFactory(name="Surface Water", code="SW-T2")
+        ParcelLedgerFactory(
+            reporting_period=period, source_type="allocation",
+            water_type=sw, amount_acre_feet=Decimal("20.0000"),
+            effective_date=date(2024, 6, 4),
+        )
+        html = auth_client.get(_ledger_url(period=str(period.pk))).content.decode()
+        assert "Surface water allocation" in html
+
+    def test_recharge_row_reads_recharge_credit_regardless_of_water_type(self, auth_client):
+        period = ReportingPeriodFactory()
+        sw = WaterTypeFactory(name="Surface Water", code="SW-T3")
+        ParcelLedgerFactory(
+            reporting_period=period, source_type="recharge",
+            water_type=sw, amount_acre_feet=Decimal("15.0000"),
+            effective_date=date(2024, 6, 5),
+        )
+        html = auth_client.get(_ledger_url(period=str(period.pk))).content.decode()
+        assert "Recharge credit" in html
+
+    def test_the_old_badge_words_are_gone_from_the_page(self, auth_client):
+        period = ReportingPeriodFactory()
+        gw = WaterTypeFactory(name="Groundwater", code="GW-T3")
+        sw = WaterTypeFactory(name="Surface Water", code="SW-T4")
+        for source_type, water_type, day in (
+            ("meter_reading", gw, 10),
+            ("surface_diversion", sw, 11),
+        ):
+            ParcelLedgerFactory(
+                reporting_period=period, source_type=source_type,
+                water_type=water_type, amount_acre_feet=Decimal("-1.0000"),
+                effective_date=date(2024, 6, day),
+            )
+        html = auth_client.get(_ledger_url(period=str(period.pk))).content.decode()
+        assert "Meter Reading" not in html
+        assert "Meter Read" not in html
+        assert "Surface diversion" not in html

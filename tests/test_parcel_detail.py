@@ -171,9 +171,12 @@ def test_the_card_states_the_period_it_is_showing(field_with_two_years):
 def test_the_amount_column_says_what_a_negative_means(field_with_two_years):
     """R-108: 241.56 beside -36.55 with nothing saying which direction is which.
 
-    The sentence is carried VERBATIM from the Use Ledger's own footer
-    (``_ledger_list_results.html``) rather than reworded here -- one quantity,
-    one wording, on every screen that shows it (DESIGN.md copy rule 12).
+    143-05's second checkpoint (2026-09-12) shortened the sentence to two
+    facts at 14px; the wording is carried VERBATIM from the Use Ledger's own
+    facts line (``_ledger_list_results.html``, ``.ledger-card-head``) rather
+    than reworded here -- one quantity, one wording, on every screen that
+    shows it (DESIGN.md copy rule 12). The old 30-word sentence must be gone
+    from this page too, not just shortened elsewhere.
     """
     parcel, older, _newer, _empty = field_with_two_years
     client = Client()
@@ -187,5 +190,9 @@ def test_the_amount_column_says_what_a_negative_means(field_with_two_years):
     html = response.content.decode()
 
     assert (
-        "Water leaving a canal or a well is stored as a negative entry." in html
+        "Negative amounts are water delivered or pumped; positive amounts "
+        "are credits." in html
     ), "the ledger card prints negative amounts with nothing saying what they are (R-108)"
+    assert (
+        "Water leaving a canal or a well is stored as a negative entry." not in html
+    ), "the old 30-word sentence should be gone, not merely duplicated (143-05)"

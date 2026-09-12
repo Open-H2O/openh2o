@@ -987,8 +987,9 @@ LEDGER_PAGE_SIZES = (25, 100, 500)
 #:
 #: ``ParcelLedger.SOURCE_TYPE_CHOICES`` is the full historical vocabulary and has
 #: to stay that way. A ``surface_diversion`` row written before the module was
-#: switched off is still a real row, ``_source_badge.html`` still labels it, and
-#: hiding it would be lying about the ledger — the same call 88-03 made for
+#: switched off is still a real row, ``accounting/ledger_words.py::
+#: ledger_row_words`` still names it, and hiding it would be lying about the
+#: ledger — the same call 88-03 made for
 #: ``/drinking/``'s Well column. What this table gates is the OFFER: on a
 #: deployment with no Surface module, a "Surface Diversion" option in the filter
 #: invites an operator to filter for a row type this deployment can never
@@ -1007,23 +1008,25 @@ LEDGER_SOURCE_TYPE_OWNERS = {
 }
 
 
-#: 143-05: the Source filter's option words, sentence case, matching
-#: ``_source_badge.html``'s own labels exactly (that partial has always
-#: hardcoded its own strings independent of ``SOURCE_TYPE_CHOICES``. Compare
-#: "Meter reading" here to the model's "Meter Reading", which the parcel
-#: pane's Source column still prints verbatim via ``get_source_type_display``,
-#: unaffected by this table). Keep the two lists in sync by hand; a value
-#: missing here falls back to the model's own label below.
+#: 143-05 (second checkpoint, 2026-09-12): the Source FILTER's option words.
+#: The filter still narrows on the stored ``source_type`` value — only the
+#: option LABELS changed, to the shortest true words the checkpoint ruling
+#: settled on (a filter option is one word or a short phrase, not the fuller
+#: "{Water type}, metered" sentence the merged Water column prints per row —
+#: that sentence needs the row's own water type, which no single filter
+#: option can name). Keep this table in sync with
+#: ``accounting/ledger_words.py`` by hand; a value missing here falls back to
+#: the model's own label below.
 LEDGER_SOURCE_TYPE_LABELS = {
-    "meter_reading": "Meter reading",
+    "meter_reading": "Metered",
+    "calculated": "Estimated",
     "et_estimate": "ET estimate",
-    "manual_entry": "Manual entry",
-    "csv_import": "CSV import",
-    "surface_diversion": "Surface diversion",
-    "recharge": "Recharge",
+    "surface_diversion": "Diverted",
+    "manual_entry": "Entered by hand",
+    "csv_import": "Imported from CSV",
+    "adjustment": "Adjusted",
     "allocation": "Allocation",
-    "adjustment": "Adjustment",
-    "calculated": "Calculated",
+    "recharge": "Recharge credit",
 }
 
 
