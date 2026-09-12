@@ -218,9 +218,14 @@ class TestLedgerDefaultPeriod:
 
 
 class TestLedgerPresetChips:
-    """Quick-filter chips above the ledger filter bar (Phase E polish): a one-
-    click 'Active Use Areas' filter, and a 'This Period' chip whose destination
-    is the same period the ledger auto-defaults to, so the two never disagree."""
+    """143-05: the quick-filter chip row is retired ("This Period" duplicated
+    the Period select; "Active Use Areas" is now the "Active use areas only"
+    checkbox in the disclosed filter row). The chip elements are gone from
+    the page, but the two mechanisms behind them survive under new controls:
+    `active_areas` still narrows to active parcels, and `current_period_id`
+    is still the value the ledger auto-defaults to on a bare landing, so the
+    two never disagree. Class name kept for history; the assertions below
+    test the surviving mechanism, not a chip."""
 
     def test_active_use_areas_filters_to_active_parcels(self, auth_client):
         from datetime import date
@@ -235,7 +240,8 @@ class TestLedgerPresetChips:
         )
 
         assert response.status_code == 200
-        # The chip's on-state is driven by this context value.
+        # The "Active use areas only" checkbox's on-state is driven by this
+        # context value (143-05; formerly the chip's on-state).
         assert response.context["active_areas"] == "1"
         rows = list(response.context["page_obj"])
         assert rows, "the active parcel's row should survive the filter"
@@ -245,8 +251,9 @@ class TestLedgerPresetChips:
     def test_this_period_chip_target_matches_auto_default(self, auth_client):
         from datetime import date
 
-        # current_period_id is the chip's destination; it must equal the period
-        # the ledger auto-defaults to on a bare landing.
+        # current_period_id is no longer a chip's destination (143-05 removed
+        # the chip); it must still equal the period the ledger auto-defaults
+        # to on a bare landing, which is what the Period select shows.
         period_calc = ReportingPeriodFactory(
             start_date=date(2024, 6, 1), end_date=date(2024, 6, 30)
         )

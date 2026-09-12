@@ -53,6 +53,17 @@ def _ledger_url(**params):
     return f"{base}?{urlencode(params)}"
 
 
+def _results_region(html):
+    """Scope a check to the swapped #ledger-results region (the subtitle,
+    table and paging), never the filter form above it. A period or zone name
+    always appears in the filter form's own <select> options regardless of
+    what the subtitle says, so a bare `name in html` check would pass whether
+    or not the subtitle names it -- this excludes that false pass."""
+    marker = 'id="ledger-results"'
+    idx = html.index(marker)
+    return html[idx:]
+
+
 pytestmark = pytest.mark.django_db
 
 
@@ -97,6 +108,25 @@ class TestLedgerSort:
         # Default is newest effective_date first.
         assert rows[0].effective_date == date(2024, 6, 7)
         assert resp.context["sort"] == "bogus"  # echoed back; just not applied
+
+    def test_amount_ties_break_by_parcel_number_ascending(self, auth_client):
+        """143-05 (candidate B kept the single 'amount' sort key unchanged;
+        R-020's tiebreak was added to every sortable key). Three rows tied on
+        amount must still come out in a predictable order rather than
+        whatever -created_at happens to be."""
+        period = ReportingPeriodFactory()
+        for number in ("050", "010", "030"):
+            ParcelLedgerFactory(
+                parcel=ParcelFactory(parcel_number=number),
+                reporting_period=period,
+                amount_acre_feet=Decimal("10.0000"),
+                effective_date=date(2024, 6, 10),
+                source_type="manual_entry",
+            )
+        resp = auth_client.get(_ledger_url(period=str(period.pk), sort="amount", dir="asc"))
+        assert resp.status_code == 200
+        rows = list(resp.context["page_obj"])
+        assert [r.parcel.parcel_number for r in rows] == ["010", "030", "050"]
 
 
 # ---------------------------------------------------------------------------
@@ -248,3 +278,175 @@ class TestLedgerFooter:
         tfoot = re.search(r"<tfoot>.*?</tfoot>", html, re.S)
         assert tfoot, "footer should still render its two subtotals"
         assert sentence not in tfoot.group(0)
+
+
+# ---------------------------------------------------------------------------
+# 143-05 guards: the seven register rows this plan closes (R-016, R-018,
+# R-042, R-017, R-019, R-020, R-043). Each guard below observed RED against
+# the pre-change tree (ad08624's templates and views.py) before it was made
+# to pass; see 143-05-EVIDENCE.md for the quoted failing assertion.
+# ---------------------------------------------------------------------------
+
+
+class TestLedgerFilterBarShape:
+    """R-016/R-017: one filter row. The quick-filter chips and the
+    jump-to-page input are gone from the whole page, not merely relocated;
+    exactly one control on the page sets page_size."""
+
+    def test_page_size_control_appears_exactly_once(self, auth_client):
+        resp = auth_client.get(_ledger_url())
+        html = resp.content.decode()
+        assert html.count('name="page_size"') == 1
+
+    def test_no_element_named_page_exists_anywhere_on_the_page(self, auth_client):
+        # The old jump-to-page <input name="page"> is gone outright (R-017);
+        # the Previous/Next buttons set "page" through hx-vals, never a named
+        # form control, so this count is 0 both before and after -- what
+        # changed is the jump control that used to make it 1.
+        resp = auth_client.get(_ledger_url())
+        html = resp.content.decode()
+        assert 'name="page"' not in html
+
+    def test_the_this_period_chip_and_jump_to_page_input_are_gone(self, auth_client):
+        resp = auth_client.get(_ledger_url())
+        html = resp.content.decode()
+        assert "chip-this-period" not in html
+        assert "filter-page" not in html
+        assert "filter-chip" not in html
+
+
+class TestLedgerSubtitle:
+    """R-042: the subtitle line above the table names the period (or "All
+    periods") and the row count, and the zone's name when a zone narrows the
+    set, instead of a bare "N entries" that never says which period."""
+
+    def test_subtitle_names_the_period_and_the_entry_count(self, auth_client):
+        period = TestLedgerFooter()._four_rows()
+        resp = auth_client.get(_ledger_url(period=str(period.pk)))
+        assert resp.status_code == 200
+        region = _results_region(resp.content.decode())
+        assert period.name in region
+        assert "4 entries" in region
+
+    def test_subtitle_reads_all_periods_when_no_period_is_set(self, auth_client):
+        TestLedgerFooter()._four_rows()
+        resp = auth_client.get(_ledger_url(period=""))
+        assert resp.status_code == 200
+        region = _results_region(resp.content.decode())
+        assert "All periods" in region
+
+    def test_subtitle_names_the_zone_when_a_zone_is_set(self, auth_client):
+        period = ReportingPeriodFactory()
+        zone = ZoneFactory(name="Halvern")
+        parcel = ParcelFactory()
+        ParcelZoneFactory(parcel=parcel, zone=zone)
+        ParcelLedgerFactory(
+            parcel=parcel, reporting_period=period,
+            effective_date=date(2024, 6, 20), source_type="manual_entry",
+        )
+        resp = auth_client.get(_ledger_url(period=str(period.pk), zone=str(zone.pk)))
+        assert resp.status_code == 200
+        region = _results_region(resp.content.decode())
+        assert "Halvern" in region
+
+
+class TestLedgerSignSentenceInSubtitle:
+    """R-018 (candidate B, checkpoint 2026-09-12 08:04 PDT): the full settled
+    sentence lives in the subtitle line above the table exactly once, and
+    never inside <tfoot> -- the footer keeps its two subtotals and no
+    sentence."""
+
+    def test_full_sentence_appears_once_in_the_subtitle_and_not_the_footer(self, auth_client):
+        period = TestLedgerFooter()._four_rows()
+        resp = auth_client.get(_ledger_url(period=str(period.pk)))
+        html = resp.content.decode()
+        sentence = (
+            "Water leaving a canal or a well is stored as a negative entry. "
+            "Credits are paper or banked water and are not a supply."
+        )
+        assert html.count(sentence) == 1
+        head = re.search(r'<div class="ledger-card-head">.*?</div>\s*</div>', html, re.S)
+        assert head, "subtitle region not found"
+        assert sentence in head.group(0)
+        tfoot = re.search(r"<tfoot>.*?</tfoot>", html, re.S)
+        assert tfoot and sentence not in tfoot.group(0)
+
+
+class TestLedgerDescriptionUntruncated:
+    """R-019: the Description column loses truncatechars and its fixed width,
+    so the true 125-character maximum in the live demo round-trips whole
+    instead of being cut at 60 characters with an ellipsis."""
+
+    def test_a_125_character_description_round_trips_whole(self, auth_client):
+        period = ReportingPeriodFactory()
+        long_desc = (
+            "Diversion from MER-POD-099-DEMO Stevinson Diversion Canal Headgate: "
+            "214.5813 AF, Direct Use, demand weighted and ET allocated"
+        )
+        assert len(long_desc) == 125
+        ParcelLedgerFactory(
+            reporting_period=period, effective_date=date(2024, 6, 1),
+            source_type="manual_entry", description=long_desc,
+        )
+        resp = auth_client.get(_ledger_url(period=str(period.pk)))
+        assert resp.status_code == 200
+        html = resp.content.decode()
+        assert long_desc in html
+        # Scoped to the table body: the page head's own search combobox
+        # legitimately carries an ellipsis in unrelated placeholder text, so
+        # the guard checks the Description cell's own region, not the page.
+        tbody = re.search(r"<tbody>.*?</tbody>", html, re.S)
+        assert tbody, "table body not found"
+        assert "&hellip;" not in tbody.group(0)
+        assert "…" not in tbody.group(0)
+
+
+class TestLedgerWithinDateOrder:
+    """R-020: within one date, rows render in use-area (parcel number)
+    ascending order rather than raw seed-insertion order."""
+
+    def test_three_same_date_rows_order_by_parcel_number_ascending(self, auth_client):
+        period = ReportingPeriodFactory()
+        same_date = date(2024, 6, 15)
+        # Insertion order is deliberately scrambled and non-alphabetical, so a
+        # pass here can only come from the view's own ordering.
+        for number in ("076", "002", "041"):
+            ParcelLedgerFactory(
+                parcel=ParcelFactory(parcel_number=number),
+                reporting_period=period,
+                effective_date=same_date,
+                source_type="manual_entry",
+            )
+        resp = auth_client.get(_ledger_url(period=str(period.pk)))
+        assert resp.status_code == 200
+        rows = list(resp.context["page_obj"])
+        numbers = [r.parcel.parcel_number for r in rows]
+        assert numbers == ["002", "041", "076"]
+
+
+class TestLedgerZeroRowSentence:
+    """R-043: a `calculated` row at exactly 0.0000 AF carries the engine's own
+    sentence in its Description cell and a muted Amount cell; an ordinary
+    negative row does not."""
+
+    def test_zero_calculated_row_gets_the_sentence_and_a_negative_row_does_not(self, auth_client):
+        period = ReportingPeriodFactory()
+        parcel = ParcelFactory()
+        ParcelLedgerFactory(
+            parcel=parcel, reporting_period=period, source_type="calculated",
+            amount_acre_feet=Decimal("0.0000"), effective_date=date(2024, 6, 1),
+            description="Derived groundwater extraction estimate (calculation engine)",
+        )
+        ParcelLedgerFactory(
+            parcel=parcel, reporting_period=period, source_type="meter_reading",
+            amount_acre_feet=Decimal("-10.0000"), effective_date=date(2024, 6, 2),
+        )
+        resp = auth_client.get(_ledger_url(period=str(period.pk)))
+        assert resp.status_code == 200
+        html = resp.content.decode()
+        sentence = (
+            "No groundwater extraction was derived for this month; rainfall "
+            "and delivered surface water covered the estimated use."
+        )
+        assert html.count(sentence) == 1
+        assert 'class="td-num text-tertiary"' in html
