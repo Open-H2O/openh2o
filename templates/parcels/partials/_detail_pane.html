@@ -7,6 +7,7 @@
   script that creates-or-updates that persistent map.
 {% endcomment %}
 
+{% if not on_full_page %}
 <!-- Pane header: which parcel you're looking at (the workspace has no breadcrumb). -->
 <div class="pane-header">
   <div>
@@ -27,6 +28,7 @@
     {% endif %}
   </div>
 </div>
+{% endif %}
 
 <div class="pane-stack">
 

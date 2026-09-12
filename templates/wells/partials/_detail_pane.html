@@ -7,6 +7,7 @@
   call into OH2O.detailPaneMap that creates-or-updates that persistent map.
 {% endcomment %}
 
+{% if not on_full_page %}
 <!-- Pane header: which well you're looking at (the workspace has no breadcrumb). -->
 <div class="pane-header">
   <div>
@@ -18,6 +19,7 @@
     <a href="{% url 'wells:detail' well.pk %}" class="text-tertiary text-xs back-link" title="Open this well on its own page">Open full page &rarr;</a>
   </div>
 </div>
+{% endif %}
 
 <div class="pane-stack">
   <div class="page-grid-2col">

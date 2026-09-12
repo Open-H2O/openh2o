@@ -1,7 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Use Ledger - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Use Ledger{% endblock %}
+{% block title %}Use ledger - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Use ledger{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'accounting:ledger_export' %}?period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}&active_areas={{ active_areas }}" class="btn-secondary btn-sm">
+  Download CSV
+</a>
+<a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">
+  Upload CSV
+</a>
+<a href="{% url 'accounting:ledger_create' %}" class="btn-primary btn-sm">
+  + New entry
+</a>
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -18,22 +30,11 @@
 <div class="page-stack">
 
   <!-- Header row -->
-  <div class="row-between">
+  <div class="row-start">
     <div>
       <span class="text-secondary text-base">
         {{ total_count }} entr{{ total_count|pluralize:"y,ies" }}
       </span>
-    </div>
-    <div class="row-start">
-      <a href="{% url 'accounting:ledger_export' %}?period={{ period_id }}&source_type={{ source_type }}&water_type={{ water_type_id }}&start_date={{ start_date }}&end_date={{ end_date }}&active_areas={{ active_areas }}" class="btn-secondary btn-sm">
-        Download CSV
-      </a>
-      <a href="{% url 'accounting:csv_upload' %}" class="btn-secondary btn-sm">
-        Upload CSV
-      </a>
-      <a href="{% url 'accounting:ledger_create' %}" class="btn-primary btn-sm">
-        + New entry
-      </a>
     </div>
   </div>
 

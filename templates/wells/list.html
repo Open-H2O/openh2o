@@ -3,6 +3,13 @@
 {% block title %}Wells - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Wells{% endblock %}
 
+{% block page_actions %}
+{% if 'infrastructure' in enabled_modules %}
+<a href="{% url 'infrastructure:import' %}?type=well" class="btn-secondary btn-sm">Import</a>
+<a href="{% url 'infrastructure:add' %}?type=well" class="btn-primary btn-sm">+ Add well</a>
+{% endif %}
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -11,12 +18,6 @@
     <span class="breadcrumb-current">Wells</span>
   </nav>
   <p class="page-description">Groundwater wells tracked in the system. Pick one to open its construction record, map, and linked meters alongside the list.</p>
-  <div class="row-end" style="margin-top: var(--space-sm);">
-    {% if 'infrastructure' in enabled_modules %}
-    <a href="{% url 'infrastructure:import' %}?type=well" class="btn-secondary btn-sm">Import</a>
-    <a href="{% url 'infrastructure:add' %}?type=well" class="btn-primary btn-sm">+ Add well</a>
-    {% endif %}
-  </div>
 </div>
 {% endblock %}
 

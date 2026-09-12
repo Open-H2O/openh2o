@@ -9,8 +9,12 @@
   map_scripts and framed across this right's points of diversion.
 {% endcomment %}
 
-{% block title %}Water Right {{ water_right.right_id }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Water Right {{ water_right.right_id }}{% endblock %}
+{% block title %}Water right {{ water_right.right_id }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water right {{ water_right.right_id }}{% endblock %}
+
+{% block page_meta %}
+{% include "surface/partials/_status_badge.html" with status=water_right.status %}
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -40,7 +44,7 @@
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
   <div id="detail-body">
-    {% include "surface/partials/_water_right_detail_pane.html" %}
+    {% include "surface/partials/_water_right_detail_pane.html" with on_full_page=True %}
   </div>
 </div>
 {% endblock %}

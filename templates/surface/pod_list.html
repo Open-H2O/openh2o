@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Surface Diversions - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Surface Diversions{% endblock %}
+{% block title %}Surface diversions - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Surface diversions{% endblock %}
 
 {% block map_styles %}
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
@@ -14,6 +14,13 @@
 <script src="{% static 'js/map-core.js' %}"></script>
 {% endblock %}
 
+{% block page_actions %}
+{% if 'infrastructure' in enabled_modules %}
+<a href="{% url 'infrastructure:import' %}?type=diversion" class="btn-secondary btn-sm">Import</a>
+<a href="{% url 'infrastructure:add' %}?type=diversion" class="btn-primary btn-sm">+ Add diversion</a>
+{% endif %}
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -22,12 +29,6 @@
     <span class="breadcrumb-current">Surface Diversions</span>
   </nav>
   <p class="page-description">Points of diversion from streams and canals. The map shows every diversion point at once; pick one from the map or the list to open its diversion records, location, and linked use areas.</p>
-  <div class="row-end" style="margin-top: var(--space-sm);">
-    {% if 'infrastructure' in enabled_modules %}
-    <a href="{% url 'infrastructure:import' %}?type=diversion" class="btn-secondary btn-sm">Import</a>
-    <a href="{% url 'infrastructure:add' %}?type=diversion" class="btn-primary btn-sm">+ Add diversion</a>
-    {% endif %}
-  </div>
 </div>
 {% endblock %}
 

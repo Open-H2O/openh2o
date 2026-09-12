@@ -19,6 +19,7 @@
 {% endcomment %}
 {% load static placeholders %}
 
+{% if not on_full_page %}
 <!-- Pane header: which recharge site you're looking at. -->
 <div class="pane-header">
   <div>
@@ -29,6 +30,7 @@
     {% include "recharge/partials/_status_badge.html" with status=site.status %}
   </div>
 </div>
+{% endif %}
 
 <div class="pane-stack">
   <div class="page-grid-2col">

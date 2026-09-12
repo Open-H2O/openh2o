@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}New Allocation - Open Water Accounting Platform{% endblock %}
-{% block page_title %}New Allocation{% endblock %}
+{% block title %}New allocation - Open Water Accounting Platform{% endblock %}
+{% block page_title %}New allocation{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -12,6 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">New Allocation</span>
   </nav>
+  <p class="page-description">An allocation is a zone's ceiling for one water type in one water year, in acre-feet. Name it so the zone and the year read in the list, such as Halvern GW 2025-2026; each account in the zone gets a pro-rated share of it.</p>
 </div>
 {% endblock %}
 
@@ -22,9 +24,8 @@
   <a href="{% url 'accounting:allocations_list' %}" class="back-link">&larr; Back to Allocations</a>
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">
-      Create allocation
-    </h2>
+    {% comment %} Was "Create allocation", the page title said again in other words (Phase 143-02, copy rule 13: a label under a heading says the remainder). {% endcomment %}
+    <h2 class="card-header-ruled">Details</h2>
 
     {% if form.errors %}
     <div class="form-error-box">

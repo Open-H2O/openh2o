@@ -4,6 +4,10 @@
 {% block title %}Users - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Users{% endblock %}
 
+{% block page_actions %}
+<a href="{% url 'core:user_create' %}" class="btn-primary btn-sm">+ Add user</a>
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -32,9 +36,6 @@
         <span class="count-pill">{{ users|length }}</span>
         user{{ users|length|pluralize }}
       </span>
-    </div>
-    <div>
-      <a href="{% url 'core:user_create' %}" class="btn-primary">+ Add user</a>
     </div>
   </div>
 

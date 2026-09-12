@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load drinking_display %}
 
-{% block title %}Sample Results - Open Water Accounting Platform{% endblock %}
+{% block title %}Sample results - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Sample results{% endblock %}
 
 {% block breadcrumbs %}
@@ -24,18 +24,12 @@
 </div>
 {% endblock %}
 
+{% block page_actions %}
+<a href="{% url 'drinking:import' %}" class="btn-primary btn-sm">Import lab results</a>
+{% endblock %}
+
 {% block content %}
 <div class="page-stack page-wide">
-
-  {% comment %}
-    Import is the page's one primary action, so it gets the gold — "gold acts".
-    It sits above the filter bar rather than inside it: the filter toolbar is a
-    utility over the data, and burying the only write path in it would read as
-    another control on the view rather than the way results get here.
-  {% endcomment %}
-  <div class="row-end">
-    <a href="{% url 'drinking:import' %}" class="btn-primary">Import lab results</a>
-  </div>
 
   {% comment %}
     Plain GET form rather than HTMX-per-control: four filters that are usually

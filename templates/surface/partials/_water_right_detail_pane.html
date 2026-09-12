@@ -9,6 +9,7 @@
 {% endcomment %}
 {% load static placeholders %}
 
+{% if not on_full_page %}
 <!-- Detail header: which water right you're looking at. -->
 <div class="pane-header">
   <div>
@@ -19,6 +20,7 @@
     {% include "surface/partials/_status_badge.html" with status=water_right.status %}
   </div>
 </div>
+{% endif %}
 
 <div class="pane-stack">
   <div class="page-grid-2col">

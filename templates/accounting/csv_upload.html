@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Use Ledger CSV - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Upload Use Ledger CSV{% endblock %}
+{% block title %}Upload use ledger CSV - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Upload use ledger CSV{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -25,7 +26,8 @@
   <!-- Upload card -->
   <div class="card-raised">
     <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <h2 class="section-header-flush">Import entries from CSV</h2>
+      {% comment %} Was "Import entries from CSV" under the title "Upload use ledger CSV" (Phase 143-02, copy rule 13): the card is the file step. {% endcomment %}
+      <h2 class="section-header-flush">Choose the file</h2>
       <a href="{% url 'accounting:csv_template' %}" class="btn-secondary btn-sm">
         Download CSV template
       </a>

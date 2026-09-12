@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}New Use Ledger Entry - Open Water Accounting Platform{% endblock %}
-{% block page_title %}New Use Ledger Entry{% endblock %}
+{% block title %}New use ledger entry - Open Water Accounting Platform{% endblock %}
+{% block page_title %}New use ledger entry{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -12,6 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">New Entry</span>
   </nav>
+  <p class="page-description">One row of the use ledger: a volume on one use area on one date. By the ledger's convention, water that left a canal or a well for the field is entered negative, and an allocation or recharge credit positive. Pick the water year the row counts in.</p>
 </div>
 {% endblock %}
 
@@ -22,9 +24,8 @@
   <a href="{% url 'accounting:ledger_list' %}" class="back-link">&larr; Back to Use Ledger</a>
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">
-      Create ledger entry
-    </h2>
+    {% comment %} Was "Create ledger entry", the page title said again in other words (Phase 143-02, copy rule 13: a label under a heading says the remainder). {% endcomment %}
+    <h2 class="card-header-ruled">Details</h2>
 
     <form method="post">
       {% csrf_token %}

@@ -22,8 +22,8 @@
   the page as visible text.
 {% endcomment %}
 
-{% block title %}{{ facility.facility_id }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Facility {{ facility.facility_id }}{% endblock %}
+{% block title %}{% if facility.name %}{{ facility.name }}{% else %}Facility {{ facility.facility_id }}{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if facility.name %}{{ facility.name }}{% else %}Facility {{ facility.facility_id }}{% endif %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">

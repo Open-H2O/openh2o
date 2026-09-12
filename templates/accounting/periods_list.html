@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Water Years - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Water Years{% endblock %}
+{% block title %}Water years - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water years{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'accounting:period_create' %}" class="btn-primary btn-sm">+ New water year</a>
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -32,11 +36,6 @@
         hx-trigger="keyup changed delay:300ms"
         class="form-input search-input-icon"
       >
-    </div>
-
-    <!-- Create button -->
-    <div>
-      <a href="{% url 'accounting:period_create' %}" class="btn-primary">+ New water year</a>
     </div>
   </div>
 

@@ -1,7 +1,7 @@
 {% extends "workspace.html" %}
 
-{% block title %}Water Accounts - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Water Accounts{% endblock %}
+{% block title %}Water accounts - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Water accounts{% endblock %}
 
 {% comment %}
   Water accounts have no geometry of their own, so this workspace has no map.
@@ -12,6 +12,10 @@
 {% block map_styles %}{% endblock %}
 {% block map_scripts %}{% endblock %}
 
+{% block page_actions %}
+<a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ New account</a>
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -20,9 +24,6 @@
     <span class="breadcrumb-current">Accounts</span>
   </nav>
   <p class="page-description">Water accounts group use areas for tracking and reporting. Pick one to open its balance and assigned use areas alongside the list.</p>
-  <div class="row-end" style="margin-top: var(--space-sm);">
-    <a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ New account</a>
-  </div>
 </div>
 {% endblock %}
 

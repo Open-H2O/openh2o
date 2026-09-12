@@ -364,21 +364,14 @@ def test_a_multi_line_comment_uses_the_comment_tag():
 #: the entry gets deleted rather than accumulating. A new page lands in neither
 #: set and forces a deliberate call.
 PAGES_WITHOUT_A_DESCRIPTION = {
-    # A form page's card header is its description: "Create water account",
-    # "Add monitoring station". A second sentence above the breadcrumb would
-    # say the same thing twice.
-    "/accounting/accounts/create/": "form page — the card header names it",
-    "/accounting/allocations/create/": "form page — the card header names it",
-    "/accounting/ledger/create/": "form page — the card header names it",
-    "/accounting/reporting-periods/create/": "form page — the card header names it",
-    "/datasync/stations/add/": "form page — the card header names it",
-    "/reporting/reports/generate/": "form page — the card header names it",
-    "/users/add/": "form page — the card header names it",
-    "/profile/": "form page — the card header names it",
-    # The two pages a reader reaches before any water data: the signed-in home
-    # and the About page. Both open with a hero that carries the same job.
+    # Phase 143-02 (R-031, R-132) gave the create forms, the station form, the
+    # user form, Profile and About a description under a visible title, and
+    # their card headers now say the remainder ("Details"). One form page keeps
+    # the exemption: its lead-in sentence sits in the card because it is
+    # conditional on the module set.
+    "/reporting/reports/generate/": "form page — the lead-in sentence is in the card",
+    # The signed-in home opens with a hero that carries the same job.
     "/": "landing page — the hero carries it",
-    "/about/": "landing page — the hero carries it",
     # django-allauth's screens. Their headings are the description, they are
     # not part of the sidebar's information architecture, and their markup is
     # allauth's rather than ours.

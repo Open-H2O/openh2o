@@ -19,7 +19,7 @@
   LINE, so a multi-line note written that way leaks into the page.
 {% endcomment %}
 
-{% block title %}{{ result.analyte.name }} {{ event.sample_date|date:"Y-m-d" }} - Open Water Accounting Platform{% endblock %}
+{% block title %}{{ result.analyte.name }} sampled {{ event.sample_date|date:"Y-m-d" }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ result.analyte.name }} sampled {{ event.sample_date|date:"Y-m-d" }}{% endblock %}
 
 {% block breadcrumbs %}

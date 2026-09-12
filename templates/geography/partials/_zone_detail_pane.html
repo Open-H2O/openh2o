@@ -7,6 +7,7 @@
 {% endcomment %}
 {% load static placeholders humanize %}
 
+{% if not on_full_page %}
 <!-- Detail header: which zone you're looking at. -->
 <div class="pane-header">
   <div>
@@ -14,6 +15,7 @@
     <div class="pane-header-sub">{{ zone.get_zone_type_display|default:"Zone" }}</div>
   </div>
 </div>
+{% endif %}
 
 {% if is_curtailed %}
 <div class="alert-warning">

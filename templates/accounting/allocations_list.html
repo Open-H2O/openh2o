@@ -3,6 +3,10 @@
 {% block title %}Allocations - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Allocations{% endblock %}
 
+{% block page_actions %}
+<a href="{% url 'accounting:allocation_create' %}" class="btn-primary btn-sm">+ New allocation</a>
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -57,11 +61,6 @@
           <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
         {% endfor %}
       </select>
-    </div>
-
-    <!-- Create button -->
-    <div>
-      <a href="{% url 'accounting:allocation_create' %}" class="btn-primary">+ New allocation</a>
     </div>
   </div>
 

@@ -8,8 +8,12 @@
   target; day-to-day use happens in the master-detail workspace at parcels:list.
 {% endcomment %}
 
-{% block title %}Use Area {{ parcel.parcel_number }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Use Area {{ parcel.parcel_number }}{% endblock %}
+{% block title %}Use area {{ parcel.parcel_number }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Use area {{ parcel.parcel_number }}{% endblock %}
+
+{% block page_meta %}
+{% include "parcels/partials/_status_badge.html" with status=parcel.status %}
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">

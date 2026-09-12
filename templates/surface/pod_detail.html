@@ -12,6 +12,10 @@
 {% block title %}{{ pod.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ pod.name }}{% endblock %}
 
+{% block page_meta %}
+{% include "surface/partials/_status_badge.html" with status=pod.status %}
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -40,7 +44,7 @@
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
   <div id="detail-body">
-    {% include "surface/partials/_detail_pane.html" %}
+    {% include "surface/partials/_detail_pane.html" with on_full_page=True %}
   </div>
 </div>
 {% endblock %}

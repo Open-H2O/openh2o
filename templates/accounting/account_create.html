@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}New Water Account - Open Water Accounting Platform{% endblock %}
-{% block page_title %}New Water Account{% endblock %}
+{% block title %}New water account - Open Water Accounting Platform{% endblock %}
+{% block page_title %}New water account{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -12,6 +13,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">New Account</span>
   </nav>
+  <p class="page-description">An account groups the use areas one holder is reported on together. The account number follows your own scheme, such as MER-ACCT-001; the name is the holder's. Use areas are assigned from the account's page once it exists.</p>
 </div>
 {% endblock %}
 
@@ -22,9 +24,8 @@
   <a href="{% url 'accounting:accounts_list' %}" class="back-link">&larr; Back to Water Accounts</a>
 
   <div class="card-raised">
-    <h2 class="card-header-ruled">
-      Create water account
-    </h2>
+    {% comment %} Was "Create water account", the page title said again in other words (Phase 143-02, copy rule 13: a label under a heading says the remainder). {% endcomment %}
+    <h2 class="card-header-ruled">Details</h2>
 
     {% if form.errors %}
     <div class="form-error-box">

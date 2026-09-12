@@ -15,6 +15,10 @@
 <script src="{% static 'js/map-core.js' %}"></script>
 {% endblock %}
 
+{% block page_actions %}
+<a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add zone</a>
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -29,9 +33,6 @@
   reproduces "boundary, assigned use areas, and allocation-vs-use" byte-for-byte
   on a full deployment; the boundary is always there, so the list never empties
   out.{% endcomment %}<p class="page-description">Management zones divide your district into areas{% if 'accounting' in enabled_modules %} with separate allocations{% endif %}. The map shows every zone boundary at once; pick a zone from the map or the list to open its {% module_nouns "geography:boundary" "parcels:assigned use areas" "accounting:allocation-vs-use" %}.</p>
-  <div class="row-end" style="margin-top: var(--space-sm);">
-    <a href="{% url 'geography:zone_create' %}" class="btn-primary btn-sm">+ Add zone</a>
-  </div>
 </div>
 {% endblock %}
 

@@ -27,8 +27,8 @@
   LINE, so a multi-line note written that way leaks into the page.
 {% endcomment %}
 
-{% block title %}{{ point.ps_code }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}Sampling point {{ point.ps_code }}{% endblock %}
+{% block title %}{% if point.name %}{{ point.name }}{% else %}Sampling point {{ point.ps_code }}{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if point.name %}{{ point.name }}{% else %}Sampling point {{ point.ps_code }}{% endif %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">

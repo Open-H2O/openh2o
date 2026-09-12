@@ -9,6 +9,7 @@
   full-page load order (Chart.js loads at end of body).
 {% endcomment %}
 
+{% if not on_full_page %}
 <!-- Page sub-header: which station, and how fresh. -->
 <div class="pane-header">
   <div>
@@ -22,6 +23,7 @@
     </span>
   </div>
 </div>
+{% endif %}
 
 <div class="pane-stack">
 

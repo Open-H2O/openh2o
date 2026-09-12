@@ -8,8 +8,20 @@
   accounts workspace at accounting:accounts_list.
 {% endcomment %}
 
-{% block title %}{{ account.account_number }} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}{{ account.account_number }}{% endblock %}
+{% block title %}{{ account.name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{{ account.name }}{% endblock %}
+
+{% block page_meta %}
+{% if account.status == "active" %}
+  <span class="badge badge-pill badge-green">Active</span>
+{% elif account.status == "inactive" %}
+  <span class="badge badge-pill badge-grey">Inactive</span>
+{% elif account.status == "suspended" %}
+  <span class="badge badge-pill badge-red">Suspended</span>
+{% else %}
+  <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
+{% endif %}
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">

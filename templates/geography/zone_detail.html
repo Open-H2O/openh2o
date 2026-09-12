@@ -21,6 +21,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ zone.name }}</span>
   </nav>
+  <p class="page-description">A zone is an area the district accounts for as one unit: its boundary, the use areas inside it, and its allocation against its use for the selected water year.</p>
 </div>
 {% endblock %}
 
@@ -39,7 +40,7 @@
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
   <div id="detail-body">
-    {% include "geography/partials/_zone_detail_pane.html" %}
+    {% include "geography/partials/_zone_detail_pane.html" with on_full_page=True %}
   </div>
 </div>
 {% endblock %}

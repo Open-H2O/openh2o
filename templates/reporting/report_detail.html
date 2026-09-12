@@ -1,7 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Report Detail - Open Water Accounting Platform{% endblock %}
+{% block title %}{{ submission.report_template.name }} - {{ submission.reporting_period.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ submission.report_template.name }} - {{ submission.reporting_period.name }}{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
+
+{% block page_meta %}
+{% if submission.status == "filed" %}
+  <span class="badge badge-pill badge-green">{{ submission.get_status_display }}</span>
+{% elif submission.status == "internally_approved" %}
+  <span class="badge badge-pill badge-orange">{{ submission.get_status_display }}</span>
+{% elif submission.status == "exported" %}
+  <span class="badge badge-pill badge-blue">{{ submission.get_status_display }}</span>
+{% else %}
+  <span class="badge badge-pill badge-grey">{{ submission.get_status_display }}</span>
+{% endif %}
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
@@ -30,7 +43,7 @@
     <span class="text-secondary text-sm">{{ submission.report_template.name }}</span>
   </div>
 
-  {% include "reporting/partials/_report_detail_pane.html" %}
+  {% include "reporting/partials/_report_detail_pane.html" with on_full_page=True %}
 
 </div>
 {% endblock %}

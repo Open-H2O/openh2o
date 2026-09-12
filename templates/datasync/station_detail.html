@@ -40,7 +40,7 @@
     <div id="detail-map" class="map-embed" style="height: 380px; position: relative; overflow: hidden; background: var(--color-base);"></div>
   </div>
   <div id="detail-body">
-    {% include "datasync/partials/_station_detail_pane.html" %}
+    {% include "datasync/partials/_station_detail_pane.html" with on_full_page=True %}
   </div>
 </div>
 {% endblock %}
