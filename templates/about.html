@@ -13,7 +13,9 @@
         {% if logo_exists %}
         <img src="{% static 'img/logo.png' %}" alt="OpenH2O logo" class="about-logo">
         {% endif %}
-        <h1 class="about-title">OpenH2O</h1>
+        {% comment %} The wordmark, not the page's title: the page head carries the one h1
+           (Phase 143-02). Same class, same look. {% endcomment %}
+        <p class="about-title">OpenH2O</p>
         <p class="about-tagline">Open-source water-data management for California</p>
         {% comment %}
           A fifth ISS-082 site, and the one nobody had measured — 87-02 looked at

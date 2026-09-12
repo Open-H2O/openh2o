@@ -18,8 +18,9 @@
 
 {% block content %}
 <div class="page-stack page-wide">
-    <div class="row-between">
-        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--color-text-primary); margin: 0;">Site health</h1>
+    {% comment %} The page's title is the page head's (Phase 143-02); the h1 that sat here
+       duplicated it once the head became visible. The score box keeps its row. {% endcomment %}
+    <div class="row-end">
         {% if total > 0 %}
         <div class="row-start" style="padding: var(--space-xs) var(--space-md); border-radius: var(--radius-md); background: var(--color-card); border: 1px solid var(--color-border);">
             {% comment %} `unknown` is now reachable with rows present (every check skipped),

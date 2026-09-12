@@ -1571,6 +1571,66 @@ html { color-scheme: dark; }
     margin-bottom: var(--space-md);
 }
 
+/* -- Page head (Phase 143-02) --------------------------------------------- */
+/* One head on every page that extends base.html: crumbs (the path, without the
+   current page), the title at title size with the page's actions on its line,
+   the description under it. Sits OUTSIDE .app-content, like the breadcrumb bar
+   it replaces, so it is not under that pane's zoom.
+
+   The per-page breadcrumbs block keeps its markup; its wrapper dissolves
+   (display: contents) so the crumbs, the description and any action row a
+   template still carries become items of this column, placed by `order`. */
+.page-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-lg);
+    background-color: var(--color-card);
+    border-bottom: 1px solid var(--color-border);
+}
+.page-head .breadcrumb-bar { display: contents; }
+.page-head .breadcrumb { order: 1; }
+/* The title says the current page; the crumb strip keeps it for a screen reader
+   (aria) but does not print it twice, nor the separator before it. */
+.page-head .breadcrumb-current,
+.page-head .breadcrumb > .breadcrumb-separator:has(+ .breadcrumb-current) { display: none; }
+.page-head-row {
+    order: 2;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    min-height: 2rem;
+}
+.page-title {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+}
+.page-head-meta { display: flex; align-items: center; gap: var(--space-sm); }
+.page-head-meta:empty { display: none; }
+.page-head-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+.page-head-actions:empty { display: none; }
+.page-head .page-description { order: 3; margin: 0; }
+/* An action row a template has not yet moved into page_actions lands last. */
+.page-head .breadcrumb-bar > .row-end { order: 4; }
+/* A narrow page (a form at 640px, centred) gets a head on the same measure, so
+   the top of the page and its body share one axis. */
+.page-head--narrow > *,
+.page-head--narrow .breadcrumb-bar > * { width: 100%; max-width: 640px; margin-inline: auto; }
+.page-head--medium > *,
+.page-head--medium .breadcrumb-bar > * { width: 100%; max-width: 800px; margin-inline: auto; }
+
 /* -- Help tooltip -------------------------------------------------------- */
 
 .help-tooltip {
@@ -3989,6 +4049,10 @@ div[id$="-map"] {
     }
 
     .breadcrumb-bar {
+        padding: var(--space-sm) var(--space-md);
+    }
+
+    .page-head {
         padding: var(--space-sm) var(--space-md);
     }
 

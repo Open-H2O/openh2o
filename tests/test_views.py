@@ -277,18 +277,20 @@ class TestAccessibility:
         assert "keyup[key=='Enter']" in body
 
     def test_page_has_one_real_h1_that_is_the_page_subject(self, auth_client):
-        # F3 (1.3.1 / 2.4.6): exactly one <h1>, and it is the page subject
-        # (now in <main>), NOT the static app name that used to live in the
-        # header. The page_title block override only reaches the chain-defined
-        # h1, never the {% include %}d header.
+        # F3 (1.3.1 / 2.4.6): exactly one <h1>, and it is the page subject,
+        # NOT the static app name that used to live in the header. The
+        # page_title block override only reaches the chain-defined h1, never
+        # the {% include %}d header. Since Phase 143-02 that h1 is the visible
+        # `.page-title` in the page head, not a screen-reader-only element
+        # (tests/test_page_head.py holds the platform-wide guard).
         import re
 
         response = auth_client.get(reverse("accounting:ledger_list"))
         body = response.content.decode()
         assert body.count("<h1") == 1
         assert '<h1 class="app-header-title"' not in body
-        h1 = re.search(r'<h1 class="sr-only">(.*?)</h1>', body, re.S)
-        assert h1 and "Use Ledger" in h1.group(1)
+        h1 = re.search(r'<h1 class="page-title">(.*?)</h1>', body, re.S)
+        assert h1 and "use ledger" in h1.group(1).lower()
 
 
 class TestAccountDetailBillableLedger:
