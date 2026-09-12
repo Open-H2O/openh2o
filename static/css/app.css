@@ -1625,11 +1625,15 @@ html { color-scheme: dark; }
 /* An action row a template has not yet moved into page_actions lands last. */
 .page-head .breadcrumb-bar > .row-end { order: 4; }
 /* A narrow page (a form at 640px, centred) gets a head on the same measure, so
-   the top of the page and its body share one axis. */
+   the top of the page and its body share one axis. The body sits under
+   .app-content's zoom (1.0625, Phase 64) and this head does not, so the head's
+   measure is the body's measure times that zoom: 640 renders at 680, 800 at 850.
+   Measured 2026-09-11 at 1,730: the unzoomed 640 put the title 20px inside the
+   card's edge on every narrow page. Keep the factor in sync with .app-content. */
 .page-head--narrow > *,
-.page-head--narrow .breadcrumb-bar > * { width: 100%; max-width: 640px; margin-inline: auto; }
+.page-head--narrow .breadcrumb-bar > * { width: 100%; max-width: calc(640px * 1.0625); margin-inline: auto; }
 .page-head--medium > *,
-.page-head--medium .breadcrumb-bar > * { width: 100%; max-width: 800px; margin-inline: auto; }
+.page-head--medium .breadcrumb-bar > * { width: 100%; max-width: calc(800px * 1.0625); margin-inline: auto; }
 
 /* -- The feedback trigger in the sidebar (Phase 143-02, R-024) ---------------- */
 /* A .sidebar-link that is a <button>: same row, same type, no button chrome.

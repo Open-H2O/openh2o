@@ -66,7 +66,7 @@
     <!-- Compiled Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <!-- App layout and component styles -->
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=83">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=84">
 
     <!-- MapLibre GL JS (available in map pages via block) -->
     {% block map_styles %}{% endblock %}
@@ -112,7 +112,7 @@
               CSS order: crumbs, title row, description, leftover actions.
 
               page_head_class: a page whose body is a centred narrow form sets
-              "page-head--narrow" so the head sits on the same 640px measure.
+              "page-head--narrow" so the head sits on the same measure (640px under the pane zoom).
               page_meta: a status pill beside the title (record pages).
               page_actions: the page's buttons, on the title's line.
             {% endcomment %}
