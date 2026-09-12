@@ -68,3 +68,45 @@ def test_the_visible_title_is_the_page_title_block(crawled):  # noqa: F811
         if "page-title" not in attrs and "auth-title" not in attrs
     }
     assert off_pattern == {}, f"an h1 that is not the page head's title: {off_pattern}"
+
+
+# ---------------------------------------------------------------------------
+# Source half: a template that declares a breadcrumb strip declares its own
+# title too, or the visible h1 says "Open Water Accounting Platform" on it.
+# ---------------------------------------------------------------------------
+
+from pathlib import Path  # noqa: E402
+
+from django.conf import settings  # noqa: E402
+
+_TEMPLATES = Path(settings.BASE_DIR) / "templates"
+_DEFAULT_TITLE = "Open Water Accounting Platform"
+
+
+def _declares(path, block):
+    return f"{{% block {block} %}}" in path.read_text()
+
+
+def test_every_template_with_a_breadcrumb_strip_declares_its_own_title():
+    """Observed RED against the pre-change tree: delivery_settings.html and
+    methodology_settings.html declared breadcrumbs and no page_title, so the
+    visible title on those two pages was the platform's name. (About declares
+    neither block but is caught by the rendered guard above.)"""
+    missing = sorted(
+        str(p.relative_to(_TEMPLATES))
+        for p in _TEMPLATES.rglob("*.html")
+        if _declares(p, "breadcrumbs") and not _declares(p, "page_title")
+    )
+    assert missing == [], f"a page with a breadcrumb strip and no title of its own: {missing}"
+
+
+def test_no_page_template_declares_the_default_title():
+    """The base default is the fallback for a page that forgot; a template that
+    declares it on purpose has no title."""
+    offenders = sorted(
+        str(p.relative_to(_TEMPLATES))
+        for p in _TEMPLATES.rglob("*.html")
+        if p.name != "base.html"
+        and f"{{% block page_title %}}{_DEFAULT_TITLE}{{% endblock %}}" in p.read_text()
+    )
+    assert offenders == [], f"a template titles itself with the platform's name: {offenders}"
