@@ -52,6 +52,7 @@ from core.models import SiteConfig
 from core.modules import is_enabled
 from accounting.services import (
     account_consumptive_balance,
+    current_period_id as compute_current_period_id,
     parcel_consumptive_balance,
     parse_ledger_csv,
     runs_in_period,
@@ -496,16 +497,36 @@ def periods_list(request):
 
 @login_required
 def period_detail(request, pk):
-    """Detail view for a single reporting period."""
+    """Detail view for a single reporting period.
+
+    143-06 (R-034): the old "Summary" tile row (Allocations count, Ledger
+    entries count) goes. The period leads with what it IS (its dates, its
+    finalized status) and the one figure it exists for — its allocations by
+    water type, in the same ``.budget-panel`` shape and the same subtotal
+    grouping the allocations list uses for one period, so the two screens
+    never say this water year's totals two different ways. The Allocations
+    table below is that list's own columns, link and footer, brought here
+    rather than re-derived (zone as the link, no Name column).
+    """
     period = get_object_or_404(ReportingPeriod, pk=pk)
-    allocations = AllocationPlan.objects.filter(reporting_period=period).select_related(
-        "zone", "water_type"
-    )
+    allocations = AllocationPlan.objects.filter(
+        reporting_period=period
+    ).select_related("zone", "water_type").order_by("water_type__name", "zone__name")
     ledger_count = ParcelLedger.objects.filter(reporting_period=period).count()
+
+    # Same shape as the allocations list's per-period subtotals (rule 5's
+    # label: what makes a group of rows addable), so the lead panel's figures
+    # and the table's footer are read from the one query, not recomputed twice.
+    allocation_subtotals = list(
+        allocations.values("water_type__name")
+        .annotate(total=Sum("allocation_acre_feet"), plans=Count("pk"))
+        .order_by("water_type__name")
+    )
 
     context = {
         "period": period,
         "allocations": allocations,
+        "allocation_subtotals": allocation_subtotals,
         "ledger_count": ledger_count,
     }
     return render(request, "accounting/period_detail.html", context)
@@ -551,13 +572,33 @@ def period_finalize(request, pk):
 
 @login_required
 def allocations_list(request):
-    """Paginated list of allocation plans with HTMX search and period filter."""
+    """Paginated list of allocation plans with HTMX search and period filter.
+
+    143-06 (R-032, R-033, R-041/ISS-164, R-034): "period" absent entirely (a
+    bare landing) is distinct from "period=" (the explicit "All periods"
+    choice the Period select always sends), the same distinction the ledger
+    view makes — only the former gets the current-period auto-default, via
+    the helper the two views share (``accounting.services.current_period_id``).
+    A bare landing's rows are therefore always addable (rule 5): the footer
+    never has to sum across a water year to answer "how much, in total?".
+    """
     q = request.GET.get("q", "").strip()
+    period_present = "period" in request.GET
     period_id = request.GET.get("period", "").strip()
 
+    if not period_present:
+        default_period_id = compute_current_period_id()
+        if default_period_id is not None:
+            period_id = str(default_period_id)
+
+    # Zone as the link (R-033, the checkpoint's "link-zone" ruling): the
+    # allocation's own record is read against its use on the zone page, which
+    # already draws on the same helper the dashboard's zone row calls
+    # (zone_groundwater_budget) -- an allocation page of its own would show one
+    # figure and four fields nothing else on the platform needs.
     queryset = AllocationPlan.objects.select_related(
         "zone", "water_type", "reporting_period"
-    ).order_by("-reporting_period__start_date", "name")
+    ).order_by("-reporting_period__start_date", "water_type__name", "zone__name")
 
     if q:
         queryset = queryset.filter(
@@ -574,26 +615,91 @@ def allocations_list(request):
     # ForeignKey, not an M2M, so the queryset has no row duplication and
     # aggregates directly without the ledger's pk-refilter.
     #
-    # **Subtotalled by water type, and never summed across them (ISS-156).** This
-    # footer printed one number until 2026-09-06: 159,671.46 AF for WY 2025-2026,
-    # which was 148,500.00 AF of a surface-water district's diversion entitlement
-    # plus 11,171.46 AF of a groundwater sustainability agency's pumping
-    # allowance. Different agencies, different law, and nobody manages the sum —
-    # so a reader could not act on the one figure the footer gave them. The
-    # arithmetic was never wrong; the label was. Any figure that adds rows has to
-    # be able to say what makes them addable, and "both are measured in acre-feet"
-    # is not an answer.
+    # **Subtotalled by (period, water type), and never summed across either axis
+    # (ISS-156, then R-041/ISS-164).** This footer printed one number until
+    # 2026-09-06: 159,671.46 AF for WY 2025-2026, which was 148,500.00 AF of a
+    # surface-water district's diversion entitlement plus 11,171.46 AF of a
+    # groundwater sustainability agency's pumping allowance. "All periods" then
+    # went on to add the SAME entitlement across two water years into
+    # 304,200.00 AF, a quantity nobody manages. Different agencies, different
+    # law, and different years never add either — so nobody could act on the one
+    # figure the old footer gave them. The arithmetic was never wrong; the label
+    # was, and shared units are not what makes two rows addable.
     allocation_subtotals = list(
-        queryset.values("water_type__name")
+        queryset.values(
+            "reporting_period_id",
+            "reporting_period__name",
+            "reporting_period__start_date",
+            "water_type__name",
+        )
         .annotate(total=Sum("allocation_acre_feet"), plans=Count("pk"))
-        .order_by("water_type__name")
+        .order_by("-reporting_period__start_date", "water_type__name")
     )
+    subtotals_by_period = {}
+    for row in allocation_subtotals:
+        subtotals_by_period.setdefault(row["reporting_period_id"], []).append(row)
+
+    # Per-period count (every water type together), for the "All periods" row-
+    # group divider ("WY 2025-2026 · 8 allocations") — a different number from
+    # any one subtotal's own ``plans`` count, which is per water type.
+    # ``.order_by()`` clears the ordering `queryset` already carries: left in
+    # place, Django folds those extra fields (water_type__name, zone__name)
+    # into the GROUP BY alongside reporting_period_id, so every zone counts as
+    # its own group of 1 instead of the period's whole count.
+    period_counts = {
+        row["reporting_period_id"]: row["count"]
+        for row in queryset.order_by().values("reporting_period_id").annotate(
+            count=Count("pk")
+        )
+    }
 
     paginator = Paginator(queryset, 25)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # Candidate A (the checkpoint ruling, 2026-09-12): "All periods" groups the
+    # rows by water year and closes each group with its own subtotal rows,
+    # inside the table body, never a tfoot naming a cross-year sum. Marked per
+    # row on THIS page only (not the whole filtered set), so a group a page
+    # boundary splits still closes at the boundary — with the whole filtered
+    # set's total, from subtotals_by_period above, not just this page's rows —
+    # and reopens with its own divider on the next page.
+    page_rows = list(page_obj)
+    for index, alloc in enumerate(page_rows):
+        starts_group = (
+            index == 0
+            or page_rows[index - 1].reporting_period_id != alloc.reporting_period_id
+        )
+        ends_group = (
+            index == len(page_rows) - 1
+            or page_rows[index + 1].reporting_period_id != alloc.reporting_period_id
+        )
+        alloc.starts_period_group = starts_group
+        alloc.ends_period_group = ends_group
+        alloc.period_group_count = period_counts.get(alloc.reporting_period_id, 0)
+        alloc.period_group_subtotals = (
+            subtotals_by_period.get(alloc.reporting_period_id, []) if ends_group else []
+        )
+
     periods = ReportingPeriod.objects.order_by("-start_date")
+
+    period_name = "All periods"
+    if period_id:
+        period_name = next(
+            (p.name for p in periods if str(p.pk) == period_id), period_name
+        )
+
+    # The card head's facts line (rule 5's label, said once): why "All periods"
+    # is here at all, plus a pagination caveat when the totals above cover rows
+    # this page does not show.
+    facts_parts = []
+    if not period_id:
+        facts_parts.append(
+            "Totals are by water year and water type; nothing is added across them."
+        )
+    if page_obj.paginator.num_pages > 1:
+        facts_parts.append("Totals are for the whole filtered set, not just this page.")
+    facts_line = " ".join(facts_parts)
 
     context = {
         "page_obj": page_obj,
@@ -601,6 +707,8 @@ def allocations_list(request):
         "allocation_subtotals": allocation_subtotals,
         "q": q,
         "period_id": period_id,
+        "period_name": period_name,
+        "facts_line": facts_line,
         "periods": periods,
     }
 
@@ -1092,6 +1200,14 @@ def ledger_list(request):
     # any activity, then simply the most recent period. This single value is both
     # the auto-default target on a bare landing AND the destination of the "This
     # Period" preset chip, so the two always point at the same period.
+    #
+    # 143-06: the three-fallback derivation itself moved to
+    # accounting.services.current_period_id(), which the allocations view (and
+    # 143-10's zone view) call too, so "current period" cannot mean two things
+    # on two screens. calculated_period_id stays a query of its own here only
+    # because auto_default_calculated below needs to know which fallback rung
+    # produced the default, a distinction the shared helper has no reason to
+    # expose.
     calculated_period_id = (
         ParcelLedger.objects.filter(
             source_type="calculated", reporting_period__isnull=False
@@ -1100,14 +1216,7 @@ def ledger_list(request):
         .values_list("reporting_period_id", flat=True)
         .first()
     )
-    current_period_id = calculated_period_id or (
-        ParcelLedger.objects.filter(reporting_period__isnull=False)
-        .order_by("-reporting_period__start_date")
-        .values_list("reporting_period_id", flat=True)
-        .first()
-    )
-    if current_period_id is None and periods.exists():
-        current_period_id = periods.first().pk
+    default_period_id = compute_current_period_id()
 
     period_auto_defaulted = False
     auto_default_period_name = ""
@@ -1116,11 +1225,11 @@ def ledger_list(request):
         q or source_type or water_type_id or start_date or end_date or zone_id
         or active_areas
     )
-    if not period_present and no_other_filters and current_period_id is not None:
-        period_id = str(current_period_id)
+    if not period_present and no_other_filters and default_period_id is not None:
+        period_id = str(default_period_id)
         period_auto_defaulted = True
         default_period = next(
-            (p for p in periods if p.pk == current_period_id), None
+            (p for p in periods if p.pk == default_period_id), None
         )
         auto_default_period_name = default_period.name if default_period else ""
 
@@ -1252,7 +1361,7 @@ def ledger_list(request):
         "auto_default_period_name": auto_default_period_name,
         "auto_default_calculated": auto_default_calculated,
         "active_areas": active_areas,
-        "current_period_id": current_period_id,
+        "current_period_id": default_period_id,
         # The page description names "recharge" (copy rule 11's settled
         # sentence); a deployment without the recharge module must not see
         # that noun (tests/droppability/checks.py::

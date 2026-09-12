@@ -27,26 +27,15 @@
 {% block content %}
 <div class="page-stack">
 
-  <!-- Toolbar -->
+  {% comment %}
+    143-06: one row, the ledger's shape (Period, then Search) -- the filter
+    card used to put Search first; the Period select now leads because a
+    bare landing already has one chosen (the current water year) and this
+    reorders the row to match what a reader sees selected.
+  {% endcomment %}
   <div class="card-raised toolbar-row">
-    <!-- Search -->
-    <div style="flex: 1; min-width: 200px;">
-      <label class="form-label" for="filter-search">Search</label>
-      <input
-        type="text"
-        id="filter-search" name="q"
-        value="{{ q }}"
-        placeholder="Plan name, zone, or water type..."
-        hx-get="{% url 'accounting:allocations_list' %}"
-        hx-target="#results"
-        hx-trigger="keyup changed delay:300ms"
-        hx-include="[name='period']"
-        class="form-input search-input-icon"
-      >
-    </div>
-
     <!-- Period filter -->
-    <div>
+    <div style="width: 220px;">
       <label class="form-label" for="filter-period">Period</label>
       <select
         id="filter-period" name="period"
@@ -61,6 +50,22 @@
           <option value="{{ p.pk }}" {% if period_id == p.pk|stringformat:"d" %}selected{% endif %}>{{ p.name }}</option>
         {% endfor %}
       </select>
+    </div>
+
+    <!-- Search -->
+    <div style="flex: 1; min-width: 240px;">
+      <label class="form-label" for="filter-search">Search</label>
+      <input
+        type="text"
+        id="filter-search" name="q"
+        value="{{ q }}"
+        placeholder="Zone or water type"
+        hx-get="{% url 'accounting:allocations_list' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='period']"
+        class="form-input search-input-icon"
+      >
     </div>
   </div>
 

@@ -431,6 +431,46 @@ def billable_ledger(queryset):
     return queryset.exclude(Q(source_type="et_estimate") & suppression)
 
 
+# ---------------------------------------------------------------------------
+# The "current" reporting period (143-06)
+# ---------------------------------------------------------------------------
+
+
+def current_period_id():
+    """The reporting period a bare landing should default to.
+
+    The most recent period with CALCULATED ledger rows, then the most recent
+    period with any ledger activity at all, then simply the most recent
+    period -- the three-fallback rule ISS-022 wrote for the ledger view
+    (`accounting/views.py::ledger_list`), extracted here so the allocations
+    view (143-06) and the zone view (143-10) land on the same period the
+    ledger does rather than re-deriving it and risking the three screens
+    disagreeing about what "current" means. Returns ``None`` only when the
+    database holds no ReportingPeriod at all.
+    """
+    calculated_period_id = (
+        ParcelLedger.objects.filter(
+            source_type="calculated", reporting_period__isnull=False
+        )
+        .order_by("-reporting_period__start_date")
+        .values_list("reporting_period_id", flat=True)
+        .first()
+    )
+    period_id = calculated_period_id or (
+        ParcelLedger.objects.filter(reporting_period__isnull=False)
+        .order_by("-reporting_period__start_date")
+        .values_list("reporting_period_id", flat=True)
+        .first()
+    )
+    if period_id is None:
+        period_id = (
+            ReportingPeriod.objects.order_by("-start_date")
+            .values_list("pk", flat=True)
+            .first()
+        )
+    return period_id
+
+
 def parcel_balance(parcel, reporting_period=None):
     """Sum of all ledger entries for a parcel.
 

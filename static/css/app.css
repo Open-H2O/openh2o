@@ -4992,6 +4992,63 @@ div[id$="-map"] {
     cursor: default;
 }
 
+/* -- Allocations list, the water-year page (143-06) ----------------------- */
+/* The allocations card carries no padding (the table fills it, the ledger's
+   own shape, `.ledger-card-head` above); the edge cells restore the card's
+   inset themselves so Zone/Allocation don't sit flush against the card wall. */
+.alloc-table th:first-child, .alloc-table td:first-child { padding-left: var(--space-lg); }
+.alloc-table th:last-child,  .alloc-table td:last-child  { padding-right: var(--space-lg); }
+/* Reader fault (143-06 build note, not the mock-up): `.data-table`'s own
+   `width: 100%` forced this table to fill the card no matter how short its
+   content, and auto layout gives that forced surplus to whichever column has
+   the widest natural content (Zone, because of the long MER Surface Service
+   Area names) -- so every SHORT GSA name trailed ~700px of blank table before
+   Water type, three columns reading as two with a gap between them. A FIXED
+   percentage split (56/20/24) tried first still forced the same surplus into
+   Zone on every row and left the gap at 539-643px, unchanged in kind. The fix
+   is `width: auto`: the table sizes to its own content (auto layout, the
+   platform's default) with the card's spare width left OUTSIDE the table,
+   right of the Allocation column, rather than inside a cell pretending to be
+   text. Zone still gets a `max-width` so the longest name (MER Surface
+   Service Area (MER-WR-005-DEMO)) wraps to a second line instead of setting
+   the table's total width by itself. */
+.alloc-table {
+    width: auto;
+    max-width: 100%;
+}
+.alloc-table th:nth-child(1), .alloc-table td:nth-child(1) {
+    max-width: 460px;
+}
+.alloc-table th:nth-child(2), .alloc-table td:nth-child(2),
+.alloc-table td.td-num, .alloc-table th.th-right {
+    white-space: nowrap;
+}
+/* "All periods" (candidate A, the 2026-09-12 checkpoint): a water-year group
+   closes with its own subtotal rows INSIDE the body, set like the table's
+   closing footer (`.tfoot-total`) but never a `tfoot` itself, so 148,500.00
+   and 155,700.00 each sit under their own year and the two years' sum
+   (304,200.00 AF, ISS-164) never prints anywhere on the page. */
+.data-table tbody tr.row-subtotal td,
+.data-table tbody tr.row-subtotal:nth-child(even) td {
+    border-top: 2px solid var(--color-accent-muted);
+    border-bottom: none;
+    background-color: color-mix(in srgb, var(--color-elevated) 85%, transparent);
+    font-weight: 600;
+}
+.data-table tbody tr.row-subtotal + tr.row-subtotal td { border-top: none; }
+.data-table tbody tr.row-subtotal td.tfoot-total {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+/* The water-year page's lead panel holds one figure per water type and no
+   operator between them (nothing adds across water types, ISS-156): two (or
+   more) tracks and a rule, not the five-track supply/use/balance equation
+   `.budget-panel-body .budget-panel-row` is built for. */
+.period-panel .budget-panel-body .budget-panel-row { grid-template-columns: 1fr auto 1fr; }
+
 /* -- Screen-reader-only utility (a11y) ------------------------------------ */
 /* Visually removes an element while leaving it in the accessibility tree —
    used for the real per-page <h1> whose visible counterpart is the breadcrumb. */

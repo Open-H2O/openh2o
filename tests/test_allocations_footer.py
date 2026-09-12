@@ -143,9 +143,13 @@ class TestAllocationsFooter:
         assert subtotals["Groundwater"]["plans"] == 3
 
         assert "Surface Water" in html
-        assert "148,500.00 AF" in html
+        # 143-06: the unit left the per-figure cell for the card head (rule 4,
+        # "a unit is stated once per single-unit table"), so the footer figure
+        # itself no longer carries " AF" -- the value's presence is still the
+        # thing this test pins.
+        assert "148,500.00" in html
         assert "Groundwater" in html
-        assert "11,171.46 AF" in html
+        assert "11,171.46" in html
 
     def test_the_screen_never_prints_the_mixed_sum(self, auth_client, two_water_types):
         """159,671.46 AF is the figure ISS-156 was filed against.
@@ -176,7 +180,9 @@ class TestAllocationsFooter:
         assert len(subtotals) == 1
         assert subtotals[0]["water_type__name"] == "Groundwater"
         assert subtotals[0]["total"] == Decimal("11171.4600")
-        assert "11,171.46 AF" in response.content.decode()
+        # 143-06: no " AF" suffix on the figure itself (rule 4; see the note
+        # in test_each_water_type_carries_its_own_subtotal above).
+        assert "11,171.46" in response.content.decode()
 
     def test_a_period_with_no_allocations_prints_no_footer(self, auth_client):
         """An empty state states the fact and stops (DESIGN.md copy rule 8)."""

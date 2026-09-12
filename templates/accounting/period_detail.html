@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}{{ period.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ period.name }}{% endblock %}
@@ -25,30 +26,28 @@
     </a>
   </div>
 
-  <div class="page-grid-2col">
+  {% comment %}
+    143-06 (R-034): the old "Summary" tile row (Allocations count, Ledger
+    entries count, in `.stat-card-value-sm`) goes. This page now leads with
+    what the period IS (dates, finalized status, unchanged) beside the ONE
+    figure it exists for -- its allocations by water type -- in the account
+    page's own grid (143-03's `.page-grid-account` shape: information beside
+    the lead panel at one height, the wide table full width below). The
+    Allocations table keeps the list's own columns, link and footer (R-032,
+    R-033, R-041/ISS-164): zone as the link, no Name column, one water year
+    already, so it never needs a row-group divider.
+  {% endcomment %}
+  <div class="page-grid-account">
 
-    <!-- Left column: Period Info -->
-    <div class="page-stack">
+    <div class="card-raised page-grid-account-info">
+      <h2 class="section-header">
+        Period information
+      </h2>
 
-      <!-- Period Info card -->
-      <div class="card-raised">
-        <h2 class="section-header">
-          Period information
-        </h2>
-
+      <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Name</div>
           <div class="field-value">{{ period.name }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">Start date</div>
-          <div class="field-value">{{ period.start_date|date:"M d, Y" }}</div>
-        </div>
-
-        <div class="field-group">
-          <div class="field-label">End date</div>
-          <div class="field-value">{{ period.end_date|date:"M d, Y" }}</div>
         </div>
 
         <div class="field-group">
@@ -65,85 +64,149 @@
           </div>
         </div>
 
-        {% if period.notes %}
         <div class="field-group">
+          <div class="field-label">Start date</div>
+          <div class="field-value">{{ period.start_date|date:"M d, Y" }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">End date</div>
+          <div class="field-value">{{ period.end_date|date:"M d, Y" }}</div>
+        </div>
+
+        {% if period.notes %}
+        <div class="field-group field-grid-2-span">
           <div class="field-label">Notes</div>
           <div class="field-value">{{ period.notes }}</div>
         </div>
         {% endif %}
-
-        <!-- Finalize / Unfinalize (Phase 75: primary action made prominent) -->
-        <div class="border-separator">
-          {% if period.is_finalized %}
-            <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
-              {% csrf_token %}
-              <button type="submit" class="btn-secondary btn-sm">Reopen period</button>
-            </form>
-          {% else %}
-            <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm);">Finalizing locks this water year's allocations and ledger against further edits so its reports stay stable.</p>
-            <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
-              {% csrf_token %}
-              <button type="submit" class="btn-primary" style="width: 100%;">Finalize period</button>
-            </form>
-          {% endif %}
-        </div>
-
-        <!-- Timestamps -->
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ period.created_at|date:"M d, Y" }} &middot; Updated {{ period.updated_at|date:"M d, Y" }}
-          </div>
-        </div>
       </div>
 
-      <!-- Stats card (Phase 75: counts on the stat-tile vocabulary) -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Summary</h2>
-        <div class="stat-grid-2col">
-          <div class="inset-card">
-            <div class="stat-card-label">Allocations</div>
-            <div class="stat-card-value-sm">{{ allocations|length }}</div>
-          </div>
-          <div class="inset-card">
-            <div class="stat-card-label">Ledger entries</div>
-            <div class="stat-card-value-sm">{{ ledger_count }}</div>
-          </div>
+      <!-- Finalize / Unfinalize (Phase 75: primary action made prominent) -->
+      <div class="border-separator">
+        {% if period.is_finalized %}
+          <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-secondary btn-sm">Reopen period</button>
+          </form>
+        {% else %}
+          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm);">Finalizing locks this water year's allocations and ledger against further edits so its reports stay stable.</p>
+          <form method="post" action="{% url 'accounting:period_finalize' period.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary" style="width: 100%;">Finalize period</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <!-- Timestamps -->
+      <div class="border-separator">
+        <div class="text-tertiary text-xs">
+          Created {{ period.created_at|date:"M d, Y" }} &middot; Updated {{ period.updated_at|date:"M d, Y" }}
         </div>
       </div>
     </div>
 
-    <!-- Right column: Allocations -->
-    <div class="page-stack">
+    <div class="card-raised page-grid-account-balance">
+      <div class="row-between mb-md page-grid-account-head">
+        <h2 class="section-header-flush">Allocations by water type</h2>
+        <span class="text-secondary text-base">{{ period.start_date|date:"M d, Y" }} to {{ period.end_date|date:"M d, Y" }} &middot; {% if period.is_finalized %}Finalized{% else %}Open{% endif %}</span>
+      </div>
 
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Allocations</h2>
-        {% if allocations %}
-        <table class="data-table text-sm">
+      {% if allocation_subtotals %}
+        {% comment %}
+          Each water type's figure sits in the account page's `.budget-panel`
+          shape (143-03) with NO `--result` (rule 8 names one lead figure per
+          page; a period with two water types has two peers, and elevating
+          either one over the other would be a decision this table does not
+          make). Exactly one type in the period gets the large `--result`
+          size instead, since there is then only one figure to lead with.
+        {% endcomment %}
+        {% if allocation_subtotals|length == 1 %}
+        <div class="budget-panel">
+          <div class="budget-panel-body">
+            <div class="budget-panel-row">
+              {% with subtotal=allocation_subtotals.0 %}
+              <div class="budget-seg budget-seg--result">
+                <div class="budget-seg-label">{{ subtotal.water_type__name }}</div>
+                <div class="budget-seg-value">{{ subtotal.total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+                <div class="budget-seg-caption">{{ subtotal.plans }} allocation{{ subtotal.plans|pluralize }}, {{ period.name }}</div>
+              </div>
+              {% endwith %}
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="budget-panel period-panel">
+          <div class="budget-panel-body">
+            <div class="budget-panel-row">
+              {% for subtotal in allocation_subtotals %}
+              {% if not forloop.first %}<div class="budget-op"></div>{% endif %}
+              <div class="budget-seg">
+                <div class="budget-seg-label">{{ subtotal.water_type__name }}</div>
+                <div class="budget-seg-value">{{ subtotal.total|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+                <div class="budget-seg-caption">{{ subtotal.plans }} allocation{{ subtotal.plans|pluralize }}, {{ period.name }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        <div class="budget-panel-note">The Use ledger holds <a href="{% url 'accounting:ledger_list' %}?period={{ period.pk }}" class="prose-link">{{ ledger_count|intcomma }} entr{{ ledger_count|pluralize:"y,ies" }}</a> for this water year.</div>
+      {% else %}
+      <p class="text-tertiary text-base">No allocations for this period.</p>
+      {% endif %}
+    </div>
+
+    <div class="card-raised page-grid-account-full" style="padding: 0;">
+      {% if allocations %}
+      <div class="ledger-card-head">
+        <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Allocations</h2>
+        <div class="text-secondary text-base">{{ period.name }} &middot; {{ allocations|length }} allocation{{ allocations|length|pluralize }} &middot; Acre-feet.</div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table alloc-table">
           <thead>
             <tr>
-              <th>Name</th>
               <th>Zone</th>
-              <th>Water Type</th>
-              <th class="th-right">Allocation (AF)</th>
+              <th>Water type</th>
+              <th class="th-right">Allocation</th>
             </tr>
           </thead>
           <tbody>
             {% for alloc in allocations %}
             <tr>
-              <td style="font-weight: 600;">{{ alloc.name }}</td>
-              <td class="text-secondary">{{ alloc.zone.name }}</td>
+              <td>
+                <a href="{% url 'geography:zone_detail' alloc.zone.pk %}" class="data-table-link">
+                  {{ alloc.zone.name }}
+                </a>
+              </td>
               <td class="text-secondary">{{ alloc.water_type.name }}</td>
-              <td class="td-num">{{ alloc.allocation_acre_feet|floatformat:2 }}</td>
+              <td class="td-num">
+                {{ alloc.allocation_acre_feet|floatformat:2|intcomma }}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
+          {% if allocation_subtotals %}
+          <tfoot>
+            {% for subtotal in allocation_subtotals %}
+            <tr>
+              <td class="tfoot-total" colspan="2">All {{ subtotal.plans }} {{ subtotal.water_type__name|slugify }} allocation{{ subtotal.plans|pluralize }}, {{ period.name }}</td>
+              <td class="td-num-bold">{{ subtotal.total|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endfor %}
+          </tfoot>
+          {% endif %}
         </table>
-        {% else %}
-          <p class="text-tertiary text-base">No allocations for this period.</p>
-        {% endif %}
       </div>
-
+      {% else %}
+      <div style="padding: var(--space-lg);">
+        <h2 class="section-header mb-md">Allocations</h2>
+        <p class="text-tertiary text-base">No allocations for this period.</p>
+      </div>
+      {% endif %}
     </div>
+
   </div>
 </div>
 {% endblock %}
