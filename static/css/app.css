@@ -4998,27 +4998,20 @@ div[id$="-map"] {
    inset themselves so Zone/Allocation don't sit flush against the card wall. */
 .alloc-table th:first-child, .alloc-table td:first-child { padding-left: var(--space-lg); }
 .alloc-table th:last-child,  .alloc-table td:last-child  { padding-right: var(--space-lg); }
-/* Reader fault (143-06 build note, not the mock-up): `.data-table`'s own
-   `width: 100%` forced this table to fill the card no matter how short its
-   content, and auto layout gives that forced surplus to whichever column has
-   the widest natural content (Zone, because of the long MER Surface Service
-   Area names) -- so every SHORT GSA name trailed ~700px of blank table before
-   Water type, three columns reading as two with a gap between them. A FIXED
-   percentage split (56/20/24) tried first still forced the same surplus into
-   Zone on every row and left the gap at 539-643px, unchanged in kind. The fix
-   is `width: auto`: the table sizes to its own content (auto layout, the
-   platform's default) with the card's spare width left OUTSIDE the table,
-   right of the Allocation column, rather than inside a cell pretending to be
-   text. Zone still gets a `max-width` so the longest name (MER Surface
-   Service Area (MER-WR-005-DEMO)) wraps to a second line instead of setting
-   the table's total width by itself. */
-.alloc-table {
-    width: auto;
-    max-width: 100%;
-}
-.alloc-table th:nth-child(1), .alloc-table td:nth-child(1) {
-    max-width: 460px;
-}
+/* Reader fault (143-06 build note, not the mock-up): auto layout gave the
+   table's forced `width: 100%` surplus to whichever column has the widest
+   natural content (Zone, because of the long MER Surface Service Area
+   names), so a SHORT GSA name trailed blank table before Water type. Two
+   narrower fixes were tried and rejected: a fixed 56/20/24 percentage split
+   still forced the same surplus into Zone (539-643px gap, unchanged in
+   kind), and `width: auto` stopped the table at ~757px inside a 1,439px
+   card, leaving the card head and filter row full width above a table that
+   no longer matched -- not the shape the mock-up shows or Brent approved.
+   `width: 100%` stays (the platform's own pattern: the ledger's Description
+   column, the dashboard's tables all let their widest column take the
+   surplus); Water type and Allocation are pinned to their own content width
+   with `white-space: nowrap` so THEY never absorb it, leaving Zone the one
+   column that grows or shrinks with the card. */
 .alloc-table th:nth-child(2), .alloc-table td:nth-child(2),
 .alloc-table td.td-num, .alloc-table th.th-right {
     white-space: nowrap;
