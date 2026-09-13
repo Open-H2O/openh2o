@@ -56,7 +56,7 @@
       <td class="tfoot-total" colspan="2">
         All {{ use_area_count }} use area{{ use_area_count|pluralize }}{% if use_area_with_area_count < use_area_count %} &middot; {{ use_area_with_area_count }} of {{ use_area_count }} with an area on record{% endif %}
       </td>
-      <td class="td-num-bold">{{ use_area_acreage_total|floatformat:2|intcomma }}</td>
+      <td class="td-num-bold td-total">{{ use_area_acreage_total|floatformat:2|intcomma }}</td>
       <td></td>
     </tr>
   </tfoot>

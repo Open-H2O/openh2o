@@ -192,7 +192,7 @@
             {% for subtotal in allocation_subtotals %}
             <tr>
               <td class="tfoot-total" colspan="2">All {{ subtotal.plans }} {{ subtotal.water_type__name|slugify }} allocation{{ subtotal.plans|pluralize }}, {{ period.name }}</td>
-              <td class="td-num-bold">{{ subtotal.total|floatformat:2|intcomma }}</td>
+              <td class="td-num-bold td-total">{{ subtotal.total|floatformat:2|intcomma }}</td>
             </tr>
             {% endfor %}
           </tfoot>

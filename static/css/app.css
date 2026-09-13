@@ -5036,6 +5036,19 @@ div[id$="-map"] {
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
+/* The closing figure of a totals row (a tfoot or a `.row-subtotal`): the
+   accent the label already carries, one weight up and one step larger than
+   the body's figures, so the total reads as the table's answer rather than
+   one more entry. Brent, 143-06 verify checkpoint 2026-09-12: the band and
+   the teal label alone left the values blending into the list. The dashboard's
+   totals already colour theirs by meaning (`text-supply`); a plain total has
+   no meaning colour, so it takes the platform's emphasis accent. */
+.data-table td.td-total,
+.data-table tbody tr.row-subtotal td.td-total {
+    color: var(--color-accent);
+    font-weight: 700;
+    font-size: 0.9375rem;
+}
 /* The water-year page's lead panel holds one figure per water type and no
    operator between them (nothing adds across water types, ISS-156): two (or
    more) tracks and a rule, not the five-track supply/use/balance equation
