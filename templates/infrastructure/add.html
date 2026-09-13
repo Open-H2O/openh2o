@@ -63,10 +63,24 @@
         </div>
         <!-- Map container: 380px, the record pages' band height (app.css) -->
         <div id="infra-map" style="width: 100%;"></div>
-        <!-- Coordinate display -->
-        <div class="coord-display" id="coord-display">
-          <span class="text-xs text-tertiary">Click map to place geometry</span>
+        {% comment %}ISS-171: a well operator with a WCR in hand has the coordinates
+             before the map. The strip's click/drag echo, then two typed
+             inputs that place the marker the same way a click does; shown
+             only in point mode (setDrawMode, below).{% endcomment %}
+        <div class="coord-display coord-display-row" id="coord-display">
+          <span class="text-xs text-tertiary" id="coord-display-text">Click map to place geometry</span>
+          <div class="coord-inputs" id="coord-inputs">
+            <div class="form-group">
+              <label class="field-label" for="latitude">Latitude</label>
+              <input type="text" inputmode="decimal" id="latitude" name="latitude" class="form-input" placeholder="37.300000" value="{{ submitted.latitude|default:'' }}">
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="longitude">Longitude</label>
+              <input type="text" inputmode="decimal" id="longitude" name="longitude" class="form-input" placeholder="-120.500000" value="{{ submitted.longitude|default:'' }}">
+            </div>
+          </div>
         </div>
+        <p class="coord-warning" id="coord-warning" style="display: none;"></p>
       </div>
 
     </div>
@@ -338,6 +352,12 @@
   var parcelDrawGeometry = null;
   var parcelClickHandled = false;
 
+  // ISS-171: the typed lat/long pair beside the coordinate strip.
+  var latInput = document.getElementById('latitude');
+  var lngInput = document.getElementById('longitude');
+  var coordWarning = document.getElementById('coord-warning');
+  var CA_BOUNDS = { latMin: 32.5, latMax: 42.0, lngMin: -124.5, lngMax: -114.1 };
+
   // Type field visibility
   var typeFields = {
     well: document.getElementById('fields-well'),
@@ -416,47 +436,53 @@
     // height (none does today; the type is fixed for the page's lifetime
     // since ISS-134), so the canvas never drifts from its container.
     map.resize();
-    map.addSource('drawing', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addLayer({
-      id: 'drawing-line', type: 'line', source: 'drawing',
-      paint: { 'line-color': OH2O.colors.gold, 'line-width': 2, 'line-dasharray': [4, 2] }
-    });
-    map.addLayer({
-      id: 'drawing-vertices', type: 'circle', source: 'drawing',
-      filter: ['==', '$type', 'Point'],
-      paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.gold, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
-    });
+    // R-100: frame on the agency boundary BEFORE the drawing/parcel layers,
+    // so they always draw on top of the boundary outline whichever way the
+    // fetch resolves (a deployment with no boundary rows keeps this map's
+    // own center/zoom, unchanged below).
+    OH2O.frameOnBoundary(map, '{% url "geography:boundaries_geojson" %}').then(function() {
+      map.addSource('drawing', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'drawing-line', type: 'line', source: 'drawing',
+        paint: { 'line-color': OH2O.colors.gold, 'line-width': 2, 'line-dasharray': [4, 2] }
+      });
+      map.addLayer({
+        id: 'drawing-vertices', type: 'circle', source: 'drawing',
+        filter: ['==', '$type', 'Point'],
+        paint: { 'circle-radius': 5, 'circle-color': OH2O.colors.gold, 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+      });
 
-    map.addSource('finished', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addLayer({
-      id: 'finished-fill', type: 'fill', source: 'finished',
-      paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.25 }
-    });
-    map.addLayer({
-      id: 'finished-line', type: 'line', source: 'finished',
-      paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 2 }
-    });
+      map.addSource('finished', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'finished-fill', type: 'fill', source: 'finished',
+        paint: { 'fill-color': OH2O.colors.blue, 'fill-opacity': 0.25 }
+      });
+      map.addLayer({
+        id: 'finished-line', type: 'line', source: 'finished',
+        paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 2 }
+      });
 
-    map.addSource('parcels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addLayer({
-      id: 'parcels-fill', type: 'fill', source: 'parcels',
-      paint: { 'fill-color': OH2O.colors.blueBright, 'fill-opacity': 0.12 },
-      layout: { 'visibility': 'none' }
-    });
-    map.addLayer({
-      id: 'parcels-line', type: 'line', source: 'parcels',
-      paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 1.5 },
-      layout: { 'visibility': 'none' }
-    });
+      map.addSource('parcels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'parcels-fill', type: 'fill', source: 'parcels',
+        paint: { 'fill-color': OH2O.colors.blueBright, 'fill-opacity': 0.12 },
+        layout: { 'visibility': 'none' }
+      });
+      map.addLayer({
+        id: 'parcels-line', type: 'line', source: 'parcels',
+        paint: { 'line-color': OH2O.colors.blueBright, 'line-width': 1.5 },
+        layout: { 'visibility': 'none' }
+      });
 
-    map.addSource('parcel-highlight', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-    map.addLayer({
-      id: 'parcel-highlight-fill', type: 'fill', source: 'parcel-highlight',
-      paint: { 'fill-color': OH2O.colors.gold, 'fill-opacity': 0.25 }
-    });
-    map.addLayer({
-      id: 'parcel-highlight-line', type: 'line', source: 'parcel-highlight',
-      paint: { 'line-color': OH2O.colors.gold, 'line-width': 2.5 }
+      map.addSource('parcel-highlight', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addLayer({
+        id: 'parcel-highlight-fill', type: 'fill', source: 'parcel-highlight',
+        paint: { 'fill-color': OH2O.colors.gold, 'fill-opacity': 0.25 }
+      });
+      map.addLayer({
+        id: 'parcel-highlight-line', type: 'line', source: 'parcel-highlight',
+        paint: { 'line-color': OH2O.colors.gold, 'line-width': 2.5 }
+      });
     });
   });
 
@@ -480,10 +506,58 @@
       var pos = marker.getLngLat();
       updateGeometry({ type: 'Point', coordinates: [pos.lng, pos.lat] });
       updateCoordDisplay(pos.lng, pos.lat);
+      syncCoordInputs(pos.lng, pos.lat);
     });
     updateGeometry({ type: 'Point', coordinates: [lngLat.lng, lngLat.lat] });
     updateCoordDisplay(lngLat.lng, lngLat.lat);
+    // ISS-171: a click or a drag (above) writes the marker's position back
+    // into the two inputs at six decimals; any warning from a PRIOR typed
+    // pair is now stale (the point just moved), so it clears here and only
+    // handleCoordInput below decides whether to raise it again.
+    syncCoordInputs(lngLat.lng, lngLat.lat);
+    hideCoordWarning();
   }
+
+  // ISS-171: mirror the placed point back into the two typed inputs, at six
+  // decimals, whichever way the point got there (click, drag, or typing).
+  function syncCoordInputs(lng, lat) {
+    if (latInput) latInput.value = lat.toFixed(6);
+    if (lngInput) lngInput.value = lng.toFixed(6);
+  }
+
+  function showCoordWarning(text) {
+    if (!coordWarning) return;
+    coordWarning.textContent = text;
+    coordWarning.style.display = '';
+  }
+
+  function hideCoordWarning() {
+    if (!coordWarning) return;
+    coordWarning.style.display = 'none';
+  }
+
+  // ISS-171: a valid typed pair places the marker exactly as a click does; a
+  // pair outside California's box gets a plain warning and STILL places the
+  // marker (a warning, never a refusal — a border district or a fat-fingered
+  // sign is still the operator's call, not this form's).
+  function handleCoordInput() {
+    var latStr = latInput.value.trim();
+    var lngStr = lngInput.value.trim();
+    if (!latStr || !lngStr) { hideCoordWarning(); return; }
+    var lat = parseFloat(latStr);
+    var lng = parseFloat(lngStr);
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      hideCoordWarning();
+      return;
+    }
+    placePoint({ lng: lng, lat: lat });
+    if (lat < CA_BOUNDS.latMin || lat > CA_BOUNDS.latMax || lng < CA_BOUNDS.lngMin || lng > CA_BOUNDS.lngMax) {
+      showCoordWarning('Outside California; check the sign of the longitude.');
+    }
+  }
+
+  if (latInput) latInput.addEventListener('input', handleCoordInput);
+  if (lngInput) lngInput.addEventListener('input', handleCoordInput);
 
   function addVertex(lngLat) {
     vertices.push([lngLat.lng, lngLat.lat]);
@@ -522,7 +596,7 @@
       map.getSource('parcel-highlight').setData({ type: 'Feature', geometry: geojson, properties: {} });
       map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
       document.getElementById('draw-finish').style.display = 'none';
-      document.getElementById('coord-display').textContent = numVerts + ' vertices — enter parcel details below';
+      setCoordText(numVerts + ' vertices — enter parcel details below');
       document.getElementById('parcel-draw-form').style.display = '';
       document.getElementById('new-parcel-number').focus();
       vertices = [];
@@ -534,7 +608,7 @@
     map.getSource('drawing').setData({ type: 'FeatureCollection', features: [] });
     updateGeometry(geojson);
     document.getElementById('draw-finish').style.display = 'none';
-    document.getElementById('coord-display').textContent = numVerts + ' vertices, polygon complete';
+    setCoordText(numVerts + ' vertices, polygon complete');
     vertices = [];
   }
 
@@ -545,13 +619,21 @@
     map.getSource('finished').setData({ type: 'FeatureCollection', features: [] });
     document.getElementById('geometry_json').value = '';
     document.getElementById('draw-finish').style.display = 'none';
-    document.getElementById('coord-display').textContent = 'Click map to place geometry';
+    setCoordText('Click map to place geometry');
+    if (latInput) latInput.value = '';
+    if (lngInput) lngInput.value = '';
+    hideCoordWarning();
   }
 
   function setDrawMode(mode) {
     drawMode = mode;
     document.getElementById('draw-point').classList.toggle('active', mode === 'point');
     document.getElementById('draw-polygon').classList.toggle('active', mode === 'polygon');
+    // ISS-171: typed coordinates place a POINT, so the inputs make sense only
+    // in point mode (a well or a diversion; storage when it is a tank).
+    var coordInputs = document.getElementById('coord-inputs');
+    if (coordInputs) coordInputs.style.display = mode === 'point' ? '' : 'none';
+    if (mode !== 'point') hideCoordWarning();
     try { map.getCanvas().style.cursor = 'crosshair'; } catch(e) {}
   }
 
@@ -559,10 +641,19 @@
     document.getElementById('geometry_json').value = JSON.stringify(geojson);
   }
 
+  // ISS-171: the coord-display strip now WRAPS the status text and the typed
+  // inputs, so its status text lives in its own child element — setting
+  // `.textContent` on the wrapper itself, as every call site here used to,
+  // would erase the inputs along with the words.
+  function setCoordText(text) {
+    var el = document.getElementById('coord-display-text');
+    if (el) el.textContent = text;
+  }
+
   function updateCoordDisplay(lng, lat, extra) {
     var text = lng.toFixed(6) + ', ' + lat.toFixed(6);
     if (extra) text += ' (' + extra + ')';
-    document.getElementById('coord-display').textContent = text;
+    setCoordText(text);
   }
 
   // Toolbar buttons
@@ -605,7 +696,7 @@
         .then(function(data) {
           if (data.features.length === 0) {
             btn.textContent = 'Select on map';
-            document.getElementById('coord-display').textContent = 'No parcels in database yet';
+            setCoordText('No parcels in database yet');
             return;
           }
           map.getSource('parcels').setData(data);
@@ -635,7 +726,7 @@
     var btn = document.getElementById('btn-parcel-map');
     btn.textContent = 'Cancel selection';
     btn.classList.add('active');
-    document.getElementById('coord-display').textContent = 'Click a parcel to select it';
+    setCoordText('Click a parcel to select it');
     document.getElementById('infra-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -687,7 +778,7 @@
     document.getElementById('draw-point').disabled = true;
     document.getElementById('draw-polygon').disabled = true;
     document.getElementById('draw-clear').disabled = true;
-    document.getElementById('coord-display').textContent = 'Click the map to place parcel corners (at least 3). Double-click last corner to finish.';
+    setCoordText('Click the map to place parcel corners (at least 3). Double-click last corner to finish.');
     document.getElementById('infra-map').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 
@@ -724,7 +815,7 @@
       .catch(function() {
         btn.textContent = 'Save Parcel';
         btn.disabled = false;
-        document.getElementById('coord-display').textContent = 'Error saving parcel — try again';
+        setCoordText('Error saving parcel — try again');
       });
   });
 
@@ -756,7 +847,7 @@
     updateDrawModeForType();
     savedDrawMode = null;
     parcelDrawGeometry = null;
-    document.getElementById('coord-display').textContent = 'Click map to place geometry';
+    setCoordText('Click map to place geometry');
     var saveBtn = document.getElementById('save-new-parcel');
     saveBtn.textContent = 'Save Parcel';
     saveBtn.disabled = false;

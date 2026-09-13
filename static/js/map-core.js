@@ -352,6 +352,36 @@ OH2O.mountBasemapToggle = function (map, mode) {
     return bar;
 };
 
+/* ── Frame a map on the agency boundary (R-100) ───────────────────────────
+   The two draw-your-boundary maps (zone_create, infrastructure add) used to
+   open on a fixed point in the mountains with no sense of where the agency
+   actually is. Fetches `geography:boundaries_geojson`; with features, draws
+   an outline + an always-on centered label and fits the map to it; with none
+   (a deployment that has not drawn its boundary yet) leaves the map's own
+   center/zoom alone — there is nothing to frame on.
+
+   Returns the fetch promise (never rejects) so a caller adds its OWN layers
+   inside `.then()`, which guarantees they are added to the map AFTER this
+   helper's, whichever way the fetch resolves — layer order is add order, not
+   call order, and the fetch is async, so calling this first in the source
+   only draws the caller's layers on top if the caller also waits on it. */
+OH2O.frameOnBoundary = function (map, url) {
+    return fetch(url)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (fc) {
+            if (!fc || !fc.features || !fc.features.length) return;
+            map.addSource('boundary', { type: 'geojson', data: fc });
+            map.addLayer({
+                id: 'boundary-outline', type: 'line', source: 'boundary',
+                paint: { 'line-color': OH2O.colors.boundary, 'line-width': 2, 'line-opacity': 0.85 }
+            });
+            OH2O.addDetailLabel(map, 'boundary', 'boundary', { id: 'boundary-label', anchor: 'center' });
+            var bounds = OH2O._geojsonBounds(fc);
+            if (bounds) map.fitBounds(bounds, { padding: 40 });
+        })
+        .catch(function () { /* keep the map's initial center/zoom */ });
+};
+
 /* ── Persistent detail-pane map (master-detail workspace engine) ────────────
    The shared spine of the v2.0 master-detail screens. The map element lives in
    the pane SHELL (the workspace layout / the standalone detail page); each
@@ -403,8 +433,21 @@ OH2O._frameBounds = function (map, bounds) {
     }
 };
 
-/* Add this feature's layers (point or polygon) to a freshly-loaded map. */
-OH2O._addDetailLayers = function (map, src, key, isPoint, popup) {
+/* Add this feature's layers (point or polygon) to a freshly-loaded map. opts:
+     labelAt   'point_on_surface' reads a server-supplied `label_point`
+               ([lng, lat]) off each feature's properties and labels a
+               separate one-point-per-feature source instead of the polygon
+               source itself (R-102): a MultiPolygon with many disjoint parts
+               (a GSA union of scattered parcels, or a zone) otherwise stamps
+               a symbol layer placed ON the polygon source once PER PART —
+               the same fault `zone_labels_geojson` already fixed for the
+               full map. Falls back to labeling the polygon source directly
+               (today's behavior) when no feature carries `label_point` (an
+               older cached response, or a caller that never asked for this).
+     geojson   the FeatureCollection just loaded into `src`, read for the
+               `label_point` properties above; ignored when isPoint. */
+OH2O._addDetailLayers = function (map, src, key, isPoint, popup, opts) {
+    opts = opts || {};
     var color = (OH2O.entities[key] || {}).color || OH2O.colors.blue;
     if (isPoint) {
         map.addLayer({ id: src + '-glow', type: 'circle', source: src, paint: OH2O.glowPaint(key) });
@@ -417,7 +460,21 @@ OH2O._addDetailLayers = function (map, src, key, isPoint, popup) {
             paint: { 'fill-color': color, 'fill-opacity': 0.35 } });
         map.addLayer({ id: src + '-outline', type: 'line', source: src,
             paint: { 'line-color': color, 'line-width': 2 } });
-        OH2O.addDetailLabel(map, src, key, { id: src + '-label', anchor: 'center', offset: [0, 0] });
+        var labelSrc = src;
+        if (opts.labelAt === 'point_on_surface' && opts.geojson) {
+            var pts = (opts.geojson.features || [])
+                .filter(function (f) { return f.properties && f.properties.label_point; })
+                .map(function (f) {
+                    return { type: 'Feature',
+                        geometry: { type: 'Point', coordinates: f.properties.label_point },
+                        properties: f.properties };
+                });
+            if (pts.length) {
+                labelSrc = src + '-label-point';
+                map.addSource(labelSrc, { type: 'geojson', data: { type: 'FeatureCollection', features: pts } });
+            }
+        }
+        OH2O.addDetailLabel(map, labelSrc, key, { id: src + '-label', anchor: 'center', offset: [0, 0] });
         if (popup) OH2O.attachPopup(map, src + '-fill', popup);
     }
 };
@@ -434,6 +491,10 @@ OH2O._addDetailLayers = function (map, src, key, isPoint, popup) {
             drops the river/canal flowlines beneath the diversion point). Does
             NOT re-run on row-to-row swaps — the substrate is built once with the
             map, same as the basemap.
+     labelAt   optional, forwarded to OH2O._addDetailLayers (R-102): pass
+            'point_on_surface' for a polygon feature whose geojson carries a
+            `label_point` per feature, so a multi-part MultiPolygon gets one
+            label instead of one per part.
    Defensive: polls until maplibre + the toolkit are ready, no-ops when the page
    has no map host, hides the card when the feature has no geometry. */
 OH2O.detailPaneMap = function (opts) {
@@ -479,7 +540,8 @@ OH2O.detailPaneMap = function (opts) {
             map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
             OH2O.mountBasemapToggle(map, 'aerial');
             map.addSource(src, { type: 'geojson', data: geojson });
-            OH2O._addDetailLayers(map, src, key, isPoint, opts.popup);
+            OH2O._addDetailLayers(map, src, key, isPoint, opts.popup,
+                { labelAt: opts.labelAt, geojson: geojson });
             // Per-screen substrate (e.g. POD flowlines), added once beneath the
             // feature's own layers. Guarded so a screen's substrate fetch can't
             // abort the map build.

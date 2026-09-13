@@ -445,6 +445,38 @@ def _zone_detail_context(zone):
                 fields=["name", "zone_type"],
             )
         )
+        # R-102: the zone's boundary is a MultiPolygon with many disjoint
+        # parts (a GSA union of scattered parcels), so a symbol layer placed
+        # ON this polygon source stamps the name once PER PART. `label_point`
+        # ([lng, lat], the same `point_on_surface` `zone_labels_geojson` uses
+        # for the full map) lets the detail map's toolkit label a single
+        # point instead — one label for the whole zone.
+        geojson["features"][0]["properties"]["label_point"] = [
+            zone.geometry.point_on_surface.x,
+            zone.geometry.point_on_surface.y,
+        ]
+
+    # R-102: the zone's assigned use areas, so the persistent map can draw
+    # them beneath the boundary — the list beneath this map already names
+    # them; the map drew none. None when there are none to draw, or when
+    # `parcels` is off (the existing parcels_ctx gate above), so the pane's
+    # `{% if parcels_geojson %}` skips the source/layers cleanly.
+    parcels_geojson = None
+    if is_enabled("parcels"):
+        parcels_with_geometry = [
+            pz.parcel for pz in parcel_zones if pz.parcel.geometry
+        ]
+        if parcels_with_geometry:
+            parcels_geojson = json.loads(
+                serialize(
+                    "geojson",
+                    parcels_with_geometry,
+                    geometry_field="geometry",
+                    fields=["parcel_number", "area_acres"],
+                )
+            )
+            for f in parcels_geojson["features"]:
+                f["properties"]["pk"] = f.get("id")
 
     context = {
         "zone": zone,
@@ -455,6 +487,7 @@ def _zone_detail_context(zone):
         "is_curtailed": is_curtailed,
         "curtailment_orders": curtailment_orders,
         "geojson": geojson,
+        "parcels_geojson": parcels_geojson,
     }
     context.update(parcels_ctx)
     context.update(_recovery_horizon_context(zone))

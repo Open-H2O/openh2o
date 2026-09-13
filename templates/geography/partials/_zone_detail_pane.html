@@ -233,18 +233,53 @@
   polls until the toolkit is ready (on a full-page load this body renders BEFORE
   the map scripts at end of page), hides the map card when the zone has no
   geometry.
+
+  R-102: `onMapLoad` lays the zone's assigned use areas (parcels_geojson)
+  BENEATH the zone outline (`beforeId: 'zone-fill'`), each with a popup
+  linking out to its own detail page. This is a standalone full page for ONE
+  zone (`/map/zones/<pk>/`) — the overview list swaps `#results` only, never
+  this pane — so `onMapLoad` running once, with the map, is enough; there is
+  no later zone whose parcels this would need to refresh for. `labelAt:
+  'point_on_surface'` is the R-102 fix for the OTHER half of this fault: the
+  zone's own boundary label, which used to stamp once per polygon part.
 {% endcomment %}
 {% if geojson %}{{ geojson|json_script:"detail-geojson-data" }}{% endif %}
+{% if parcels_geojson %}{{ parcels_geojson|json_script:"detail-parcels-geojson-data" }}{% endif %}
 <script>
 (function () {
+  var PARCEL_DETAIL_URL = '{% url "parcels:detail" 0 %}';
   function go() {
     if (!window.OH2O || !OH2O.detailPaneMap) return window.setTimeout(go, 50);
     OH2O.detailPaneMap({
       card: 'detail-map-card', host: 'detail-map', dataEl: 'detail-geojson-data',
-      source: 'zone',
+      source: 'zone', labelAt: 'point_on_surface',
       popup: function (p) {
         return '<strong>' + (p.name || 'Zone') + '</strong><br>' +
                'Type: ' + (p.zone_type || '—');
+      },
+      onMapLoad: function (map) {
+        var el = document.getElementById('detail-parcels-geojson-data');
+        if (!el) return;
+        var fc;
+        try { fc = JSON.parse(el.textContent); } catch (e) { return; }
+        if (!fc || !fc.features || !fc.features.length) return;
+        map.addSource('zone-parcels', { type: 'geojson', data: fc });
+        var beforeId = map.getLayer('zone-fill') ? 'zone-fill' : undefined;
+        map.addLayer({
+          id: 'zone-parcels-fill', type: 'fill', source: 'zone-parcels',
+          paint: { 'fill-color': OH2O.entities.parcel.color, 'fill-opacity': 0.35 }
+        }, beforeId);
+        map.addLayer({
+          id: 'zone-parcels-outline', type: 'line', source: 'zone-parcels',
+          paint: { 'line-color': OH2O.entities.parcel.color, 'line-width': 1.5 }
+        }, beforeId);
+        OH2O.attachPopup(map, 'zone-parcels-fill', function (p) {
+          var acreage = p.area_acres != null
+            ? parseFloat(p.area_acres).toFixed(2) + ' ac' : '—';
+          return '<strong>' + (p.parcel_number || 'Use area') + '</strong><br>' +
+                 'Acreage: ' + acreage + '<br>' +
+                 '<a href="' + PARCEL_DETAIL_URL.replace('/0/', '/' + p.pk + '/') + '">View use area &rarr;</a>';
+        });
       }
     });
   }

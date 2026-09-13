@@ -4257,6 +4257,32 @@ div[id$="-map"] {
     min-height: 28px;
 }
 
+/* ISS-171 (143-07 Task 6): the add page's coordinate strip becomes a row —
+   the click/drag echo text, then labelled lat/long inputs a WCR-in-hand
+   operator can type instead of clicking the map. Point mode only;
+   add.html's setDrawMode hides `.coord-inputs` in polygon mode. */
+.coord-display-row {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+.coord-inputs {
+    display: flex;
+    gap: var(--space-sm);
+}
+.coord-inputs .form-group {
+    margin: 0;
+}
+.coord-inputs .form-input {
+    width: 130px;
+}
+.coord-warning {
+    margin: 0;
+    padding: 0 var(--space-sm) var(--space-xs);
+    color: var(--furnace-400);
+}
+
 /* The second .upload-zone rule set stood here until 2026-08-26 (Phase 121). It
    is folded into the single rule set beside the first one, above. */
 

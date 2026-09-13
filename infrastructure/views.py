@@ -160,6 +160,32 @@ def infrastructure_add(request):
     geometry_json = request.POST.get("geometry_json", "")
     parcel_id = request.POST.get("parcel_id", "")
 
+    # ISS-171: a well operator with a WCR in hand types the point instead of
+    # clicking the map. A click or a drag always fills geometry_json client
+    # side, so this is strictly a fallback for the typed-coordinate path — and
+    # it runs BEFORE the geometry path below, building the same Point a click
+    # would have, so _parse_point/_parse_polygon downstream need no changes.
+    # Silently ignored (not an error) when it does not parse: a stray value in
+    # one box with the map still empty is the map's story to tell, not this
+    # fallback's.
+    if not geometry_json:
+        lat_raw = request.POST.get("latitude", "").strip()
+        lng_raw = request.POST.get("longitude", "").strip()
+        if lat_raw and lng_raw:
+            try:
+                lat_val = float(lat_raw)
+                lng_val = float(lng_raw)
+            except ValueError:
+                lat_val = lng_val = None
+            if (
+                lat_val is not None
+                and -90 <= lat_val <= 90
+                and -180 <= lng_val <= 180
+            ):
+                geometry_json = json.dumps(
+                    {"type": "Point", "coordinates": [lng_val, lat_val]}
+                )
+
     parcel = None
     if parcel_id:
         try:

@@ -500,6 +500,11 @@ def _water_right_detail_context(water_right):
                 fields=["name", "stream_name", "max_rate_cfs", "status"],
             )
         )
+        # R-123: the serializer puts pk at the feature's top level, not in
+        # properties, the same reason the general `pods_geojson` endpoint
+        # injects it below — this map's popup needs it to link out.
+        for f in pods_geojson["features"]:
+            f["properties"]["pk"] = f.get("id")
 
     return {
         "water_right": water_right,
