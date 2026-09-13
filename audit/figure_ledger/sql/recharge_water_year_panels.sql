@@ -1,5 +1,5 @@
--- FIG-recharge-002, 003, 004, 007 (the recharge site page's lead panel, its
--- "by water type" breakdown, and the event table's own current-year closing
+-- FIG-recharge-002, 003, 004, 005, 008 (the recharge site page's lead panel, its
+-- "by event" and "by water type" breakdowns, and the event table's own current-year closing
 -- subtotal). 143-10, Task 3.
 --
 -- WHAT THIS FILE CHECKS. Task 3 gave a recharge site's detail page a lead

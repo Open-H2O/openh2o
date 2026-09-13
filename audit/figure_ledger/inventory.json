@@ -1181,25 +1181,36 @@
     "app": "recharge",
     "kind": "figure",
     "template": "templates/recharge/partials/_detail_pane.html",
-    "line": 144,
-    "column": 96,
-    "expression": "{{ type_total|floatformat:2|intcomma }}",
-    "enclosing_loop": "type_name, type_total in current_totals.by_type.items",
-    "nearest_label": "{{ type_total|"
+    "line": 149,
+    "column": 310,
+    "expression": "{{ event.volume_acre_feet|floatformat:2|intcomma }}",
+    "enclosing_loop": "event in current_totals.rows",
+    "nearest_label": "{{ event.volume_acre_feet|"
   },
   {
     "id": "FIG-recharge-005",
     "app": "recharge",
     "kind": "figure",
     "template": "templates/recharge/partials/_detail_pane.html",
-    "line": 202,
+    "line": 156,
+    "column": 96,
+    "expression": "{{ type_total|floatformat:2|intcomma }}",
+    "enclosing_loop": "type_name, type_total in current_totals.by_type.items",
+    "nearest_label": "{{ type_total|"
+  },
+  {
+    "id": "FIG-recharge-006",
+    "app": "recharge",
+    "kind": "figure",
+    "template": "templates/recharge/partials/_detail_pane.html",
+    "line": 214,
     "column": 43,
     "expression": "{{ m.value|floatformat:2 }}",
     "enclosing_loop": "m in group.rows",
     "nearest_label": "{{ m.value|"
   },
   {
-    "id": "FIG-recharge-006",
+    "id": "FIG-recharge-007",
     "app": "recharge",
     "kind": "figure",
     "template": "templates/recharge/partials/_event_history.html",
@@ -1210,7 +1221,7 @@
     "nearest_label": "{{ event.volume_acre_feet|"
   },
   {
-    "id": "FIG-recharge-007",
+    "id": "FIG-recharge-008",
     "app": "recharge",
     "kind": "figure",
     "template": "templates/recharge/partials/_event_history.html",
@@ -1221,7 +1232,7 @@
     "nearest_label": "{{ group.volume|"
   },
   {
-    "id": "FIG-recharge-008",
+    "id": "FIG-recharge-009",
     "app": "recharge",
     "kind": "figure",
     "template": "templates/recharge/partials/_list_results.html",

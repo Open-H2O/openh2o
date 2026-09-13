@@ -136,9 +136,10 @@
       </div>
     </div>
 
-    {# Three short cards, stacked: Current meters, Irrigated parcels, Monitoring data. No lead figure on this page (R-055 does not name one here), so no .budget-panel -- this cell is a plain page-stack that fills the height the Identification card sets. #}
+    {# Three short cards: Current meters and Irrigated parcels side by side (each is a one-line list on most wells, and a one-line list across a 2fr cell read as an empty box, page-verdict 143-10), Monitoring data under them. No lead figure on this page (R-055 does not name one here), so no .budget-panel -- this cell is a plain page-stack that fills the height the Identification card sets. #}
     <div class="page-grid-account-balance">
       <div class="page-stack">
+        <div class="page-grid-2col">
 
         <!-- Current Meters card -->
         <div class="card-raised">
@@ -182,6 +183,8 @@
           {% else %}
             <p class="text-tertiary text-base">No parcels linked to this well.</p>
           {% endif %}
+        </div>
+
         </div>
 
         <!-- Monitoring Data card -->

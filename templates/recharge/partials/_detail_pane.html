@@ -137,6 +137,18 @@
               <div class="budget-seg-label">Recharged</div>
               <div class="budget-seg-value">{{ current_totals.volume|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
               <div class="budget-seg-caption">{{ current_totals.count }} event{{ current_totals.count|pluralize }}, {{ current_period.name }}</div>
+              {% comment %}
+                The year's figure and what it is made of, the same rows the
+                Event history table below prints (the zone panel's "Available
+                by source" idiom): a lone figure in this panel read as a region
+                left hanging (page-verdict, 143-10).
+              {% endcomment %}
+              <div class="budget-breakdown-group">
+                <div class="budget-breakdown-title">By event</div>
+                {% for event in current_totals.rows %}
+                <div class="budget-breakdown-row"><span>{{ event.start_date|date:"M j" }}{% if event.end_date and event.end_date != event.start_date %}&ndash;{{ event.end_date|date:"M j" }}{% endif %}{% if event.water_type %} &middot; {{ event.water_type.name }}{% endif %}</span><b>{{ event.volume_acre_feet|floatformat:2|intcomma }}</b></div>
+                {% endfor %}
+              </div>
               {% if current_totals.by_type|length > 1 %}
               <div class="budget-breakdown-group">
                 <div class="budget-breakdown-title">By water type</div>
