@@ -375,7 +375,17 @@ OH2O.frameOnBoundary = function (map, url) {
                 id: 'boundary-outline', type: 'line', source: 'boundary',
                 paint: { 'line-color': OH2O.colors.boundary, 'line-width': 2, 'line-opacity': 0.85 }
             });
-            OH2O.addDetailLabel(map, 'boundary', 'boundary', { id: 'boundary-label', anchor: 'center' });
+            // One label per boundary, not one per polygon part: a two-part
+            // MultiPolygon labelled from the polygon source paints its name
+            // twice (the add page, 143-07 Task 6 capture). Label a point
+            // source built from each feature's bbox centre instead.
+            var pts = { type: 'FeatureCollection', features: fc.features.map(function (f) {
+                var b = OH2O._geojsonBounds({ type: 'FeatureCollection', features: [f] });
+                return { type: 'Feature', properties: f.properties || {},
+                         geometry: { type: 'Point', coordinates: b ? [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2] : [0, 0] } };
+            }) };
+            map.addSource('boundary-label-points', { type: 'geojson', data: pts });
+            OH2O.addDetailLabel(map, 'boundary-label-points', 'boundary', { id: 'boundary-label', anchor: 'center' });
             var bounds = OH2O._geojsonBounds(fc);
             if (bounds) map.fitBounds(bounds, { padding: 40 });
         })
