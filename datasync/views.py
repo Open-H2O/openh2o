@@ -76,6 +76,45 @@ def _build_source_status(boundary, now):
     return result
 
 
+def _station_list_head_line(*, total_count, q, source, active, reporting):
+    """The Monitoring Stations card head's count line (143-07).
+
+    This page filters on FOUR axes at once (search, source, syncing,
+    reporting) with its own established wording ("42 stations, syncing" / "2
+    stations matching “BEAR”, syncing" / "293 stations, not syncing") —
+    already the results partial's own words before this plan, just moved to
+    the card head above the map instead of a `.result-count-bar` inside
+    #results. A shape `partials/_map_card_head.html`'s generic branches were
+    never asked to say, hence a page-owned line instead of that shared
+    partial.
+    """
+    noun = f"{total_count:,} station{'s' if total_count != 1 else ''}"
+    clauses = []
+    if q:
+        clauses.append(f"matching “{q}”")
+    if source:
+        clauses.append(f"from {source}")
+    if clauses:
+        noun += " " + " ".join(clauses)
+
+    if active == "0":
+        sync_state = "not syncing"
+    elif active == "all":
+        sync_state = "syncing and not"
+    else:
+        sync_state = "syncing"
+
+    tail = sync_state
+    if reporting == "fresh":
+        tail += ", up to date"
+    elif reporting == "stale":
+        tail += ", slightly behind"
+    elif reporting == "dead":
+        tail += ", dormant"
+
+    return f"{noun}, {tail}"
+
+
 @login_required
 def station_list(request):
     """Monitoring stations OVERVIEW: a network freshness map + a searchable list.
@@ -180,8 +219,13 @@ def station_list(request):
             raw_records[sid].append(row["value"])
 
     sparklines: dict = {}
+    # R-075: the count a sparkline was built from, per station — 0 or 1 when
+    # there's no sparkline (2 is the floor to draw one), so the Trend cell can
+    # tell "no reading yet" apart from "one reading, not enough to trend".
+    reading_counts: dict = {}
     for sid, values in raw_records.items():
         numeric = [float(v) for v in reversed(values) if v is not None]
+        reading_counts[sid] = len(numeric)
         if len(numeric) < 2:
             continue
         min_v, max_v = min(numeric), max(numeric)
@@ -207,8 +251,16 @@ def station_list(request):
             "freshness": station_freshness.get(s.pk, "dead"),
             "sparkline_points": sparklines.get(s.pk),
             "latest_tooltip": tooltip,
+            "reading_count": reading_counts.get(s.pk, 0),
         })
 
+    # The map card's head (143-07, R-074). `result_pks` is the WHOLE filtered
+    # (and ordered) list, before pagination — the station list's four filters
+    # (q, source, active, reporting) all land in `stations_ordered` above, so
+    # this is exactly what the map is told to draw. `located_count` gates
+    # whether the card builds a map at all (every MonitoredStation requires a
+    # location, so this is always the station count, the same reason
+    # Recharge and Zones always equal their own `all_count`).
     context = {
         "page_obj": page_obj,
         "enriched_stations": enriched_stations,
@@ -218,6 +270,15 @@ def station_list(request):
         "active": active,
         "reporting": reporting,
         "data_sources": DataSource.objects.filter(is_active=True).order_by("code"),
+        "located_count": MonitoredStation.objects.filter(
+            location__isnull=False
+        ).count(),
+        "result_pks": [s.pk for s in stations_ordered],
+        "line": _station_list_head_line(
+            total_count=paginator.count, q=q, source=source,
+            active=active, reporting=reporting,
+        ),
+        "hx_request": bool(request.headers.get("HX-Request")),
     }
     return list_response(
         request,
@@ -657,11 +718,21 @@ def station_chart_data(request, pk):
 
 @login_required
 def stations_freshness_geojson(request):
-    """Return active stations as GeoJSON with freshness metadata."""
+    """Return every LOCATED station as GeoJSON with freshness metadata.
+
+    143-07, R-074: this used to filter ``is_active=True`` the same way the
+    list's default does, so the two agreed by coincidence (42 = 42 on the
+    demonstration) rather than by design — filtering "Not syncing" on the list
+    left the map still drawing only the active 42, with nothing on screen for
+    the 293 the list was now showing. Every located station draws here, active
+    or not, and ``is_active`` rides along in properties so the follow helper
+    (which filters by the list's own pks, honouring all four of its filters)
+    is what actually decides what's on screen — never this endpoint.
+    """
     now = timezone.now()
 
     stations = MonitoredStation.objects.filter(
-        is_active=True, location__isnull=False
+        location__isnull=False
     ).select_related("data_source")
 
     # Latest published reading (value/unit/parameter) per station, so the map
@@ -713,6 +784,7 @@ def stations_freshness_geojson(request):
                 "label": map_label(s.station_name or ""),
                 "external_station_id": s.external_station_id,
                 "data_source_code": s.data_source.code,
+                "is_active": s.is_active,
                 "freshness": fresh_class,
                 "hours_since_data": round(hours_since, 1) if hours_since is not None else None,
                 "last_data_at": s.last_data_at.isoformat() if s.last_data_at else None,

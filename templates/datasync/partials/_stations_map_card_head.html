@@ -1,0 +1,40 @@
+{% comment %}
+The Monitoring Stations map card's head (143-07). Modeled on
+partials/_map_card_head.html — same div, same h2, same one-line-below-it
+shape — with the one difference this page's own data forces: the key is not
+one swatch but THREE, the freshness states `FRESH_META` already names in
+`_freshness_map.html`'s popup and, until this plan, its own in-map legend
+box. The head is the key now (one place, not two saying the same three
+things), so that box goes.
+
+The count line is not built from noun/count branches the way the shared
+partial's is, either: this page filters on FOUR axes (q, source, active,
+reporting) and already had its own finished wording ("42 stations, syncing" /
+"2 stations matching "BEAR", syncing" / "293 stations, not syncing"), a shape
+the shared partial's generic branches were never asked to say. So this
+partial takes the finished `line` (datasync/views.py::station_list) and only
+lays out the row.
+
+Colours are the platform's own tokens, never a literal hex: `--color-supply`
+and `--color-warning` are exact matches for FRESH_META's fresh/stale, and
+Dormant reads `--color-text-secondary` (a muted grey a shade lighter than
+FRESH_META's own literal `#8899aa` — that literal is itself already adrift
+from both tokens.css and `.freshness-dot--*` in app.css, a pre-existing
+three-way drift this plan does not chase; using a real token here rather than
+a fourth hex is the containable fix).
+
+Words, from the including page/partial:
+  head_id  the element id; the same id in the page and the results partial
+  line     the finished count sentence
+  oob      True inside the results partial only
+{% endcomment %}<div id="{{ head_id }}" class="map-card-head"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <h2 class="section-header-flush">Monitoring stations</h2>
+  <p class="text-base text-secondary">
+    <span>{{ line }}</span>
+    <span class="map-card-head-keys">
+      <span class="map-card-head-key"><span class="swatch-dot" style="color: var(--color-supply);"></span>Up to date</span>
+      <span class="map-card-head-key"><span class="swatch-dot" style="color: var(--color-warning);"></span>Slightly behind</span>
+      <span class="map-card-head-key"><span class="swatch-dot" style="color: var(--color-text-secondary);"></span>Dormant</span>
+    </span>
+  </p>
+</div>

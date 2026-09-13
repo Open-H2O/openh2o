@@ -1247,7 +1247,7 @@
     "app": "recharge",
     "kind": "figure",
     "template": "templates/recharge/partials/_list_results.html",
-    "line": 31,
+    "line": 34,
     "column": 110,
     "expression": "{{ site.capacity_acre_feet|floatformat:0 }}",
     "enclosing_loop": "site in page_obj",

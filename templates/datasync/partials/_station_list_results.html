@@ -1,17 +1,20 @@
-<!-- Count badge -->
-<div class="result-count-bar">
-  <span class="text-secondary text-sm">
-    <span class="count-pill">{{ total_count }}</span>
-    station{{ total_count|pluralize }}{% if q %} matching "{{ q }}"{% endif %}{% if source %} from {{ source }}{% endif %}{% if active == "0" %} not syncing{% elif active == "all" %} (syncing and not){% endif %}{% if reporting == "fresh" %}, up to date{% elif reporting == "stale" %}, slightly behind{% elif reporting == "dead" %}, dormant{% endif %}
-  </span>
-</div>
+{% comment %}
+The count line is NOT here (143-07). It is the map card's head, above the map
+and outside #results, and on an htmx swap this partial re-renders that head
+out of band (hx-swap-oob on the same id) so the count follows the list without
+the map being torn down. On a full page render the page includes the head once
+itself, so it is included here only on an htmx request (hx_request, from the
+view). The pks below are the WHOLE filtered queryset's, before pagination:
+OH2O.followResults reads them after every swap and filters the map to them.
+{% endcomment %}{% if hx_request %}{% include "datasync/partials/_stations_map_card_head.html" with head_id="stations-overview-map-head" line=line oob=True %}{% endif %}
+{{ result_pks|json_script:"results-map-pks" }}
 
 {% if enriched_stations %}
 <div class="card-raised table-scroll">
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 28px;"></th>
+        <th>Reporting</th>
         <th>Station</th>
         <th>Source</th>
         <th>Last Data</th>
@@ -23,8 +26,9 @@
       {% for item in enriched_stations %}
       <tr class="row-clickable" style="cursor: pointer;"
           onclick="if(!event.target.closest('a')){window.location='{% url 'datasync:station_detail' item.station.pk %}';}">
-        <td style="padding-right: 0;">
-          <span class="freshness-dot freshness-dot--{{ item.freshness }}" title="{{ item.freshness }}"></span>
+        <td class="text-secondary text-sm" style="white-space: nowrap;">
+          <span class="freshness-dot freshness-dot--{{ item.freshness }}"></span>
+          {% if item.freshness == "fresh" %}Up to date{% elif item.freshness == "stale" %}Slightly behind{% else %}Dormant{% endif %}
         </td>
         <td>
           <a href="{% url 'datasync:station_detail' item.station.pk %}" class="data-table-link">
@@ -76,8 +80,14 @@
               />
             </svg>
           </div>
+          {% elif item.reading_count == 1 %}
+          {% comment %} R-075: one reading is not "no data" — the dot and the
+               timestamp beside it say otherwise; a sparkline just needs a
+               second point (datasync/views.py refuses to draw one from
+               fewer). Never `--`, which reads the same as zero. {% endcomment %}
+          <span class="text-tertiary text-xs">No trend yet</span>
           {% else %}
-          <span class="text-tertiary text-xs">--</span>
+          <span class="text-tertiary text-xs">No readings</span>
           {% endif %}
         </td>
         {% comment %} ISS-109. The control to switch a station on was NOT missing — it

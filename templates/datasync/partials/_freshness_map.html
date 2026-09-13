@@ -14,6 +14,17 @@ Usage:
 
 Variables:
   map_id     - ID of the existing <div> container on the page (required)
+
+143-07: the in-map legend box is gone. The card's HEAD is the key now
+(partials/_stations_map_card_head.html, three swatches instead of the box
+this partial used to draw in the map's bottom-left corner) — one place
+saying the three freshness states, not two. The map also now FOLLOWS THE
+LIST: `stations_freshness_geojson` serves every located station regardless
+of `is_active` (R-074 — filtering the list to "Not syncing" used to leave the
+map still drawing only the active 42, with nothing on screen for the 293 the
+list was showing), and OH2O.followResults filters the glow/dots layers to the
+results partial's own pks, which honour all four of the list's filters
+(search, source, syncing, reporting).
 {% endcomment %}
 <script>
 (function() {
@@ -28,13 +39,14 @@ Variables:
   el._mapInit = true;
 
   // Plain-English freshness states + their dot colours, defined ONCE so the
-  // persistent legend, the per-station popup and the two map layers can never
-  // drift apart. The values were Tailwind defaults (green-500, amber-500,
-  // gray-400) rather than this platform's palette, and the two `circle-color`
-  // expressions below repeated them a third and fourth time; they now read from
-  // here. Literal hexes, not `var(--token)`, because MapLibre paint takes a
-  // colour value and cannot resolve a custom property — the tokens they mirror
-  // are named beside each one.
+  // per-station popup and the two map layers can never drift apart. The
+  // values were Tailwind defaults (green-500, amber-500, gray-400) rather
+  // than this platform's palette, and the two `circle-color` expressions
+  // below repeated them a third and fourth time; they now read from here.
+  // Literal hexes, not `var(--token)`, because MapLibre paint takes a colour
+  // value and cannot resolve a custom property — the tokens they mirror are
+  // named beside each one. The card head above (143-07) draws its own three
+  // key swatches from the token side of this same pair, in CSS.
   var FRESH_META = {
     fresh: { label: 'Up to date',      color: '#55B678' },  // --color-supply
     stale: { label: 'Slightly behind', color: '#fbbf24' },  // --color-warning
@@ -46,26 +58,6 @@ Variables:
     'stale', FRESH_META.stale.color,
     FRESH_META.dead.color];
 
-  // Persistent legend anchored in the map's bottom-left corner, token-styled to
-  // match the app's cards. Built from FRESH_META so it tracks the dot colours.
-  var legend = document.createElement('div');
-  legend.style.cssText =
-    'position:absolute;bottom:10px;left:10px;z-index:1;' +
-    'background:var(--color-card,#141E2A);border:1px solid var(--color-border,rgba(255,255,255,0.07));' +
-    'border-radius:var(--radius-md);padding:8px 10px;' +
-    'font-family:var(--font-display,sans-serif);font-size:11px;' +
-    'box-shadow:0 2px 8px rgba(0,0,0,0.35);';
-  legend.innerHTML =
-    '<div style="color:var(--color-text-secondary,#8FA3AE);font-weight:600;text-transform:uppercase;' +
-      'letter-spacing:0.04em;font-size:10px;margin-bottom:5px;">Station freshness</div>' +
-    ['fresh', 'stale', 'dead'].map(function(k) {
-      return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;">' +
-        '<span style="width:9px;height:9px;border-radius:50%;flex:none;display:inline-block;' +
-          'background:' + FRESH_META[k].color + ';"></span>' +
-        '<span style="color:var(--color-text-primary,#E7EEF2);">' + FRESH_META[k].label + '</span></div>';
-    }).join('');
-  el.appendChild(legend);
-
   var map = new maplibregl.Map({
     cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
     container: '{{ map_id }}',
@@ -74,6 +66,7 @@ Variables:
     center: [-119.5, 37.3],
     attributionControl: false
   });
+  el._oh2oMap = map;   // a handle for probes; the map is otherwise closed over
 
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
   OH2O.mountBasemapToggle(map, 'aerial');
@@ -84,20 +77,8 @@ Variables:
       .then(function(data) {
         if (!data.features || !data.features.length) return;
 
-        var coords = data.features.map(function(f) { return f.geometry.coordinates; });
-        if (coords.length > 1) {
-          var lngs = coords.map(function(c) { return c[0]; });
-          var lats = coords.map(function(c) { return c[1]; });
-          map.fitBounds(
-            [[Math.min.apply(null, lngs), Math.min.apply(null, lats)], [Math.max.apply(null, lngs), Math.max.apply(null, lats)]],
-            { padding: 40, maxZoom: 13 }
-          );
-        } else {
-          map.setCenter(coords[0]);
-          map.setZoom(11);
-        }
-
-        map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+        var SRC = '{{ map_id }}-source';
+        map.addSource(SRC, { type: 'geojson', data: data });
 
         map.addLayer({
           id: '{{ map_id }}-glow',
@@ -121,6 +102,21 @@ Variables:
             'circle-stroke-width': 1.5,
             'circle-stroke-color': 'rgba(255,255,255,0.3)'
           }
+        });
+
+        // Filter to the list's pks (143-07, R-074) and frame them: now, and
+        // after every htmx swap of #results. The results partial's pks
+        // already honour all four filters (q, source, active, reporting),
+        // so this is the ONE place that decides what the map draws.
+        OH2O.followResults(map, {
+          layers: ['{{ map_id }}-glow', '{{ map_id }}-dots'],
+          source: SRC,
+          data: data,
+          pksEl: 'results-map-pks',
+          resultsEl: 'results',
+          padding: 40,
+          maxZoom: 13,
+          singleZoom: 11
         });
 
         map.on('click', '{{ map_id }}-dots', function(e) {

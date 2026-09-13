@@ -33,10 +33,18 @@
 {% block content %}
 <div class="page-stack page-wide">
 
-  {% comment %} Network freshness map (overview): all stations, colored by recency. The
-       legend lives inside the map; clicking a point opens that station. {% endcomment %}
+  {% comment %} The overview map card (143-07): the head (the count line, in this
+       page's own words, and the three freshness keys on one row,
+       partials/_stations_map_card_head.html) above the map. Every LOCATED
+       station draws (stations_freshness_geojson, active or not) and the map
+       follows the list — the same four filters (q, source, active,
+       reporting) the list itself honours. The in-map legend box is gone: the
+       head is the key now, one place instead of two. {% endcomment %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
+    {% include "datasync/partials/_stations_map_card_head.html" with head_id="stations-overview-map-head" line=line %}
+    {% if located_count %}
     <div id="stations-overview-map" style="height: 380px; width: 100%;"></div>
+    {% endif %}
   </div>
 
   {% comment %} Toolbar: search + filters. With <=50 stations the whole list is on one
@@ -127,5 +135,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{% if located_count %}
 {% include "datasync/partials/_freshness_map.html" with map_id="stations-overview-map" %}
+{% endif %}
 {% endblock %}

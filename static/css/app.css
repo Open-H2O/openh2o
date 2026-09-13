@@ -5094,6 +5094,29 @@ div[id$="-map"] {
     background: currentColor;
 }
 
+/* Three-key variant of the map card head (143-07, Monitoring Stations): the
+   three freshness states (Up to date / Slightly behind / Dormant) replace
+   the in-map legend box _freshness_map.html used to draw, so this head has
+   three keys where every other overview card has one. `.map-card-head`'s own
+   `:has(.swatch-dot)` rule styles a span that IS the key; here that span
+   (`.map-card-head-keys`) holds three sub-keys instead, so its children get
+   their own matching rule rather than inheriting one built for a single mark. */
+.map-card-head-keys {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-lg);
+}
+.map-card-head-key {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    white-space: nowrap;
+}
+.map-card-head-key .swatch-dot {
+    background: currentColor;
+}
+
 /* -- Allocations list, the water-year page (143-06) ----------------------- */
 /* The allocations card carries no padding (the table fills it, the ledger's
    own shape, `.ledger-card-head` above); the edge cells restore the card's
