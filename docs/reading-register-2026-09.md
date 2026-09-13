@@ -479,6 +479,91 @@ mock-ups, the built zone page locally, the allocations landing on staging; the s
 guardrail refused the fifth), allocations SHIP at FINISH 4 both times, the zone page DO NOT SHIP at
 FINISH 3 both times for the 380px map at first paint, which is 143-07's.
 
+Resolved by 143-10 (2026-09-12; local build, not yet on staging), applying 143-06's three
+patterns class for class rather than redesigning them: 9 of the 99 rows plus the diversion,
+water-right and recharge-site shares of R-055 and the POD, well and add-page shares of
+R-112 (twelve register rows, fifteen measured keys). Before values from
+`143-10-probe-before-local.json` / `143-10-probe-before-staging.json` (identical, captured
+2026-09-12 17:46-17:48 PDT); after values from `143-10-probe-after-local.json`, measured
+directly against the rebuilt local stack in this task rather than copied from a builder's
+own claim (counts in `143-10-EVIDENCE.md`). Commits: `6f5a7d4` (the diversion page and the
+water right page), `2721b32` (the recharge list and site page), `888c31f` (the wells list,
+the well page, the add page); guards commit: see `143-10-SUMMARY.md`. R-115 by `6f5a7d4`:
+the records table's Period column is gone, replaced by `tr.row-group` per water year (before:
+one flat row, Period repeating on 4 of 6 rows; after: 2 groups, "WY 2025-2026 · 2 months" and
+"WY 2024-2025 · 4 months", each closing with its own `tr.row-subtotal`, `.col-sep` on Retained
+alone). R-055 diversion by the same commit: before, Diverted's cell (14px) sat smaller than
+the page's largest text (16px, the card head); after, the page's one `.budget-seg--result`,
+Retained, renders at 32px against a 14px Diverted cell, the largest text on the page.
+R-112 POD by the same commit: before, the two-column body's row (POD information beside the
+panel) ran 1,508px against 525px, a 983px difference; after, the same row's content spans
+244px and 244px, a 0px difference (the account grid's info/balance pair, not the old
+`.page-grid-2col`). R-121 by `6f5a7d4`: before, the face value printed "60000.00" with no
+comma and nothing summed the twelve records against it; after, the face value prints
+"60,000.00" and the lead panel reads Face value 60,000.00 − Recorded 15,550.00 (a
+`budget-breakdown-group` "By point of diversion" naming Merced Falls 14,400.00 and Snelling
+1,150.00) = Remaining 44,450.00, all four figures from the same `current_totals` group the
+table below is built from (guards assert these as the values, never re-derive them). R-122
+by the same commit: before, 3 of 4 multi-POD months printed Snelling before Merced Falls;
+after, ordering by `-month, point_of_diversion__name` makes every month (8 of 8 on the local
+demo's fuller record set, not the register's original 4) read Merced Falls first, 0
+differing from alphabetical. R-055 right by `6f5a7d4`: before, the Face value figure (15px)
+sat smaller than the page's largest text (16px); after, the one `.budget-seg--result`,
+Remaining, is 32px, the largest text on the page. R-118 by the same commit: before, one of
+seven rows carried a DEMO pill in its Status cell; after, `_status_badge.html`'s
+`demo_marker=False` on the list drops it from all seven rows (0 in the list body), the
+detail page's own pill (`tests/test_demo_marker.py`) unchanged. R-125 by `2721b32`: before,
+the list's Capacity header read "CAPACITY" with nothing saying capacity of what; after, the
+header reads "CAPACITY PER FILL (AF)", the same words on the site page's field label and
+both add-form cards (storage, recharge_site). R-126 by the same commit: before, one Value
+column mixed mg/L, ft, cfs and in/hr ordered only by date, no divider; after, one
+`tr.row-group` per type present ("WATER LEVEL, FT", "FLOW RATE, CFS", "WATER QUALITY, MG/L",
+"INFILTRATION RATE, IN/HR", in `MEASUREMENT_TYPE_CHOICES` order), no header reading "Unit",
+18 readings across 4 groups on the seeded site (the register's original count was 10; the
+demo has grown since 2026-09-06). R-055 recharge by the same commit: before, the first Volume
+cell (14px) sat smaller than the page's largest text (16px); after, the one
+`.budget-seg--result`, "318.55" AF (the current water year's own subtotal, matching the
+event-history table's own WY 2025-2026 row exactly), renders at 32px, the largest text on the
+page; the prior year's subtotal, 637.10, prints only in its own row, never summed with the
+current year's. R-110 by `888c31f`: before, the list read "340.00 ft" with no word for what
+was measured; after, every row reads "Depth 340.00 ft" (340.00, 430.00, 750.00 ft on the
+first three). R-111 by the same commit: before, the Totalizer header ran unitless beside a
+"Delta (AF)" header; after, neither header carries a unit ("Date", "Totalizer", "Delta"),
+the unit sits once in the meter's own facts line ("Meter MTR-MER-W-001 · reads in acre-feet
+(AF) · the delta is the read less the previous read"), and each water year closes with its
+own subtotal (811.73 AF, WY 2025-2026; 766.72 AF, WY 2024-2025). R-114 by the same commit:
+before, the card read "1.00 fraction"; after, "100% of this well's pumping", worked out in
+the view as a whole percent, never `{% widthratio %}`. R-112 add by `888c31f`: before, the
+two `.map-form-layout` columns ran 1,385px and 560px, an 825px difference; after,
+`align-items: stretch` makes both columns 1,385px, a 0px difference (the map canvas itself is
+1,304px inside its 1,385px card, the remainder its own toolbar and coordinate strip, not a
+gap between the two columns).
+
+**R-112 well is NOT closed, and this paragraph says so rather than the plan's own assumption
+that it would be.** Before, the well page's two-column row ran 1,293px against 2,943px, a
+1,650px difference; after, the account grid's info/balance pair itself matches (932.6px /
+932.6px, `page-grid-account--source-order` keeping Identification first in the stacked pane,
+the main session's own build-time measurement), but the CONTENT inside those two cells does
+not run the same length: Identification's own fields run to 880px while the three short cards
+(Current meters, Irrigated parcels, Monitoring data) stop at 597px, a 283px run-out under the
+short cards, measured by this task's own after-probe. The main session's build-time read of
+the same page (`143-10-work/main-session-drift-checks.md`) found 335.6px by a different
+method (absolute Y bottoms of the Identification card and the last short card, 1,619.8px and
+1,284.2px, against a 1,650px before), a different number from a different measurement, same
+direction and the same finding: a real, un-closed run-out, smaller than before (1,650px to
+roughly 283-336px) but not gone. This is a genuine content-length mismatch (three short cards
+are shorter than a six-section identification form), not a template defect, and it is carried
+here rather than marked closed. Deferred and not built: the rights list's face values print
+without a thousands separator ("120000 AF", not this plan's row); the recharge panel holds
+one figure with nothing set against it (flagged for Brent, not built); the well page's run-out
+above; the add page's tall map with a two-column-form alternative not built. R-055's last
+three pages (Site Health, the lab result, the shared-supply check) remain for 143-08 and
+143-09; R-112 is closed on the POD and add-infrastructure pages and, from 143-06, the zone
+page, but NOT on the well page (above): three of the four R-112 pages closed, one carried.
+Suite 2,609 → **2,631** (22 new guard tests, all observed red against the pre-change tree
+before green). `make test-droppable` green, 30 passed. Staging and Brent's approval are
+143-10 Task 6, not run by this task.
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**

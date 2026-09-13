@@ -29,6 +29,7 @@ below, never ``> 0`` and never a re-derivation of the page's own arithmetic
   on 10 September 2025 and 87.5136 on 10 October 2025 render as 86.94 and
   87.51, and the October change is 87.5136 - 86.9398 = 0.5738 -> 0.57.
 """
+import re
 from datetime import datetime
 from decimal import Decimal
 
@@ -46,7 +47,7 @@ from measurements.models import (
     WaterMeasurement,
 )
 from standards.models import ObservedProperty
-from tests.factories import WellFactory
+from tests.factories import WellFactory, WellIrrigatedParcelFactory, ParcelFactory
 from wells.models import WellMeter
 
 pytestmark = pytest.mark.django_db
@@ -217,3 +218,55 @@ def test_the_page_description_sentence_is_unchanged():
     """The promise at detail.html:23 is kept by rendering, never by rewording."""
     html = _page(_metered_well())
     assert "Well details, linked meters, and measurement history." in html
+
+
+# ---------------------------------------------------------------------------
+# 143-10 (R-111, R-114): the meter table's water-year subtotal and the
+# irrigated-parcel share, each a pasted literal, never a re-derivation of
+# what the page itself computes (measurement_history.py's own delta_total,
+# wells/views.py's own pumping_percent).
+# ---------------------------------------------------------------------------
+
+
+def _th_texts(section):
+    return re.findall(r"<th[^>]*>(.*?)</th>", section, re.S)
+
+
+def test_the_water_year_subtotal_sums_the_deltas_and_names_the_unit_once():
+    """R-111: the closing row totals the Delta column; the unit sits in the
+    meter's own head line and on no header."""
+    well = WellFactory(name="Subtotal well")
+    meter = Meter.objects.create(serial_number="MTR-TEST-2", unit="acre_feet")
+    WellMeter.objects.create(well=well, meter=meter, is_current=True)
+    MeterReading.objects.create(
+        meter=meter, reading_date=_at(2025, 10, 31),
+        previous_value=Decimal("100.0000"), current_value=Decimal("110.0000"),
+        calculated_volume=Decimal("10.0000"), quality="approved",
+    )
+    MeterReading.objects.create(
+        meter=meter, reading_date=_at(2025, 11, 30),
+        previous_value=Decimal("110.0000"), current_value=Decimal("130.0000"),
+        calculated_volume=Decimal("20.0000"), quality="approved",
+    )
+
+    html = _page(well)
+    section = html[html.index(SECTION_HEADING):]
+    table = section[section.index("<table"):section.index("</table>") + len("</table>")]
+
+    (subtotal_row,) = re.findall(r'<tr class="row-subtotal">.*?</tr>', table, re.S)
+    assert ">30.00<" in subtotal_row
+    assert "MTR-TEST-2 &middot; reads in acre-feet (AF)" in section
+    for header in _th_texts(table):
+        assert "(AF)" not in header
+
+
+def test_irrigated_parcel_shares_render_as_whole_percents():
+    """R-114: the fraction is worked out to a whole percent in the view,
+    never `{% widthratio %}` in the template."""
+    well = WellFactory(name="Shared well")
+    WellIrrigatedParcelFactory(well=well, parcel=ParcelFactory(), fraction=Decimal("1.0000"))
+    WellIrrigatedParcelFactory(well=well, parcel=ParcelFactory(), fraction=Decimal("0.2500"))
+
+    html = _page(well)
+    assert "100% of this well's pumping" in html
+    assert "25% of this well's pumping" in html

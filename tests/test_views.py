@@ -813,6 +813,15 @@ class TestWellsPages:
         response = auth_client.get(reverse("wells:detail", kwargs={"pk": well.pk}))
         assert response.status_code == 200
 
+    def test_wells_list_names_the_depth(self, auth_client):
+        """143-10 (R-110): the list's master-row figure says what it measures."""
+        from decimal import Decimal
+
+        WellFactory(name="Depth-named well", depth_ft=Decimal("340.00"))
+        response = auth_client.get(reverse("wells:list"))
+        assert response.status_code == 200
+        assert "Depth 340.00 ft" in response.content.decode()
+
 
 # ---------------------------------------------------------------------------
 # Surface water pages (login required)
@@ -865,6 +874,27 @@ class TestSurfacePages:
         assert "WR-FRAGMENT" in body
         # Fragment, not full document: no <html> shell from base.html.
         assert "<html" not in body.lower()
+
+    def test_curtailed_right_carries_no_demo_badge_on_the_list_but_one_on_detail(
+        self, auth_client
+    ):
+        """143-10 (R-118): the list's notice above the table already says the
+        set is mixed and every id already ends -DEMO, so a pill on one row of
+        several read as though the others were something else
+        (`_status_badge.html`'s `demo_marker=False`, list-only). The detail
+        page is untouched -- `tests/test_demo_marker.py` already pins it."""
+        from core.models import SiteConfig
+
+        SiteConfig.objects.create(agency_name="Demo GSA", demonstration_mode=True)
+        right = WaterRightFactory(status="curtailed")
+
+        list_body = auth_client.get(reverse("surface:water_rights_list")).content.decode()
+        assert "badge-demo" not in list_body
+
+        detail_body = auth_client.get(
+            reverse("surface:detail", kwargs={"pk": right.pk})
+        ).content.decode()
+        assert "badge-demo" in detail_body
 
     # Surface Diversions — Bucket 3 overview (overview map + list -> detail page).
     def test_pod_list(self, auth_client):
@@ -944,8 +974,69 @@ class TestRechargePages:
 
 
 # ---------------------------------------------------------------------------
-# Datasync pages (login required)
+# 143-10 (R-112 well and add): the well page's account grid and the add
+# page's stretched map column, each a rendered-markup / CSS-text assertion,
+# never a screenshot measurement re-derived here.
 # ---------------------------------------------------------------------------
+
+
+class TestAccountGridOnWellsAndAddPage:
+    def test_well_page_uses_the_account_grid_with_a_full_width_measurement_card(
+        self, auth_client
+    ):
+        from datetime import datetime
+        from decimal import Decimal
+
+        from django.utils import timezone
+
+        from measurements.models import Meter, MeterReading, WaterMeasurement
+        from standards.models import ObservedProperty
+
+        well = WellFactory(name="Grid-checked well")
+        meter = Meter.objects.create(serial_number="MTR-GRID-1", unit="acre_feet")
+        from wells.models import WellMeter
+
+        WellMeter.objects.create(well=well, meter=meter, is_current=True)
+        MeterReading.objects.create(
+            meter=meter,
+            reading_date=timezone.make_aware(datetime(2025, 11, 30, 14, 0)),
+            previous_value=Decimal("100.0000"), current_value=Decimal("110.0000"),
+            calculated_volume=Decimal("10.0000"), quality="approved",
+        )
+        prop, _ = ObservedProperty.objects.get_or_create(
+            key="groundwater_level_depth", defaults={"name": "Depth to groundwater"}
+        )
+        WaterMeasurement.objects.create(
+            name="sounder", measurement_type="groundwater_level", observed_property=prop,
+            value=Decimal("86.9400"), unit="ft",
+            measurement_date=timezone.make_aware(datetime(2025, 11, 10, 10, 0)),
+            well=well,
+        )
+
+        body = auth_client.get(reverse("wells:detail", kwargs={"pk": well.pk})).content.decode()
+        assert "page-grid-account" in body
+
+        heading_pos = body.index("Measurement history")
+        assert "page-grid-account-full" in body[heading_pos - 300:heading_pos]
+
+        # Bounded by the next <script> tag: the persistent-map script is the
+        # last thing in the pane, after Measurement history, so everything
+        # between the heading and it is this card's own two tables.
+        card = body[heading_pos:body.index("<script>", heading_pos)]
+        assert card.count("<table") == 2
+
+    def test_add_page_map_form_layout_stretches_the_shorter_column(self):
+        from pathlib import Path
+
+        app_css = (Path(__file__).resolve().parent.parent / "static/css/app.css").read_text()
+        # The SAME literal block test_template_hygiene.py's style of check reads:
+        # the `.map-form-layout` rule (outside the phone-width media query,
+        # which resets it to one column) must carry the stretch rule that
+        # makes the map column run the taller form column's height.
+        block_start = app_css.index("/* Infrastructure form */")
+        block = app_css[block_start:block_start + app_css[block_start:].index("}") + 1]
+        assert ".map-form-layout" in block
+        assert "align-items: stretch;" in block
 
 
 class TestDatasyncPages:
