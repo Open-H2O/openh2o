@@ -28,17 +28,25 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Surface Diversions</span>
   </nav>
-  <p class="page-description">Points of diversion from streams and canals. The map shows every diversion point at once; pick one from the map or the list to open its diversion records, location, and linked use areas.</p>
+  <p class="page-description">Points of diversion from streams and canals. The map follows the list; pick one from either to open its diversion records, location, and linked use areas.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack page-wide">
 
-  {% comment %} Diversion-point map (overview): every point at once. Clicking a point
-       opens its detail page; the list below is the type-to-find path to the same. {% endcomment %}
+  {% comment %} The overview map card (143-07): the head (the count line and the
+       key on one row, partials/_map_card_head.html) above the map. Clicking a
+       point opens its detail page; the list below is the type-to-find path to
+       the same, and the map follows it (OH2O.followResults). With nothing
+       located the card is its head alone: no map host, no map built. The head
+       is OUTSIDE #results, and the results partial rewrites it out of band, so
+       this is the page's only count line. {% endcomment %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
+    {% include "partials/_map_card_head.html" with head_id="pods-overview-map-head" title="Diversion points" noun="diversion point" noun_plural="diversion points" key_label="Diversion point" swatch="dot" swatch_token="teal" %}
+    {% if located_count %}
     <div id="pods-overview-map" style="height: 380px; width: 100%;"></div>
+    {% endif %}
   </div>
 
   {% comment %} Toolbar: search + status filter. Diversion points are bounded and few, so
@@ -86,5 +94,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-{% include "surface/partials/_pods_overview_map.html" with map_id="pods-overview-map" %}
+{% if located_count %}{% include "surface/partials/_pods_overview_map.html" with map_id="pods-overview-map" %}{% endif %}
 {% endblock %}

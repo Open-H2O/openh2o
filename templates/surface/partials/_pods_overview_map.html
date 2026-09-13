@@ -1,15 +1,31 @@
 {% comment %}
-Surface Diversions overview map: every diversion point at once, on the pod_list
-overview page.
+Surface Diversions overview map: the diversion points the list is showing, on
+the pod_list overview page.
 
-The Bucket-3 overview map (see docs/2.0-UX-PATTERN-SPEC.md) for a POINT screen —
-the points-of-diversion analogue of the Zones boundary map and datasync's station
-map. It draws each diversion point from surface:pods_geojson (which already
-carries pk in properties) and, on click, opens a popup with the point's name and
-a link to its full detail page. Modeled on _zones_overview_map.html.
+The Bucket-3 overview map (see docs/2.0-UX-PATTERN-SPEC.md) for a POINT screen,
+the points-of-diversion analogue of the Zones boundary map and datasync's
+station map. It draws each diversion point from surface:pods_geojson (which
+already carries pk in properties) and, on click, opens a popup with the point's
+name and a link to its full detail page. Modeled on _zones_overview_map.html.
+
+The overview map card (143-07, designed here and copied by the other overview
+pages). Three things beyond the dots:
+
+  * An always-on label per point (OH2O.addDetailLabel: minzoom 0, collision
+    declutter, text-optional), so nine dots read as nine named points at the
+    fitted zoom. A label that collides yields; the dot stays.
+  * The map FOLLOWS THE LIST. The results partial emits the whole filtered
+    queryset's pks as json_script#results-map-pks, and OH2O.followResults
+    filters every layer here to those pks and re-frames on first paint and
+    after every htmx swap of #results. The geojson endpoint takes NO
+    parameter: one fetch per page load, one source, filtered client-side.
+  * The card's head (partials/_map_card_head.html) carries the count line and
+    the key; the map itself says nothing in words.
 
 The parent page must provide a <div> with the matching map_id, and must load
-MapLibre GL JS + map-core.js (the map_scripts block) before this include.
+MapLibre GL JS + map-core.js (the map_scripts block) before this include. It
+includes this partial only when something has a location (located_count):
+with nothing to draw the card is its head alone and no map is built.
 
 Variables:
   map_id  - ID of the existing <div> container on the page (required)
@@ -25,7 +41,8 @@ Variables:
     if (!el || el._mapInit) return;
     el._mapInit = true;
 
-    var COLOR = OH2O.colors.teal;   // matches the POD symbology on the big map
+    var COLOR = OH2O.entities.pod.color;   // the POD symbology on the big map
+    var SRC = '{{ map_id }}-source';
 
     var map = new maplibregl.Map({
       cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
@@ -35,6 +52,7 @@ Variables:
       center: [-119.5, 37.3],
       attributionControl: false
     });
+    el._oh2oMap = map;   // a handle for probes; the map is otherwise closed over
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     OH2O.mountBasemapToggle(map, 'aerial');
@@ -49,37 +67,54 @@ Variables:
         .then(function(data) {
           if (!data.features || !data.features.length) return;
 
-          var coords = data.features
-            .map(function(f) { return f.geometry && f.geometry.coordinates; })
-            .filter(Boolean);
-          if (coords.length > 1) {
-            var lngs = coords.map(function(c) { return c[0]; });
-            var lats = coords.map(function(c) { return c[1]; });
-            map.fitBounds(
-              [[Math.min.apply(null, lngs), Math.min.apply(null, lats)],
-               [Math.max.apply(null, lngs), Math.max.apply(null, lats)]],
-              { padding: 40, maxZoom: 13 }
-            );
-          } else if (coords.length === 1) {
-            map.setCenter(coords[0]); map.setZoom(11);
-          }
-
-          map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+          map.addSource(SRC, { type: 'geojson', data: data });
 
           map.addLayer({
             id: '{{ map_id }}-glow',
             type: 'circle',
-            source: '{{ map_id }}-source',
+            source: SRC,
             paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
           });
           map.addLayer({
             id: '{{ map_id }}-dots',
             type: 'circle',
-            source: '{{ map_id }}-source',
+            source: SRC,
             paint: {
               'circle-radius': 6, 'circle-color': COLOR,
               'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
             }
+          });
+          // The always-on label, after the dots so it draws above them. The
+          // label may sit on any side of its dot (variable anchors), so a label
+          // that would collide below finds room beside: measured at the fitted
+          // zoom on the demonstration, 6 of 9 labels rendered with the fixed
+          // top anchor and 8 of 9 with these; the ninth is one of two points
+          // ten pixels apart, where no layout fits both, and it yields.
+          OH2O.addDetailLabel(map, SRC, 'pod', {
+            id: '{{ map_id }}-label',
+            layout: {
+              'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+              'text-radial-offset': 0.9,
+              'text-justify': 'auto'
+            }
+          });
+
+          // Filter to the list's pks and frame them: now, and after every swap
+          // of #results. The frame the whole set used to get (padding 40,
+          // maxZoom 13; a lone point at zoom 11) is the frame the filtered set
+          // gets, with 64px above and below instead of 40: a three-line label
+          // under the lowest dot (or over the highest) clipped at the band's
+          // edge at 40, and MapLibre still places a label up to 100px outside
+          // the canvas, so the room has to be in the frame.
+          OH2O.followResults(map, {
+            layers: ['{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
+            source: SRC,
+            data: data,
+            pksEl: 'results-map-pks',
+            resultsEl: 'results',
+            padding: { top: 64, bottom: 64, left: 40, right: 40 },
+            maxZoom: 13,
+            singleZoom: 11
           });
 
           map.on('click', '{{ map_id }}-dots', function(e) {

@@ -127,9 +127,23 @@ def pod_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # The map card's head and the map that follows the list (143-07). The
+    # results partial emits the WHOLE filtered queryset's pks, never the
+    # page's, and the head counts what the list counts against everything;
+    # ``located_count`` is what the map can draw at all (a location is required
+    # on this model, so it equals ``all_count`` here; the shared head partial
+    # still branches on it because the other overview pages' geometries are
+    # optional). ``filter_words`` is the status facet as the head says it.
+    status_label = dict(PointOfDiversion.STATUS_CHOICES).get(status, "")
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
+        "all_count": PointOfDiversion.objects.count(),
+        "located_count": PointOfDiversion.objects.filter(location__isnull=False).count(),
+        "result_pks": list(queryset.values_list("pk", flat=True)),
+        "result_located_count": queryset.filter(location__isnull=False).count(),
+        "filter_words": f"with status “{status_label}”" if status_label else "",
+        "hx_request": bool(request.headers.get("HX-Request")),
         "q": q,
         "status": status,
         "status_choices": PointOfDiversion.STATUS_CHOICES,

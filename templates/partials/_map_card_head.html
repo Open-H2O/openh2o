@@ -1,0 +1,50 @@
+{% load humanize %}{% comment %}
+The overview map card's head (143-07). ONE partial, and every overview page
+includes it with its own words: the h2 names the thing, then ONE line at
+text-base that is the count line AND the key on one row. The count is what the
+list counts, in the same three states on every page:
+
+    9 diversion points, all on the map
+    2 of 9 match "Merced"; the map shows those 2
+    No diversion point matches "xyz"; the map shows none
+
+and, when nothing has a geometry, "No diversion point has a location yet."
+(the page then builds no map at all). The key sits at the right of the same
+line: a .swatch-dot (points) or .swatch-fill (polygons) from map-engine.css in
+the entity's colour, read off its --color-entity-* token so it can never
+disagree with the paint (tests/test_map_palette_single_source.py holds the
+token and OH2O.colors equal), and the mark's name. Copy rule 11: the key names
+the mark ("Diversion point"), never the water. Rule 17: noun phrases.
+
+It is the page's ONLY count line. The results partial includes it again with
+oob=True on an htmx request, which renders hx-swap-oob="true" on the same id,
+so every swap of #results rewrites this head above the map without touching
+the map (the map lives outside #results; a map inside is torn down on every
+keystroke, the UAT-001 lesson). A full page render includes it once, here.
+
+Words, from the including page:
+  head_id       the element id; the same id in the page and the results partial
+  title         the thing, sentence case ("Diversion points")
+  noun          the thing in the count line, singular ("diversion point")
+  noun_plural   its plural ("diversion points")
+  key_label     what a mark is ("Diversion point")
+  swatch        "dot" for a point layer, "fill" for a polygon layer
+  swatch_token  the --color-entity-* token the layer paints with ("teal")
+  oob           True inside the results partial only
+Counts, from the view (the page and the results partial share one context):
+  all_count             every row, unfiltered
+  located_count         rows with a geometry: what the map can draw at all
+  total_count           rows the list is showing now, after the filters
+  result_located_count  the showing rows that have a geometry
+  q                     the search text, if any
+  filter_words          the other active filter as a phrase ("with status
+                        "Active""), or empty
+  line                  optional: a page whose count cannot take this shape
+                        passes its own noun phrase and the branches are skipped
+{% endcomment %}<div id="{{ head_id }}" class="map-card-head"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <h2 class="section-header-flush">{{ title }}</h2>
+  <p class="text-base text-secondary">
+    <span>{% if line %}{{ line }}{% elif not located_count %}No {{ noun }} has a location yet.{% elif not q and not filter_words %}{{ all_count|intcomma }} {% if all_count == 1 %}{{ noun }}{% else %}{{ noun_plural }}{% endif %}, {% if located_count == all_count %}all on the map{% else %}{{ located_count|intcomma }} of them on the map{% endif %}{% elif not total_count %}No {{ noun }}{% if q %} matches &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}; the map shows none{% else %}{{ total_count|intcomma }} of {{ all_count|intcomma }}{% if q %} match{{ total_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% endif %}{% if filter_words %} {{ filter_words }}{% endif %}; the map shows {% if result_located_count == total_count %}{% if total_count == 1 %}it{% else %}those {{ total_count|intcomma }}{% endif %}{% elif result_located_count == 1 %}the one of them with a location{% elif result_located_count %}the {{ result_located_count|intcomma }} of them with a location{% else %}none of them; none has a location yet{% endif %}{% endif %}</span>
+    {% if located_count %}<span><span class="swatch-{{ swatch|default:'dot' }}" style="color: var(--color-entity-{{ swatch_token }});"></span>{{ key_label }}</span>{% endif %}
+  </p>
+</div>

@@ -5059,6 +5059,38 @@ div[id$="-map"] {
     cursor: default;
 }
 
+/* -- The overview map card's head (143-07) -------------------------------- */
+/* The map card (padding 0, the ledger card's shape above) opens with its
+   head: the h2 names the thing, and ONE line at text-base is the count line
+   and the key on one row: the count at the left; at the right the key, a
+   .swatch-dot or .swatch-fill (map-engine.css) in the entity token's colour
+   beside the mark's name. The head is the page's only count line; the results
+   partial rewrites it out of band on every #results swap.
+   templates/partials/_map_card_head.html */
+.map-card-head {
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+.map-card-head > p {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-xs) var(--space-lg);
+    margin: var(--space-xs) 0 0;
+}
+/* The key is the span that holds the swatch. */
+.map-card-head > p > span:has(.swatch-dot, .swatch-fill) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    white-space: nowrap;
+}
+.map-card-head .swatch-dot,
+.map-card-head .swatch-fill {
+    background: currentColor;
+}
+
 /* -- Allocations list, the water-year page (143-06) ----------------------- */
 /* The allocations card carries no padding (the table fills it, the ledger's
    own shape, `.ledger-card-head` above); the edge cells restore the card's
