@@ -26,6 +26,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
 from core.access import public_in_open_demo
+from core.map_labels import map_label
 
 from core.workspace import list_response
 from drinking import envirofacts, envirofacts_mapping, glossary, importer
@@ -522,6 +523,12 @@ def facilities_geojson(request):
                 "pk": facility.pk,
                 "facility_id": facility.facility_id,
                 "name": facility.name,
+                # 143-07 Step 0: the map label, code prefix stripped. `name` is
+                # optional here (a facility can carry only its federal id), so
+                # this is null rather than an empty string when absent — a
+                # coalesce expression skips null and falls through to the next
+                # field, but treats "" as a real (empty) value and stops there.
+                "label": map_label(facility.name) if facility.name else None,
                 # The published LABEL, not the two-letter code. ISS-008 was filed
                 # for exactly this on the monitoring charts.
                 "facility_type": facility.get_facility_type_display(),

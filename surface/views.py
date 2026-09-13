@@ -19,6 +19,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from core.access import public_in_open_demo
+from core.map_labels import map_label
 
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
@@ -547,4 +548,8 @@ def pods_geojson(request):
     for f in data["features"]:
         # Inject pk so the full-map popup can link to the POD detail page.
         f["properties"]["pk"] = f.get("id")
+        # 143-07 Step 0: the map label, code prefix stripped. labelField reads
+        # this first and falls back to the existing expression, so an older
+        # cached response still labels the way it always has.
+        f["properties"]["label"] = map_label(f["properties"].get("name") or "")
     return HttpResponse(json.dumps(data), content_type="application/json")

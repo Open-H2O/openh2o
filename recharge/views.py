@@ -18,6 +18,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from core.access import public_in_open_demo
+from core.map_labels import map_label
 
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
@@ -362,6 +363,8 @@ def recharge_sites_geojson(request):
             "properties": {
                 "pk": site.pk,
                 "name": site.name,
+                # 143-07 Step 0: the map label, code prefix stripped.
+                "label": map_label(site.name or ""),
                 "site_type": site.site_type,
                 "capacity_acre_feet": str(site.capacity_acre_feet) if site.capacity_acre_feet else None,
                 "status": site.status,

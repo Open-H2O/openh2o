@@ -23,6 +23,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from core.access import public_in_open_demo
+from core.map_labels import map_label
 
 from core.workspace import list_response
 from datasync import freshness
@@ -708,6 +709,8 @@ def stations_freshness_geojson(request):
             "properties": {
                 "pk": s.pk,
                 "station_name": s.station_name,
+                # 143-07 Step 0: the map label, code prefix stripped.
+                "label": map_label(s.station_name or ""),
                 "external_station_id": s.external_station_id,
                 "data_source_code": s.data_source.code,
                 "freshness": fresh_class,

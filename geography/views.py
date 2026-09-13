@@ -29,6 +29,7 @@ from accounting.services import (
 )
 from core.access import admin_required, public_in_open_demo
 from core.constants import RECOVERY_HORIZON_CHOICES
+from core.map_labels import map_label
 from core.models import SiteConfig
 from core.modules import is_enabled
 from core.workspace import detail_response, list_response
@@ -852,12 +853,24 @@ def zone_labels_geojson(request):
     stamps the zone name once *per part* — a multi-part GSA appeared a dozen-plus
     times across the map. Labeling a single interior point per zone gives
     exactly one clean, well-placed label.
+
+    ``pk`` and ``zone_type`` (143-07) let the Zones overview map's follow
+    helper filter this second source by the same pks the fill/outline layers
+    filter by, and let a later plan split the legend by type. ``label`` is the
+    code-prefix-stripped name (Step 0); every symbol layer that draws it reads
+    ``['coalesce', ['get','label'], ...]`` so an older cached response still
+    labels the way it always has.
     """
     features = [
         {
             "type": "Feature",
             "geometry": json.loads(zone.geometry.point_on_surface.geojson),
-            "properties": {"name": zone.name},
+            "properties": {
+                "pk": zone.pk,
+                "name": zone.name,
+                "label": map_label(zone.name or ""),
+                "zone_type": zone.zone_type,
+            },
         }
         for zone in Zone.objects.filter(geometry__isnull=False)
     ]

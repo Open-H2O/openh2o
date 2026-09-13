@@ -46,26 +46,36 @@ OH2O.SPRITE = 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm';
    color  : marker / accent color
    rampLo/rampHi : circle radius at zoom 9 and zoom 16 (interpolated)
    labelField : MapLibre expression for the label text
-   labelMin   : zoom at which the label fades in (zoom-dependent labels) */
+   labelMin   : zoom at which the label fades in (zoom-dependent labels)
+
+   Five of these (pod, recharge, zone, drinking, station — every entity the
+   overview maps this plan touches draw) lead with ['get','label'] (143-07
+   Step 0): the geojson endpoint's map_label()-stripped name, with the code
+   prefix a stored name like "MER-POD-004-DEMO Atwater Canal Headgate" carries
+   dropped. `coalesce` falls through to the old expression when a feature has
+   no `label` property at all (an older cached response, or an endpoint this
+   plan does not touch), so nothing regresses; a facility's `label` is `null`
+   rather than `""` when it has no name, for exactly that reason. `well` is
+   untouched — its geojson endpoint does not carry `label` yet. */
 OH2O.entities = {
     well:    { color: OH2O.colors.gold,   rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
                labelField: ['coalesce', ['get','name'], ['get','well_registration_id'], 'Well'] },
     pod:     { color: OH2O.colors.teal,   rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
-               labelField: ['coalesce', ['get','name'], 'POD'] },
+               labelField: ['coalesce', ['get','label'], ['get','name'], 'POD'] },
     station: { color: OH2O.colors.red,    rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
-               labelField: ['coalesce', ['get','station_name'], ['get','external_station_id'], 'Station'] },
+               labelField: ['coalesce', ['get','label'], ['get','station_name'], ['get','external_station_id'], 'Station'] },
     recharge:{ color: OH2O.colors.purple, rampLo: 4.5, rampHi: 10,  labelMin: 10.5,
-               labelField: ['coalesce', ['get','name'], ['get','site_type'], 'Recharge'] },
+               labelField: ['coalesce', ['get','label'], ['get','name'], ['get','site_type'], 'Recharge'] },
     // Drinking-water facilities. blueBright, NOT gold: on the district map these
     // dots land on the SAME coordinates as the gold `wells` layer (a supply well
     // is one physical feature seen from two sides), and two gold dots on one
     // point is unreadable.
     drinking:{ color: OH2O.colors.blueBright, rampLo: 3.5, rampHi: 8.5, labelMin: 10.5,
-               labelField: ['coalesce', ['get','name'], ['get','facility_id'], 'Facility'] },
+               labelField: ['coalesce', ['get','label'], ['get','name'], ['get','facility_id'], 'Facility'] },
     parcel:  { color: OH2O.colors.blue,   labelMin: 10.5,
                labelField: ['get','parcel_number'] },
     zone:    { color: OH2O.colors.green,  labelMin: 9,
-               labelField: ['get','name'] },
+               labelField: ['coalesce', ['get','label'], ['get','name']] },
     boundary:{ color: OH2O.colors.gold,   labelMin: 8,
                labelField: ['get','name'] },
     hydrography:{ color: OH2O.colors.river, labelMin: 11,
