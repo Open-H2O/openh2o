@@ -415,8 +415,8 @@ Resolved by 143-05 (2026-09-12, approved by Brent 13:09 PDT on staging `ae0c1be`
 
 Revised at the 143-05 checkpoint (2026-09-12 11:16 to 13:09 PDT, Brent). The badge Source column and the Water type column became ONE column headed Water whose words come from the reporting systems (GEARS: Metered / Unmetered-Estimated; CalWATRS: the reported diversion): "Groundwater, metered", "Groundwater, estimated", "Surface water, diverted", "{type}, entered" (form or CSV, the same thing), "{type}, adjusted", "Groundwater allocation" / "Surface water allocation", "Recharge credit", written by `accounting/ledger_words.py::ledger_row_words` for the ledger and the use-area pane alike (commits `5f2c33d`, `ae0c1be`; six value guards observed red first). His reason: "Meter reading in the source sticks out compared to surface water diversion"; a metered headgate diversion is still a Surface diversion row, and the platform carries no measurement-method field on a point of diversion. R-018 is therefore closed by structure after all, not by the sentence: the row's own words say whether it is water or paper, and the sentence above the table shrank to two facts at 14px, "Acre-feet. Negative amounts are water delivered or pumped; positive amounts are credits." (his words: the 30-word sentence "covers from a liability standpoint" but "the font is so tiny I wouldn't notice it"). The pane card carries the same column and the same line, and `tests/test_parcel_detail.py` and `tests/test_ledger_navigation.py` pin them together. First data row on staging: y=535 of 1,000 (the facts line is two lines). What the readable Description column exposed, the engines' own labels on ~2,000 rows, is ISS-170, its own plan.
 
-Resolved by 143-06 (2026-09-12, local build only; staging deploy, the after-probe and Brent's
-approval are Task 6, not yet run): 8 of the 99 rows, before values from
+Resolved by 143-06 (2026-09-12; staging `ca474be`, approved by Brent 17:17 PDT, production
+untouched at `241c22b`): 8 of the 99 rows, before values from
 `143-06-probe-before-local.json` and `143-06-probe-before-staging.json` (identical), after values
 re-measured directly against the local build's rendered HTML in this task rather than copied from
 a builder's own claim (counts in `143-06-EVIDENCE.md`). Checkpoint rulings (`143-06-work/rulings.md`,
@@ -466,7 +466,18 @@ the recharge event) and the three R-112 pages (the well, POD and add-infrastruct
 this plan's: the three water pages among them (the diversion, the water right and the recharge
 event's R-055, plus all three of R-112's) go to 143-10, which copies the lead-panel and group-header
 shapes this plan settled rather than redesigning them; the remaining three R-055 pages (Site Health,
-the lab result, the shared-supply check) go to 143-08 and 143-09.
+the lab result, the shared-supply check) go to 143-08 and 143-09. Task 6 deployed `0dcb8f0` to staging and re-ran the
+probe there (`143-06-probe-after-staging.json`): every figure above identical to local (16
+allocations, 148,500.00 and 155,700.00 once each and 304,200.00 nowhere, 23 use areas and 375.16,
+911.58 at 32px, 455/484px). Verify checkpoint, first pass, Brent 17:11 PDT: "We should add a color or
+some other formatting to the totals values. They just blend into the list. Hard to read." Built as
+`ca474be`: `.td-total` on the closing figure of every totals row this plan touched (the one-period
+tfoot, the per-year subtotals, the water-year page's tfoot, the use-areas tfoot), the accent the
+label already carries, weight 700, 15px against the 13px body (measured on staging: rgb(70,179,196),
+15px, 700 on all three pages). Second pass approved 17:17 PDT. Readers: 4 of 5 budgeted (the two
+mock-ups, the built zone page locally, the allocations landing on staging; the session's sub-agent
+guardrail refused the fifth), allocations SHIP at FINISH 4 both times, the zone page DO NOT SHIP at
+FINISH 3 both times for the 380px map at first paint, which is 143-07's.
 
 ## Phase 144: The words and the way in
 
