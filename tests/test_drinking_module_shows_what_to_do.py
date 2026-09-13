@@ -384,21 +384,31 @@ class TestTheMapIsUnfilteredAndSaysSo:
     A clause that is ALWAYS present fails just as loudly as one that never is —
     which matters, because "always present" is what a careless edit produces and
     it reads perfectly well on the one page anybody looks at.
+
+    RETARGETED (143-07, Ruling A): the map now FOLLOWS the filtered list
+    (OH2O.followResults, wired into `_drinking_overview_map.html`, shared with
+    Sampling Points), so it no longer contradicts the table under a filter —
+    the class name is dated but kept rather than renamed to minimise the diff
+    against a class the checkpoint discussed by this name. The old "It is not
+    filtered: ... still drawing every located facility" clause was TRUE before
+    this plan and false after it, so it is gone; what remains true and needed
+    saying is the located-subset count, which the new clause names instead.
     """
 
-    def test_the_divergence_clause_appears_under_a_filter(
+    def test_the_located_subset_clause_appears_under_a_filter(
         self, client_in, mapped_system
     ):
         html = _get(client_in, "drinking:facilities", q="Well 08")
-        assert "It is not filtered" in html
-        assert "still drawing every located facility" in html
+        assert "It is not filtered" not in html
+        assert "The map follows the list" in html
+        assert "with a location" in html
 
-    def test_the_divergence_clause_is_absent_with_no_filter(
+    def test_the_located_subset_clause_is_absent_with_no_filter(
         self, client_in, mapped_system
     ):
         html = _get(client_in, "drinking:facilities")
-        assert "It is not filtered" not in html, (
-            "the divergence clause renders when nothing diverges"
+        assert "The map follows the list" not in html, (
+            "the located-subset clause renders when nothing is filtered"
         )
 
     def test_the_clause_names_the_count_the_list_is_showing(
@@ -409,9 +419,9 @@ class TestTheMapIsUnfilteredAndSaysSo:
         assert "showing 2 facilities" in html
 
     def test_a_type_filter_alone_raises_the_clause(self, client_in, mapped_system):
-        """Not just `q` — all three filters diverge from the map the same way."""
+        """Not just `q` — all three filters raise the located-subset clause."""
         html = _get(client_in, "drinking:facilities", facility_type="DS")
-        assert "It is not filtered" in html
+        assert "The map follows the list" in html
 
     def test_the_clause_reaches_the_htmx_partial_too(self, client_in, mapped_system):
         """UAT-001. The sentence must survive the path an operator actually uses.
@@ -423,9 +433,9 @@ class TestTheMapIsUnfilteredAndSaysSo:
         the clause exists to prevent, invisible on a full `?q=` load.
         """
         partial = _get_htmx(client_in, "drinking:facilities", q="Well")
-        assert "It is not filtered" in partial, (
-            "the divergence clause does not reach the htmx partial, so it never "
-            "appears when an operator types in the search box"
+        assert "The map follows the list" in partial, (
+            "the located-subset clause does not reach the htmx partial, so it "
+            "never appears when an operator types in the search box"
         )
         assert "showing 2 facilities" in partial
 
@@ -435,7 +445,7 @@ class TestTheMapIsUnfilteredAndSaysSo:
         """The other direction, through the same path."""
         partial = _get_htmx(client_in, "drinking:facilities")
         assert "2 of the 3" in partial
-        assert "It is not filtered" not in partial
+        assert "The map follows the list" not in partial
 
     def test_the_htmx_partial_never_carries_the_map_host(
         self, client_in, mapped_system

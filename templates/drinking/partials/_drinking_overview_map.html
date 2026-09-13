@@ -54,6 +54,7 @@ Variables:
       center: [-119.5, 37.3],
       attributionControl: false
     });
+    el._oh2oMap = map;   // a handle for probes; the map is otherwise closed over
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     OH2O.mountBasemapToggle(map, 'aerial');
@@ -120,37 +121,39 @@ Variables:
         .then(function(data) {
           if (!data.features || !data.features.length) return;
 
-          // Points only — no polygons in this layer, so the bbox walk is a flat
-          // pass over [lng, lat] pairs rather than recharge's recursion.
-          var bbox = [Infinity, Infinity, -Infinity, -Infinity];
-          data.features.forEach(function(f) {
-            if (!f.geometry || !f.geometry.coordinates) return;
-            var c = f.geometry.coordinates;
-            if (c[0] < bbox[0]) bbox[0] = c[0];
-            if (c[1] < bbox[1]) bbox[1] = c[1];
-            if (c[0] > bbox[2]) bbox[2] = c[0];
-            if (c[1] > bbox[3]) bbox[3] = c[1];
-          });
-          if (isFinite(bbox[0])) {
-            map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, maxZoom: 13 });
-          }
-
-          map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+          var SRC = '{{ map_id }}-source';
+          map.addSource(SRC, { type: 'geojson', data: data });
 
           map.addLayer({
             id: '{{ map_id }}-glow',
             type: 'circle',
-            source: '{{ map_id }}-source',
+            source: SRC,
             paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
           });
           map.addLayer({
             id: '{{ map_id }}-dots',
             type: 'circle',
-            source: '{{ map_id }}-source',
+            source: SRC,
             paint: {
               'circle-radius': 6, 'circle-color': COLOR,
               'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
             }
+          });
+
+          // Filter to the list's pks (143-07) and frame them: now, and after
+          // every htmx swap of #results. Both pages that include this
+          // partial target #results with every control, and both results
+          // partials emit the same results-map-pks id, so the defaults fit
+          // either host with no per-page wiring.
+          OH2O.followResults(map, {
+            layers: ['{{ map_id }}-glow', '{{ map_id }}-dots'],
+            source: SRC,
+            data: data,
+            pksEl: 'results-map-pks',
+            resultsEl: 'results',
+            padding: 40,
+            maxZoom: 13,
+            singleZoom: 11
           });
 
           map.on('click', '{{ map_id }}-dots', function(e) {

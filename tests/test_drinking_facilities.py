@@ -103,9 +103,20 @@ def inventory(db):
     return {"system": system, "source": source, "plant": plant, "retired": retired}
 
 
-def _count_pill(html):
-    """The number in the count bar, as an int."""
-    return int(re.search(r'count-pill">(\d+)<', html).group(1))
+def _count_pill(response):
+    """The count the list is showing, as an int.
+
+    RETARGETED (143-07): the page's only count line moved from a
+    `.result-count-bar` `count-pill` badge inside #results to the map card's
+    head above it (`partials/_map_card_head.html`), which states the count in
+    a sentence rather than a fixed badge — "3 facilities, 2 of them on the
+    map" one render, "1 of 3 matches ..." the next. Reading
+    `response.context["total_count"]` (the same number `list_response` handed
+    the template) is more robust than a new regex against prose that is
+    deliberately not fixed-shape, and it is what the badge was always a proxy
+    for.
+    """
+    return response.context["total_count"]
 
 
 # -- 1. The page ------------------------------------------------------------
@@ -116,7 +127,7 @@ class TestTheListRenders:
         response = client_in.get(reverse("drinking:facilities"))
         assert response.status_code == 200
         html = response.content.decode()
-        assert _count_pill(html) == 3
+        assert _count_pill(response) == 3
         for facility_id in ("001", "002", "003"):
             assert facility_id in html
 
@@ -128,8 +139,9 @@ class TestTheListRenders:
 
     def test_it_paginates_past_fifty(self, client_in, inventory):
         SystemFacilityFactory.create_batch(60, system=inventory["system"])
-        html = client_in.get(reverse("drinking:facilities")).content.decode()
-        assert _count_pill(html) == 63
+        response = client_in.get(reverse("drinking:facilities"))
+        html = response.content.decode()
+        assert _count_pill(response) == 63
         assert html.count('class="data-table-link"') == 50
         second = client_in.get(reverse("drinking:facilities"), {"page": 2})
         assert second.content.decode().count('class="data-table-link"') == 13
@@ -141,25 +153,25 @@ class TestTheListRenders:
 class TestSearchAndFilters:
     def test_search_matches_the_facility_id(self, client_in, inventory):
         response = client_in.get(reverse("drinking:facilities"), {"q": "002"})
-        assert _count_pill(response.content.decode()) == 1
+        assert _count_pill(response) == 1
 
     def test_search_matches_the_name(self, client_in, inventory):
         response = client_in.get(reverse("drinking:facilities"), {"q": "Riverside"})
         html = response.content.decode()
-        assert _count_pill(html) == 1
+        assert _count_pill(response) == 1
         assert "Riverside treatment" in html
 
     def test_the_type_filter_narrows(self, client_in, inventory):
         response = client_in.get(
             reverse("drinking:facilities"), {"facility_type": "TP"}
         )
-        assert _count_pill(response.content.decode()) == 1
+        assert _count_pill(response) == 1
 
     def test_the_status_filter_narrows(self, client_in, inventory):
         response = client_in.get(
             reverse("drinking:facilities"), {"activity_status": "I"}
         )
-        assert _count_pill(response.content.decode()) == 1
+        assert _count_pill(response) == 1
 
     def test_the_options_come_from_the_database_not_the_choices_table(
         self, client_in, inventory

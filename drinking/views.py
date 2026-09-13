@@ -161,6 +161,46 @@ def _present_choices(field_name, choices):
     )
 
 
+def _sampling_points_head_line(
+    *, all_count, mapped_facility_count, total_count, result_located_count, q, filter_words
+):
+    """The Sampling Points card head's `line` override (143-07).
+
+    ``partials/_map_card_head.html``'s own branches describe ONE set of rows
+    on the map exactly as the list counts them. This page's list counts
+    sampling POINTS and its map draws the FACILITIES they sit at (one facility
+    can host several points), so "the located subset" is a count of
+    facilities, not of points — a shape the shared partial's branches cannot
+    say on their own, hence this override. Mirrors their wording (and their
+    three states — full load, a filter with matches, a filter with none) as
+    closely as that difference allows.
+    """
+    if not q and not filter_words:
+        noun = "sampling point" if all_count == 1 else "sampling points"
+        return (
+            f"{all_count:,} {noun}; {mapped_facility_count:,} of them at a "
+            "located facility, on the map"
+        )
+
+    clause_bits = []
+    if q:
+        clause_bits.append(f"“{q}”")
+    if filter_words:
+        clause_bits.append(filter_words)
+    clause = " ".join(clause_bits)
+
+    if not total_count:
+        return f"No sampling point matching {clause}; the map shows none"
+
+    match_verb = "matches" if total_count == 1 else "match"
+    facility_noun = "facility" if result_located_count == 1 else "facilities"
+    if not result_located_count:
+        tail = "the map shows none of them; none is at a located facility"
+    else:
+        tail = f"the map shows the {result_located_count:,} located {facility_noun} among them"
+    return f"{total_count:,} of {all_count:,} {match_verb} {clause}; {tail}"
+
+
 @login_required
 def facilities(request):
     """The facility inventory: every physical part of the water system.
@@ -194,6 +234,20 @@ def facilities(request):
     paginator = Paginator(queryset, 50)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
+    # The map card's head (143-07). The map draws FACILITIES and the list
+    # counts facilities too — a 1:1 correspondence sampling_points below does
+    # not have — so the shared head partial's own branches (all_count /
+    # located_count / total_count / result_located_count) say the right thing
+    # with no `line` override. `result_pks` is the WHOLE filtered queryset's
+    # pks (before pagination), read by OH2O.followResults after every swap.
+    facility_type_label = dict(FACILITY_TYPE_CHOICES).get(facility_type, "")
+    activity_status_label = dict(ACTIVITY_STATUS_CHOICES).get(activity_status, "")
+    filter_bits = []
+    if facility_type_label:
+        filter_bits.append(f"of type “{facility_type_label}”")
+    if activity_status_label:
+        filter_bits.append(f"with status “{activity_status_label}”")
+
     return list_response(
         request,
         page_template="drinking/facilities.html",
@@ -220,15 +274,24 @@ def facilities(request):
             #
             # Deliberately UNFILTERED by `q` / `facility_type` /
             # `activity_status`. This sentence is about what the platform
-            # HOLDS, not about what the current search matched; the map is
-            # unfiltered too (see `facilities_geojson`, which takes no
-            # parameters), and the sentence gains a clause naming the
-            # divergence when a filter is on rather than quietly disagreeing
-            # with the table.
+            # HOLDS, not about what the current search matched.
             "total_facility_count": SystemFacility.objects.count(),
             "mapped_facility_count": SystemFacility.objects.filter(
                 location__isnull=False
             ).count(),
+            # The head partial's own names for the same two counts, plus the
+            # FILTERED located count (143-07, Ruling A: the map now follows
+            # the list, so this is the number that actually lands on it).
+            "all_count": SystemFacility.objects.count(),
+            "located_count": SystemFacility.objects.filter(
+                location__isnull=False
+            ).count(),
+            "result_pks": list(queryset.values_list("pk", flat=True)),
+            "result_located_count": queryset.filter(
+                location__isnull=False
+            ).count(),
+            "filter_words": " and ".join(filter_bits),
+            "hx_request": bool(request.headers.get("HX-Request")),
         },
     )
 
@@ -297,6 +360,47 @@ def sampling_points(request):
     # Deliberately unfiltered by `q` / `point_type`. This sentence is about what
     # the platform HOLDS, not about what the current search matched; recomputing
     # it per keystroke would make "how much of my inventory is mapped" flicker.
+    point_total_count = SamplingPoint.objects.count()
+    mapped_point_count = SamplingPoint.objects.filter(
+        facility__location__isnull=False
+    ).count()
+    total_facility_count = SystemFacility.objects.count()
+    mapped_facility_count = SystemFacility.objects.filter(
+        location__isnull=False
+    ).count()
+
+    # The map card's head (143-07): the map draws FACILITIES, so the pks the
+    # results partial emits are the distinct facility ids of the FILTERED
+    # sampling points, never the points' own pks. `result_located_count`
+    # counts the distinct located facilities among that same filtered set —
+    # the number the `line` override actually names.
+    point_type_label = dict(POINT_TYPE_CHOICES).get(point_type, "")
+    result_pks = list(
+        queryset.values_list("facility_id", flat=True).distinct()
+    )
+    result_located_count = (
+        queryset.filter(facility__location__isnull=False)
+        .values_list("facility_id", flat=True)
+        .distinct()
+        .count()
+    )
+    # None when nothing is located at all: `_map_card_head.html`'s own
+    # `{% elif not located_count %}` branch ("No sampling point has a
+    # location yet.") already says that correctly, and skips building the map
+    # host — no need for this override to duplicate it.
+    head_line = (
+        _sampling_points_head_line(
+            all_count=point_total_count,
+            mapped_facility_count=mapped_facility_count,
+            total_count=paginator.count,
+            result_located_count=result_located_count,
+            q=q,
+            filter_words=f"of type “{point_type_label}”" if point_type_label else "",
+        )
+        if mapped_facility_count
+        else None
+    )
+
     return list_response(
         request,
         page_template="drinking/sampling_points.html",
@@ -309,14 +413,16 @@ def sampling_points(request):
             "point_type_choices": POINT_TYPE_CHOICES,
             "has_any": has_any_point,
             "points_pwsid": points_pwsid,
-            "point_total_count": SamplingPoint.objects.count(),
-            "mapped_point_count": SamplingPoint.objects.filter(
-                facility__location__isnull=False
-            ).count(),
-            "total_facility_count": SystemFacility.objects.count(),
-            "mapped_facility_count": SystemFacility.objects.filter(
-                location__isnull=False
-            ).count(),
+            "point_total_count": point_total_count,
+            "mapped_point_count": mapped_point_count,
+            "total_facility_count": total_facility_count,
+            "mapped_facility_count": mapped_facility_count,
+            "all_count": point_total_count,
+            "located_count": mapped_facility_count,
+            "result_pks": result_pks,
+            "result_located_count": result_located_count,
+            "line": head_line,
+            "hx_request": bool(request.headers.get("HX-Request")),
         },
     )
 

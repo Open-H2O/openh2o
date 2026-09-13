@@ -102,35 +102,36 @@ nobody would notice until one of them broke.
   </div>
 
   {% comment %}
-  The Bucket-3 overview map, and an honest sentence about how much of the
-  inventory it can show. Both counts are computed in drinking/views.py on every
-  render — never written down here — because the Merced demonstration's numbers
-  are not any other system's, and an operator who onboards through the
-  Envirofacts flow starts with none at all.
+  The overview map card (143-07): the head (the count line and the key on one
+  row, partials/_map_card_head.html) above the map. The map and the list are
+  both FACILITIES here — a 1:1 correspondence the Sampling Points page does
+  not have — so the shared head partial's own branches say the count with no
+  `line` override.
 
   OUTSIDE #results, and that is load-bearing on THIS page more than on any
   other: four controls above swap #results wholesale (search keyup, both
   selects, and pagination), so a map inside it would be torn down and rebuilt
   on every keystroke.
 
-  UNFILTERED, by ruling and not by omission. `drinking:facilities_geojson`
-  takes no parameters and is not being given any: filtering it would make this
-  the only one of five Bucket-3 maps to behave that way, and it would not even
-  make the two numbers agree — under `q=WELL 01` the list matched 6 facilities
-  and only 2 of those carry a coordinate. The sentence has to name the
-  divergence either way, so the cheaper and more consistent answer wins. The
-  divergence clause below is that naming.
+  FOLLOWS THE LIST (143-07, Ruling A). Before this it was unfiltered by
+  ruling: `drinking:facilities_geojson` took no parameters and the sentence
+  in `_facility_results.html` named the resulting divergence instead. The
+  endpoint still takes no parameters — the filtering happens client-side, the
+  same way every other Bucket-3 map's does — but OH2O.followResults now
+  narrows what it DRAWS to the list's own pks, so the located-subset sentence
+  replaces the old "it is not filtered" clause.
 
   A `{# #}` comment would NOT work here: Django's inline comment closes at the
   end of its line, so a multi-line one renders its second line onward as page
   text. That has shipped to openh2o.com once, and
   `test_no_template_ships_a_multi_line_django_comment` now guards it.
   {% endcomment %}
-  {% if mapped_facility_count %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
+    {% include "partials/_map_card_head.html" with head_id="facilities-map-head" title="Facilities" noun="facility" noun_plural="facilities" key_label="Facility with sampling points" swatch="dot" swatch_token="blue-bright" %}
+    {% if located_count %}
     <div id="drinking-facilities-map" style="height: 380px; width: 100%;"></div>
+    {% endif %}
   </div>
-  {% endif %}
 
   {% comment %}
   THE SENTENCE LIVES IN `_facility_results.html`, INSIDE #results, and the map
@@ -168,5 +169,5 @@ scoped to drinking:sampling_points — reusing that id would break the pair in
 opposite directions. The partial already parameterises the host, the source and
 both layers, so a second map costs no new JavaScript.
 {% endcomment %}
-{% include "drinking/partials/_drinking_overview_map.html" with map_id="drinking-facilities-map" %}
+{% if located_count %}{% include "drinking/partials/_drinking_overview_map.html" with map_id="drinking-facilities-map" %}{% endif %}
 {% endblock %}

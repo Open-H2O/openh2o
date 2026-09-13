@@ -1,9 +1,46 @@
-{% load placeholders %}<div class="result-count-bar">
-  <span class="text-secondary text-sm">
-    <span class="count-pill">{{ total_count }}</span>
-    sampling point{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
-  </span>
-</div>
+{% load placeholders %}{% comment %}
+The count line is NOT here (143-07). It is the map card's head, above the map
+and outside #results, and on an htmx swap this partial re-renders that head
+out of band (hx-swap-oob on the same id) so the count follows the list without
+the map being torn down. On a full page render the page includes the head once
+itself, so it is included here only on an htmx request (hx_request, from the
+view). The pks below are the WHOLE filtered queryset's distinct FACILITY ids
+(before pagination): the map draws facilities, not points, so that is what
+OH2O.followResults needs to filter it.
+{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="sampling-points-map-head" title="Sampling points" noun="sampling point" noun_plural="sampling points" key_label="Facility with sampling points" swatch="dot" swatch_token="blue-bright" line=line oob=True %}{% endif %}
+{{ result_pks|json_script:"results-map-pks" }}
+
+{% comment %}
+The GAMA coverage paragraph. Lives HERE, not on the page around it, because it
+quotes `point_total_count` / `mapped_point_count` / `total_facility_count` /
+`mapped_facility_count` — numbers an htmx swap must keep current the same way
+the Facilities page's coverage sentence does (UAT-001, `_facility_results.html`).
+It says WHY not every point is on the map at all; the card head above already
+says how many of the CURRENT list matched and how many of those are located.
+
+"Groundwater sources", not "source wells": the word "wells" belongs to a
+module a drinking-water utility may not run, and the droppability vocabulary
+gate fails a kept page that names a domain the deployment does not have.
+{% endcomment %}{% if mapped_facility_count %}
+<p class="page-description">
+  The map shows {{ mapped_point_count }} of the {{ point_total_count }} sampling
+  point{{ point_total_count|pluralize }} in this inventory, drawn at the
+  {{ mapped_facility_count }} of the {{ total_facility_count }} facilities that
+  have a published location. Coordinates are published by the state's Groundwater
+  Ambient Monitoring and Assessment Program (GAMA) for groundwater sources only,
+  so distribution-system and treatment-plant facilities carry none, and the points
+  sampled there cannot be placed on a map.
+</p>
+{% else %}
+<p class="page-description">
+  No facility in this system has a published location, so there is no map of
+  this inventory yet. Coordinates are published by the state's Groundwater Ambient
+  Monitoring and Assessment Program (GAMA) for groundwater sources only — EPA's
+  Envirofacts record, which onboarding builds a system from, carries none — so a
+  newly onboarded system starts unmapped and gains coordinates as its sources are
+  located.
+</p>
+{% endif %}
 
 {% if page_obj.object_list %}
 <div class="card-raised table-scroll">
