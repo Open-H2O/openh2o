@@ -127,9 +127,22 @@ def recharge_sites_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # The map card's head and the map that follows the list (143-07). Every
+    # RechargeSite carries a required ``location`` (see the model), so
+    # ``located_count`` always equals ``all_count`` here — the shared head
+    # partial still branches on it because the other overview pages' geometries
+    # are optional. ``result_pks`` is the WHOLE filtered queryset's pks, never
+    # the page's, because OH2O.followResults filters the map to them.
+    site_type_label = dict(RechargeSite.SITE_TYPE_CHOICES).get(site_type, "")
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
+        "all_count": RechargeSite.objects.count(),
+        "located_count": RechargeSite.objects.count(),
+        "result_pks": list(queryset.values_list("pk", flat=True)),
+        "result_located_count": queryset.count(),
+        "filter_words": f"of type “{site_type_label}”" if site_type_label else "",
+        "hx_request": bool(request.headers.get("HX-Request")),
         "q": q,
         "site_type": site_type,
         "site_type_choices": RechargeSite.SITE_TYPE_CHOICES,

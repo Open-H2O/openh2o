@@ -1,19 +1,40 @@
 {% comment %}
-Recharge overview map: every recharge site at once, on the recharge:list overview
-page.
+Recharge overview map: every recharge site the list is showing, on the
+recharge:list overview page.
 
 The Bucket-3 overview map (see docs/2.0-UX-PATTERN-SPEC.md) for the recharge
 screen — the recharge analogue of the Zones boundary map and the Surface
-Diversions point map. Recharge sites are MIXED geometry: most are polygon basins,
-some are single points. So this map draws both, exactly as the big district map
-does (templates/geography/map.html): one GeoJSON source from recharge:sites_geojson
-(which already carries pk in properties), with a fill+outline pair filtered to
-non-points and a glow+circle pair filtered to points. Clicking either opens a
-popup with the site name and a link to its full detail page. Modeled on
-_zones_overview_map.html.
+Diversions point map. Recharge sites are MIXED geometry: most are polygon
+basins, some are single points. So this map draws both, exactly as the big
+district map does (templates/geography/map.html): one GeoJSON source from
+recharge:sites_geojson (which already carries pk in properties), with a
+fill+outline pair filtered to non-points and a glow+circle pair filtered to
+points. Clicking either opens a popup with the site name and a link to its
+full detail page. Modeled on _zones_overview_map.html.
+
+The overview map card (143-07, designed on Surface Diversions and copied
+here). Three things beyond the marks:
+
+  * An always-on label per SITE, not per polygon part. A symbol layer placed
+    directly on the fill/outline source would repeat a multi-ring basin's name
+    once per ring; instead a SECOND client-side source, `{{ map_id }}-labels`,
+    carries one Point per site at that site's bounding-box centre (built from
+    the same coordinate walk the fitBounds calculation already does), and
+    OH2O.addDetailLabel draws it with anchor: 'center' so the label sits over
+    the basin rather than offset from a dot that is not there.
+  * The map FOLLOWS THE LIST. The results partial emits the whole filtered
+    queryset's pks as json_script#results-map-pks, and OH2O.followResults
+    filters the fill, outline, glow, dots AND the label layer here to those
+    pks and re-frames on first paint and after every htmx swap of #results.
+    The geojson endpoint takes NO parameter: one fetch per page load, one
+    source, filtered client-side.
+  * The card's head (partials/_map_card_head.html) carries the count line and
+    the key; the map itself says nothing in words.
 
 The parent page must provide a <div> with the matching map_id, and must load
-MapLibre GL JS + map-core.js (the map_scripts block) before this include.
+MapLibre GL JS + map-core.js (the map_scripts block) before this include. It
+includes this partial only when something has a location (located_count):
+with nothing to draw the card is its head alone and no map is built.
 
 Variables:
   map_id  - ID of the existing <div> container on the page (required)
@@ -29,7 +50,9 @@ Variables:
     if (!el || el._mapInit) return;
     el._mapInit = true;
 
-    var COLOR = OH2O.colors.purple;   // matches the recharge symbology on the big map
+    var COLOR = OH2O.entities.recharge.color;   // matches the recharge symbology on the big map
+    var SRC = '{{ map_id }}-source';
+    var LABELS_SRC = '{{ map_id }}-labels';
 
     var map = new maplibregl.Map({
       cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
@@ -39,6 +62,7 @@ Variables:
       center: [-119.5, 37.3],
       attributionControl: false
     });
+    el._oh2oMap = map;   // a handle for probes; the map is otherwise closed over
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     OH2O.mountBasemapToggle(map, 'aerial');
@@ -55,6 +79,30 @@ Variables:
         return;
       }
       for (var i = 0; i < node.length; i++) extend(bbox, node[i]);
+    }
+
+    // One label point per SITE, at its own bbox centre — the same walk the
+    // page-load fitBounds uses below, run per feature instead of over the
+    // whole collection. `pk` lets the follow helper filter this layer with
+    // the rest; `label` is what OH2O.entities.recharge.labelField reads.
+    function labelFeatures(data) {
+      return (data.features || []).map(function(f) {
+        var bbox = [Infinity, Infinity, -Infinity, -Infinity];
+        if (f.geometry && f.geometry.coordinates) extend(bbox, f.geometry.coordinates);
+        var center = isFinite(bbox[0])
+          ? [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2]
+          : null;
+        if (!center) return null;
+        return {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: center },
+          properties: {
+            pk: f.properties.pk,
+            name: f.properties.name,
+            label: f.properties.label
+          }
+        };
+      }).filter(Boolean);
     }
 
     // Resolve the detail URL through Django (a sentinel pk we swap out) so the
@@ -82,50 +130,74 @@ Variables:
         .then(function(data) {
           if (!data.features || !data.features.length) return;
 
-          var bbox = [Infinity, Infinity, -Infinity, -Infinity];
-          data.features.forEach(function(f) {
-            if (f.geometry && f.geometry.coordinates) extend(bbox, f.geometry.coordinates);
-          });
-          if (isFinite(bbox[0])) {
-            map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, maxZoom: 13 });
-          }
-
-          map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+          map.addSource(SRC, { type: 'geojson', data: data });
+          map.addSource(LABELS_SRC, { type: 'geojson', data: { type: 'FeatureCollection', features: labelFeatures(data) } });
 
           // Polygon basins: fill + outline. A fill/line layer ignores point
-          // features, so the $type filter keeps the two geometries from colliding.
+          // features, so the $type filter keeps the two geometries from
+          // colliding. Opacity 0.22 -> 0.35 and outline 1.5 -> 2.5px (143-07,
+          // R-124): a small basin (33 to 263 e-6 deg^2) read as two faint
+          // smudges at the fitted zoom.
           map.addLayer({
             id: '{{ map_id }}-fill',
             type: 'fill',
-            source: '{{ map_id }}-source',
+            source: SRC,
             filter: ['!=', '$type', 'Point'],
-            paint: { 'fill-color': COLOR, 'fill-opacity': 0.22 }
+            paint: { 'fill-color': COLOR, 'fill-opacity': 0.35 }
           });
           map.addLayer({
             id: '{{ map_id }}-outline',
             type: 'line',
-            source: '{{ map_id }}-source',
+            source: SRC,
             filter: ['!=', '$type', 'Point'],
-            paint: { 'line-color': COLOR, 'line-width': 1.5, 'line-opacity': 0.9 }
+            paint: { 'line-color': COLOR, 'line-width': 2.5, 'line-opacity': 0.9 }
           });
 
           // Single-point sites: glow + marker, filtered to points.
           map.addLayer({
             id: '{{ map_id }}-glow',
             type: 'circle',
-            source: '{{ map_id }}-source',
+            source: SRC,
             filter: ['==', '$type', 'Point'],
             paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
           });
           map.addLayer({
             id: '{{ map_id }}-dots',
             type: 'circle',
-            source: '{{ map_id }}-source',
+            source: SRC,
             filter: ['==', '$type', 'Point'],
             paint: {
               'circle-radius': 6, 'circle-color': COLOR,
               'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
             }
+          });
+
+          // The always-on label, one per site regardless of how many polygon
+          // rings it has, centered on its own bbox. text-allow-overlap: true
+          // because the demonstration's five El Nido basins sit close enough
+          // that MapLibre's default collision pass (text-optional, no
+          // overlap) would silently drop most of the cluster's labels rather
+          // than crowd them — measured 2 of 7 rendering with the default.
+          // Seven small labels overlapping at the fitted zoom is still more
+          // useful than five silently missing ones; a reader zooms in to
+          // read.
+          OH2O.addDetailLabel(map, LABELS_SRC, 'recharge', {
+            id: '{{ map_id }}-label',
+            anchor: 'center',
+            layout: { 'text-allow-overlap': true }
+          });
+
+          // Filter every layer (marks and label alike) to the list's pks and
+          // frame them: now, and after every htmx swap of #results.
+          OH2O.followResults(map, {
+            layers: ['{{ map_id }}-fill', '{{ map_id }}-outline', '{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
+            source: SRC,
+            data: data,
+            pksEl: 'results-map-pks',
+            resultsEl: 'results',
+            padding: { top: 64, bottom: 64, left: 40, right: 40 },
+            maxZoom: 13,
+            singleZoom: 11
           });
 
           // Clicking a basin pops at the click point; clicking a marker pops at
