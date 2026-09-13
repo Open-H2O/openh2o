@@ -1,36 +1,68 @@
+{% load humanize %}
+{% comment %}
+  143-10 (R-055, R-112). This partial is the HTMX target of BOTH the full
+  page load (_recharge_site_detail_context) and recharge_event_create's POST
+  response, so the two callers share _group_recharge_events rather than
+  deriving the same water-year groups twice. The card head, the grouped
+  table (tr.row-group per water year, tr.row-subtotal closing each group
+  inside the body, no tfoot) and the 640px-capped log form below all copy
+  the shape 143-06 settled and Task 2 carried to the diversion page's
+  records table (templates/surface/partials/_diversion_records.html).
+  Columns are Start, End, Volume, Water type -- a plain record of what was
+  logged, not a derivation -- so no column sums into another and there is no
+  .col-sep here (rule 3 fires only where the kind of number changes).
+{% endcomment %}
+<div class="ledger-card-head">
+  <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Event history</h2>
+  <div class="text-secondary text-base">{{ events|length }} event{{ events|length|pluralize }} over {{ event_groups|length }} water year{{ event_groups|length|pluralize }}.</div>
+  <div class="text-secondary text-base">Acre-feet. Each year's row adds its own events.</div>
+</div>
 {% if ledger_msg %}
-<p class="text-tertiary text-sm mb-sm">{{ ledger_msg }}</p>
+<p class="text-tertiary text-sm mb-sm" style="padding: 0 var(--space-lg);">{{ ledger_msg }}</p>
 {% endif %}
-
-{% if events %}
-<table class="data-table text-sm">
+{% if event_groups %}
+<div class="table-scroll">
+<table class="data-table text-sm data-table--grouped">
   <thead>
     <tr>
       <th>Start</th>
       <th>End</th>
-      <th class="th-right">Volume (AF)</th>
-      <th>Water Type</th>
+      <th class="th-right">Volume</th>
+      <th>Water type</th>
     </tr>
   </thead>
   <tbody>
-    {% for event in events %}
+    {% for group in event_groups %}
+    <tr class="row-group">
+      <td colspan="4">{{ group.period_name }} &middot; {{ group.count }} event{{ group.count|pluralize }}</td>
+    </tr>
+    {% for event in group.rows %}
     <tr>
       <td class="text-secondary">{{ event.start_date|date:"M d, Y" }}</td>
       <td class="text-secondary">
         {% if event.end_date %}{{ event.end_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}
       </td>
-      <td class="td-num">{{ event.volume_acre_feet|floatformat:2 }}</td>
-      <td class="text-tertiary">
-        {% if event.water_type %}{{ event.water_type }}{% else %}—{% endif %}
+      <td class="td-num">{{ event.volume_acre_feet|floatformat:2|intcomma }}</td>
+      <td class="text-secondary">
+        {% if event.water_type %}{{ event.water_type }}{% else %}&mdash;{% endif %}
       </td>
+    </tr>
+    {% endfor %}
+    <tr class="row-subtotal">
+      <td class="tfoot-total">All {{ group.count }} event{{ group.count|pluralize }}, {{ group.period_name }}</td>
+      <td></td>
+      <td class="td-num-bold td-total">{{ group.volume|floatformat:2|intcomma }}</td>
+      <td></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
-  <p class="text-tertiary text-base">No recharge events recorded.</p>
+  <p class="text-tertiary text-sm" style="padding: 0 var(--space-lg) var(--space-lg);">No recharge events recorded.</p>
 {% endif %}
 
+<div style="max-width: 640px; padding: 0 var(--space-lg) var(--space-lg);">
 <form class="border-separator"
       hx-post="{% url 'recharge:event_create' site.pk %}"
       hx-target="#event-history" hx-swap="innerHTML">
@@ -49,3 +81,4 @@
   {% endfor %}
   <button type="submit" class="btn-primary btn-sm">Log event</button>
 </form>
+</div>

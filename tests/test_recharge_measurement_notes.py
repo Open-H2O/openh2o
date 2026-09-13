@@ -6,15 +6,13 @@ and why — the half that reads like fieldwork rather than telemetry — and the
 "Recent measurements" card rendered Date / Type / Value / Unit and nothing else,
 so 126 notes reached no reader.
 
-The note goes on a second line under its own row: one ``<tr>`` holding a single
-cell that spans the four columns, rendered only when the reading has a note. A
-reading without one adds no row. Chosen over a ``title`` attribute (invisible
-until hovered, unreachable on touch) and over an expandable (a control for one
-sentence). The card sits in the narrow right-hand column, so the note wraps
-inside the existing width and adds none.
-
-The row count is asserted exactly, never ``>``: two readings with one note is
-three body rows; two readings with no note is two.
+The note went on a second line under its own row while the card sat in the
+narrow right-hand column. 143-10 (R-126) moved the readings into a full-width
+table grouped by what they measure (one ``tr.row-group`` per type, naming the
+unit), so the note now has a column of its own on the reading's own row; a
+reading without a note prints an em dash there. The row count is asserted
+exactly, never ``>``: two readings of two types is two group rows and two
+reading rows, whether or not either carries a note.
 """
 import re
 from datetime import datetime
@@ -69,7 +67,7 @@ def _measurements_tbody(html):
     return tbody
 
 
-def test_a_reading_with_a_note_renders_it_on_a_second_line_under_the_row():
+def test_a_reading_with_a_note_renders_it_in_its_own_cell_on_its_own_row():
     site = RechargeSiteFactory(name="Noted basin")
     _reading(site, 18, "infiltration_rate", "1.0300", "in/hr", notes=NOTE)
     _reading(site, 10, "water_level", "3.4100", "ft")
@@ -78,14 +76,20 @@ def test_a_reading_with_a_note_renders_it_on_a_second_line_under_the_row():
     tbody = _measurements_tbody(html)
 
     assert NOTE in tbody
-    assert len(re.findall(r"<tr\b", tbody)) == 3
-    # The note sits directly under the reading it belongs to (newest first, so
-    # the 18 February infiltration reading comes first and its note follows it).
-    assert tbody.index("1.03") < tbody.index(NOTE) < tbody.index("3.41")
-    assert 'colspan="4"' in tbody
+    # Two type groups (a divider row each) and one reading under each.
+    assert len(re.findall(r"<tr\b", tbody)) == 4
+    # The note sits in a cell on the row of the reading it belongs to, and on
+    # no other row.
+    rows = re.findall(r"<tr\b(?![^>]*row-group)[^>]*>(.*?)</tr>", tbody, re.S)
+    assert len(rows) == 2
+    (noted,) = [row for row in rows if NOTE in row]
+    assert "1.03" in noted
+    (quiet,) = [row for row in rows if NOTE not in row]
+    assert "3.41" in quiet and "&mdash;" in quiet
+    assert 'colspan="4"' not in tbody
 
 
-def test_readings_without_notes_add_no_second_row():
+def test_readings_without_notes_print_an_em_dash_in_the_note_cell():
     site = RechargeSiteFactory(name="Quiet basin")
     _reading(site, 18, "infiltration_rate", "1.0300", "in/hr")
     _reading(site, 10, "water_level", "3.4100", "ft")
@@ -93,5 +97,7 @@ def test_readings_without_notes_add_no_second_row():
     html = _login().get(reverse("recharge:detail", args=[site.pk])).content.decode()
     tbody = _measurements_tbody(html)
 
-    assert len(re.findall(r"<tr\b", tbody)) == 2
-    assert "colspan" not in tbody
+    assert len(re.findall(r"<tr\b", tbody)) == 4
+    rows = re.findall(r"<tr\b(?![^>]*row-group)[^>]*>(.*?)</tr>", tbody, re.S)
+    assert len(rows) == 2
+    assert all("&mdash;" in row for row in rows)

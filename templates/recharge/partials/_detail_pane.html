@@ -17,7 +17,7 @@
   point; OH2O.detailPaneMap auto-detects which from the GeoJSON and draws fill +
   outline for polygons or glow + marker for points — the same call serves both.
 {% endcomment %}
-{% load static placeholders %}
+{% load static placeholders humanize %}
 
 {% if not on_full_page %}
 <!-- Pane header: which recharge site you're looking at. -->
@@ -32,16 +32,24 @@
 </div>
 {% endif %}
 
+{% comment %}
+  143-10 (R-126, R-055, R-112). Composed as a page at 1,730 CSS px, reusing
+  the account page's grid UNCHANGED (143-03's .page-grid-account*): Site
+  information beside Water recharged at one height (the checkpoint's
+  zone-lead ruling, 143-06, copied here), event history full width below,
+  then recent measurements full width. The previous .page-grid-2col put
+  Site information and Event history in one left column beside Recent
+  measurements alone in a right column that ended well short of it -- no
+  worked shape here to copy from; the account grid is.
+{% endcomment %}
 <div class="pane-stack">
-  <div class="page-grid-2col">
+  <div class="page-grid-account">
 
-    <!-- Left column: Site Info + Event History -->
-    <div class="page-stack">
+    <!-- Site information card -->
+    <div class="card-raised page-grid-account-info">
+      <h2 class="section-header">Site information</h2>
 
-      <!-- Site Info card -->
-      <div class="card-raised">
-        <h2 class="section-header">Site information</h2>
-
+      <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Name</div>
           <div class="field-value">{{ site.name }}</div>
@@ -53,7 +61,7 @@
         </div>
 
         <div class="field-group">
-          <div class="field-label">Capacity (AF)</div>
+          <div class="field-label">Capacity per fill (AF)</div>
           <div class="field-value">
             {% if site.capacity_acre_feet %}{{ site.capacity_acre_feet|floatformat:2 }}{% else %}—{% endif %}
           </div>
@@ -70,11 +78,11 @@
         </div>
 
         {% if pod_links %}
-        <div class="field-group">
+        <div class="field-group field-grid-2-span">
           <div class="field-label">Filled by</div>
           <div class="field-value">
             {% for link in pod_links %}
-            <div class="mt-xs"{% if not forloop.first %}{% endif %}>
+            <div class="mt-xs">
               <a href="{% url 'surface:pod_detail' link.point_of_diversion.pk %}" class="data-table-link">{{ link.point_of_diversion.name }}</a>
               <span class="text-secondary">on {{ link.point_of_diversion.source_flowline.name|default:link.point_of_diversion.stream_name|blank }}</span>
             </div>
@@ -84,73 +92,126 @@
         {% endif %}
 
         {% if site.notes %}
-        <div class="field-group">
+        <div class="field-group field-grid-2-span">
           <div class="field-label">Notes</div>
           <div class="text-secondary text-base">{{ site.notes }}</div>
         </div>
         {% endif %}
+      </div>
 
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ site.created_at|date:"M d, Y" }} &middot; Updated {{ site.updated_at|date:"M d, Y" }}
+      <div class="border-separator">
+        <div class="text-tertiary text-xs">
+          Created {{ site.created_at|date:"M d, Y" }} &middot; Updated {{ site.updated_at|date:"M d, Y" }}
+        </div>
+      </div>
+    </div>
+
+    {% comment %}
+      The lead panel: the CURRENT water year's Recharged total, the period
+      page's shape (a sum, not a difference -- nothing subtracts from a
+      recharge event, so no operators and no second segment, rule 8). The
+      panel's figure is current_totals, the SAME group
+      _recharge_site_detail_context builds the table from -- never a second
+      query. A site recharging more than one water type in the period gets a
+      "By water type" breakdown under the one result, never a peer result
+      per type (this is a physical volume added into one basin, unlike a
+      zone's groundwater and surface allocations, which are managed under
+      different law and are never added, ISS-156).
+    {% endcomment %}
+    <div class="card-raised page-grid-account-balance">
+      <div class="page-grid-account-head mb-md">
+        <h2 class="section-header-flush">Water recharged</h2>
+        <div class="text-secondary text-base">
+          {% if current_period %}
+            {% if current_totals %}{{ current_period.name }}{% if site.capacity_acre_feet %} &middot; capacity per fill {{ site.capacity_acre_feet|floatformat:2|intcomma }} AF{% endif %}.{% else %}{{ current_period.name }} &middot; no events recorded this water year.{% endif %}
+          {% else %}
+            No water year on record.
+          {% endif %}
+        </div>
+      </div>
+      {% if current_totals %}
+      <div class="budget-panel budget-panel--single">
+        <div class="budget-panel-body">
+          <div class="budget-panel-row">
+            <div class="budget-seg budget-seg--result">
+              <div class="budget-seg-label">Recharged</div>
+              <div class="budget-seg-value">{{ current_totals.volume|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+              <div class="budget-seg-caption">{{ current_totals.count }} event{{ current_totals.count|pluralize }}, {{ current_period.name }}</div>
+              {% if current_totals.by_type|length > 1 %}
+              <div class="budget-breakdown-group">
+                <div class="budget-breakdown-title">By water type</div>
+                {% for type_name, type_total in current_totals.by_type.items %}
+                <div class="budget-breakdown-row"><span>{{ type_name }}</span><b>{{ type_total|floatformat:2|intcomma }}</b></div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- Recharge Event History card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Event history</h2>
-        <div id="event-history">
-          {% include "recharge/partials/_event_history.html" %}
+      {% else %}
+      <div class="budget-panel budget-panel--single">
+        <div class="budget-panel-body">
+          <div class="budget-panel-row">
+            <div class="budget-seg budget-seg--result">
+              <div class="budget-seg-label">Recharged</div>
+              <div class="budget-seg-value text-tertiary">&mdash;</div>
+            </div>
+          </div>
         </div>
       </div>
-
+      {% endif %}
     </div>
 
-    <!-- Right column: Recent Measurements -->
-    <div class="page-stack">
+    <!-- Event history: full width, still #event-history and still the recharge_event_create HTMX target -->
+    <div class="card-raised page-grid-account-full" style="padding: 0;" id="event-history">
+      {% include "recharge/partials/_event_history.html" %}
+    </div>
 
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Recent measurements</h2>
-        {% if recent_measurements %}
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th class="th-right">Value</th>
-              <th>Unit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for m in recent_measurements %}
-            <tr{% if m.notes %} class="row-has-note"{% endif %}>
-              <td class="text-secondary">{{ m.measurement_date|date:"M d, Y H:i" }}</td>
-              <td class="text-secondary">{{ m.get_measurement_type_display }}</td>
-              <td class="td-num">{{ m.value|floatformat:2 }}</td>
-              <td class="text-tertiary">{{ m.unit }}</td>
-            </tr>
-            {% if m.notes %}
-            {% comment %}
-              ISS-146 (137-03). The reading's field note, on its own line under
-              the row it belongs to. This card sits in the narrow right-hand
-              column, so a fifth column would not fit; a second row wraps inside
-              the width the four columns already have. Rendered only when there
-              is a note, so a reading without one adds nothing.
-            {% endcomment %}
-            <tr class="row-note">
-              <td colspan="4" class="text-tertiary text-xs">{{ m.notes }}</td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-          <p class="text-tertiary text-base">No measurements recorded.</p>
-        {% endif %}
+    {% comment %}
+      Recent measurements: full width, ONE grouped table (R-126). tr.row-group
+      per measurement type present, naming the type and its unit ("Water
+      level, ft") so the Unit column that used to carry four different units
+      down one column is gone; the note sits in its own column now that the
+      table has the width (ISS-146's second row existed only because the
+      narrow right-hand column had none to spare).
+    {% endcomment %}
+    <div class="card-raised page-grid-account-full" style="padding: 0;">
+      <div class="ledger-card-head">
+        <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Recent measurements</h2>
+        <div class="text-secondary text-base">Most recent 6 readings of each type &middot; {{ total_measurement_count }} reading{{ total_measurement_count|pluralize }} on record.</div>
       </div>
-
+      {% if measurement_groups %}
+      <div class="table-scroll">
+      <table class="data-table text-sm data-table--grouped">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th class="th-right">Value</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in measurement_groups %}
+          <tr class="row-group">
+            <td colspan="3">{{ group.display_name }}, {{ group.unit }}</td>
+          </tr>
+          {% for m in group.rows %}
+          <tr>
+            <td class="text-secondary">{{ m.measurement_date|date:"M d, Y H:i" }}</td>
+            <td class="td-num">{{ m.value|floatformat:2 }}</td>
+            <td class="text-tertiary text-xs">{% if m.notes %}{{ m.notes }}{% else %}&mdash;{% endif %}</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+        <p class="text-tertiary text-sm" style="padding: 0 var(--space-lg) var(--space-lg);">No measurements recorded.</p>
+      {% endif %}
     </div>
+
   </div>
 </div>
 

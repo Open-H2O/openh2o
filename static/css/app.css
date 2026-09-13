@@ -5054,6 +5054,11 @@ div[id$="-map"] {
    more) tracks and a rule, not the five-track supply/use/balance equation
    `.budget-panel-body .budget-panel-row` is built for. */
 .period-panel .budget-panel-body .budget-panel-row { grid-template-columns: 1fr auto 1fr; }
+/* 143-10, Task 3: a lead panel that holds ONE figure and nothing to set it
+   against (the recharge site's year total: nothing subtracts, rule 8 still
+   wants one lead figure). Without this the lone segment sits in the first
+   track of the five-track grid and two thirds of the panel stand empty. */
+.budget-panel--single .budget-panel-body .budget-panel-row { grid-template-columns: 1fr; }
 
 /* 143-06, Task 4: the zone page's allocation card. `.page-grid-account*`
    (143-03) fits the zone page's row-one shape unchanged -- Zone information

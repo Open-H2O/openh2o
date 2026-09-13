@@ -1272,17 +1272,23 @@ than by reading the code that picks the default.
 
 ---
 
-## Section 5: The remaining subsystems (22 figures)
+## Section 5: The remaining subsystems (26 figures)
 
-Twenty-two figures across ten page templates and five parts of the platform:
-the zone page, the monitoring stations, the wells, the recharge basins, and the
-first two steps of the setup wizard. They are the long tail of the figure
-ledger. Most of these screens carry one or two numbers, not twenty, and most of
-those numbers are a stored value shown back to the reader rather than the
-result of a calculation. Four of the twenty-two are new: 137-03 (ISS-145) gave
-the well page a Measurement history card, and two of its four figures, the
-meter Delta and the water-level Change, are the first figures on this page
-whose derivation is arithmetic rather than a column shown back unchanged.
+Twenty-six figures across ten page templates and five parts of the platform
+(22 until 2026-09-12, when 143-10 Task 3 gave the recharge site page a lead
+panel -- the current water year's Recharged total, a SUM rather than a
+difference, with a "by water type" breakdown -- and gave the event table its
+own water-year subtotal row closing inside the body, a net four sites more;
+see "143-10 Task 3: the recharge site's lead panel" below): the zone page,
+the monitoring stations, the wells, the recharge basins, and the first two
+steps of the setup wizard. They are the long tail of the figure ledger. Most
+of these screens carry one or two numbers, not twenty, and most of those
+numbers are a stored value shown back to the reader rather than the result of
+a calculation. Four of the twenty-two original figures are new as of
+137-03 (ISS-145), which gave the well page a Measurement history card, and
+two of its four figures, the meter Delta and the water-level Change, are the
+first figures on this page whose derivation is arithmetic rather than a
+column shown back unchanged.
 
 **Screens and pins.** A figure inside a table renders once per row, so each one
 is pinned to a named instance and the pin is recorded in
@@ -1294,7 +1300,7 @@ is pinned to a named instance and the pin is recorded in
 | `/map/zones/1/`, `/map/zones/3/`, `/map/zones/9/` | The same three figures on every other district, captured so the finding below rests on four screens rather than one. |
 | `/wells/10/` | Well MER-W-001, "Ag well on MER-APN-002". One screen carries all eight wells figures: the newest meter read's Totalizer and Delta and the newest water-level month's Close and Change (137-03, ISS-145), an irrigated parcel, a monitoring record with a reference elevation, a whole-number field and a two-decimal field. |
 | `/wells/13/` | Evidence, not a figure site. MER-W-004, "Ag well on MER-APN-006", the transducer well the ISS-145 finding's two-year decline is measured on. Its water-level digest reads a September 2025 close of 94.15 ft and a September 2026 close of 109.65 ft. |
-| `/recharge/1/` | El Nido Recharge Basin 1, first by name on the list. Pinned reading: the newest, 18 February 2026. Pinned recharge event: the newest, starting 15 February 2026. |
+| `/recharge/1/` | El Nido Recharge Basin 1, first by name on the list. Pinned reading: the newest water-level reading, 17 February 2026 (143-10 Task 3 grouped the table by measurement type; the water-level group is first, `MEASUREMENT_TYPE_CHOICES` order). Pinned recharge event: the newest, starting 15 February 2026. |
 | `/recharge/` | The list shows every basin on one page in name order, so the pinned row is El Nido Recharge Basin 1 again. |
 | `/setup/` | Merced Subbasin, the only district boundary on file. |
 | `/datasync/stations/1/` | SAN JOAQUIN R - MONITORING WELL #142, the lowest station id. Since 136-02 rebuilt the demonstration data this page opens and prints the station's stored location, so it is a figure site for `FIG-datasync-001` and `002`. It holds no staged data record, so the two reading figures still have nothing to show. `/datasync/stations/` is captured as evidence, not as a figure site. |
@@ -1317,6 +1323,46 @@ site. FIG-wells-001..004, the four new figures, are recomputed separately, by
 because they did not exist when `remaining_subsystems.sql` was written; that
 file's own four wells figures were renumbered FIG-wells-005..008 to make room
 ahead of them and did not otherwise change.
+
+**143-10 Task 3: the recharge site's lead panel (2026-09-12).** Task 3 copied
+143-06's period-page shape onto the recharge site page: the CURRENT water
+year's Recharged total (`div.budget-panel.period-panel`, ONE
+`.budget-seg--result`, no operators -- a recharge event has nothing to
+subtract, unlike the diversion page's Diverted/Return flow/Retained, so this
+is a SUM, not a difference), with a "by water type" breakdown that renders
+only when the period holds more than one type (never a peer result per type,
+ISS-156's rule against summing across water types held here the same way it
+holds on the zone page). The event table gained the water-year
+`tr.row-group`/`tr.row-subtotal` shape (rule 7) in place of its old flat
+list, and the "Recent measurements" table was regrouped by measurement type
+(`tr.row-group` reading "Water level, ft") in place of the old flat list
+ordered only by date, dropping the Type and Unit columns the group header now
+carries. Every new figure is a `Sum` computed once in Python from the SAME
+queryset the table under the panel prints
+(`recharge/views.py::_group_recharge_events`) -- never re-derived -- so
+`FIG-recharge-003` (the panel) and `FIG-recharge-007` (the table's own
+current-year subtotal row) are the identical Python value printed twice.
+`audit/figure_ledger/sql/recharge_water_year_panels.sql` recomputes all of
+them from `recharge_rechargeevent`, `accounting_reportingperiod` and
+`accounting_watertype` directly, with no ORM in the path, pinned to the
+current local demonstration's `period_id=2` (WY 2025-2026), `site_id=1` (El
+Nido Recharge Basin 1): run 2026-09-12,
+`bash audit/figure_ledger/run_sql.sh audit/figure_ledger/sql/recharge_water_year_panels.sql`.
+`FIG-recharge-004` is the same breakdown segment's row, not reachable on THIS
+pin (site 1's six events on record are all Groundwater, so the panel's single
+result never gains a peer to break down) -- its row states the identity
+rather than a second pinned value, the same treatment `FIG-surface-018/019/023`
+got in section 4. The other three ids (001, 005, 006, 008) are the
+pre-143-10-Task-3 figures, renumbered by the insertion; 001 and 008 are
+byte-for-byte the same template expression at a new line (their labels
+changed text, R-125, but not their `context_var` or stored value), and two
+(005, 006) carry a small, stated change -- `006` gained `|intcomma` (a
+thousands separator; the value did not move) and `005` moved into a grouped
+table with no expression change. None of the four was merely carried forward
+from the last capture: every one was re-verified live on the local stack
+2026-09-12 (see the per-row notes below), because site 1's events and
+readings still exist under the same ids and the same values on the current
+demonstration database.
 
 **One column needs a word of warning before the table.** `verdict` and `delta`
 answer different questions. `delta` is arithmetic: did the number on the screen
@@ -1344,10 +1390,14 @@ they are right.
 | `FIG-geography-009` | `/map/zones/2/` | `templates/geography/partials/_zone_detail_pane.html:181` | Remaining (AF) | `b.remaining` | `geography/views.py:285`, computed via `zone_groundwater_budget` at `accounting/services.py:1246` | `zone_groundwater_budget` calls `available_with_carryover` | `accounting_allocationplan, accounting_watertype, accounting_allocationcarryover, parcels_parcelledger, geography_parcelzone` | 911.58 | 911.58 | MATCH | MATCH | Was `FIG-geography-004` before 143-06 Task 4's renumbering (previously `FIG-geography-003` under `ISS-154`, then `FIG-geography-004` after 137-02). 143-06 Task 4 removed the "?" popout that used to sit on this column's header and replaced it with the panel above (`FIG-geography-005`) and the table's own group header; the value did not move. Independence: restatement. |
 | `FIG-geography-010` | `/map/zones/2/` | `templates/geography/partials/_zone_parcels.html:30` | Area (acres) | `pz.parcel.area_acres` | `geography/views.py:322`, queryset at `194-206` (`_zone_parcels_context`) | `— (model field)` | `parcels_parcel, geography_parcelzone` | 12.74 | 12.74 | MATCH | MATCH | Was `FIG-geography-005` before 143-06 Task 4's renumbering (previously `FIG-geography-004` after 137-02). The queryset moved from an inline block in `_zone_detail_context` into the shared `_zone_parcels_context` helper (143-06, so the assign/remove HTMX endpoints compute the same footer this partial now carries), but it is the same `ParcelZone` queryset, same ordering, same field. Independence: transcription. This partial has exactly one route that renders it for reading: as an include on the district page. Its two other routes both change data and accept POST only. The value did not move. |
 | `FIG-geography-011` | `/map/zones/2/` | `templates/geography/partials/_zone_parcels.html:59` | Assigned use areas, footer acreage total | `use_area_acreage_total` | `geography/views.py:204`, computed in `_zone_parcels_context` | `— (Sum aggregate in the view; `Sum` excludes NULL areas by construction)` | `geography_parcelzone, parcels_parcel` | 375.16 | 375.16 | MATCH | MATCH | New figure, 143-06 Task 4 (R-103): the use-areas table gained a `tfoot` (`.tfoot-total`, "All 23 use areas") with an acreage total under Area, so a reader no longer has to add 23 rows by hand. Recomputed outside the ORM by `audit/figure_ledger/sql/zone_use_area_acreage.sql` (`bash audit/figure_ledger/run_sql.sh audit/figure_ledger/sql/zone_use_area_acreage.sql`, 2026-09-12): 23 use areas, 23 with an area on record, 375.16 acres, the same join `zone_budget_basis.sql`'s `zone_size` CTE already computes for this zone. All 23 of this zone's use areas carry an area, so the "N of M with an area on record" wording (`test_zone_detail_page.py`'s fixture pins the case where one is missing) does not render here. Independence: a fresh SQL file against the base tables, not a re-read of the view's own query. |
-| `FIG-recharge-001` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:56` | Capacity (AF) | `site.capacity_acre_feet` | `recharge/views.py:119` | `— (model field)` | `recharge_rechargesite` | 637.10 | 637.10 | MATCH | MATCH | Independence: transcription. |
-| `FIG-recharge-002` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:128` | Recent measurements, Value | `m.value` | `recharge/views.py:122`, queryset at `:95-97` | `— (model field)` | `recharge_rechargemeasurement` | 315.26 | 315.26 | MATCH | MATCH | Independence: transcription. One column serves four different kinds of reading, each with its own unit, so the same figure is milligrams per litre on one row and feet on the next. The pinned row is a water quality reading in milligrams per litre. |
-| `FIG-recharge-003` | `/recharge/1/` | `templates/recharge/partials/_event_history.html:22` | Volume (AF) | `event.volume_acre_feet` | `recharge/views.py:120`, queryset at `:82-84` | `— (model field)` | `recharge_rechargeevent` | 127.42 | 127.42 | MATCH | MATCH | Independence: transcription. |
-| `FIG-recharge-004` | `/recharge/` | `templates/recharge/partials/_list_results.html:31` | Capacity | `site.capacity_acre_feet` | `recharge/views.py:60`, queryset at `:45` | `— (model field)` | `recharge_rechargesite` | 637 | 637 | MATCH | MATCH | Independence: transcription. Rounded to whole acre-feet here and to hundredths on the basin's own page, so the same basin reads 637 in the list and 637.10 one click later. Both are right; the list is choosing not to show the tenths. |
+| `FIG-recharge-001` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:66` | Site information, Capacity per fill (AF) | `site.capacity_acre_feet` | `recharge/views.py:146-235` (`_recharge_site_detail_context`) | `— (model field)` | `recharge_rechargesite` | 637.10 | 637.10 | MATCH | MATCH | Was line 56 before 143-10 Task 3 renumbered this template. 143-10 Task 3 renamed the field label from "Capacity (AF)" to "Capacity per fill (AF)" (R-125, naming what the seed's capacity is the capacity of -- one filling); the stored value did not move. Independence: transcription. |
+| `FIG-recharge-002` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:126` | Water recharged panel, facts line ("capacity per fill N AF") | `site.capacity_acre_feet` | `recharge/views.py:146-235` | `— (model field)` | `recharge_rechargesite` | 637.10 | 637.10 | MATCH | MATCH | New site, 143-10 Task 3. Repeats `FIG-recharge-001`'s own stored column a second time, with a thousands separator, in the lead panel's facts line. Independence: transcription (same field as `FIG-recharge-001`), strengthened by `recharge_water_year_panels.sql`'s independently-selected `site_capacity`. |
+| `FIG-recharge-003` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:138` | Water recharged panel, Recharged segment (the page's one `.budget-seg--result`) | `current_totals.volume` | `recharge/views.py:146-235`, `_group_recharge_events` (`recharge/views.py:45-93`) | `_group_recharge_events` | `recharge_rechargeevent, accounting_reportingperiod` | 318.55 | 318.55 | MATCH | MATCH | New site, 143-10 Task 3 (R-126, the period page's sum-only shape, no operators: a recharge event has nothing to subtract). The current water year's (`accounting.services.current_period_id()`, WY 2025-2026) Volume sum across this site's events; the SAME group the event table's own closing subtotal row reads (`FIG-recharge-007`), no second query. 127.42 + 191.13 = 318.55 by hand. Independent recomputation: `recharge_water_year_panels.sql`, `site_year_sums` where `reporting_period_id = 2`. |
+| `FIG-recharge-004` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:144` | Water recharged panel, "By water type" breakdown row | `type_total` | `recharge/views.py:146-235` | Python `dict` grouped from `event_groups[...]["by_type"]` | `recharge_rechargeevent, accounting_watertype` | not reachable on this pin | 318.55 | UNVERIFIED | UNVERIFIED | New site, 143-10 Task 3. Renders only when the current period holds more than one water type (never a peer result per type, ISS-156); site 1's six events on record are all Groundwater, so this branch does not render for it. Same context variable and the same per-type sums `recharge_water_year_panels.sql`'s `site_current_year_by_type` finds independently (one type, Groundwater, 318.55 -- agreeing with `FIG-recharge-003` and explaining why the breakdown stays hidden here). |
+| `FIG-recharge-005` | `/recharge/1/` | `templates/recharge/partials/_detail_pane.html:202` | Recent measurements, Value | `m.value` | `recharge/views.py:146-235`, queryset at `:199-206` | `— (model field)` | `recharge_rechargemeasurement` | 2.59 | 2.59 | MATCH | MATCH | Was `FIG-recharge-002` at line 128. 143-10 Task 3 grouped this table by measurement type (`tr.row-group` reading "Water level, ft") in place of one flat list ordered only by date, and dropped the Type and Unit columns the group header now carries; the pinned row is the newest of six water-level readings shown, no longer the newest reading of any type (that reading, a water-quality sample at 315.26 mg/L, is still on the page, further down under its own "Water quality, mg/L" group). Independence: transcription. |
+| `FIG-recharge-006` | `/recharge/1/` | `templates/recharge/partials/_event_history.html:45` | Volume | `event.volume_acre_feet` | `recharge/views.py:146-235` | `— (model field)` | `recharge_rechargeevent` | 127.42 | 127.42 | MATCH | MATCH | Was `FIG-recharge-003` at line 22. 143-10 Task 3 added the `intcomma` filter (a thousands separator; the value did not move) and grouped the table by water year (`tr.row-group` / `tr.row-subtotal`, rule 7), replacing the old flat list. Independence: transcription. |
+| `FIG-recharge-007` | `/recharge/1/` | `templates/recharge/partials/_event_history.html:54` | Event table, current water year's own closing subtotal, Volume | `group.volume` | `recharge/views.py:146-235`, `_group_recharge_events` | `_group_recharge_events` | `recharge_rechargeevent, accounting_reportingperiod` | 318.55 | 318.55 | MATCH | MATCH | New site, 143-10 Task 3 (footer A, no `tfoot`, rule 7): the WY 2025-2026 group is the first `tr.row-group` (the table orders `-start_date`, newest year first), and this is its `tr.row-subtotal`'s Volume cell -- the SAME dict `FIG-recharge-003` reads, printed a second time. Independent recomputation: `recharge_water_year_panels.sql`, `site_year_sums`. |
+| `FIG-recharge-008` | `/recharge/` | `templates/recharge/partials/_list_results.html:31` | Capacity per fill (AF) | `site.capacity_acre_feet` | `recharge/views.py:97-144` (`recharge_sites_list`), queryset at `:115` | `— (model field)` | `recharge_rechargesite` | 637 | 637 | MATCH | MATCH | Was `FIG-recharge-004`. 143-10 Task 3 renamed the column header from "Capacity" to "Capacity per fill (AF)" (R-125); the cell's own expression and value did not move. Independence: transcription. Rounded to whole acre-feet here and to hundredths on the basin's own page, so the same basin reads 637 in the list and 637.10 one click later. Both are right; the list is choosing not to show the tenths. |
 | `FIG-setup-001` | `/setup/confirm/` | `templates/setup/confirm.html:61` | Area, square miles | `area_sq_miles` | `setup/services.py:247` | `— (model field)` | `geography_boundary` | not rendered | 800.9 | NO VALUE | UNVERIFIED | The confirmation step reads the chosen boundary out of the visitor's session, which only the previous step's form submission writes. The capture performs page requests only, so this screen redirected rather than rendering. The recomputed value is recorded because the same stored field renders on the previous step and is verified there. |
 | `FIG-setup-002` | `/setup/` | `templates/setup/wizard.html:66` | The district boundary dropdown: "Merced Subbasin (800.9 sq mi)" | `b.area_sq_miles` | `setup/views.py:115`, queryset at `:113` | `— (model field)` | `geography_boundary` | 800.9 | 800.9 | MATCH | MATCH | Independence: transcription, plus one genuinely independent check. The platform deliberately never computes this area, taking it from the uploaded file instead, on the reasoning that a computed figure would be OpenH2O's number rather than the district's. The database can compute it: the stored outline measures 800.949 square miles against the 800.948 the file states, a difference of about half an acre across an 800 square mile basin. |
 | `FIG-wells-001` | `/wells/10/` | `templates/wells/partials/_detail_pane.html:164` | Totalizer | `read.current_value` | `wells/views.py:163` | `meter_history` (`wells/measurement_history.py:60-77`) | `measurements_meterreading, wells_wellmeter` | 41,241.64 | 41241.64 | MATCH | MATCH | New figure, 137-03 (ISS-145): the Measurement history card's meter table. Pinned to the well's one current meter, MTR-MER-W-001, its newest read, 30 September 2026. Independence: transcription, one stored column read back and rounded the same way the template does. |
@@ -1361,11 +1411,15 @@ they are right.
 
 ### What section 5 found
 
-**Nineteen of the twenty-two figures agree with the rows behind them to the
-cent. The other three showed nothing on screen** (thirteen and five on
+**Twenty-two of the twenty-six figures agree with the rows behind them to the
+cent** (nineteen of the original twenty-two on 2026-09-06, plus three of the
+four 143-10 Task 3 additions on 2026-09-12). **The other four showed nothing
+on screen or nothing reachable on this pin** (thirteen and five on
 2026-09-05; the monitoring station's two location figures rendered for the
 first time on 2026-09-06, after 136-02 rebuilt the demonstration data; 137-03
-then added four figures on 2026-09-06, all four MATCH). No figure in this
+then added four figures on 2026-09-06, all four MATCH; 143-10 Task 3's
+`FIG-recharge-004`, the "by water type" breakdown, does not render on a site
+whose current-period events are all one water type). No figure in this
 section disagrees with its own arithmetic. One of them disagrees with its label,
 and that is the finding worth acting on.
 
