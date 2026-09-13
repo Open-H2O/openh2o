@@ -39,8 +39,41 @@
 
   <div class="map-form-layout">
 
-    <!-- LEFT: Form fields -->
+    {% comment %}The map, a landscape band above the form (Brent, 2026-09-13: a map runs
+         landscape like every other map here; portrait beside the form put most
+         of it out of view).{% endcomment %}
     <div class="page-stack">
+      <div class="card-raised map-card" style="padding: 0; overflow: hidden;">
+        <!-- Draw toolbar -->
+        <div class="draw-toolbar">
+          <button type="button" class="draw-btn active" id="draw-point" title="Place point">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>
+            Point
+          </button>
+          <button type="button" class="draw-btn" id="draw-polygon" title="Draw polygon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 18 21 6 21 2 8.5"/></svg>
+            Polygon
+          </button>
+          <button type="button" class="draw-btn" id="draw-clear" title="Clear drawing">
+            Clear
+          </button>
+          <button type="button" class="draw-btn" id="draw-finish" title="Finish polygon" style="display: none;">
+            Finish
+          </button>
+        </div>
+        <!-- Map container: 380px, the record pages' band height (app.css) -->
+        <div id="infra-map" style="width: 100%;"></div>
+        <!-- Coordinate display -->
+        <div class="coord-display" id="coord-display">
+          <span class="text-xs text-tertiary">Click map to place geometry</span>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- The form, its cards two across under the map -->
+    <div class="page-grid-2col">
 
       {% comment %}The type is decided before arrival (?type=, defaulted by _supported_type)
          and is switched by the link in the page header, which reloads the page.
@@ -230,7 +263,7 @@
         down — the block calls getElementById on these buttons and would throw
         on null, taking the page's whole map script with it.
       {% endcomment %}{% if 'parcels' in enabled_modules %}<!-- Parcel linkage -->
-      <div class="card-raised">
+      <div class="card-raised" style="grid-column: 1 / -1;">
         <details class="parcel-link-section">
           <summary class="card-header-ruled" style="cursor: pointer; list-style: none;">
             <span>Link to parcel</span>
@@ -274,47 +307,9 @@
       </div>{% endif %}
 
       <!-- Submit -->
-      <div class="form-footer-ruled">
+      <div class="form-footer-ruled" style="grid-column: 1 / -1;">
         <a href="{{ back_url }}" class="btn-secondary">Cancel</a>
         <button type="submit" class="btn-primary" id="submit-btn">Create {{ preselect_label }}</button>
-      </div>
-
-    </div>
-
-    <!-- RIGHT: Map -->
-    <div class="page-stack">
-      {% comment %}
-        143-10 (R-112). `.map-card` (app.css) turns this card into a flex
-        column so `#infra-map` can grow to the height `align-items: stretch`
-        on `.map-form-layout` gives this whole column -- the left column's
-        form -- instead of stopping at a fixed 480px with a shorter card
-        beside a taller one. The coordinate strip stays pinned at the foot by
-        ordinary flow: it is simply the last child.
-      {% endcomment %}
-      <div class="card-raised map-card" style="padding: 0; overflow: hidden;">
-        <!-- Draw toolbar -->
-        <div class="draw-toolbar">
-          <button type="button" class="draw-btn active" id="draw-point" title="Place point">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>
-            Point
-          </button>
-          <button type="button" class="draw-btn" id="draw-polygon" title="Draw polygon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 18 21 6 21 2 8.5"/></svg>
-            Polygon
-          </button>
-          <button type="button" class="draw-btn" id="draw-clear" title="Clear drawing">
-            Clear
-          </button>
-          <button type="button" class="draw-btn" id="draw-finish" title="Finish polygon" style="display: none;">
-            Finish
-          </button>
-        </div>
-        <!-- Map container: height set by .map-card's flex layout (app.css), min-height 480px -->
-        <div id="infra-map" style="width: 100%;"></div>
-        <!-- Coordinate display -->
-        <div class="coord-display" id="coord-display">
-          <span class="text-xs text-tertiary">Click map to place geometry</span>
-        </div>
       </div>
 
     </div>

@@ -241,13 +241,13 @@
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Measurement history</h2>
       <p class="text-secondary text-base" style="margin: 0 0 var(--space-md) 0;">What came through the meter, and what the water table did beneath it.</p>
       {% if meter_history or water_levels %}
-      <div class="page-grid-2col">
+      {# .history-grid: each column is a subgrid of two rows (facts line, table), so the two tables' heads sit on one line even when one facts line wraps and the other does not (Brent's screenshot, 2026-09-13 11:02). A second meter's facts line and table follow in the left column's implicit rows. #}
+      <div class="page-grid-2col history-grid">
 
         <div>
           {% for group in meter_history %}
-          <div{% if not forloop.first %} class="mt-lg"{% endif %}>
             {# The unit stated ONCE, here, in this meter's own facts line (rule 4); no unit on either header below. #}
-            <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Meter {{ group.meter }} &middot; reads in {{ group.meter.get_unit_display|lower }} ({{ group.unit }}) &middot; the delta is the read less the previous read.</p>
+            <p class="text-tertiary text-xs" style="margin: {% if forloop.first %}0{% else %}var(--space-lg){% endif %} 0 var(--space-sm) 0;">Meter {{ group.meter }} &middot; reads in {{ group.meter.get_unit_display|lower }} ({{ group.unit }}) &middot; the delta is the read less the previous read.</p>
             <div class="table-scroll">
             <table class="data-table text-sm data-table--grouped">
               <thead>
@@ -282,7 +282,6 @@
               </tbody>
             </table>
             </div>
-          </div>
           {% endfor %}
           {% if not meter_history %}
           <p class="text-tertiary text-base">No meter reads recorded for this well.</p>

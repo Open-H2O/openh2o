@@ -143,14 +143,6 @@
                 <div class="budget-seg-label">Recorded</div>
                 <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
                 <div class="budget-seg-caption">diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
-                {% if pod_breakdown %}
-                <div class="budget-breakdown-group">
-                  <div class="budget-breakdown-title">By point of diversion</div>
-                  {% for row in pod_breakdown %}
-                  <div class="budget-breakdown-row"><span>{{ row.name }}</span><b>{{ row.total|floatformat:2|intcomma }}</b></div>
-                  {% endfor %}
-                </div>
-                {% endif %}
               </div>
               <div class="budget-op">&equals;</div>
               <div class="budget-seg budget-seg--result">
@@ -159,6 +151,19 @@
                 <div class="budget-seg-notes"><p class="text-tertiary">Face value less the volume recorded, {{ current_period.name }}.</p></div>
               </div>
             </div>
+            {% if pod_breakdown %}
+            {% comment %}
+              Recorded's parts, under the row rather than inside its cell: a
+              point of diversion's id and name ran the cell's rows across the
+              divider into Remaining (Brent's screenshot, 2026-09-13 10:58).
+            {% endcomment %}
+            <div class="budget-breakdown-group budget-breakdown-group--under">
+              <div class="budget-breakdown-title">Recorded, by point of diversion</div>
+              {% for row in pod_breakdown %}
+              <div class="budget-breakdown-row"><span>{{ row.name }}</span><b>{{ row.total|floatformat:2|intcomma }}</b></div>
+              {% endfor %}
+            </div>
+            {% endif %}
           </div>
         </div>
         {% else %}

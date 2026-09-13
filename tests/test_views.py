@@ -1025,18 +1025,29 @@ class TestAccountGridOnWellsAndAddPage:
         card = body[heading_pos:body.index("<script>", heading_pos)]
         assert card.count("<table") == 2
 
-    def test_add_page_map_form_layout_stretches_the_shorter_column(self):
+    def test_add_page_map_is_a_landscape_band_above_the_form(self, auth_client):
         from pathlib import Path
 
+        # Brent, 2026-09-13, on the build that ran the map beside the form at
+        # the form's height: a map is landscape, like every other map here.
+        # The map card comes first in the layout and the form's cards follow
+        # under it; the map is the record pages' 380px band.
+        response = auth_client.get("/infrastructure/add/?type=well")
+        assert response.status_code == 200
+        body = response.content.decode()
+        layout = body[body.index('class="map-form-layout"'):]
+        assert layout.index('id="infra-map"') < layout.index('id="fields-well"')
+        assert layout.index('id="infra-map"') < layout.index('id="name"')
+        assert 'class="page-grid-2col"' in layout[:layout.index('id="name"')]
+
         app_css = (Path(__file__).resolve().parent.parent / "static/css/app.css").read_text()
-        # The SAME literal block test_template_hygiene.py's style of check reads:
-        # the `.map-form-layout` rule (outside the phone-width media query,
-        # which resets it to one column) must carry the stretch rule that
-        # makes the map column run the taller form column's height.
         block_start = app_css.index("/* Infrastructure form */")
-        block = app_css[block_start:block_start + app_css[block_start:].index("}") + 1]
-        assert ".map-form-layout" in block
-        assert "align-items: stretch;" in block
+        block = app_css[block_start:block_start + 1200]
+        assert "grid-template-columns: 1fr;" in block
+        assert "align-items: stretch" not in block
+        map_rule = app_css[app_css.index("#infra-map {"):]
+        map_rule = map_rule[:map_rule.index("}")]
+        assert "height: 380px;" in map_rule
 
 
 class TestDatasyncPages:

@@ -178,6 +178,15 @@ def _recharge_site_detail_context(site):
         ),
         None,
     )
+    # The water year before the current one that holds events, shown beside
+    # the current year's figure as a peer (never added to it, ISS-155): the
+    # groups are in the periods' own order, newest first, the "outside any
+    # water year" group last and never a peer.
+    previous_totals = None
+    if current_totals is not None:
+        later = [g for g in event_groups if g["period_key"] is not None]
+        index = later.index(current_totals)
+        previous_totals = later[index + 1] if index + 1 < len(later) else None
 
     # The diversion(s) that fill this basin (Phase 62): each link names the POD
     # and, through it, the real waterway it sits on. A data field on this page,
@@ -238,6 +247,7 @@ def _recharge_site_detail_context(site):
         "event_groups": event_groups,
         "current_period": current_period,
         "current_totals": current_totals,
+        "previous_totals": previous_totals,
         "pod_links": pod_links,
         "measurement_groups": measurement_groups,
         "total_measurement_count": total_measurement_count,
