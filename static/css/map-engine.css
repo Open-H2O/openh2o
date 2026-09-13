@@ -101,7 +101,25 @@
 }
 .panel-toggle-all:hover { color:var(--color-text-primary, #e8edf4); border-color:var(--color-accent, #46B3C4); }
 
-.panel-body { padding:10px 14px 12px; flex:1; min-height:0; overflow-y:auto; }
+/* scrollbar-gutter reserves the thin scrollbar's width (app.css `*` rule,
+   scrollbar-width:thin) so it can't sit on top of the last row's text, the
+   same reasoning `.master-pane`/`.detail-pane` (app.css) already use. */
+.panel-body { padding:10px 14px 12px; flex:1; min-height:0; overflow-y:auto; scrollbar-gutter: stable; }
+
+/* R-096 (143-07): a bottom fade over the panel's last visible row, shown only
+   while `.panel-body` can still scroll further (map-engine.js toggles the
+   class) and gone once the reader reaches the end — the panel that clipped
+   MONITORING at 1,440 x 900 with nothing on screen to say more was below.
+   Lives on #controls (never scrolls) rather than on .panel-body itself
+   (which does), so the fade stays pinned to the panel's bottom edge instead
+   of scrolling away with the content it is meant to sit over. */
+#controls.panel-can-scroll::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0; height: 28px;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, color-mix(in oklch, var(--color-card) 92%, transparent));
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
 
 .layer-toggle {
     display:flex; align-items:center; gap:9px;

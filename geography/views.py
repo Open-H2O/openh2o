@@ -73,7 +73,28 @@ def map_view(request):
     # so the legend can never name a basin that isn't in the database. (A
     # hardcoded Kaweah legend survived the v1.9 Kaweah→Merced demo migration and
     # showed retired-basin names on the live map — post-mortem 2026-06-08.)
-    zone_palette = ["#2d6a4f", "#40916c", "#52b788", "#74c69d", "#95d5b2"]
+    #
+    # 143-07 R-095: three fills, not five near-identical greens — one from each
+    # of DESIGN.md's OKLCH tonal ramps at its 500 (mid) lightness step, so a
+    # reader tells them apart at a glance on aerial imagery and in an 11px
+    # legend swatch: forest-teal, reservoir-blue, furnace-orange. None is the
+    # parcel blue (--color-blue), the recharge purple, the POD teal or the
+    # drinking blueBright — those identify a different entity everywhere else
+    # on this map. A fourth zone (and beyond) cycles into the same three
+    # ramps' 600 step, a lighter tint of the same hue, never a fourth hue.
+    # Values are the sRGB conversion of tokens.css's own oklch() stops
+    # (forest/reservoir/furnace -400..-800, hue 145/200/50); MapLibre's paint
+    # expressions take a literal color, not a CSS oklch() function.
+    ZONE_FILL_FOREST = "#3a9742"      # oklch(0.60 0.15 145), --forest-500
+    ZONE_FILL_RESERVOIR = "#00969f"   # oklch(0.60 0.13 200), --reservoir-500
+    ZONE_FILL_FURNACE = "#cc5900"     # oklch(0.60 0.17 50),  --furnace-500
+    ZONE_FILL_FOREST_LIGHT = "#6ab76d"      # oklch(0.71 0.13 145), --forest-600
+    ZONE_FILL_RESERVOIR_LIGHT = "#00bac4"   # oklch(0.71 0.14 200), --reservoir-600
+    ZONE_FILL_FURNACE_LIGHT = "#f7791a"     # oklch(0.71 0.18 50),  --furnace-600
+    zone_palette = [
+        ZONE_FILL_FOREST, ZONE_FILL_RESERVOIR, ZONE_FILL_FURNACE,
+        ZONE_FILL_FOREST_LIGHT, ZONE_FILL_RESERVOIR_LIGHT, ZONE_FILL_FURNACE_LIGHT,
+    ]
     gsa_zones = [
         {"name": name, "color": zone_palette[i % len(zone_palette)]}
         for i, name in enumerate(
@@ -82,6 +103,12 @@ def map_view(request):
             .values_list("name", flat=True)
         )
     ]
+    # The flat fill for a deployment with NO management-area zones (a subbasin
+    # deployment, ISS-116's own case) — forest-teal, so the fallback still
+    # reads as "zones" rather than introducing a fourth, undocumented hue.
+    # Kept out of the template as a literal: every zone-fill colour on this
+    # page comes from this derivation, never a value typed into map.html.
+    zone_fallback_color = ZONE_FILL_FOREST
 
     return render(request, "geography/map.html", {
         "center_lng": center_lng,
@@ -89,6 +116,7 @@ def map_view(request):
         "zoom": zoom,
         "bounds": bounds,
         "gsa_zones": gsa_zones,
+        "zone_fallback_color": zone_fallback_color,
     })
 
 
@@ -868,13 +896,30 @@ def zone_labels_geojson(request):
     times across the map. Labeling a single interior point per zone gives
     exactly one clean, well-placed label.
 
-    ``pk`` and ``zone_type`` (143-07) let the Zones overview map's follow
-    helper filter this second source by the same pks the fill/outline layers
-    filter by, and let a later plan split the legend by type. ``label`` is the
-    code-prefix-stripped name (Step 0); every symbol layer that draws it reads
-    ``['coalesce', ['get','label'], ...]`` so an older cached response still
-    labels the way it always has.
+    ``pk`` and ``zone_type`` (143-07 Task 4) let the Zones overview map's
+    follow helper filter this second source by the same pks the fill/outline
+    layers filter by, and let this plan split the district map's legend by
+    type. ``label`` is the code-prefix-stripped name (Step 0); every symbol
+    layer that draws it reads ``['coalesce', ['get','label'], ...]`` so an
+    older cached response still labels the way it always has.
+
+    ``short_label`` (Task 5, R-094) is ``label`` with everything up to and
+    including the LAST `` — `` (em dash) dropped. The demonstration's surface
+    service-area names carry a composed prefix ``map_label`` deliberately
+    leaves alone (``test_map_labels.py``'s
+    ``test_an_em_dash_name_keeps_a_plain_leading_word``: ``MER`` alone is not
+    a leading-code token, so stripping it there would risk cutting the first
+    word off a real deployment's name too) — "MER Surface Service Area —
+    Halvern Irrigation District" is still 47 characters, long enough on its
+    own to pile against the wells cluster east of Merced. A name with no em
+    dash (every GSA zone; a real deployment's plain names) has nothing to
+    drop, so ``short_label`` equals ``label`` there. The district map's
+    service-area label layer reads ``short_label``; the GSA label layer and
+    the Zones overview map both keep reading ``label``, unchanged.
     """
+    def _short_label(label):
+        return label.rsplit(" — ", 1)[-1] if " — " in label else label
+
     features = [
         {
             "type": "Feature",
@@ -883,6 +928,7 @@ def zone_labels_geojson(request):
                 "pk": zone.pk,
                 "name": zone.name,
                 "label": map_label(zone.name or ""),
+                "short_label": _short_label(map_label(zone.name or "")),
                 "zone_type": zone.zone_type,
             },
         }

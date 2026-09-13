@@ -326,10 +326,15 @@ class TestBothPopulatedModulesAreReachable:
         filed against — there the 15 zones are `zone_type='subbasin'`, the
         per-zone list comes back empty, and a swatch fixed at the
         match-expression colour showed a colour the map never painted.
+
+        ``#3a9742`` (143-07 R-095) is forest-teal at DESIGN.md's OKLCH ramps'
+        500 lightness step, the fallback ``map_view`` derives when no
+        management-area zone exists — replacing the old flat green
+        ``#3a7d5c``, which lived nowhere in the derivation.
         """
         names = dict(_labelled_layers(_rendered(client_in)))
         element = names["GSA Zones"]
-        assert "'#3a7d5c'" in element.split("swatch:")[-1], (
+        assert "'#3a9742'" in element.split("swatch:")[-1], (
             "the zones swatch does not follow the fill it paints"
         )
 

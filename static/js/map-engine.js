@@ -22,6 +22,9 @@ var OH2O = window.OH2O || { switchBasemap: function(){}, basemapStyle: function(
 // declare one — never invent a different rule.
 //
 //   { prop, val }         strict equality (the original form)
+//   { prop, notVal }      strict INequality (143-07: two zone-type layers on
+//                         'zones' — 'GSA Zones' is `val: 'management_area'`,
+//                         'Surface service areas' is everything else)
 //   { prop, contains }    substring of the property's string value
 //   { prop, notContains } NOT a substring of it
 //
@@ -38,6 +41,7 @@ function countFeatures(layer, sourceCounts) {
         var text = (raw === null || raw === undefined) ? '' : String(raw);
         if (f.contains !== undefined) return text.indexOf(f.contains) !== -1;
         if (f.notContains !== undefined) return text.indexOf(f.notContains) === -1;
+        if (f.notVal !== undefined) return raw !== f.notVal;
         return raw === f.val;
     }).length;
 }
@@ -204,6 +208,37 @@ function countFeatures(layer, sourceCounts) {
         });
         body.appendChild(section);
     });
+})();
+
+// ── R-096: the panel says when it scrolls ──
+// At 1,730 x 1,000 the panel fit with MONITORING visible; at 1,440 x 900 it
+// clipped the last section with nothing on screen to say so. `#controls::after`
+// (map-engine.css) draws a bottom fade in the card colour; this toggles the
+// `.panel-can-scroll` class that shows it, reading the exact condition R-096
+// asks for and removing it once the reader has scrolled to the end. Runs on
+// scroll, on section collapse/expand (both change `.panel-body.scrollHeight`
+// without a scroll event of their own) and on viewport resize.
+(function panelScrollFade() {
+    var panel = document.getElementById('controls');
+    var body = panel ? panel.querySelector('.panel-body') : null;
+    if (!panel || !body) return;
+
+    function update() {
+        var canScrollMore = body.scrollTop + body.clientHeight < body.scrollHeight - 2;
+        panel.classList.toggle('panel-can-scroll', canScrollMore);
+    }
+
+    body.addEventListener('scroll', update);
+    panel.addEventListener('click', function(e) {
+        if (e.target.closest && e.target.closest('.layer-section-header')) {
+            // The collapse toggle above runs synchronously in its own
+            // listener; wait a frame so scrollHeight reflects the new layout.
+            requestAnimationFrame(update);
+        }
+    });
+    window.addEventListener('resize', update);
+    update();
+    requestAnimationFrame(update);
 })();
 
 // ── Legend ──

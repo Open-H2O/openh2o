@@ -172,32 +172,75 @@ var DRINKING_FACILITY_URL = '{% url "drinking:facility_detail" 0 %}';
             layout: { 'text-transform': 'uppercase', 'text-letter-spacing': 0.18,
                       'text-size': ['interpolate', ['linear'], ['zoom'], 8, 11, 12, 15] }
         }), { panelHidden: true, section: 'Administrative', paint: { 'text-color': OH2O.colors.gold, 'text-halo-color': '#040608', 'text-halo-width': 1.6, 'text-opacity': 0.85 } }),
+        // R-095 (143-07): the 'zones' source carries TWO kinds of feature —
+        // management-area GSA zones (the per-zone-name legend breakdown below)
+        // and everything else (surface service areas in the demonstration,
+        // a real deployment's own custom or subbasin zones). One fill layer
+        // drawing both meant the legend named three GSA greens against a
+        // layer of eight zones, and the Layers panel's "GSA Zones" count
+        // included the five service areas it never named. Both layers below
+        // read the SAME source and MUST filter it the way their MapLibre
+        // `filter` does — the ISS-116 lesson (`countFilter` mirrors `filter`).
         {
             id: 'zones-fill', type: 'fill', source: 'zones',
             label: 'GSA Zones', group: 'zones', section: 'Administrative',
+            filter: ['==', ['get', 'zone_type'], 'management_area'],
+            countFilter: { prop: 'zone_type', val: 'management_area' },
             // Fill colors are rendered from the live GSA zones (geography views
             // map_view) so symbology can never diverge from the data again.
             paint: { 'fill-color': {% if gsa_zones %}['match', ['get', 'name'],
 {% for z in gsa_zones %}                '{{ z.name|escapejs }}', '{{ z.color }}',
-{% endfor %}                '#3a7d5c'
-            ]{% else %}'#3a7d5c'{% endif %}, 'fill-opacity': 0.16 },
+{% endfor %}                '{{ zone_fallback_color }}'
+            ]{% else %}'{{ zone_fallback_color }}'{% endif %}, 'fill-opacity': 0.16 },
             // The swatch follows the PAINT above, both branches. On a real-basin
             // deployment the zones are `zone_type='subbasin'`, `gsa_zones` comes
             // back empty and the fill is the flat fallback — a swatch fixed at
             // the match-expression colour showed the panel and legend a colour
             // the map never painted.
-            swatch: 'fill', swatchColor: {% if gsa_zones %}'#40916c'{% else %}'#3a7d5c'{% endif %}
+            swatch: 'fill', swatchColor: {% if gsa_zones %}'{{ gsa_zones.0.color }}'{% else %}'{{ zone_fallback_color }}'{% endif %}
         },
         {
             id: 'zones-outline', type: 'line', source: 'zones',
             group: 'zones', groupHidden: true, section: 'Administrative',
+            filter: ['==', ['get', 'zone_type'], 'management_area'],
             paint: { 'line-color': '#74c69d', 'line-width': 1.5, 'line-dasharray': [4, 3], 'line-opacity': 0.85 }
         },
         // One label per zone, placed at a single interior point (zone-labels
         // source). Labeling the MultiPolygon directly stamped the name once per
-        // disjoint part — many times over for a multi-part GSA.
-        Object.assign(OH2O.makeLabelLayer('zones-label', 'zone-labels', 'zone', { anchor: 'center', offset: [0, 0] }),
-            { panelHidden: true, group: 'zones', section: 'Administrative' }),
+        // disjoint part — many times over for a multi-part GSA. `labelMin` 9
+        // (OH2O.entities.zone) — GSA labels appear first, at a lower zoom than
+        // the service-area labels below.
+        Object.assign(OH2O.makeLabelLayer('zones-label', 'zone-labels', 'zone', {
+            anchor: 'center', offset: [0, 0],
+            filter: ['==', ['get', 'zone_type'], 'management_area'],
+            sortKey: 1
+        }), { panelHidden: true, group: 'zones', section: 'Administrative' }),
+
+        // Surface service areas: everything in 'zones' that is NOT a
+        // management-area GSA. Drawn OUTLINE ONLY (no fill, dashed) so the
+        // layer reads as a boundary laid over the GSA zones, never as more
+        // zones competing for the same three fills. R-094: the label sits at
+        // minzoom 11 (the layer and its popups don't exist below that),
+        // wraps at 10 characters, reads `short_label` (the part of the name
+        // after the em dash — `zone_labels_geojson`) so "MER Surface Service
+        // Area — Halvern Irrigation District" labels as "Halvern Irrigation
+        // District", and sorts AFTER the GSA labels (a higher sort-key loses
+        // a collision to a lower one) so a GSA name never yields to a service
+        // area's.
+        {
+            id: 'service-areas-outline', type: 'line', source: 'zones',
+            label: 'Surface service areas', group: 'service-areas', section: 'Administrative',
+            filter: ['!=', ['get', 'zone_type'], 'management_area'],
+            countFilter: { prop: 'zone_type', notVal: 'management_area' },
+            paint: { 'line-color': OH2O.colors.boundary, 'line-width': 1.5, 'line-dasharray': [3, 2], 'line-opacity': 0.75 },
+            swatch: 'line-dash', swatchColor: OH2O.colors.boundary
+        },
+        Object.assign(OH2O.makeLabelLayer('service-areas-label', 'zone-labels', 'zone', {
+            anchor: 'center', offset: [0, 0], minzoom: 11, sortKey: 5,
+            field: ['coalesce', ['get', 'short_label'], ['get', 'label'], ['get', 'name']],
+            filter: ['!=', ['get', 'zone_type'], 'management_area'],
+            layout: { 'text-max-width': 10 }
+        }), { panelHidden: true, group: 'service-areas', section: 'Administrative' }),
 
         // ── Surface Water (hydrography) ──
         // Placed early in the array so the river/canal lines DRAW beneath parcels
