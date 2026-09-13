@@ -27,7 +27,11 @@
     </div>
     <div class="master-row-sub">
       <span class="master-row-owner">{{ well.well_registration_id|blank }}</span>
-      {% if well.depth_ft %}<span class="master-row-acres">{{ well.depth_ft }} ft</span>{% endif %}
+      {% comment %} 143-10 (R-110): "Depth" names what the figure is, the same word
+           the well page's own tooltip on this field uses ("Total Depth"); the
+           bare number beside the registration id said nothing about what it
+           measured. {% endcomment %}
+      {% if well.depth_ft %}<span class="master-row-acres">Depth {{ well.depth_ft }} ft</span>{% endif %}
     </div>
   </div>
   {% endfor %}

@@ -155,7 +155,13 @@ def _well_detail_context(well):
     workspace's pre-loaded ``?selected=`` pane so all three are identical.
     """
     current_meters = well.wellmeter_set.filter(is_current=True).select_related("meter")
-    irrigated_parcels = well.wellirrigatedparcel_set.select_related("parcel").all()
+    irrigated_parcels = list(well.wellirrigatedparcel_set.select_related("parcel").all())
+    # 143-10 (R-114): the whole percent a reader can act on, worked out here so
+    # the template does no arithmetic (never `widthratio`). The seed's shares
+    # sum to 100 per well; real data may not, and where they don't this says
+    # nothing more than each parcel's own share.
+    for wip in irrigated_parcels:
+        wip.pumping_percent = round(float(wip.fraction) * 100)
     monitoring = getattr(well, "monitoringwell", None)
     # ISS-145 (137-03). The page's own description promises "measurement
     # history"; these two are it. Both are built in wells/measurement_history.py,

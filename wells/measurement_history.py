@@ -31,6 +31,7 @@ because a transducer logging in air during a calibration visit "is the
 instrument, not the aquifer" (the seed's own note on that row).
 """
 from collections import OrderedDict
+from decimal import Decimal
 
 from django.utils import timezone
 
@@ -69,8 +70,19 @@ def meter_history(well):
         by_year = OrderedDict()
         for read in reads:
             by_year.setdefault(water_year(_local_date(read.reading_date)), []).append(read)
+        # 143-10 (R-111): `count` and `delta_total` close each water year's own
+        # row-group, the same footer-A shape the diversion and event-history
+        # tables carry (rule 7) -- summed here from the rows already fetched
+        # above, never a second query. The Totalizer has no matching total: a
+        # totalizer is a running reading, never summed (it is the delta column
+        # that closes).
         years = [
-            {"label": water_year_label(wy), "reads": rows}
+            {
+                "label": water_year_label(wy),
+                "reads": rows,
+                "count": len(rows),
+                "delta_total": sum((r.calculated_volume for r in rows), Decimal("0")),
+            }
             for wy, rows in sorted(by_year.items(), reverse=True)
         ]
         unit = UNIT_SHORT.get(link.meter.unit, link.meter.get_unit_display())

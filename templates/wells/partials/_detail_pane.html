@@ -21,38 +21,56 @@
 </div>
 {% endif %}
 
+{% comment %}
+  143-10 (R-110, R-111, R-114, R-112). Composed as a page at 1,730 CSS px,
+  reusing the account page's grid UNCHANGED (143-03's .page-grid-account*):
+  Identification beside the three short cards (Current meters, Irrigated
+  parcels, Monitoring data) at one height, then Measurement history full
+  width with its two tables side by side. The previous .page-grid-2col ran
+  Identification to the bottom of the page while the right column's cards and
+  four water-year tables ended a third of the way down (R-112) -- no worked
+  shape here to copy from; the account grid is.
+
+  `page-grid-account--source-order`: this page has no swap target inside the
+  balance cell (unlike the account page's #balance-section), so the reader
+  who opened the pane to edit Identification should still meet it first when
+  the grid stacks under the workspace's 1,010px pane. The base
+  `@container (max-width: 1150px)` rule puts `-balance` first (`order: -2`)
+  because IT was written for the account page, where the swapped balance
+  panel leads on purpose; this modifier resets that back to source order for
+  this grid only (app.css, "143-10, Task 4").
+{% endcomment %}
 <div class="pane-stack">
-  <div class="page-grid-2col">
+  <div class="page-grid-account page-grid-account--source-order">
 
-    <!-- Left column: Well Info -->
-    <div class="page-stack">
+    <!-- Identification, State reporting (GEARS), Construction -->
+    <div class="card-raised page-grid-account-info">
 
-      <div class="card-raised">
+      {% comment %}
+        Phase 101. This header carried an UNCONDITIONAL demo pill, so on the
+        public demonstration every one of the 21 municipal supply sources — the
+        ones a drinking-water system lists as its facilities — was labelled
+        sample data. It is the inverse of the truth for those rows: their names
+        come from the State Water Board's own lab file, their owner is the water
+        system's real name from EPA Envirofacts, and their coordinates are real
+        GAMA publications.
 
-        {% comment %}
-          Phase 101. This header carried an UNCONDITIONAL demo pill, so on the
-          public demonstration every one of the 21 municipal supply sources — the
-          ones a drinking-water system lists as its facilities — was labelled
-          sample data. It is the inverse of the truth for those rows: their names
-          come from the State Water Board's own lab file, their owner is the water
-          system's real name from EPA Envirofacts, and their coordinates are real
-          GAMA publications.
+        `published_source` is resolved in the view
+        (`wells/views.py::published_source_publisher`), behind a module guard,
+        off the SystemFacility.well foreign key — never off the `MER-PWS-`
+        prefix, which is a demo seed constant. With `drinking` dropped it is
+        always None and this pane renders exactly as it did before.
 
-          `published_source` is resolved in the view
-          (`wells/views.py::published_source_publisher`), behind a module guard,
-          off the SystemFacility.well foreign key — never off the `MER-PWS-`
-          prefix, which is a demo seed constant. With `drinking` dropped it is
-          always None and this pane renders exactly as it did before.
+        The section is genuinely MIXED, which is why the pill is replaced rather
+        than deleted: the identity is published, but the Registration ID under
+        it is an identifier this deployment minted for its own registry and
+        names no state or federal one. Labelling the whole card as published
+        would be the same error in the other direction.
+      {% endcomment %}
+      <!-- ── Identification ── -->
+      <h2 class="section-header">Identification {% if published_source %}{% include "partials/_source_label.html" with source=published_source %}{% else %}{% include "partials/_demo_marker.html" %}{% endif %}</h2>
 
-          The section is genuinely MIXED, which is why the pill is replaced rather
-          than deleted: the identity is published, but the Registration ID under
-          it is an identifier this deployment minted for its own registry and
-          names no state or federal one. Labelling the whole card as published
-          would be the same error in the other direction.
-        {% endcomment %}
-        <!-- ── Identification ── -->
-        <h2 class="section-header">Identification {% if published_source %}{% include "partials/_source_label.html" with source=published_source %}{% else %}{% include "partials/_demo_marker.html" %}{% endif %}</h2>
-
+      <div class="field-grid-2">
         {% include "wells/partials/_editable_field.html" with ef=ef.name %}
 
         <!-- Static field: well_registration_id (local registry id) -->
@@ -81,21 +99,25 @@
         </div>
 
         {% include "wells/partials/_editable_field.html" with ef=ef.owner_name %}
+      </div>
 
-        <!-- ── State Reporting (GEARS) ── -->
-        <h2 class="section-header mt-lg">State reporting (GEARS)</h2>
-        <p class="text-tertiary text-xs" style="margin-bottom: var(--space-sm);">
-          These fields feed a GEARS extraction filing.
-        </p>
+      <!-- ── State Reporting (GEARS) ── -->
+      <h2 class="section-header mt-lg">State reporting (GEARS)</h2>
+      <p class="text-tertiary text-xs" style="margin-bottom: var(--space-sm);">
+        These fields feed a GEARS extraction filing.
+      </p>
 
+      <div class="field-grid-2">
         {% include "wells/partials/_editable_field.html" with ef=ef.status %}
         {% include "wells/partials/_editable_field.html" with ef=ef.capacity_gpm %}
         {% include "wells/partials/_editable_field.html" with ef=ef.year_pumping_began %}
         {% include "wells/partials/_editable_field.html" with ef=ef.measurement_method %}
+      </div>
 
-        <!-- ── Construction (DWR Well Completion Report) ── -->
-        <h2 class="section-header mt-lg">Construction (DWR Well Completion Report)</h2>
+      <!-- ── Construction (DWR Well Completion Report) ── -->
+      <h2 class="section-header mt-lg">Construction (DWR Well Completion Report)</h2>
 
+      <div class="field-grid-2">
         {% include "wells/partials/_editable_field.html" with ef=ef.depth_ft %}
         {% include "wells/partials/_editable_field.html" with ef=ef.casing_diameter_in %}
         {% include "wells/partials/_editable_field.html" with ef=ef.casing_material %}
@@ -103,166 +125,207 @@
         {% include "wells/partials/_editable_field.html" with ef=ef.screen_bottom_ft %}
         {% include "wells/partials/_editable_field.html" with ef=ef.tested_yield_gpm %}
         {% include "wells/partials/_editable_field.html" with ef=ef.pump_type %}
+        {# Notes spans both columns: a long note wraps mid-token in a half-width column and Notes is the one field here without a fixed shape. #}
+        {% include "wells/partials/_editable_field.html" with ef=ef.notes extra_class="field-grid-2-span" %}
+      </div>
 
-        <!-- Notes + timestamps -->
-        <div class="border-separator">
-          {% include "wells/partials/_editable_field.html" with ef=ef.notes %}
-          <div class="text-tertiary text-xs">
-            Created {{ well.created_at|date:"M d, Y" }} &middot; Updated {{ well.updated_at|date:"M d, Y" }}
-          </div>
+      <div class="border-separator">
+        <div class="text-tertiary text-xs">
+          Created {{ well.created_at|date:"M d, Y" }} &middot; Updated {{ well.updated_at|date:"M d, Y" }}
         </div>
       </div>
-
     </div>
 
-    <!-- Right column: Meters, Parcels, Monitoring -->
-    <div class="page-stack">
+    {# Three short cards, stacked: Current meters, Irrigated parcels, Monitoring data. No lead figure on this page (R-055 does not name one here), so no .budget-panel -- this cell is a plain page-stack that fills the height the Identification card sets. #}
+    <div class="page-grid-account-balance">
+      <div class="page-stack">
 
-      <!-- Current Meters card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Current meters</h2>
-        {% if current_meters %}
-          {% for wm in current_meters %}
-          <div class="item-row">
-            <span class="field-value-sm">{{ wm.meter }}</span>
-            {% if wm.installed_date %}
-              <span class="text-tertiary text-xs" style="margin-left: var(--space-sm);">Installed {{ wm.installed_date|date:"M d, Y" }}</span>
+        <!-- Current Meters card -->
+        <div class="card-raised">
+          <h2 class="section-header mb-md">Current meters</h2>
+          {% if current_meters %}
+            {% for wm in current_meters %}
+            <div class="item-row">
+              <span class="field-value-sm">{{ wm.meter }}</span>
+              {% if wm.installed_date %}
+                <span class="text-tertiary text-xs" style="margin-left: var(--space-sm);">Installed {{ wm.installed_date|date:"M d, Y" }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-tertiary text-base">No active meters on this well.</p>
+          {% endif %}
+        </div>
+
+        <!-- Irrigated Parcels card -->
+        <div class="card-raised">
+          <h2 class="section-header mb-md">Irrigated parcels</h2>
+          {% if irrigated_parcels %}
+            {% for wip in irrigated_parcels %}
+            <div class="item-row row-between">
+              <a href="{% url 'parcels:detail' wip.parcel.pk %}" class="data-table-link text-base">
+                {{ wip.parcel.parcel_number }}
+              </a>
+              <div style="text-align: right;">
+                {% comment %} 143-10 (R-114): the whole percent, worked out in the view
+                     (`round(fraction * 100)`, never `widthratio` here). Where a well's
+                     shares do not sum to 100 this says nothing more than each parcel's
+                     own share -- the seed's shares happen to sum to 100 per well; real
+                     data may not. {% endcomment %}
+                <span class="text-secondary text-sm">{{ wip.pumping_percent }}% of this well's pumping</span>
+                {% if wip.parcel.owner_name %}
+                  <div class="text-tertiary text-xs">{{ wip.parcel.owner_name }}</div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-tertiary text-base">No parcels linked to this well.</p>
+          {% endif %}
+        </div>
+
+        <!-- Monitoring Data card -->
+        {% if monitoring %}
+        <div class="card-raised">
+          <h2 class="section-header mb-md">Monitoring data</h2>
+          <div class="page-stack" style="gap: var(--space-sm);">
+            {% if monitoring.monitoring_agency %}
+            <div class="field-group mb-0">
+              <span class="field-label">Agency</span>
+              <div class="field-value-sm">{{ monitoring.monitoring_agency }}</div>
+            </div>
+            {% endif %}
+            {% if monitoring.measurement_frequency %}
+            <div class="field-group mb-0">
+              <span class="field-label">Frequency</span>
+              <div class="field-value-sm">{{ monitoring.measurement_frequency }}</div>
+            </div>
+            {% endif %}
+            {% if monitoring.reference_elevation_ft %}
+            <div class="field-group mb-0">
+              <span class="field-label">Reference elevation</span>
+              <div class="field-value-sm">{{ monitoring.reference_elevation_ft|floatformat:1 }} ft</div>
+            </div>
+            {% endif %}
+            {% if monitoring.notes %}
+            <div class="field-group mb-0">
+              <span class="field-label">Notes</span>
+              <div class="text-secondary text-base">{{ monitoring.notes }}</div>
+            </div>
             {% endif %}
           </div>
-          {% endfor %}
-        {% else %}
-          <p class="text-tertiary text-base">No active meters on this well.</p>
+        </div>
         {% endif %}
-      </div>
 
-      {% comment %}
-        Measurement history (ISS-145, 137-03). The page description above has
-        promised this section since the page was written. Two tables: each
-        current meter's totalizer reads with the delta the read produced, and
-        a monthly digest of depth to water from the well's logger or, failing
-        that, its hand-entered record. Both come from wells/measurement_history.py
-        grouped by water year, newest first; nothing is computed here. A table,
-        not a chart: this page loads no charting library and gains none.
-      {% endcomment %}
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Measurement history</h2>
-        {% if meter_history or water_levels %}
+      </div>
+    </div>
+
+    {% comment %}
+      Measurement history (ISS-145, 137-03; recomposed 143-10 R-111/R-114/R-112).
+      Two tables side by side: each current meter's totalizer reads (ONE table
+      per meter, grouped by water year with its own closing subtotal row --
+      footer A, no tfoot, rule 7) and the monthly depth-to-water digest (grouped,
+      no subtotal: levels are not amounts, rule 5). Both come from
+      wells/measurement_history.py, newest first; nothing is computed here. A
+      table, not a chart: this page loads no charting library and gains none.
+
+      The empty-case sentence below must stay the first `</div>`-closing content
+      after this heading (tests/test_wells_measurement_history.py reads
+      `html[:html.index("</div>")]` from the heading) -- so the facts line above
+      the grid is a `<p>`, never a wrapping `<div>`, in both branches.
+    {% endcomment %}
+    <div class="card-raised page-grid-account-full">
+      <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Measurement history</h2>
+      <p class="text-secondary text-base" style="margin: 0 0 var(--space-md) 0;">What came through the meter, and what the water table did beneath it.</p>
+      {% if meter_history or water_levels %}
+      <div class="page-grid-2col">
+
+        <div>
           {% for group in meter_history %}
-            <div class="field-label">Meter {{ group.meter }} totalizer reads</div>
-            {% for year in group.years %}
-              <div class="text-tertiary text-xs mt-sm">{{ year.label }}</div>
-              <table class="data-table text-sm">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th class="th-right">Totalizer</th>
-                    <th class="th-right">Delta ({{ group.unit }})</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for read in year.reads %}
-                  <tr>
-                    <td class="text-secondary">{{ read.reading_date|date:"M d, Y" }}</td>
-                    <td class="td-num">{{ read.current_value|floatformat:2|intcomma }}</td>
-                    <td class="td-num">
-                      {{ read.calculated_volume|floatformat:2|intcomma }}
-                      {% if read.quality != "approved" %}<span class="text-tertiary text-xs">{{ read.get_quality_display|lower }}</span>{% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            {% endfor %}
-          {% endfor %}
-
-          {% if water_levels %}
-            <div class="field-label{% if meter_history %} mt-md{% endif %}">Depth to water, ft below land surface</div>
-            <p class="text-tertiary text-xs" style="margin-bottom: 0;">
-              Monthly close from the well's {{ water_levels.source }} record; change is against the previous month's close, so a positive change is a deeper water table.
-            </p>
-            {% for year in water_levels.years %}
-              <div class="text-tertiary text-xs mt-sm">{{ year.label }}</div>
-              <table class="data-table text-sm">
-                <thead>
-                  <tr>
-                    <th>Month</th>
-                    <th class="th-right">Close (ft)</th>
-                    <th class="th-right">Change (ft)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for row in year.months %}
-                  <tr>
-                    <td class="text-secondary">{{ row.month|date:"M Y" }}</td>
-                    <td class="td-num">{{ row.close|floatformat:2 }}</td>
-                    <td class="td-num">{% if row.change is None %}<span class="text-tertiary">&mdash;</span>{% else %}{{ row.change|floatformat:2 }}{% endif %}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            {% endfor %}
-          {% endif %}
-        {% else %}
-          <p class="text-tertiary text-base">No meter reads or water-level readings recorded for this well.</p>
-        {% endif %}
-      </div>
-
-      <!-- Irrigated Parcels card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Irrigated parcels</h2>
-        {% if irrigated_parcels %}
-          {% for wip in irrigated_parcels %}
-          <div class="item-row row-between">
-            <a href="{% url 'parcels:detail' wip.parcel.pk %}" class="data-table-link text-base">
-              {{ wip.parcel.parcel_number }}
-            </a>
-            <div style="text-align: right;">
-              <span class="text-secondary text-sm">{{ wip.fraction|floatformat:2 }} fraction</span>
-              {% if wip.parcel.owner_name %}
-                <div class="text-tertiary text-xs">{{ wip.parcel.owner_name }}</div>
-              {% endif %}
+          <div{% if not forloop.first %} class="mt-lg"{% endif %}>
+            {# The unit stated ONCE, here, in this meter's own facts line (rule 4); no unit on either header below. #}
+            <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Meter {{ group.meter }} &middot; reads in {{ group.meter.get_unit_display|lower }} ({{ group.unit }}) &middot; the delta is the read less the previous read.</p>
+            <div class="table-scroll">
+            <table class="data-table text-sm data-table--grouped">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th class="th-right">Totalizer</th>
+                  <th class="th-right">Delta</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for year in group.years %}
+                <tr class="row-group">
+                  <td colspan="3">{{ year.label }} &middot; {{ year.count }} read{{ year.count|pluralize }}</td>
+                </tr>
+                {% for read in year.reads %}
+                <tr>
+                  <td class="text-secondary">{{ read.reading_date|date:"M d, Y" }}</td>
+                  <td class="td-num">{{ read.current_value|floatformat:2|intcomma }}</td>
+                  <td class="td-num">
+                    {{ read.calculated_volume|floatformat:2|intcomma }}
+                    {% if read.quality != "approved" %}<span class="text-tertiary text-xs">{{ read.get_quality_display|lower }}</span>{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                {# A totalizer is a running reading and is never summed -- only the Delta closes. #}
+                <tr class="row-subtotal">
+                  <td class="tfoot-total">All {{ year.count }} read{{ year.count|pluralize }}, {{ year.label }}</td>
+                  <td></td>
+                  <td class="td-num-bold td-total">{{ year.delta_total|floatformat:2|intcomma }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
             </div>
           </div>
           {% endfor %}
-        {% else %}
-          <p class="text-tertiary text-base">No parcels linked to this well.</p>
-        {% endif %}
-      </div>
-
-      <!-- Monitoring Data card -->
-      {% if monitoring %}
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Monitoring data</h2>
-        <div class="page-stack" style="gap: var(--space-sm);">
-          {% if monitoring.monitoring_agency %}
-          <div class="field-group mb-0">
-            <span class="field-label">Agency</span>
-            <div class="field-value-sm">{{ monitoring.monitoring_agency }}</div>
-          </div>
-          {% endif %}
-          {% if monitoring.measurement_frequency %}
-          <div class="field-group mb-0">
-            <span class="field-label">Frequency</span>
-            <div class="field-value-sm">{{ monitoring.measurement_frequency }}</div>
-          </div>
-          {% endif %}
-          {% if monitoring.reference_elevation_ft %}
-          <div class="field-group mb-0">
-            <span class="field-label">Reference elevation</span>
-            <div class="field-value-sm">{{ monitoring.reference_elevation_ft|floatformat:1 }} ft</div>
-          </div>
-          {% endif %}
-          {% if monitoring.notes %}
-          <div class="field-group mb-0">
-            <span class="field-label">Notes</span>
-            <div class="text-secondary text-base">{{ monitoring.notes }}</div>
-          </div>
+          {% if not meter_history %}
+          <p class="text-tertiary text-base">No meter reads recorded for this well.</p>
           {% endif %}
         </div>
-      </div>
-      {% endif %}
 
+        <div>
+          {% if water_levels %}
+          {# Levels are not amounts (rule 5): no subtotal row here. #}
+          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Depth to water, ft below land surface. Monthly close from the well's {{ water_levels.source }} record; change is against the previous month's close, so a positive change is a deeper water table.</p>
+          <div class="table-scroll">
+          <table class="data-table text-sm data-table--grouped">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th class="th-right">Close</th>
+                <th class="th-right">Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for year in water_levels.years %}
+              <tr class="row-group">
+                <td colspan="3">{{ year.label }}</td>
+              </tr>
+              {% for row in year.months %}
+              <tr>
+                <td class="text-secondary">{{ row.month|date:"M Y" }}</td>
+                <td class="td-num">{{ row.close|floatformat:2 }}</td>
+                <td class="td-num">{% if row.change is None %}<span class="text-tertiary">&mdash;</span>{% else %}{{ row.change|floatformat:2 }}{% endif %}</td>
+              </tr>
+              {% endfor %}
+              {% endfor %}
+            </tbody>
+          </table>
+          </div>
+          {% else %}
+          <p class="text-tertiary text-base">No water-level readings recorded for this well.</p>
+          {% endif %}
+        </div>
+
+      </div>
+      {% else %}
+      <p class="text-tertiary text-base">No meter reads or water-level readings recorded for this well.</p>
+      {% endif %}
     </div>
+
   </div>
 </div>
 

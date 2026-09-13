@@ -1026,6 +1026,20 @@ html { color-scheme: dark; }
        off at the fold, so what is cut is the least of it. */
     .page-grid-account-balance { order: -2; }
     #balance-section > .page-grid-account-full { order: -1; }
+    /* 143-10, Task 4: the well pane has no swap target inside its balance
+       cell (unlike the account page's #balance-section, which the rule above
+       was written for), and a reader opens the pane to edit Identification,
+       not to see Current meters first. This modifier on `.page-grid-account`
+       resets the two rules above back to source order for that grid only;
+       two classes beats one so it wins over `.page-grid-account-balance`
+       without touching the account or zone pages. */
+    .page-grid-account--source-order.page-grid-account-balance,
+    .page-grid-account--source-order .page-grid-account-balance {
+        order: 0;
+    }
+    .page-grid-account--source-order #balance-section > .page-grid-account-full {
+        order: 0;
+    }
 }
 
 /* -- Section and field --------------------------------------------------- */
@@ -4129,7 +4143,33 @@ div[id$="-map"] {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-lg);
-    align-items: start;
+    /* 143-10, Task 4 (R-112): `position: sticky` cannot engage here --
+       `.app-content` is this page's own scroll container and does not itself
+       scroll (ISS-167's measurement), so a sticky map would pin to nothing.
+       `stretch` (was `start`) keeps the one grid idiom instead: the row's
+       height is still set by content, i.e. the taller LEFT column (the well
+       or diversion form), and this makes the shorter RIGHT column's wrapper
+       fill that same height rather than sitting at its own ~480px content
+       height with dead space below. The left column is unaffected: nothing in
+       it needs the extra height stretch would otherwise give it room for. */
+    align-items: stretch;
+}
+
+/* The map card grows to fill whatever height `align-items: stretch` above
+   gives its `.page-stack` wrapper, then lays its own three rows out as a
+   column so `#infra-map` (flex: 1 1 auto below) can claim the space the
+   toolbar and the coordinate strip do not need, with the strip pinned at the
+   card's foot by ordinary flow -- it is simply the last child. MapLibre still
+   sizes its canvas once at init, so a script that hides or shows a
+   type-specific fields card calls `map.resize()` afterward (map_scripts). */
+.map-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+#infra-map {
+    flex: 1 1 auto;
+    min-height: 480px;
 }
 
 /* The `.infra-type-*` four-card picker stood here. It was deleted 2026-08-27

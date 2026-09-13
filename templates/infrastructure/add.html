@@ -283,7 +283,15 @@
 
     <!-- RIGHT: Map -->
     <div class="page-stack">
-      <div class="card-raised" style="padding: 0; overflow: hidden;">
+      {% comment %}
+        143-10 (R-112). `.map-card` (app.css) turns this card into a flex
+        column so `#infra-map` can grow to the height `align-items: stretch`
+        on `.map-form-layout` gives this whole column -- the left column's
+        form -- instead of stopping at a fixed 480px with a shorter card
+        beside a taller one. The coordinate strip stays pinned at the foot by
+        ordinary flow: it is simply the last child.
+      {% endcomment %}
+      <div class="card-raised map-card" style="padding: 0; overflow: hidden;">
         <!-- Draw toolbar -->
         <div class="draw-toolbar">
           <button type="button" class="draw-btn active" id="draw-point" title="Place point">
@@ -301,8 +309,8 @@
             Finish
           </button>
         </div>
-        <!-- Map container -->
-        <div id="infra-map" style="height: 480px; width: 100%;"></div>
+        <!-- Map container: height set by .map-card's flex layout (app.css), min-height 480px -->
+        <div id="infra-map" style="width: 100%;"></div>
         <!-- Coordinate display -->
         <div class="coord-display" id="coord-display">
           <span class="text-xs text-tertiary">Click map to place geometry</span>
@@ -406,6 +414,13 @@
   OH2O.mountBasemapToggle(map, 'aerial');
 
   map.on('load', function() {
+    // 143-10 (R-112): MapLibre sizes its canvas once at init, against
+    // whatever height `.map-card`'s flex layout (app.css) already gave the
+    // container by then. This call is the safety net for a script that hides
+    // or shows a type-specific fields card AFTER load and changes that
+    // height (none does today; the type is fixed for the page's lifetime
+    // since ISS-134), so the canvas never drifts from its container.
+    map.resize();
     map.addSource('drawing', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     map.addLayer({
       id: 'drawing-line', type: 'line', source: 'drawing',
