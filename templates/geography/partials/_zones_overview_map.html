@@ -1,14 +1,31 @@
 {% comment %}
-Zones overview map: every zone boundary at once, on the Zones overview page.
+Zones overview map: every zone boundary the list is showing, on the Zones
+overview page.
 
-The Bucket-3 overview map (see docs/2.0-UX-PATTERN-SPEC.md) — the zone analogue
-of datasync's _freshness_map. It draws each zone's polygon (fill + outline) from
-geography:zone_overview_geojson and, on click, opens a popup with the zone name
-and a link to that zone's full detail page. Modeled on _freshness_map.html so the
-two overview maps stay consistent.
+The Bucket-3 overview map (see docs/2.0-UX-PATTERN-SPEC.md) — the zone
+analogue of datasync's _freshness_map. It draws each zone's polygon (fill +
+outline) from geography:zone_overview_geojson and, on click, opens a popup
+with the zone name and a link to that zone's full detail page. Modeled on
+_freshness_map.html so the two overview maps stay consistent.
+
+The overview map card (143-07, designed on Surface Diversions and copied
+here). Three things beyond the fill:
+
+  * An always-on label per ZONE, from a SECOND source,
+    geography:zone_labels_geojson (one point_on_surface per zone, so a
+    multi-part GSA stamps once, not once per polygon ring — the fault
+    geography/views.py::zone_labels_geojson already fixed for the big map).
+  * The map FOLLOWS THE LIST. The results partial emits the whole filtered
+    queryset's pks as json_script#results-map-pks, and OH2O.followResults
+    filters the fill, outline AND the label layer here to those pks and
+    re-frames on first paint and after every htmx swap of #results.
+  * The card's head (partials/_map_card_head.html) carries the count line and
+    the key; the map itself says nothing in words.
 
 The parent page must provide a <div> with the matching map_id, and must load
-MapLibre GL JS + map-core.js (the map_scripts block) before this include.
+MapLibre GL JS + map-core.js (the map_scripts block) before this include. It
+includes this partial only when something has a boundary (located_count):
+with nothing to draw the card is its head alone and no map is built.
 
 Variables:
   map_id  - ID of the existing <div> container on the page (required)
@@ -25,8 +42,9 @@ Variables:
     if (!el || el._mapInit) return;
     el._mapInit = true;
 
-    var FILL = '#40916c';     // matches the GSA-zone fill on the big district map
-    var OUTLINE = '#74c69d';
+    var COLOR = OH2O.entities.zone.color;   // matches the GSA-zone fill on the big map
+    var SRC = '{{ map_id }}-source';
+    var LABELS_SRC = '{{ map_id }}-labels';
 
     var map = new maplibregl.Map({
       cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
@@ -36,81 +54,90 @@ Variables:
       center: [-119.5, 37.3],
       attributionControl: false
     });
+    el._oh2oMap = map;   // a handle for probes; the map is otherwise closed over
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     OH2O.mountBasemapToggle(map, 'aerial');
 
-    // Walk a GeoJSON geometry's nested coordinate arrays, expanding the running
-    // bbox. Handles Polygon and MultiPolygon (any nesting depth) by recursing
-    // until it reaches a [lng, lat] position.
-    function extend(bbox, node) {
-      if (typeof node[0] === 'number') {
-        if (node[0] < bbox[0]) bbox[0] = node[0];
-        if (node[1] < bbox[1]) bbox[1] = node[1];
-        if (node[0] > bbox[2]) bbox[2] = node[0];
-        if (node[1] > bbox[3]) bbox[3] = node[1];
-        return;
-      }
-      for (var i = 0; i < node.length; i++) extend(bbox, node[i]);
+    // Resolve the detail URL through Django (a sentinel pk we swap out) so
+    // the link tracks the app's URL prefix instead of hardcoding it.
+    var detailUrl = '{% url "geography:zone_detail" 0 %}';
+
+    function fetchJSON(url) {
+      return fetch(url).then(function(r) { return r.json(); });
     }
 
     map.on('load', function() {
-      fetch('{% url "geography:zone_overview_geojson" %}')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.features || !data.features.length) return;
+      Promise.all([
+        fetchJSON('{% url "geography:zone_overview_geojson" %}'),
+        fetchJSON('{% url "geography:zone_labels_geojson" %}')
+      ]).then(function(results) {
+        var data = results[0];
+        var labelData = results[1];
+        if (!data.features || !data.features.length) return;
 
-          var bbox = [Infinity, Infinity, -Infinity, -Infinity];
-          data.features.forEach(function(f) {
-            if (f.geometry && f.geometry.coordinates) extend(bbox, f.geometry.coordinates);
-          });
-          if (isFinite(bbox[0])) {
-            map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]], { padding: 40, maxZoom: 13 });
-          }
+        map.addSource(SRC, { type: 'geojson', data: data });
+        map.addSource(LABELS_SRC, { type: 'geojson', data: labelData });
 
-          map.addSource('{{ map_id }}-source', { type: 'geojson', data: data });
+        map.addLayer({
+          id: '{{ map_id }}-fill',
+          type: 'fill',
+          source: SRC,
+          paint: { 'fill-color': COLOR, 'fill-opacity': 0.18 }
+        });
 
-          map.addLayer({
-            id: '{{ map_id }}-fill',
-            type: 'fill',
-            source: '{{ map_id }}-source',
-            paint: { 'fill-color': FILL, 'fill-opacity': 0.18 }
-          });
+        map.addLayer({
+          id: '{{ map_id }}-outline',
+          type: 'line',
+          source: SRC,
+          paint: { 'line-color': COLOR, 'line-width': 1.5, 'line-opacity': 0.9 }
+        });
 
-          map.addLayer({
-            id: '{{ map_id }}-outline',
-            type: 'line',
-            source: '{{ map_id }}-source',
-            paint: { 'line-color': OUTLINE, 'line-width': 1.5, 'line-opacity': 0.9 }
-          });
+        // The always-on label, one per zone regardless of how many polygon
+        // parts it has (zone_labels_geojson is already one point_on_surface
+        // per zone).
+        OH2O.addDetailLabel(map, LABELS_SRC, 'zone', {
+          id: '{{ map_id }}-label',
+          layout: { 'text-allow-overlap': true }
+        });
 
-          // Resolve the detail URL through Django (a sentinel pk we swap out) so
-          // the link tracks the app's URL prefix instead of hardcoding it.
-          var detailUrl = '{% url "geography:zone_detail" 0 %}';
+        // Filter every layer (the fill, the outline and the label) to the
+        // list's pks and frame them: now, and after every htmx swap of
+        // #results.
+        OH2O.followResults(map, {
+          layers: ['{{ map_id }}-fill', '{{ map_id }}-outline', '{{ map_id }}-label'],
+          source: SRC,
+          data: data,
+          pksEl: 'results-map-pks',
+          resultsEl: 'results',
+          padding: { top: 64, bottom: 64, left: 40, right: 40 },
+          maxZoom: 13,
+          singleZoom: 11
+        });
 
-          map.on('click', '{{ map_id }}-fill', function(e) {
-            var p = e.features[0].properties;
-            var sub = (p.zone_type_label ? p.zone_type_label : '') +
-              (p.parcel_count != null
-                ? (p.zone_type_label ? ' &middot; ' : '') + p.parcel_count + ' use area' + (p.parcel_count == 1 ? '' : 's')
-                : '');
-            new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
-              .setLngLat(e.lngLat)
-              .setHTML(
-                '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
-                '<div style="font-weight:600;font-size:13px;">' + p.name + '</div>' +
-                (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
-                '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
-                  'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View zone &rarr;</a>' +
-                '</div>'
-              )
-              .addTo(map);
-          });
+        map.on('click', '{{ map_id }}-fill', function(e) {
+          var p = e.features[0].properties;
+          var sub = (p.zone_type_label ? p.zone_type_label : '') +
+            (p.parcel_count != null
+              ? (p.zone_type_label ? ' &middot; ' : '') + p.parcel_count + ' use area' + (p.parcel_count == 1 ? '' : 's')
+              : '');
+          new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
+            .setLngLat(e.lngLat)
+            .setHTML(
+              '<div style="font-family:var(--font-display,sans-serif);color:#e8edf4;background:#1a1e27;padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
+              '<div style="font-weight:600;font-size:13px;">' + p.name + '</div>' +
+              (sub ? '<div style="color:#8899aa;font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
+              '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
+                'style="display:inline-block;margin-top:6px;color:#38bdf8;text-decoration:none;font-size:11px;">View zone &rarr;</a>' +
+              '</div>'
+            )
+            .addTo(map);
+        });
 
-          map.on('mouseenter', '{{ map_id }}-fill', function() { map.getCanvas().style.cursor = 'pointer'; });
-          map.on('mouseleave', '{{ map_id }}-fill', function() { map.getCanvas().style.cursor = ''; });
-        })
-        .catch(function(err) { console.error('Zones GeoJSON failed:', err); });
+        map.on('mouseenter', '{{ map_id }}-fill', function() { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', '{{ map_id }}-fill', function() { map.getCanvas().style.cursor = ''; });
+      })
+      .catch(function(err) { console.error('Zones GeoJSON failed:', err); });
     });
   }
   if (document.readyState === 'loading') {

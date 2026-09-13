@@ -136,9 +136,23 @@ def zone_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
+    # The map card's head and the map that follows the list (143-07). Every
+    # Zone carries a required ``geometry`` (see the model), so
+    # ``located_count`` always equals ``all_count`` here — the shared head
+    # partial still branches on it because the other overview pages'
+    # geometries are optional. ``result_pks`` is the WHOLE filtered queryset's
+    # pks, never the page's, because OH2O.followResults filters the map to
+    # them.
+    zone_type_label = dict(Zone.ZONE_TYPE_CHOICES).get(zone_type, "")
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
+        "all_count": Zone.objects.count(),
+        "located_count": Zone.objects.count(),
+        "result_pks": list(queryset.values_list("pk", flat=True)),
+        "result_located_count": queryset.count(),
+        "filter_words": f"of type “{zone_type_label}”" if zone_type_label else "",
+        "hx_request": bool(request.headers.get("HX-Request")),
         "q": q,
         "zone_type": zone_type,
         "zone_type_choices": Zone.ZONE_TYPE_CHOICES,
