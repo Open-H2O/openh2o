@@ -1,51 +1,74 @@
-<h2 class="section-header mb-md">Diversion records</h2>
+{% load humanize %}
+{% comment %}
+  143-10 (R-115, R-055, R-112). This partial is the HTMX target of BOTH the
+  full page load (_pod_detail_context) and diversion_record_create's POST
+  response, so the two callers share _group_diversion_records rather than
+  deriving the same water-year groups twice. Columns run Month, Diverted,
+  Return flow, Retained, Type -- rule 1, the equation's own order -- with
+  ONE .col-sep on Retained (rule 3: the kind of number changes there, from
+  what the operator recorded to what the platform worked out) and no Period
+  column: the row-group dividers below say the water year once per group
+  (rule 7) instead of repeating it on every row. Retained/To storage, never
+  "consumed" (DESIGN.md rule 12, ISS-153) -- the Type cell keeps the same
+  return-flow badges the page has always carried, now beside the diversion
+  type instead of wrapped inside the Retained figure.
+{% endcomment %}
+<div class="ledger-card-head">
+  <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Diversion records</h2>
+  <div class="text-secondary text-base">{{ diversion_records|length }} record{{ diversion_records|length|pluralize }} over {{ record_groups|length }} water year{{ record_groups|length|pluralize }}.</div>
+  <div class="text-secondary text-base">Acre-feet. Each year's row adds its own months; nothing is added across years.</div>
+</div>
 {% if period_warning %}
-<p class="text-sm mb-md text-deficit" role="alert">{{ period_warning }}</p>
+<p class="text-sm mb-md text-deficit" role="alert" style="padding: 0 var(--space-lg);">{{ period_warning }}</p>
 {% endif %}
-{% if diversion_records %}
-<table class="data-table text-sm">
+{% if record_groups %}
+<div class="table-scroll">
+<table class="data-table text-sm data-table--grouped">
   <thead>
     <tr>
       <th>Month</th>
-      <th class="th-right">Diverted (AF)</th>
-      <th class="th-right">Return Flow (AF)</th>
-      <th class="th-right">Retained (AF)</th>
-      <th>Period</th>
+      <th class="th-right">Diverted</th>
+      <th class="th-right"><span class="th-stack">Return flow</span></th>
+      <th class="th-right col-sep">Retained</th>
+      <th>Type</th>
     </tr>
   </thead>
   <tbody>
-    {% for record in diversion_records %}
+    {% for group in record_groups %}
+    <tr class="row-group">
+      <td colspan="5">{{ group.period_name }} &middot; {{ group.count }} month{{ group.count|pluralize }}</td>
+    </tr>
+    {% for record in group.rows %}
     <tr>
       <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
-      <td class="td-num">{{ record.volume_acre_feet|floatformat:2 }}</td>
-      <td class="td-num text-secondary">{{ record.returned_af|floatformat:2 }}</td>
-      <td class="td-num">
-        {{ record.consumed_acre_feet|floatformat:2 }}
-        {% comment %}
-          Retained = diverted minus returned to stream (DESIGN.md rule 12). Whether
-          retained water was delivered to a field or taken to storage is the
-          record's diversion_type, and only delivered water can be consumed: the
-          column used to claim consumption over recharge water spread into a
-          basin (ISS-153). The type branch comes first; the two return-flow badges
-          below it are about the returned part and keep their meaning.
-        {% endcomment %}
-        {% if record.diversion_type == "to_storage" %}
-        <span class="badge badge-teal" title="The retained volume was taken to storage: spread for recharge, banked, and not consumed.">To storage</span>
-        {% elif record.is_non_consumptive %}
+      <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
+      <td class="td-num text-secondary">{{ record.returned_af|floatformat:2|intcomma }}</td>
+      <td class="td-num col-sep">{{ record.consumed_acre_feet|floatformat:2|intcomma }}</td>
+      <td class="text-tertiary text-xs">
+        {{ record.get_diversion_type_display }}
+        {% if record.is_non_consumptive %}
         <span class="badge badge-teal" title="Returned volume equals the diverted volume, so nothing counts as consumed. Hydropower and other passthroughs record this way.">Non-consumptive (returned to stream)</span>
         {% elif record.is_partial_return %}
         <span class="badge badge-blue" title="Part of the diverted volume is returned to the stream; only the remainder is consumed.">Partial return</span>
         {% endif %}
       </td>
-      <td class="text-tertiary">
-        {% if record.reporting_period %}{{ record.reporting_period.name }}{% else %}—{% endif %}
-      </td>
+    </tr>
+    {% endfor %}
+    <tr class="row-subtotal">
+      <td class="tfoot-total">All {{ group.count }} month{{ group.count|pluralize }}, {{ group.period_name }}</td>
+      <td class="td-num-bold td-total">{{ group.diverted|floatformat:2|intcomma }}</td>
+      <td class="td-num-bold td-total">{{ group.returned|floatformat:2|intcomma }}</td>
+      <td class="td-num-bold td-total col-sep">{{ group.retained|floatformat:2|intcomma }}</td>
+      <td></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
-  <p class="text-tertiary text-sm">No diversion records yet.</p>
+  <p class="text-tertiary text-sm" style="padding: 0 var(--space-lg) var(--space-lg);">No diversion records yet.</p>
 {% endif %}
 
+<div style="max-width: 640px; padding: 0 var(--space-lg) var(--space-lg);">
 {% include "surface/partials/_diversion_form.html" %}
+</div>

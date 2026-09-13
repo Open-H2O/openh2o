@@ -9,6 +9,7 @@ and water_right_detail expose the underlying entitlements, diversion_record_crea
 records a diversion event, and pods_geojson feeds the diversion map.
 """
 import json
+from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -20,6 +21,7 @@ from django.views.decorators.http import require_POST
 from core.access import public_in_open_demo
 
 from accounting.models import ReportingPeriod
+from accounting.services import current_period_id as compute_current_period_id
 from core.modules import is_enabled
 from core.workspace import detail_response, list_response
 from surface.forms import DiversionRecordForm
@@ -30,6 +32,54 @@ from surface.models import (
     PointOfDiversionParcel,
     WaterRight,
 )
+
+
+# ---------------------------------------------------------------------------
+# 143-10: the water-year grouping shared by the diversion page, its add-record
+# view, and the water right page. Rule 7 (DESIGN.md): two kinds of row are
+# said once, with a divider naming the condition (a reporting period covers
+# these rows), never a note repeated on every one. The list handed in MUST
+# already be ordered so a reporting period's rows are contiguous (``-month``
+# alone for a POD, which carries one diversion_type per record per month;
+# ``-month, point_of_diversion__name`` for a right's records, R-122, so ties
+# in a month read in POD-name order) -- this function does not re-sort, it
+# only partitions what it is given, so it never disagrees with the table it
+# groups (ISS-154, 137-02; 143-05: the panel's figures are the SAME queryset
+# the table prints, never a second derivation).
+# ---------------------------------------------------------------------------
+def _group_diversion_records(records):
+    """Partition ordered ``DiversionRecord`` rows into water-year groups.
+
+    Each group carries its own ``diverted`` / ``returned`` / ``retained``
+    sums and ``count``, computed once in Python from the rows already
+    fetched -- never a second query. A record with no reporting period
+    (its FK is null) closes into its own "No water year assigned" group
+    rather than being silently dropped or merged into a neighbour.
+    """
+    groups = []
+    current = None
+    for record in records:
+        period = record.reporting_period
+        period_key = period.pk if period else None
+        if current is None or current["period_key"] != period_key:
+            current = {
+                "period_key": period_key,
+                "period": period,
+                "period_name": period.name if period else "No water year assigned",
+                "rows": [],
+                "diverted": Decimal("0"),
+                "returned": Decimal("0"),
+                "retained": Decimal("0"),
+                "count": 0,
+            }
+            groups.append(current)
+        current["rows"].append(record)
+        current["diverted"] += abs(record.volume_acre_feet)
+        current["returned"] += record.returned_af
+        current["count"] += 1
+    for group in groups:
+        group["retained"] = group["diverted"] - group["returned"]
+    return groups
 
 
 # ---------------------------------------------------------------------------
@@ -99,21 +149,49 @@ def _pod_detail_context(pod):
     Shared by the standalone detail page, the in-pane HTMX render, and the
     workspace's pre-loaded ``?selected=`` pane so all three are identical.
     """
-    # Diversion records for this POD
-    diversion_records = (
+    # Diversion records for this POD, oldest-year-last so a reporting period's
+    # rows stay contiguous for _group_diversion_records.
+    diversion_records = list(
         DiversionRecord.objects
         .filter(point_of_diversion=pod)
         .select_related("reporting_period")
         .order_by("-month")
     )
 
-    # Linked use areas (parcel connections)
-    pod_parcels = (
+    # 143-10 (R-115, R-055): the table's own water-year groups, and the
+    # CURRENT period's figures read off that SAME grouping -- no second
+    # query, so the lead panel can never disagree with the table under it
+    # (a guard asserts this). accounting.services.current_period_id is the
+    # helper 143-06 extracted so the diversion page, the zone page and the
+    # ledger land on the same idea of "current" (surface `requires`
+    # accounting, core/modules.py, so this import needs no module gate).
+    record_groups = _group_diversion_records(diversion_records)
+    current_period_pk = compute_current_period_id()
+    current_period = (
+        ReportingPeriod.objects.filter(pk=current_period_pk).first()
+        if current_period_pk is not None
+        else None
+    )
+    current_totals = next(
+        (
+            g for g in record_groups
+            if g["period_key"] == (current_period.pk if current_period else None)
+        ),
+        None,
+    )
+
+    # Linked use areas (parcel connections). share_percent is computed here,
+    # not with {% widthratio %} in the template (143-10, Task 4's same rule
+    # for the well's irrigated-parcel share): a whole percent of this POD's
+    # deliveries the parcel receives.
+    pod_parcels = list(
         PointOfDiversionParcel.objects
         .filter(point_of_diversion=pod)
         .select_related("parcel")
         .order_by("parcel__parcel_number")
     )
+    for pp in pod_parcels:
+        pp.share_percent = round(float(pp.fraction) * 100)
 
     # Recharge areas this diversion fills (Phase 62). For a dual-purpose Merced
     # River diversion this lists the Flood-MAR areas it floods, right next to the
@@ -165,6 +243,9 @@ def _pod_detail_context(pod):
     return {
         "pod": pod,
         "diversion_records": diversion_records,
+        "record_groups": record_groups,
+        "current_period": current_period,
+        "current_totals": current_totals,
         "pod_parcels": pod_parcels,
         "basin_links": basin_links,
         "rediverted_from": rediverted_from,
@@ -229,16 +310,37 @@ def diversion_record_create(request, pk):
     # On an invalid submit, `form` is still the BOUND form: re-rendering it
     # preserves the user's typed values and surfaces the field errors, so a
     # failed save reads as a visible error rather than a silent reset.
-    diversion_records = (
+    diversion_records = list(
         DiversionRecord.objects
         .filter(point_of_diversion=pod)
         .select_related("reporting_period")
         .order_by("-month")
     )
 
+    # 143-10: the same grouping _pod_detail_context uses, so a POST that
+    # swaps this partial back in renders the identical shape (row-group
+    # dividers, subtotal rows) the full page load does.
+    record_groups = _group_diversion_records(diversion_records)
+    current_period_pk = compute_current_period_id()
+    current_period = (
+        ReportingPeriod.objects.filter(pk=current_period_pk).first()
+        if current_period_pk is not None
+        else None
+    )
+    current_totals = next(
+        (
+            g for g in record_groups
+            if g["period_key"] == (current_period.pk if current_period else None)
+        ),
+        None,
+    )
+
     return render(request, "surface/partials/_diversion_records.html", {
         "pod": pod,
         "diversion_records": diversion_records,
+        "record_groups": record_groups,
+        "current_period": current_period,
+        "current_totals": current_totals,
         "form": form,
         "period_warning": period_warning,
     })
@@ -308,12 +410,57 @@ def _water_right_detail_context(water_right):
     """
     pods = PointOfDiversion.objects.filter(water_right=water_right).order_by("name")
 
-    # Recent diversion records through PODs, last 12
-    recent_diversions = (
+    # 143-10 (R-121, R-122, R-055): every record, not the last 12 -- a
+    # right's records are monthly per point, a few dozen a year, so the
+    # count belongs in the card head rather than a silent truncation.
+    # Ordered by month, then by POD name (R-122): the previous "-month" alone
+    # left ties between two PODs recording in the same month swap order from
+    # render to render, because the database gives no guarantee for equal
+    # keys with no secondary sort.
+    all_records = list(
         DiversionRecord.objects.filter(point_of_diversion__water_right=water_right)
         .select_related("point_of_diversion")
-        .order_by("-month")[:12]
+        .order_by("-month", "point_of_diversion__name")
     )
+    record_groups = _group_diversion_records(all_records)
+    current_period_pk = compute_current_period_id()
+    current_period = (
+        ReportingPeriod.objects.filter(pk=current_period_pk).first()
+        if current_period_pk is not None
+        else None
+    )
+    current_totals = next(
+        (
+            g for g in record_groups
+            if g["period_key"] == (current_period.pk if current_period else None)
+        ),
+        None,
+    )
+
+    # Remaining = face value less the current period's recorded volume,
+    # across every point of diversion under this right -- never re-derived
+    # from anything but the SAME rows the table under the panel prints
+    # (ISS-154, 137-02; 143-05).
+    remaining = None
+    if water_right.face_value_acre_feet is not None:
+        diverted_so_far = current_totals["diverted"] if current_totals else Decimal("0")
+        remaining = water_right.face_value_acre_feet - diverted_so_far
+
+    # "By point of diversion": the current period's rows broken down by the
+    # POD that recorded them, so the panel's Recorded segment can show where
+    # the sum came from without a second query against the database.
+    pod_breakdown = []
+    if current_totals:
+        totals_by_pod = {}
+        for record in current_totals["rows"]:
+            name = record.point_of_diversion.name
+            totals_by_pod[name] = totals_by_pod.get(name, Decimal("0")) + abs(
+                record.volume_acre_feet
+            )
+        pod_breakdown = [
+            {"name": name, "total": total}
+            for name, total in sorted(totals_by_pod.items())
+        ]
 
     # Active curtailments that affect this right (priority_date_cutoff >= this right's priority_date)
     active_curtailments = []
@@ -342,7 +489,12 @@ def _water_right_detail_context(water_right):
     return {
         "water_right": water_right,
         "pods": pods,
-        "recent_diversions": recent_diversions,
+        "record_groups": record_groups,
+        "record_count": len(all_records),
+        "current_period": current_period,
+        "current_totals": current_totals,
+        "remaining": remaining,
+        "pod_breakdown": pod_breakdown,
         "active_curtailments": active_curtailments,
         "pods_geojson": pods_geojson,
     }

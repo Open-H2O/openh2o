@@ -1,4 +1,4 @@
-{% load placeholders %}{% comment %}
+{% load placeholders humanize %}{% comment %}
   Per-POD detail BODY for the standalone pod_detail.html page, which includes it.
   pod_detail() also hands it to detail_response() as the pane_template, so an
   HTMX request for a POD would get this fragment on its own — but no page makes
@@ -31,18 +31,26 @@
 </div>
 {% endif %}
 
+{% comment %}
+  143-10 (R-115, R-055, R-112). Composed as a page at 1,730 CSS px, reusing
+  the account page's grid UNCHANGED (143-03's .page-grid-account*): Diversion
+  point information beside Water diverted at one height (the checkpoint's
+  zone-lead ruling, 143-06, copied here), the records table full width below,
+  then the linked-parcels row and the compliance strip. The previous
+  .page-grid-2col put POD info, water journey, records and compliance in one
+  tall left column beside a right column that ended a third of the way down
+  (R-112) -- no worked shape here to copy from; the account grid is.
+{% endcomment %}
 <div class="pane-stack">
-  <div class="page-grid-2col">
+  <div class="page-grid-account">
 
-    <!-- Left column: POD Info + Water Journey + Diversion Records + Compliance -->
-    <div class="page-stack">
+    <!-- Diversion point information (+ Water journey, when this POD re-diverts) -->
+    <div class="card-raised page-grid-account-info">
+      <h2 class="section-header">
+        Diversion point information {% include "partials/_demo_marker.html" %}
+      </h2>
 
-      <!-- POD Info card -->
-      <div class="card-raised">
-        <h2 class="section-header">
-          Diversion point information {% include "partials/_demo_marker.html" %}
-        </h2>
-
+      <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Name</div>
           <div class="field-value">{{ pod.name }}</div>
@@ -66,124 +74,135 @@
         </div>
 
         {% if pod.notes %}
-        <div class="field-group">
+        <div class="field-group field-grid-2-span">
           <div class="field-label">Notes</div>
           <div class="text-secondary text-base">{{ pod.notes }}</div>
         </div>
         {% endif %}
       </div>
 
-      {% comment %} Water Journey card (Phase 67-03) — only when this POD is part of a
-           re-diversion chain, so ordinary diversion points are unaffected. {% endcomment %}
+      {% comment %}
+        Water Journey (Phase 67-03) joins THIS card under its own header
+        rather than a separate one (143-10): only shown for a POD that is
+        part of a re-diversion chain, so an ordinary diversion point's card
+        ends at its fields.
+      {% endcomment %}
       {% if rediverted_from or rediversions %}
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Water journey</h2>
-        <p class="text-secondary text-sm" style="margin-bottom: var(--space-md);">
-          Water taken at one point can be partly or fully returned to the stream and
-          re-diverted further downstream. This traces the journey one hop at a time.
-        </p>
+      <h2 class="section-header mt-lg">Water journey</h2>
+      <p class="text-secondary text-sm mb-md">
+        Water taken at one point can be partly or fully returned to the stream and
+        re-diverted further downstream. This traces the journey one hop at a time.
+      </p>
 
-        {% if rediverted_from %}
-        <div class="field-group">
-          <div class="field-label">Re-diverts from (upstream source)</div>
-          <div class="field-value">
-            <a href="{% url 'surface:pod_detail' rediverted_from.pk %}" class="data-table-link">
-              {{ rediverted_from.name }}
-            </a>
-            {% if rediverted_from.stream_name %}
-            <span class="text-tertiary text-sm">&mdash; {{ rediverted_from.stream_name }}</span>
-            {% endif %}
-          </div>
+      {% if rediverted_from %}
+      <div class="field-group">
+        <div class="field-label">Re-diverts from (upstream source)</div>
+        <div class="field-value">
+          <a href="{% url 'surface:pod_detail' rediverted_from.pk %}" class="data-table-link">
+            {{ rediverted_from.name }}
+          </a>
+          {% if rediverted_from.stream_name %}
+          <span class="text-tertiary text-sm">&mdash; {{ rediverted_from.stream_name }}</span>
+          {% endif %}
         </div>
-        {% endif %}
-
-        {% if rediversions %}
-        <div class="field-group">
-          <div class="field-label">Re-diverted downstream by</div>
-          <div class="field-value">
-            <ul style="list-style: none; padding: 0; margin: 0;">
-              {% for r in rediversions %}
-              <li class="mt-xs"{% if not forloop.first %}{% endif %}>
-                <a href="{% url 'surface:pod_detail' r.pk %}" class="data-table-link">{{ r.name }}</a>
-                {% if r.stream_name %}
-                <span class="text-tertiary text-sm">&mdash; {{ r.stream_name }}</span>
-                {% endif %}
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-        {% endif %}
       </div>
       {% endif %}
 
-      <!-- Diversion Records card -->
-      <div class="card-raised" id="diversion-records-section">
-        {% include "surface/partials/_diversion_records.html" %}
+      {% if rediversions %}
+      <div class="field-group">
+        <div class="field-label">Re-diverted downstream by</div>
+        <div class="field-value">
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for r in rediversions %}
+            <li class="mt-xs">
+              <a href="{% url 'surface:pod_detail' r.pk %}" class="data-table-link">{{ r.name }}</a>
+              {% if r.stream_name %}
+              <span class="text-tertiary text-sm">&mdash; {{ r.stream_name }}</span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
       </div>
-
-      <!-- Compliance Details (collapsible) -->
-      <div class="card-raised">
-        <details>
-          <summary class="section-header" style="cursor: pointer; list-style: none; display: flex; align-items: center; gap: var(--space-sm);">
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-tertiary">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-            Compliance details
-          </summary>
-          <div class="mt-md">
-            {% if water_right %}
-              <div class="field-group">
-                <div class="field-label">Right ID</div>
-                <div class="field-value">
-                  <a href="{% url 'surface:detail' water_right.pk %}" class="data-table-link text-mono" style="font-size: 0.8125rem;">
-                    {{ water_right.right_id }}
-                  </a>
-                </div>
-              </div>
-              <div class="field-group">
-                <div class="field-label">Holder</div>
-                <div class="field-value">{{ water_right.holder_name|blank }}</div>
-              </div>
-              <div class="field-group">
-                <div class="field-label">Right type</div>
-                <div class="field-value">{{ water_right.right_type|blank }}</div>
-              </div>
-              {% if water_right.priority_date %}
-              <div class="field-group">
-                <div class="field-label">Priority date</div>
-                <div class="field-value">{{ water_right.priority_date|date:"M d, Y" }}</div>
-              </div>
-              {% endif %}
-              {% if water_right.face_value_acre_feet %}
-              <div class="field-group">
-                <div class="field-label">Face value (AF)</div>
-                <div class="field-value">{{ water_right.face_value_acre_feet|floatformat:2 }}</div>
-              </div>
-              {% endif %}
-              <div class="field-group">
-                <div class="field-label">Status</div>
-                <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
-              </div>
-              {% if basin_links %}
-              {% comment %} 136-02: a right-holding intake that feeds basins. Rule 12's words —
-                   Retained / To storage — not "consumptive". {% endcomment %}
-              <p class="text-secondary text-sm mt-xs">Recharge diversion. Water retained here is taken to storage in the basins below, not consumed.</p>
-              {% endif %}
-            {% elif basin_links %}
-              <p class="text-secondary text-sm">Recharge diversion. It feeds a recharge basin rather than a consumptive use, and no water right is linked.</p>
-            {% else %}
-              <p class="text-secondary text-sm">No water right linked. This diversion point operates without a formal water right permit.</p>
-              <p class="text-tertiary text-xs mt-xs">CalWATRS reports will flag this diversion as [INCOMPLETE].</p>
-            {% endif %}
-          </div>
-        </details>
-      </div>
-
+      {% endif %}
+      {% endif %}
     </div>
 
-    <!-- Right column: Linked Use Areas + Recharge Areas Filled -->
-    <div class="page-stack">
+    {% comment %}
+      The lead panel: Diverted minus Return flow equals Retained, for the
+      CURRENT water year only (accounting.services.current_period_id, the
+      same helper the zone page and the allocations list read). The panel's
+      figures are current_totals, the SAME group _pod_detail_context builds
+      the table from -- never a second query, so a guard can assert the two
+      can never disagree. The head names the thing (rule 8), not "Diversion
+      records" (that is the table's own head below).
+    {% endcomment %}
+    <div class="card-raised page-grid-account-balance">
+      <div class="page-grid-account-head mb-md">
+        <h2 class="section-header-flush">Water diverted</h2>
+        <div class="text-secondary text-base">
+          {% if current_period %}
+            {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }} &middot; Retained is the diverted volume less the return flow.{% else %}No records in {{ current_period.name }}.{% endif %}
+          {% else %}
+            No water year on record.
+          {% endif %}
+        </div>
+      </div>
+      {% if current_totals %}
+      <div class="budget-panel">
+        <div class="budget-panel-body">
+          <div class="budget-panel-row">
+            <div class="budget-seg">
+              <div class="budget-seg-label">Diverted</div>
+              <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+              <div class="budget-seg-caption">recorded at this point, {{ current_period.name }}</div>
+            </div>
+            <div class="budget-op">&minus;</div>
+            <div class="budget-seg">
+              <div class="budget-seg-label">Return flow</div>
+              <div class="budget-seg-value">{{ current_totals.returned|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+              <div class="budget-seg-caption">returned to the stream, {{ current_period.name }}</div>
+            </div>
+            <div class="budget-op">&equals;</div>
+            <div class="budget-seg budget-seg--result">
+              <div class="budget-seg-label">Retained</div>
+              <div class="budget-seg-value {% if current_totals.retained >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ current_totals.retained|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+              <div class="budget-seg-notes"><p class="text-tertiary">Diverted less returned, {{ current_period.name }}.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="budget-panel">
+        <div class="budget-panel-body">
+          <div class="budget-panel-row">
+            <div class="budget-seg">
+              <div class="budget-seg-label">Diverted</div>
+              <div class="budget-seg-value text-tertiary">&mdash;</div>
+            </div>
+            <div class="budget-op">&minus;</div>
+            <div class="budget-seg">
+              <div class="budget-seg-label">Return flow</div>
+              <div class="budget-seg-value text-tertiary">&mdash;</div>
+            </div>
+            <div class="budget-op">&equals;</div>
+            <div class="budget-seg budget-seg--result">
+              <div class="budget-seg-label">Retained</div>
+              <div class="budget-seg-value text-tertiary">&mdash;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Diversion Records: full width, still #diversion-records-section and still the diversion_record_create HTMX target -->
+    <div class="card-raised page-grid-account-full" style="padding: 0;" id="diversion-records-section">
+      {% include "surface/partials/_diversion_records.html" %}
+    </div>
+
+    <!-- Linked use areas + Recharge areas filled, side by side -->
+    <div class="page-grid-2col page-grid-account-full">
 
       <!-- Linked Use Areas card -->
       <div class="card-raised">
@@ -194,7 +213,7 @@
             <tr>
               <th>Parcel</th>
               <th>Owner</th>
-              <th class="th-right">Fraction</th>
+              <th class="th-right">Share of deliveries</th>
             </tr>
           </thead>
           <tbody>
@@ -206,7 +225,7 @@
                 </a>
               </td>
               <td class="text-secondary">{{ pp.parcel.owner_name|blank }}</td>
-              <td class="td-num text-secondary">{{ pp.fraction }}</td>
+              <td class="td-num text-secondary">{{ pp.share_percent }}%</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -254,6 +273,65 @@
       {% endif %}
 
     </div>
+
+    <!-- Compliance Details (collapsible), full width under the row above -->
+    <div class="card-raised page-grid-account-full">
+      <details>
+        <summary class="section-header" style="cursor: pointer; list-style: none; display: flex; align-items: center; gap: var(--space-sm);">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-tertiary">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          Compliance details
+        </summary>
+        <div class="mt-md">
+          {% if water_right %}
+            <div class="field-group">
+              <div class="field-label">Right ID</div>
+              <div class="field-value">
+                <a href="{% url 'surface:detail' water_right.pk %}" class="data-table-link text-mono" style="font-size: 0.8125rem;">
+                  {{ water_right.right_id }}
+                </a>
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">Holder</div>
+              <div class="field-value">{{ water_right.holder_name|blank }}</div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">Right type</div>
+              <div class="field-value">{{ water_right.right_type|blank }}</div>
+            </div>
+            {% if water_right.priority_date %}
+            <div class="field-group">
+              <div class="field-label">Priority date</div>
+              <div class="field-value">{{ water_right.priority_date|date:"M d, Y" }}</div>
+            </div>
+            {% endif %}
+            {% if water_right.face_value_acre_feet %}
+            <div class="field-group">
+              <div class="field-label">Face value (AF)</div>
+              <div class="field-value">{{ water_right.face_value_acre_feet|floatformat:2|intcomma }}</div>
+            </div>
+            {% endif %}
+            <div class="field-group">
+              <div class="field-label">Status</div>
+              <div style="margin-top: 2px;">{% include "surface/partials/_status_badge.html" with status=water_right.status %}</div>
+            </div>
+            {% if basin_links %}
+            {% comment %} 136-02: a right-holding intake that feeds basins. Rule 12's words —
+                 Retained / To storage — not "consumptive". {% endcomment %}
+            <p class="text-secondary text-sm mt-xs">Recharge diversion. Water retained here is taken to storage in the basins below, not consumed.</p>
+            {% endif %}
+          {% elif basin_links %}
+            <p class="text-secondary text-sm">Recharge diversion. It feeds a recharge basin rather than a consumptive use, and no water right is linked.</p>
+          {% else %}
+            <p class="text-secondary text-sm">No water right linked. This diversion point operates without a formal water right permit.</p>
+            <p class="text-tertiary text-xs mt-xs">CalWATRS reports will flag this diversion as [INCOMPLETE].</p>
+          {% endif %}
+        </div>
+      </details>
+    </div>
+
   </div>
 </div>
 

@@ -7,7 +7,7 @@
   OH2O.detailPaneMap frames the map across all of them and the onMapLoad hook lays
   the river/canal flowlines substrate beneath the points.
 {% endcomment %}
-{% load static placeholders %}
+{% load static placeholders humanize %}
 
 {% if not on_full_page %}
 <!-- Detail header: which water right you're looking at. -->
@@ -22,16 +22,21 @@
 </div>
 {% endif %}
 
+{% comment %}
+  143-10 (R-121, R-122, R-055). Composed as a page at 1,730 CSS px, reusing
+  the account page's grid UNCHANGED: Right information beside "Face value
+  against records" at one height, the records table full width below
+  (grouped by water year, every record now, not just the last 12), then
+  Points of diversion and Active curtailments side by side.
+{% endcomment %}
 <div class="pane-stack">
-  <div class="page-grid-2col">
+  <div class="page-grid-account">
 
-    <!-- Left column: Right Info + Points of Diversion + Curtailments -->
-    <div class="page-stack">
+    <!-- Right Info card -->
+    <div class="card-raised page-grid-account-info">
+      <h2 class="section-header">Right information</h2>
 
-      <!-- Right Info card -->
-      <div class="card-raised">
-        <h2 class="section-header">Right information</h2>
-
+      <div class="field-grid-2">
         <div class="field-group">
           <div class="field-label">Right ID</div>
           <div class="field-value-mono">{{ water_right.right_id }}</div>
@@ -53,7 +58,7 @@
             {% include "partials/_help_tooltip.html" with label="Priority Date" text="The date establishing seniority. Earlier dates have higher priority during shortages." %}
           </div>
           <div class="field-value">
-            {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}—{% endif %}
+            {% if water_right.priority_date %}{{ water_right.priority_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}
           </div>
         </div>
 
@@ -63,7 +68,7 @@
             {% include "partials/_help_tooltip.html" with label="Face Value" text="The maximum amount of water authorized by the right, in acre-feet per year." %}
           </div>
           <div class="field-value">
-            {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2 }}{% else %}—{% endif %}
+            {% if water_right.face_value_acre_feet %}{{ water_right.face_value_acre_feet|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
           </div>
         </div>
 
@@ -85,20 +90,175 @@
         </div>
 
         {% if water_right.notes %}
-        <div class="field-group">
+        <div class="field-group field-grid-2-span">
           <div class="field-label">Notes</div>
-          <div class="text-secondary text-base">{{ water_right.notes }}</div>
+          <div class="field-value">{{ water_right.notes }}</div>
         </div>
         {% endif %}
+      </div>
 
-        <div class="border-separator">
-          <div class="text-tertiary text-xs">
-            Created {{ water_right.created_at|date:"M d, Y" }} &middot; Updated {{ water_right.updated_at|date:"M d, Y" }}
-          </div>
+      <div class="border-separator">
+        <div class="text-tertiary text-xs">
+          Created {{ water_right.created_at|date:"M d, Y" }} &middot; Updated {{ water_right.updated_at|date:"M d, Y" }}
+        </div>
+      </div>
+    </div>
+
+    {% comment %}
+      The lead panel: Face value minus Recorded equals Remaining, for the
+      current water year, across every point of diversion this right holds.
+      Recorded and its "By point of diversion" breakdown come from
+      current_totals, the SAME group _water_right_detail_context builds the
+      table from below -- no second query. Without a face value, the period
+      page's shape: one --result (Recorded alone), no operators.
+    {% endcomment %}
+    <div class="card-raised page-grid-account-balance">
+      <div class="page-grid-account-head mb-md">
+        <h2 class="section-header-flush">Face value against records</h2>
+        <div class="text-secondary text-base">
+          {% if water_right.face_value_acre_feet %}
+            {% if current_period %}
+              {% if current_totals %}{{ current_period.name }} &middot; {{ current_totals.count }} record{{ current_totals.count|pluralize }} &middot; Remaining is the face value less the volume recorded.{% else %}No records in {{ current_period.name }}.{% endif %}
+            {% else %}
+              No water year on record.
+            {% endif %}
+          {% else %}
+            No face value is on record for this right.
+          {% endif %}
         </div>
       </div>
 
-      <!-- Points of Diversion card -->
+      {% if water_right.face_value_acre_feet %}
+        {% if current_totals %}
+        <div class="budget-panel">
+          <div class="budget-panel-body">
+            <div class="budget-panel-row">
+              <div class="budget-seg">
+                <div class="budget-seg-label">Face value</div>
+                <div class="budget-seg-value">{{ water_right.face_value_acre_feet|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+                <div class="budget-seg-caption">authorised per year, from the right's record</div>
+              </div>
+              <div class="budget-op">&minus;</div>
+              <div class="budget-seg">
+                <div class="budget-seg-label">Recorded</div>
+                <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+                <div class="budget-seg-caption">diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
+                {% if pod_breakdown %}
+                <div class="budget-breakdown-group">
+                  <div class="budget-breakdown-title">By point of diversion</div>
+                  {% for row in pod_breakdown %}
+                  <div class="budget-breakdown-row"><span>{{ row.name }}</span><b>{{ row.total|floatformat:2|intcomma }}</b></div>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="budget-op">&equals;</div>
+              <div class="budget-seg budget-seg--result">
+                <div class="budget-seg-label">Remaining</div>
+                <div class="budget-seg-value {% if remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ remaining|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+                <div class="budget-seg-notes"><p class="text-tertiary">Face value less the volume recorded, {{ current_period.name }}.</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="budget-panel">
+          <div class="budget-panel-body">
+            <div class="budget-panel-row">
+              <div class="budget-seg">
+                <div class="budget-seg-label">Face value</div>
+                <div class="budget-seg-value">{{ water_right.face_value_acre_feet|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+              </div>
+              <div class="budget-op">&minus;</div>
+              <div class="budget-seg">
+                <div class="budget-seg-label">Recorded</div>
+                <div class="budget-seg-value text-tertiary">&mdash;</div>
+              </div>
+              <div class="budget-op">&equals;</div>
+              <div class="budget-seg budget-seg--result">
+                <div class="budget-seg-label">Remaining</div>
+                <div class="budget-seg-value text-tertiary">&mdash;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      {% else %}
+      <div class="budget-panel period-panel">
+        <div class="budget-panel-body">
+          <div class="budget-panel-row">
+            <div class="budget-seg budget-seg--result">
+              <div class="budget-seg-label">Recorded</div>
+              {% if current_totals %}
+              <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
+              <div class="budget-seg-caption">diverted at {{ pod_breakdown|length }} point{{ pod_breakdown|length|pluralize }}, {{ current_period.name }}</div>
+              {% else %}
+              <div class="budget-seg-value text-tertiary">&mdash;</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% comment %}
+      Records: full width, grouped by water year with closing subtotal rows
+      (rule 7), no tfoot. Every record on the right now, not the last 12 --
+      the count moves into the card head instead of a silent truncation.
+      R-122: ordered "-month, point_of_diversion__name" in the view, so two
+      PODs recording in the same month read in a stable, POD-name order.
+    {% endcomment %}
+    <div class="card-raised page-grid-account-full" style="padding: 0;">
+      <div class="ledger-card-head">
+        <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Diversion records</h2>
+        <div class="text-secondary text-base">{{ record_count }} record{{ record_count|pluralize }} over {{ record_groups|length }} water year{{ record_groups|length|pluralize }}. Acre-feet.</div>
+      </div>
+      {% if record_groups %}
+      <div class="table-scroll">
+      <table class="data-table text-sm data-table--grouped">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Point of diversion</th>
+            <th class="th-right">Diverted</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in record_groups %}
+          <tr class="row-group">
+            <td colspan="4">{{ group.period_name }} &middot; {{ group.count }} record{{ group.count|pluralize }}</td>
+          </tr>
+          {% for record in group.rows %}
+          <tr>
+            <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
+            <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
+            <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
+            <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="row-subtotal">
+            <td class="tfoot-total" colspan="2">All {{ group.count }} record{{ group.count|pluralize }}, {{ group.period_name }}</td>
+            <td class="td-num-bold td-total">{{ group.diverted|floatformat:2|intcomma }}</td>
+            <td></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+        <p class="text-tertiary text-base" style="padding: 0 var(--space-lg) var(--space-lg);">No diversion records yet.</p>
+      {% endif %}
+    </div>
+
+    {% comment %}
+      Points of diversion + Active curtailments, side by side when a
+      curtailment applies; otherwise Points of diversion spans full width
+      rather than sitting alone in a half-width column beside nothing.
+    {% endcomment %}
+    {% if active_curtailments %}
+    <div class="page-grid-2col page-grid-account-full">
       <div class="card-raised">
         <h2 class="section-header mb-md">Points of diversion</h2>
         {% if pods %}
@@ -121,8 +281,6 @@
         {% endif %}
       </div>
 
-      <!-- Curtailment Status card -->
-      {% if active_curtailments %}
       <div class="card-raised">
         <h2 class="section-header mb-md text-accent">
           Active curtailments affecting this right
@@ -148,43 +306,31 @@
         </div>
         {% endfor %}
       </div>
+    </div>
+    {% else %}
+    <div class="card-raised page-grid-account-full">
+      <h2 class="section-header mb-md">Points of diversion</h2>
+      {% if pods %}
+        {% for pod in pods %}
+        <div class="item-row">
+          <div class="row-between" style="margin-bottom: 2px;">
+            <a href="{% url 'surface:pod_detail' pod.pk %}" class="data-table-link field-value-sm" style="font-weight: 600;">{{ pod.name }}</a>
+            {% include "surface/partials/_status_badge.html" with status=pod.status %}
+          </div>
+          {% if pod.stream_name %}
+            <div class="text-tertiary text-xs">{{ pod.stream_name }}</div>
+          {% endif %}
+          {% if pod.max_rate_cfs %}
+            <div class="text-tertiary text-xs">Max rate: {{ pod.max_rate_cfs|floatformat:2 }} cfs</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-tertiary text-base">No points of diversion recorded.</p>
       {% endif %}
-
     </div>
+    {% endif %}
 
-    <!-- Right column: Recent Diversion Records -->
-    <div class="page-stack">
-
-      <!-- Recent Diversion Records card -->
-      <div class="card-raised">
-        <h2 class="section-header mb-md">Recent diversion records</h2>
-        {% if recent_diversions %}
-        <table class="data-table text-sm">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th>POD</th>
-              <th class="th-right">Volume (AF)</th>
-              <th>Type</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for record in recent_diversions %}
-            <tr>
-              <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
-              <td class="text-secondary">{{ record.point_of_diversion.name }}</td>
-              <td class="td-num">{{ record.volume_acre_feet|floatformat:2 }}</td>
-              <td class="text-tertiary">{{ record.get_diversion_type_display }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-          <p class="text-tertiary text-base">No diversion records yet.</p>
-        {% endif %}
-      </div>
-
-    </div>
   </div>
 </div>
 

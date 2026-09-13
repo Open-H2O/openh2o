@@ -1010,26 +1010,69 @@ else in the codebase checks it.
 
 ---
 
-## Section 4: Surface water and state reporting (14 figures)
+## Section 4: Surface water and state reporting (28 figures)
 
-Six templates, 14 figures: the water rights list and a right's detail page, a
-diversion point's detail page and its records table, the shared-supply check, and
-the CalWATRS transcription worksheet. They are grouped together because the same
-stored rows appear on both an operator's screen and the worksheet a person copies
-into the state's portal, so each row is checked once against both.
+Six templates, 28 figures (14 until 2026-09-12, when 143-10 Task 2 gave the
+diversion page and the water right page each a lead panel -- Diverted minus
+Return flow equals Retained; Face value minus Recorded equals Remaining, with
+a "by point of diversion" breakdown -- and gave both pages' records tables a
+water-year subtotal row closing inside the body, a net 14 sites more; see
+"143-10: the two new panels" below): the water rights list and a right's
+detail page, a diversion point's detail page and its records table, the
+shared-supply check, and the CalWATRS transcription worksheet. They are
+grouped together because the same stored rows appear on both an operator's
+screen and the worksheet a person copies into the state's portal, so each row
+is checked once against both.
 
 **Screens.** Each is captured under `audit/figure_ledger/rendered/`, with its size
-and content fingerprint in `manifest-c.json`.
+and content fingerprint in `manifest-c.json`. 143-10's four new screens/states are
+not yet in that capture set (Task 2 ran the SQL recomputation and the live-page
+check below; the `/page-verdict` captures belong to Task 6).
 
 | Screen | Figures | What is pinned |
 |---|---|---|
-| `/surface/diversion/8/` | `FIG-surface-001` to `005` | MER-POD-011-DEMO Snelling Re-Diversion. Records row pinned to **May 2026**. |
-| `/surface/rights/6/` | `FIG-surface-007` to `009` | MER-WR-010-DEMO, Halvern Hydroelectric Co. |
-| `/surface/rights/` | `FIG-surface-006` | First row by right identifier: MER-WR-004-DEMO. |
+| `/surface/diversion/8/` | `FIG-surface-001`, `005` to `008` | MER-POD-011-DEMO Snelling Re-Diversion. Records row pinned to **May 2026**. |
+| `/surface/diversion/9/` | `FIG-surface-002` to `004`, `009` to `011` | MER-BPOD-001 El Nido Canal Recharge Intake. The new lead panel and the records table's own current-year subtotal, WY 2025-2026 (`accounting.services.current_period_id()`). |
+| `/surface/rights/6/` | `FIG-surface-013` to `017`, `020` to `023` | MER-WR-010-DEMO, Halvern Hydroelectric Co. The new lead panel, its "by point of diversion" breakdown, and the records table's own current-year subtotal (Task 2 dropped the `[:12]` slice, R-121; every record now groups by water year, R-055). |
+| `/surface/rights/` | `FIG-surface-012` | First row by right identifier: MER-WR-004-DEMO. |
 | `/reporting/reports/4/calwatrs-worksheet/` | `FIG-reporting-001`, `002` | Submission 4, CalWATRS To Storage, WY 2025-2026. First block, first row. |
 | `/reporting/reports/shared-supply-check/?period=2` | `FIG-reporting-003` to `005` | First group, MER-POD-004-DEMO Atwater Canal Headgate; row MER-APN-058. |
-| `/surface/diversion/9/` | none | MER-BPOD-001 El Nido Canal Recharge Intake. Captured as evidence, see finding 3. Since 136-02 it renders one of its template's two figures, the linked right's face value of 3,500.00 AF, and still not a maximum rate. |
 | `/reporting/reports/shared-supply-check/` | none | No period chosen. Captured to record which period the page picks by itself. |
+
+**143-10: the two new panels (2026-09-12).** Task 2 copied 143-06's zone-page
+shapes onto the diversion page (Diverted − Return flow = Retained, R-115) and
+the water right page (Face value − Recorded = Remaining, R-121/R-122), and
+gave both records tables a water-year `tr.row-group`/`tr.row-subtotal` shape
+(rule 7) in place of the old repeating Period column. Every new figure is a
+`Sum` computed once in Python from the SAME queryset the table under the panel
+prints (`surface/views.py::_group_diversion_records`) -- never re-derived --
+so `FIG-surface-002/003/004` (the panel) and `FIG-surface-009/010/011` (the
+table's own current-year subtotal row) are the identical Python values printed
+twice, and likewise `FIG-surface-015` and `FIG-surface-021` on the right page.
+`audit/figure_ledger/sql/surface_water_year_panels.sql` recomputes all of them
+from `surface_diversionrecord` and `accounting_reportingperiod` directly, with
+no ORM in the path, pinned to the current local demonstration's `period_id=2`
+(WY 2025-2026), `pod_id=9`, `right_id=6`: run 2026-09-12,
+`bash audit/figure_ledger/run_sql.sh audit/figure_ledger/sql/surface_water_year_panels.sql`.
+`FIG-surface-018` and `FIG-surface-019` are the same two panel segments,
+printed a third time in the branch of the template that renders only for a
+right with a face value but no records in the current period (or, for -019,
+no face value at all) -- not reachable on THIS pin (right 6 has both a face
+value and current-period records), so their row states the identity rather
+than a second pinned value. `FIG-surface-023` is likewise `pod.max_rate_cfs`
+printed a second time in the template's no-active-curtailments branch, not
+reachable on right 6 (which has one, MER-CURT-001); same field, same value as
+`FIG-surface-022` whenever it renders. The other nine ids (001, 005, 006, 007,
+008, 012, 013, 020, 022) are the pre-143-10 figures, renumbered by the
+insertion; six of them (001, 006, 007, 008, 012, 020) are byte-for-byte the
+same template expression at a new line, and three (005, 013, 022) carry a
+small, stated change -- `005` and `013` gained `|intcomma` (a thousands
+separator; the value did not move), and `022` is the same `pod.max_rate_cfs`
+expression now inside a conditional branch it did not used to be in. None of
+the nine was merely carried forward from the last capture: every one was
+re-verified live on the local stack 2026-09-12 (see the per-row notes below),
+because POD 8's records and right 6's linked points still exist under the
+same ids and the same values on the current demonstration database.
 
 **Why the May 2026 row and not the first row on screen.** A diversion record
 carries three numbers that ought to differ: what was diverted, what was returned,
@@ -1043,7 +1086,11 @@ other row a wrong subtraction would still have matched.
 **Period.** WY 2025-2026, the drier of the demonstration's two years, matching
 section 1's pin. The diversion point's own records table is not scoped to a
 period at all (`surface/views.py:104-108`), so the choice does not reach
-`FIG-surface-001` to `005`.
+`FIG-surface-001`, `005` to `008`. 143-10's new panel and subtotal figures
+(`FIG-surface-002`/`003`/`004`/`009`/`010`/`011`, `013` to `017`, `020` to `023`)
+ARE scoped to a period -- the CURRENT one, `accounting.services.current_period_id()`
+-- by design (R-115, R-121): the lead panel and the table's own closing
+subtotal row are never the all-time sum.
 
 **Re-captured at commit `2555a68`**, 2026-09-06, after 136-02 gave the El Nido
 recharge intake a water right of its own and the rebuilt demonstration data
@@ -1055,11 +1102,18 @@ That commit is one past `v2.15`, the tag section 1 was captured at, and it added
 only this ledger's own tooling: no template, view, service or model differs
 between the two captures.
 
-**Recomputation:** `audit/figure_ledger/sql/surface_reporting.sql`, run on the
-host through `run_sql.sh`. It names tables and columns only. The independence
-guard `tests/test_figure_ledger_independence.py` went from 17 passing cases to 20
-when this file was added, which is how we know it actually read it rather than
-skipping it.
+**Re-verified live on the local stack**, 2026-09-12, for 143-10 Task 2: the nine
+pre-143-10 figures still hold their exact 2026-09-06 values (POD 8 and right 6
+are untouched by this plan), and the fourteen new figures are pinned fresh to
+the current local demonstration (`period_id=2`, `pod_id=9`, `right_id=6`).
+
+**Recomputation:** `audit/figure_ledger/sql/surface_reporting.sql` for the nine
+pre-143-10 figures, and `audit/figure_ledger/sql/surface_water_year_panels.sql`
+(143-10) for the fourteen new ones, both run on the host through `run_sql.sh`.
+Both name tables and columns only. The independence guard
+`tests/test_figure_ledger_independence.py` went from 17 passing cases to 20 when
+`surface_reporting.sql` was added; it covers the new file too, since it walks
+every `.sql` file under this directory rather than a named list.
 
 > **Demonstration data.** Every figure below belongs to the invented Merced
 > groundwater district. No row here describes a real water user, and none of it
@@ -1069,15 +1123,29 @@ skipping it.
 
 | `id` | `screen` | `site` | `label` | `context_var` | `view` | `service` | `raw_tables` | `rendered` | `recomputed` | `delta` | `verdict` | `notes` |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `FIG-surface-001` | `/surface/diversion/8/` | `templates/surface/partials/_detail_pane.html:57` | Max rate (CFS) | `pod.max_rate_cfs` | `surface/views.py:166` | `—` | `surface_pointofdiversion` | 150.00 | 150.00 | MATCH | MATCH | Independence: different identity. Model field on the diversion point the view fetched at `surface/views.py:186`. Wrapped in a conditional, so it renders only where a rate is recorded; see finding 3. |
-| `FIG-surface-002` | `/surface/diversion/8/` | `templates/surface/partials/_detail_pane.html:159` | Face value (AF) | `water_right.face_value_acre_feet` | `surface/views.py:172` | `—` | `surface_waterright, surface_pointofdiversion` | 60000.00 | 60000.00 | MATCH | MATCH | Independence: different identity. The linked right's field, reached through the diversion point. Also conditional: no linked right, or a right with no face value, and nothing renders. |
-| `FIG-surface-003` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:20` | Diverted (AF) | `record.volume_acre_feet` | `surface/views.py:167` | `—` | `surface_diversionrecord` | 250.00 | 250.00 | MATCH | MATCH | Independence: different identity. Whole column also checked, all 8 records on this diversion point, cross-check 3. |
-| `FIG-surface-004` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:21` | Return Flow (AF) | `record.returned_af` | `surface/views.py:167` | `—` | `surface_diversionrecord` | 100.00 | 100.00 | MATCH | MATCH | Independence: different identity. This is one of only two records in the whole demonstration where this column is neither 0 nor the full diverted volume, which is why the row was pinned here. |
-| `FIG-surface-005` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:23` | Retained (AF) | `record.consumed_acre_feet` | `surface/views.py:167` | `DiversionRecord.consumed_acre_feet` (`surface/models.py:162`) | `surface_diversionrecord` | 150.00 | 150.00 | MATCH | MATCH | Re-checked 2026-09-06 after 136-01: the value did not move; the column heading changed from *Consumptive Use (AF)* to *Retained (AF)* and a `to_storage` record now carries a *To storage* badge (ISS-153 resolved; the method keeps its name). Independence: restatement of one subtraction, `abs(volume) - returned`. Strengthened by cross-check 1, which applies the identity to all 173 records and finds 0 breaks and 0 rows where the return exceeds the volume. A method on the model, not a service. |
-| `FIG-surface-006` | `/surface/rights/` | `templates/surface/partials/_list_results.html:30` | Face Value | `right.face_value_acre_feet` | `surface/views.py:288` | `—` | `surface_waterright` | 120000 | 120000 | MATCH | MATCH | Independence: different identity. Shown to zero decimal places, with the unit "AF" as template text beside it rather than part of the figure. All seven rights checked whole-column, cross-check 2. 136-02 added a seventh right, `MER-WR-011-DEMO` at 3,500 AF, which sorts last on this list, so the pinned first row and its value did not move. |
-| `FIG-surface-007` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:64` | Face value (AF) | `water_right.face_value_acre_feet` | `surface/views.py:343` | `—` | `surface_waterright` | 60000.00 | 60000.00 | MATCH | MATCH | Independence: different identity. The same stored column as `FIG-surface-006`, shown to two decimal places instead of none; the two screens agree. |
-| `FIG-surface-008` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:113` | Max rate: N cfs | `pod.max_rate_cfs` | `surface/views.py:344` | `—` | `surface_pointofdiversion` | 400.00 | 400.00 | MATCH | MATCH | Independence: different identity. Renders once per diversion point on the right, ordered by name; the pin is the first, MER-POD-010-DEMO Merced Falls Hydroelectric Diversion. |
-| `FIG-surface-009` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:174` | Volume (AF) | `record.volume_acre_feet` | `surface/views.py:345` | `—` | `surface_diversionrecord, surface_pointofdiversion` | 1200.00 | 1200.00 | MATCH | MATCH | Independence: different identity. First row of a 12-row list ordered by month alone; two diversion points sharing a month would be in an unspecified order, so the pin sits on September 2026, which only one has. This figure is a **diverted** volume with no return-flow column beside it, and all 1200.00 AF of it was returned to the stream: see finding 4. |
+| `FIG-surface-001` | `/surface/diversion/8/` | `templates/surface/partials/_detail_pane.html:67` | Max rate (CFS) | `pod.max_rate_cfs` | `surface/views.py:230` | `—` | `surface_pointofdiversion` | 150.00 | 150.00 | MATCH | MATCH | Was line 57 before 143-10 Task 2 renumbered this template. Independence: different identity. Model field on the diversion point the view fetched. Wrapped in a conditional, so it renders only where a rate is recorded; see finding 3. |
+| `FIG-surface-002` | `/surface/diversion/9/` | `templates/surface/partials/_detail_pane.html:157` | Water diverted panel, Diverted segment | `current_totals.diverted` | `surface/views.py:168-183` (`_pod_detail_context`) | `_group_diversion_records` (`surface/views.py:50-81`) | `surface_diversionrecord, accounting_reportingperiod` | 1,462.45 | 1,462.45 | MATCH | MATCH | New site, 143-10 Task 2 (R-055, the checkpoint's zone-lead ruling copied from 143-06). The current water year's (`accounting.services.current_period_id()`, WY 2025-2026) Diverted sum across this point's records; the SAME group `FIG-surface-009` reads (no second query, `_group_diversion_records` is called once and both sites read the same dict). Independent recomputation: `audit/figure_ledger/sql/surface_water_year_panels.sql`, `pod_year_sums` where `reporting_period_id = 2`. |
+| `FIG-surface-003` | `/surface/diversion/9/` | `templates/surface/partials/_detail_pane.html:163` | Water diverted panel, Return flow segment | `current_totals.returned` | `surface/views.py:168-183` | `_group_diversion_records` | `surface_diversionrecord` | 0.00 | 0.00 | MATCH | MATCH | New site, 143-10 Task 2. Every one of this point's records is `to_storage` with `returned_af = 0` (it re-diverts nothing to the stream), so the segment is zero for every water year on record, not only the current one -- see cross-check in `surface_water_year_panels.sql`, `pod_year_sums`, both rows. Independence: different identity, `Sum(returned_af)`. |
+| `FIG-surface-004` | `/surface/diversion/9/` | `templates/surface/partials/_detail_pane.html:169` | Water diverted panel, Retained segment (the page's one `.budget-seg--result`) | `current_totals.retained` | `surface/views.py:168-183` | `_group_diversion_records` | `surface_diversionrecord` | 1,462.45 | 1,462.45 | MATCH | MATCH | New site, 143-10 Task 2 (rule 8: the only large figure on the page). `current_totals.diverted` (`FIG-surface-002`) minus `current_totals.returned` (`FIG-surface-003`) = 1,462.45 − 0.00 = 1,462.45 by hand. Independence: restatement, verified a second way by hand subtraction, and by `surface_water_year_panels.sql`'s independently-summed `retained` column. |
+| `FIG-surface-005` | `/surface/diversion/8/` | `templates/surface/partials/_detail_pane.html:313` | Compliance details, Face value (AF) | `water_right.face_value_acre_feet` | `surface/views.py:146-198` (`_pod_detail_context`) | `—` | `surface_waterright, surface_pointofdiversion` | 60,000.00 | 60000.00 | MATCH | MATCH | Was `FIG-surface-002` at line 159 before 143-10 Task 2. Task 2 added the intcomma filter platform-wide to every figure over 999 (DESIGN.md, *Established patterns*); the stored value did not move, only its punctuation (60000.00 -> 60,000.00). Independence: different identity. The linked right's field, reached through the diversion point. Also conditional: no linked right, or a right with no face value, and nothing renders; `/surface/diversion/9/`'s OWN compliance card shows this same site's OTHER live value, 3,500.00 (right MER-WR-011-DEMO), evidence that the conditional and the lookup both work, not a second ledger row (one template line, one id). |
+| `FIG-surface-006` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:44` | Diverted | `record.volume_acre_feet` | `surface/views.py:146-198` | `—` | `surface_diversionrecord` | 250.00 | 250.00 | MATCH | MATCH | Was `FIG-surface-003` at line 20. Independence: different identity. Whole column also checked, all 8 records on this diversion point, cross-check 3 in `surface_reporting.sql`. |
+| `FIG-surface-007` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:45` | Return flow | `record.returned_af` | `surface/views.py:146-198` | `—` | `surface_diversionrecord` | 100.00 | 100.00 | MATCH | MATCH | Was `FIG-surface-004` at line 21. Independence: different identity. This is one of only two records in the whole demonstration where this column is neither 0 nor the full diverted volume, which is why the row was pinned here. |
+| `FIG-surface-008` | `/surface/diversion/8/` | `templates/surface/partials/_diversion_records.html:46` | Retained, now its own column with a `.col-sep` instead of wrapped inside a badge | `record.consumed_acre_feet` | `surface/views.py:146-198` | `DiversionRecord.consumed_acre_feet` (`surface/models.py:162`) | `surface_diversionrecord` | 150.00 | 150.00 | MATCH | MATCH | Was `FIG-surface-005` at line 23. 143-10 Task 2 moved this figure out from inside the Retained cell's type badge (R-115: no numeric cell may hold a badge) into a plain `td-num`, added the Period column's replacement (`tr.row-group` per water year), and gave the column a `.col-sep`; the value did not move. Independence: restatement of one subtraction, `abs(volume) - returned`. Strengthened by cross-check 1 in `surface_reporting.sql`, which applies the identity to all 173 records. |
+| `FIG-surface-009` | `/surface/diversion/9/` | `templates/surface/partials/_diversion_records.html:61` | Records table, current water year's own closing subtotal, Diverted | `group.diverted` | `surface/views.py:168-183`, `_group_diversion_records` | `_group_diversion_records` | `surface_diversionrecord, accounting_reportingperiod` | 1,462.45 | 1,462.45 | MATCH | MATCH | New site, 143-10 Task 2 (rule 7, footer A, the checkpoint's candidate-A ruling copied from 143-06): the WY 2025-2026 group is the first `tr.row-group` (the table orders `-month`, newest year first), and this is its `tr.row-subtotal`'s Diverted cell -- the SAME dict `FIG-surface-002` reads, printed a second time. 584.98 (Feb 2026) + 877.47 (Jan 2026) = 1,462.45 by hand. Independent recomputation: `surface_water_year_panels.sql`, `pod_year_sums`. |
+| `FIG-surface-010` | `/surface/diversion/9/` | `templates/surface/partials/_diversion_records.html:62` | Records table, current water year's subtotal, Return flow | `group.returned` | `surface/views.py:168-183` | `_group_diversion_records` | `surface_diversionrecord` | 0.00 | 0.00 | MATCH | MATCH | New site, 143-10 Task 2. Same dict as `FIG-surface-003`. Both of this point's WY 2025-2026 records carry `returned_af = 0.0000`. |
+| `FIG-surface-011` | `/surface/diversion/9/` | `templates/surface/partials/_diversion_records.html:63` | Records table, current water year's subtotal, Retained (`.col-sep`) | `group.retained` | `surface/views.py:168-183` | `_group_diversion_records` | `surface_diversionrecord` | 1,462.45 | 1,462.45 | MATCH | MATCH | New site, 143-10 Task 2. Same dict as `FIG-surface-004`; 1,462.45 − 0.00 = 1,462.45 by hand, and the prior water year's own subtotal row (WY 2024-2025, not pinned here) independently sums to 2,924.90 in `surface_water_year_panels.sql`'s `pod_year_sums`, matching the page's second `tr.row-subtotal`. |
+| `FIG-surface-012` | `/surface/rights/` | `templates/surface/partials/_list_results.html:30` | Face Value | `right.face_value_acre_feet` | `surface/views.py:355-380` | `—` | `surface_waterright` | 120000 | 120000 | MATCH | MATCH | Was `FIG-surface-006`. Independence: different identity. Shown to zero decimal places, with the unit "AF" as template text beside it rather than part of the figure. All seven rights checked whole-column, cross-check 2 in `surface_reporting.sql`. |
+| `FIG-surface-013` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:71` | Right information, Face value (AF) | `water_right.face_value_acre_feet` | `surface/views.py:405-473` (`_water_right_detail_context`) | `—` | `surface_waterright` | 60,000.00 | 60000.00 | MATCH | MATCH | Was `FIG-surface-007` at line 64. 143-10 Task 2 added the intcomma filter; the value did not move. Independence: different identity. The same stored column as `FIG-surface-012`, shown to two decimal places with a thousands separator instead of none. |
+| `FIG-surface-014` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:138` | Face value against records panel, Face value segment | `water_right.face_value_acre_feet` | `surface/views.py:405-473` | `—` | `surface_waterright` | 60,000.00 | 60000.00 | MATCH | MATCH | New site, 143-10 Task 2 (R-121, the zone-lead shape copied from 143-06). Repeats `FIG-surface-013` a second time on the page, in the lead panel. Renders in this branch because right 6 both carries a face value AND has records in the current period (see `FIG-surface-018` for the branch that does not). |
+| `FIG-surface-015` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:144` | Face value against records panel, Recorded segment | `current_totals.diverted` | `surface/views.py:405-473` | `_group_diversion_records` | `surface_diversionrecord, surface_pointofdiversion, accounting_reportingperiod` | 15,550.00 | 15550.00 | MATCH | MATCH | New site, 143-10 Task 2. The current water year's Diverted sum across BOTH of this right's points of diversion (R-121 drops the old `[:12]` slice, R-055: every record now groups by water year). 14,400.00 (MER-POD-010-DEMO, `FIG-surface-016`) + 1,150.00 (MER-POD-011-DEMO) = 15,550.00 by hand. Independent recomputation: `surface_water_year_panels.sql`, `right_current_year`. |
+| `FIG-surface-016` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:150` | Face value against records panel, "By point of diversion" breakdown, first row | `row.total` | `surface/views.py:405-473` | Python `dict` grouped from `current_totals["rows"]`, sorted by name | `surface_diversionrecord, surface_pointofdiversion` | 14,400.00 | 14400.00 | MATCH | MATCH | New site, 143-10 Task 2. Sorted alphabetically, so the pinned row is MER-POD-010-DEMO Merced Falls Hydroelectric Diversion's own current-year sum (12 records at 1,200.00 each). Independent recomputation: `surface_water_year_panels.sql`, `right_current_year_by_pod`. |
+| `FIG-surface-017` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:158` | Face value against records panel, Remaining segment (the page's one `.budget-seg--result`) | `remaining` | `surface/views.py:444-447` | `_group_diversion_records` | `surface_waterright, surface_diversionrecord` | 44,450.00 | 44450.00 | MATCH | MATCH | New site, 143-10 Task 2 (rule 8). `water_right.face_value_acre_feet` (`FIG-surface-014`) minus `current_totals.diverted` (`FIG-surface-015`) = 60,000.00 − 15,550.00 = 44,450.00 by hand. Independent recomputation: `surface_water_year_panels.sql`, `right_face_value_less_current_year`. |
+| `FIG-surface-018` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:170` | Face value against records panel, Face value segment (the em-dash branch: a face value on record but no records in the current period) | `water_right.face_value_acre_feet` | `surface/views.py:405-473` | `—` | `surface_waterright` | not reachable on this pin | 60000.00 | UNVERIFIED | UNVERIFIED | New site, 143-10 Task 2. Right 6 has current-period records, so this branch does not render for it; same context variable and same stored column as `FIG-surface-014`, so the same MATCH would apply the moment a right with a face value and zero current-period records is opened. No fixture in the local demonstration currently produces this branch; Task 5's guard fixture is where this gets a value assertion (a right with a face value and no current-period records). |
+| `FIG-surface-019` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:193` | "Recorded" period-panel segment (the no-face-value branch) | `current_totals.diverted` | `surface/views.py:405-473` | `_group_diversion_records` | `surface_diversionrecord` | not reachable on this pin | 15550.00 | UNVERIFIED | UNVERIFIED | New site, 143-10 Task 2. Right 6 has a face value, so this branch (the period-panel shape for a right with none) does not render for it; same context variable as `FIG-surface-015`. |
+| `FIG-surface-020` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:237` | Records table, Diverted | `record.volume_acre_feet` | `surface/views.py:405-473` | `—` | `surface_diversionrecord, surface_pointofdiversion` | 1,200.00 | 1,200.00 | MATCH | MATCH | Was `FIG-surface-009` at line 174. 143-10 Task 2 dropped the `[:12]` slice and the "Recent" wording, and sorted ties by `point_of_diversion__name` (R-122); the FIRST row is still September 2026 (only MER-POD-010-DEMO has a record that month), so the pinned row and value did not move even though the table now holds 32 records instead of 12. |
+| `FIG-surface-021` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:243` | Records table, current water year's own closing subtotal, Diverted | `group.diverted` | `surface/views.py:405-473` | `_group_diversion_records` | `surface_diversionrecord, surface_pointofdiversion, accounting_reportingperiod` | 15,550.00 | 15550.00 | MATCH | MATCH | New site, 143-10 Task 2 (footer A, no `tfoot`, rule 7). The SAME dict `FIG-surface-015` reads, printed a second time as the table's own closing row for the 16 WY 2025-2026 records. |
+| `FIG-surface-022` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:275` | Points of diversion card, Max rate (active-curtailments branch) | `pod.max_rate_cfs` | `surface/views.py:405-473` | `—` | `surface_pointofdiversion` | 400.00 | 400.00 | MATCH | MATCH | Was `FIG-surface-008` at line 113. 143-10 Task 2 put this card beside Active curtailments in a `page-grid-2col` when curtailments exist (right 6 has one, MER-CURT-001), so this exact expression now also exists a second time in the template's no-curtailments branch (`FIG-surface-023`); the value and the pin (first point by name, MER-POD-010-DEMO) did not move. |
+| `FIG-surface-023` | `/surface/rights/6/` | `templates/surface/partials/_water_right_detail_pane.html:324` | Points of diversion card, Max rate (no-curtailments branch, full width) | `pod.max_rate_cfs` | `surface/views.py:405-473` | `—` | `surface_pointofdiversion` | not reachable on this pin | 400.00 | UNVERIFIED | UNVERIFIED | New site, 143-10 Task 2: the SAME field and template text as `FIG-surface-022`, duplicated into the branch that renders when a right carries no active curtailment (R-121's fallback: the Points of diversion card spans full width rather than sitting alone beside nothing). Right 6 always takes the other branch; a right with no curtailment would show 400.00 identically for its own first point. |
 | `FIG-reporting-001` | `/reporting/reports/4/calwatrs-worksheet/` | `templates/reporting/calwatrs_worksheet.html:84` | Volume (AF) | `row.volume_af` | `reporting/views.py:443` | `—` | `surface_diversionrecord, surface_pointofdiversion, reporting_reportsubmission` | 877.47 | 877.47 | MATCH | MATCH | 136-02 took ISS-152 option (a) and gave this diversion point a water right, `MER-WR-011-DEMO`, held by Halvern Irrigation District: the value did not move, but the block it sits in is now headed with that right identifier instead of a red *No linked water right*, and the generated state file carries these rows instead of withholding them. Independence: different identity. The stored volume, copied into a display dictionary at `reporting/views.py:437`. See finding 2. |
 | `FIG-reporting-002` | `/reporting/reports/4/calwatrs-worksheet/` | `templates/reporting/calwatrs_worksheet.html:85` | Max Rate (CFS) | `row.max_rate_cfs` | `reporting/views.py:443` | `—` | `surface_diversionrecord` | 312.07 | 312.07 | MATCH | MATCH | Same block as the row above, now headed `MER-WR-011-DEMO` and no longer withheld from the generated file; the value did not move. Independence: different identity. Stored as 312.0662 and shown to two places. Conditional: a record with no rate shows a dash. Note this is a peak rate stated against a whole month's volume, because a diversion record is monthly by design (`surface/models.py:160`). |
 | `FIG-reporting-003` | `/reporting/reports/shared-supply-check/?period=2` | `templates/reporting/shared_supply_check.html:112` | Your share | `row.your_weight` | `reporting/views.py:296` | `build_shared_supply_comparison` then `apportion_shared_supply` | `surface_pointofdiversionparcel, parcels_parcel` | 0.2000 | 0.2000 | MATCH | MATCH | Independence: restatement. Reproduces the four-rung ladder, including which rung fires: some stored share here differs from the untouched default, so the whole group counts as hand-set and the stored shares are used as written. Cross-check 7 adds a different identity, that each group's shares sum to exactly 1.0000, and all 8 groups do. |
@@ -1095,15 +1163,24 @@ not.
 
 Five things the reconciliation turned up that a matching column does not show.
 
-**1. Three of these fourteen numbers can barely be wrong, given this data.** The
-diversion records table's three columns are a genuine test of the platform's
-arithmetic only where the return flow is a partial one. It is partial on **2 of
-173** records. On the other 171 the Consumptive Use column is either a copy of the
-Diverted column or a zero, and any formula at all would reproduce it. Both
-discriminating rows belong to one diversion point, MER-POD-011-DEMO Snelling
-Re-Diversion, and the ledger pins one of them deliberately. Nobody should read
-`FIG-surface-005` as evidence that this arithmetic is exercised; it is evidence
-that it is correct where it is exercised, which on this data is twice.
+**1. Three of the original fourteen numbers can barely be wrong, given this
+data.** (Findings 1-5 below predate 143-10's fourteen new panel and subtotal
+figures, FIG-surface-002/003/004/009/010/011/013-023, and describe the
+section as it stood at 106 sites platform-wide; the ids they name are the
+POD 8 and right 6 sites 143-10 renumbered but did not re-derive -- see the
+per-row notes above for the id changes.) The diversion records table's three
+columns are a genuine test of the platform's arithmetic only where the return
+flow is a partial one. It is partial on **2 of 173** records. On the other 171
+the Consumptive Use column is either a copy of the Diverted column or a zero,
+and any formula at all would reproduce it. Both discriminating rows belong to
+one diversion point, MER-POD-011-DEMO Snelling Re-Diversion, and the ledger
+pins one of them deliberately. Nobody should read `FIG-surface-008` (was
+`FIG-surface-005` before 143-10) as evidence that this arithmetic is
+exercised; it is evidence that it is correct where it is exercised, which on
+this data is twice. 143-10 gave POD 9, MER-BPOD-001, its own reason to be
+checked twice more: every one of its records carries a zero return flow
+(`FIG-surface-003`/`010`), so its new panel and subtotal are a test of the
+SUM only, never of the subtraction.
 
 **2. The worksheet and the file the state receives disagreed about 87 percent of
 the volume; 136-02 closed that on the data, and the worksheet still does not say

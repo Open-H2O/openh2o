@@ -1,11 +1,19 @@
-{% if status == "active" %}
+{% comment %}
+  143-10 (R-118): demo_marker defaults ON (every other caller is unchanged).
+  The rights LIST passes demo_marker=False -- the notice above the table
+  already says the set is mixed and every id already ends -DEMO, so a pill on
+  one row of seven read as though the other six were something else. `is not
+  False` rather than the `default` filter: `default` also overrides an
+  explicit False (a falsy value), which would silently turn the list's own
+  demo_marker=False back on.
+{% endcomment %}{% if status == "active" %}
   <span class="badge badge-pill badge-green">Active</span>
 {% elif status == "inactive" %}
   <span class="badge badge-pill badge-grey">Inactive</span>
 {% elif status == "curtailed" %}
-  <span class="badge badge-pill badge-gold">Curtailed</span> {% include "partials/_demo_marker.html" %}
+  <span class="badge badge-pill badge-gold">Curtailed</span> {% if demo_marker is not False %}{% include "partials/_demo_marker.html" %}{% endif %}
 {% elif status == "revoked" %}
-  <span class="badge badge-pill badge-red">Revoked</span> {% include "partials/_demo_marker.html" %}
+  <span class="badge badge-pill badge-red">Revoked</span> {% if demo_marker is not False %}{% include "partials/_demo_marker.html" %}{% endif %}
 {% else %}
   <span class="badge badge-pill badge-grey">{{ status|capfirst }}</span>
 {% endif %}

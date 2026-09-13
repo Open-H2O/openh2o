@@ -28,7 +28,7 @@
         </td>
         <td class="text-secondary text-sm">{{ right.holder_name|blank }}</td>
         <td class="text-secondary text-sm tabular-nums">{% if right.face_value_acre_feet %}{{ right.face_value_acre_feet|floatformat:0 }} AF{% else %}—{% endif %}</td>
-        <td>{% include "surface/partials/_status_badge.html" with status=right.status %}</td>
+        <td>{% include "surface/partials/_status_badge.html" with status=right.status demo_marker=False %}</td>
       </tr>
       {% endfor %}
     </tbody>

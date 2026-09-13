@@ -274,8 +274,8 @@ def test_a_to_storage_record_renders_to_storage_and_never_consumptive_use():
 
     html = _pod_pane(pod)
 
-    assert "Retained (AF)" in html
-    assert "To storage" in html
+    assert "Retained</th>" in html
+    assert "To Storage" in html
     # 877.47 diverted, 0 returned: the retained cell reads the whole volume.
     assert "877.47" in html
     assert "Consumptive Use" not in html, (
@@ -296,6 +296,7 @@ def test_a_direct_use_record_with_a_partial_return_still_says_partial_return():
     html = _pod_pane(pod)
 
     assert "Partial return" in html
-    assert "To storage" not in html
+    # The add-record select always offers "To Storage"; the table must not.
+    assert html.count("To Storage") == html.count(">To Storage</option>")
     # 100.00 diverted minus 40.00 returned: retained reads 60.00.
     assert "60.00" in html
