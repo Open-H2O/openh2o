@@ -127,7 +127,7 @@ nobody would notice until one of them broke.
   `test_no_template_ships_a_multi_line_django_comment` now guards it.
   {% endcomment %}
   <div class="card-raised" style="padding: 0; overflow: hidden;">
-    {% include "partials/_map_card_head.html" with head_id="facilities-map-head" title="Facilities" noun="facility" noun_plural="facilities" key_label="Facility with sampling points" swatch="dot" swatch_token="blue-bright" %}
+    {% include "partials/_map_card_head.html" with head_id="facilities-map-head" title="Facilities" noun="facility" noun_plural="facilities" key_label="Facility" swatch="dot" swatch_token="blue-bright" %}
     {% if located_count %}
     <div id="drinking-facilities-map" style="height: 380px; width: 100%;"></div>
     {% endif %}

@@ -140,13 +140,25 @@ Variables:
             }
           });
 
+          // The always-on label per facility (the overview map card, 143-07):
+          // its name beside the dot on whichever side has room; a label that
+          // would collide yields and the dot stays.
+          OH2O.addDetailLabel(map, SRC, 'drinking', {
+            id: '{{ map_id }}-label',
+            layout: {
+              'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+              'text-radial-offset': 0.9,
+              'text-justify': 'auto'
+            }
+          });
+
           // Filter to the list's pks (143-07) and frame them: now, and after
           // every htmx swap of #results. Both pages that include this
           // partial target #results with every control, and both results
           // partials emit the same results-map-pks id, so the defaults fit
           // either host with no per-page wiring.
           OH2O.followResults(map, {
-            layers: ['{{ map_id }}-glow', '{{ map_id }}-dots'],
+            layers: ['{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
             source: SRC,
             data: data,
             pksEl: 'results-map-pks',

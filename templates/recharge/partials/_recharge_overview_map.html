@@ -173,18 +173,20 @@ Variables:
           });
 
           // The always-on label, one per site regardless of how many polygon
-          // rings it has, centered on its own bbox. text-allow-overlap: true
-          // because the demonstration's five El Nido basins sit close enough
-          // that MapLibre's default collision pass (text-optional, no
-          // overlap) would silently drop most of the cluster's labels rather
-          // than crowd them — measured 2 of 7 rendering with the default.
-          // Seven small labels overlapping at the fitted zoom is still more
-          // useful than five silently missing ones; a reader zooms in to
-          // read.
+          // rings it has, placed on whichever side of its bbox centre has
+          // room. A label that would collide YIELDS and the mark stays (the
+          // approved Surface Diversions card, 143-07 Task 3): the five El Nido
+          // basins sit a few hundred metres apart, so at the fitted zoom only
+          // some of their names fit, and all of them appear as the reader
+          // zooms in. Never text-allow-overlap: seven names painted over one
+          // another read as none (the drift the main session caught 14:50).
           OH2O.addDetailLabel(map, LABELS_SRC, 'recharge', {
             id: '{{ map_id }}-label',
-            anchor: 'center',
-            layout: { 'text-allow-overlap': true }
+            layout: {
+              'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+              'text-radial-offset': 0.6,
+              'text-justify': 'auto'
+            }
           });
 
           // Filter every layer (marks and label alike) to the list's pks and

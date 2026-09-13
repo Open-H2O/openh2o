@@ -6,7 +6,7 @@ the map being torn down. On a full page render the page includes the head once
 itself, so it is included here only on an htmx request (hx_request, from the
 view). The pks below are the WHOLE filtered queryset's, before pagination:
 OH2O.followResults reads them after every swap and filters the map to them.
-{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="facilities-map-head" title="Facilities" noun="facility" noun_plural="facilities" key_label="Facility with sampling points" swatch="dot" swatch_token="blue-bright" oob=True %}{% endif %}
+{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="facilities-map-head" title="Facilities" noun="facility" noun_plural="facilities" key_label="Facility" swatch="dot" swatch_token="blue-bright" oob=True %}{% endif %}
 {{ result_pks|json_script:"results-map-pks" }}
 
 {% comment %}
@@ -40,8 +40,8 @@ filtered" clause, which was true before this plan and is not true after it.
   only, so distribution-system and treatment-plant facilities carry none and
   cannot be placed on a map.{% if q or facility_type or activity_status %}
   The map follows the list: showing {{ total_count|intcomma }}
-  facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %};
-  the map shows the {{ result_located_count|intcomma }} of them with a location.{% endif %}
+  facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
+  {% if result_located_count == total_count %}all{% elif result_located_count %}{{ result_located_count|intcomma }} of them{% else %}none of them{% endif %} with a location.{% endif %}
 </p>
 {% else %}
 <p class="page-description">

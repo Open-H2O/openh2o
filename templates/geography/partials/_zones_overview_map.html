@@ -96,9 +96,16 @@ Variables:
         // The always-on label, one per zone regardless of how many polygon
         // parts it has (zone_labels_geojson is already one point_on_surface
         // per zone).
+        // A label that would collide yields and the outline stays (the
+        // approved card; never text-allow-overlap, which paints the names
+        // over one another). Variable anchors let a name step aside.
         OH2O.addDetailLabel(map, LABELS_SRC, 'zone', {
           id: '{{ map_id }}-label',
-          layout: { 'text-allow-overlap': true }
+          layout: {
+            'text-variable-anchor': ['center', 'top', 'bottom', 'left', 'right'],
+            'text-radial-offset': 0.6,
+            'text-justify': 'auto'
+          }
         });
 
         // Filter every layer (the fill, the outline and the label) to the

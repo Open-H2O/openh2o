@@ -104,12 +104,25 @@ results partial's own pks, which honour all four of the list's filters
           }
         });
 
+        // The always-on label per station (the overview map card, 143-07):
+        // its name beside the dot on whichever side has room; a label that
+        // would collide yields and the dot stays, so the dense middle of the
+        // network names what fits and the rest appear as the reader zooms.
+        OH2O.addDetailLabel(map, SRC, 'station', {
+          id: '{{ map_id }}-label',
+          layout: {
+            'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+            'text-radial-offset': 1.0,
+            'text-justify': 'auto'
+          }
+        });
+
         // Filter to the list's pks (143-07, R-074) and frame them: now, and
         // after every htmx swap of #results. The results partial's pks
         // already honour all four filters (q, source, active, reporting),
         // so this is the ONE place that decides what the map draws.
         OH2O.followResults(map, {
-          layers: ['{{ map_id }}-glow', '{{ map_id }}-dots'],
+          layers: ['{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
           source: SRC,
           data: data,
           pksEl: 'results-map-pks',
