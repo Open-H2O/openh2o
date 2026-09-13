@@ -247,6 +247,35 @@ below was judged on the whole page, not a table in isolation, and Phase 143 carr
     inventory, run `audit/figure_ledger/remap_ids.py`, and give the new site a row that names the figure it
     repeats or the recomputation that covers it. The build refuses until it is done.
 
+Rulings from the 143-10 checkpoint (Brent, 2026-09-13, on staging at his own width), each pinned by a
+guard so it is not re-learned. They extend rules 1-10 and hold on every page that copies these shapes:
+
+11. **A lead panel never holds one lone figure.** A single segment in the panel's five-track row read as
+    "a giant blank box to the right of the recharged value". Where the page's figure is a sum with nothing
+    to set it against, the row carries its peers: the figure, what it is made of (the same rows the table
+    below prints), and the period before it (a peer, never added). `templates/recharge/partials/_detail_pane.html`;
+    guard `tests/test_recharge_site_page.py`.
+12. **A breakdown whose labels are names goes UNDER the equation row**, full width, ruled off
+    (`.budget-breakdown-group--under`). Inside a segment a point of diversion's id and name ran across the
+    divider into the next cell, and shrunk to the cell it wrapped seven lines deep. Word labels ("Allocation",
+    "Carried forward") stay in the segment. `templates/surface/partials/_water_right_detail_pane.html`.
+13. **Two grouped tables side by side keep step by structure.** The same rows per water year on both
+    (group header, the rows, a closing row), their head lines in one subgrid row (`.history-grid`), and the
+    closing label on one line. A closing row on a LEVELS table prints the year's net change, never a sum of
+    closes; the Close cell stays empty. `templates/wells/partials/_detail_pane.html`; guard
+    `tests/test_wells_measurement_history.py::test_each_water_year_of_the_depth_digest_closes_on_its_net_change`.
+14. **A column header is the thing, in a word a reader would use.** "Delta" asked whether it meant
+    difference; the meter's column is **Pumped** (the read less the previous read, said once in the head
+    line); the level column is **Change**. Never a Greek letter, an abbreviation, or an engine's own word.
+15. **A map on a form page is a landscape band above the form**, the record pages' 380px, the form's cards
+    two across under it. A map beside a form at the form's height is portrait and mostly out of view.
+    `templates/infrastructure/add.html`; guard `tests/test_views.py::test_add_page_map_is_a_landscape_band_above_the_form`.
+16. **Water-year group headers stand out**: primary text at 700 on a fuller band, ruled above and below
+    (`tr.row-group td`, platform-wide). The secondary-text version blended into the rows.
+17. **A card's subtitle is a noun phrase, not a sentence with a story in it.** "What came through the meter,
+    and what the water table did beneath it" became "Meter reads and depth to water, by water year."
+    The platform-wide sweep is Phase 143.1; the shape of the fault is in the roadmap entry.
+
 ## Copy rules
 
 House rules for the words on screen. Written 2026-07-30 during the drinking

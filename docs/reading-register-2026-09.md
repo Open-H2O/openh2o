@@ -479,7 +479,7 @@ mock-ups, the built zone page locally, the allocations landing on staging; the s
 guardrail refused the fifth), allocations SHIP at FINISH 4 both times, the zone page DO NOT SHIP at
 FINISH 3 both times for the 380px map at first paint, which is 143-07's.
 
-Resolved by 143-10 (2026-09-12; local build, not yet on staging), applying 143-06's three
+Resolved by 143-10 (built 2026-09-12; Brent "approved" 2026-09-13 12:06 PDT on staging `6090d2e` after three checkpoint rounds, his rulings recorded as DESIGN.md rules 11-17; production untouched at `241c22b`), applying 143-06's three
 patterns class for class rather than redesigning them: 9 of the 99 rows plus the diversion,
 water-right and recharge-site shares of R-055 and the POD, well and add-page shares of
 R-112 (twelve register rows, fifteen measured keys). Before values from
@@ -488,7 +488,7 @@ R-112 (twelve register rows, fifteen measured keys). Before values from
 directly against the rebuilt local stack in this task rather than copied from a builder's
 own claim (counts in `143-10-EVIDENCE.md`). Commits: `6f5a7d4` (the diversion page and the
 water right page), `2721b32` (the recharge list and site page), `888c31f` (the wells list,
-the well page, the add page); guards commit: see `143-10-SUMMARY.md`. R-115 by `6f5a7d4`:
+the well page, the add page); guards `1759f7d`; the checkpoint rounds `cead0f2`, `9e1d02b`, `6090d2e` (the by-point breakdown under the row, the recharge panel as three cells, the histories level, the map a landscape band, Pumped not Delta, stronger year headers). R-115 by `6f5a7d4`:
 the records table's Period column is gone, replaced by `tr.row-group` per water year (before:
 one flat row, Period repeating on 4 of 6 rows; after: 2 groups, "WY 2025-2026 · 2 months" and
 "WY 2024-2025 · 4 months", each closing with its own `tr.row-subtotal`, `.col-sep` on Retained
