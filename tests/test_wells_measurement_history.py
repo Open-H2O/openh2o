@@ -195,9 +195,9 @@ def test_each_water_year_of_the_depth_digest_closes_on_its_net_change():
     table = digest[digest.index("<table"):digest.index("</table>")]
     closing = re.findall(r'<tr class="row-subtotal">.*?</tr>', table, re.S)
     assert len(closing) == 2
-    assert "Net change, WY 2025-2026 &middot; 2 months" in closing[0]
+    assert "Net change, WY 2025-2026" in closing[0]
     assert ">+2.55<" in closing[0]
-    assert "Net change, WY 2024-2025 &middot; 2 months" in closing[1]
+    assert "Net change, WY 2024-2025" in closing[1]
     assert ">+0.85<" in closing[1]
     # The Close cell of a closing row is empty: a level is never summed.
     assert closing[0].count("<td></td>") == 1

@@ -315,7 +315,7 @@
               {% endfor %}
               {# A close is a level and is never summed; the changes between closes add to the year's net change, which closes the year here so this table keeps step with the meter table beside it. #}
               <tr class="row-subtotal">
-                <td class="tfoot-total">Net change, {{ year.label }} &middot; {{ year.count }} month{{ year.count|pluralize }}</td>
+                <td class="tfoot-total">Net change, {{ year.label }}</td>
                 <td></td>
                 <td class="td-num-bold td-total">{% if year.net_change > 0 %}+{% endif %}{{ year.net_change|floatformat:2 }}</td>
               </tr>
