@@ -1653,6 +1653,17 @@
     "id": "FIG-wells-007",
     "app": "wells",
     "kind": "figure",
+    "template": "templates/wells/partials/_detail_pane.html",
+    "line": 320,
+    "column": 109,
+    "expression": "{{ year.net_change|floatformat:2 }}",
+    "enclosing_loop": "year in water_levels.years",
+    "nearest_label": "{{ year.net_change|"
+  },
+  {
+    "id": "FIG-wells-008",
+    "app": "wells",
+    "kind": "figure",
     "template": "templates/wells/partials/_editable_field.html",
     "line": 32,
     "column": 69,
@@ -1661,7 +1672,7 @@
     "nearest_label": "{{ ef.value|"
   },
   {
-    "id": "FIG-wells-008",
+    "id": "FIG-wells-009",
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_editable_field.html",

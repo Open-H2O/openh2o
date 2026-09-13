@@ -239,7 +239,7 @@
     {% endcomment %}
     <div class="card-raised page-grid-account-full">
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Measurement history</h2>
-      <p class="text-secondary text-base" style="margin: 0 0 var(--space-md) 0;">What came through the meter, and what the water table did beneath it.</p>
+      <p class="text-secondary text-base" style="margin: 0 0 var(--space-md) 0;">Meter reads and depth to water, by water year.</p>
       {% if meter_history or water_levels %}
       {# .history-grid: each column is a subgrid of two rows (facts line, table), so the two tables' heads sit on one line even when one facts line wraps and the other does not (Brent's screenshot, 2026-09-13 11:02). A second meter's facts line and table follow in the left column's implicit rows. #}
       <div class="page-grid-2col history-grid">
@@ -247,14 +247,14 @@
         <div>
           {% for group in meter_history %}
             {# The unit stated ONCE, here, in this meter's own facts line (rule 4); no unit on either header below. #}
-            <p class="text-tertiary text-xs" style="margin: {% if forloop.first %}0{% else %}var(--space-lg){% endif %} 0 var(--space-sm) 0;">Meter {{ group.meter }} &middot; reads in {{ group.meter.get_unit_display|lower }} ({{ group.unit }}) &middot; the delta is the read less the previous read.</p>
+            <p class="text-tertiary text-xs" style="margin: {% if forloop.first %}0{% else %}var(--space-lg){% endif %} 0 var(--space-sm) 0;">Meter {{ group.meter }} &middot; reads in {{ group.meter.get_unit_display|lower }} ({{ group.unit }}) &middot; pumped is the read less the previous read.</p>
             <div class="table-scroll">
             <table class="data-table text-sm data-table--grouped">
               <thead>
                 <tr>
                   <th>Date</th>
                   <th class="th-right">Totalizer</th>
-                  <th class="th-right">Delta</th>
+                  <th class="th-right">Pumped</th>
                 </tr>
               </thead>
               <tbody>
@@ -272,7 +272,7 @@
                   </td>
                 </tr>
                 {% endfor %}
-                {# A totalizer is a running reading and is never summed -- only the Delta closes. #}
+                {# A totalizer is a running reading and is never summed -- only Pumped closes. #}
                 <tr class="row-subtotal">
                   <td class="tfoot-total">All {{ year.count }} read{{ year.count|pluralize }}, {{ year.label }}</td>
                   <td></td>
@@ -290,8 +290,8 @@
 
         <div>
           {% if water_levels %}
-          {# Levels are not amounts (rule 5): no subtotal row here. #}
-          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Depth to water, ft below land surface. Monthly close from the well's {{ water_levels.source }} record; change is against the previous month's close, so a positive change is a deeper water table.</p>
+          {# Levels are not amounts (rule 5): the Close column never sums; the year closes on its net change. #}
+          <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-sm) 0;">Depth to water, ft below land surface &middot; monthly close from the well's {{ water_levels.source }} record &middot; change is against the previous month's close; positive is deeper.</p>
           <div class="table-scroll">
           <table class="data-table text-sm data-table--grouped">
             <thead>
@@ -313,6 +313,12 @@
                 <td class="td-num">{% if row.change is None %}<span class="text-tertiary">&mdash;</span>{% else %}{{ row.change|floatformat:2 }}{% endif %}</td>
               </tr>
               {% endfor %}
+              {# A close is a level and is never summed; the changes between closes add to the year's net change, which closes the year here so this table keeps step with the meter table beside it. #}
+              <tr class="row-subtotal">
+                <td class="tfoot-total">Net change, {{ year.label }} &middot; {{ year.count }} month{{ year.count|pluralize }}</td>
+                <td></td>
+                <td class="td-num-bold td-total">{% if year.net_change > 0 %}+{% endif %}{{ year.net_change|floatformat:2 }}</td>
+              </tr>
               {% endfor %}
             </tbody>
           </table>

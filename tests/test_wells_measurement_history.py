@@ -184,6 +184,25 @@ def test_the_monthly_water_level_closes_are_literal_for_two_months_in_each_water
     assert "WY 2025-2026" in section and "WY 2024-2025" in section
 
 
+def test_each_water_year_of_the_depth_digest_closes_on_its_net_change():
+    """Brent, 2026-09-13: the digest keeps step with the meter table beside
+    it, so each water year closes with a row. A close is a level and never
+    sums; the monthly changes add to the year's net change, and that is the
+    figure the closing row prints (typed here from the fixture, not summed)."""
+    html = _page(_logged_well())
+    section = html[html.index(SECTION_HEADING):]
+    digest = section[section.index("Depth to water"):]
+    table = digest[digest.index("<table"):digest.index("</table>")]
+    closing = re.findall(r'<tr class="row-subtotal">.*?</tr>', table, re.S)
+    assert len(closing) == 2
+    assert "Net change, WY 2025-2026 &middot; 2 months" in closing[0]
+    assert ">+2.55<" in closing[0]
+    assert "Net change, WY 2024-2025 &middot; 2 months" in closing[1]
+    assert ">+0.85<" in closing[1]
+    # The Close cell of a closing row is empty: a level is never summed.
+    assert closing[0].count("<td></td>") == 1
+
+
 def test_a_well_with_only_a_hand_entered_record_still_gets_a_digest():
     html = _page(_sounded_well())
     section = html[html.index(SECTION_HEADING):]
