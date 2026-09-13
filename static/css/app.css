@@ -1318,7 +1318,10 @@ html { color-scheme: dark; }
    (0,2,1) beats the base `.data-table th` left-align without an importance
    override; the pseudo-element positions against the sticky cell. */
 .data-table--grouped th.th-group-label {
-    text-align: center;
+    /* Left, not centred: a centred group word floats over the middle of its
+       bracket with nothing under it, while every leaf header and every figure
+       below it hangs off an edge (Brent, 2026-09-13, zone page's Available). */
+    text-align: left;
     /* NOT `transparent`. `.data-table` is `border-collapse: collapse`, and a
        collapsed border is not painted over by the cell's own background -- so a
        transparent 2px border here showed the CARD behind it as a dark band
