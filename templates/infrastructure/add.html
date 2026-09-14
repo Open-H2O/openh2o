@@ -497,7 +497,10 @@
     }
   });
 
-  function placePoint(lngLat) {
+  // fromTyping: the pair came from the two inputs, so do NOT write it back
+  // into them (rewriting "-12" as "-12.000000" under the cursor on every
+  // keystroke made the boxes impossible to edit; Brent, staging, 18:24 PDT).
+  function placePoint(lngLat, fromTyping) {
     if (marker) marker.remove();
     marker = new maplibregl.Marker({ color: OH2O.colors.gold, draggable: true })
       .setLngLat(lngLat)
@@ -514,7 +517,7 @@
     // into the two inputs at six decimals; any warning from a PRIOR typed
     // pair is now stale (the point just moved), so it clears here and only
     // handleCoordInput below decides whether to raise it again.
-    syncCoordInputs(lngLat.lng, lngLat.lat);
+    if (!fromTyping) syncCoordInputs(lngLat.lng, lngLat.lat);
     hideCoordWarning();
   }
 
@@ -550,7 +553,7 @@
       hideCoordWarning();
       return;
     }
-    placePoint({ lng: lng, lat: lat });
+    placePoint({ lng: lng, lat: lat }, true);
     if (lat < CA_BOUNDS.latMin || lat > CA_BOUNDS.latMax || lng < CA_BOUNDS.lngMin || lng > CA_BOUNDS.lngMax) {
       showCoordWarning('Outside California; check the sign of the longitude.');
     }

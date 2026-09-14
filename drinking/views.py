@@ -177,10 +177,9 @@ def _sampling_points_head_line(
     """
     if not q and not filter_words:
         noun = "sampling point" if all_count == 1 else "sampling points"
-        return (
-            f"{all_count:,} {noun}; {mapped_facility_count:,} of them at a "
-            "located facility, on the map"
-        )
+        # Plain words (Brent, staging 18:24 PDT: "at a located facility, on
+        # the map" read as machine prose). The Facilities head's own shape.
+        return f"{all_count:,} {noun}, {mapped_facility_count:,} of them on the map"
 
     clause_bits = []
     if q:
@@ -193,11 +192,12 @@ def _sampling_points_head_line(
         return f"No sampling point matching {clause}; the map shows none"
 
     match_verb = "matches" if total_count == 1 else "match"
-    facility_noun = "facility" if result_located_count == 1 else "facilities"
     if not result_located_count:
-        tail = "the map shows none of them; none is at a located facility"
+        tail = "the map shows none of them"
+    elif total_count == 1:
+        tail = "the map shows it"
     else:
-        tail = f"the map shows the {result_located_count:,} located {facility_noun} among them"
+        tail = f"the map shows {result_located_count:,} of them"
     return f"{total_count:,} of {all_count:,} {match_verb} {clause}; {tail}"
 
 

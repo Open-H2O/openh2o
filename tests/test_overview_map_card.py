@@ -162,8 +162,7 @@ def _sampling_points_full_line():
     ).count()
     noun = "sampling point" if all_count == 1 else "sampling points"
     return (
-        f"{all_count:,} {noun}; {mapped_facility_count:,} of them at a "
-        "located facility, on the map"
+        f"{all_count:,} {noun}, {mapped_facility_count:,} of them on the map"
     )
 
 

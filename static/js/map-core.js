@@ -237,11 +237,33 @@ OH2O.followResults = function (map, opts) {
             map.fitBounds(bounds, { padding: padding, maxZoom: maxZoom });
         }
     }
+    // Each layer's OWN filter (the recharge dots layer keeps only Point
+    // geometry, for one) is read once and ANDed with the pk filter. Replacing
+    // it wholesale put a circle on every polygon vertex of every basin (Brent,
+    // staging, 18:17 PDT).
+    // A legacy filter (['==', '$type', 'Point']) cannot sit inside an
+    // expression ['all', ...]: MapLibre rejects the pair and keeps the old
+    // filter, silently. Translate the one legacy shape this codebase uses.
+    function asExpression(f) {
+        if (!f) return null;
+        if (f.length === 3 && f[1] === '$type') return [f[0], ['geometry-type'], f[2]];
+        if (f.length === 3 && typeof f[1] === 'string' && f[1].charAt(0) !== '$' && !Array.isArray(f[2])) {
+            return [f[0], ['get', f[1]], f[2]];
+        }
+        return f;
+    }
+    var ownFilters = {};
+    (opts.layers || []).forEach(function (id) {
+        if (map.getLayer(id)) ownFilters[id] = asExpression(map.getFilter(id));
+    });
     function apply() {
         var pks = readPks();
-        var filter = pks === null ? null : ['in', ['get', 'pk'], ['literal', pks]];
+        var pkFilter = pks === null ? null : ['in', ['get', 'pk'], ['literal', pks]];
         (opts.layers || []).forEach(function (id) {
-            if (map.getLayer(id)) map.setFilter(id, filter);
+            if (!map.getLayer(id)) return;
+            var own = ownFilters[id];
+            var filter = pkFilter === null ? own : (own ? ['all', own, pkFilter] : pkFilter);
+            map.setFilter(id, filter);
         });
         var feats = features();
         if (pks !== null) {
