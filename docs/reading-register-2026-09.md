@@ -712,9 +712,15 @@ Guards: thirty-one new tests across `tests/test_overview_map_card.py` (new),
 commit of the row's own feature commit, copied into the running container over the built
 image, `docker compose cp`, never `git stash`) before GREEN against the built tree; the
 failing assertion for every guard is quoted in `143-07-EVIDENCE.md`. Suite 2,641 → **2,672**.
-`make test-droppable` result is in `143-07-EVIDENCE.md`. Staging deploy, the after-probe and
-Brent's approval are Task 8, not this task; the staging column of every row above is marked
-`TASK 8 FILLS IN` in the evidence file.
+`make test-droppable` 30. Staging: the after-probe (`143-07-probe-after-staging.json`) matched
+local on every row (8 zones and one boundary on staging, where local carries a Debug Zone and a
+stray Boundary 0). Brent's staging round, 18:24 PDT, sent four things back and `8da1fcc` fixed
+them the same hour: circles on every basin vertex (the list filter had replaced the dots layer's
+own Point filter; it now ANDs the pks with each layer's own filter), the longitude box that
+could not be edited (a typed pair no longer rewrites the inputs under the cursor), the zone
+page's "Available" back to centre (DESIGN.md rule 18), and the sampling-points line in plain
+words ("27 sampling points, 21 of them on the map"). **Approved 18:47 PDT on staging `8da1fcc`;
+production untouched at `241c22b`.**
 
 ## Phase 144: The words and the way in
 

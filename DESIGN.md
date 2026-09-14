@@ -275,6 +275,18 @@ guard so it is not re-learned. They extend rules 1-10 and hold on every page tha
 17. **A card's subtitle is a noun phrase, not a sentence with a story in it.** "What came through the meter,
     and what the water table did beneath it" became "Meter reads and depth to water, by water year."
     The platform-wide sweep is Phase 143.1; the shape of the fault is in the roadmap entry.
+18. **A grouped table's bracket header sits centred over its bracket.** Tried left on 2026-09-13 at
+    Brent's first read and ruled back to centre on staging the same evening ("way worse"): the bracket
+    is the group's extent and the word balances it from the middle. `.data-table--grouped
+    th.th-group-label`, platform-wide; guard
+    `tests/test_template_hygiene.py::TestGroupedTableBracketHeaderIsCentred`.
+19. **A map's marks are named on the map and keyed above it; the map follows its list.** Every overview
+    map sits under a card head that counts what the list counts with the key on the same line
+    (`partials/_map_card_head.html`, `.map-card-head`), carries an always-on label per mark that
+    YIELDS when it collides (never `text-allow-overlap`: seven names painted over one another read as
+    none), and filters to the list's pks on every swap (`OH2O.followResults`, which keeps each layer's
+    own geometry filter). A typed coordinate is never rewritten under the cursor. Ruled 2026-09-13
+    14:10 (A, the card) and 18:24 (the round on staging); guards `tests/test_overview_map_card.py`.
 
 ## Copy rules
 
