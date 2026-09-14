@@ -564,6 +564,158 @@ Suite 2,609 → **2,631** (22 new guard tests, all observed red against the pre-
 before green). `make test-droppable` green, 30 passed. Staging and Brent's approval are
 143-10 Task 6, not run by this task.
 
+Resolved by 143-07 (built 2026-09-13; local stack only, staging deploy and Brent's approval
+are Task 8, not this task), closing the twelve map rows: R-023, R-022, R-124, R-094, R-095,
+R-096, R-100, R-102, R-123, R-074, R-075, R-076. Before values from
+`143-07-probe-before-local.json` / `-staging.json` (Task 1, 12:50-13:00 PDT); after values
+measured directly against the rebuilt local stack in this task. Commits, in order: `9310657`
+(the overview map card, Surface Diversions), `69978e3` (Brent's 14:01 PDT bracket-header
+ruling, applied platform-wide), `1dc1e67` (`map_label`, the code-prefix/parenthetical strip,
+and `zone_labels_geojson`'s `pk`/`zone_type`/`label`), `133a767` (Recharge), `2b6f6cf`
+(Zones), `7d1431c` (Sampling Points, Facilities), `9b8aac7` (Stations: R-074, R-075, R-076),
+`e49abe2` (the main session's drift fixes after Task 4, below), `c93a0a2` (the district map:
+R-094, R-095, R-096), `362427e` (the draw maps, ISS-171, the zone's use areas, the right's
+popup link), `4868347` (the boundary label, one per feature). Guard commit and register
+annotation follow in this task.
+
+**R-023** (four overview maps and the stations list ignored the list's own filter). Before:
+Surface Diversions, Recharge, Zones and Sampling Points installed no listener for `#results`'
+htmx swap, so a one-row match still rendered every mark; Sampling Points' coverage sentence
+kept saying "21 of 27" through a filter that had already narrowed the list to zero. After:
+`OH2O.followResults` reads the filtered queryset's pks from a `results-map-pks` `json_script`
+after every swap of `#results`, `setFilter`s every layer (marks and label alike) to them, and
+re-frames; the card head above the map (never inside `#results`) is the one count line and is
+re-rendered `hx-swap-oob="true"` on the same swap. Measured on the local demonstration at
+first paint: 9 diversion points, 7 recharge sites, 9 zones (8 on staging), 21 of 27 sampling
+points at a located facility, 42 stations syncing; after a one-row match on each, the map's
+rendered-feature count equals the list's own count, in both directions (a widened filter
+re-populates the map, never only narrows it). ISS-136 closes on Ruling A (below): every
+overview map follows its list; the facilities/sampling-points sentence shrinks to the
+located-subset gap it was already carrying, rather than growing a sentence to the other four
+pages.
+
+**R-022** (Surface Diversions: nine unlabelled dots, no legend, the count line under the map).
+Before: "9 diversion points found" sat under the filter card, not with the map; nine plain
+teal dots, no label, no key. After: the card head reads "9 diversion points, all on the map"
+with a `.swatch-dot` and "Diversion point" beside it on the same line; an always-on label per
+point (`OH2O.addDetailLabel`, collision-yield, never `text-allow-overlap`): 8 of 9 render at
+the fitted zoom, the ninth two points ten pixels apart where no layout fits both labels at
+once and it yields, the dot stays. Card approved by Brent 14:10 PDT with one change: the
+label drops the stored name's code prefix ("Atwater Canal Headgate", not "MER-POD-004-DEMO
+Atwater Canal Headgate", `map_label`, Step 0).
+
+**R-124** (Recharge: two faint smudges for seven sites). Before: fill opacity 0.22, outline
+1.5px, no label, five El Nido basins read as one faint cluster. After: opacity 0.35, outline
+2.5px; a second client-side source (`{{ map_id }}-labels`, one point per site at its own
+bbox centre, never per polygon ring) with an always-on label. The main session's drift read
+after Task 4 (14:50-15:20 PDT) found the first pass had painted all seven names with
+`text-allow-overlap`: seven labels on top of one another read as none, fixed in `e49abe2`
+to the same collision-yield rule R-022 uses: 4 of 7 render at first paint, the rest yield as
+the reader zooms in.
+
+**R-074** (Monitoring Stations: the list and the map disagree). Not reproduced as written at
+first load: `stations_freshness_geojson` filtered `is_active=True` (42) and the list defaulted
+to `active=1` (42), so the two agreed at 42 = 42 by coincidence, not by design; the register's
+reader had read the grey "Dormant" dots (a freshness state) as stations outside the list. Its
+CLASS did reproduce on every filter: choosing "Not syncing" left the list at 293 and the map
+still at 42. After: the endpoint serves every LOCATED station regardless of `is_active`, with
+`is_active` riding in properties, and `OH2O.followResults` (never the endpoint) decides what
+draws by filtering to the list's own pks; "Not syncing" now reads list 293 = map 293.
+
+**R-075** (a bare `--` for both a one-reading station and a zero-reading one). Before: the
+Trend cell read `--` either way. After: "No trend yet" (`reading_count == 1`, too few for a
+sparkline but not "no data") and "No readings" (`reading_count == 0`), the view's own count,
+never a dash.
+
+**R-076** (an unheaded coloured-dot column). Before: the first `<th>` was empty, its meaning
+only in the map's own legend box further up the page. After: the header reads "Reporting",
+the cell carries the dot AND the word ("Up to date" / "Slightly behind" / "Dormant"), the
+same three words the filter and the card's key (below) use, and the in-map legend box is
+gone (the head above the map is the key now, one place, not two saying the same three things).
+
+**R-094 / R-095** (the district map's pile and its legend). Before: the `zones` source drew
+management-area GSA zones and surface service areas in one fill layer; the legend named three
+near-identical greens (`#2d6a4f`/`#40916c`/`#52b788`) while the Layers panel counted eight GSA
+Zones (five of them unnamed service areas), and the service areas' four-line white labels
+piled against the wells cluster east of Merced. After: two layer groups on the SAME source,
+filtered the way their MapLibre `filter` narrows (`zones-fill`/`zones-label` on
+`management_area`; `service-areas-outline`/`service-areas-label`, dashed, outline only, on
+everything else): Layers panel now counts GSA Zones 4 locally (3 on staging, no Debug Zone)
+and Surface service areas 5. Three fills a reader can tell apart (`#3a9742` forest-teal,
+`#00969f` reservoir-blue, `#cc5900` furnace-orange, from DESIGN.md's OKLCH ramps, none the
+parcel/recharge/POD/drinking colours), derived in `map_view` and never hardcoded. Pile: the
+service-area label sits at `minzoom` 11 (the layer and its popup don't exist below that),
+`text-max-width` 10, sorts after the GSA labels, and reads `short_label` (the part of the name
+after the em dash) rather than the full composed name. Measured after: 3 GSA labels at first
+paint, 0 label-on-label overlap (the probe's residual "overlap" counts were dot circles, not
+text). Accepted by the main session's read after Task 5 (15:45-16:20 PDT): service areas as a
+gold dashed line beside the solid gold agency boundary, the same administrative class: every
+other colour already taken.
+
+**R-096** (the Layers panel sliced through "MONITORING"). Not reproduced as written at 1,730 x
+1,000 (the panel fit; Task 1 measured it there); reproduces at 1,440 x 900, the register's own
+viewport. After: `#controls.panel-can-scroll::after` (`static/css/map-engine.css`), a 28px
+bottom fade in the card colour, shown only while `.panel-body` can scroll further
+(`map-engine.js` toggles the class) and gone once scrolled to the end; `scrollbar-gutter:
+stable` keeps the thin scrollbar off the last row's text. The DOM measurement at both
+viewports (whether the fade actually shows, and where the panel's last row sits) is a browser
+fact this suite cannot see (`tests/test_map_legend.py`'s own docstring); Task 8's staging
+read is the measurement; the guard here only proves the stylesheet rule exists for the toggle
+to reveal.
+
+**R-100** (the two draw-your-own-geometry maps open with no district). Before: both
+`/map/zones/create/` and `/infrastructure/add/?type=well` opened at `[-119.5, 37.3]` zoom 8
+with no boundary layer: the probe's own `boundary_layer_present: true` on `/map/` was a
+naming artifact (the BASEMAP style's `boundary_state`/`boundary_country` layers, not an agency
+boundary). After: `OH2O.frameOnBoundary` fetches `geography:boundaries_geojson`, draws an
+outline and an always-on label, and `fitBounds`es on it before the drawing layers go on top;
+with no boundary rows a deployment degrades to today's centre/zoom, unchanged. The local
+database carries a stray "Boundary 0" (pk 2, near Hanford) and a "Debug Zone", local test
+debris, absent on staging (`boundaries_geojson` feature_count 1 there), left in place so
+Task 8's after-probe compares like with like; staging is the judged host. The boundary label
+itself painted twice for a two-part `MultiPolygon` boundary; fixed in `4868347` to one label
+per feature from a bbox-centre point source, the same fix shape as R-124's per-site label.
+
+**R-102** (the zone's own map draws the outline and none of its named use areas). Before:
+`/map/zones/2/` showed the outline alone while the list beneath named twenty-three assigned
+use areas; the same map's own zone label painted six times (once per polygon part). After:
+`zone_detail`'s view adds `parcels_geojson` (the zone's assigned parcels, `parcel_number` +
+`pk`), rendered beneath `zone-fill` in the parcel blue with a "View use area →" popup link;
+23 parcels drawn under the outline on the demonstration's own populated zone. The six-times
+label: `_addDetailLayers`'s polygon branch reads a new `label_point` property
+(`point_on_surface`, the same mechanism `zone_labels_geojson` already used on the big map):
+one label for the whole zone, not one per part.
+
+**R-123** (the water right's map popups have no link). Before: a diversion point's popup
+carried a name, a stream and a rate and nothing to click, while the same name in the table
+beside it was a link. After: the popup gains a "View diversion →" link built from the
+`pod_detail` sentinel URL (`'/surface/diversion/0/'`, swapped for the real pk client side, the
+house pattern every overview partial already uses); `pods_geojson` for the right now carries
+`pk` in `properties` (the serializer otherwise puts it at the feature's top level). Measured
+after (staging demonstration, right pk 6): the popup's link resolves to
+`/surface/diversion/8/`.
+
+**Brent's three Task 3 rulings (2026-09-13 14:10 PDT, "proceed as suggested"), quoted, are
+the authority for the shape above:** (1) **A**: every overview map follows its list; ISS-136
+closes on A. (2) The card as built on Surface Diversions is **approved**, with one change:
+drop the code prefix from every map label. (3) **Keep 380px** on the record pages; fix what is
+in the band (R-102); DESIGN.md rule 15 is unchanged. A fourth ruling, 14:01 PDT, moved the
+grouped-table bracket header from centred to left platform-wide (`.data-table--grouped
+th.th-group-label`, `69978e3`) after Brent named it on the zone page's Available bracket;
+carried here because Task 7's guard for it lives beside these twelve, not because it is one of
+the twelve rows.
+
+Guards: thirty-one new tests across `tests/test_overview_map_card.py` (new),
+`tests/test_input_validation.py`, `tests/test_views.py`, `tests/test_map_legend.py`,
+`tests/test_datasync_honesty.py`, `tests/test_zone_detail_page.py` and
+`tests/test_template_hygiene.py`, each observed RED against the pre-change tree (the parent
+commit of the row's own feature commit, copied into the running container over the built
+image, `docker compose cp`, never `git stash`) before GREEN against the built tree; the
+failing assertion for every guard is quoted in `143-07-EVIDENCE.md`. Suite 2,641 → **2,672**.
+`make test-droppable` result is in `143-07-EVIDENCE.md`. Staging deploy, the after-probe and
+Brent's approval are Task 8, not this task; the staging column of every row above is marked
+`TASK 8 FILLS IN` in the evidence file.
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**
