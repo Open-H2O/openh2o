@@ -40,7 +40,9 @@ assert on JavaScript control flow. A grep over source code is not a behavioural
 guard and rots on the first refactor.
 """
 
+import json
 import re
+from pathlib import Path
 
 import factory
 import pytest
@@ -381,3 +383,139 @@ class TestSharedSourcesAreNarrowedPerLayer:
             assert f"'{prop}'" in filter_text, (
                 f"{name} counts on {prop!r}, which its MapLibre filter never mentions"
             )
+
+
+# -- 5. R-094 / R-095 (143-07): two kinds of zone, three tellable fills ------
+#
+# The `zones` source carries management-area GSA zones AND everything else
+# (surface service areas in the demonstration). One fill layer drawing both
+# meant the legend named three GSA greens against a layer of eight zones
+# (R-095), and a district's worth of long service-area names piled east of
+# Merced with nothing to thin them out (R-094). Both are fixed by splitting
+# into two layer groups that filter the SAME source the same way their
+# MapLibre `filter` does (the ISS-116 lesson `countFilter` already pins
+# above), plus a `minzoom` on the service-area label so it only exists where
+# its own popup does.
+
+
+def _element_containing(html, key, needle):
+    """The one element of a MAP_CONFIG array (`layers`/`legend`/...) whose
+    text contains `needle`, or a clear failure naming what was searched."""
+    for element in _elements(_array(html, key)):
+        if needle in element:
+            return element
+    raise AssertionError(f"no element of {key!r} contains {needle!r}")
+
+
+def _hex_rgb(hex_color):
+    hex_color = hex_color.lstrip("#")
+    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+
+
+@pytest.fixture
+def three_management_areas(db):
+    """Three GSA zones: enough for the "three tellable fills" claim to mean
+    something; `management_areas` above only carries two."""
+    return [
+        ZoneFactory(name="Alpha GSA"),
+        ZoneFactory(name="Beta GSA"),
+        ZoneFactory(name="Gamma GSA"),
+    ]
+
+
+class TestTheDistrictSplitsIntoTwoZoneKinds:
+    def test_zones_fill_is_filtered_to_management_area_and_keyed(self, client_in):
+        element = _element_containing(
+            _rendered(client_in), "layers", "id: 'zones-fill'"
+        )
+        assert "filter: ['==', ['get', 'zone_type'], 'management_area']" in element
+        assert "label: 'GSA Zones'" in element
+        assert "swatch: 'fill'" in element
+
+    def test_service_areas_outline_is_filtered_to_everything_else_and_keyed(
+        self, client_in
+    ):
+        element = _element_containing(
+            _rendered(client_in), "layers", "id: 'service-areas-outline'"
+        )
+        assert "filter: ['!=', ['get', 'zone_type'], 'management_area']" in element
+        assert "label: 'Surface service areas'" in element
+        assert "swatch: 'line-dash'" in element
+
+    def test_service_area_labels_do_not_exist_below_zoom_11(self, client_in):
+        """R-094: the layer and its popups don't exist below 11 either, a
+        label with no way to reach the thing it names would just be more
+        pile."""
+        element = _element_containing(
+            _rendered(client_in), "layers", "'service-areas-label'"
+        )
+        assert "minzoom: 11" in element
+
+    def test_the_legend_names_exactly_the_management_area_zones(
+        self, client_in, three_management_areas
+    ):
+        legend = _array(_rendered(client_in), "legend")
+        names = re.findall(r"label:\s*'([^']+)'", legend)
+        assert names == [z.name for z in three_management_areas]
+
+
+class TestTheThreeFillsAreTellableApart:
+    def test_the_three_colours_are_pairwise_distinct(
+        self, client_in, three_management_areas
+    ):
+        legend = _array(_rendered(client_in), "legend")
+        colors = re.findall(r"color:\s*'(#[0-9a-fA-F]{6})'", legend)
+        assert len(colors) == 3, f"expected 3 zone colours, got {colors}"
+        rgbs = [_hex_rgb(c) for c in colors]
+        for i in range(len(rgbs)):
+            for j in range(i + 1, len(rgbs)):
+                channel_diffs = [abs(a - b) for a, b in zip(rgbs[i], rgbs[j])]
+                distinct_channels = sum(1 for d in channel_diffs if d > 0x20)
+                assert distinct_channels >= 2, (
+                    f"{colors[i]} and {colors[j]} differ by more than 0x20 in "
+                    f"only {distinct_channels} channel(s), not tellable apart "
+                    "at a glance on aerial imagery or in an 11px swatch"
+                )
+
+
+class TestZoneLabelsGeojsonCarriesTheFollowFilterFields:
+    """`zone_labels_geojson` feeds the Zones overview map's follow helper
+    (143-07 Task 4) and the district map's two label layers (Task 5) alike;
+    both need `pk` and `zone_type` to filter by, and the district map's
+    service-area label reads `short_label`/`label` rather than the stored
+    name so a demonstration's composed suffix does not pile against markers.
+    """
+
+    def test_features_carry_pk_zone_type_and_a_parenthetical_stripped_label(
+        self, client_in, db
+    ):
+        zone = ZoneFactory(name="Halvern Irrigation District (MER-WR-004-DEMO)")
+        response = client_in.get(reverse("geography:zone_labels_geojson"))
+        assert response.status_code == 200
+        data = json.loads(response.content)
+        feature = next(
+            f for f in data["features"] if f["properties"]["pk"] == zone.pk
+        )
+        assert feature["properties"]["zone_type"] == "management_area"
+        assert feature["properties"]["label"] == "Halvern Irrigation District", (
+            "a zone named \"X (Y)\" must label as \"X\""
+        )
+
+
+class TestThePanelShowsWhenItCanScrollFurther:
+    """R-096. The panel fits at 1,730 x 1,000 (Task 1 measured it there) and
+    clips at 1,440 x 900: a DOM measurement at both viewports, which this
+    file's own docstring says pytest cannot make (the panel is assembled in
+    the browser). It lives in `143-07-EVIDENCE.md`, not here. What this guard
+    proves is that the affordance rule map-engine.js toggles actually exists
+    in the stylesheet, so a future edit to `.panel-body` cannot silently drop
+    it and leave the toggle with nothing to reveal.
+    """
+
+    def test_the_bottom_fade_rule_is_declared(self):
+        css_path = Path(__file__).resolve().parent.parent / "static/css/map-engine.css"
+        css = css_path.read_text()
+        assert "#controls.panel-can-scroll::after" in css, (
+            "the panel's scroll-affordance rule is gone from map-engine.css"
+        )
+        assert "pointer-events: none" in css.split("panel-can-scroll::after")[1][:400]

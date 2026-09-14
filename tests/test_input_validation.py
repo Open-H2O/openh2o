@@ -252,3 +252,55 @@ class TestInfrastructureAddValidation:
         assert Well.objects.count() == 1
         well = Well.objects.get()
         assert str(well.depth_ft) == "350.00"
+
+    # -------------------------------------------------------------------
+    # ISS-171 (143-07): a well operator with a WCR in hand types the point
+    # instead of clicking the map. The two inputs feed `placePoint` client
+    # side and are silently ignored server side when the click path already
+    # filled `geometry_json` (`infrastructure/views.py::infrastructure_add`);
+    # this only exercises the typed-coordinate fallback.
+    # -------------------------------------------------------------------
+
+    def test_typed_coordinates_with_no_geometry_json_create_a_well_there(
+        self, auth_client
+    ):
+        url = reverse("infrastructure:add")
+        resp = auth_client.post(url, {
+            "infra_type": "well",
+            "name": "Typed Coordinate Well",
+            "status": "active",
+            "latitude": "37.3",
+            "longitude": "-120.5",
+        })
+
+        assert resp.status_code == 302
+        assert Well.objects.count() == 1
+        well = Well.objects.get()
+        assert round(well.location.y, 6) == 37.3
+        assert round(well.location.x, 6) == -120.5
+
+    def test_a_latitude_outside_the_valid_range_rerenders_with_a_warning_and_creates_nothing(
+        self, auth_client
+    ):
+        url = reverse("infrastructure:add")
+        resp = auth_client.post(url, {
+            "infra_type": "well",
+            "name": "Bad Latitude Well",
+            "status": "active",
+            "latitude": "95",
+            "longitude": "-120.5",
+        })
+
+        # Out of [-90, 90]: the typed-coordinate fallback declines to build a
+        # geometry from it, so the well branch's own "a point is required"
+        # guard is what the operator sees, never a 500, never a stray row.
+        assert resp.status_code == 200
+        assert b"A point location is required for wells." in resp.content
+        assert Well.objects.count() == 0
+
+    def test_the_typed_coordinate_inputs_are_on_the_add_page(self, auth_client):
+        url = reverse("infrastructure:add")
+        body = auth_client.get(url, {"type": "well"}).content.decode()
+
+        assert 'name="latitude"' in body
+        assert 'name="longitude"' in body

@@ -125,3 +125,73 @@ class TestZoneUseAreasFooter:
 
         assert "No parcels assigned to this zone." in html
         assert "tfoot-total" not in html
+
+
+class TestZoneUseAreasOnTheMap:
+    """R-102 (143-07): the zone page's own map drew the outline and none of
+    the use areas the table beneath it names. `zone_detail`'s view now adds
+    `parcels_geojson` (the zone's assigned parcels, beneath `zone-fill`), and
+    fixes the six-times label the same map showed for a multi-part GSA
+    (`label_point`, one interior point per zone rather than a symbol layer
+    stamping the polygon source once per part).
+    """
+
+    def test_two_assigned_parcels_render_with_parcel_number_and_pk(self, viewer):
+        import json
+        import re
+
+        zone = ZoneFactory(name="Parcels-On-Map Zone")
+        p1 = ParcelFactory(parcel_number="APN-100001")
+        p2 = ParcelFactory(parcel_number="APN-100002")
+        ParcelZoneFactory(parcel=p1, zone=zone)
+        ParcelZoneFactory(parcel=p2, zone=zone)
+
+        response = viewer.get(f"/map/zones/{zone.pk}/")
+        assert response.status_code == 200
+        html = response.content.decode()
+
+        match = re.search(
+            r'<script[^>]*id="detail-parcels-geojson-data"[^>]*>(.*?)</script>',
+            html,
+            re.DOTALL,
+        )
+        assert match, "detail-parcels-geojson-data is not on the page"
+        data = json.loads(match.group(1))
+        assert len(data["features"]) == 2
+        numbers = {f["properties"]["parcel_number"] for f in data["features"]}
+        assert numbers == {"APN-100001", "APN-100002"}
+        for f in data["features"]:
+            assert "pk" in f["properties"]
+
+    def test_with_none_assigned_the_parcels_element_is_absent(self, viewer):
+        zone = ZoneFactory(name="No Parcels On Map Zone")
+        response = viewer.get(f"/map/zones/{zone.pk}/")
+        assert response.status_code == 200
+        html = response.content.decode()
+
+        assert 'id="detail-parcels-geojson-data"' not in html
+
+    def test_the_zone_geojson_carries_one_label_point_for_the_whole_zone(
+        self, viewer
+    ):
+        import json
+        import re
+
+        zone = ZoneFactory(name="Label Point Zone")
+        response = viewer.get(f"/map/zones/{zone.pk}/")
+        assert response.status_code == 200
+        html = response.content.decode()
+
+        match = re.search(
+            r'<script[^>]*id="detail-geojson-data"[^>]*>(.*?)</script>',
+            html,
+            re.DOTALL,
+        )
+        assert match, "detail-geojson-data is not on the page"
+        data = json.loads(match.group(1))
+        assert len(data["features"]) == 1
+        assert "label_point" in data["features"][0]["properties"], (
+            "the zone's own detail map has nothing to draw a single label from"
+        )
+        lng, lat = data["features"][0]["properties"]["label_point"]
+        assert isinstance(lng, float) and isinstance(lat, float)

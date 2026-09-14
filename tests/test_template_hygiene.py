@@ -152,3 +152,25 @@ class TestEmptyValuesAreWorded:
             "an empty value needs wording, not a dash — use the `blank` filter "
             f"or a `.value-empty` span: {offenders}"
         )
+
+
+class TestGroupedTableBracketHeaderIsLeftAligned:
+    """Brent's ruling, 2026-09-13 14:01 PDT (143-07 Task 3, `/map/zones/2/`'s
+    Available bracket): a grouped table's bracket header sits LEFT, not
+    centred. A centred group word floats over the middle of its bracket with
+    nothing under it, while every leaf header and every figure below it
+    hangs off an edge. Applied platform-wide to
+    ``.data-table--grouped th.th-group-label``, the dashboard's Supplies /
+    Groundwater budget headers moved with it, commit ``69978e3``.
+    """
+
+    def test_the_bracket_header_rule_is_left_not_centred(self):
+        source = re.sub(r"/\*.*?\*/", "", APP_CSS.read_text(), flags=re.S)
+        match = re.search(
+            r"\.data-table--grouped th\.th-group-label\s*\{([^}]*)\}", source
+        )
+        assert match, ".data-table--grouped th.th-group-label has no rule in app.css"
+        assert "text-align: left" in match.group(1), (
+            "the bracket header is not ruled text-align: left"
+        )
+        assert "text-align: center" not in match.group(1)

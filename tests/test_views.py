@@ -974,6 +974,59 @@ class TestRechargePages:
 
 
 # ---------------------------------------------------------------------------
+# 143-07: the two draw-your-own-geometry maps open on the district, and the
+# water right's map popups link to the diversion point they name.
+# ---------------------------------------------------------------------------
+
+
+class TestTheDrawMapsFrameOnTheDistrictBoundary:
+    """R-100. Before this plan both maps opened at a fixed point in the
+    mountains ([-119.5, 37.3], zoom 8) with no agency boundary drawn.
+    `OH2O.frameOnBoundary` (map-core.js) fetches this URL and, given
+    features, frames on them; verified in a real browser at the checkpoint
+    (a MapLibre instance is not something this suite can inspect); what a
+    guard here can prove is that the page hands the helper something to
+    fetch at all."""
+
+    def test_zone_create_page_declares_the_boundary_endpoint(self, auth_client):
+        body = auth_client.get(reverse("geography:zone_create")).content.decode()
+        assert reverse("geography:boundaries_geojson") in body
+
+    def test_infrastructure_add_page_declares_the_boundary_endpoint(self, auth_client):
+        body = auth_client.get(
+            reverse("infrastructure:add"), {"type": "well"}
+        ).content.decode()
+        assert reverse("geography:boundaries_geojson") in body
+
+
+class TestTheWaterRightPopupLinksToItsDiversionPoint:
+    """R-123. Before this plan a diversion point's map popup carried a name,
+    a stream and a rate and nothing to click, while the same name in the
+    table beside it was a link. `_water_right_detail_pane.html` resolves the
+    link through Django with a sentinel pk (`'/surface/diversion/0/'`) and
+    swaps in the real one client side; this guard proves the sentinel URL
+    reaches the page and that the pod's own pk is on the feature the popup
+    reads it from."""
+
+    def test_the_popup_script_carries_the_sentinel_url_and_the_pods_geojson_carries_pk(
+        self, auth_client
+    ):
+        right = WaterRightFactory(right_id="WR-POPUP")
+        pod = PointOfDiversionFactory(water_right=right, name="Popup POD")
+
+        body = auth_client.get(
+            reverse("surface:detail", kwargs={"pk": right.pk})
+        ).content.decode()
+
+        assert "'/surface/diversion/0/'" in body, (
+            "the pane's popup script no longer resolves the sentinel pod_detail URL"
+        )
+        assert f'"pk": {pod.pk}' in body, (
+            "the right's pods_geojson does not carry pk in properties"
+        )
+
+
+# ---------------------------------------------------------------------------
 # 143-10 (R-112 well and add): the well page's account grid and the add
 # page's stretched map column, each a rendered-markup / CSS-text assertion,
 # never a screenshot measurement re-derived here.
