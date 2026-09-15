@@ -724,6 +724,131 @@ page's "Available" back to centre (DESIGN.md rule 18), and the sampling-points l
 words ("27 sampling points, 21 of them on the map"). **Approved 18:47 PDT on staging `8da1fcc`;
 production untouched at `241c22b`.**
 
+Resolved by 143-08 (built 2026-09-15; local stack only, staging deploy and Brent's approval
+are Task 6, not this task), closing the drinking-water half of the eleven rows: R-062, R-063,
+R-064, R-066, R-067, R-068, R-069, R-070, R-071, R-073, and the lab-result share of R-055.
+ISS-135 closes with it. Before values from `143-08-probe-before-local.json` /
+`-staging.json` (Task 1, byte-identical across hosts, captured 2026-09-15 12:36 PDT; local
+`7c368d1`, staging `5d5ffcd`, production `241c22b`); after values measured directly against
+the rebuilt local stack in this task, re-running Task 1's own probe script rather than
+copying a builder's own claim (`/tmp/143-08-after-for-register.json`; the plan's official
+after-probe, `143-08-probe-after.py`, is Task 6's). Commits: `a5bade8` (the three lists and
+ISS-135), `7672b0e` (intcomma on the results-log count pill), `b3af011` (the three record
+pages), `e96f442` (the points/results tables re-seated in a zero-padding card), `fcc4d11`
+(the overview's records card and the builder as one form).
+
+**R-062.** Before, the three tiles sat under "Population and service connections", a
+heading naming something else. After, an `h2` reading "Records for this system" heads a
+card beside the identity card; the tiles are byte-identical to before this task
+(`tests/test_drinking_module_shows_what_to_do.py` untouched, green).
+
+**R-063 / ISS-135.** Before, of the 50 visible facility rows 22 read "Not recorded" in
+Water Type and 32 in Well (Task 1 measured 22/32, not the plan's rough guess of 27 for
+either), no text on the page said why either cell was empty; the Type and Status selects'
+`hx-include="[name='q'], …"` matched the header's own search box too, so a filter change
+sent `q` twice (`?facility_type=DS&q=&q=&activity_status=`). After, the card head reads "61
+facilities: 31 sources, 29 treatment plants, 1 distribution", a GW source's cell reads
+"Ground water", a non-source facility's Water Type and Well cells both read "Not applicable"
+(**a documented deviation from the plan's own literal dash**: `tests/test_template_hygiene.py`
+forbids a bare dash between two angle brackets as a value, so the built wording is "Not
+applicable", never a bare dash), and a
+well with no link reads "Not linked", distinct from "Not applicable". Both selects and the
+search input now scope their `hx-include` to `#filter-search, #filter-activity-status` /
+`#filter-search, #filter-facility-type`, and `sampling_points.html`'s identical selector was
+fixed in the same commit; re-verified live: `?facility_type=DS&q=&activity_status=`, once.
+
+**R-064 / R-066.** Before, the facility page's crumb read Drinking Water → 012 with no link
+back to the 61-row list, and the back link went to the overview; the "Well" section's only
+line named the field "Physical well" and read "Not recorded" beside it, on every facility
+type, well or not. After, the crumb carries a `Facilities` link to `/drinking/facilities/`
+and the back link reads "← Back to Facilities"; the well field renders ONLY on a
+`facility_type == "WL"` facility, as "Metered
+well" (the link when one exists, "Not linked" when it does not), and a treatment plant or
+the distribution facility carries no well field at all.
+
+**R-067 / R-068.** Before, the sampling-points list's Facility cell was plain text on every
+row (measured: 0 of the visible cells carried an anchor) and the "Results" header named
+nothing. After, every Facility cell carries `<a href="/drinking/facilities/<pk>/">`
+(measured: `all_facility_cells_have_anchor` true) and the header reads "Sample results"
+(`th-stack`), intcomma'd (`tests/test_drinking_lists_explain_their_columns.py`'s own fixture:
+1,234 results renders "1,234").
+
+**R-069.** Before, point 1's results table repeated its Sample Date, Method and Laboratory
+down all 25 rows (Task 1 measured 1 distinct date, **2** distinct methods, not the plan's
+"1", and 1 distinct laboratory) under the heading "The 25 most recent of 796 results". After,
+"Sampling history" is gone as a section; the results card's own head reads "796 sample
+results · 151 analytes · sampled 2023-08-24 to 2026-02-04" and, truncated, "The 25 most
+recent are below; the full log is at Sample results" (re-verified live against
+`/drinking/sampling-points/1/`); the table carries 1 `tr.row-group` (point 1's most recent
+event, 2026-02-04, holds 29 results and `RECENT_RESULT_LIMIT` shows 25 of them, cutting
+inside the event, exactly as the plan's own measurement said it would).
+
+**R-070 / R-071.** Before, the results log's link cell was Sample Date, reading
+"2026-05-21" on every one of the 50 visible rows while the Analyte cell (the one that
+differs) was plain text; four of six columns held one repeated value down the page (Sample
+Date 1, PS Code 1, Method 1, Laboratory 1 distinct value; `RESULT` 3), no `tr.row-group`, 1
+distinct event id on the whole first page (every row from one sample event). After, the
+Sample Date and PS Code columns are gone, the Analyte cell carries the link, and the table
+groups by sample event through `group_results_by_event` (the one helper both this page and
+the sampling-point page call): measured live, the log's first page now carries a
+`tr.row-group` divider ("Sampled 2026-05-21 at CA2410009_011_011 … 68 results, 44 on this
+page") ahead of that event's rows. The new guard's own fixture (two points sampled the same
+day, three results each) renders exactly 2 groups in PS Code order, never interleaved.
+
+**R-055 (lab-result share).** Before, the finding sat in one of 18 equal `.field-group`
+cells (Task 1 measured 18, not the plan's "sixteen"), the page's largest text was
+`h2.section-header` at 16px (the Result value itself rendered at 15px), no
+`.budget-seg--result` existed, and "Regulatory limit" did not appear. After, the finding
+leads the account-grid panel in `.budget-seg--result` at 32px, the largest text measured on
+the page (re-verified live), with two peers, Reporting level and Previous finding; the
+`.field-group` count on the same page drops to 12 (the Result, Unit, Result type and
+Reporting level fields moved into the panel); "Regulatory limit" is still absent, now with a
+real `RegulatoryLimit` in TWO fixtures rather than one (the standing ISS-140 test, extended
+rather than weakened, and this plan's own `tests/test_lab_result_page.py` fixture).
+
+**R-073.** Before, the builder rendered 61 `form[hx-post]` elements and 61 facility panels,
+no facility select, at a full-page height of 8,990px. After, one `form[hx-post]`, one
+`select[name="facility"]` with 61 options (sources first), one grouped table (23
+`tr.row-group`, one per facility that carries a point; the plan's own "(14)" was a guess,
+not a measurement), at 3,827px. A duplicate POST returns "already listed" alongside the
+regenerated whole table; a new POST adds its row under its own facility's group.
+
+**Main-session drift checks**, run before each of Tasks 3 and 4's dispatches, per the plan's
+own drift trap: "Task 2: `ledger-card-head` in the ledger list's no-h2 form and
+`data-table--grouped` with `tr.row-group` > `td[colspan=4]`, the platform's group-header
+style as on surface-diversion-9; classes match." / "Task 3: `.card-raised.page-grid-account-balance`
+> `.page-grid-account-head.mb-md` > `.budget-panel` > `.budget-seg--result` + two
+`.budget-seg` peers with empty `.budget-op`, as on recharge-1; the record pages' head+table
+re-seated in a zero-padding card (e96f442) to match 143-06; classes match." / "Task 4:
+`.page-grid-account` info + balance row as on the account page; the builder's
+`data-table--grouped` divider as on surface-diversion-9; classes match."
+
+**Brent's two rulings, quoted with their time.** [2026-09-15 12:09 PDT] the split (drinking
+now, the monitoring-and-reporting half after this checkpoint, in 143-12) and **builder design
+A**: one "Add a sampling point" form with a Facility select over one grouped table, applied
+and not reopened. [2026-09-15, at plan time, "I don't know what this means"] on the
+lab-result panel's two peers: it ships with the reporting level and the previous finding as
+built above; he rules on it at the checkpoint, where he can see it (human-verify item 3), not
+in a menu.
+
+**R-055's other two pages remain.** The shared-supply check and the monitoring-and-reporting
+share of R-055 go to 143-12; Site Health's own share goes to 143-09. Neither is touched here.
+
+Guards: 33 new tests across three new files: `tests/test_drinking_lists_explain_their_columns.py`
+(R-063, ISS-135, R-067, R-068, R-064, R-066, R-062, R-073), `tests/test_results_grouped_by_event.py`
+(the `group_results_by_event` helper tested directly, R-070/R-071, R-069), and
+`tests/test_lab_result_page.py` (the R-055 share). Each was observed RED against the pre-change
+tree (`git checkout 7c368d1 -- templates/drinking drinking/views.py static/css/app.css`,
+rebuilt, run, then restored to HEAD and rebuilt again), the failing assertion for every guard
+quoted in `143-08-EVIDENCE.md`. `tests/test_water_vocabulary.py`, `tests/test_domain_vocabulary.py`,
+`tests/test_template_hygiene.py`, `tests/test_module_template_guards.py`,
+`tests/test_composition_rule.py`, `tests/test_drinking_readability.py`, `tests/test_drinking_map.py`,
+`tests/test_overview_map_card.py` and `tests/test_drinking_module_shows_what_to_do.py` all
+green with no edit beyond the two files Tasks 2 and 4 already retargeted
+(`tests/test_drinking_detail_views.py`, `tests/test_drinking_readability.py`). Suite 2,697 →
+**2,730**. `make test-droppable` 30. Staging and Brent's approval are Task 6, not this task;
+production untouched at `241c22b` (re-read from the host).
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**
