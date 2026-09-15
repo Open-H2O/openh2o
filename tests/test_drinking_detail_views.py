@@ -259,26 +259,41 @@ class TestResultsRenderHonestly:
     def test_non_detect_reads_as_a_bound_not_as_its_reporting_level(
         self, client_in, sampled_system
     ):
-        """"< 0.002 mg/L" is a bound. The bare reporting level would be a claim
-        the laboratory never made, and 0 would be a different one again."""
+        """"< 0.002" is a bound. The bare reporting level would be a claim the
+        laboratory never made, and 0 would be a different one again.
+
+        Retargeted 143-08 Task 3: the standalone "This is a non-detect..."
+        explainer card is gone, its sentence shortened into the lead panel's
+        own caption (DESIGN.md rule 7), and the number now sits in
+        `.budget-seg-value` with the unit in its own `span.budget-seg-unit`
+        rather than one run of text, so the value and the unit are no longer
+        adjacent in the raw markup even though they read as one figure.
+        """
         html = client_in.get(
             reverse("drinking:result_detail", args=[sampled_system["non_detect"].pk])
         ).content.decode()
-        assert "&lt; 0.002 mg/L" in html
+        assert "&lt; 0.002" in html
+        assert "mg/L" in html
         text = _squash(html)
-        assert "non-detect" in text
-        assert "different claim from zero" in text, (
-            "the page shows a bound but never says it is one"
-        )
+        assert (
+            "reported below the laboratory's reporting level, "
+            "not a measured quantity"
+        ) in text, "the page shows a bound but never says it is one"
 
     def test_a_stored_decimal_never_shows_precision_nobody_measured(
         self, client_in, sampled_system
     ):
-        """The column stores six decimal places; 3.2 mg/L must not read 3.200000."""
+        """The column stores six decimal places; 3.2 mg/L must not read 3.200000.
+
+        Retargeted 143-08 Task 3: the value and its unit are now two sibling
+        nodes (`.budget-seg-value` text plus a child `span.budget-seg-unit`),
+        not one run of "3.2 mg/L" text, so the two are checked separately.
+        """
         html = client_in.get(
             reverse("drinking:result_detail", args=[sampled_system["numeric"].pk])
         ).content.decode()
-        assert "3.2 mg/L" in html
+        assert "3.2" in html
+        assert "mg/L" in html
         assert "3.200000" not in html
 
     def test_the_whole_lab_record_is_on_the_page(self, client_in, sampled_system):
@@ -401,6 +416,15 @@ class TestTruncationAdmitsItself:
     def test_thirty_results_render_as_twenty_five_rows_under_a_heading_naming_thirty(
         self, client_in, sampled_system
     ):
+        """Retargeted 143-08 Task 3: "Sampling history" and the old "The N most
+        recent of M results" heading are gone. The true total and the truncation
+        now live in the results card's head (`ledger-card-head`), and the table
+        itself is grouped by sample event (`group_results_by_event`, the results
+        log's own helper), so a divider row (`tr.row-group`) sits ahead of every
+        event's results instead of repeating the date on each one. That is why
+        the row count check now targets bare `<tr>` (data rows only) rather than
+        every `<tr` (which would also count the dividers).
+        """
         point = sampled_system["point"]
         # The fixture already carries 3; add 27 to reach 30.
         for day in range(2, 29):
@@ -412,10 +436,17 @@ class TestTruncationAdmitsItself:
         html = client_in.get(
             reverse("drinking:sampling_point_detail", args=[point.pk])
         ).content.decode()
-        assert _tbody(html).count("<tr") == 25, "the page did not cap its table at 25"
+        rows_html = _tbody(html)
+        assert rows_html.count("<tr>") == 25, "the page did not cap its table at 25 result rows"
+        assert rows_html.count('<tr class="row-group">') > 1, (
+            "expected the truncated log to still show more than one sample event"
+        )
         text = _squash(html)
-        assert "The 25 most recent of 30 results" in text, (
-            "the heading does not state the true total"
+        assert "30 sample results" in text, (
+            "the head line does not state the true total"
+        )
+        assert "The 25 most recent are below" in text, (
+            "the head line does not say the list is truncated"
         )
         assert "See all 30 results for this point" in text, (
             "no way out to the unfiltered log"
@@ -428,8 +459,8 @@ class TestTruncationAdmitsItself:
         html = client_in.get(
             reverse("drinking:sampling_point_detail", args=[sampled_system["point"].pk])
         ).content.decode()
-        assert "most recent of" not in _squash(html)
-        assert _tbody(html).count("<tr") == 3
+        assert "most recent are below" not in _squash(html)
+        assert _tbody(html).count("<tr>") == 3
 
 
 # -- 8. The CCR link is California-scoped ------------------------------------

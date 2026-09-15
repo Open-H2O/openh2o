@@ -21,5 +21,11 @@
   pass/fail coloring — this platform prepares submissions, it does not determine
   compliance. Any styling added below must stay neutral.
 
-  Caller supplies: `result` (a SampleResult).
-{% endcomment %}{% if result.result_kind == "presence_absence" %}{% if result.presence is True %}Present{% elif result.presence is False %}Absent{% else %}—{% endif %}{% elif result.less_than_rl %}{% if result.reporting_level is not None %}&lt; {{ result.reporting_level|plain_decimal }} {{ result.unit }}{% else %}&lt; RL{% endif %}{% elif result.result_value is not None %}{{ result.result_value|plain_decimal }} {{ result.unit }}{% else %}—{% endif %}
+  Caller supplies: `result` (a SampleResult). 143-08 Task 3 added `parts`: pass
+  `parts=True` (the lab-result page's lead panel) to wrap the unit in its own
+  `span.budget-seg-unit` instead of a leading space, so the caller can seat the
+  number alone in `.budget-seg-value` with the unit beside it at its own
+  smaller size. The SAME three-way decision above still runs either way:
+  `parts` only changes how the unit is attached, never which of "< RL",
+  "Present"/"Absent" or a plain value gets picked.
+{% endcomment %}{% if result.result_kind == "presence_absence" %}{% if result.presence is True %}Present{% elif result.presence is False %}Absent{% else %}—{% endif %}{% elif result.less_than_rl %}{% if result.reporting_level is not None %}&lt; {{ result.reporting_level|plain_decimal }}{% if parts %}<span class="budget-seg-unit">{{ result.unit }}</span>{% else %} {{ result.unit }}{% endif %}{% else %}&lt; RL{% endif %}{% elif result.result_value is not None %}{{ result.result_value|plain_decimal }}{% if parts %}<span class="budget-seg-unit">{{ result.unit }}</span>{% else %} {{ result.unit }}{% endif %}{% else %}—{% endif %}

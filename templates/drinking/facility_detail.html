@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static placeholders %}
+{% load static placeholders humanize %}
 {% load drinking_display %}
 
 {% comment %}
@@ -32,6 +32,8 @@
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'drinking:overview' %}">Drinking Water</a>
     <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:facilities' %}">Facilities</a>
+    <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ facility.facility_id }}</span>
   </nav>
   <p class="page-description">One facility of {{ facility.system.name }}, and the sampling points on it.</p>
@@ -47,7 +49,7 @@
 <div class="page-stack page-wide">
 
   <div>
-    <a href="{% url 'drinking:overview' %}" class="back-link">&larr; Back to Drinking Water</a>
+    <a href="{% url 'drinking:facilities' %}" class="back-link">&larr; Back to Facilities</a>
   </div>
 
   {% comment %}
@@ -156,10 +158,12 @@
         <div class="field-value-mono">{{ facility.epa_facility_id }}</div>
       </div>
       {% endif %}
-    </div>
-
-    <h2 class="section-header mt-lg">Water system</h2>
-    <div class="form-grid-2col">
+      {% comment %}
+        143-08 Task 3 (R-064). "Water system" folded in here: it is the SAME
+        publisher (EPA_SDWIS) as every field above it, so a second heading and
+        a second pill three inches down would be an identical badge repeated
+        rather than new information.
+      {% endcomment %}
       <div class="field-group">
         <div class="field-label">System</div>
         <div class="field-value"><a href="{% url 'drinking:overview' %}" class="data-table-link">{{ facility.system.name }}</a></div>
@@ -168,33 +172,46 @@
         <div class="field-label">PWSID</div>
         <div class="field-value-mono">{{ facility.system.pwsid }}</div>
       </div>
-    </div>
-
-    {% comment %}
-      The quality-to-quantity join: ONE physical well, sampled on this side and
-      metered on the wells side. Guarded on enabled_modules because
-      `drinking.requires` is ("standards",) — this page must render on a
-      drinking-water-only deployment, and an unguarded {% url 'wells:detail' %}
-      there is a NoReverseMatch 500, not a missing link. Same shape as the
-      Facilities table on drinking/overview.html.
-    {% endcomment %}
-    <h2 class="section-header mt-lg">Well</h2>
-    <div class="form-grid-2col">
+      {% comment %}
+        R-066. The quality-to-quantity join: ONE physical well, sampled on this
+        side and metered on the wells side. Renders ONLY on a WL facility;
+        a treatment plant or the distribution facility has no well, and the
+        field not applying is a fact rule 8 says to state by leaving it off,
+        not by printing an empty one. Guarded on enabled_modules because
+        `drinking.requires` is ("standards",), so this page must render on a
+        drinking-water-only deployment, and an unguarded {% url 'wells:detail' %}
+        there is a NoReverseMatch 500, not a missing link.
+      {% endcomment %}
+      {% if facility.facility_type == "WL" %}
       <div class="field-group">
-        <div class="field-label">Physical well</div>
+        <div class="field-label">Metered well</div>
         <div class="field-value">
           {% if facility.well and 'wells' in enabled_modules %}
             <a href="{% url 'wells:detail' facility.well.pk %}" class="data-table-link">{{ facility.well.name }}</a>
           {% elif facility.well %}
             {{ facility.well.name }}
           {% else %}
-            <span class="value-empty">Not recorded</span>
+            <span class="value-empty" title="This deployment links a source facility to its well record when both exist.">Not linked</span>
           {% endif %}
         </div>
       </div>
+      {% endif %}
     </div>
 
-    <h2 class="section-header mt-lg">Sampling points</h2>
+    {% comment %}
+      R-068. The card head above the table (the shape the drinking lists'
+      own `ledger-card-head` already uses): the population line says how many
+      points hang off THIS facility, the facts line says once what the
+      renamed "Sample results" column counts, so it needs no re-explaining on
+      every row.
+    {% endcomment %}
+    <div class="ledger-card-head" style="margin-top: var(--space-lg);">
+      <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sampling points</h2>
+      {% if points %}
+      <div class="text-secondary text-base">{{ points|length }} sampling point{{ points|length|pluralize }} on this facility.</div>
+      <div class="text-secondary text-base">Sample results counts the laboratory findings recorded at each point.</div>
+      {% endif %}
+    </div>
     {% if points %}
     <div class="table-scroll">
       <table class="data-table">
@@ -204,7 +221,7 @@
             <th>Name</th>
             <th>Type</th>
             <th>Latest Sample</th>
-            <th>Results</th>
+            <th><span class="th-stack">Sample results</span></th>
           </tr>
         </thead>
         <tbody>
@@ -216,7 +233,7 @@
             <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|blank }}</td>
             <td class="text-secondary text-sm tabular-nums">
               {% if point.result_count %}
-                <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">{{ point.result_count }}</a>
+                <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">{{ point.result_count|intcomma }}</a>
               {% else %}
                 0
               {% endif %}

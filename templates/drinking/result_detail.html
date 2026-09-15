@@ -44,126 +44,141 @@
     <a href="{% url 'drinking:results' %}" class="back-link">&larr; Back to Sample Results</a>
   </div>
 
-  <div class="card-raised">
+  {% comment %}
+    143-08 Task 3 (R-055). The account-grid shape (`.page-grid-account*`,
+    143-03/143-06/143-10): row one is the analysis and the sample beside the
+    finding at the only large size, row two is the record it belongs to full
+    width. "The finding" used to be a sixteen-field grid with Result as one
+    equal field among Unit, Result type and Reporting level -- the defect this
+    plan closes. It is now the panel: the number itself, what the method could
+    even see (Reporting level), and what this same tap read last time
+    (Previous finding), matching the lead-panel-never-holds-one-lone-figure
+    ruling (DESIGN.md rule 11) the recharge site page carries. Result, Unit,
+    Result type and Reporting level all LEAVE the field grid below -- they are
+    on the panel now.
+  {% endcomment %}
+  <div class="page-grid-account">
 
-    <h2 class="section-header" style="margin-top: 0;">The finding {% source_label "DDW_LAB" %}</h2>
+    <div class="card-raised page-grid-account-info">
+      <h2 class="section-header" style="margin-top: 0;">The analysis {% source_label "DDW_LAB" %}</h2>
+      <div class="field-grid-2">
+        <div class="field-group">
+          <div class="field-label">Analysis date</div>
+          <div class="field-value-mono">{{ result.analysis_date|date:"Y-m-d"|blank }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Method</div>
+          <div class="field-value">{{ result.method|blank }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Laboratory</div>
+          <div class="field-value">{{ result.lab_name|blank }}</div>
+        </div>
+        {% comment %}
+          Labelled as ELAP rather than shown as a bare number: a certification
+          number with no scheme name beside it is a string nobody can act on.
+        {% endcomment %}
+        <div class="field-group">
+          <div class="field-label">ELAP certification</div>
+          <div class="field-value-mono">{{ result.lab_cert_no|blank }}</div>
+        </div>
+        {% if result.counting_error is not None %}
+        <div class="field-group">
+          <div class="field-label">Counting error</div>
+          <div class="field-value-mono">{{ result.counting_error|plain_decimal }}</div>
+        </div>
+        {% endif %}
+      </div>
+      <p class="text-sm text-tertiary" style="margin-top: var(--space-xs); max-width: 75ch;">
+        ELAP is California's Environmental Laboratory Accreditation Program — the certification a laboratory holds to run this analysis for regulatory purposes.
+      </p>
 
-    <div class="form-grid-2col">
-      <div class="field-group">
-        <div class="field-label">Analyte</div>
-        <div class="field-value">{{ result.analyte.name }}</div>
+      <h2 class="section-header mt-lg">The sample it came from {% source_label "DDW_LAB" %}</h2>
+      <div class="field-grid-2">
+        <div class="field-group">
+          <div class="field-label">Sample date</div>
+          <div class="field-value-mono">{{ event.sample_date|date:"Y-m-d" }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Sample time</div>
+          <div class="field-value-mono">{{ event.sample_time|time:"H:i"|blank }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Sample type</div>
+          <div class="field-value">{{ event.get_sample_type_display|blank }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Collector</div>
+          <div class="field-value">{{ event.collector|blank }}</div>
+        </div>
       </div>
-      <div class="field-group">
-        <div class="field-label">State analyte code</div>
-        <div class="field-value-mono">{{ result.analyte.ddw_code|blank }}</div>
-      </div>
-      {% comment %}
-        Rendered through _result_value.html, the single place the platform
-        decides how a lab finding reads. A presence/absence result reads
-        "Absent" here, never 0 and never "< RL".
-      {% endcomment %}
-      <div class="field-group">
-        <div class="field-label">Result</div>
-        <div class="field-value-mono">{% include "drinking/partials/_result_value.html" with result=result %}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Unit</div>
-        <div class="field-value">{{ result.unit|blank }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Result type</div>
-        <div class="field-value">{{ result.get_result_kind_display }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Reporting level</div>
-        <div class="field-value-mono">{{ result.reporting_level|plain_decimal }}</div>
-      </div>
-      {% if result.counting_error is not None %}
-      <div class="field-group">
-        <div class="field-label">Counting error</div>
-        <div class="field-value-mono">{{ result.counting_error|plain_decimal }}</div>
+
+      {% if event.chain_of_custody_note %}
+      <div class="field-group mt-md">
+        <div class="field-label">Chain of custody</div>
+        <div class="field-value">{{ event.chain_of_custody_note|linebreaksbr }}</div>
       </div>
       {% endif %}
     </div>
 
     {% comment %}
-      A non-detect is a BOUND, not a measurement, and it is not a zero. Said in
-      a sentence rather than left to the "<" symbol, because the difference
-      between "we found none" and "we could not have seen this little" is the
-      whole reason the flag exists.
+      The lead panel. Result 3, shape 3 (rule 8): the finding leads at the
+      only large size (`.budget-seg--result`), captioned by what KIND of
+      finding it is rather than repeating the old standalone explainer cards
+      (a non-detect / a presence-absence result each used to get their own
+      card below the grid; the caption now carries that sentence, shortened
+      to one clause, rule 7). Its two peers are what the method could even
+      report (Reporting level) and what this same analyte read at this same
+      point last time (Previous finding, `result_detail`'s `previous_finding`)
+      -- never a different point and never a different analyte, which would
+      compare findings that answer different questions. Both `_result_value.html`
+      calls below pass `parts=True` so the SAME single decision tree ("< RL" /
+      "Present"/"Absent" / a plain value) seats the number in `.budget-seg-value`
+      and the unit in its own `span.budget-seg-unit` rather than one run of text.
     {% endcomment %}
-    {% if result.less_than_rl %}
-    <div class="card-raised" style="margin-top: var(--space-md); max-width: 75ch;">
-      <p class="text-base text-secondary m-0">
-        This is a <strong>non-detect</strong>. The laboratory did not measure a
-        quantity{% if result.reporting_level is not None %}; it reported only that the true value is below its reporting level of {{ result.reporting_level|plain_decimal }}&nbsp;{{ result.unit }}{% else %}; it reported only that the true value is below its reporting level{% endif %}.
-        That is a different claim from zero.
-      </p>
-    </div>
-    {% endif %}
-
-    {% if result.result_kind == "presence_absence" %}
-    <div class="card-raised" style="margin-top: var(--space-md); max-width: 75ch;">
-      <p class="text-base text-secondary m-0">
-        This analyte is reported <strong>present or absent</strong>, never as a
-        concentration. There is no number to show and none was measured.
-      </p>
-    </div>
-    {% endif %}
-
-    <h2 class="section-header mt-lg">The analysis {% source_label "DDW_LAB" %}</h2>
-    <div class="form-grid-2col">
-      <div class="field-group">
-        <div class="field-label">Analysis date</div>
-        <div class="field-value-mono">{{ result.analysis_date|date:"Y-m-d"|blank }}</div>
+    <div class="card-raised page-grid-account-balance">
+      <div class="page-grid-account-head mb-md">
+        <h2 class="section-header-flush">The finding {% source_label "DDW_LAB" %}</h2>
+        <div class="text-secondary text-base">{{ result.analyte.name }}, state code {{ result.analyte.ddw_code|blank:"not published" }} &middot; {{ finding_count }} finding{{ finding_count|pluralize }} of it at {{ point.ps_code }}.</div>
       </div>
-      <div class="field-group">
-        <div class="field-label">Method</div>
-        <div class="field-value">{{ result.method|blank }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Laboratory</div>
-        <div class="field-value">{{ result.lab_name|blank }}</div>
-      </div>
-      {% comment %}
-        Labelled as ELAP rather than shown as a bare number: a certification
-        number with no scheme name beside it is a string nobody can act on.
-      {% endcomment %}
-      <div class="field-group">
-        <div class="field-label">ELAP certification</div>
-        <div class="field-value-mono">{{ result.lab_cert_no|blank }}</div>
-      </div>
-    </div>
-    <p class="text-sm text-tertiary" style="margin-top: var(--space-xs); max-width: 75ch;">
-      ELAP is California's Environmental Laboratory Accreditation Program — the certification a laboratory holds to run this analysis for regulatory purposes.
-    </p>
-
-    <h2 class="section-header mt-lg">The sample it came from {% source_label "DDW_LAB" %}</h2>
-    <div class="form-grid-2col">
-      <div class="field-group">
-        <div class="field-label">Sample date</div>
-        <div class="field-value-mono">{{ event.sample_date|date:"Y-m-d" }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Sample time</div>
-        <div class="field-value-mono">{{ event.sample_time|time:"H:i"|blank }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Sample type</div>
-        <div class="field-value">{{ event.get_sample_type_display|blank }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Collector</div>
-        <div class="field-value">{{ event.collector|blank }}</div>
+      <div class="budget-panel">
+        <div class="budget-panel-body">
+          <div class="budget-panel-row">
+            <div class="budget-seg budget-seg--result">
+              <div class="budget-seg-label">Result</div>
+              <div class="budget-seg-value">{% include "drinking/partials/_result_value.html" with result=result parts=True %}</div>
+              <div class="budget-seg-caption">
+                {% if result.less_than_rl %}reported below the laboratory's reporting level, not a measured quantity
+                {% elif result.result_kind == "presence_absence" %}reported present or absent, never as a concentration
+                {% else %}as the laboratory reported it{% endif %}
+              </div>
+            </div>
+            <div class="budget-op"></div>
+            <div class="budget-seg">
+              <div class="budget-seg-label">Reporting level</div>
+              {% if result.reporting_level is not None %}
+              <div class="budget-seg-value">{{ result.reporting_level|plain_decimal }}<span class="budget-seg-unit">{{ result.unit }}</span></div>
+              <div class="budget-seg-caption">the least this method reports</div>
+              {% else %}
+              <div class="budget-seg-value text-tertiary">&mdash;</div>
+              <div class="budget-seg-caption">not given in the lab file</div>
+              {% endif %}
+            </div>
+            <div class="budget-op"></div>
+            <div class="budget-seg">
+              <div class="budget-seg-label">Previous finding</div>
+              {% if previous_finding %}
+              <div class="budget-seg-value">{% include "drinking/partials/_result_value.html" with result=previous_finding parts=True %}</div>
+              <div class="budget-seg-caption">{{ previous_finding.event.sample_date|date:"Y-m-d" }}, the same analyte at this point</div>
+              {% else %}
+              <div class="budget-seg-value text-tertiary">&mdash;</div>
+              <div class="budget-seg-caption">no earlier finding of this analyte at this point</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    {% if event.chain_of_custody_note %}
-    <div class="field-group mt-md">
-      <div class="field-label">Chain of custody</div>
-      <div class="field-value">{{ event.chain_of_custody_note|linebreaksbr }}</div>
-    </div>
-    {% endif %}
 
     {% comment %}
       Split out of "The sample it came from" deliberately. Everything above is
@@ -173,54 +188,56 @@
       convention, so it carries its own row label rather than inheriting EPA's.
       Left inside the DDW section, one label claimed one publisher for three.
     {% endcomment %}
-    <h2 class="section-header mt-lg">The record it belongs to {% source_label "EPA_SDWIS" %}</h2>
-    <div class="form-grid-2col">
-      <div class="field-group">
-        <div class="field-label">Sampling point {% source_label "PS_CODE_COMPOSED" %}</div>
-        <div class="field-value">
-          <a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link text-mono">{{ point.ps_code }}</a>{% if point.name %} — {{ point.name }}{% endif %}
+    <div class="card-raised page-grid-account-full">
+      <h2 class="section-header">The record it belongs to {% source_label "EPA_SDWIS" %}</h2>
+      <div class="form-grid-2col">
+        <div class="field-group">
+          <div class="field-label">Sampling point {% source_label "PS_CODE_COMPOSED" %}</div>
+          <div class="field-value">
+            <a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link text-mono">{{ point.ps_code }}</a>{% if point.name %} — {{ point.name }}{% endif %}
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Facility</div>
+          <div class="field-value">
+            <a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a>{% if facility.name %} — {{ facility.name }}{% endif %}
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Water system</div>
+          <div class="field-value">{{ system.name }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">PWSID</div>
+          <div class="field-value-mono">{{ system.pwsid }}</div>
         </div>
       </div>
-      <div class="field-group">
-        <div class="field-label">Facility</div>
-        <div class="field-value">
-          <a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a>{% if facility.name %} — {{ facility.name }}{% endif %}
-        </div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Water system</div>
-        <div class="field-value">{{ system.name }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">PWSID</div>
-        <div class="field-value-mono">{{ system.pwsid }}</div>
-      </div>
-    </div>
 
-    {% comment %}
-      The nearest published document that actually exists for this sample — the
-      system's annual Consumer Confidence Report for the year it was taken.
-      Worded as exactly that: there is no per-sample analytical PDF anywhere to
-      link to. Rendered only for a California PWSID, because the viewer is a
-      State Water Board service and a non-CA id would compose an
-      authoritative-looking link that 404s.
-    {% endcomment %}
-    {% if ccr_url %}
-    {% comment %}
-      The one section on this page that is not the lab file. The three sections
-      above are the State Water Board's own export; this points at a document the
-      water system itself published, for the whole year rather than for this
-      sample. Inheriting the page's publisher here would attribute the system's
-      annual report to the regulator.
-    {% endcomment %}
-    <h2 class="section-header mt-lg">Published report {% source_label "CCR_SYSTEM" %}</h2>
-    <p class="text-base text-secondary" style="max-width: 75ch;">
-      <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>
-      — the annual water-quality report this system published for the year this
-      sample was taken. It is the system's report for the whole year, not this
-      sample's own laboratory sheet.
-    </p>
-    {% endif %}
+      {% comment %}
+        The nearest published document that actually exists for this sample --
+        the system's annual Consumer Confidence Report for the year it was
+        taken. Worded as exactly that: there is no per-sample analytical PDF
+        anywhere to link to. Rendered only for a California PWSID, because the
+        viewer is a State Water Board service and a non-CA id would compose an
+        authoritative-looking link that 404s.
+      {% endcomment %}
+      {% if ccr_url %}
+      {% comment %}
+        The one section on this page that is not the lab file. The sections
+        above are the State Water Board's own export; this points at a document
+        the water system itself published, for the whole year rather than for
+        this sample. Inheriting the page's publisher here would attribute the
+        system's annual report to the regulator.
+      {% endcomment %}
+      <h2 class="section-header mt-lg">Published report {% source_label "CCR_SYSTEM" %}</h2>
+      <p class="text-base text-secondary" style="max-width: 75ch;">
+        <a href="{{ ccr_url }}" target="_blank" rel="noopener" class="data-table-link">{{ system.name }}'s {{ ccr_year }} Consumer Confidence Report</a>
+        — the annual water-quality report this system published for the year this
+        sample was taken. It is the system's report for the whole year, not this
+        sample's own laboratory sheet.
+      </p>
+      {% endif %}
+    </div>
 
   </div>
 

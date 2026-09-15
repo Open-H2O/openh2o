@@ -769,10 +769,14 @@ def sampling_point_detail(request, pk):
         first_sample=Min("event__sample_date"),
         latest_sample=Max("event__sample_date"),
     )
+    # `event_id` rides in the ordering (ahead of `analyte__name`) for the same
+    # reason `results()` carries it: `group_results_by_event` only folds a
+    # CONTIGUOUS run of one `event_id`, so two events sharing a date must not
+    # interleave by analyte before they reach it.
     recent = (
         at_this_point
         .select_related("analyte", "event")
-        .order_by("-event__sample_date", "analyte__name")[:RECENT_RESULT_LIMIT]
+        .order_by("-event__sample_date", "event_id", "analyte__name")[:RECENT_RESULT_LIMIT]
     )
 
     return render(
@@ -781,6 +785,11 @@ def sampling_point_detail(request, pk):
         {
             "point": point,
             "recent_results": recent,
+            # 143-08 Task 3 (R-069): the SAME helper the results log calls
+            # (`group_results_by_event`, defined above), on this point's own
+            # `recent` slice, so one place decides how a run of results folds
+            # into one block per sample event.
+            "result_groups": group_results_by_event(recent),
             "shown_limit": RECENT_RESULT_LIMIT,
             "is_truncated": summary["result_count"] > RECENT_RESULT_LIMIT,
             # Read through the FACILITY, because a sampling point has no
@@ -875,6 +884,30 @@ def result_detail(request, pk):
     )
     system = result.event.sampling_point.facility.system
 
+    # 143-08 Task 3 (R-055): the lead panel's third peer. The most recent
+    # earlier finding of the SAME analyte at the SAME point -- never a
+    # different point or a different analyte, which would compare findings
+    # that answer different questions. `sample_date__lte` plus `exclude(pk=)`
+    # rather than a strict `<` catches two results filed under the same date
+    # (a re-run, a duplicate row) and still resolves to one deterministic row,
+    # ordered by pk so the tie always favors the later-written one.
+    previous_finding = (
+        SampleResult.objects
+        .filter(
+            analyte=result.analyte,
+            event__sampling_point=result.event.sampling_point,
+            event__sample_date__lte=result.event.sample_date,
+        )
+        .exclude(pk=result.pk)
+        .select_related("event")
+        .order_by("-event__sample_date", "-pk")
+        .first()
+    )
+    finding_count = SampleResult.objects.filter(
+        analyte=result.analyte,
+        event__sampling_point=result.event.sampling_point,
+    ).count()
+
     return render(
         request,
         "drinking/result_detail.html",
@@ -884,6 +917,8 @@ def result_detail(request, pk):
             "point": result.event.sampling_point,
             "facility": result.event.sampling_point.facility,
             "system": system,
+            "previous_finding": previous_finding,
+            "finding_count": finding_count,
             "ccr_url": _ccr_url(system, result.event.sample_date),
             "ccr_year": result.event.sample_date.year if result.event.sample_date else "",
         },

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static placeholders %}
+{% load static placeholders humanize %}
 {% load drinking_display %}
 
 {% comment %}
@@ -124,12 +124,14 @@
         <div class="field-label">Water system</div>
         <div class="field-value">{{ point.facility.system.name }} <span class="text-mono text-secondary">({{ point.facility.system.pwsid }})</span></div>
       </div>
-    </div>
-
-    <h2 class="section-header mt-lg">Facility {% source_label "EPA_SDWIS" %}</h2>
-    <div class="form-grid-2col">
+      {% comment %}
+        143-08 Task 3 (R-069). "Facility" folded into the point's own grid
+        instead of a second section: the point's identity is PS_CODE_COMPOSED,
+        but this one field's publisher differs (EPA's own record), so it
+        carries its own label rather than inheriting the section's.
+      {% endcomment %}
       <div class="field-group">
-        <div class="field-label">Facility</div>
+        <div class="field-label">Facility {% source_label "EPA_SDWIS" %}</div>
         <div class="field-value">
           <a href="{% url 'drinking:facility_detail' point.facility.pk %}" class="data-table-link">{{ point.facility.facility_id }}</a>{% if point.facility.name %} — {{ point.facility.name }}{% endif %}
         </div>
@@ -139,67 +141,54 @@
         <div class="field-value">{{ point.facility.get_facility_type_display|blank }}</div>
       </div>
       {% comment %}
-        Module-guarded exactly as the overview and the facility page are:
-        `drinking.requires` is ("standards",), so this page must render on a
-        deployment carrying no wells module, where an unguarded
-        {% url 'wells:detail' %} is a NoReverseMatch 500.
+        R-066's same rule, read through the FACILITY: renders ONLY when the
+        facility itself is a Well. A point on a treatment plant or the
+        distribution facility has no well to name at all, so the field is
+        left off rather than printed empty (rule 8). Module-guarded exactly as
+        the overview and the facility page are: `drinking.requires` is
+        ("standards",), so this page must render on a deployment carrying no
+        wells module, where an unguarded {% url 'wells:detail' %} is a
+        NoReverseMatch 500.
       {% endcomment %}
+      {% if point.facility.facility_type == "WL" %}
       <div class="field-group">
-        <div class="field-label">Well</div>
+        <div class="field-label">Metered well</div>
         <div class="field-value">
           {% if point.facility.well and 'wells' in enabled_modules %}
             <a href="{% url 'wells:detail' point.facility.well.pk %}" class="data-table-link">{{ point.facility.well.name }}</a>
           {% elif point.facility.well %}
             {{ point.facility.well.name }}
           {% else %}
-            <span class="value-empty">Not recorded</span>
+            <span class="value-empty" title="This deployment links a source facility to its well record when both exist.">Not linked</span>
           {% endif %}
         </div>
       </div>
+      {% endif %}
     </div>
 
     {% comment %}
-      Four counts, all of them derived from the imported lab file and none of
-      them from the point record above — which is why this section carries a
-      different publisher from the one at the top of the same card. The results
-      table below is the same file, immediately under this label, so it does not
-      repeat it.
+      R-069. "Sampling history" is gone as its own section: its four counts
+      are what this card's head now says, and the table right under it is the
+      same lab file, so a separate label a few lines up would only ask a
+      reader to hold the number twice. The SAME `group_results_by_event`
+      helper the results log calls (Task 2) folds this point's own `recent`
+      slice into one block per sample event, so the date and this point's own
+      identity are said ONCE per event rather than repeated down every row,
+      and the divider does not name the point, because the point is the page.
     {% endcomment %}
-    <h2 class="section-header mt-lg">Sampling history {% source_label "DDW_LAB" %}</h2>
-    <div class="form-grid-2col">
-      <div class="field-group">
-        <div class="field-label">Results recorded</div>
-        <div class="field-value-mono">{{ result_count }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Analytes measured</div>
-        <div class="field-value-mono">{{ analyte_count }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Earliest sample</div>
-        <div class="field-value-mono">{{ first_sample|date:"Y-m-d"|blank }}</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Latest sample</div>
-        <div class="field-value-mono">{{ latest_sample|date:"Y-m-d"|blank }}</div>
-      </div>
+    <div class="ledger-card-head" style="margin-top: var(--space-lg);">
+      <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sample results {% source_label "DDW_LAB" %}</h2>
+      <div class="text-secondary text-base">{{ result_count|intcomma }} sample results &middot; {{ analyte_count }} analytes &middot; sampled {{ first_sample|date:"Y-m-d" }} to {{ latest_sample|date:"Y-m-d" }}</div>
+      {% if is_truncated %}
+      <div class="text-secondary text-base">The {{ shown_limit }} most recent are below; the full log is at Sample results.</div>
+      {% endif %}
     </div>
 
-    {% comment %}
-      The heading states the TRUE total, not the number of rows below it. If a
-      reader has to count the rows to discover the list is partial, the page has
-      misled them.
-    {% endcomment %}
-    <h2 class="section-header mt-lg">
-      {% if is_truncated %}The {{ shown_limit }} most recent of {{ result_count }} results{% else %}Results{% if result_count %} ({{ result_count }}){% endif %}{% endif %}
-    </h2>
-
-    {% if recent_results %}
+    {% if result_groups %}
     <div class="table-scroll">
-      <table class="data-table">
+      <table class="data-table text-sm data-table--grouped">
         <thead>
           <tr>
-            <th>Sample Date</th>
             <th>Analyte</th>
             <th>Result</th>
             <th>Method</th>
@@ -207,14 +196,21 @@
           </tr>
         </thead>
         <tbody>
-          {% for result in recent_results %}
+          {% for group in result_groups %}
+          <tr class="row-group">
+            <td colspan="4">
+              Sampled {{ group.event.sample_date|date:"Y-m-d" }}
+              &middot; {{ group.total }} result{{ group.total|pluralize }}{% if group.shown != group.total %}, {{ group.shown }} shown{% endif %}
+            </td>
+          </tr>
+          {% for result in group.rows %}
           <tr>
-            <td class="text-secondary text-sm tabular-nums">{{ result.event.sample_date|date:"Y-m-d" }}</td>
             <td><a href="{% url 'drinking:result_detail' result.pk %}" class="data-table-link">{{ result.analyte.name }}</a></td>
             <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
             <td class="text-secondary text-sm">{{ result.method|blank }}</td>
             <td class="text-secondary text-sm">{{ result.lab_name|blank }}</td>
           </tr>
+          {% endfor %}
           {% endfor %}
         </tbody>
       </table>
