@@ -5,7 +5,7 @@
 Use Ledger's Description column is the one column written for a human, and
 until this plan it carried the engines' internal shorthand verbatim ("demand-
 weighted (ET-allocated)", "Derived groundwater extraction estimate (calculation
-engine)") — ISS-170. The five sentences a reader now sees for every engine-
+engine)"), ISS-170. The five sentences a reader now sees for every engine-
 written row live here, beside the Water column's words, so every word the
 ledger shows lives in one file rather than being composed again at each write
 site. `surface/services.py` and `accounting/management/commands/run_calculations.py`

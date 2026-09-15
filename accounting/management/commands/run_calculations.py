@@ -570,7 +570,7 @@ class Command(BaseCommand):
                     residual_disposition = "groundwater"
                     unmet_demand_af = Decimal("0")
                     # ISS-158: the zero stays a zero. Nothing else in this
-                    # branch changes — only which sentence describes it.
+                    # branch changes; only which sentence describes it.
                     amount = (-net_af).quantize(Decimal("0.0001"))
                     description = (
                         NO_PUMPING_DERIVED_WORDS
