@@ -552,3 +552,32 @@ left to say: the arithmetic ("Not met by supplies"), the unit, the scope ("by so
 stays the quantity's NAME where it stands alone (the field's own page prints "Water use recorded, no supply
 reported: 330.37 AF"); only the repeat under its own title goes. Rule 4 still holds: this stops a restating,
 it never renames a quantity. Platform-wide sweep: ISS-168, Phase 144.
+
+### 14. Text an engine writes onto a record is a sentence a reader can use
+
+Brent, 2026-09-12, at the 143-05 checkpoint, the moment the ledger's Description column was readable in
+full: "What does demand-weighted ET allocated mean? These descriptions may be accurate, but they are
+difficult to understand." The strings were engine output stored on 1,880 of the demonstration's 2,313
+rows, not template text, so no template edit could fix them. Rule 9 is the nearest rule and forbids a
+column name in a message; this rule requires more: a description an engine stores is copy, and it must
+say what the row is in words the reader would use.
+
+The five sentences (143-11, ISS-170), settled by Brent 2026-09-15 and kept in ONE module,
+`accounting/ledger_words.py`, beside the Water column's words, so every word the ledger shows lives in one
+file: a share of a headgate's delivery split by estimated use ("Share of 214.58 AF delivered from Stevinson
+Diversion Canal Headgate, split among the use areas it serves by each one's estimated use for the month");
+the same split by the fixed share on file ("…, split by the fixed share on file (20%); no estimated use on
+record for the month"); the incidental credit ("Credit for canal water delivered beyond the use area's
+estimated use for the month"); the pumping estimate ("Estimated pumping: the month's estimated use, less
+rainfall and canal water delivered"); and the month with none ("No groundwater extraction was derived for
+this month; rainfall and delivered surface water covered the estimated use."). The guards:
+`tests/test_ledger_words.py` scans every constant through `tests/test_domain_vocabulary.py::scan` and the
+rule-12 table, and `tests/test_template_hygiene.py` fails a template that carries an engine sentence or the
+phrase "calculation engine" (the template prints the stored description; it composes nothing).
+
+Two carry-overs. The figure in the sentence is the one the shares actually sum to
+(`consumed_acre_feet()`, not the diverted volume), at the Amount column's precision (two decimals, a
+thousands separator), never the four decimals the model stores. And a re-run on rows written before a
+wording change must replace them, not double them: the old string stays in the module as a legacy prefix
+matched on delete and never written (`LEGACY_INCIDENTAL_RECHARGE_WORDS`; the ISS-052 contract). Identifiers
+follow the 143-07 map-card ruling (table rule 19, `core.map_labels.map_label`): the headgate's name, never its `MER-POD-…` code.
