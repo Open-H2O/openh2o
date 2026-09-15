@@ -1,6 +1,6 @@
-{% load placeholders %}<div class="result-count-bar">
+{% load humanize %}{% load placeholders %}<div class="result-count-bar">
   <span class="text-secondary text-sm">
-    <span class="count-pill">{{ total_count }}</span>
+    <span class="count-pill">{{ total_count|intcomma }}</span>
     sample result{{ total_count|pluralize }} found
   </span>
 </div>
