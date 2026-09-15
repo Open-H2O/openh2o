@@ -176,7 +176,10 @@
       identity are said ONCE per event rather than repeated down every row,
       and the divider does not name the point, because the point is the page.
     {% endcomment %}
-    <div class="ledger-card-head" style="margin-top: var(--space-lg);">
+  </div>
+
+  <div class="card-raised" style="padding: 0;">
+    <div class="ledger-card-head">
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sample results {% source_label "DDW_LAB" %}</h2>
       <div class="text-secondary text-base">{{ result_count|intcomma }} sample results &middot; {{ analyte_count }} analytes &middot; sampled {{ first_sample|date:"Y-m-d" }} to {{ latest_sample|date:"Y-m-d" }}</div>
       {% if is_truncated %}
@@ -216,13 +219,12 @@
       </table>
     </div>
 
-    <p class="text-sm mt-sm">
-      <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">See all {{ result_count }} result{{ result_count|pluralize }} for this point</a>
+    <p class="text-sm" style="padding: var(--space-md) var(--space-lg);">
+      <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">See all {{ result_count|intcomma }} result{{ result_count|pluralize }} for this point</a>
     </p>
     {% else %}
-    <p class="text-secondary text-sm">No results recorded at this sampling point yet.</p>
+    <p class="text-secondary text-sm" style="padding: var(--space-md) var(--space-lg);">No results recorded at this sampling point yet.</p>
     {% endif %}
-
   </div>
 
 </div>

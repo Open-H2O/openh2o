@@ -205,7 +205,10 @@
       renamed "Sample results" column counts, so it needs no re-explaining on
       every row.
     {% endcomment %}
-    <div class="ledger-card-head" style="margin-top: var(--space-lg);">
+  </div>
+
+  <div class="card-raised" style="padding: 0;">
+    <div class="ledger-card-head">
       <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sampling points</h2>
       {% if points %}
       <div class="text-secondary text-base">{{ points|length }} sampling point{{ points|length|pluralize }} on this facility.</div>
@@ -244,9 +247,8 @@
       </table>
     </div>
     {% else %}
-    <p class="text-secondary text-sm">No sampling points on this facility yet. Sampling points are added in the onboarding builder, never by an import.</p>
+    <p class="text-secondary text-sm" style="padding: var(--space-md) var(--space-lg);">No sampling points on this facility yet. Sampling points are added in the onboarding builder, never by an import.</p>
     {% endif %}
-
   </div>
 
 </div>
