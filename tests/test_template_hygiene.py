@@ -179,7 +179,7 @@ class TestGroupedTableBracketHeaderIsCentred:
 class TestEngineSentenceLivesOnlyInTheEngine:
     """143-11 (ISS-170): the ledger's engine-written sentences live in
     `accounting/ledger_words.py` and are printed unchanged from
-    `entry.description` — no template composes or overrides one. Before this
+    `entry.description`; no template composes or overrides one. Before this
     plan, `_ledger_list_results.html` carried a display-time override that
     hard-coded the zero-row sentence for a `calculated` row at 0.0000 AF
     (`{% if entry.amount_acre_feet == 0 and entry.source_type == "calculated" %}`),

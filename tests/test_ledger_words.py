@@ -4,8 +4,8 @@
 Two things this module owes a reader, pinned here:
 
 1. `delivery_share_words` composes the Description sentence for a surface
-   allocation row correctly — the figure, the return-flow clause, the
-   fixed-share tail, and the POD name — with NO database (an unsaved record
+   allocation row correctly: the figure, the return-flow clause, the
+   fixed-share tail, and the POD name, with NO database (an unsaved record
    and an unsaved POD are enough; the function only reads attributes and
    calls `consumed_acre_feet()`, which is pure Decimal arithmetic).
 2. Every sentence a reader sees scans clean under the two vocabulary gates
@@ -153,7 +153,7 @@ def _public_word_constants():
 
 @pytest.mark.parametrize("name", _public_word_constants())
 def test_every_sentence_constant_scans_clean_under_the_domain_gate(name):
-    """`tests/test_domain_vocabulary.py::scan` — never define the water."""
+    """`tests/test_domain_vocabulary.py::scan`: never define the water."""
     from tests.test_domain_vocabulary import scan
 
     import accounting.ledger_words as lw
@@ -165,7 +165,7 @@ def test_every_sentence_constant_scans_clean_under_the_domain_gate(name):
 
 @pytest.mark.parametrize("name", _public_word_constants())
 def test_every_sentence_constant_carries_no_gated_phrase(name):
-    """DESIGN.md's vocabulary table (rule 12), read live — no cosmetic copy.
+    """DESIGN.md's vocabulary table (rule 12), read live, no cosmetic copy.
 
     The scope checked is the one template that renders these sentences.
     """
@@ -182,7 +182,7 @@ def test_every_sentence_constant_carries_no_gated_phrase(name):
 
 
 def test_incidental_recharge_words_constants_are_distinct():
-    """The rename left the old and new sentences DIFFERENT strings — a re-run's
+    """The rename left the old and new sentences DIFFERENT strings, so a re-run's
     `Q(startswith=OLD) | Q(startswith=NEW)` delete would silently become a
     no-op filter if they ever collided."""
     assert INCIDENTAL_RECHARGE_WORDS != LEGACY_INCIDENTAL_RECHARGE_WORDS

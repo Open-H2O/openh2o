@@ -388,7 +388,7 @@ def test_run_calculations_writes_the_zero_sentence_when_surface_covers_et():
     (pinned above). Zero is reached the way the 253 demonstration rows reach
     it: enough surface delivery to cover the month's ET, so `clamp_floor`
     floors `running_af` at 0 and the amount the engine stores quantizes to
-    0.0000 — never a hand-written 0 row."""
+    0.0000; never a hand-written 0 row."""
     from parcels.models import ParcelLedger as PL
 
     parcel = _parcel("RUN-ZERO", acres="10")

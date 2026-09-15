@@ -509,7 +509,7 @@ def test_legacy_incidental_recharge_row_is_replaced_by_a_rerun():
     """ISS-052 preserved across the 143-11 rename: a `recharge` row an agency
     wrote before this change (carrying `LEGACY_INCIDENTAL_RECHARGE_WORDS`) is
     deleted by a re-run and replaced by exactly one row carrying the new
-    words — never doubled, never left stale."""
+    words; never doubled, never left stale."""
     parcel = _parcel("RUN-LEGACY-RENAME", acres="10")
     _irrigate(parcel)
     WellIrrigatedParcelFactory(parcel=parcel)  # has well -> CONJUNCTIVE / personal
