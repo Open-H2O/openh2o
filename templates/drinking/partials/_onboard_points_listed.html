@@ -1,0 +1,80 @@
+{% load placeholders %}{% comment %}
+  143-08 Task 4 (R-073, design A). The builder's one grouped table, replacing
+  the per-facility tables that used to live inside each of the 61 panels.
+  This is the HTMX target of `onboard_points_add`: `id="points-listed"` on
+  the root, `hx-swap="outerHTML"`, so the whole table is regenerated from the
+  database on every add rather than one row spliced into one facility's old
+  panel. `_diversion_records.html` follows the same rule for its own target.
+
+  A facility with no sampling points is not a row here (the head's "n of m"
+  already says such facilities exist); it still has a place to be found, the
+  form's facility select, `_onboard_points_form.html`.
+
+  On success AND on every error branch `onboard_points_add` renders THIS
+  partial, so the alert and the up-to-date table always arrive together. The
+  alert itself is an out-of-band swap into `#point-add-status`
+  (`_map_card_head.html`'s own mechanism): it renders here, marked
+  `hx-swap-oob="true"`, only when this render IS a POST response (`added`,
+  `duplicate` or `error` is set); a plain page load passes none of the three
+  and the persistent empty `#point-add-status` in `_onboard_points_form.html`
+  is what a later add's oob div finds and replaces.
+
+  Caller supplies `system`, `pwsid`, `facilities` (every facility of the
+  system, for the "n of m" line), `point_groups` (one dict per facility WITH
+  points: `{"facility": ..., "points": [...]}`), `point_count`, `n_with`, and
+  optionally one of `added` / `duplicate` / `error`.
+{% endcomment %}
+{% if added or duplicate or error %}
+<div id="point-add-status" hx-swap-oob="true">
+  {% if error %}
+  <div class="alert-error">{{ error }}</div>
+  {% endif %}
+  {% if added %}
+  <div class="alert-success">
+    Added <span class="text-mono">{{ added.ps_code }}</span>{% if added.name %} &mdash; {{ added.name }}{% endif %}.
+  </div>
+  {% endif %}
+  {% if duplicate %}
+  <div class="alert-warning">
+    <span class="text-mono">{{ duplicate.ps_code }}</span> is already listed &mdash; nothing was
+    changed. Coming back to a system you had partly finished is ordinary; this is not an error.
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+<div id="points-listed" class="card-raised" style="padding: 0;">
+  <div class="ledger-card-head">
+    <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Sampling points</h2>
+    <div class="text-secondary text-base">{{ point_count }} sampling point{{ point_count|pluralize }} listed on {{ n_with }} of {{ facilities|length }} facilities.</div>
+    <div class="text-secondary text-base">Lab results naming any PS Code below match on import; a row naming one that is not listed is reported and skipped.</div>
+  </div>
+  {% if point_groups %}
+  <div class="table-scroll">
+    <table class="data-table text-sm data-table--grouped">
+      <thead>
+        <tr><th>PS Code</th><th>Name</th><th>Point type</th></tr>
+      </thead>
+      <tbody>
+        {% for group in point_groups %}
+        <tr class="row-group">
+          <td colspan="3">
+            {% if group.facility.facility_type %}{{ group.facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if group.facility.name and not group.facility.name_adds_nothing %} &mdash; {{ group.facility.name }}{% endif %}
+            {% if group.facility.is_source %}<span class="badge badge-blue">Source</span>{% endif %}
+            <span class="text-tertiary">&middot; Codes begin <span class="text-mono">{{ pwsid }}_{{ group.facility.facility_id }}_</span></span>
+          </td>
+        </tr>
+        {% for point in group.points %}
+        <tr>
+          <td class="text-mono">{{ point.ps_code }}</td>
+          <td>{{ point.name|blank }}</td>
+          <td class="text-secondary">{{ point.get_point_type_display|blank }}</td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-secondary text-sm" style="padding: var(--space-md) var(--space-lg);">No sampling points listed yet. Add one above.</p>
+  {% endif %}
+</div>

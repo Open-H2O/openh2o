@@ -1445,8 +1445,7 @@ def _describe(facility):
     """Flag whether EPA's name for this facility repeats its type label.
 
     Set on the instance rather than resolved in the template so the same answer
-    is available whether the panel is rendered by the page or swapped in by an
-    add.
+    is available whether the page renders it or an add's response swaps it in.
 
     This used to also attach a sentence saying what the facility physically is
     ("A drilled well. Water comes up out of the ground here."). Deleted
@@ -1456,16 +1455,62 @@ def _describe(facility):
     # EPA's name is often just the type again ("DISTRIBUTION SYSTEM" on a
     # facility already typed Distribution System). Showing both produced the
     # heading "Distribution System — DISTRIBUTION SYSTEM", which is the exact
-    # code-soup this rewrite exists to remove.
+    # code-soup this rewrite exists to remove. Applied to the facility select's
+    # option text too (143-08 Task 4), the one other place this heading shape
+    # is built.
     label = (facility.get_facility_type_display() or "").strip().lower()
     facility.name_adds_nothing = (facility.name or "").strip().lower() == label
     return facility
 
 
+def _facility_select_order(facilities):
+    """Sources first, then the rest, each group in facility-id order.
+
+    143-08 Task 4 (design A): the builder's facility select is the one place
+    order matters, since a source facility is disproportionately what an
+    operator is adding a point to (it is where water enters the system, the
+    thing a program most often samples). ``sorted`` is stable, so within each
+    group ``_facility_panels``'s own facility-id order survives.
+    """
+    return sorted(facilities, key=lambda f: not f.is_source)
+
+
+def _points_listed_context(system, facilities):
+    """The grouped-table state for the builder's listed-points card.
+
+    Shared by the full-page GET and by ``onboard_points_add``'s POST response
+    so the two can never drift apart the way a hand-spliced row would: the
+    add view calls this on a freshly refetched facility list, never patches
+    the group it just added to.
+
+    A facility with no points is left out of ``point_groups`` entirely (the
+    head's "n of m" already says such facilities exist); it never disappears
+    from the system, only from this table.
+    """
+    point_groups = []
+    n_with = 0
+    point_count = 0
+    for facility in facilities:
+        points = list(facility.sampling_points.all())
+        if not points:
+            continue
+        n_with += 1
+        point_count += len(points)
+        point_groups.append({"facility": facility, "points": points})
+    return {
+        "system": system,
+        "pwsid": system.pwsid,
+        "facilities": facilities,
+        "point_groups": point_groups,
+        "point_count": point_count,
+        "n_with": n_with,
+    }
+
+
 @login_required
 @require_GET
 def onboard_points(request, pwsid):
-    """The per-facility sampling-point builder.
+    """The system-wide sampling-point builder: one form, one grouped table.
 
     Guarded rather than rendered empty: a system that was never onboarded has no
     facilities to hang points on, and an empty page would read as "this system
@@ -1492,31 +1537,25 @@ def onboard_points(request, pwsid):
         )
         return redirect("drinking:onboard")
 
-    # Split rather than list all 35. A real system carries far more facilities
-    # than ever take samples — Bakman has 35, of which 14 are sampled — and
-    # rendering 21 identical empty forms buries the ones that matter. The empty
-    # ones stay reachable behind a toggle; they are not hidden, just not first.
-    with_points = [f for f in facilities if f.sampling_points.all()]
-    without_points = [f for f in facilities if not f.sampling_points.all()]
+    # ONE ordered list, reused everywhere on the page: the select's options,
+    # the grouped table's row order, and the "n of m" count line's length.
+    # Sorted once here rather than per-consumer so the select and the table
+    # below it never present two different orders for the same facilities.
+    facilities = _facility_select_order(facilities)
 
     return render(
         request,
         "drinking/onboard_points.html",
         {
             "system": system,
-            "facilities": facilities,
-            "facilities_with_points": with_points,
-            "facilities_without_points": without_points,
             "point_type_choices": POINT_TYPE_CHOICES,
-            "point_count": SamplingPoint.objects.filter(
-                facility__system=system
-            ).count(),
             # Only the abbreviations that actually appear on this page.
             "shorthand": glossary.shorthand_in_use(
                 [f.name for f in facilities]
                 + [f.facility_id for f in facilities]
                 + [p.name for f in facilities for p in f.sampling_points.all()]
             ),
+            **_points_listed_context(system, facilities),
         },
     )
 
@@ -1524,37 +1563,53 @@ def onboard_points(request, pwsid):
 @login_required
 @require_POST
 def onboard_points_add(request, pwsid):
-    """Add one sampling point to one facility. Renders that facility's panel back.
+    """Add one sampling point to one facility. Renders the WHOLE listed-points
+    table back, regrouped, plus the status alert out of band.
 
     A duplicate is reported and skipped, not raised: an operator re-walking a
     partially-completed system is the ordinary case, not an error. ``get_or_create``
     rather than an ``exists()`` check so two operators racing the same code get a
     plain "already there" instead of an IntegrityError 500.
+
+    143-08 Task 4 (design A): every branch below renders
+    ``_onboard_points_listed.html``, never the bare alert the old per-facility
+    panel returned on an error: the operator's whole table has to stay on
+    screen (``hx-target="#points-listed"``, ``hx-swap="outerHTML"``) whatever
+    the outcome, with the alert riding along as an out-of-band swap into
+    ``#point-add-status``.
     """
     pwsid = (pwsid or "").strip().upper()
     system = WaterSystem.objects.filter(pwsid=pwsid).first()
     if system is None:
         return render(
             request,
-            "drinking/partials/_onboard_points.html",
-            {"error": f"{pwsid} is not a system carried here."},
+            "drinking/partials/_onboard_points_listed.html",
+            {
+                "system": None,
+                "pwsid": pwsid,
+                "facilities": [],
+                "point_groups": [],
+                "point_count": 0,
+                "n_with": 0,
+                "error": f"{pwsid} is not a system carried here.",
+            },
+        )
+
+    def _listed(**status):
+        facilities = _facility_select_order(
+            [_describe(f) for f in _facility_panels(system)]
+        )
+        return render(
+            request,
+            "drinking/partials/_onboard_points_listed.html",
+            {**_points_listed_context(system, facilities), **status},
         )
 
     facility = system.facilities.filter(
         pk=(request.POST.get("facility") or "").strip() or None
     ).first()
     if facility is None:
-        return render(
-            request,
-            "drinking/partials/_onboard_points.html",
-            {"error": "That facility is not part of this system."},
-        )
-
-    panel = {
-        "system": system,
-        "facility": _describe(facility),
-        "point_type_choices": POINT_TYPE_CHOICES,
-    }
+        return _listed(error="That facility is not part of this system.")
 
     point_number = (request.POST.get("point_number") or "").strip()
     name = (request.POST.get("name") or "").strip()
@@ -1566,30 +1621,17 @@ def onboard_points_add(request, pwsid):
     try:
         ps_code = compose_ps_code(system.pwsid, facility.facility_id, point_number)
     except ValueError as exc:
-        return render(
-            request,
-            "drinking/partials/_onboard_points.html",
-            {**panel, "error": str(exc)},
-        )
+        return _listed(error=str(exc))
 
     if point_type and point_type not in dict(POINT_TYPE_CHOICES):
-        return render(
-            request,
-            "drinking/partials/_onboard_points.html",
-            {**panel, "error": "That is not a point type this platform carries."},
-        )
+        return _listed(error="That is not a point type this platform carries.")
 
     point, created = SamplingPoint.objects.get_or_create(
         ps_code=ps_code,
         defaults={"facility": facility, "name": name, "point_type": point_type},
     )
 
-    return render(
-        request,
-        "drinking/partials/_onboard_points.html",
-        {
-            **panel,
-            "added": point if created else None,
-            "duplicate": None if created else point,
-        },
+    return _listed(
+        added=point if created else None,
+        duplicate=None if created else point,
     )

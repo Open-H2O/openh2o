@@ -213,24 +213,48 @@ class TestBuilderIsUsable:
         assert "Lead and Copper Rule" in body
         assert "Untreated water" in body
 
-    def test_unsampled_facilities_are_collapsed_not_listed_flat(
+    def test_unsampled_facilities_are_not_rows_but_stay_selectable(
         self, client_logged_in, system
     ):
-        """21 identical empty forms buried the ones that mattered."""
+        """RETARGETED 143-08 Task 4 (design A).
+
+        21 identical empty forms buried the ones that mattered, and the fix
+        used to be a `<details>` toggle around a second stack of panels. The
+        panels are gone: a facility with no sampling point is not a row in
+        the grouped table (the head's "n of m" already says such facilities
+        exist), but it never disappears from the page, since it is still one
+        option in the facility select, so a lab file naming one of them is
+        still one click from being fixed.
+        """
         body = client_logged_in.get(
             reverse("drinking:onboard_points", args=[PWSID])
         ).content.decode()
-        assert "Facilities with sampling points (2)" in body
-        assert "Facilities with no sampling points yet (5)" in body
-        # Behind a disclosure control, still reachable.
-        assert "<details" in body
+        assert "2 sampling points listed on 2 of 7 facilities" in body
+        # No disclosure control left to reach the other 5: there is nothing
+        # hidden to disclose; they are options in the select instead. The
+        # sidebar carries its own unrelated `<details class="sidebar-
+        # collapsible">` for the Help section, so this is scoped to the
+        # builder's own content rather than the whole page.
+        assert '<details class="sidebar-collapsible">' in body, (
+            "the sidebar's own disclosure control went missing"
+        )
+        assert "<details class=\"mt-md\">" not in body
+        # A never-sampled facility (901) still has a place: the select.
+        assert 'data-prefix="CA1010001_901_"' in body
 
-    def test_context_separates_sampled_from_unsampled(self, client_logged_in, system):
+    def test_context_carries_the_grouped_table_and_the_full_facility_list(
+        self, client_logged_in, system
+    ):
+        """RETARGETED 143-08 Task 4: `facilities_with_points` and
+        `facilities_without_points` no longer exist. One table replaces the
+        split, grouped from a `facilities` list the select also reads."""
         response = client_logged_in.get(
             reverse("drinking:onboard_points", args=[PWSID])
         )
-        assert len(response.context["facilities_with_points"]) == 2
-        assert len(response.context["facilities_without_points"]) == 5
+        assert len(response.context["facilities"]) == 7
+        assert len(response.context["point_groups"]) == 2
+        assert response.context["n_with"] == 2
+        assert response.context["point_count"] == 2
 
 
 class TestReviewScreenSaysNothingIsSaved:

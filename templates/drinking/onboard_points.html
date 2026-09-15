@@ -28,6 +28,12 @@
        as EPA's rather than presented as if we wrote them.
     3. Facilities that have sampling points come first; the rest are behind a
        toggle instead of 21 identical empty boxes.
+
+  143-08 Task 4 (2026-09-15, design A) replaced the mechanism point 3 built:
+  23 per-facility panels, 21 more behind a `<details>`, became one form with
+  a facility select and one grouped table of what is listed. Every facility
+  is one click away in the select rather than 47 of them defaulting to
+  hidden, so the toggle this comment used to describe is gone.
 {% endcomment %}
 {% block content %}
 <div class="page-stack page-wide">
@@ -53,9 +59,10 @@
 
   {% comment %}
     Body prose caps at 75ch (DESIGN.md copy rule 6), inline as the six sibling
-    drinking templates do it. The container stays at 1400px because the facility
-    panels and their four-column add form need that width — only the prose was
-    over-wide, measured at 127ch on staging before this pass.
+    drinking templates do it. The container stays at 1400px because the
+    add-a-point form's five-column grid and the grouped table below need that
+    width; only the prose was over-wide, measured at 127ch on staging before
+    this pass.
   {% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">What this page is for</h2>
@@ -75,51 +82,20 @@
   </div>
 
   {% comment %}
-    Facilities that already have sampling points, first and open. These are the
-    ones an operator is actually working with.
+    143-08 Task 4 (R-073, design A, ruled by Brent 2026-09-15 12:09 PDT). One
+    "Add a sampling point" form for the whole system, replacing the 23
+    identical per-facility panels and the `<details>` that hid the rest. A
+    facility select stands in for the toggle, since every facility is always
+    one click away in it rather than 47 of them being buried by default. The
+    grouped table of what is already listed sits below, its own card, so a
+    reader sees what is done and what to add next in one scroll.
   {% endcomment %}
-  {% if facilities_with_points %}
   <div class="card-raised">
-    <h2 class="card-header-ruled">Facilities with sampling points ({{ facilities_with_points|length }})</h2>
-    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
-      Lab results naming any of the PS Codes below will match on import.
-    </p>
-    {% comment %}
-      The panels live INSIDE the card that names them. They used to render as
-      siblings after it, so the heading closed its own card and then floated
-      above 23 unattached boxes — while the collapsed section below already
-      contained its panels this way. The two paths now match.
-    {% endcomment %}
-    <div class="page-stack mt-md">
-      {% for facility in facilities_with_points %}
-        {% include "drinking/partials/_onboard_points.html" %}
-      {% endfor %}
-    </div>
+    <h2 class="card-header-ruled">Add a sampling point</h2>
+    {% include "drinking/partials/_onboard_points_form.html" %}
   </div>
-  {% endif %}
 
-  {% comment %}
-    The rest, collapsed. Most facilities in a real system are never sampled —
-    Bakman has 35 on record and 14 that take samples. Showing the other 21 as
-    open forms buried the ones that matter. They stay one click away.
-  {% endcomment %}
-  {% if facilities_without_points %}
-  <div class="card-raised">
-    <h2 class="card-header-ruled">Facilities with no sampling points yet ({{ facilities_without_points|length }})</h2>
-    <p class="text-base text-secondary mt-md" style="max-width: 75ch;">
-      On the system's record with no sampling point listed. Most facilities are
-      never sampled directly. Open this only if a lab file names one of them.
-    </p>
-    <details class="mt-md">
-      <summary class="text-base" style="cursor: pointer;">Show these {{ facilities_without_points|length }} facilities</summary>
-      <div class="page-stack mt-md">
-        {% for facility in facilities_without_points %}
-          {% include "drinking/partials/_onboard_points.html" %}
-        {% endfor %}
-      </div>
-    </details>
-  </div>
-  {% endif %}
+  {% include "drinking/partials/_onboard_points_listed.html" %}
 
   {% comment %}
     Only the abbreviations that actually appear above. EPA's names are their

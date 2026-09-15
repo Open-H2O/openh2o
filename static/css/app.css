@@ -942,6 +942,16 @@ html { color-scheme: dark; }
     flex-direction: column;
     justify-content: center;
 }
+/* 143-08 Task 4: the drinking overview's balance slot holds a stat grid
+   instead of a budget panel (no figure to lead with here, three counts
+   routing to three lists). Same rule as the budget panel above -- the
+   identity card's fields set the row's height, and the tiles centre in
+   whatever the balance card has left over its head band. */
+.page-grid-account-balance > .stat-grid-3col {
+    flex: 1 1 auto;
+    align-content: center;
+    margin-bottom: 0;
+}
 .page-grid-account-full {
     grid-column: 1 / -1;
 }
@@ -4364,12 +4374,17 @@ div[id$="-map"] {
     padding-bottom: var(--space-xs);
 }
 
-/* The "add a place" row: a defined grid instead of a wrapping flex row, so the
-   number / description / kind / button keep a stable order and collapse
-   predictably (four → two → one) rather than reflowing on help-text heights. */
+/* The "add a sampling point" row: a defined grid instead of a wrapping flex
+   row, so facility / number / description / kind / button keep a stable
+   order and collapse predictably (five, then two, then one) rather than
+   reflowing on help-text heights. Widened from four columns to five on
+   143-08 Task 4 (design A): the per-facility form became one form for the
+   whole system, so a facility select leads the row. The select gets the
+   widest fixed range: its option text is a full "Type, Name (id)" and the
+   narrowest facility list still needs to read without wrapping. */
 .sp-add-form {
     display: grid;
-    grid-template-columns: minmax(8rem, 11rem) minmax(12rem, 1fr) minmax(9rem, 12rem) auto;
+    grid-template-columns: minmax(14rem, 1.5fr) minmax(8rem, 11rem) minmax(12rem, 1fr) minmax(9rem, 12rem) auto;
     gap: var(--space-sm) var(--space-md);
     align-items: start;
 }

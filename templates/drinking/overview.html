@@ -32,7 +32,21 @@
 <div class="page-stack page-wide">
 
   {% for system in systems %}
-  <div class="card-raised">
+  {% comment %}
+    143-08 Task 4 (R-062). One two-column row, the account-grid shape
+    (`page-grid-account`, `_account_detail_pane.html` / `_zone_detail_pane.html`):
+    the identity card beside a card naming the three lists this system feeds.
+    The identity card's fields move from `.form-grid-2col` to `.field-grid-2`
+    (the account page's own class) because the card now sits beside a
+    shorter neighbour and has to set its own height rather than spanning the
+    page; the population-split and connections-split grids under them are
+    untouched, `.form-grid-2col` as they were. The three tiles keep every
+    anchor, class and comment they carried before this task:
+    tests/test_drinking_module_shows_what_to_do.py pins their shape.
+  {% endcomment %}
+  <div class="page-grid-account">
+
+    <div class="card-raised page-grid-account-info">
 
     {% comment %}
       Identity. Every value is the regulator's own published vocabulary, shown
@@ -40,7 +54,7 @@
       friendlier local wording.
     {% endcomment %}
     <h2 class="section-header">{{ system.name }} {% source_label "EPA_SDWIS" %}</h2>
-    <div class="form-grid-2col">
+    <div class="field-grid-2">
       <div class="field-group">
         <div class="field-label">PWSID</div>
         <div class="field-value-mono">{{ system.pwsid }}</div>
@@ -86,7 +100,7 @@
     on one model.
     {% endcomment %}
     <h2 class="section-header mt-lg">Population and service connections {% source_label "EPA_SDWIS" %}</h2>
-    <div class="form-grid-2col">
+    <div class="field-grid-2">
       <div class="field-group">
         <div class="field-label">Population served</div>
         <div class="field-value-mono tabular-nums">{{ system.population_served_total|default_if_none:"—"|intcomma }}</div>
@@ -156,6 +170,8 @@
     </p>
     {% endif %}
 
+    </div>
+
     {% comment %}
     The front door. Three counts, each linking to the list that holds them —
     the facility inventory that used to be a 61-row table on this page now has
@@ -168,49 +184,63 @@
     on the same page reads as an oversight. This page got separators first and
     the dashboard card was left alone as out of scope; on 2026-08-02 the same
     argument was accepted there too, so the two surfaces now agree.
+
+    143-08 Task 4 (R-062): the tile row moved into its own card beside the
+    identity card (the account-grid shape), headed "Records for this system"
+    so the three counts read as what THIS deployment holds rather than
+    floating under the population section above. `.stat-grid-3col` centres in
+    the balance card's height the way `.budget-panel` does on the account and
+    recharge pages (`.page-grid-account-balance > .budget-panel` in app.css);
+    the tiles below are otherwise byte-identical to before this task.
     {% endcomment %}
-    {% comment %}
-    123-02: the whole tile is the anchor, not just the digits. The page has
-    always advertised the affordance — `.card-raised:hover` (app.css:98-102)
-    lights the entire tile — while only the number was clickable, so the target
-    was 40% of what the hover promised. Measured pixel-identical at 1024 (0.0%,
-    max channel delta 0); no CSS was added and none is needed.
+    <div class="card-raised page-grid-account-balance">
+      <div class="page-grid-account-head mb-md">
+        <h2 class="section-header-flush">Records for this system</h2>
+        <div class="text-secondary text-base">Facilities are EPA's record; sampling points are composed here; sample results are the state's laboratory export.</div>
+      </div>
+      {% comment %}
+      123-02: the whole tile is the anchor, not just the digits. The page has
+      always advertised the affordance (`.card-raised:hover`, app.css:98-102
+      lights the entire tile) while only the number was clickable, so the target
+      was 40% of what the hover promised. Measured pixel-identical at 1024 (0.0%,
+      max channel delta 0); no CSS was added and none is needed.
 
-    The inner element is a `<span class="data-table-link">`, NOT an `<a>`. An
-    anchor nested inside an anchor is invalid HTML: browsers reparent the inner
-    one out of the outer, and the tile-wide target silently shrinks back to the
-    digits with nothing visibly wrong. The class is kept because it is what
-    gives the number its colour.
+      The inner element is a `<span class="data-table-link">`, NOT an `<a>`. An
+      anchor nested inside an anchor is invalid HTML: browsers reparent the inner
+      one out of the outer, and the tile-wide target silently shrinks back to the
+      digits with nothing visibly wrong. The class is kept because it is what
+      gives the number its colour.
 
-    `text-decoration: none` is inline, and it is NOT decoration-fiddling — it
-    repairs a real regression the mock-up did not show. An `<a>` underlines by
-    default and paints that through its in-flow descendants, so making the tile
-    an anchor underlined the LABELS too ("Facilities", "Sampling points"),
-    which they have never been. Caught on staging at 1440x900.
+      `text-decoration: none` is inline, and it is NOT decoration-fiddling: it
+      default and paints that through its in-flow descendants, so making the tile
+      an anchor underlined the LABELS too ("Facilities", "Sampling points"),
+      which they have never been. Caught on staging at 1440x900.
 
-    Why inline rather than the house `.card-link` component, which exists for
-    exactly "the whole card is a link": `.card-link:hover` sits AFTER
-    `.card-raised:hover` in app.css at equal specificity, so it replaces the
-    accent glow with a flat `--shadow-pop-sm`. That glow is the affordance this
-    whole task exists to honour, so borrowing the component would undo the
-    change while fixing the underline. `templates/datasync/partials/
-    _monitoring_content.html:99` sets the same property inline on a card link
-    for the same reason. Still zero CSS added.
-    {% endcomment %}
-    <div class="stat-grid-3col mt-lg">
-      <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:facilities' %}">
-        <div class="stat-card-label">Facilities</div>
-        <div class="stat-card-value-sm"><span class="data-table-link">{{ system.facility_count|intcomma }}</span></div>
-      </a>
-      <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:sampling_points' %}">
-        <div class="stat-card-label">Sampling points</div>
-        <div class="stat-card-value-sm"><span class="data-table-link">{{ system.sampling_point_count|intcomma }}</span></div>
-      </a>
-      <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:results' %}">
-        <div class="stat-card-label">Sample results</div>
-        <div class="stat-card-value-sm"><span class="data-table-link">{{ system.result_count|intcomma }}</span></div>
-      </a>
+      Why inline rather than the house `.card-link` component, which exists for
+      exactly "the whole card is a link": `.card-link:hover` sits AFTER
+      `.card-raised:hover` in app.css at equal specificity, so it replaces the
+      accent glow with a flat `--shadow-pop-sm`. That glow is the affordance this
+      whole task exists to honour, so borrowing the component would undo the
+      change while fixing the underline. `templates/datasync/partials/
+      _monitoring_content.html:99` sets the same property inline on a card link
+      for the same reason. Still zero CSS added.
+      {% endcomment %}
+      <div class="stat-grid-3col">
+        <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:facilities' %}">
+          <div class="stat-card-label">Facilities</div>
+          <div class="stat-card-value-sm"><span class="data-table-link">{{ system.facility_count|intcomma }}</span></div>
+        </a>
+        <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:sampling_points' %}">
+          <div class="stat-card-label">Sampling points</div>
+          <div class="stat-card-value-sm"><span class="data-table-link">{{ system.sampling_point_count|intcomma }}</span></div>
+        </a>
+        <a class="card-raised card-inset stat-card" style="text-decoration: none;" href="{% url 'drinking:results' %}">
+          <div class="stat-card-label">Sample results</div>
+          <div class="stat-card-value-sm"><span class="data-table-link">{{ system.result_count|intcomma }}</span></div>
+        </a>
+      </div>
     </div>
+
   </div>
 
   {% comment %}

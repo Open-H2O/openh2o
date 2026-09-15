@@ -1,0 +1,108 @@
+{% comment %}
+  143-08 Task 4 (R-073, design A, ruled by Brent 2026-09-15 12:09 PDT). One
+  form for the whole system, replacing the 61 identical per-facility panels:
+  a facility select first (sources first, then the rest, per `views.py`'s
+  `_facility_select_order`), Point number, Name, Point type, the button, in
+  the `.sp-add-form` grid widened to five columns.
+
+  The option text applies the same `_describe` guard the old per-facility
+  heading used (so "Distribution System, DISTRIBUTION SYSTEM" never renders)
+  and carries `data-prefix`, the PS Code prefix for THAT facility, so the
+  form-help line under the select updates on `change` with no round trip.
+  `data-prefix` is also why a facility with no points yet still puts its
+  prefix on the page: `CA1010001_DST_` (the plan's own guard string) has to
+  survive a GET even though the grouped table below never rows a facility
+  with nothing listed on it.
+
+  `hx-target="#points-listed"` / `hx-swap="outerHTML"` regenerates the WHOLE
+  grouped table on every add, the same "regenerate, don't patch" rule
+  `_diversion_records.html` follows for its own HTMX target, so the table
+  can never drift from the database by one spliced row.
+
+  `#point-add-status` starts empty here. It is the persistent element the
+  POST response's oob div swaps into (`_map_card_head.html`'s own
+  mechanism, `templates/partials/_map_card_head.html`), so an add anywhere
+  in the system shows its alert here without disturbing the operator's place
+  in the form.
+
+  Caller supplies `system`, `facilities` (sources first, `_describe`d) and
+  `point_type_choices`.
+{% endcomment %}
+<div id="point-add-status"></div>
+
+<form
+  method="post"
+  action="{% url 'drinking:onboard_points_add' system.pwsid %}"
+  hx-post="{% url 'drinking:onboard_points_add' system.pwsid %}"
+  hx-target="#points-listed"
+  hx-swap="outerHTML">
+  {% csrf_token %}
+
+  <div class="sp-add-form">
+
+    <div class="form-group">
+      <label class="form-label" for="point-facility">Facility <span class="required-mark">*</span></label>
+      <select id="point-facility" name="facility" class="form-input" required>
+        {% for facility in facilities %}
+        <option value="{{ facility.pk }}" data-prefix="{{ system.pwsid }}_{{ facility.facility_id }}_">
+          {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; {{ facility.name }}{% endif %} ({{ facility.facility_id }})
+        </option>
+        {% endfor %}
+      </select>
+      {% with first=facilities.0 %}
+      <div class="form-help" id="point-facility-prefix">Codes here begin <span class="text-mono">{{ system.pwsid }}_{{ first.facility_id }}_</span></div>
+      {% endwith %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="point-number">Point number or label <span class="required-mark">*</span></label>
+      {% comment %}
+        type="text", never type="number": real labels include LCR and 900,
+        and a number input silently refuses letters and would drop every
+        lead-testing and disinfection-byproduct point.
+      {% endcomment %}
+      <input type="text" id="point-number" name="point_number" required
+             class="form-input" autocomplete="off" spellcheck="false"
+             placeholder="e.g. LCR or 010">
+      <div class="form-help">The last segment of the PS Code. Letters are fine &mdash; <span class="text-mono">LCR</span> and <span class="text-mono">900</span> are both real.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="point-name">Name</label>
+      <input type="text" id="point-name" name="name"
+             class="form-input" autocomplete="off"
+             placeholder="e.g. Lead testing tap">
+      <div class="form-help">Optional. Shown beside the PS Code wherever this point is listed.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="point-type">Point type</label>
+      <select id="point-type" name="point_type" class="form-input">
+        <option value="">&mdash;</option>
+        {% for value, label in point_type_choices %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group sp-add-submit">
+      <span class="form-label" aria-hidden="true">&nbsp;</span>
+      <button type="submit" class="btn-secondary">Add sampling point</button>
+    </div>
+
+  </div>
+</form>
+
+{% comment %}
+  Five lines of inline script, no library: the prefix line is derived data
+  (the selected option's own `data-prefix`), never fetched again from the
+  server on a change event.
+{% endcomment %}
+<script>
+document.getElementById("point-facility").addEventListener("change", function () {
+  var opt = this.options[this.selectedIndex];
+  var prefix = opt ? opt.getAttribute("data-prefix") : "";
+  document.getElementById("point-facility-prefix").innerHTML =
+    "Codes here begin <span class=\"text-mono\">" + prefix + "</span>";
+});
+</script>
