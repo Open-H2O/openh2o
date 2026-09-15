@@ -1,6 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """143-05: the ledger's one merged "Water" column, in words, not two badges.
 
+**143-11 added the engines' own sentences below the Water-column words.** The
+Use Ledger's Description column is the one column written for a human, and
+until this plan it carried the engines' internal shorthand verbatim ("demand-
+weighted (ET-allocated)", "Derived groundwater extraction estimate (calculation
+engine)") — ISS-170. The five sentences a reader now sees for every engine-
+written row live here, beside the Water column's words, so every word the
+ledger shows lives in one file rather than being composed again at each write
+site. `surface/services.py` and `accounting/management/commands/run_calculations.py`
+import from this module; neither writes a sentence of its own.
+
 Checkpoint ruling, 2026-09-12 (Brent, second read): the two badge-styled
 columns this plan's Task 4 shipped (a colored Source pill plus a plain Water
 type cell) read as "very confusing" -- "Meter reading in the source sticks
@@ -27,6 +37,10 @@ and this function has to say that, not "Groundwater, metered" regardless of
 what the row actually holds. ``water_type`` is nullable on the model, so
 every branch below has a fallback to the source word alone.
 """
+
+from decimal import Decimal
+
+from core.map_labels import map_label
 
 #: Source types whose word pairs with the row's own water type name as
 #: "{Water type}, {word}". ``calculated`` and ``et_estimate`` are the same
@@ -87,3 +101,120 @@ def ledger_row_words(entry):
     if water_type_name:
         return f"{water_type_name}, {word}"
     return word.capitalize()
+
+
+# --------------------------------------------------------------------------
+# 143-11: the engines' own sentences (ISS-170).
+#
+# `surface/services.py` (the demand-weighted and static-fraction allocation
+# paths) and `run_calculations.py` (the incidental-recharge credit and the
+# groundwater-extraction estimate) write these constants onto the
+# `ParcelLedger.description` field they own, instead of composing engine
+# shorthand at the write site. Every sentence here was ruled on by Brent,
+# 2026-09-15 09:40 PDT, and scanned clean through
+# `tests/test_domain_vocabulary.py::scan` at planning time.
+# --------------------------------------------------------------------------
+
+#: The tail of a demand-weighted delivery-share sentence: the share was split
+#: across the use areas a point of diversion serves by each one's estimated
+#: use for the month. Composed by ``delivery_share_words`` below.
+DELIVERY_SHARE_BY_USE = (
+    "split among the use areas it serves by each one's estimated use for the "
+    "month"
+)
+
+#: The tail of a static-fraction delivery-share sentence: no served use area
+#: had an estimated use for the month, so the split fell back to the fixed
+#: share on file. The percentage and the "no estimated use on record" clause
+#: are composed by ``delivery_share_words`` below, not part of this constant.
+DELIVERY_SHARE_BY_FIXED = "split by the fixed share on file"
+
+#: A recharge row credited to a use area (or the basin pool) for canal water
+#: delivered beyond what the month's estimated use called for.
+INCIDENTAL_RECHARGE_WORDS = (
+    "Credit for canal water delivered beyond the use area's estimated use "
+    "for the month"
+)
+
+#: The string every incidental-recharge row carried before 143-11. Matched on
+#: delete, alongside `INCIDENTAL_RECHARGE_WORDS`, so a re-run on a database
+#: written before this change replaces its own rows instead of doubling them
+#: (ISS-052 preserved across the wording change). Never written by new code.
+LEGACY_INCIDENTAL_RECHARGE_WORDS = (
+    "Incidental recharge — deep percolation from surface over-delivery"
+)
+
+#: A `calculated` row's sentence when the month's residual is nonzero: the
+#: platform's own estimate of pumping, derived from the month's estimated use
+#: less rainfall and canal water delivered.
+PUMPING_ESTIMATE_WORDS = (
+    "Estimated pumping: the month's estimated use, less rainfall and canal "
+    "water delivered"
+)
+
+#: The 143-05 zero-row sentence, moved into the engine verbatim (byte for
+#: byte, including the full stop). `health/checks.py:265` carries the same
+#: claim and `tests/test_health_checks.py:343` pins the two together; neither
+#: is edited by 143-11.
+NO_PUMPING_DERIVED_WORDS = (
+    "No groundwater extraction was derived for this month; rainfall and "
+    "delivered surface water covered the estimated use."
+)
+
+
+def delivery_share_words(record, pod, *, fixed_share=None):
+    """The Description sentence for one surface-diversion allocation row.
+
+    ``record`` is the ``surface.models.DiversionRecord`` the allocation was
+    split from; ``pod`` is its ``PointOfDiversion``. The figure is
+    ``record.consumed_acre_feet()`` -- the magnitude the shares actually sum
+    to, not ``volume_acre_feet`` -- at the Amount column's two-decimal,
+    thousands-separated precision (copy rule 9's spirit: the sentence is for
+    a reader, not a debugger).
+
+    ``fixed_share`` is the ``Decimal`` weight (4dp, from
+    ``apportion_shared_supply``) this parcel received on the static-fraction
+    fallback path; pass it only from ``_fraction_rows``. When omitted, the
+    sentence closes with ``DELIVERY_SHARE_BY_USE``; when given, it closes with
+    ``DELIVERY_SHARE_BY_FIXED``, the percentage, and the "no estimated use on
+    record for the month" tail.
+
+    The verb phrase is "delivered from" for a `direct_use` record and "taken
+    to storage from" otherwise (a to-storage record reaching this path is
+    already the ISS-134 defect; the sentence must not lie about it).
+
+    The POD's name is passed through ``core.map_labels.map_label`` so the
+    stored ``MER-POD-...`` id never appears in the sentence -- the same
+    stripper the overview maps use (143-07); this never writes a second one.
+
+    A return-flow clause is inserted only when
+    ``0 < record.returned_af < abs(record.volume_acre_feet)`` -- a partial
+    return -- naming both the returned magnitude and the diverted volume.
+    """
+    consumed = record.consumed_acre_feet()
+    verb = (
+        "delivered from"
+        if record.diversion_type == "direct_use"
+        else "taken to storage from"
+    )
+    name = map_label(pod.name)
+
+    sentence = f"Share of {consumed:,.2f} AF {verb} {name}"
+
+    if Decimal("0") < record.returned_af < abs(record.volume_acre_feet):
+        returned = record.returned_af
+        volume = abs(record.volume_acre_feet)
+        sentence += (
+            f", after {returned:,.2f} AF of the {volume:,.2f} AF diverted "
+            f"was returned to the stream"
+        )
+
+    if fixed_share is not None:
+        sentence += (
+            f", {DELIVERY_SHARE_BY_FIXED} ({fixed_share:.0%}); no estimated "
+            f"use on record for the month"
+        )
+    else:
+        sentence += ", " + DELIVERY_SHARE_BY_USE
+
+    return sentence

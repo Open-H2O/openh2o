@@ -37,11 +37,17 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 
 from accounting.banking_math import depreciated_value, is_expired, periods_between
 from accounting.calculation import evaluate_chain, plan_config_hash
 from accounting.carryover_math import water_year_of
+from accounting.ledger_words import (
+    INCIDENTAL_RECHARGE_WORDS,
+    LEGACY_INCIDENTAL_RECHARGE_WORDS,
+    NO_PUMPING_DERIVED_WORDS,
+    PUMPING_ESTIMATE_WORDS,
+)
 from accounting.models import (
     CalculationPlan,
     CalculationRun,
@@ -68,9 +74,10 @@ def _add_months(period, months):
 # ISS-052: incidental-recharge ledger rows the engine writes are tagged with this
 # description prefix so a re-run replaces only its OWN rows (delete-then-insert)
 # and never touches managed-basin recharge (which uses a "Managed ..." prefix).
-INCIDENTAL_RECHARGE_DESC = (
-    "Incidental recharge — deep percolation from surface over-delivery"
-)
+# 143-11: the words themselves moved to `accounting/ledger_words.py`, beside
+# every other sentence the ledger shows a reader; this stays an alias so
+# nothing else in this module has to move.
+INCIDENTAL_RECHARGE_DESC = INCIDENTAL_RECHARGE_WORDS
 
 
 def _incidental_recharge_af(breakdown):
@@ -562,16 +569,21 @@ class Command(BaseCommand):
                 elif routes_personal:
                     residual_disposition = "groundwater"
                     unmet_demand_af = Decimal("0")
+                    # ISS-158: the zero stays a zero. Nothing else in this
+                    # branch changes — only which sentence describes it.
+                    amount = (-net_af).quantize(Decimal("0.0001"))
+                    description = (
+                        NO_PUMPING_DERIVED_WORDS
+                        if amount == 0
+                        else PUMPING_ESTIMATE_WORDS
+                    )
                     ParcelLedger.objects.create(
                         parcel=parcel,
                         transaction_date=dt.date.today(),
                         effective_date=eff_date,
-                        amount_acre_feet=(-net_af).quantize(Decimal("0.0001")),
+                        amount_acre_feet=amount,
                         source_type="calculated",
-                        description=(
-                            "Derived groundwater extraction estimate "
-                            "(calculation engine)"
-                        ),
+                        description=description,
                         reporting_period=reporting_period,
                         water_type=gw_water_type,
                     )
@@ -598,11 +610,15 @@ class Command(BaseCommand):
                 # credit. WHERE it lands depends on the parcel's archetype. The
                 # delete-by-prefix always runs first so a re-run (or an archetype
                 # flip) clears any stale PERSONAL row before re-deciding.
+                # Matches EITHER prefix: an agency that ran the engine before
+                # 143-11 and re-runs it after must replace its incidental rows,
+                # not double them (ISS-052 preserved across the wording change).
                 ParcelLedger.objects.filter(
+                    Q(description__startswith=INCIDENTAL_RECHARGE_WORDS)
+                    | Q(description__startswith=LEGACY_INCIDENTAL_RECHARGE_WORDS),
                     parcel=parcel,
                     effective_date=eff_date,
                     source_type="recharge",
-                    description__startswith=INCIDENTAL_RECHARGE_DESC,
                 ).delete()
                 if routes_personal:
                     # CONJUNCTIVE (has well): a personal, recoverable GW credit.

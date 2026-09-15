@@ -44,6 +44,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from accounting.allocation_math import allocate_by_demand, apportion_shared_supply
+from accounting.ledger_words import delivery_share_words
 from accounting.models import CalculationRun, WaterType
 from parcels.models import ParcelLedger
 from surface.models import (
@@ -116,11 +117,7 @@ def _demand_rows(record, shares, pod, sw_type):
             effective_date=record.month,
             amount_acre_feet=-share,  # NEGATIVE: delivered magnitude (production convention)
             source_type="surface_diversion",
-            description=(
-                f"Diversion from {pod.name}: {record.volume_acre_feet} AF "
-                f"({record.get_diversion_type_display()}) — demand-weighted "
-                f"(ET-allocated)"
-            ),
+            description=delivery_share_words(record, pod),
             reporting_period=record.reporting_period,
             water_type=sw_type,
         )
@@ -187,11 +184,8 @@ def _fraction_rows(record, served_links, pod, sw_type):
                 effective_date=record.month,
                 amount_acre_feet=-amount,
                 source_type="surface_diversion",
-                description=(
-                    f"Diversion from {pod.name}: {record.volume_acre_feet} AF "
-                    f"({record.get_diversion_type_display()}) — static fraction "
-                    f"fallback (no ET demand), normalized share="
-                    f"{weights[link.parcel.pk]} (stored fraction={link.fraction})"
+                description=delivery_share_words(
+                    record, pod, fixed_share=weights[link.parcel.pk]
                 ),
                 reporting_period=record.reporting_period,
                 water_type=sw_type,
