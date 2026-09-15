@@ -62,7 +62,7 @@ nobody would notice until one of them broke.
         hx-get="{% url 'drinking:facilities' %}"
         hx-target="#results"
         hx-trigger="keyup changed delay:300ms"
-        hx-include="[name='facility_type'], [name='activity_status']"
+        hx-include="#filter-facility-type, #filter-activity-status"
         autocomplete="off"
         class="form-input search-input-icon"
       >
@@ -74,7 +74,7 @@ nobody would notice until one of them broke.
         hx-get="{% url 'drinking:facilities' %}"
         hx-target="#results"
         hx-trigger="change"
-        hx-include="[name='q'], [name='activity_status']"
+        hx-include="#filter-search, #filter-activity-status"
         class="form-select"
       >
         <option value="" {% if not facility_type %}selected{% endif %}>All Types</option>
@@ -90,7 +90,7 @@ nobody would notice until one of them broke.
         hx-get="{% url 'drinking:facilities' %}"
         hx-target="#results"
         hx-trigger="change"
-        hx-include="[name='q'], [name='facility_type']"
+        hx-include="#filter-search, #filter-facility-type"
         class="form-select"
       >
         <option value="" {% if not activity_status %}selected{% endif %}>All Statuses</option>

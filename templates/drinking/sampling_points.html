@@ -73,7 +73,7 @@
         hx-get="{% url 'drinking:sampling_points' %}"
         hx-target="#results"
         hx-trigger="keyup changed delay:300ms"
-        hx-include="[name='point_type']"
+        hx-include="#filter-point-type"
         autocomplete="off"
         class="form-input search-input-icon"
       >
@@ -85,7 +85,7 @@
         hx-get="{% url 'drinking:sampling_points' %}"
         hx-target="#results"
         hx-trigger="change"
-        hx-include="[name='q']"
+        hx-include="#filter-search"
         class="form-select"
       >
         <option value="" {% if not point_type %}selected{% endif %}>All Point Types</option>

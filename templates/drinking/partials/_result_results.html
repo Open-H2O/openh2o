@@ -7,11 +7,19 @@
 
 {% if page_obj.object_list %}
 <div class="card-raised table-scroll">
-  <table class="data-table">
+  {% comment %}
+  R-070 / R-071. An event IS one date at one point, so it is said ONCE per
+  group (`tr.row-group`, rule 7) rather than repeated on every row: Sample
+  Date and PS Code are gone as columns. Method and Laboratory stay -- measured
+  on the local stack they vary inside 18% and 3% of events, so a column that
+  changes is not a repeated note. `result_groups` comes from
+  `drinking/views.py::group_results_by_event`, the same helper the
+  sampling-point detail page calls on its own `recent` slice. No subtotal, no
+  tfoot: rule 5, laboratory findings are never summed.
+  {% endcomment %}
+  <table class="data-table text-sm data-table--grouped">
     <thead>
       <tr>
-        <th>Sample Date</th>
-        <th>PS Code</th>
         <th>Analyte</th>
         <th>Result</th>
         <th>Method</th>
@@ -19,11 +27,18 @@
       </tr>
     </thead>
     <tbody>
-      {% for result in page_obj %}
+      {% for group in result_groups %}
+      {% with point=group.event.sampling_point %}
+      <tr class="row-group">
+        <td colspan="4">
+          Sampled {{ group.event.sample_date|date:"Y-m-d" }} at
+          <a class="data-table-link" href="{% url 'drinking:sampling_point_detail' point.pk %}">{{ point.ps_code }}</a>{% if point.name %} — {{ point.name }}{% endif %}
+          &middot; {{ group.total }} result{{ group.total|pluralize }}{% if group.shown != group.total %}, {{ group.shown }} on this page{% endif %}
+        </td>
+      </tr>
+      {% for result in group.rows %}
       <tr>
-        <td class="text-secondary text-sm tabular-nums"><a href="{% url 'drinking:result_detail' result.pk %}" class="data-table-link">{{ result.event.sample_date|date:"Y-m-d" }}</a></td>
-        <td class="text-mono">{{ result.event.sampling_point.ps_code }}</td>
-        <td>{{ result.analyte.name }}</td>
+        <td><a href="{% url 'drinking:result_detail' result.pk %}" class="data-table-link">{{ result.analyte.name }}</a></td>
         {% comment %}
           Rendered through result_kind, never as a raw number. The unit lives
           with the value because several limits are percentages, not
@@ -33,6 +48,8 @@
         <td class="text-secondary text-sm">{{ result.method|blank }}</td>
         <td class="text-secondary text-sm">{{ result.lab_name|blank }}</td>
       </tr>
+      {% endfor %}
+      {% endwith %}
       {% endfor %}
     </tbody>
   </table>

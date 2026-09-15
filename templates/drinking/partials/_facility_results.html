@@ -55,7 +55,20 @@ filtered" clause, which was true before this plan and is not true after it.
 {% endif %}
 
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
+<div class="card-raised table-scroll" style="padding: 0;">
+  {% comment %}
+  R-063. The card head above the table (shape 1, the ledger list's own
+  no-h2 form: `accounting/partials/_ledger_list_results.html`, this page's
+  own page_title already names the thing). The population line's three type
+  counts come from ONE `values("facility_type").annotate(Count)` query in
+  `drinking/views.py::facilities` -- never a per-row loop -- so an htmx swap
+  keeps them current with whatever `q` / `facility_type` / `activity_status`
+  narrowed the table to.
+  {% endcomment %}
+  <div class="ledger-card-head">
+    <div class="text-secondary text-base">{{ total_count }} facilit{{ total_count|pluralize:"y,ies" }}: {{ n_source }} sources, {{ n_tp }} treatment plants, {{ n_ds }} distribution</div>
+    <div class="text-secondary text-base">Water type comes with EPA&rsquo;s record for a source facility; treatment plants and the distribution system carry none.{% if 'wells' in enabled_modules %} Well names the metered well this deployment has linked to a source.{% endif %}</div>
+  </div>
   <table class="data-table">
     <thead>
       <tr>
@@ -75,7 +88,20 @@ filtered" clause, which was true before this plan and is not true after it.
         <td>{{ facility.name|blank }}</td>
         <td class="text-secondary text-sm">{{ facility.get_facility_type_display|blank }}</td>
         <td class="text-secondary text-sm">{{ facility.get_activity_status_display|blank }}</td>
-        <td class="text-secondary text-sm">{{ facility.get_water_type_display|blank }}</td>
+        {% comment %}
+          R-063. EPA's record carries a water type for a source facility
+          only -- measured, every one of the wells is a source and none of
+          the treatment plants or the distribution facility is -- so a
+          non-source facility's cell says the field does not apply, worded
+          rather than a bare dash (tests/test_template_hygiene.py --
+          TestEmptyValuesAreWorded, `tests/test_placeholders.py`'s own
+          three-way split of "not recorded" / "does not apply" / "the page
+          broke"), and distinct from "Not recorded" (the field applies and
+          is empty). The card head above says this once for the whole table.
+        {% endcomment %}
+        <td class="text-secondary text-sm">
+          {% if facility.is_source %}{{ facility.get_water_type_display|blank }}{% else %}<span class="value-empty">Not applicable</span>{% endif %}
+        </td>
         {% comment %}
           A plain count, not a link. The sampling-point list filters on `q` and
           `point_type` only — it carries no `facility` filter — so a link here
@@ -87,16 +113,21 @@ filtered" clause, which was true before this plan and is not true after it.
           The quality-to-quantity join made visible: ONE physical well, sampled
           on this side and metered on the wells side. Guarded on enabled_modules
           so dropping `wells` degrades to plain text rather than NoReverseMatch
-          (the 77-02 template-guard rule). Lifted verbatim from the overview
-          table this page replaced.
+          (the 77-02 template-guard rule). R-063: only a Well facility carries
+          this field at all, so every other facility type's cell says the
+          field does not apply; a well with no link reads "Not linked", never
+          "Not recorded" -- the field applies to this facility and is simply
+          unset.
         {% endcomment %}
         <td>
-          {% if facility.well and 'wells' in enabled_modules %}
+          {% if facility.facility_type != "WL" %}
+            <span class="value-empty">Not applicable</span>
+          {% elif facility.well and 'wells' in enabled_modules %}
             <a href="{% url 'wells:detail' facility.well.pk %}" class="data-table-link">{{ facility.well.name }}</a>
           {% elif facility.well %}
             {{ facility.well.name }}
           {% else %}
-            <span class="value-empty">Not recorded</span>
+            {{ facility.well|blank:"Not linked" }}
           {% endif %}
         </td>
       </tr>

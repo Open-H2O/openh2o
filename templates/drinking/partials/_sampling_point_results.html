@@ -1,4 +1,4 @@
-{% load placeholders %}{% comment %}
+{% load humanize %}{% load placeholders %}{% comment %}
 The count line is NOT here (143-07). It is the map card's head, above the map
 and outside #results, and on an htmx swap this partial re-renders that head
 out of band (hx-swap-oob on the same id) so the count follows the list without
@@ -43,7 +43,17 @@ gate fails a kept page that names a domain the deployment does not have.
 {% endif %}
 
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
+<div class="card-raised table-scroll" style="padding: 0;">
+  {% comment %}
+  R-067, R-068. The card head above the table (shape 1, the ledger list's
+  own no-h2 form). The facts line says once what the "Sample results"
+  column counts and what "Latest Sample" is the newest of, so neither has to
+  be re-explained on 27 rows.
+  {% endcomment %}
+  <div class="ledger-card-head">
+    <div class="text-secondary text-base">{{ total_count }} sampling point{{ total_count|pluralize }}</div>
+    <div class="text-secondary text-base">Sample results counts the laboratory findings recorded at the point; Latest Sample is the newest of them.</div>
+  </div>
   <table class="data-table">
     <thead>
       <tr>
@@ -52,7 +62,7 @@ gate fails a kept page that names a domain the deployment does not have.
         <th>Facility</th>
         <th>Type</th>
         <th>Latest Sample</th>
-        <th>Results</th>
+        <th><span class="th-stack">Sample results</span></th>
       </tr>
     </thead>
     <tbody>
@@ -60,12 +70,17 @@ gate fails a kept page that names a domain the deployment does not have.
       <tr>
         <td class="text-mono"><a href="{% url 'drinking:sampling_point_detail' point.pk %}" class="data-table-link">{{ point.ps_code }}</a></td>
         <td>{{ point.name|blank }}</td>
-        <td class="text-secondary text-sm">{{ point.facility.facility_id }}{% if point.facility.name %} — {{ point.facility.name }}{% endif %}</td>
+        {% comment %}
+          R-067: the facility ID is the link (the same shape the lab-result
+          page already uses for its own Facility field); the name stays
+          plain, beside it.
+        {% endcomment %}
+        <td class="text-secondary text-sm"><a href="{% url 'drinking:facility_detail' point.facility.pk %}" class="data-table-link">{{ point.facility.facility_id }}</a>{% if point.facility.name %} — {{ point.facility.name }}{% endif %}</td>
         <td class="text-secondary text-sm">{{ point.get_point_type_display|blank }}</td>
         <td class="text-secondary text-sm tabular-nums">{{ point.latest_sample_date|date:"Y-m-d"|blank }}</td>
         <td class="text-secondary text-sm tabular-nums">
           {% if point.result_count %}
-            <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">{{ point.result_count }}</a>
+            <a href="{% url 'drinking:results' %}?sampling_point={{ point.pk }}" class="data-table-link">{{ point.result_count|intcomma }}</a>
           {% else %}
             0
           {% endif %}

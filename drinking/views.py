@@ -213,26 +213,47 @@ def facilities(request):
     facility_type = request.GET.get("facility_type", "").strip()
     activity_status = request.GET.get("activity_status", "").strip()
 
-    queryset = (
-        SystemFacility.objects
-        .select_related("well", "system")
-        .annotate(sampling_point_count=Count("sampling_points"))
-        .order_by("facility_id")
-    )
+    # The filters live on `base_queryset`, unannotated, so the type-count
+    # aggregate below can group it by `facility_type` alone. Annotating it
+    # first and THEN grouping by fewer fields would fold `sampling_point_count`
+    # into the same GROUP BY and re-join `sampling_points` under the new
+    # `Count("id")` -- the exact join-multiplication bug the comment below
+    # already warns about, just one step removed.
+    base_queryset = SystemFacility.objects.select_related("well", "system")
 
     # One filter() with a Q, never `qs.filter(a) | qs.filter(b)`: OR-ing an
     # already-annotated queryset re-joins sampling_points and inflates the count.
     if q:
-        queryset = queryset.filter(
+        base_queryset = base_queryset.filter(
             Q(facility_id__icontains=q) | Q(name__icontains=q)
         )
     if facility_type:
-        queryset = queryset.filter(facility_type=facility_type)
+        base_queryset = base_queryset.filter(facility_type=facility_type)
     if activity_status:
-        queryset = queryset.filter(activity_status=activity_status)
+        base_queryset = base_queryset.filter(activity_status=activity_status)
+
+    queryset = base_queryset.annotate(
+        sampling_point_count=Count("sampling_points")
+    ).order_by("facility_id")
 
     paginator = Paginator(queryset, 50)
     page_obj = paginator.get_page(request.GET.get("page", 1))
+
+    # The card head's population line (R-063): one facility_type count query
+    # over the FILTERED, unannotated queryset -- never a per-row loop -- with
+    # "source" as the residual bucket (every present type that is not a
+    # treatment plant or the distribution system). Measured on the local
+    # stack every present type besides TP/DS is a source (`is_source=True`);
+    # this reads the same story off `facility_type` so it stays one query.
+    type_counts = dict(
+        base_queryset.order_by()
+        .values("facility_type")
+        .annotate(n=Count("id"))
+        .values_list("facility_type", "n")
+    )
+    n_tp = type_counts.pop("TP", 0)
+    n_ds = type_counts.pop("DS", 0)
+    n_source = sum(type_counts.values())
 
     # The map card's head (143-07). The map draws FACILITIES and the list
     # counts facilities too — a 1:1 correspondence sampling_points below does
@@ -255,6 +276,9 @@ def facilities(request):
         context={
             "page_obj": page_obj,
             "total_count": paginator.count,
+            "n_source": n_source,
+            "n_tp": n_tp,
+            "n_ds": n_ds,
             "q": q,
             "facility_type": facility_type,
             "activity_status": activity_status,
@@ -427,6 +451,61 @@ def sampling_points(request):
     )
 
 
+def group_results_by_event(rows):
+    """Fold an ordered run of sample results into one block per sample event.
+
+    R-070 / R-071: an event IS one date at one point, so the results log says
+    that once per event (a ``tr.row-group`` divider) instead of repeating the
+    date and the PS Code on every row. ``rows`` must already be ordered so a
+    given event's results are contiguous -- ``results`` below orders
+    ``-event__sample_date, event__sampling_point__ps_code, event_id,
+    analyte__name`` for exactly that reason -- this function only folds runs
+    of the same ``event_id``; it does not sort.
+
+    ``total`` is the event's FULL result count, read from ONE ``Count`` query
+    over every event id present in ``rows``, never a query per group and
+    never a per-row loop. ``shown`` is how many of that event's rows are in
+    THIS ``rows`` list, so a group whose rows are split across two pages of
+    the caller's own pagination prints its divider again on the second page,
+    with ``shown`` less than ``total`` saying so.
+
+    Pure on purpose -- rows in, groups out, no request and no queryset touched
+    beyond the one Count -- so the sampling-point detail page (143-08 Task 3)
+    can call it again on its own ``recent`` slice of one point's history.
+    """
+    rows = list(rows)
+    if not rows:
+        return []
+
+    event_ids = []
+    seen_events = set()
+    for row in rows:
+        if row.event_id not in seen_events:
+            seen_events.add(row.event_id)
+            event_ids.append(row.event_id)
+
+    totals = dict(
+        SampleResult.objects.filter(event_id__in=event_ids)
+        .order_by()
+        .values("event_id")
+        .annotate(n=Count("id"))
+        .values_list("event_id", "n")
+    )
+
+    groups = []
+    for row in rows:
+        if not groups or groups[-1]["event"].pk != row.event_id:
+            groups.append({
+                "event": row.event,
+                "rows": [],
+                "shown": 0,
+                "total": totals.get(row.event_id, 0),
+            })
+        groups[-1]["rows"].append(row)
+        groups[-1]["shown"] += 1
+    return groups
+
+
 @login_required
 def results(request):
     """The sample-result log — the workhorse surface.
@@ -450,7 +529,17 @@ def results(request):
             "event__sampling_point__facility",
             "event__sampling_point__facility__system",
         )
-        .order_by("-event__sample_date", "analyte__name")
+        # An event IS one date at one point (R-070/R-071): ordering by point
+        # and event id after the date keeps a whole event's rows contiguous,
+        # so two points sampled the same day render as two groups rather than
+        # interleaving by analyte the way the old `analyte__name`-only
+        # tiebreak did.
+        .order_by(
+            "-event__sample_date",
+            "event__sampling_point__ps_code",
+            "event_id",
+            "analyte__name",
+        )
     )
 
     if analyte_id.isdigit():
@@ -477,6 +566,7 @@ def results(request):
         context={
             "page_obj": page_obj,
             "total_count": paginator.count,
+            "result_groups": group_results_by_event(page_obj.object_list),
             "analyte_id": analyte_id,
             "point_id": point_id,
             "date_from": date_from,
