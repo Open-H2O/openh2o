@@ -31,6 +31,7 @@ from django.core.exceptions import ValidationError
 from django.test import Client
 from django.urls import reverse
 
+from accounting.ledger_words import DELIVERY_SHARE_BY_FIXED, DELIVERY_SHARE_BY_USE
 from accounting.models import CalculationRun
 from accounting.services import create_diversion_ledger_entries
 from parcels.models import ParcelLedger
@@ -187,7 +188,7 @@ def test_demand_weighted_path(returned, expected):
         volume_acre_feet=VOL, returned_af=returned,
     )
     rows = allocate_district_delivery(pod, rp, efficiency=EFF)
-    assert "demand-weighted" in rows[0].description  # confirm the path taken
+    assert DELIVERY_SHARE_BY_USE in rows[0].description  # confirm the path taken
     assert _surface_magnitude() == expected
 
 
@@ -210,7 +211,7 @@ def test_static_fraction_fallback_path(returned, expected):
         volume_acre_feet=VOL, returned_af=returned,
     )
     rows = allocate_district_delivery(pod, rp, efficiency=EFF)
-    assert "static fraction fallback" in rows[0].description
+    assert DELIVERY_SHARE_BY_FIXED in rows[0].description
     assert _surface_magnitude() == expected
 
 

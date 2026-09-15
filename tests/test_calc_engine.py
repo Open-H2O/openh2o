@@ -16,6 +16,7 @@ from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.management import call_command
 
 from accounting.calculation import evaluate_chain
+from accounting.ledger_words import NO_PUMPING_DERIVED_WORDS, PUMPING_ESTIMATE_WORDS
 from accounting.models import CalculationPlan, CalculationStep
 from accounting.services import et_mm_to_acre_feet
 from accounting.steps import STEP_REGISTRY, clamp_floor, facility_only_zero
@@ -368,7 +369,8 @@ def test_run_calculations_writes_one_negative_row_and_is_idempotent():
             Decimal("0.0001")
         )
         assert row.amount_acre_feet == expected
-        assert "groundwater extraction estimate" in row.description
+        # A nonzero residual: the engine's pumping-estimate sentence (143-11).
+        assert row.description == PUMPING_ESTIMATE_WORDS
 
     # Idempotent: second run leaves identical count + amounts (no double-count).
     before = {r.parcel_id: r.amount_acre_feet for r in rows}
@@ -377,6 +379,37 @@ def test_run_calculations_writes_one_negative_row_and_is_idempotent():
     assert rows2.count() == 2
     after = {r.parcel_id: r.amount_acre_feet for r in rows2}
     assert before == after
+
+
+@pytest.mark.django_db
+def test_run_calculations_writes_the_zero_sentence_when_surface_covers_et():
+    """143-11 guard: `run_calculations` writes `NO_PUMPING_DERIVED_WORDS` when
+    the residual quantizes to zero, and `PUMPING_ESTIMATE_WORDS` otherwise
+    (pinned above). Zero is reached the way the 253 demonstration rows reach
+    it: enough surface delivery to cover the month's ET, so `clamp_floor`
+    floors `running_af` at 0 and the amount the engine stores quantizes to
+    0.0000 — never a hand-written 0 row."""
+    from parcels.models import ParcelLedger as PL
+
+    parcel = _parcel("RUN-ZERO", acres="10")
+    _et_cache(parcel, period="2024-06", et_mm=100.0)
+    _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)
+    # A surface_diversion row far in excess of the parcel's ET so the chain
+    # nets to (or below) the floor; subtract_surface_water sums the magnitude
+    # of every surface_diversion row on the parcel for the month.
+    PL.objects.create(
+        parcel=parcel, transaction_date=dt.date(2024, 6, 1),
+        effective_date=dt.date(2024, 6, 1), amount_acre_feet=Decimal("-1000.0000"),
+        source_type="surface_diversion",
+    )
+    call_command("seed_calculation_plan")
+
+    call_command("run_calculations", "--period", "2024-06")
+
+    row = ParcelLedger.objects.get(parcel=parcel, source_type="calculated")
+    assert row.amount_acre_feet == Decimal("0.0000")
+    assert row.description == NO_PUMPING_DERIVED_WORDS
 
 
 @pytest.mark.django_db

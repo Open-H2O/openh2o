@@ -55,6 +55,7 @@ from django.core.management import call_command
 
 from accounting.models import AllocationCarryover, CalculationRun
 from accounting.services import consumptive_use_balance, parcel_mass_balance
+from core.map_labels import map_label
 from core.models import SiteConfig
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
 from surface.models import DiversionRecord
@@ -425,10 +426,15 @@ def test_diversion_reach_journey_does_not_move_basin_closure():
     # The one-hop link resolves both directions.
     assert downstream.rediverted_from_id == upstream.id
     assert list(upstream.rediversions.all()) == [downstream]
-    # No surface_diversion row was written for either journey POD.
+    # No surface_diversion row was written for either journey POD. The id left
+    # the sentence in 143-11 (the name stays, stripped by map_label), so the
+    # raw stored name is what a row's description could carry.
     assert not ParcelLedger.objects.filter(
         source_type="surface_diversion",
-        description__icontains="MER-POD-010-DEMO").exists()
+        description__icontains=map_label(upstream.name)).exists()
+    assert not ParcelLedger.objects.filter(
+        source_type="surface_diversion",
+        description__icontains=map_label(downstream.name)).exists()
     assert DiversionRecord.objects.filter(
         point_of_diversion__in=[upstream, downstream]).count() == 2
 

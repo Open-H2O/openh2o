@@ -31,6 +31,10 @@ from accounting.models import (
     CalculationStep,
     ReportingPeriod,
 )
+from accounting.ledger_words import (
+    INCIDENTAL_RECHARGE_WORDS,
+    LEGACY_INCIDENTAL_RECHARGE_WORDS,
+)
 from accounting.services import INCIDENTAL_RECHARGE_POOL, et_mm_to_acre_feet
 from parcels.models import CropType, Parcel, ParcelLedger, UsageLocation
 from tests.factories import ParcelZoneFactory, WellIrrigatedParcelFactory, ZoneFactory
@@ -493,11 +497,41 @@ def test_has_well_parcel_keeps_personal_incidental_recharge_row():
     )
     assert recharge.amount_acre_feet.quantize(Q) == over_delivery
     assert recharge.water_type.code == "GW"
-    assert recharge.description.startswith("Incidental recharge")
+    assert recharge.description == INCIDENTAL_RECHARGE_WORDS
     # A has-well parcel never feeds the basin pool.
     assert not AllocationCarryover.objects.filter(
         origin=INCIDENTAL_RECHARGE_POOL
     ).exists()
+
+
+@pytest.mark.django_db
+def test_legacy_incidental_recharge_row_is_replaced_by_a_rerun():
+    """ISS-052 preserved across the 143-11 rename: a `recharge` row an agency
+    wrote before this change (carrying `LEGACY_INCIDENTAL_RECHARGE_WORDS`) is
+    deleted by a re-run and replaced by exactly one row carrying the new
+    words — never doubled, never left stale."""
+    parcel = _parcel("RUN-LEGACY-RENAME", acres="10")
+    _irrigate(parcel)
+    WellIrrigatedParcelFactory(parcel=parcel)  # has well -> CONJUNCTIVE / personal
+    _et_cache(parcel, period="2024-02", et_mm=100.0)
+    _surface_row(parcel, "2024-02", af=5)
+    call_command("seed_calculation_plan")
+
+    # A pre-143-11 row on the SAME (parcel, month), as if a prior run wrote it
+    # before the wording changed.
+    ParcelLedger.objects.create(
+        parcel=parcel, transaction_date=dt.date(2024, 2, 1),
+        effective_date=dt.date(2024, 2, 1), amount_acre_feet=Decimal("1.7200"),
+        source_type="recharge", description=LEGACY_INCIDENTAL_RECHARGE_WORDS,
+    )
+
+    call_command("run_calculations", "--period", "2024-02")
+
+    rows = ParcelLedger.objects.filter(
+        parcel=parcel, effective_date=dt.date(2024, 2, 1), source_type="recharge"
+    )
+    assert rows.count() == 1
+    assert rows.get().description == INCIDENTAL_RECHARGE_WORDS
 
 
 @pytest.mark.django_db

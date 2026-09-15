@@ -174,3 +174,32 @@ class TestGroupedTableBracketHeaderIsCentred:
             "the bracket header is not ruled text-align: center"
         )
         assert "text-align: left" not in match.group(1)
+
+
+class TestEngineSentenceLivesOnlyInTheEngine:
+    """143-11 (ISS-170): the ledger's engine-written sentences live in
+    `accounting/ledger_words.py` and are printed unchanged from
+    `entry.description` — no template composes or overrides one. Before this
+    plan, `_ledger_list_results.html` carried a display-time override that
+    hard-coded the zero-row sentence for a `calculated` row at 0.0000 AF
+    (`{% if entry.amount_acre_feet == 0 and entry.source_type == "calculated" %}`),
+    and the comment above it explained the substitution by naming the old
+    engine string, "... (calculation engine)". Both are gone: a template
+    that reintroduces either is a template composing the ledger's words
+    again instead of printing what the engine stored.
+    """
+
+    def test_no_template_hardcodes_the_zero_pumping_sentence_or_names_the_engine(self):
+        from accounting.ledger_words import NO_PUMPING_DERIVED_WORDS
+
+        sentence_hits = _offenders(NO_PUMPING_DERIVED_WORDS)
+        assert not sentence_hits, (
+            "the zero-row sentence is engine output (accounting/ledger_words."
+            "NO_PUMPING_DERIVED_WORDS); a template must print entry.description, "
+            f"never hardcode it: {sentence_hits}"
+        )
+        engine_hits = _offenders("calculation engine)")
+        assert not engine_hits, (
+            "a template names the old engine shorthand instead of printing "
+            f"the stored description: {engine_hits}"
+        )

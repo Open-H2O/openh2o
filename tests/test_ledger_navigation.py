@@ -16,6 +16,7 @@ from django.contrib.auth.hashers import make_password
 from django.test import Client
 from django.urls import reverse
 
+from accounting.ledger_words import NO_PUMPING_DERIVED_WORDS
 from tests.factories import (
     ParcelFactory,
     ParcelLedgerFactory,
@@ -442,7 +443,13 @@ class TestLedgerWithinDateOrder:
 class TestLedgerZeroRowSentence:
     """R-043: a `calculated` row at exactly 0.0000 AF carries the engine's own
     sentence in its Description cell and a muted Amount cell; an ordinary
-    negative row does not."""
+    negative row does not.
+
+    143-11: the engine (`run_calculations.py`) writes `NO_PUMPING_DERIVED_WORDS`
+    onto the row itself now, instead of the template substituting it at display
+    time for a zero `calculated` row. The template prints the stored
+    `entry.description` unchanged; this test seeds the row the way the engine
+    now writes it."""
 
     def test_zero_calculated_row_gets_the_sentence_and_a_negative_row_does_not(self, auth_client):
         period = ReportingPeriodFactory()
@@ -450,7 +457,7 @@ class TestLedgerZeroRowSentence:
         ParcelLedgerFactory(
             parcel=parcel, reporting_period=period, source_type="calculated",
             amount_acre_feet=Decimal("0.0000"), effective_date=date(2024, 6, 1),
-            description="Derived groundwater extraction estimate (calculation engine)",
+            description=NO_PUMPING_DERIVED_WORDS,
         )
         ParcelLedgerFactory(
             parcel=parcel, reporting_period=period, source_type="meter_reading",
@@ -459,11 +466,7 @@ class TestLedgerZeroRowSentence:
         resp = auth_client.get(_ledger_url(period=str(period.pk)))
         assert resp.status_code == 200
         html = resp.content.decode()
-        sentence = (
-            "No groundwater extraction was derived for this month; rainfall "
-            "and delivered surface water covered the estimated use."
-        )
-        assert html.count(sentence) == 1
+        assert html.count(NO_PUMPING_DERIVED_WORDS) == 1
         assert 'class="td-num text-tertiary"' in html
 
 

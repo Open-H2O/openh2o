@@ -91,11 +91,10 @@
     <tbody>
       {% for entry in page_obj %}
       {% comment %} A calculated row at zero (R-043): the amount cell is
-           text-tertiary (a real zero, not a suppression), and the
-           Description cell explains it in the engine's own words instead of
-           the stored "Derived groundwater extraction estimate (calculation
-           engine)". The stored description is never rewritten (seed and
-           golden are pinned); this is a display-time substitution only. {% endcomment %}
+           text-tertiary (a real zero, not a suppression). The engine has
+           written the Description cell's own sentence since 143-11 (ISS-170,
+           accounting/ledger_words.py) — the stored entry.description is
+           what is shown, unchanged; this template composes nothing. {% endcomment %}
       <tr>
         <td class="text-secondary" style="white-space: nowrap;">
           {{ entry.effective_date|date:"M d, Y" }}
@@ -123,11 +122,7 @@
           {% if entry.amount_acre_feet < 0 %}&minus;{{ entry.amount_acre_feet|floatformat:2|intcomma|cut:"-" }}{% else %}{{ entry.amount_acre_feet|floatformat:2|intcomma }}{% endif %}
         </td>
         <td class="text-secondary" style="white-space: normal;">
-          {% if entry.amount_acre_feet == 0 and entry.source_type == "calculated" %}
-          No groundwater extraction was derived for this month; rainfall and delivered surface water covered the estimated use.
-          {% else %}
           {{ entry.description }}
-          {% endif %}
         </td>
       </tr>
       {% empty %}

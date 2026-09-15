@@ -27,6 +27,7 @@ import pytest
 from django.core.management import call_command
 from django.utils import timezone
 
+from accounting.ledger_words import INCIDENTAL_RECHARGE_WORDS
 from accounting.models import AllocationCarryover, WaterType
 from accounting.services import BASIN_RECHARGE_POOL, INCIDENTAL_RECHARGE_POOL
 from core.management.commands.seed_merced_recharge_events import FILL_SPAN_DAYS
@@ -175,7 +176,7 @@ def test_flush_leaves_engine_incidental_pool_and_rows_untouched():
         effective_date=date(2025, 7, 1),
         amount_acre_feet=Decimal("2.5000"),
         source_type="recharge",
-        description="Incidental recharge — deep percolation from surface over-delivery",
+        description=INCIDENTAL_RECHARGE_WORDS,
     )
 
     call_command("seed_merced_recharge_events")

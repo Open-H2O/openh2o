@@ -15,6 +15,7 @@ from decimal import Decimal
 
 import pytest
 
+from accounting.ledger_words import DELIVERY_SHARE_BY_FIXED, DELIVERY_SHARE_BY_USE
 from accounting.models import CalculationRun, WaterType
 from core.models import SiteConfig
 from parcels.models import ParcelLedger
@@ -120,7 +121,7 @@ def test_no_et_demand_falls_back_to_fraction_split():
     assert by_parcel[a.id] == Decimal("-30.0000")
     assert by_parcel[b.id] == Decimal("-20.0000")
     assert sum(by_parcel.values()) == Decimal("-50.0000")
-    assert "static fraction fallback" in rows[0].description
+    assert DELIVERY_SHARE_BY_FIXED in rows[0].description
 
 
 def test_idempotent_rerun_produces_identical_rows():
@@ -204,7 +205,7 @@ def test_demand_weighted_rows_carry_surface_water_type():
     rows = allocate_district_delivery(pod, rp, efficiency=EFF)
 
     assert rows  # demand-weighted path produced rows
-    assert "demand-weighted" in rows[0].description  # confirm the path taken
+    assert DELIVERY_SHARE_BY_USE in rows[0].description  # confirm the path taken
     assert all(r.water_type is not None for r in rows)
     assert all(r.water_type.code == "SW" for r in rows)
 
@@ -226,7 +227,7 @@ def test_fraction_fallback_rows_carry_surface_water_type():
 
     rows = allocate_district_delivery(pod, rp, efficiency=EFF)
 
-    assert "static fraction fallback" in rows[0].description  # confirm the path taken
+    assert DELIVERY_SHARE_BY_FIXED in rows[0].description  # confirm the path taken
     assert all(r.water_type is not None for r in rows)
     assert all(r.water_type.code == "SW" for r in rows)
 
