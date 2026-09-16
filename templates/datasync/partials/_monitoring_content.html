@@ -1,55 +1,37 @@
 <div class="page-stack page-wide">
 
-  <!-- Freshness Map (top): the whole network at a glance. -->
-  <div>
-    <h2 class="content-section-label">Station freshness</h2>
-    <div class="card-raised" style="padding: 0; overflow: hidden;">
-      <div id="monitoring-freshness-map" style="height: 320px; width: 100%;"></div>
-    </div>
-  </div>
-
-  <!-- Stat Cards -->
-  <div class="stat-grid-4col">
-    <div class="card-raised stat-card stat-card-accent-supply">
-      <div class="stat-card-label">Active stations</div>
-      <div class="stat-card-value text-supply">{{ total_active }}</div>
-      <div class="stat-card-unit">total linked to sources</div>
-    </div>
-    <div class="card-raised stat-card" style="border-top: 3px solid var(--forest-400);">
-      <div class="stat-card-label">On schedule</div>
-      <div class="stat-card-value" style="color: var(--forest-400);">{{ fresh_count }}</div>
-      <div class="stat-card-unit">reporting on their normal cadence</div>
-    </div>
-    <div class="card-raised stat-card" style="border-top: 3px solid var(--furnace-400);">
-      <div class="stat-card-label">Behind schedule</div>
-      <div class="stat-card-value" style="color: var(--furnace-400);">{{ stale_count }}</div>
-      <div class="stat-card-unit">overdue vs. their expected cadence</div>
-    </div>
-    {% comment %}
-      ISS-128: this card used to read "N of 400 monthly budget used" where the
-      account's real allowance was 100, and N counted cached rows rather than
-      requests made — so a freshly-rebuilt demonstration reported 380 spent
-      having spent nothing. Both numbers are now real, and the card says which
-      of two sources it is reading, because a figure whose provenance a reader
-      cannot see is a figure they cannot act on.
-    {% endcomment %}
-    <div class="card-raised stat-card" style="border-top: 3px solid {% if openet_low %}var(--color-deficit){% else %}var(--reservoir-400){% endif %};">
-      <div class="stat-card-label">Satellite data requests</div>
-      <div class="stat-card-value{% if openet_low %} text-deficit{% endif %}"{% if not openet_low %} style="color: var(--reservoir-400);"{% endif %}>{{ openet_used }}</div>
-      <div class="stat-card-unit">of {{ openet_limit }} used this month &middot; resets on the 1st</div>
-      <div class="stat-card-note">
-        {% if openet_source == "provider" %}
-          Counted by OpenET{% if openet_tier %}, tier {{ openet_tier }}{% endif %}
-        {% else %}
-          Counted here, not by OpenET &mdash; {{ openet_fallback_reason }}
-        {% endif %}
-      </div>
-    </div>
+  {% comment %}
+    The overview map card (143-07's shape, applied here 143-12): the head
+    (the count line, in the station list's own words, and the three
+    freshness keys on one row, partials/_stations_map_card_head.html) above
+    the map. No stat-grid-4col row survives on the dashboard (Brent,
+    2026-09-15: a dashboard with no identity card puts its counts in the
+    map's card head and under the section headers below, never a row of
+    tiles). freshness_line is built in the view (datasync/views.py).
+  {% endcomment %}
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    {% include "datasync/partials/_stations_map_card_head.html" with head_id="monitoring-map-head" line=freshness_line %}
+    <div id="monitoring-freshness-map" style="height: 320px; width: 100%;"></div>
   </div>
 
   <!-- Source Status -->
   <div>
-    <h2 class="content-section-label">Source status</h2>
+    <h2 class="section-header">Source status</h2>
+    {% comment %}
+      ISS-128: this line used to read "N of 400 monthly budget used" on a
+      card of its own, where the account's real allowance was 100 and N
+      counted cached rows rather than requests made, so a freshly-rebuilt
+      demonstration reported 380 spent having spent nothing. Both numbers
+      are real now, and the sentence says which of two sources it is
+      reading, because a figure whose provenance a reader cannot see is a
+      figure they cannot act on. The used figure's own class is the whole
+      low-allowance signal now that the card (and its border) are gone.
+    {% endcomment %}
+    <p class="text-secondary text-base mb-md">
+      {{ n_sources }} station sources. Satellite crop-water estimates come from
+      OpenET, not a station: <span{% if openet_low %} class="text-deficit"{% endif %}>{{ openet_used }}</span> of {{ openet_limit }} requests used this month
+      ({% if openet_source == "provider" %}counted by OpenET{% if openet_tier %}, tier {{ openet_tier }}{% endif %}{% else %}counted here, not by OpenET: {{ openet_fallback_reason }}{% endif %}); the allowance resets on the 1st.
+    </p>
     {% if source_status_list %}
     <div class="health-grid">
       {% for info in source_status_list %}
@@ -61,10 +43,7 @@
         {% if info.blurb %}
         <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs) 0; line-height: 1.4;">{{ info.blurb }}</p>
         {% endif %}
-        <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs) 0;">
-          {{ info.active }} active / {{ info.total }} total stations
-          {% if info.fresh %}&middot; <span style="color: var(--forest-400);">{{ info.fresh }} on schedule</span>{% endif %}
-        </p>
+        <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs) 0;">{{ info.count_line }}</p>
         {% if info.status_code == "needs_key" %}
         <p class="text-tertiary text-xs m-0">Add the API credential on the server to enable this source.</p>
         {% elif info.status_code == "no_stations" %}
@@ -73,6 +52,8 @@
         <p class="text-tertiary text-xs m-0">
           {{ info.total }} station{{ info.total|pluralize }} known here, none switched on. Discovery adds stations dormant &mdash; open one and activate it to start syncing.
         </p>
+        {% elif info.status_code == "never" %}
+        <p class="text-tertiary text-xs m-0">This deployment has not run a sync against {{ info.display }} yet; the readings it holds were loaded, not synced.</p>
         {% elif info.log %}
         <p class="text-tertiary text-xs m-0">
           Last sync: {{ info.log.started_at|timesince }} ago
@@ -91,7 +72,10 @@
 
   <!-- Active Stations -->
   <div>
-    <h2 class="content-section-label">Active stations</h2>
+    <h2 class="section-header">Active stations</h2>
+    <p class="text-secondary text-base mb-md">
+      {{ shown }} of the {{ total_active }} active stations: the ones up to date or slightly behind. The {{ dead_count }} dormant are on the <a class="text-link" href="{% url 'datasync:station_list' %}?reporting=dead">station list</a>.
+    </p>
     {% if station_list %}
     <div class="station-card-grid">
       {% for item in station_list %}

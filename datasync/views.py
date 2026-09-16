@@ -38,10 +38,43 @@ from datasync.models import (
 from geography.models import Boundary
 
 
+def _freshness_clause(n):
+    """A count as prose: zero reads 'none' rather than '0' (rule 6's words,
+    shared by the dashboard's map-card head line and every per-source count
+    line, 143-12)."""
+    return "none" if n == 0 else f"{n:,}"
+
+
+def _dashboard_freshness_line(total_active, fresh_count, stale_count, dead_count):
+    """The monitoring map card's head line (143-12, shape 1): 'N active
+    stations: F up to date, S slightly behind, D dormant', in the station
+    list's own words (rule 6: Up to date / Slightly behind / Dormant, never
+    'On schedule' / 'Behind schedule'). The noun is singular when exactly one
+    station is active."""
+    station_word = "station" if total_active == 1 else "stations"
+    return (
+        f"{total_active:,} active {station_word}: {_freshness_clause(fresh_count)} up to date, "
+        f"{_freshness_clause(stale_count)} slightly behind, {_freshness_clause(dead_count)} dormant"
+    )
+
+
+def _source_count_line(active, total, fresh, stale, dead):
+    """A source card's count line, one shape for every card (143-12, R-082):
+    zero counts read 'none'; a source with no active stations stops after
+    saying so rather than printing three more 'none' clauses."""
+    if active == 0:
+        return f"{total:,} station{'s' if total != 1 else ''}, none active"
+    return (
+        f"{active:,} active of {total:,} stations: {_freshness_clause(fresh)} up to date, "
+        f"{_freshness_clause(stale)} slightly behind, {_freshness_clause(dead)} dormant"
+    )
+
+
 def _build_source_status(boundary, now):
     """
     Per-source status for the dashboard cards: station counts, the most recent
-    sync log, a source-aware fresh count, and an honest status code/label that
+    sync log, a source-aware fresh/stale/dead split (one pass over the active
+    stations, never a query per state), and an honest status code/label that
     distinguishes "needs key" / "no stations" / "no recent data" from "failed".
     """
     sources = DataSource.objects.filter(is_active=True).order_by("code")
@@ -51,12 +84,17 @@ def _build_source_status(boundary, now):
         if boundary:
             src_stations = src_stations.filter(location__within=boundary.geometry)
         total = src_stations.count()
-        active_qs = src_stations.filter(is_active=True)
-        active = active_qs.count()
-        fresh = sum(
-            1 for s in active_qs
-            if freshness.classify_freshness(src.code, s.last_data_at, now) == "fresh"
-        )
+        active_qs = list(src_stations.filter(is_active=True))
+        active = len(active_qs)
+        fresh = stale = dead = 0
+        for s in active_qs:
+            cls = freshness.classify_freshness(src.code, s.last_data_at, now)
+            if cls == "fresh":
+                fresh += 1
+            elif cls == "stale":
+                stale += 1
+            else:
+                dead += 1
         log = DataSyncLog.objects.filter(data_source=src).order_by("-started_at").first()
         status_code = freshness.classify_source_status(
             src.code, active, log, fresh, total_stations=total
@@ -68,6 +106,9 @@ def _build_source_status(boundary, now):
             "total": total,
             "active": active,
             "fresh": fresh,
+            "stale": stale,
+            "dead": dead,
+            "count_line": _source_count_line(active, total, fresh, stale, dead),
             "blurb": freshness.source_blurb(src.code),
             "status_code": status_code,
             "status_label": freshness.status_label(status_code),
@@ -481,15 +522,29 @@ def monitoring_dashboard(request):
         is_active=True
     ).select_related("data_source").order_by("data_source__code", "station_name")
 
-    fresh_count = sum(
-        1 for s in active_stations
-        if freshness.classify_freshness(s.data_source.code, s.last_data_at, now) == "fresh"
+    # One pass over every active station, source-aware (never a query per
+    # state, 143-12 R-079/R-080). The per-station result is kept so the
+    # station_list build below classifies each station exactly once.
+    station_freshness_by_pk = {}
+    fresh_count = stale_count = dead_count = 0
+    for s in active_stations:
+        cls = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        station_freshness_by_pk[s.pk] = cls
+        if cls == "fresh":
+            fresh_count += 1
+        elif cls == "stale":
+            stale_count += 1
+        else:
+            dead_count += 1
+    total_active = fresh_count + stale_count + dead_count
+    shown = fresh_count + stale_count
+    freshness_line = _dashboard_freshness_line(
+        total_active, fresh_count, stale_count, dead_count
     )
-    total_active = active_stations.count()
-    stale_count = total_active - fresh_count
 
     # Per-source status, source-aware freshness (not boundary-scoped — see above)
     source_status_list = _build_source_status(None, now)
+    n_sources = len(source_status_list)
 
     # Sparkline data: last 10 DataRecordStaging per active station
     station_ids = list(active_stations.values_list("pk", flat=True))
@@ -538,7 +593,7 @@ def monitoring_dashboard(request):
     # Determine freshness class for each active station (source-aware)
     station_list = []
     for s in active_stations:
-        fresh_class = freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+        fresh_class = station_freshness_by_pk[s.pk]
         lv = latest_value_dash.get(s.pk)
         lu = latest_unit_dash.get(s.pk, "")
         if lv is not None:
@@ -580,9 +635,13 @@ def monitoring_dashboard(request):
 
     context = {
         "source_status_list": source_status_list,
+        "n_sources": n_sources,
         "stale_count": stale_count,
         "fresh_count": fresh_count,
+        "dead_count": dead_count,
         "total_active": total_active,
+        "shown": shown,
+        "freshness_line": freshness_line,
         "station_list": station_list,
         "openet_used": openet_used,
         "openet_limit": openet_limit,

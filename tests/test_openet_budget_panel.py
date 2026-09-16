@@ -56,16 +56,20 @@ def _dashboard(client, status):
 @pytest.mark.django_db
 class TestTheCardSaysWhereTheNumberCameFrom:
     def test_provider_sourced_says_openet_counted_it(self, client_logged_in):
+        """143-12: this sentence moved off its own card and into the Source
+        status paragraph, so the phrase is now mid-sentence, lowercase, rather
+        than a standalone capitalized card note ("Counted by OpenET")."""
         body = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
-        assert "Counted by OpenET" in body
+        assert "counted by OpenET" in body
         assert "tier 1" in body
-        assert "Counted here" not in body
+        assert "counted here" not in body
 
     def test_fallback_sourced_says_it_was_counted_here_and_why(self, client_logged_in):
+        """143-12: same move, same casing change ("Counted here" -> "counted here")."""
         body = _dashboard(client_logged_in, PROVIDER_UNREACHABLE).content.decode()
-        assert "Counted here" in body
+        assert "counted here" in body
         assert "could not be reached" in body
-        assert "Counted by OpenET" not in body
+        assert "counted by OpenET" not in body
 
     def test_the_two_states_are_distinguishable(self, client_logged_in):
         provider = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
@@ -136,12 +140,16 @@ class TestARunningLowAllowanceIsBurntOrangeNotRed:
         assert "text-deficit" not in resp.content.decode()
 
     def test_four_fifths_spent_is_flagged(self, client_logged_in):
+        """143-12: the card (and its `var(--color-deficit)` border) is gone,
+        so the used figure's own `.text-deficit` span is the whole signal now:
+        this checks that class wraps the figure itself, not just that it
+        appears somewhere on the page."""
         status = dict(PROVIDER_ANSWERED, used=80)
         resp = _dashboard(client_logged_in, status)
         assert resp.context["openet_low"] is True
         body = resp.content.decode()
         assert "text-deficit" in body
-        assert "var(--color-deficit)" in body
+        assert '<span class="text-deficit">80</span>' in body
 
     def test_it_never_reaches_for_the_error_colour(self, client_logged_in):
         """A spent allowance is a budget state, not a hard error."""
