@@ -12,6 +12,23 @@
 {% block title %}{{ station.station_name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ station.station_name }}{% endblock %}
 
+{% comment %}
+  R-077/R-078 (143-12): the freshness word used to live only in the pane
+  header, which is skipped on this full page (on_full_page=True), so a
+  dormant station said nothing anywhere on the page. The badge here is the
+  same three words the station list uses (rule 6: Up to date / Slightly
+  behind / Dormant, never "On schedule" / "Behind").
+{% endcomment %}
+{% block page_meta %}
+{% if station_freshness == "fresh" %}
+<span class="badge badge-dot badge-green" title="How recently the station published, judged against its own source's cadence. A station can be syncing and still dormant.">Up to date</span>
+{% elif station_freshness == "stale" %}
+<span class="badge badge-dot badge-amber" title="How recently the station published, judged against its own source's cadence. A station can be syncing and still dormant.">Slightly behind</span>
+{% else %}
+<span class="badge badge-grey" title="How recently the station published, judged against its own source's cadence. A station can be syncing and still dormant.">Dormant</span>
+{% endif %}
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">

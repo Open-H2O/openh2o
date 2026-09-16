@@ -19,7 +19,7 @@
   <div class="pane-header-meta">
     <span class="row-start" style="gap: 6px;" title="How recently this station reported data">
       <span class="freshness-dot freshness-dot--{{ station_freshness }}"></span>
-      <span class="text-secondary text-xs">{% if station_freshness == 'fresh' %}On schedule{% elif station_freshness == 'stale' %}Behind{% else %}Dormant{% endif %}</span>
+      <span class="text-secondary text-xs">{% if station_freshness == 'fresh' %}Up to date{% elif station_freshness == 'stale' %}Slightly behind{% else %}Dormant{% endif %}</span>
     </span>
   </div>
 </div>
@@ -28,12 +28,19 @@
 <div class="pane-stack">
 
   {% comment %} Telemetry chart, full width, directly under the map — the trend over time
-       is the thing people open a station to see, so it leads. {% endcomment %}
+       is the thing people open a station to see, so it leads. R-077 (143-12):
+       when this station has never published a reading (enriched_parameters is
+       empty), there is nothing to chart: no selects, no range buttons, no
+       canvas, no #chart-empty. The card states the fact and stops (rule 8),
+       naming the one cause the row itself carries (is_active off). The chart
+       script's own guard already returns when the canvas is absent
+       (`if (!canvas) return;`, below), so omitting the canvas here breaks
+       nothing. {% endcomment %}
   <div class="card-raised">
     <div class="row-between mb-md" style="flex-wrap: wrap; gap: var(--space-sm);">
       <h2 id="chart-title" class="section-header-flush">Telemetry</h2>
+      {% if enriched_parameters %}
       <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap; align-items: center;">
-        {% if enriched_parameters %}
         <select id="chart-param" class="form-select" style="font-size: 0.8rem; padding: 3px 8px;">
           {% for p in enriched_parameters %}
           <option value="{{ p.code }}">{{ p.label }}</option>
@@ -45,7 +52,6 @@
           <option value="{{ p.code }}">{{ p.label }}</option>
           {% endfor %}
         </select>
-        {% endif %}
         <div style="display: flex; gap: 2px;">
           <button class="chart-range-btn" data-days="7" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: var(--radius-sm) 0 0 var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">7d</button>
           <button class="chart-range-btn" data-days="30" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-left: none; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">30d</button>
@@ -54,19 +60,40 @@
           <button class="chart-range-btn active-range" data-days="0" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; border: 1px solid var(--color-border); background: var(--color-elevated); color: var(--color-text-secondary); cursor: pointer;">All</button>
         </div>
       </div>
+      {% endif %}
     </div>
+    {% if enriched_parameters %}
     <div style="position: relative; height: 300px;">
       <canvas id="telemetry-chart"></canvas>
     </div>
     <p id="chart-empty" class="text-tertiary text-base" style="display: none; margin-top: var(--space-sm);">No published data for this period.</p>
+    {% else %}
+    <p class="text-secondary text-base">No published readings from this station.{% if not station.is_active %} Syncing is switched off for it.{% endif %}</p>
+    {% endif %}
   </div>
 
-  {% comment %} Identity (left) + current readings (right). minmax(0,1fr) so the columns
-       share the width evenly; the tables further down scroll inside their own
-       .table-scroll cards rather than forcing a column wide. {% endcomment %}
-  <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
+  {% comment %}
+    Identity (left) + current readings (right). minmax(0,1fr) so the columns
+    share the width evenly; the tables further down scroll inside their own
+    .table-scroll cards rather than forcing a column wide.
 
-    <!-- Station Info card -->
+    R-077 (143-12): the Current Readings card's only content on a station
+    with no readings was one sentence ("No published readings yet.") beside a
+    tall identity card, the empty box beside a giant box Brent rejected on
+    the drinking overview. That card is not rendered at all when
+    latest_readings is empty (the Telemetry card above already says so); the
+    identity card then stands alone, its fields in the account-info two-
+    column shape (.field-grid-2) so the row is not one narrow card beside
+    nothing.
+  {% endcomment %}
+  <div class="{% if latest_readings %}page-grid-2col{% endif %}"{% if latest_readings %} style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);"{% endif %}>
+
+    {% comment %}
+      Station Info card. Fields sit in .field-grid-2 (two columns, the
+      account-info shape) only when this card stands alone in its row;
+      paired with Current Readings they stay single-column so the card is
+      not squeezed too narrow.
+    {% endcomment %}
     <div class="card-raised">
       <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
         <h2 class="section-header-flush">Station information</h2>
@@ -80,62 +107,66 @@
         </div>
       </div>
 
-      <div class="field-group">
-        <div class="field-label field-row">
-          Data source
-          {% include "partials/_help_tooltip.html" with label="Source" text="The external data provider (CDEC, USGS, CIMIS, etc.) this station syncs from." %}
-        </div>
-        <div class="row-start">
-          <span class="pill-tag" style="color: var(--color-error);">{{ station.data_source.code }}</span>
-          <span class="text-secondary text-base">{{ station.data_source.name }}</span>
-        </div>
-      </div>
+      <div class="{% if not latest_readings %}field-grid-2{% endif %}">
 
-      <div class="field-group">
-        <div class="field-label field-row">
-          External station ID
-          {% include "partials/_help_tooltip.html" with label="Station ID" text="The identifier used by the external data source to reference this station." %}
-        </div>
-        <div class="field-value-mono">{{ station.external_station_id }}</div>
-      </div>
-
-      <div class="field-group">
-        <div class="field-label">Location</div>
-        {% if station.location %}
-          <div class="text-secondary field-value-mono text-sm">
-            {{ station.location.y|floatformat:5 }}, {{ station.location.x|floatformat:5 }}
+        <div class="field-group">
+          <div class="field-label field-row">
+            Data source
+            {% include "partials/_help_tooltip.html" with label="Source" text="The external data provider (CDEC, USGS, CIMIS, etc.) this station syncs from." %}
           </div>
-        {% else %}
-          <div class="value-empty">Not recorded</div>
-        {% endif %}
-      </div>
-
-      <div class="field-group">
-        <div class="field-label">Parameters</div>
-        {% if enriched_parameters %}
-          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-            {% for p in enriched_parameters %}
-              <span class="pill-tag">{{ p.label }}</span>
-            {% endfor %}
+          <div class="row-start">
+            <span class="pill-tag" style="color: var(--color-error);">{{ station.data_source.code }}</span>
+            <span class="text-secondary text-base">{{ station.data_source.name }}</span>
           </div>
-        {% else %}
-          <div class="value-empty">Not recorded</div>
-        {% endif %}
-      </div>
-
-      <div class="field-group">
-        <div class="field-label">Last data</div>
-        <div class="field-value">
-          {% if station.last_data_at %}{{ station.last_data_at|date:"M d, Y H:i" }}{% else %}<span class="text-tertiary">No data yet</span>{% endif %}
         </div>
-      </div>
 
-      {% if station.notes %}
-      <div class="field-group">
-        <div class="field-label">Notes</div>
-        <div class="text-secondary text-base" style="line-height: 1.5;">{{ station.notes }}</div>
+        <div class="field-group">
+          <div class="field-label field-row">
+            External station ID
+            {% include "partials/_help_tooltip.html" with label="Station ID" text="The identifier used by the external data source to reference this station." %}
+          </div>
+          <div class="field-value-mono">{{ station.external_station_id }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Location</div>
+          {% if station.location %}
+            <div class="text-secondary field-value-mono text-sm">
+              {{ station.location.y|floatformat:5 }}, {{ station.location.x|floatformat:5 }}
+            </div>
+          {% else %}
+            <div class="value-empty">Not recorded</div>
+          {% endif %}
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Parameters</div>
+          {% if enriched_parameters %}
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+              {% for p in enriched_parameters %}
+                <span class="pill-tag">{{ p.label }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="value-empty">Not recorded</div>
+          {% endif %}
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Last data</div>
+          <div class="field-value">
+            {% if station.last_data_at %}{{ station.last_data_at|date:"M d, Y H:i" }}{% else %}<span class="text-tertiary">No data yet</span>{% endif %}
+          </div>
+        </div>
+
+        {% if station.notes %}
+        <div class="field-group{% if not latest_readings %} field-grid-2-span{% endif %}">
+          <div class="field-label">Notes</div>
+          <div class="text-secondary text-base" style="line-height: 1.5;">{{ station.notes }}</div>
+        </div>
+        {% endif %}
+
       </div>
-      {% endif %}
 
       <div class="border-separator">
         <div class="text-tertiary text-xs">
@@ -144,13 +175,13 @@
       </div>
     </div>
 
-    <!-- Current Readings card (always rendered so the row stays balanced) -->
+    {% if latest_readings %}
+    <!-- Current Readings card (rendered only when there is something to read) -->
     <div class="card-raised">
       <div class="row-between mb-md">
         <h2 class="section-header-flush">Current readings</h2>
         <span class="text-tertiary text-xs">Latest published value per sensor</span>
       </div>
-      {% if latest_readings %}
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-sm);">
         {% for r in latest_readings %}
         <div style="background: var(--color-elevated); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-sm) var(--space-md);">
@@ -162,14 +193,20 @@
         </div>
         {% endfor %}
       </div>
-      {% else %}
-      <p class="text-tertiary text-base">No published readings yet.</p>
-      {% endif %}
     </div>
+    {% endif %}
 
   </div>
 
-  <!-- Sync logs (left) + recent records (right). -->
+  {% comment %}
+    Sync logs (left) + recent records (right). R-077 (143-12): when NEITHER
+    has a row, two cards each holding one sentence collapse into ONE
+    full-width card (rule 8: the fact, and stop) rather than two half-width
+    boxes each apologizing for being empty. recent_logs is per SOURCE, not
+    per station (_station_detail_context reads DataSyncLog by data_source),
+    so the merged sentence names the source, not the station.
+  {% endcomment %}
+  {% if recent_logs or recent_records %}
   <div class="page-grid-2col" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
 
     <!-- Recent Sync Logs card -->
@@ -263,6 +300,12 @@
     </div>
 
   </div>
+  {% else %}
+  <div class="card-raised">
+    <h2 class="section-header-flush">Sync history</h2>
+    <p class="text-tertiary text-base">No sync runs for {{ station.data_source.name }} and no data records for this station yet.</p>
+  </div>
+  {% endif %}
 </div>
 
 {% comment %}
