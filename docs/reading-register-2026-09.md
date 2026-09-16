@@ -1031,6 +1031,215 @@ for 143-09**; nothing on that page is touched here. Staging deploy, the staging 
 and Brent's approval are Task 6, not this task; production untouched at `241c22b` (to be
 re-read from the host by Task 6).
 
+Resolved by 143-09 (built 2026-09-16; local stack only, staging deploy and Brent's approval
+are Task 7, not this task), closing sixteen rows outright and R-055 on its seventh and last
+page: R-045, R-046, R-047, R-050, R-051, R-052, R-054, R-056, R-060, R-117, R-129, R-130,
+R-131, R-137, R-138, R-140, and the Site Health share of R-055. Seventeen entries, all closed
+by measurement rather than by the plan's own 09:35 guesses, four of which differed: staging's
+health chip read "8/13 healthy" where local reads "7/13 healthy" (a genuine host difference in
+which checks are stale, the same class as 143-12's NOAA/CIMIS split); the anonymous grid
+resolved to 5 columns per row at 1,730 (`grid_columns` `[5, 5, 5]`) where the register's 1440
+capture read four; the hero's before-status read "2 of 42 stations reporting" where the
+register's original finding named "10 of 42"; and the roster held 2 rows locally
+(`admin@local.dev`, `dbg@example.com`) against the register's 1 row on staging. Before values
+from `143-09-probe-before-local.json` / `-staging.json` (Task 1, captured 2026-09-16
+11:54-11:55 PDT; local and staging both served `ea96977`); after values re-measured directly
+against the rebuilt local stack in this task (both the fixture guards and, wherever a page
+takes no fixture, a live authenticated request through Caddy at `http://localhost/`) rather
+than copied from a builder's own claim. Commits: `343973f` (the calculation page, the
+methodology editor), `cdabc4a` (the wizard, the 404 page, the roster, the import and add
+pages, the diversion page), `094cddc` + `e5d838e` (Site Health; the second is the main
+session's own drift-check fix, adding the two peers' captions), `be784e5` (the front pages).
+Production `241c22b`, re-read from the host, unchanged.
+
+**R-045 / R-046 / R-047 (the calculation page).** Before, the head read "Methodology: Default
+Methodology (a3fee261ef37)" with nothing saying the code was a fingerprint; step 2's Detail
+cell read "usda_scs: −0.3168 AF effective precip", printing the config key; step 1's Detail
+read "122.07 mm × 109.80 ac" producing 43.9731 AF with no conversion shown, and neither
+"inches" nor "÷ 12" appeared anywhere on the page. After (measured live on `/accounting/
+calculation-run/11/2026-09/`, parcel 11, period 2026-09): the head reads "Methodology:
+Default Methodology · fingerprint a3fee261ef37" with the sentence "The fingerprint is the
+first 12 characters of a hash over the methodology's enabled steps and their settings when
+this run happened. Two runs with the same fingerprint used the same method." underneath;
+step 1's Detail reads "4.8058 in of ET (122.07 mm) × 109.80 ac ÷ 12 in/ft" (4.8058 × 109.80 ÷
+12 = 43.9731, the Out cell, the auditor's own check); step 2's Detail reads "USDA-SCS
+(TR-21): 0.0346 in effective of 0.1422 in rain, 0.3168 AF taken off"; the string "usda_scs"
+appears 0 times in the served HTML. `METHOD_LABELS` (`accounting/precip_math.py`) carries the
+three keys, and the methodology editor's rendered `<option>` text equals its values, proven
+by `tests/test_calculation_page_words.py::TestOneListOfMethodNames` against a live-rendered
+page rather than by inspection.
+
+**R-050 / R-051 (the methodology editor).** Before, the precipitation step showed "Fraction
+(method = fraction)" and "Soil storage (in) (method = USDA-SCS)" side by side regardless of
+which method was selected, and the clamp step laid Floor, Bank surplus, Depreciation and
+Expiry in one grid with no heading. After: only the live method's field renders (the label
+suffixes are gone), a plain JS toggle on `select[name=method]` shows the right field before
+Save (chosen over an HTMX preview view because it needs no round trip and cannot clobber a
+sibling field the reader has already typed into, the same idiom `infrastructure/add.html`
+uses for its storage-type sub-fields), and the raw method's grid reads "No settings for this
+method."; a `div.form-subsection` headed "Banked surplus" (with the sentence "When the chain
+comes out below the floor, the difference is a surplus. These settings say whether it is
+carried forward as a credit and how it decays.") now sits between Floor and Bank surplus.
+Guards: `tests/test_methodology_editor_fields.py`, each method asserted by reading the exact
+opening tag (`data-precip-method="…"`) for a server-rendered `display: none`, never a fixed
+character window.
+
+**R-052 / R-054 (the setup wizard).** Before, `GET /setup/confirm/` and `/setup/run/` with no
+session 302'd to `/setup/` with no message; `confirm.html` printed `existing_basins|
+add:existing_flowlines` under "Existing data" (on the real local demo, boundary 2 "Boundary
+0": 1 basin + 0 flowlines = "1"). After, the same redirect renders `.alert-success` "Setup
+starts here. Choose or upload a boundary, then confirm it; this session had none." (a deleted
+boundary reads "...the boundary this session had chosen no longer exists." instead, proven by
+`tests/test_setup_wizard_says_why.py::test_confirm_with_a_deleted_boundary_names_that_it_was_
+deleted`); the tile now reads "Already inside this boundary" / "1 basin · 0 flowlines", the
+same real boundary, measured live through the wizard's own POST, no sum. A fixture with 2
+zones and 3 flowlines renders "2 basins · 3 flowlines", not "5" (`tests/
+test_setup_wizard_says_why.py::TestBasinsAndFlowlinesCountApart`).
+
+**R-060 (the not-found page).** Before, local served Django's technical 404 (`DEBUG=True`);
+production/staging serve the bare "Not Found" the register read. After, `templates/404.html`
+extends `base.html`: signed out and signed in, `@override_settings(DEBUG=False)` gets a 404
+whose body holds "Page not found", "Back to Home" and the platform name, and never the
+resolver's own exception text. Guard: `tests/test_not_found_page.py`, written by Task 3, 3
+tests, each observed red against the pre-change tree before the template existed: RED here
+meant the body fell back to Django's bare "Not Found / The requested resource was not found
+on this server." The staging probe is Task 7's.
+
+**R-117 (the diversion page).** Before, the description read "Point of diversion details,
+diversion records, and compliance information." and the water right sat in a closed
+`<details>` at y=2536 of a 2691px page, with "Right ID" not visible at first paint. After, the
+description reads "Point of diversion details, diversion records, and the water right it
+draws under."; the `<details>`/`<summary>`/chevron are gone and the water right is an ordinary
+open `div.card-raised.page-grid-account-full` headed `h2.section-header` "Water right", the
+account-info field-grid shape, with no `<details` anywhere inside that card (the sidebar's own
+unrelated Help group is also a `<details>` element, so the guard scopes to the card, not the
+page). Guards: `tests/test_admin_pages_explain_themselves.py::TestTheDiversionPageOpensThe
+WaterRight`.
+
+**R-129 (the add page's parcel link).** Before, `<details class="parcel-link-section">`'s
+summary showed "Link to parcel (optional)" with `list-style: none` and no mark, over a 108px
+card. After, the summary carries the 14px chevron (`svg.disclosure-mark`, `polyline 9 18 15
+12 9 6`) before the words, `details[open] > summary .disclosure-mark { transform:
+rotate(90deg) }`, and reads "Link to a use area / Optional. Open to search for a use area,
+pick one on the map, or draw one."; "Link to parcel" appears nowhere (`tests/
+test_admin_pages_explain_themselves.py::TestTheAddPageUseAreaLinkIsAVisibleDisclosure`).
+
+**R-130 (the import page).** Before, `/infrastructure/import/?type=well` offered no link to
+any other import type. After, the same page's description gains "Importing something else?
+Surface water diversion · Storage pond or tank · Recharge site", built exactly as `add.html`'s
+own "Adding something else?" line is; with only `wells` reachable (surface and recharge both
+dropped, the droppability harness's own `without-surface+recharge` combination) the line is
+absent rather than dead (`tests/test_admin_pages_explain_themselves.py::
+TestTheImportPageOffersTheOtherTypes`).
+
+**R-131 (the roster).** Before, the signed-in user's Actions cell read the whole word "You";
+the local demo's second row (`dbg@example.com`, not staff) already carried real buttons, so
+the fault reproduced on exactly one of the two local rows (both rows on staging, which holds
+one user, read "You"). After, the self row reads "Your account. Another administrator changes
+your role or status."; a fixture proves the `is_staff`-but-not-self row reads "Host
+administrator; managed outside this page." (the real local demo has no second staff user to
+show that cell on, the same "proven by fixture, not by the demo screen" shape 143-12 recorded
+for R-093); "You" alone appears in no cell either way (`tests/
+test_admin_pages_explain_themselves.py::TestTheRosterWordsItsOwnRow`).
+
+**R-137 / R-138 (the signed-in hero).** Before, `.home-hero-greeting` read "GOOD MORNING"
+(11.52px), `.home-hero-title` read "Halvern Valley GSA" (34px, the largest words on the page),
+and `.home-hero-status` read "2 of 42 stations reporting" (14px): the register's own original
+finding named "10 of 42" and "Good morning" was reproduced in kind, not to the letter. After,
+the eyebrow (`.home-hero-greeting`, unchanged class) reads "HALVERN VALLEY GSA", the title
+(`.home-hero-title`, still 34px, still the largest words) is a link, `<a href="/datasync/
+stations/?reporting=fresh" class="home-hero-title-link">` wrapping the freshness dot and "2 of
+42 syncing stations up to date", and "Good morning" / "Good afternoon" / "Good evening" appear
+nowhere on the page. This is the plan's own judgment, not yet Brent's: the greeting is a time
+of day, not a fact about the district, and the eyebrow is the smaller fact once the figure has
+somewhere to lead. His ruling on whether the greeting stays as the eyebrow or the agency name
+does is the checkpoint's second question.
+
+**R-138 / R-140 (the anonymous front page).** Before, `.dashboard-grid`s split 4/2/1 cards and
+each resolved to 5 columns at 1,730 (not the 4 the register's 1440 capture read), the last
+grid holding one wide "System status" card whose dot touched "System running" (`.gap-2`
+resolved to no rule, ISS-166); "Monitoring stations 335" carried no syncing count. After, one
+`h2.content-section-label` "Your data" over one `div.dashboard-grid.dashboard-grid--counts`
+(`grid-template-columns: repeat(auto-fit, minmax(380px, 1fr))` against a 1,439px content width
+at 1,730: three columns, measured live) holds all six count cards this deployment allows, in
+two rows of three with no empty cell; the stations card's sublabel reads "42 syncing · view
+stations" beside its "335" value; `page_meta` carries `span.badge.badge-dot.badge-green`
+"System running" in the head, and no `.dashboard-card-wide` or "Methodology settings" card
+remains (the latter was dead markup: gated on `request.user.is_staff`, but `config.views.index`
+serves this template only to anonymous visitors). Guards: `tests/test_front_pages.py`.
+
+**R-055 (Site Health, the last of its seven pages) / R-056.** Before, `/health/` printed
+"7/13 healthy · 13 applicable of 13" at 14px in a `row-end` chip (staging read "8/13", a real
+host difference in which checks are currently stale: `ledger_integrity`, `orphans`,
+`et_meter_agreement`, `unallocated_delivery` and `ssl` are yellow locally, `sync_freshness`
+red); the largest text on the page was 16px, `h2.section-header-flush` on a card title
+("Cache Duplication"); 0 of 13 cards carried a link. After (measured live, the real local
+demo's actual check rows): `div.page-grid-account` holds the info card ("This run": Last run,
+Checks "13: 5 applicable, 8 not applicable", Not applicable, Re-run) beside the balance card's
+panel: one `.budget-seg--result` "Healthy 7" at 32px, the largest text on the page, two peers
+"Attention needed 5" (`text-deficit`) and "Action required 1" (`text-error`, a color-only
+class next to `.text-deficit` since no `.text-error` utility existed before this plan) with
+captions "checks reading Warning" / "check reading Critical" (added by the main session's own
+drift check, `e5d838e`, after Task 4's first pass shipped the two peers with no caption); both
+cards measure 290.6px. Every yellow/red platform-category card carries `a.text-link` to its
+page (`sync_freshness` to the monitoring dashboard, `et_meter_agreement` to the water balance,
+`ledger_integrity` to the calculated Use Ledger rows, `orphans` to the use areas,
+`unallocated_delivery` to the surface diversions: 5 links, all present); the one host-level
+red card (`ssl`) reads "Fixed on the host, not in the platform."; no green or skipped card
+carries a link; cards order red, yellow, green, skipped (`Sync Freshness` first). Signed out:
+no `budget-panel`, the aggregate sentence only. Guards: `tests/test_site_health_page.py` (the
+panel, the peers, the ordering, the info card, signed-out); the link-gating mechanism itself
+(module-off drops the link even on a yellow row) is `tests/
+test_health_checks.py::TestWhereToLookLinksAreModuleGated`, written by Task 4 and not
+duplicated here.
+
+**Drift check, main session (143-09-drift-checks.md).** After Task 4: `health-after-1730.png`
+opened beside `143-12-work/reporting-reports-shared-supply-check-after-1730.png`. The
+`page-grid-account` / `budget-panel` classes matched, both cards 290.6px, but the two peers
+carried no `budget-seg-caption` where the accepted shape captions all three segments; fixed in
+`e5d838e` ("checks reading Warning" / "check reading Critical", the badges' own words) before
+the next dispatch. After Task 5: `home-after-1730.png`, the largest words are "2 of 42
+syncing stations up to date" (34px), the eyebrow "HALVERN VALLEY GSA" above, no greeting
+anywhere; `index-anon-after-1730.png`, one "Your data" grid, six cards in three columns and
+two rows, no empty cell, "System running" green badge-dot beside "Home"; both matched the
+plan's verify with no drift.
+
+Guards: 35 new tests across six new files: `tests/test_calculation_page_words.py` (R-045,
+R-046, R-047, 7 tests), `tests/test_methodology_editor_fields.py` (R-050, R-051, 5 tests),
+`tests/test_setup_wizard_says_why.py` (R-052, R-054, 4 tests), `tests/test_site_health_page.py`
+(R-055, R-056, 8 tests), `tests/test_front_pages.py` (R-137, R-138, R-140, 5 tests),
+`tests/test_admin_pages_explain_themselves.py` (R-131, R-130, R-129, R-117, 6 tests); plus the
+3 tests in `tests/test_not_found_page.py` Task 3 already wrote for R-060 (referenced, not
+duplicated). Every new guard observed RED against the pre-change tree (`git checkout ea96977
+-- ` the twenty template and view files these six tasks touched, rebuilt, run:
+`test_calculation_page_words.py` failed to even COLLECT (`ImportError: cannot import name
+'METHOD_LABELS' from 'accounting.precip_math'`, proving the whole file's premise); the other
+28 collected tests ran 25 failed / 3 passed, then `git checkout be784e5 -- ` the same files,
+rebuilt, all 35 GREEN). The 3 that passed against the pre-change tree are principled, not
+weak guards: `TestSignedOutGetsNoPanel` (the anonymous branch's wording was never touched, so
+nothing there could regress); `test_no_methodology_settings_card` (the card was dead markup
+gated on `is_staff` on a template only `AnonymousUser` ever sees, both before and after);
+`test_with_only_wells_the_line_is_absent` (old `infrastructure_import` never built
+`other_import_types` at all, so the line's absence held regardless; the discriminating half
+of that pair, `test_well_import_page_links_to_the_other_types_not_itself`, was RED). Old
+literals grepped across `tests/` before writing the list (`(method = fraction)`, `(method =
+USDA-SCS)`, `Existing data`, `Compliance details`, `compliance information`, `Link to
+parcel`, `Good morning`, `stations reporting`, `System status`, `System running`, `healthy ·`,
+`applicable of`): zero hits except `tests/test_health_checks.py`'s own CLI-summary strings
+("... applicable of 13 ..."), which belong to `run_health_checks`' JSON/stdout summary, a
+surface this plan does not touch and did not retarget. `tests/test_water_vocabulary.py`,
+`tests/test_domain_vocabulary.py`, `tests/test_template_hygiene.py`, `tests/
+test_module_template_guards.py`, `tests/test_composition_rule.py`, `tests/
+test_figure_ledger_coverage.py` (156 tests, green after the two remaps the plan's own context
+names, Task 2's calculation-page sites and Task 3's surface pane), `tests/
+test_health_checks.py`, `tests/test_setup_polish.py`, `tests/
+test_access_control.py`, `tests/test_platform_readability.py`, `tests/
+test_empty_onboarding.py`, `tests/test_methodology_settings.py` all green (459 tests). `make
+test-droppable` 30 passed. Suite 2,763 → **2,798**. Staging deploy, the after-probe on both
+hosts, the reader verdicts and the seven before/after pairs are Task 7, not this task;
+production untouched at `241c22b` (re-read from the host, `ssh` not needed locally since this
+task ran no deploy).
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**
