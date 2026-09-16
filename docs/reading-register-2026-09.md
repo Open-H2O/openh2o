@@ -1058,9 +1058,11 @@ cell read "usda_scs: −0.3168 AF effective precip", printing the config key; st
 read "122.07 mm × 109.80 ac" producing 43.9731 AF with no conversion shown, and neither
 "inches" nor "÷ 12" appeared anywhere on the page. After (measured live on `/accounting/
 calculation-run/11/2026-09/`, parcel 11, period 2026-09): the head reads "Methodology:
-Default Methodology · fingerprint a3fee261ef37" with the sentence "The fingerprint is the
-first 12 characters of a hash over the methodology's enabled steps and their settings when
-this run happened. Two runs with the same fingerprint used the same method." underneath;
+Default Methodology" and the code is gone. The plan's first answer printed it as "fingerprint
+a3fee261ef37" with a sentence about a 12-character hash; Brent struck that at the checkpoint
+(2026-09-16 15:39 PDT: "Nobody knows what that means"), and since no page lets a reader
+compare two runs by the code, it is a machine key with no reader use and is not printed
+(copy rule 9; `tests/test_calculation_page_words.py::TestCalculationPageDoesNotPrintTheConfigHash`);
 step 1's Detail reads "4.8058 in of ET (122.07 mm) × 109.80 ac ÷ 12 in/ft" (4.8058 × 109.80 ÷
 12 = 43.9731, the Out cell, the auditor's own check); step 2's Detail reads "USDA-SCS
 (TR-21): 0.0346 in effective of 0.1422 in rain, 0.3168 AF taken off"; the string "usda_scs"
@@ -1150,10 +1152,12 @@ the eyebrow (`.home-hero-greeting`, unchanged class) reads "HALVERN VALLEY GSA",
 (`.home-hero-title`, still 34px, still the largest words) is a link, `<a href="/datasync/
 stations/?reporting=fresh" class="home-hero-title-link">` wrapping the freshness dot and "2 of
 42 syncing stations up to date", and "Good morning" / "Good afternoon" / "Good evening" appear
-nowhere on the page. This is the plan's own judgment, not yet Brent's: the greeting is a time
-of day, not a fact about the district, and the eyebrow is the smaller fact once the figure has
-somewhere to lead. His ruling on whether the greeting stays as the eyebrow or the agency name
-does is the checkpoint's second question.
+nowhere on the page. Brent at the checkpoint (2026-09-16 15:39 PDT) accepted the figure as
+the lead and asked what the hero says for an agency with no monitoring stations: with
+datasync on and no syncing station it read "0 of 0 syncing stations up to date", which is not
+a figure to lead with, so that case now takes the datasync-off shape (the agency name as the
+title, "Home" as the eyebrow, no station link;
+`tests/test_front_pages.py::TestTheHeroLeadsWithTheStationFigure::test_no_syncing_station_means_the_agency_leads_not_a_zero`).
 
 **R-138 / R-140 (the anonymous front page).** Before, `.dashboard-grid`s split 4/2/1 cards and
 each resolved to 5 columns at 1,730 (not the 4 the register's 1440 capture read), the last

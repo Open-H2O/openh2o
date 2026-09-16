@@ -24,12 +24,14 @@
        agency name moves up to the eyebrow, since who/where is the smaller
        fact once the figure has somewhere to lead. With datasync off there is no figure to
        lead with, so the title stays the agency name and the eyebrow reads
-       "Home" instead of naming the agency twice.
+       "Home" instead of naming the agency twice. The same holds when datasync is on but
+       the deployment has no syncing station (an agency without monitoring stations, Brent
+       2026-09-16 15:39 PDT): "0 of 0 syncing stations" is not a figure to lead with.
     {% endcomment %}
     <section class="home-hero">
         <div class="home-hero-inner">
-            <div class="home-hero-greeting">{% if 'datasync' in enabled_modules %}{{ agency_name }}{% else %}Home{% endif %}</div>
-            {% if 'datasync' in enabled_modules %}
+            <div class="home-hero-greeting">{% if 'datasync' in enabled_modules and active_station_count %}{{ agency_name }}{% else %}Home{% endif %}</div>
+            {% if 'datasync' in enabled_modules and active_station_count %}
             <h2 class="home-hero-title"><a href="{% url 'datasync:station_list' %}?reporting=fresh" class="home-hero-title-link"><span class="home-hero-dot {% if fresh_stations %}home-hero-dot--ok{% else %}home-hero-dot--idle{% endif %}"></span>{{ fresh_stations }} of {{ active_station_count }} syncing station{{ active_station_count|pluralize }} up to date</a></h2>
             {% if last_sync_time %}<div class="home-hero-status">
                 <span>synced {{ last_sync_time|timesince }} ago</span>

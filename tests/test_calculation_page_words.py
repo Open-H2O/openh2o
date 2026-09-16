@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""The calculation audit page names its fingerprint, its inches, and its
+"""The calculation audit page names its inches and its
 method by the same words the methodology editor uses (143-09, R-045, R-046,
 R-047).
 
@@ -25,7 +25,7 @@ User = get_user_model()
 
 def _user():
     return User.objects.create_user(
-        username="fingerprint-reader", email="fingerprint-reader@example.com",
+        username="r045-reader", email="r045-reader@example.com",
         password="x", is_active=True,
     )
 
@@ -76,11 +76,14 @@ def _run(parcel, period="2026-08", config_hash="abc123def456"):
 
 
 @pytest.mark.django_db
-class TestCalculationPageNamesItsFingerprint:
-    """R-045: the twelve-character code is named as a fingerprint, not left
-    to speak for itself."""
+class TestCalculationPageDoesNotPrintTheConfigHash:
+    """R-045, as Brent ruled it at the 143-09 checkpoint (2026-09-16): the
+    twelve-character config hash is a machine key no page lets a reader
+    compare, so it is not printed at all. The head names the methodology and
+    stops. (The plan's first answer, naming the code as a "fingerprint" with
+    a sentence about a hash, was struck: "Nobody knows what that means.")"""
 
-    def test_fingerprint_sentence_and_code_render(self):
+    def test_head_names_the_methodology_and_no_code(self):
         parcel = ParcelFactory(parcel_number="R045-APN-001")
         _run(parcel)
         client = _auth_client()
@@ -92,16 +95,12 @@ class TestCalculationPageNamesItsFingerprint:
         )
         assert resp.status_code == 200
         body = resp.content.decode()
-        # The head line reads "... fingerprint <span class="text-mono">abc123def456</span>":
-        # the code and the word that names it sit either side of the span tag.
-        assert "fingerprint" in body
-        assert '<span class="text-mono">abc123def456</span>' in body
-        assert (
-            "The fingerprint is the first 12 characters of a hash over the "
-            "methodology's enabled steps and their settings"
-        ) in body
+        assert "Methodology:" in body
+        assert "abc123def456" not in body
+        assert "fingerprint" not in body.lower()
+        assert "hash" not in body.lower()
 
-    def test_blank_config_hash_reads_predates_fingerprinting(self):
+    def test_blank_config_hash_prints_nothing_about_it(self):
         parcel = ParcelFactory(parcel_number="R045-APN-002")
         _run(parcel, period="2026-07", config_hash="")
         client = _auth_client()
@@ -112,8 +111,8 @@ class TestCalculationPageNamesItsFingerprint:
             )
         )
         body = resp.content.decode()
-        assert "This run predates fingerprinting" in body
-        assert "its methodology's settings were not recorded" in body
+        assert "predates" not in body
+        assert "fingerprint" not in body.lower()
 
 
 @pytest.mark.django_db
