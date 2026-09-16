@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% comment %}
-  **The four-decimal figures in this table are WEIGHTS, not volumes — ISS-142,
-  ruled by Brent 2026-09-06.** An apportionment weight carries real information
-  in its third and fourth places; rounded to two it stops distinguishing shares
-  that are genuinely different. ISS-142 asked about four-decimal *volumes* on
-  reader-facing pages, and these are not volumes.
+  **The figures in this table are WEIGHTS, read as a percent of the source's
+  water. ISS-142, ruled by Brent 2026-09-06, extended 2026-09-15 (R-090).**
+  An apportionment weight carries real information in its third and fourth
+  decimal places; a weight rounded to two would stop distinguishing shares
+  that are genuinely different. Reading the SAME weight as a percent to two
+  decimal places keeps exactly those places (0.1196 -> 11.96%), so nothing is
+  lost, and Gap is read the same way, in percentage points (0.0804 -> 8.04).
 {% endcomment %}
 
 {% block title %}Shared-supply check - Open Water Accounting Platform{% endblock %}
@@ -32,107 +34,156 @@
 {% block content %}
 <div class="page-stack">
 
-  <!-- Period selector + summary -->
-  <div class="card-raised">
-    <form method="get" class="row-between" style="gap: var(--space-md); flex-wrap: wrap;">
-      <div class="row-start" style="gap: var(--space-sm);">
-        <label for="period" class="text-secondary text-sm">Reporting period</label>
-        <select id="period" name="period" onchange="this.form.submit()" class="form-input" style="width: auto;">
-          {% for p in periods %}
-          <option value="{{ p.pk }}" {% if selected_period and p.pk == selected_period.pk %}selected{% endif %}>{{ p.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="text-tertiary text-sm">
-        {{ groups|length }} hand-set shared source{{ groups|length|pluralize }} ·
-        {% if flagged_count %}
-          <span class="text-deficit">{{ flagged_count }} flagged</span>
-        {% else %}
-          none flagged
-        {% endif %}
-        · gap threshold {{ divergence_points }} points
-      </div>
-    </form>
-    <p class="text-tertiary text-sm" style="margin: var(--space-sm) 0 0;">
-      A field is flagged when its entered share differs from its ET-implied share
-      by {{ divergence_points }} or more percentage points. This only checks how a
-      shared source's water is <em>split between its fields</em> — it is not about
-      whether each field's overall water balance closes, so a flagged field can
-      still have a perfectly balanced ledger (it just draws a different amount from
-      this source than its crop-water use alone would suggest).
-    </p>
-  </div>
+  {% comment %}
+    143-12 (R-055, R-089, R-090, R-091). Row one is the account-grid shape
+    (143-03/143-06/143-08): the check's controls and its one paragraph beside
+    the panel with one result and two peers, copied unchanged from
+    drinking/result_detail.html as Brent accepted it 2026-09-15. Row two is
+    the eight cards folded into ONE grouped table (rule 4, rule 7), the
+    derived column (Gap) bracketed off with a `.col-sep` the way
+    _zone_detail_pane.html brackets Used. The 13px "8 hand-set shared sources
+    · 3 flagged · gap threshold 15 points" line that used to sit over the
+    period selector is gone: its three facts are now the panel and the
+    paragraph below the form.
+  {% endcomment %}
+  <div class="page-grid-account">
 
-  {% for group in groups %}
-  <div class="card-raised">
-    <div class="row-between mb-md" style="padding-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border);">
-      <div class="row-start" style="gap: var(--space-md); align-items: baseline; flex-wrap: wrap;">
-        <h2 class="section-header-flush">
-          {{ group.kind }}: {{ group.source_name }}
-        </h2>
-        {% if group.source_kind == 'well' %}{% if 'wells' in enabled_modules %}
-        <a href="{% url 'wells:detail' group.source_id %}" class="text-link text-sm">Open well →</a>
-        {% endif %}{% elif 'surface' in enabled_modules %}
-        <a href="{% url 'surface:pod_detail' group.source_id %}" class="text-link text-sm">Open point of diversion →</a>
-        {% endif %}
+    <div class="card-raised page-grid-account-info">
+      <h2 class="section-header" style="margin-top: 0;">The check</h2>
+      <form method="get" class="field-grid-2">
+        <div class="field-group">
+          <label class="field-label" for="period">Reporting period</label>
+          <select id="period" name="period" onchange="this.form.submit()" class="form-select">
+            {% for p in periods %}
+            <option value="{{ p.pk }}" {% if selected_period and p.pk == selected_period.pk %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="show">Show</label>
+          <select id="show" name="show" onchange="this.form.submit()" class="form-select">
+            <option value="" {% if show != "flagged" %}selected{% endif %}>All sources</option>
+            <option value="flagged" {% if show == "flagged" %}selected{% endif %}>Flagged only</option>
+          </select>
+        </div>
+      </form>
+      <p class="text-secondary text-base" style="margin-top: var(--space-md);">
+        A field is flagged when its entered share is {{ divergence_points }} or more
+        percentage points from the share its estimated crop-water use (ET) implies.
+        The check reads how a shared source's water is split among its fields; it
+        does not judge whether a field's balance closes, and it never changes a
+        split.
+      </p>
+    </div>
+
+    <div class="card-raised page-grid-account-balance">
+      <div class="page-grid-account-head mb-md">
+        <h2 class="section-header-flush">Flagged this period</h2>
+        <div class="text-secondary text-base">{{ selected_period.name }} &middot; shared wells and diversion points with a hand-set split</div>
       </div>
-      {% if group.any_flag %}
-      <span class="badge badge-orange" title="At least one field's entered share is far from its ET-implied share">Entered split looks off</span>
-      {% elif group.has_et_signal %}
-      <span class="badge badge-green" title="Every field's entered share is close to its ET-implied share">Split looks reasonable</span>
+      <div class="budget-panel">
+        <div class="budget-panel-body">
+          <div class="budget-panel-row">
+            <div class="budget-seg budget-seg--result">
+              <div class="budget-seg-label">Sources flagged</div>
+              <div class="budget-seg-value{% if flagged_count %} text-deficit{% endif %}">{{ flagged_count }}</div>
+              <div class="budget-seg-caption">at least one field {{ divergence_points }} or more points from its ET-implied share</div>
+            </div>
+            <div class="budget-op"></div>
+            <div class="budget-seg">
+              <div class="budget-seg-label">Sources checked</div>
+              <div class="budget-seg-value">{{ source_count }}</div>
+              <div class="budget-seg-caption">hand-set shared sources in the period</div>
+            </div>
+            <div class="budget-op"></div>
+            <div class="budget-seg">
+              <div class="budget-seg-label">Fields to review</div>
+              <div class="budget-seg-value">{{ flagged_rows }}</div>
+              <div class="budget-seg-caption">flagged rows across the flagged sources</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-raised page-grid-account-full" style="padding: 0;">
+      {% if groups %}
+      <div class="ledger-card-head">
+        <div class="text-secondary text-base">{{ groups_shown|length }} of {{ source_count }} source{{ source_count|pluralize }}{% if show == "flagged" %}, the flagged ones{% endif %} &middot; {{ rows_shown }} field{{ rows_shown|pluralize }}.</div>
+        <div class="text-secondary text-base">Shares are each field's share of the source's water, in percent. Gap is the difference between the two shares, in percentage points.</div>
+      </div>
+      {% if groups_shown %}
+      <div class="table-scroll">
+      <table class="data-table text-sm data-table--grouped">
+        <thead>
+          <tr class="th-group">
+            <th rowspan="2">Use area</th>
+            <th colspan="2" class="th-group-label">Share of the source's water</th>
+            <th rowspan="2" class="th-right col-sep"><span class="th-stack">Gap points</span></th>
+            <th rowspan="2"></th>
+          </tr>
+          <tr>
+            <th class="th-right">Entered</th>
+            <th class="th-right">ET-implied</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in groups_shown %}
+          <tr class="row-group">
+            <td colspan="5">
+              <div class="row-between" style="flex-wrap: wrap; gap: var(--space-md);">
+                <div class="row-start" style="gap: var(--space-md); align-items: baseline; flex-wrap: wrap;">
+                  <span>{{ group.kind }}: {{ group.source_name }}</span>
+                  {% if group.source_kind == 'well' %}{% if 'wells' in enabled_modules %}
+                  <a href="{% url 'wells:detail' group.source_id %}" class="text-link text-sm">Open well →</a>
+                  {% endif %}{% elif 'surface' in enabled_modules %}
+                  <a href="{% url 'surface:pod_detail' group.source_id %}" class="text-link text-sm">Open point of diversion →</a>
+                  {% endif %}
+                </div>
+                {% if group.any_flag %}
+                <span class="badge badge-orange" title="At least one field's entered share is far from its ET-implied share">Entered split looks off</span>
+                {% elif group.has_et_signal %}
+                <span class="badge badge-green" title="Every field's entered share is close to its ET-implied share">Split looks reasonable</span>
+                {% else %}
+                <span class="badge badge-grey" title="No estimated ET demand yet for these fields">No ET signal yet</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% for row in group.rows %}
+          <tr{% if row.flag %} class="row-flagged"{% endif %}>
+            <td>
+              <a href="{% url 'parcels:detail' row.parcel_id %}" class="data-table-link">{{ row.parcel_number }}</a>
+            </td>
+            <td class="td-num">{{ row.your_pct|floatformat:2 }}%</td>
+            <td class="td-num">
+              {% if row.et_pct is not None %}{{ row.et_pct|floatformat:2 }}%{% else %}<span class="value-empty">No ET estimate</span>{% endif %}
+            </td>
+            <td class="td-num col-sep">
+              {% if row.gap_points is not None %}{{ row.gap_points|floatformat:2 }}{% else %}<span class="value-empty">No ET estimate</span>{% endif %}
+            </td>
+            <td class="th-right">
+              {% if row.flag %}<span class="badge badge-orange" title="This field's entered share is {{ divergence_points }}+ points from its ET-implied share">review split</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
       {% else %}
-      <span class="badge badge-grey" title="No estimated ET demand yet for these fields">No ET signal yet</span>
+      <p class="text-tertiary text-sm" style="padding: 0 var(--space-lg) var(--space-lg);">No source is flagged in {{ selected_period.name }}.</p>
+      {% endif %}
+      {% else %}
+      <p class="text-tertiary text-base m-0" style="padding: var(--space-lg);">
+        No hand-set shared sources. Every shared well and point of diversion in this
+        period uses an untouched (even / demand-driven) split, so there is nothing to
+        reconcile.
+      </p>
       {% endif %}
     </div>
 
-    {% if not group.has_et_signal %}
-    <p class="text-tertiary text-sm" style="margin: 0 0 var(--space-md);">
-      No estimated ET demand for these use areas in this period, so there is no
-      ET-implied split to compare against yet (it will appear once the engine runs
-      for them). The entered split is shown for reference.
-    </p>
-    {% endif %}
-
-    <table class="data-table text-sm">
-      <thead>
-        <tr>
-          <th>Use area</th>
-          <th class="th-right">Your share</th>
-          <th class="th-right">ET-implied share</th>
-          <th class="th-right">Gap</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in group.rows %}
-        <tr{% if row.flag %} class="row-flagged"{% endif %}>
-          <td>
-            <a href="{% url 'parcels:detail' row.parcel_id %}" class="data-table-link">{{ row.parcel_number }}</a>
-          </td>
-          <td class="td-num">{{ row.your_weight|floatformat:4 }}</td>
-          <td class="td-num">
-            {% if row.et_weight is not None %}{{ row.et_weight|floatformat:4 }}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
-          </td>
-          <td class="td-num">
-            {% if row.divergence is not None %}{{ row.divergence|floatformat:4 }}{% else %}<span class="value-empty">Not recorded</span>{% endif %}
-          </td>
-          <td class="th-right">
-            {% if row.flag %}<span class="badge badge-orange" title="This field's entered share is {{ divergence_points }}+ points from its ET-implied share">review split</span>{% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
   </div>
-  {% empty %}
-  <div class="card-raised">
-    <p class="text-tertiary text-base m-0">
-      No hand-set shared sources. Every shared well and point of diversion in this
-      period uses an untouched (even / demand-driven) split, so there is nothing to
-      reconcile.
-    </p>
-  </div>
-  {% endfor %}
 
 </div>
 {% endblock %}

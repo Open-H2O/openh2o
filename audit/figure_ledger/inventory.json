@@ -1280,33 +1280,33 @@
     "app": "reporting",
     "kind": "figure",
     "template": "templates/reporting/shared_supply_check.html",
-    "line": 112,
-    "column": 49,
-    "expression": "{{ row.your_weight|floatformat:4 }}",
+    "line": 158,
+    "column": 48,
+    "expression": "{{ row.your_pct|floatformat:2 }}",
     "enclosing_loop": "row in group.rows",
-    "nearest_label": "{{ row.your_weight|"
+    "nearest_label": "{{ row.your_pct|"
   },
   {
     "id": "FIG-reporting-004",
     "app": "reporting",
     "kind": "figure",
     "template": "templates/reporting/shared_supply_check.html",
-    "line": 114,
-    "column": 64,
-    "expression": "{{ row.et_weight|floatformat:4 }}",
+    "line": 160,
+    "column": 60,
+    "expression": "{{ row.et_pct|floatformat:2 }}",
     "enclosing_loop": "row in group.rows",
-    "nearest_label": "{{ row.et_weight|"
+    "nearest_label": "{{ row.et_pct|"
   },
   {
     "id": "FIG-reporting-005",
     "app": "reporting",
     "kind": "figure",
     "template": "templates/reporting/shared_supply_check.html",
-    "line": 117,
-    "column": 66,
-    "expression": "{{ row.divergence|floatformat:4 }}",
+    "line": 163,
+    "column": 68,
+    "expression": "{{ row.gap_points|floatformat:2 }}",
     "enclosing_loop": "row in group.rows",
-    "nearest_label": "{{ row.divergence|"
+    "nearest_label": "{{ row.gap_points|"
   },
   {
     "id": "FIG-setup-001",
