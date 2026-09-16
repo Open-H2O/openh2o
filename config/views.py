@@ -22,16 +22,6 @@ from core.modules import is_enabled
 from core.templatetags.prose import oxford_join
 
 
-def _greeting(now):
-    """Time-of-day greeting in the deployment's local timezone."""
-    hour = timezone.localtime(now).hour
-    if hour < 12:
-        return "Good morning"
-    if hour < 17:
-        return "Good afternoon"
-    return "Good evening"
-
-
 def index(request):
     """Signed-in users get the task-first home; visitors get the public landing.
 
@@ -59,6 +49,20 @@ def index(request):
         context["well_count"] = Well.objects.count()
     if is_enabled("datasync"):
         context["station_count"] = MonitoredStation.objects.count()
+        # 143-09 (R-137, R-138): computed here, before the anonymous return,
+        # so the signed-in hero and the anonymous stations card read one
+        # pair of numbers rather than two counts that could drift apart.
+        now = timezone.now()
+        active = list(
+            MonitoredStation.objects.filter(is_active=True).select_related("data_source")
+        )
+        context["active_station_count"] = len(active)
+        context["fresh_stations"] = sum(
+            1
+            for s in active
+            if freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
+            == "fresh"
+        )
     if is_enabled("surface"):
         # Local import: `surface` is an optional module (Phase 87), so this must
         # not run at module scope — this file was the first casualty of a
@@ -81,39 +85,19 @@ def index(request):
         return render(request, "index.html", context)
 
     # Status-hero data — every value is real, never decorative.
-    now = timezone.now()
     site_config = SiteConfig.objects.first()
-    context.update(
-        {
-            "greeting": _greeting(now),
-            "agency_name": site_config.agency_name if site_config else "Your Agency",
-        }
-    )
-    # The hero's whole status line — "N of M stations reporting · synced X ago" —
-    # is datasync data. With the module off it would read "0 of 0 stations
-    # reporting", which is a monitoring claim about a deployment that does no
-    # monitoring. All three keys are built inside the guard, and home.html drops
-    # the line when they are absent.
+    context["agency_name"] = site_config.agency_name if site_config else "Your Agency"
+    # 143-09 (R-137): the greeting ("Good morning") and the `_greeting`
+    # helper that built it are both removed; the greeting named a time of
+    # day, not a fact about the district, and the hero's largest words now
+    # lead with the station figure instead (built above, before the
+    # anonymous return). Only `last_sync_time` is still signed-in-only: the
+    # anonymous page has no "synced X ago" line to fill.
     if is_enabled("datasync"):
-        active = list(
-            MonitoredStation.objects.filter(is_active=True).select_related("data_source")
-        )
-        fresh_stations = sum(
-            1
-            for s in active
-            if freshness.classify_freshness(s.data_source.code, s.last_data_at, now)
-            == "fresh"
-        )
         last_sync = (
             DataSyncLog.objects.filter(status__in=["success", "partial"]).first()
         )
-        context.update(
-            {
-                "active_station_count": len(active),
-                "fresh_stations": fresh_stations,
-                "last_sync_time": last_sync.started_at if last_sync else None,
-            }
-        )
+        context["last_sync_time"] = last_sync.started_at if last_sync else None
     return render(request, "home.html", context)
 
 

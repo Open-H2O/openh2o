@@ -9,23 +9,34 @@
 <div class="home">
 
     {% comment %}
-       Status hero — orients the user (who/where) plus live data health.
+       Status hero, orients the user (who/where) plus live data health.
        Deep Water overhaul (2026-07-05): the decorative contour texture is
-       retired (Brent's call on the approved mockups) — the panel's own depth
+       retired (Brent's call on the approved mockups); the panel's own depth
        and the ambient page light carry the hero now.
+
+       143-09 (R-137, R-138, DESIGN.md rule 8): the largest words on the page
+       used to name a time of day ("Good morning"), which is a fact about the
+       clock, not about the district. The lead panel names the thing and
+       leads with its result, so when datasync is on the title becomes the
+       figure this page exists to give, in the station list's own words
+       (rule 6: "syncing" for is_active, "up to date" for fresh), as a link to
+       the station list filtered to the ones counted as up to date; the
+       agency name moves up to the eyebrow, since who/where is the smaller
+       fact once the figure has somewhere to lead. With datasync off there is no figure to
+       lead with, so the title stays the agency name and the eyebrow reads
+       "Home" instead of naming the agency twice.
     {% endcomment %}
     <section class="home-hero">
         <div class="home-hero-inner">
-            <div class="home-hero-greeting">{{ greeting }}</div>
-            <h2 class="home-hero-title">{{ agency_name }}</h2>
-            {% if 'datasync' in enabled_modules %}<div class="home-hero-status">
-                <span class="home-hero-dot {% if fresh_stations %}home-hero-dot--ok{% else %}home-hero-dot--idle{% endif %}"></span>
-                <span>{{ fresh_stations }} of {{ active_station_count }} station{{ active_station_count|pluralize }} reporting</span>
-                {% if last_sync_time %}
-                <span class="home-status-sep">·</span>
+            <div class="home-hero-greeting">{% if 'datasync' in enabled_modules %}{{ agency_name }}{% else %}Home{% endif %}</div>
+            {% if 'datasync' in enabled_modules %}
+            <h2 class="home-hero-title"><a href="{% url 'datasync:station_list' %}?reporting=fresh" class="home-hero-title-link"><span class="home-hero-dot {% if fresh_stations %}home-hero-dot--ok{% else %}home-hero-dot--idle{% endif %}"></span>{{ fresh_stations }} of {{ active_station_count }} syncing station{{ active_station_count|pluralize }} up to date</a></h2>
+            {% if last_sync_time %}<div class="home-hero-status">
                 <span>synced {{ last_sync_time|timesince }} ago</span>
-                {% endif %}
             </div>{% endif %}
+            {% else %}
+            <h2 class="home-hero-title">{{ agency_name }}</h2>
+            {% endif %}
         </div>
     </section>
 

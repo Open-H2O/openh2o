@@ -540,6 +540,16 @@ html { color-scheme: dark; }
     gap: var(--space-lg); /* Phase F: more air between cards (loosen furniture) */
 }
 
+/* 143-09 (R-140): the anonymous front page's single counts grid. auto-FIT
+   (not auto-fill) so a short last row stretches its cards rather than
+   leaving an empty track beside them; 380px is chosen against this grid's
+   measured 1,439px content width at a 1,730 viewport, where three columns
+   fit and a fourth does not, so all six count cards resolve to two rows of
+   three instead of four across the top and two stranded below. */
+.dashboard-grid--counts {
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+}
+
 .dashboard-card {
     background-color: var(--color-card);
     border: 1px solid var(--color-border);
@@ -653,6 +663,23 @@ html { color-scheme: dark; }
     line-height: 1.12;
     color: var(--color-text-primary);
     margin: 0 0 var(--space-sm);
+}
+
+/* 143-09 (R-137): the title itself is the link when the hero leads with the
+   station figure. inline-flex + gap lays the existing .home-hero-dot beside
+   the text at the title's own size (the dot's fixed 8px box is otherwise
+   ignored by a plain inline element); colour is inherited so the link reads
+   as the title, not as a stray blue anchor, and underlines only on hover. */
+.home-hero-title-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: inherit;
+    text-decoration: none;
+}
+
+.home-hero-title-link:hover {
+    text-decoration: underline;
 }
 
 .home-hero-status {

@@ -5,23 +5,35 @@
 
 {% block page_title %}Home{% endblock %}
 
-{% block content %}
-{% comment %}Phase 89-02: the second sentence is a promise about the page it
-introduces. Both entity sections above are gated on their modules (89-01), so a
-deployment that runs none of the six leaves System Status as the only card —
-which carries no count and links nowhere. Promising counts and management pages
-over a page that has neither is the ISS-082 class in its quietest form: no
-forbidden noun appears, so no word list can see it. This is the PUBLIC landing
-page, which is the half of `/` the harness could not read at all before
-88-01.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">Overview of your water data.{% if has_entity_cards %} Each card counts one kind of record and links to where you manage it.{% endif %}</p>
+{% comment %}143-09 (R-140, shape 2): the wide "System status" card GOES: it
+carried no count and linked nowhere, and its dot touched "System running"
+because it leaned on `gap-2`/`flex`/`items-center`, utilities this stylesheet
+never compiled (ISS-166). The status moves to the head's meta slot, the shape
+every record page already uses.{% endcomment %}{% block page_meta %}<span class="badge badge-dot badge-green" title="The web process is answering requests.">System running</span>{% endblock %}
 
-{% comment %}Phase 89: the section heading is gated on its whole membership, not
-just on one card. Guarding only the Use Areas link would leave "Water Data"
-standing over an empty grid in a deployment that runs none of these four. The
-guard shares a line with the markup because a tag alone on a line still emits
-that line's newline, and the milestone's deliverable is a byte-identical full
-render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules %}<h2 class="content-section-label">Water data</h2>
-<div class="dashboard-grid">
+{% block content %}
+{% comment %}Phase 89-02, updated 143-09: the second sentence is a promise
+about the page it introduces. The entity grid below is gated on its whole
+membership (89-01), so a deployment that runs none of the six leaves this
+description as the only content on the page. Promising counts and management
+pages over a page that has neither is the ISS-082 class in its quietest form:
+no forbidden noun appears, so no word list can see it. This is the PUBLIC
+landing page, which is the half of `/` the harness could not read at all
+before 88-01.{% endcomment %}{% any_module_enabled "parcels" "wells" "surface" "recharge" "accounting" "datasync" as has_entity_cards %}<p class="page-description">Overview of your water data.{% if has_entity_cards %} Each card counts one kind of record and links to where you manage it.{% endif %}</p>
+
+{% comment %}143-09 (R-138, R-140): the two entity sections used to split
+"Water data" from "Accounting & monitoring" over two separate grids, which
+left the first grid's row five auto-fill tracks wide with the fifth empty
+(four cards) and the second grid standing alone under its own head for two
+more. One head, one grid, same gates and same order as the two grids they
+replace: `.dashboard-grid--counts` floors each card at 380px, measured
+against this grid's 1,439px content width at a 1,730 viewport (three columns
+fit at that floor, a fourth does not), so all six cards this deployment
+allows resolve to two rows of three rather than four across the top and two
+stranded below. The guard shares a line with the markup because a tag alone
+on a line still emits that line's newline, and the milestone's deliverable is
+a byte-identical full render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_modules or 'surface' in enabled_modules or 'recharge' in enabled_modules or 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label">Your data</h2>
+<div class="dashboard-grid dashboard-grid--counts">
     {% if 'parcels' in enabled_modules %}<a href="{% url 'parcels:list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Use areas</div>
         <div class="dashboard-card-value">{{ parcel_count }}</div>
@@ -46,45 +58,24 @@ render.{% endcomment %}{% if 'parcels' in enabled_modules or 'wells' in enabled_
         <div class="dashboard-card-sublabel">View recharge sites</div>
     </a>
     {% endif %}
-</div>{% endif %}
-
-{% comment %}Phase 89: same treatment. Both cards in this section belong to
-modules a deployment can switch off, so the heading goes with them.{% endcomment %}{% if 'accounting' in enabled_modules or 'datasync' in enabled_modules %}<h2 class="content-section-label" style="margin-top: var(--space-xl);">Accounting &amp; monitoring</h2>
-<div class="dashboard-grid">
     {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:accounts_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Water accounts</div>
         <div class="dashboard-card-value">{{ water_account_count }}</div>
         <div class="dashboard-card-sublabel">View accounts</div>
     </a>{% endif %}
-    {% if 'datasync' in enabled_modules %}<a href="{% url 'datasync:station_list' %}" class="dashboard-card">
+    {% comment %}R-138: 335 total stations and 42 syncing are now said in one
+    place with their difference named, in the station list's own word
+    ("syncing"). The signed-in hero counts the syncing ones that are also
+    up to date; this card counts every station on record.{% endcomment %}{% if 'datasync' in enabled_modules %}<a href="{% url 'datasync:station_list' %}" class="dashboard-card">
         <div class="dashboard-card-label">Monitoring stations</div>
         <div class="dashboard-card-value">{{ station_count }}</div>
-        <div class="dashboard-card-sublabel">View stations</div>
+        <div class="dashboard-card-sublabel">{{ active_station_count }} syncing · view stations</div>
     </a>{% endif %}
-    {% if 'accounting' in enabled_modules and request.user.is_staff %}
-    <a href="{% url 'accounting:methodology_settings' %}" class="dashboard-card">
-        <div class="dashboard-card-label">Methodology settings</div>
-        <div class="dashboard-card-value">&#9881;</div>
-        <div class="dashboard-card-sublabel">Configure how usage is derived from your data sources</div>
-    </a>
-    {% endif %}
 </div>{% endif %}
-
-<h2 class="content-section-label" style="margin-top: var(--space-xl);">System</h2>
-<div class="dashboard-grid">
-    <div class="dashboard-card dashboard-card-wide">
-        <div class="dashboard-card-label">System status</div>
-        <div class="flex items-center gap-2 mt-sm">
-            <span class="status-dot status-dot--ok"></span>
-            <span class="text-sm" style="color: var(--color-text-secondary);">
-                System running
-            </span>
-        </div>
-        {% if user.is_authenticated %}
-        <p class="text-sm mt-sm" style="color: var(--color-text-tertiary);">
-            Signed in as <strong style="color: var(--color-text-primary);">{{ user.email }}</strong>
-        </p>
-        {% endif %}
-    </div>
-</div>
+{% comment %}143-09 (R-140): "Methodology settings" GOES from this template.
+It was gated on `request.user.is_staff`, and `config.views.index` serves
+this template ONLY to anonymous visitors (a signed-in user gets home.html),
+so the card was dead markup nobody could ever see rendered. The "Signed in
+as" branch a few lines below the old System status card was dead for the
+same reason and went with it.{% endcomment %}
 {% endblock %}
