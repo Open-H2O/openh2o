@@ -3509,6 +3509,18 @@ div[id$="-map"] {
     margin-top: var(--space-md);
 }
 
+/* -- Disclosure mark: the chevron on a <summary> that shows it opens (the
+   compliance strip's own convention, reused by the parcel-link disclosure,
+   R-129) ------------------------------------------------------------------ */
+
+.disclosure-mark {
+    transition: transform 120ms;
+}
+
+details[open] > summary .disclosure-mark {
+    transform: rotate(90deg);
+}
+
 /* -- Padding utilities --------------------------------------------------- */
 
 .pt-sm { padding-top: var(--space-sm); }

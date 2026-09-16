@@ -12,6 +12,7 @@ Setup wizard views.
 import json
 import logging
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
@@ -124,12 +125,22 @@ def setup_confirm(request):
     """Step 2: Review boundary on map and confirm."""
     boundary_id = request.session.get(SESSION_KEY_BOUNDARY)
     if not boundary_id:
+        messages.info(
+            request,
+            "Setup starts here. Choose or upload a boundary, then confirm it; "
+            "this session had none.",
+        )
         return redirect("setup:wizard")
 
     try:
         boundary = Boundary.objects.get(pk=boundary_id)
     except Boundary.DoesNotExist:
         del request.session[SESSION_KEY_BOUNDARY]
+        messages.info(
+            request,
+            "Setup starts here. Choose or upload a boundary, then confirm it; "
+            "the boundary this session had chosen no longer exists.",
+        )
         return redirect("setup:wizard")
 
     if request.method == "POST":
@@ -149,11 +160,21 @@ def setup_run(request):
     """Step 3: Progress page — HTMX polling drives step-by-step execution."""
     boundary_id = request.session.get(SESSION_KEY_BOUNDARY)
     if not boundary_id:
+        messages.info(
+            request,
+            "Setup starts here. Choose or upload a boundary, then confirm it; "
+            "this session had none.",
+        )
         return redirect("setup:wizard")
 
     try:
         boundary = Boundary.objects.get(pk=boundary_id)
     except Boundary.DoesNotExist:
+        messages.info(
+            request,
+            "Setup starts here. Choose or upload a boundary, then confirm it; "
+            "the boundary this session had chosen no longer exists.",
+        )
         return redirect("setup:wizard")
 
     context = {

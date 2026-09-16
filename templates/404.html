@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% comment %}
+  Django's own 404 handler renders this in place of the bare "Not Found" page
+  when DEBUG=False (R-060). It receives `request_path` (the path that missed
+  every URL pattern) and `exception` (the Resolver404, which can carry a
+  resolver's internal detail); only `request_path` is a reader-facing fact —
+  copy rule 9 keeps `exception` off the page.
+{% endcomment %}
+
+{% block title %}Page not found - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Page not found{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'index' %}">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Page not found</span>
+  </nav>
+  <p class="page-description">There is no page at this address.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+  <div class="card-raised empty-state">
+    <p class="empty-state-text">Nothing is served at <code class="text-mono">{{ request_path }}</code>.</p>
+    <p class="text-secondary text-base">The page may have been removed, or the address mistyped.</p>
+    <a href="{% url 'index' %}" class="btn-primary">Back to Home</a>
+  </div>
+</div>
+{% endblock %}

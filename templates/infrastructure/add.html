@@ -279,9 +279,12 @@
       {% endcomment %}{% if 'parcels' in enabled_modules %}<!-- Parcel linkage -->
       <div class="card-raised" style="grid-column: 1 / -1;">
         <details class="parcel-link-section">
-          <summary class="card-header-ruled" style="cursor: pointer; list-style: none;">
-            <span>Link to parcel</span>
-            <span class="text-sm text-tertiary" id="parcel-status">(optional)</span>
+          <summary class="card-header-ruled" style="cursor: pointer; list-style: none; display: flex; align-items: center; gap: var(--space-sm);">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-tertiary disclosure-mark">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            <span>Link to a use area</span>
+            <span class="text-sm text-tertiary" id="parcel-status">Optional. Open to search for a use area, pick one on the map, or draw one.</span>
           </summary>
           <div class="form-stack mt-md">
             <div class="form-group">
@@ -739,7 +742,7 @@
     var feat = e.features[0];
     var props = feat.properties;
     document.getElementById('parcel_id').value = props.pk;
-    document.getElementById('parcel-status').textContent = '(' + props.parcel_number + ')';
+    document.getElementById('parcel-status').textContent = 'Linked to ' + props.parcel_number;
     var info = '<div class="inset-card mt-sm" data-parcel-id="' + props.pk + '">';
     info += '<span class="text-sm">Linked: <strong>' + props.parcel_number + '</strong></span>';
     if (props.owner_name) info += ' <span class="text-xs text-tertiary">(' + props.owner_name + ')</span>';
@@ -807,7 +810,7 @@
         var el = document.getElementById('parcel-selected').querySelector('[data-parcel-id]');
         if (el) {
           document.getElementById('parcel_id').value = el.dataset.parcelId;
-          document.getElementById('parcel-status').textContent = '(' + parcelNumber + ')';
+          document.getElementById('parcel-status').textContent = 'Linked to ' + parcelNumber;
         }
         document.getElementById('parcel-draw-form').style.display = 'none';
         document.getElementById('new-parcel-number').value = '';

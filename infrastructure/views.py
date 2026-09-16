@@ -339,6 +339,14 @@ def infrastructure_import(request):
             "infra_label": ADD_TYPE_LABEL[infra_type],
             "back_url": reverse(back_name),
             "back_label": back_label,
+            # The OTHER types this deployment can serve, built exactly as
+            # `_add_context` builds `other_add_types` (R-130) — so the import
+            # page and the add page read as one pair, not two designs.
+            "other_import_types": [
+                {"value": t, "label": ADD_TYPE_LONG_LABEL[t]}
+                for t in supported_add_types()
+                if t != infra_type
+            ],
         },
     )
 

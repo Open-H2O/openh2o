@@ -63,9 +63,9 @@
         <div class="stat-card-unit">square miles</div>
       </div>
       <div class="inset-card">
-        <div class="stat-card-label">Existing data</div>
-        <div class="stat-card-value-sm">{{ existing_basins|add:existing_flowlines }}</div>
-        <div class="stat-card-unit">basins + flowlines found</div>
+        <div class="stat-card-label">Already inside this boundary</div>
+        <div class="stat-card-value-sm">{{ existing_basins }} basin{{ existing_basins|pluralize }} &middot; {{ existing_flowlines }} flowline{{ existing_flowlines|pluralize }}</div>
+        <div class="stat-card-unit">left alone by auto-population</div>
       </div>
       {% if boundary.huc %}
       <div class="inset-card">

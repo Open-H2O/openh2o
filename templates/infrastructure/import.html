@@ -12,6 +12,9 @@
     <span class="breadcrumb-current">Bulk Import</span>
   </nav>
   <p class="page-description">Upload a file of many records, map your columns, preview, then create them all at once.</p>
+  {% if other_import_types %}
+  <p class="text-secondary text-sm" style="margin: var(--space-xs) 0 0 0;">Importing something else? {% for t in other_import_types %}<a href="?type={{ t.value }}">{{ t.label|capfirst }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+  {% endif %}
 </div>
 {% endblock %}
 

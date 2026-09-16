@@ -73,9 +73,9 @@
           </td>
           <td class="th-right">
             {% if u == request.user %}
-              <span class="text-tertiary text-sm">You</span>
+              <span class="value-empty">Your account. Another administrator changes your role or status.</span>
             {% elif u.is_staff %}
-              <span class="text-tertiary text-sm">System admin</span>
+              <span class="value-empty">Host administrator; managed outside this page.</span>
             {% else %}
             <div class="row-start" style="gap: var(--space-xs); justify-content: flex-end; flex-wrap: wrap;">
               <form method="post" action="{% url 'core:user_toggle_admin' u.pk %}" style="display:inline;">

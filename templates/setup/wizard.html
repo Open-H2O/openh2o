@@ -44,6 +44,8 @@
     </div>
   </div>
 
+  {% include "partials/_messages.html" %}
+
   {% if errors %}
   <div class="alert-error">
     {% for error in errors %}
