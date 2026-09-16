@@ -3195,6 +3195,18 @@ div[id$="-map"] {
     color: var(--color-deficit);
 }
 
+.text-error {
+    /* 143-09 (Task 4): the panel's "Action required" peer needs a plain red
+       figure the way `.text-deficit` gives the amber peer plain burnt-orange
+       — no utility of that shape existed for alarm red. `.badge-red` carries
+       the right color but also a background tint meant for a pill badge;
+       applied to a `.budget-seg-value` it painted a red box behind the digit
+       that no other segment on any budget panel carries (checked against
+       `.text-tertiary` / `.text-gold` on this same class elsewhere). Same
+       red the badge uses, color only. */
+    color: oklch(0.65 0.20 25);
+}
+
 .text-neutral {
     color: var(--color-text-secondary);
 }

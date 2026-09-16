@@ -11,30 +11,20 @@
     <span class="breadcrumb-current">Site Health</span>
   </nav>
   {% comment %} The category count is the registry total from the view, never a literal —
-     this sentence stayed frozen at eight long after there were thirteen (ISS-090). {% endcomment %}
-  <p class="page-description">Site health checks across {{ total }} categories. Green means healthy, yellow means attention needed, red means action required. Checks belonging to a module this deployment does not run are marked not applicable and left out of the score.</p>
+     this sentence stayed frozen at eight long after there were thirteen (ISS-090). The
+     third sentence that used to close this paragraph (which checks are left out of the
+     score, and why) now sits under the "This run" card's field grid instead, next to the
+     Not applicable field it explains (143-09). {% endcomment %}
+  <p class="page-description">Site health checks across {{ total }} categories. Green means healthy, yellow means attention needed, red means action required.</p>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="page-stack page-wide">
     {% comment %} The page's title is the page head's (Phase 143-02); the h1 that sat here
-       duplicated it once the head became visible. The score box keeps its row. {% endcomment %}
-    <div class="row-end">
-        {% if total > 0 %}
-        <div class="row-start" style="padding: var(--space-xs) var(--space-md); border-radius: var(--radius-md); background: var(--color-card); border: 1px solid var(--color-border);">
-            {% comment %} `unknown` is now reachable with rows present (every check skipped),
-               so it needs its own neutral dot — a red one would report a broken instance
-               where the honest answer is "nothing applicable to measure". {% endcomment %}
-            <span style="width: 10px; height: 10px; border-radius: 50%; background: {% if overall_status == 'healthy' %}var(--forest-400){% elif overall_status == 'degraded' %}var(--furnace-400){% elif overall_status == 'unknown' %}var(--color-text-tertiary){% else %}oklch(0.55 0.20 25){% endif %};"></span>
-            {% comment %} Denominator is `applicable`, not `total`: a skipped check leaves the
-               fraction instead of scoring as green, so dropping modules can no longer raise
-               the score (ISS-087). Both numbers show so a dropped check stays distinguishable
-               from one that never existed (ISS-090, Brent's decision 2026-07-22). {% endcomment %}
-            <span class="text-secondary text-base">{{ green_count }}/{{ applicable }} healthy · {{ applicable }} applicable of {{ total }}</span>
-        </div>
-        {% endif %}
-    </div>
+       duplicated it once the head became visible. 143-09 (R-055): the row-end chip that
+       used to sit here is gone; the "N/M healthy" sentence it carried is now the count
+       panel below, which leads with the healthy figure instead of hiding it in a chip. {% endcomment %}
 
     {% if total == 0 %}
     <div class="card-raised empty-state">
@@ -47,6 +37,75 @@
         </p>
     </div>
     {% elif show_detail %}
+    {% comment %}
+      143-09 (R-055, shape 1: the count-and-flag panel with two peers, AS BUILT on
+      shared_supply_check.html and accepted by Brent 2026-09-16 08:05 PDT). The
+      info card is "This run" (when, how many, what is left out, how to re-run)
+      beside the balance card's panel, which leads with the healthy count instead
+      of burying it in a chip.
+    {% endcomment %}
+    <div class="page-grid-account">
+
+      <div class="card-raised page-grid-account-info">
+        <h2 class="section-header" style="margin-top: 0;">This run</h2>
+        <div class="field-grid-2">
+          <div class="field-group">
+            <div class="field-label">Last run</div>
+            <div class="field-value">{{ last_checked|date:"M j, Y H:i" }}</div>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Checks</div>
+            <div class="field-value">{% if skipped %}{{ total }}: {{ applicable }} applicable, {{ skipped }} not applicable{% else %}{{ total }}, all applicable{% endif %}</div>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Not applicable</div>
+            <div class="field-value">
+              {% if skipped_category_names %}{{ skipped_category_names|join:", " }}{% else %}<span class="value-empty">None; every check has a module to measure</span>{% endif %}
+            </div>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Re-run</div>
+            <div class="field-value"><code class="text-mono">python manage.py run_health_checks</code></div>
+          </div>
+        </div>
+        <p class="text-secondary text-base" style="margin-top: var(--space-md);">A check belonging to a module this deployment does not run is marked not applicable and left out of the score.</p>
+      </div>
+
+      <div class="card-raised page-grid-account-balance">
+        <div class="page-grid-account-head mb-md">
+          <h2 class="section-header-flush">Health</h2>
+          <div class="text-secondary text-base">{{ applicable }} applicable check{{ applicable|pluralize }}, judged by their own rules</div>
+        </div>
+        <div class="budget-panel">
+          <div class="budget-panel-body">
+            <div class="budget-panel-row">
+              <div class="budget-seg budget-seg--result">
+                <div class="budget-seg-label">Healthy</div>
+                <div class="budget-seg-value">{{ green_count }}</div>
+                <div class="budget-seg-caption">of {{ applicable }} applicable check{{ applicable|pluralize }}</div>
+              </div>
+              <div class="budget-op"></div>
+              <div class="budget-seg">
+                <div class="budget-seg-label">Attention needed</div>
+                <div class="budget-seg-value{% if yellow_count %} text-deficit{% endif %}">{{ yellow_count }}</div>
+              </div>
+              <div class="budget-op"></div>
+              <div class="budget-seg">
+                {% comment %} No `.text-error` utility existed in app.css (checked 2026-09-16);
+                   the red badge's own color class (background + color) painted a tinted box
+                   behind the digit that no other budget-seg-value on the site carries, so
+                   this plan adds a color-only `.text-error` next to `.text-deficit` instead
+                   and uses that. {% endcomment %}
+                <div class="budget-seg-label">Action required</div>
+                <div class="budget-seg-value{% if red_count %} text-error{% endif %}">{{ red_count }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
     <div class="health-grid">
         {% for result in results %}
         <div class="card-raised">
@@ -67,6 +126,13 @@
             <p class="text-secondary text-sm" style="margin: 0 0 var(--space-sm) 0; line-height: 1.4;">
                 {{ result.message }}
             </p>
+            {% if result.status == 'yellow' or result.status == 'red' %}
+              {% if result.where %}
+              <a class="text-link" href="{{ result.where.href }}">Open {{ result.where.label }} →</a>
+              {% elif result.host_level %}
+              <p class="text-secondary text-sm m-0">Fixed on the host, not in the platform.</p>
+              {% endif %}
+            {% endif %}
             <p class="text-tertiary text-xs m-0">
                 Checked {{ result.checked_at|timesince }} ago
             </p>

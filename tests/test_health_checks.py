@@ -17,7 +17,9 @@ import pytest
 from django.test import override_settings
 from django.urls import reverse
 
+from core import modules as mod
 from tests.factories import ParcelLedgerFactory
+from tests.test_module_prose import compose_urlconf_under_the_full_module_set
 from health.checks import (
     check_database,
     check_disk,
@@ -617,13 +619,102 @@ class TestCategoryCountIsRegistryDerived:
 
     @pytest.mark.django_db
     def test_the_rendered_page_carries_no_frozen_count(self, client, operator):
-        """A fourteenth check must move the rendered number by itself."""
+        """A fourteenth check must move the rendered number by itself.
+
+        Retargeted 143-09 (Task 4): the row-end chip this test used to read
+        ("5 applicable of 13", "4/5 healthy") is gone, replaced by the
+        count-and-flag panel (shape 1). The same facts — the registry total,
+        the applicable/not-applicable split, and the healthy count against
+        its own denominator — now live in the "This run" card and the panel,
+        so this test follows them there instead of asserting stale text.
+        """
         _persist(["green"] * 4 + ["yellow"] + ["skipped"] * 8)
         html = client.get(reverse("health:dashboard")).content.decode()
         assert "across 13 categories" in html
         assert "8 categories" not in html
-        assert "5 applicable of 13" in html
-        assert "4/5 healthy" in html
+        assert "13: 5 applicable, 8 not applicable" in html
+        assert "of 5 applicable checks" in html
+        assert '<div class="budget-seg-value">4</div>' in html
+
+
+class TestWhereToLookLinksAreModuleGated:
+    """143-09 (R-055, R-056). A yellow or red row on a platform category gets
+    a link to its record page — built in ``health_dashboard``, never in the
+    template, and only when the owning module is on (ISS-089: the href must
+    not exist for a module a deployment can drop). A host-level category
+    (no record page in the platform) gets no link, ever; the card says the
+    fix is on the host instead.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _compose_full_urlconf(self):
+        # Same mechanism as tests/test_drinking_facilities.py: config/urls.py
+        # composes its module routes at import time, so the resolver has to
+        # be touched under the FULL module set before any test below narrows
+        # OPENH2O_MODULES — otherwise a reduced URLconf sticks for every
+        # later test in the process.
+        compose_urlconf_under_the_full_module_set()
+
+    @pytest.mark.django_db
+    def test_yellow_platform_row_links_to_its_page(self, client, operator):
+        _persist(
+            ["yellow" if c == "sync_freshness" else "green" for c in ALL_CATEGORIES]
+        )
+        html = client.get(reverse("health:dashboard")).content.decode()
+        assert reverse("datasync:monitoring_dashboard") in html
+        assert "Open the monitoring dashboard" in html
+
+    @pytest.mark.django_db
+    def test_red_platform_row_links_to_its_page(self, client, operator):
+        _persist(
+            ["red" if c == "orphans" else "green" for c in ALL_CATEGORIES]
+        )
+        html = client.get(reverse("health:dashboard")).content.decode()
+        assert reverse("parcels:list") in html
+        assert "Open the use areas" in html
+
+    @pytest.mark.django_db
+    def test_ledger_integrity_link_carries_its_query_string(self, client, operator):
+        _persist(
+            ["yellow" if c == "ledger_integrity" else "green" for c in ALL_CATEGORIES]
+        )
+        html = client.get(reverse("health:dashboard")).content.decode()
+        assert reverse("accounting:ledger_list") + "?source_type=calculated" in html
+
+    @pytest.mark.django_db
+    def test_green_rows_carry_no_link_and_no_host_message(self, client, operator):
+        _persist(["green"] * len(ALL_CATEGORIES))
+        html = client.get(reverse("health:dashboard")).content.decode()
+        assert "text-link" not in html
+        assert "Fixed on the host" not in html
+
+    @pytest.mark.django_db
+    def test_host_level_yellow_row_reads_fixed_on_the_host_not_a_link(
+        self, client, operator
+    ):
+        _persist(["yellow" if c == "ssl" else "green" for c in ALL_CATEGORIES])
+        html = client.get(reverse("health:dashboard")).content.decode()
+        assert "Fixed on the host, not in the platform." in html
+        assert "text-link" not in html
+
+    @pytest.mark.django_db
+    def test_module_off_drops_the_link_even_on_a_yellow_row(
+        self, client, operator, settings
+    ):
+        """ISS-089's actual regression shape: a row that is yellow (not
+        skipped) while its owning module is off must still render no
+        `{% url %}` into the page — building the href unconditionally would
+        raise NoReverseMatch the instant a deployment drops the module.
+        """
+        settings.OPENH2O_MODULES = [n for n in mod.ALL_MODULE_NAMES if n != "datasync"]
+        _persist(
+            ["yellow" if c == "sync_freshness" else "green" for c in ALL_CATEGORIES]
+        )
+        response = client.get(reverse("health:dashboard"))
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert "monitoring dashboard" not in html
+        assert "text-link" not in html
 
 
 class TestCliSummaryDenominator:
