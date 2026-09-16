@@ -963,7 +963,7 @@ one 32px result is "Sources flagged" with two peers ("Sources checked", "Fields 
 Share and Gap both print in percent / percentage points from the SAME weight (`your_pct` /
 `et_pct` / `gap_points`, added to `_compare_split`'s existing keys, quantized `Decimal("0.01")`
 `ROUND_HALF_UP`); one `table.data-table--grouped` replaces the eight cards, Gap bracketed off
-by `.th-group-label` "Share of the source's water" over "Entered"/"ET-implied" and a
+by `.th-group-label` "Share of the source water" (Brent's wording at the checkpoint, 2026-09-16) over "Entered"/"ET-implied" and a
 `.col-sep` th-stack "Gap points"; `?show=flagged` narrows the table to the flagged groups
 while the panel keeps counting the whole period. **Deviation, measured, not built to the
 plan's guess:** Task 3's card sentence ("a shared well or canal") failed `make test-droppable`

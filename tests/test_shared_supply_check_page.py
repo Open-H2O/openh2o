@@ -134,7 +134,7 @@ class TestThePanelAndTable:
         assert body.count("75.00%") == 1
         assert body.count("35.00") == 2  # both rows' Gap
         assert (
-            '<th colspan="2" class="th-group-label">Share of the source\'s water</th>'
+            '<th colspan="2" class="th-group-label">Share of the source water</th>'
             in body
         )
         assert '<span class="th-stack">Gap points</span>' in body

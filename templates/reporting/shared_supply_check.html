@@ -110,7 +110,7 @@
       {% if groups %}
       <div class="ledger-card-head">
         <div class="text-secondary text-base">{{ groups_shown|length }} of {{ source_count }} source{{ source_count|pluralize }}{% if show == "flagged" %}, the flagged ones{% endif %} &middot; {{ rows_shown }} field{{ rows_shown|pluralize }}.</div>
-        <div class="text-secondary text-base">Shares are each field's share of the source's water, in percent. Gap is the difference between the two shares, in percentage points.</div>
+        <div class="text-secondary text-base">Shares are each field's share of the source water, in percent. Gap is the difference between the two shares, in percentage points.</div>
       </div>
       {% if groups_shown %}
       <div class="table-scroll">
@@ -118,7 +118,7 @@
         <thead>
           <tr class="th-group">
             <th rowspan="2" style="width: 50%;">Use area</th>
-            <th colspan="2" class="th-group-label">Share of the source's water</th>
+            <th colspan="2" class="th-group-label">Share of the source water</th>
             <th rowspan="2" class="th-right col-sep"><span class="th-stack">Gap points</span></th>
             <th rowspan="2"></th>
           </tr>
