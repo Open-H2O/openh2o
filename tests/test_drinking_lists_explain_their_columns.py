@@ -31,7 +31,6 @@ from drinking.models import SampleResult, SamplingPoint
 from tests.factories import (
     AnalyteFactory,
     SampleEventFactory,
-    SampleResultFactory,
     SamplingPointFactory,
     SystemFacilityFactory,
     WaterSystemFactory,
