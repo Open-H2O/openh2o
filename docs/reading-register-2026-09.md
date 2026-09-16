@@ -738,9 +738,13 @@ pages), `e96f442` (the points/results tables re-seated in a zero-padding card), 
 (the overview's records card and the builder as one form).
 
 **R-062.** Before, the three tiles sat under "Population and service connections", a
-heading naming something else. After, an `h2` reading "Records for this system" heads a
-card beside the identity card; the tiles are byte-identical to before this task
-(`tests/test_drinking_module_shows_what_to_do.py` untouched, green).
+heading naming something else. After, an `h2` reading "Records for this system" heads the
+tiles at the foot of the identity card itself; the tiles are byte-identical to before this
+task (`tests/test_drinking_module_shows_what_to_do.py` untouched, green). Task 4 first
+built them as a second card beside the identity card (the account-grid row); Brent at the
+checkpoint, 2026-09-15 17:18 PDT: "three boxes inside of a giant box with empty space is a
+little awkward. Seems like these three boxes would be better in the box to the left that
+holds the City of Merced data." Folded in on `52f623b`.
 
 **R-063 / ISS-135.** Before, of the 50 visible facility rows 22 read "Not recorded" in
 Water Type and 32 in Well (Task 1 measured 22/32, not the plan's rough guess of 27 for
@@ -830,6 +834,21 @@ and not reopened. [2026-09-15, at plan time, "I don't know what this means"] on 
 lab-result panel's two peers: it ships with the reporting level and the previous finding as
 built above; he rules on it at the checkpoint, where he can see it (human-verify item 3), not
 in a menu.
+
+**Checkpoint, 2026-09-15 17:18 PDT, staging `57fce26`, then `52f623b`; approved 17:26 PDT.**
+Results log "Looks fine"; lab result "Looks fine, but there's a lot of blank space. I guess
+that's okay because it's the result you're looking for"; builder "Works". Two more rulings
+built on `52f623b`: R-062 as above, and the map coverage sentence on the facilities and
+sampling-points lists ("so distribution-system and treatment-plant facilities carry none and
+cannot be placed on a map") named as awkward AI language and rewritten: "The state's
+Groundwater Ambient Monitoring and Assessment Program (GAMA) publishes coordinates for
+groundwater sources only, so the treatment plants and the distribution system are not on
+it." Two questions answered by measurement, not built: the panel's colours do not change
+above the reporting level (a detect, result 10012 at 0.71 against 0.5 UG/L, renders in the
+same colour; only the caption changes), and the record holds no California MCL:
+`RegulatoryLimit` has 32 rows, all federal, covering 32 of 159 sampled analytes and 2,055 of
+22,367 results; his words ("any result in exceedance of the MCL would be red") are recorded
+against ISS-140 as the reopen question.
 
 **R-055's other two pages remain.** The shared-supply check and the monitoring-and-reporting
 share of R-055 go to 143-12; Site Health's own share goes to 143-09. Neither is touched here.
