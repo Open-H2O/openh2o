@@ -47,6 +47,7 @@ from accounting.models import (
     WaterCreditDraw,
     WaterType,
 )
+from accounting.precip_math import METHOD_LABELS
 from core.access import admin_required
 from core.models import SiteConfig
 from core.modules import is_enabled
@@ -1527,6 +1528,23 @@ def _fmt(value, places=4):
         return str(value)
 
 
+def _mm_to_in(mm):
+    """Convert a millimeter breakdown value to inches (÷25.4), or None if missing.
+
+    Kept out of a template filter on purpose (ISS-142 / DESIGN.md rule 10): a new
+    `floatformat` site would renumber the accounting figure ledger, and this
+    conversion feeds a derivation sentence in `_step_detail_summary`, not a
+    figure of its own. The ledger already covers the mm and AF figures this
+    sentence is built from.
+    """
+    if mm is None or mm == "":
+        return None
+    try:
+        return Decimal(str(mm)) / Decimal("25.4")
+    except (ArithmeticError, ValueError, TypeError):
+        return None
+
+
 def _step_detail_summary(step):
     """The salient, human-readable detail for one breakdown step.
 
@@ -1538,10 +1556,30 @@ def _step_detail_summary(step):
     step_type = step.get("step_type")
 
     if step_type == "et_gross":
-        return f"{_fmt(detail.get('et_mm'), 2)} mm × {_fmt(detail.get('area_acres'), 2)} ac"
+        # R-047 / ISS-142: the inches figure closes the arithmetic a reader can
+        # check by hand (4.8058 in × 109.80 ac ÷ 12 in/ft = 43.9731 AF, the Out
+        # cell). Four places on et_in (this page's four-place convention); et_mm
+        # and area keep their existing two places (unchanged figures).
+        et_in = _mm_to_in(detail.get("et_mm"))
+        et_in_text = f"{et_in:.4f}" if et_in is not None else "not recorded"
+        return (
+            f"{et_in_text} in of ET ({_fmt(detail.get('et_mm'), 2)} mm) × "
+            f"{_fmt(detail.get('area_acres'), 2)} ac ÷ 12 in/ft"
+        )
     if step_type == "subtract_effective_precip":
         method = detail.get("method", "usda_scs")
-        return f"{method}: −{_fmt(detail.get('effective_precip_af'))} AF effective precip"
+        method_label = METHOD_LABELS.get(method, "Method not recorded")
+        af_clause = f"{_fmt(detail.get('effective_precip_af'))} AF taken off"
+        # A pre-38 run recorded no precip_mm; fall back to the AF clause alone
+        # rather than printing a dash where an inches figure should be.
+        pe_in = _mm_to_in(detail.get("effective_precip_mm"))
+        p_in = _mm_to_in(detail.get("precip_mm"))
+        if pe_in is None or p_in is None:
+            return f"{method_label}: {af_clause}"
+        return (
+            f"{method_label}: {pe_in:.4f} in effective of {p_in:.4f} in rain, "
+            f"{af_clause}"
+        )
     if step_type == "subtract_surface_water":
         return f"−{_fmt(detail.get('surface_water_af'))} AF surface water delivered"
     if step_type == "facility_only_zero":
@@ -1714,6 +1752,10 @@ def methodology_settings(request):
         "steps": steps,
         "parcels": Parcel.objects.order_by("parcel_number")[:200],
         "default_period": _latest_calculated_period(),
+        # R-046: the effective-precip method select renders from the SAME
+        # labels the audit page's Detail cell uses, so the two pages can never
+        # name a method differently.
+        "method_labels": METHOD_LABELS.items(),
     }
     return render(request, "accounting/methodology_settings.html", context)
 
@@ -1751,7 +1793,7 @@ def _render_steps(request, plan):
     return render(
         request,
         "accounting/partials/_methodology_steps.html",
-        {"plan": plan, "steps": steps},
+        {"plan": plan, "steps": steps, "method_labels": METHOD_LABELS.items()},
     )
 
 

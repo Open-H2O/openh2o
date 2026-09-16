@@ -35,6 +35,18 @@ core below evaluates in mm so the constants match the cited FAO-25 text verbatim
 import math
 from decimal import Decimal
 
+#: One reader-facing name per method, shared by the methodology editor's select
+#: (`_methodology_steps.html`) and the calculation audit page's Detail cell
+#: (`accounting/views.py::_step_detail_summary`), so the two pages can never
+#: disagree about what a config key means. The config key itself (`raw`,
+#: `fraction`, `usda_scs`) never reaches a reader-facing page (DESIGN.md copy
+#: rule 9); only these labels do.
+METHOD_LABELS = {
+    "raw": "Raw (all precipitation)",
+    "fraction": "Fraction of precipitation",
+    "usda_scs": "USDA-SCS (TR-21)",
+}
+
 
 def _dec(x):
     """Coerce to Decimal without binary-float noise (Decimal passes through)."""

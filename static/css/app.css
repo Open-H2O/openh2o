@@ -3500,6 +3500,15 @@ div[id$="-map"] {
     border-top: 1px solid var(--color-border);
 }
 
+/* -- Form subsection: a ruled-off group of levers under a step's main grid
+   (methodology editor's "Banked surplus", R-051) ------------------------- */
+
+.form-subsection {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-md);
+    margin-top: var(--space-md);
+}
+
 /* -- Padding utilities --------------------------------------------------- */
 
 .pt-sm { padding-top: var(--space-sm); }

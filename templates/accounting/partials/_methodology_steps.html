@@ -51,24 +51,38 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
         </div>
 
         {% if step.step_type == 'subtract_effective_precip' %}
+          {% with current_method=step.config.method|default:'usda_scs' %}
           <div class="field-group mb-0">
             <label class="form-label">Method</label>
-            <select name="method" class="form-select">
-              <option value="raw" {% if step.config.method == 'raw' %}selected{% endif %}>Raw (all precipitation)</option>
-              <option value="fraction" {% if step.config.method == 'fraction' %}selected{% endif %}>Fraction of precipitation</option>
-              <option value="usda_scs" {% if step.config.method == 'usda_scs' %}selected{% endif %}>USDA-SCS (TR-21)</option>
+            <select name="method" class="form-select js-precip-method">
+              {% for value, label in method_labels %}
+              <option value="{{ value }}" {% if current_method == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
             </select>
           </div>
-          <div class="field-group mb-0">
-            <label class="form-label">Fraction <span class="text-tertiary">(method = fraction)</span></label>
+          {% comment %} R-050: only the field the selected method reads is
+               shown, with no "(method = fraction)" suffix left to disagree
+               with a select the reader has already changed. A plain JS
+               toggle (below) keeps the right field visible the instant the
+               select changes, before Save, matching the storage-type toggle
+               `infrastructure/add.html` already uses for the same reason:
+               it needs no round trip and cannot lose whatever the reader has
+               typed into a sibling field that HTMX's own re-render would. {% endcomment %}
+          <div class="field-group mb-0 js-precip-field" data-precip-method="fraction"
+               {% if current_method != 'fraction' %}style="display: none;"{% endif %}>
+            <label class="form-label">Fraction</label>
             <input type="number" step="0.01" min="0" max="1" name="fraction"
                    value="{{ step.config.fraction|default:'0.70' }}" class="form-input" style="width: 7rem;">
           </div>
-          <div class="field-group mb-0">
-            <label class="form-label">Soil storage (in) <span class="text-tertiary">(method = USDA-SCS)</span></label>
+          <div class="field-group mb-0 js-precip-field" data-precip-method="usda_scs"
+               {% if current_method != 'usda_scs' %}style="display: none;"{% endif %}>
+            <label class="form-label">Soil storage (in)</label>
             <input type="number" step="0.1" min="0" name="soil_storage_in"
                    value="{{ step.config.soil_storage_in|default:'3.0' }}" class="form-input" style="width: 7rem;">
           </div>
+          <p class="text-tertiary text-sm mb-0 js-precip-field" data-precip-method="raw"
+             style="grid-column: 1 / -1; align-self: center;{% if current_method != 'raw' %} display: none;{% endif %}">No settings for this method.</p>
+          {% endwith %}
 
         {% elif step.step_type == 'clamp_floor' %}
           <div class="field-group mb-0">
@@ -76,6 +90,21 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
             <input type="number" step="0.01" name="floor"
                    value="{{ step.config.floor|default:'0' }}" class="form-input" style="width: 7rem;">
           </div>
+
+        {% else %}
+          <p class="text-tertiary text-sm mb-0" style="grid-column: 1 / -1; align-self: center;">No configurable options for this step.</p>
+        {% endif %}
+
+      </div>
+
+      {% if step.step_type == 'clamp_floor' %}
+      {% comment %} R-051: the floor stays in the grid above; everything below
+           it is what happens to the surplus the floor creates, headed so a
+           reader can tell the two apart at a glance. {% endcomment %}
+      <div class="form-subsection">
+        <h3 class="field-label">Banked surplus</h3>
+        <p class="text-secondary text-sm">When the chain comes out below the floor, the difference is a surplus. These settings say whether it is carried forward as a credit and how it decays.</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-md); align-items: end;">
           <div class="field-group mb-0">
             <label class="form-label">Bank surplus</label>
             <label style="display: inline-flex; align-items: center; gap: var(--space-xs); height: 38px;">
@@ -93,12 +122,9 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
             <input type="number" step="1" min="1" name="expiry_months"
                    value="{{ step.config.expiry_months|default_if_none:'' }}" class="form-input" style="width: 7rem;">
           </div>
-
-        {% else %}
-          <p class="text-tertiary text-sm mb-0" style="grid-column: 1 / -1; align-self: center;">No configurable options for this step.</p>
-        {% endif %}
-
+        </div>
       </div>
+      {% endif %}
 
       <div class="form-footer-ruled" style="margin-top: var(--space-md); justify-content: flex-end;">
         <button type="submit" class="btn-secondary btn-sm">Save step</button>
@@ -107,3 +133,27 @@ list re-renders in place. Loaded by methodology_settings.html via {% include %}.
   </div>
   {% endfor %}
 </div>
+
+{% comment %} R-050: toggle the precipitation step's live field to match the
+     Method select, with no server round trip, the same idiom
+     `infrastructure/add.html` uses for its storage-type sub-fields. Delegated
+     from the document root (not bound per-select) because this whole partial
+     is an HTMX swap target and gets replaced wholesale on Save/toggle/move;
+     a listener bound directly to the select would be silently dropped by the
+     next swap. {% endcomment %}
+<script>
+(function() {
+  if (window.__precipMethodToggleBound) return;
+  window.__precipMethodToggleBound = true;
+  document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('js-precip-method')) return;
+    var chosen = e.target.value;
+    document.querySelectorAll('.js-precip-field[data-precip-method]').forEach(function(field) {
+      // Match on the enclosing form so a second precipitation step (there is
+      // only ever one today, but nothing enforces that) toggles independently.
+      if (field.closest('form') !== e.target.closest('form')) return;
+      field.style.display = field.dataset.precipMethod === chosen ? '' : 'none';
+    });
+  });
+})();
+</script>

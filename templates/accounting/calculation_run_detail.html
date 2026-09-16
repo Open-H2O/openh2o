@@ -60,8 +60,11 @@
         </div>
         <div class="text-tertiary text-sm mt-xs">
           Methodology: <span class="text-secondary">{{ methodology_plan_name|blank }}</span>
-          ({{ config_hash|blank }})
+          &middot; fingerprint <span class="text-mono">{{ config_hash|blank }}</span>
         </div>
+        <p class="text-tertiary text-sm mt-xs">
+          {% if config_hash %}The fingerprint is the first 12 characters of a hash over the methodology's enabled steps and their settings when this run happened. Two runs with the same fingerprint used the same method.{% else %}This run predates fingerprinting; its methodology's settings were not recorded.{% endif %}
+        </p>
       </div>
       <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
         {{ run.final_af|floatformat:4 }} AF
