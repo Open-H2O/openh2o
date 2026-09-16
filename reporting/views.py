@@ -280,6 +280,13 @@ def shared_supply_check(request):
     as a likely data-entry tell. Display only — never writes a fraction back.
     Defaults to the most recent period carrying real activity (where the ET
     signal lives), with a period selector; ``?period=`` overrides.
+
+    143-12, R-089: ``?show=flagged`` narrows the TABLE to the flagged groups;
+    any other value (including absent) shows all of them. The "Flagged this
+    period" panel's three counts (``flagged_count``, ``source_count``,
+    ``flagged_rows``) are always computed over EVERY group of the period,
+    the check's own result, never over the filtered set: the panel counts
+    the period, the table shows the filter.
     """
     periods = ReportingPeriod.objects.order_by("-start_date")
     period_id = request.GET.get("period", "").strip()
@@ -302,11 +309,20 @@ def shared_supply_check(request):
             selected_period = periods.first()
 
     groups = build_shared_supply_comparison(selected_period)
+    show = request.GET.get("show", "").strip()
+    groups_shown = [g for g in groups if g["any_flag"]] if show == "flagged" else groups
     context = {
         "periods": periods,
         "selected_period": selected_period,
         "groups": groups,
+        "groups_shown": groups_shown,
+        "rows_shown": sum(len(g["rows"]) for g in groups_shown),
+        "show": show,
         "flagged_count": sum(1 for g in groups if g["any_flag"]),
+        "source_count": len(groups),
+        "flagged_rows": sum(
+            1 for g in groups for row in g["rows"] if row["flag"]
+        ),
         "divergence_points": int(SHARED_SUPPLY_DIVERGENCE_THRESHOLD * 100),
     }
     return render(request, "reporting/shared_supply_check.html", context)

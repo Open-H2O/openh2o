@@ -15,7 +15,7 @@ Reference: USGS Water Science School; California Department of Water Resources u
 
 import csv
 import io
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.db.models import Sum
 
@@ -34,6 +34,10 @@ from wells.models import Well, WellIrrigatedParcel
 # worth a second look — a likely data-entry tell. Display-only; nothing is
 # auto-corrected.
 SHARED_SUPPLY_DIVERGENCE_THRESHOLD = Decimal("0.15")
+
+# 143-12, R-090: the quantum a shared-supply weight is rounded to once it is
+# read as a percent (0.1196 -> 11.96) rather than a four-place fraction.
+_PCT_PLACES = Decimal("0.01")
 
 
 # GEARS "Extraction volume measurement method" controlled vocabulary (ISS-047a).
@@ -200,6 +204,15 @@ def _compare_split(links, demand_by_parcel, parcel_names):
       the source's parcels have zero total measured demand it is undefined
       (``None`` → "no ET signal"), NOT a misleading even split, and the flag is
       suppressed. This is the demo state until Phase 58 re-runs the engine.
+    * ``your_pct`` / ``et_pct`` / ``gap_points`` -- 143-12, R-090. The same three
+      weights read as a percent of the source's water (0.1196 -> 11.96) rather
+      than a fraction, each quantized to ``Decimal("0.01")`` with
+      ``ROUND_HALF_UP``. ISS-142 allows the conversion because a weight's third
+      and fourth decimal places become the percent's two, so no information is
+      lost. ``None`` where the underlying weight is ``None``. These are ADDED
+      keys; ``your_weight``/``et_weight``/``divergence`` and the flag rule are
+      unchanged, and every existing key stays for the apportionment and
+      presentation tests that assert them by name.
     """
     your_split = apportion_shared_supply(
         [(pid, frac, demand_by_parcel.get(pid, Decimal("0"))) for pid, frac in links]
@@ -237,6 +250,17 @@ def _compare_split(links, demand_by_parcel, parcel_names):
                 "et_weight": et_w,
                 "divergence": divergence,
                 "flag": flag,
+                "your_pct": (your_w * 100).quantize(_PCT_PLACES, rounding=ROUND_HALF_UP),
+                "et_pct": (
+                    (et_w * 100).quantize(_PCT_PLACES, rounding=ROUND_HALF_UP)
+                    if et_w is not None
+                    else None
+                ),
+                "gap_points": (
+                    (divergence * 100).quantize(_PCT_PLACES, rounding=ROUND_HALF_UP)
+                    if divergence is not None
+                    else None
+                ),
             }
         )
     return {"has_et_signal": has_et, "rows": rows, "any_flag": any_flag}
