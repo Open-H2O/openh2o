@@ -868,6 +868,169 @@ green with no edit beyond the two files Tasks 2 and 4 already retargeted
 **2,730**. `make test-droppable` 30. Staging and Brent's approval are Task 6, not this task;
 production untouched at `241c22b` (re-read from the host).
 
+Resolved by 143-12 (built 2026-09-15; local stack only, staging deploy and Brent's approval
+are Task 6, not this task), closing the monitoring-and-reporting half of the former 143-08:
+R-077, R-078, R-079, R-080, R-081, R-082, R-083, R-084, R-085, R-087, R-088, R-089, R-090,
+R-091, R-093, and the monitoring-and-reporting share of R-055 (the shared-supply check).
+Sixteen entries, all closed by measurement rather than by the plan's own guesses. Before
+values from `143-12-probe-before-local.json` / `-staging.json` (Task 1, captured 2026-09-15
+18:22-18:23 PDT; local served `7fa0c4e`, staging served `52f623b`, production `241c22b`);
+after values re-run directly against the rebuilt local stack in this task rather than copied
+from a builder's own claim. Commits: `c9c4615` (station page), `f8679f5` (dashboard),
+`e3b026b` (reports page), `96bb306` (report page), `1a65f70` (worksheet), `e30fb2e`
+(generator + view: `your_pct`/`et_pct`/`gap_points`, `?show=flagged`, panel counts), `b8d152a`
+(shared-supply template).
+
+**R-077 / R-078.** Before, station 1's Telemetry card drew a 319px chart against a 0-to-1.0
+axis with 11 tick labels for a station that had never published, `chart_empty` already
+visible reading "No published data for this period.", and the freshness word appeared
+nowhere on the full page (`freshness_word_hits` false for all three words; `page_head_meta_text`
+empty). After, `.page-head-meta` carries a badge reading "Dormant" (measured live: 0
+`id="telemetry-chart"` canvases, 0 `<button class="chart-range-btn">` elements, "No published
+readings from this station." and "Syncing is switched off for it." both present); a station
+with one fresh reading renders the canvas and "Up to date". The Current Readings card (before:
+one of five one-sentence cards, "No published readings yet.") is gone when there is nothing to
+read; the two empty history cards (Recent sync logs, Recent data records: two more of the
+five one-sentence cards) merge into one "Sync history" card. "On schedule" / "Behind schedule"
+appear nowhere on this page.
+
+**R-079 / R-080.** Before, the dashboard's `stat_grid_4col` held four like 36px tiles: "Active
+stations 42", "On schedule 2", "Behind schedule 40" (the register's original guess of "10 on
+schedule" / "32 behind" was already stale by Task 1's own re-measure: 2 fresh, not 10, and the
+true split is three-way (2 fresh, 15 stale, 25 dead), not the two `stat_grid_4col` ever
+showed), "Satellite data requests 0", with no sentence saying the last three are parts of the
+first. After, `stat-grid-4col` is gone (0 occurrences); the map card's head reads "42 active
+stations: 2 up to date, 15 slightly behind, 25 dormant" (station-list vocabulary); the
+satellite quota is a sentence under "Source status" ("... 0 of 100 requests used this
+month ..."), not a fourth tile.
+
+**R-081 / R-082.** Before, on local FOUR of six source cards read "Not yet synced" with no
+sentence saying what that means (cimis and noaa read "Needs API key" locally: noaa has no key
+set on local, so it takes the credential branch instead); on staging FIVE cards read "Not yet
+synced" (noaa's key IS set there, so it clears the credential check and falls through to
+"never"; cimis instead reads "None activated" on staging, because its 15 stations are
+discovered but none switched on). Both are real, hosts-differ readings, not a bug: `never` vs
+`needs_key` vs `none_activated` are three different classifications and the demo data differs
+by host. Only one of six cards (`dwr_sgma`) carried the "· 2 on schedule" clause; the other
+five carried none. After (measured against a fictional-source fixture, `tests/
+test_monitoring_dashboard_counts.py`): every source card renders one shape,
+"{active} active of {total} stations: {fresh} up to date, {stale} slightly behind, {dead}
+dormant", zeros worded "none"; a `never`-status card also carries "This deployment has not run
+a sync against {SOURCE} yet; the readings it holds were loaded, not synced."; a card with zero
+active stations stops after "{total} station(s), none active" rather than printing three more
+"none" clauses.
+
+**R-083.** Before, "Active stations" showed 17 cards, all `dwr_sgma` (the only source with
+fresh/stale members), under a dashboard claiming 42 active, with no sentence saying which 17
+or why. After, the section's own line reads "{shown} of the {total_active} active stations:
+the ones up to date or slightly behind. The {dead_count} dormant are on the
+[station list](?reporting=dead)."; on local this reads "17 of the 42 active stations ... 25 dormant ...".
+The `{% if item.freshness != 'dead' %}` filter is unchanged; the head now says it instead of
+leaving it silent.
+
+**R-084 / R-085.** Before, the reports page's third "Start a filing" card ("Shared-supply
+check") carried no marker distinguishing it from the two filings beside it; on local the
+toolbar (search + status select) rendered over 3 history rows (not empty, so not R-085's
+fault there), but staging's `toolbar_row_present` was `true` over 0 rows: the register's own
+read, reproduced. After, the third card carries `badge-grey` "A check, not a filing" and its
+sentence names what it compares; `all_count` (every submission, unfiltered) gates the
+toolbar, so a deployment with zero submissions anywhere renders no toolbar at all (measured:
+`tests/test_reports_pages_explain_themselves.py`, no `ReportSubmission` rows -> 0 `toolbar-row`
+occurrences). The `count-pill` span R-085's own guard used to key off is gone; the population
+line in the table's own `ledger-card-head` carries the count instead (retargeted in
+`tests/test_views.py::test_report_list_htmx_returns_history_partial`, done in Task 3).
+
+**R-087 / R-088.** Before (report pk 5, the file this plan generated; pk 3, no file): the
+template name printed 3 times (the head, a `.row-start` crumb row under the demo notice, and
+the metadata card's first field) and the period name 3 (pk 5) / 2 (pk 3) times, before any
+figure; Download sat as the fourth of four 14px metadata fields, `btn_primary_in_page_head_
+actions_count` 0. On staging both report URLs (pks 3 and 4) 404 (0 rows: staging holds no
+report rows until Task 6 generates one there). After, `page-head-actions` carries exactly one
+`a.btn-primary` reading "Download CSV" linking `reporting:report_download`, and no button at
+all when there is no file; the `.row-start` crumb row is gone, replaced by a plain "← Back to
+Reports" link; the metadata card carries only Generated and File. The template name now prints
+3 times total on the page (the `<title>` tag, the `h1.page-title`, and the breadcrumb's
+current-page span), not "once below the head" as the plan's own `<verify>` block guessed;
+0 additional occurrences anywhere in the body, confirmed live.
+
+**R-089 / R-090 / R-091 / R-055 (shared-supply check).** Before, the page's only control was
+the period select (`period_form_control_count` 1); the "8 hand-set shared sources · 3 flagged
+· gap threshold 15 points" line was 13px text over the toolbar, no `.budget-seg--result`
+existed; Gap printed a raw four-place fraction ("0.0804", "0.0842", "0.4351") against a rule
+stated in points, with no `.th-group-label` or `.col-sep` marking it derived; eight
+`card-raised` blocks ran the page to 4,393px. After: two selects (period, show); the panel's
+one 32px result is "Sources flagged" with two peers ("Sources checked", "Fields to review");
+Share and Gap both print in percent / percentage points from the SAME weight (`your_pct` /
+`et_pct` / `gap_points`, added to `_compare_split`'s existing keys, quantized `Decimal("0.01")`
+`ROUND_HALF_UP`); one `table.data-table--grouped` replaces the eight cards, Gap bracketed off
+by `.th-group-label` "Share of the source's water" over "Entered"/"ET-implied" and a
+`.col-sep` th-stack "Gap points"; `?show=flagged` narrows the table to the flagged groups
+while the panel keeps counting the whole period. **Deviation, measured, not built to the
+plan's guess:** Task 3's card sentence ("a shared well or canal") failed `make test-droppable`
+2 of 30 (`without-wells`, `without-surface+recharge`) because the reports page renders in
+every module set; reworded to "a shared water source", and an EXEMPT entry
+(`("surface", "reporting/calwatrs_worksheet.html")`) was added to `tests/
+test_module_template_guards.py` because that guard is the view's 404, not a template gate.
+Task 4: the full page is 3,708px, not the plan's guessed under-2,600 (74 table rows at the
+platform's row height are 2,898px alone); `?show=flagged` shows 18 rows on the real demo data,
+not 22 (the three flagged groups hold 5+10+3); "15" (the threshold) prints twice as prose (the
+paragraph and the panel caption), both mandated by the action's own text. The remap needed
+`--alias` for the three shared-supply sites because the expression text changed (`your_weight`
+to `your_pct` etc.); ids kept, no gains or losses. This task's own guard fixture (`tests/
+test_shared_supply_check_page.py`, a hand-set well, 0.6/0.4 stored, 5/20 demand) found a
+second plan guess wrong: BOTH parcels diverge past the 0.15 threshold (|0.6-0.25| and
+|0.4-0.75| are both 0.35), so "Fields to review" reads 2, not the plan's guessed 1; the guard
+asserts the measured value.
+
+**R-093.** Before, on local (`report_type_is_available` false: `surface` reachable, but the
+demo's two blocks both carry a right and a PIN, so `has_no_linked_water_right` and
+`has_add_pin_text` were both `false`, proving the blockers by absence rather than by
+appearance) both blockers were plain text, 0 anchors in either block's `.field-value-sm`; on
+staging the same URL 404s (0 rows, no `surface` reachable path to prove against there either).
+After (fixture-proven, `tests/test_reports_pages_explain_themselves.py`): a block with no
+linked water right renders "No linked water right; link one on [the point of diversion]"
+(`surface:pod_detail`); a block with a right and no PIN renders "Add this right's PIN on [the
+water right]" (`surface:detail`).
+
+**Drift checks, main session.** (a) After Task 2, the dashboard's map card is
+`div.card-raised[style="padding: 0; overflow: hidden;"]` > `_stations_map_card_head.html`
+with `head_id="monitoring-map-head"`, the same two lines as `station_list.html:43-44`: MATCH.
+(b) After Task 3, `_report_history.html` is a zero-padding `card-raised` > `ledger-card-head`
+with two `text-secondary text-base` lines > `table-scroll` > `data-table`, the shape of
+`_diversion_records.html:16-25`, with no `h2.section-header-flush` inside the head because the
+page already carries `h2.section-header` "Report history" above the toolbar (rule 6, one
+name): MATCH. (c) After Task 4, the panel is `.page-grid-account-balance` >
+`.page-grid-account-head.mb-md` > `.budget-panel` with one `.budget-seg--result` at 32px, two
+peers and two empty `.budget-op`, and the table head is `tr.th-group` > `th[rowspan=2]` /
+`th.th-group-label[colspan=2]` / `th.th-right.col-sep[rowspan=2] > .th-stack`, the classes of
+`_zone_detail_pane.html:151-161`: MATCH. One composition fault named for the next reader: in
+the first-paint capture the Gap column and the trailing flag column take roughly 330px and
+470px of the 1,440px table, so each Gap figure sits ~250px right of the ET-implied figure:
+browser auto-layout, not a class drift.
+
+**Plan-level judgments, stated as the plan's until Brent rules (Task 6's checkpoint):** the
+dashboard's counts sit in the map head and under the section headers because the page has no
+identity card to fold them into; the OpenET quota is the Source status sentence rather than a
+seventh card; percent to two decimal places is the reading of the shared-supply weights under
+ISS-142.
+
+Guards: 24 new tests across four new files: `tests/test_station_page_says_its_state.py`
+(R-077, R-078), `tests/test_monitoring_dashboard_counts.py` (R-081, R-082, R-083),
+`tests/test_reports_pages_explain_themselves.py` (R-084, R-085, R-087, R-088, R-093),
+`tests/test_shared_supply_check_page.py` (R-055 share, R-089, R-090, R-091), plus an
+extension of `tests/test_openet_budget_panel.py`'s own fixtures (R-079, R-080). Every guard
+observed RED against the pre-change tree (`git checkout 7fa0c4e -- ` the thirteen template
+and view files this plan touched, rebuilt, run: 26 of 26 failed, two by `KeyError` on
+`your_pct`/`et_pct` proving the generator did not carry them yet, the rest by assertion, then
+`git checkout HEAD --` the same files, rebuilt, GREEN), the failing assertion for every guard
+quoted in `143-12-EVIDENCE.md`. `tests/test_water_vocabulary.py`, `tests/test_domain_
+vocabulary.py`, `tests/test_template_hygiene.py`, `tests/test_module_template_guards.py`,
+`tests/test_composition_rule.py`, `tests/test_figure_ledger_coverage.py` all green (296 tests).
+Suite 2,730 → **2,754**. `make test-droppable` 30 passed. **R-055's Site Health share remains
+for 143-09**; nothing on that page is touched here. Staging deploy, the staging after-probe,
+and Brent's approval are Task 6, not this task; production untouched at `241c22b` (to be
+re-read from the host by Task 6).
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**

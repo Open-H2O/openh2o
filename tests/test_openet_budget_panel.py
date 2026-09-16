@@ -10,13 +10,16 @@ from, because a figure whose provenance is invisible is one nobody can act on.
 Every provider read is mocked. No test here touches the network.
 """
 
+from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+from django.contrib.gis.geos import Point
 from django.test import Client
 from django.urls import reverse
+from django.utils import timezone
 
-from datasync.models import OpenETCache
+from datasync.models import DataSource, MonitoredStation, OpenETCache
 
 PROVIDER_ANSWERED = {
     "source": "provider",
@@ -187,3 +190,48 @@ class TestTheDashboardMakesNoOutboundCall:
             assert resp.context["openet_used"] == 12
         finally:
             cache.delete(ACCOUNT_STATUS_CACHE_KEY)
+
+
+@pytest.mark.django_db
+class TestTheMapHeadSplitsActiveStationsThreeWays:
+    """143-12, R-079 / R-080: the dashboard's freshness counts used to print as
+    'On schedule 10' / 'Behind schedule 32', two states lumped under one label,
+    with the satellite quota as a fourth like tile beside them. Extends this
+    file's own fixtures (client_logged_in, PROVIDER_ANSWERED) rather than a
+    second copy, per the plan.
+
+    Station and source names here are fictional (`Probe ...`), never a name
+    from the session-scoped Merced seed.
+    """
+
+    def test_three_stations_one_of_each_state_render_the_map_head_line(
+        self, client_logged_in
+    ):
+        src = DataSource.objects.create(
+            code="probe_079_src", name="Probe 079 Source", is_active=True
+        )
+        now = timezone.now()
+        MonitoredStation.objects.create(
+            data_source=src, external_station_id="R079-1", station_name="Probe 079 Fresh",
+            location=Point(-120.0, 37.0), is_active=True, last_data_at=now,
+        )
+        MonitoredStation.objects.create(
+            data_source=src, external_station_id="R079-2", station_name="Probe 079 Stale",
+            location=Point(-120.0, 37.0), is_active=True,
+            last_data_at=now - timedelta(hours=48),
+        )
+        MonitoredStation.objects.create(
+            data_source=src, external_station_id="R079-3", station_name="Probe 079 Dead",
+            location=Point(-120.0, 37.0), is_active=True,
+            last_data_at=now - timedelta(days=30),
+        )
+        body = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
+        assert (
+            '<span>3 active stations: 1 up to date, 1 slightly behind, '
+            '1 dormant</span>' in body
+        )
+        assert "stat-grid-4col" not in body
+
+    def test_the_quota_sentence_names_the_provider_figure(self, client_logged_in):
+        body = _dashboard(client_logged_in, PROVIDER_ANSWERED).content.decode()
+        assert "of 100 requests" in body
