@@ -435,9 +435,11 @@ def calwatrs_worksheet(request, pk):
         wr = pod.water_right
         if pod.pk not in blocks:
             blocks[pod.pk] = {
+                "pod_id": pod.pk,
                 "pod_name": pod.name,
                 "stream_name": pod.stream_name,
                 "has_water_right": wr is not None,
+                "water_right_id": wr.pk if wr else None,
                 "right_id": wr.right_id if wr else "",
                 "holder_name": wr.holder_name if wr else "",
                 "right_type": wr.right_type.name if wr else "",

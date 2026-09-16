@@ -45,7 +45,7 @@
       <div class="field-group mb-0">
         <div class="field-label">Water right</div>
         <div class="field-value-sm">
-          {% if block.has_water_right %}{{ block.right_id }}{% else %}<span style="color: var(--color-error);">No linked water right</span>{% endif %}
+          {% if block.has_water_right %}{{ block.right_id }}{% else %}<span style="color: var(--color-error);">No linked water right</span>; link one on <a class="text-link" href="{% url 'surface:pod_detail' block.pod_id %}">the point of diversion</a>{% endif %}
         </div>
       </div>
       <div class="field-group mb-0">
@@ -59,7 +59,7 @@
       <div class="field-group mb-0">
         <div class="field-label">CalWATRS PIN</div>
         <div class="field-value-sm" style="font-family: var(--font-mono);">
-          {% if block.calwatrs_pin %}{{ block.calwatrs_pin }}{% else %}<span class="text-tertiary">Add this right's PIN on the water right</span>{% endif %}
+          {% if block.calwatrs_pin %}{{ block.calwatrs_pin }}{% elif block.has_water_right %}<span class="text-tertiary">Add this right's PIN on <a class="text-link" href="{% url 'surface:detail' block.water_right_id %}">the water right</a></span>{% else %}<span class="text-tertiary">Add this right's PIN on the water right</span>{% endif %}
         </div>
       </div>
     </div>

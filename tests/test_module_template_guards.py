@@ -60,6 +60,16 @@ EXEMPT = {
     # made the pair mutual: parcels.requires now names accounting, so a template
     # under parcels/ can never render in a deployment without Accounting.
     ("accounting", "parcels/partials/_detail_pane.html"),
+    # 143-12 (R-093). `reporting` does not `requires=("surface",)` -- a
+    # surface-less deployment still files GEARS -- so this is not a
+    # requires-edge exemption like the ones above. The guard instead sits in
+    # Python: calwatrs_worksheet() (reporting/views.py) calls
+    # report_type_is_available(report_type), whose owner for calwatrs_a1/a2 is
+    # `surface`, and raises Http404 before this template is ever rendered.
+    # Wrapping the two `{% url 'surface:...' %}` calls in
+    # `{% if 'surface' in enabled_modules %}` here would be dead code: the
+    # branch cannot be False by the time this template renders.
+    ("surface", "reporting/calwatrs_worksheet.html"),
 }
 
 
