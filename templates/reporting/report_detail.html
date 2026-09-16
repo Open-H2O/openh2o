@@ -16,6 +16,18 @@
 {% endif %}
 {% endblock %}
 
+{% comment %}
+  R-087: the download link was the fourth of four small fields in the metadata
+  card. It is the one thing this page produces, so it moves to the title line
+  (shape 7), the only gold on the page besides the workflow buttons already
+  in _status_section.html.
+{% endcomment %}
+{% block page_actions %}
+{% if submission.generated_file %}
+<a class="btn-primary" href="{% url 'reporting:report_download' pk=submission.pk %}">Download CSV</a>
+{% endif %}
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -37,11 +49,7 @@
 {% endcomment %}
 <div class="page-stack page-medium">
 
-  <div class="row-start">
-    <a href="{% url 'reporting:report_list' %}" class="back-link text-sm">Reports</a>
-    <span class="text-tertiary">/</span>
-    <span class="text-secondary text-sm">{{ submission.report_template.name }}</span>
-  </div>
+  <a href="{% url 'reporting:report_list' %}" class="back-link">&larr; Back to Reports</a>
 
   {% include "reporting/partials/_report_detail_pane.html" with on_full_page=True %}
 

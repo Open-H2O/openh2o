@@ -242,6 +242,12 @@ def _report_detail_context(submission):
         "is_calwatrs": report_type.startswith("calwatrs"),
         # Single-tenant: one agency profile carries the GEARS Correspondence ID.
         "profile": ReportingProfile.objects.first(),
+        # R-088: the metadata card's File field shows the file itself, not its
+        # storage path (submission.generated_file carries the "reports/" prefix).
+        "generated_filename": (
+            os.path.basename(submission.generated_file)
+            if submission.generated_file else ""
+        ),
     }
 
 
