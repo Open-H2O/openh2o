@@ -1152,14 +1152,20 @@ class TestReportingPages:
 
     def test_report_list_htmx_returns_history_partial(self, auth_client):
         """A search/filter swap (HX-Request) returns just the history table, not
-        the whole page."""
+        the whole page.
+
+        Retargeted 143-12 (R-085): the `.result-count-bar`'s `count-pill` span
+        is gone -- the count now lives in the `ledger-card-head`'s population
+        line above the table (shape 2), so the count is asserted there.
+        """
         _report_submission()
         response = auth_client.get(
             reverse("reporting:report_list"), HTTP_HX_REQUEST="true"
         )
         html = response.content.decode()
         assert response.status_code == 200
-        assert "count-pill" in html
+        assert "ledger-card-head" in html
+        assert "1 report" in html
         assert "data-table" in html
         assert "<html" not in html.lower()  # fragment, not a full document
 

@@ -100,8 +100,14 @@ def report_list(request):
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
+        # R-085: every submission, unfiltered, so the toolbar (a search box)
+        # can hide itself when there is nothing in the whole table to search.
+        "all_count": ReportSubmission.objects.count(),
         "q": q,
         "status": status,
+        "status_display": (
+            dict(ReportSubmission.STATUS_CHOICES).get(status, status) if status else ""
+        ),
         "filing_families": families,
         "gears_available": "gears" in available_keys,
         "calwatrs_available": "calwatrs" in available_keys,

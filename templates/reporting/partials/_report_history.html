@@ -4,15 +4,13 @@
   page. Returned on its own for a search / filter / pagination swap; included by
   report_list for first paint. (docs/2.0-UX-PATTERN-SPEC.md)
 {% endcomment %}
-<div class="result-count-bar">
-  <span class="text-secondary text-sm">
-    <span class="count-pill">{{ total_count }}</span>
-    report{{ total_count|pluralize }} found{% if q %} matching "{{ q }}"{% endif %}
-  </span>
-</div>
-
 {% if page_obj.object_list %}
-<div class="card-raised table-scroll">
+<div class="card-raised" style="padding: 0;">
+  <div class="ledger-card-head">
+    <div class="text-secondary text-base">{{ total_count }} report{{ total_count|pluralize }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if status %} with status {{ status_display }}{% endif %}{% if gears_available and calwatrs_available %}: {{ gears_count }} GEARS, {{ calwatrs_count }} CalWATRS{% elif gears_available %}: {{ gears_count }} GEARS{% elif calwatrs_available %}: {{ calwatrs_count }} CalWATRS{% endif %}</div>
+    <div class="text-secondary text-base">Generated says when the file was written; a draft with no file has not been generated yet.</div>
+  </div>
+  <div class="table-scroll">
   <table class="data-table">
     <thead>
       <tr>
@@ -41,7 +39,7 @@
         </td>
         <td class="text-secondary text-sm">{{ sub.reporting_period.name }}</td>
         <td class="text-secondary text-sm tabular-nums">
-          {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y" }}{% else %}—{% endif %}
+          {% if sub.generated_at %}{{ sub.generated_at|date:"M j, Y" }}{% else %}<span class="value-empty">Not generated</span>{% endif %}
         </td>
         <td>
           {% if sub.status == "filed" %}
@@ -58,6 +56,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 
 {% if page_obj.has_other_pages %}

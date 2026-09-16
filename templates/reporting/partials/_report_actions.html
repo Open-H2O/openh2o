@@ -60,16 +60,18 @@
     </div>
   </div>{% endif %}
 
-  <!-- Shared-supply reasonableness check (ISS-056) -->
+  <!-- Shared-supply reasonableness check (ISS-056, R-084: named as a check, not a filing) -->
   <div class="card-raised" style="display: flex; flex-direction: column; gap: var(--space-sm);">
     <div style="display: flex; align-items: center; gap: var(--space-sm);">
       <span aria-hidden="true" style="color: var(--color-text-tertiary); flex-shrink: 0; display: inline-flex;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
       </span>
       <span style="font-weight: 600; font-size: 1.0625rem;">Shared-supply check</span>
+      <span class="badge badge-grey">A check, not a filing</span>
     </div>
     <p class="text-secondary text-sm" style="margin: 0; flex: 1;">
-      Flag hand-entered shares that look off from crop-water use.
+      Before a filing: compares each hand-entered share of a shared water source with the
+      share its estimated crop-water use implies.
     </p>
     <div class="row-end">
       <a href="{% url 'reporting:shared_supply_check' %}" class="btn-secondary btn-sm" style="text-decoration: none;">Run check &rarr;</a>

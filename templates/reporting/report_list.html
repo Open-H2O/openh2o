@@ -47,6 +47,7 @@
   <section>
     <h2 class="section-header">Report history</h2>
 
+    {% if all_count %}
     <div class="card-raised toolbar-row">
       <div style="flex: 1; min-width: 200px;">
         <label class="form-label" for="filter-search">Search</label>
@@ -80,6 +81,7 @@
         </select>
       </div>
     </div>
+    {% endif %}
 
     <div id="results">
       {% include "reporting/partials/_report_history.html" %}
