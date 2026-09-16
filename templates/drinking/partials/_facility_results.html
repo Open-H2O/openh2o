@@ -35,10 +35,9 @@ filtered" clause, which was true before this plan and is not true after it.
 <p class="page-description">
   The map shows {{ mapped_facility_count|intcomma }} of the
   {{ total_facility_count|intcomma }} facilit{{ total_facility_count|pluralize:"y,ies" }}
-  in this inventory. Coordinates are published by the state&rsquo;s Groundwater
-  Ambient Monitoring and Assessment Program (GAMA) for groundwater sources
-  only, so distribution-system and treatment-plant facilities carry none and
-  cannot be placed on a map.{% if q or facility_type or activity_status %}
+  in this inventory. The state&rsquo;s Groundwater Ambient Monitoring and
+  Assessment Program (GAMA) publishes coordinates for groundwater sources only,
+  so the treatment plants and the distribution system are not on it.{% if q or facility_type or activity_status %}
   The map follows the list: showing {{ total_count|intcomma }}
   facilit{{ total_count|pluralize:"y,ies" }}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}{% if facility_type %} of that type{% endif %}{% if activity_status %} with that status{% endif %},
   {% if result_located_count == total_count %}all{% elif result_located_count %}{{ result_located_count|intcomma }} of them{% else %}none of them{% endif %} with a location.{% endif %}

@@ -33,20 +33,18 @@
 
   {% for system in systems %}
   {% comment %}
-    143-08 Task 4 (R-062). One two-column row, the account-grid shape
-    (`page-grid-account`, `_account_detail_pane.html` / `_zone_detail_pane.html`):
-    the identity card beside a card naming the three lists this system feeds.
-    The identity card's fields move from `.form-grid-2col` to `.field-grid-2`
-    (the account page's own class) because the card now sits beside a
-    shorter neighbour and has to set its own height rather than spanning the
-    page; the population-split and connections-split grids under them are
-    untouched, `.form-grid-2col` as they were. The three tiles keep every
-    anchor, class and comment they carried before this task:
+    143-08 (R-062). One card. The three counts sit at the foot of the identity
+    card under a head of their own, "Records for this system", so they read
+    as what THIS deployment holds rather than floating under the population
+    section. Task 4 first built them as a second card beside the identity
+    card (the account-grid shape); Brent at the checkpoint, 2026-09-15 17:18
+    PDT: "three boxes inside of a giant box with empty space is a little
+    awkward. Seems like these three boxes would be better in the box to the
+    left that holds the City of Merced data." So they are. The three tiles
+    keep every anchor, class and comment they carried:
     tests/test_drinking_module_shows_what_to_do.py pins their shape.
   {% endcomment %}
-  <div class="page-grid-account">
-
-    <div class="card-raised page-grid-account-info">
+  <div class="card-raised">
 
     {% comment %}
       Identity. Every value is the regulator's own published vocabulary, shown
@@ -54,7 +52,7 @@
       friendlier local wording.
     {% endcomment %}
     <h2 class="section-header">{{ system.name }} {% source_label "EPA_SDWIS" %}</h2>
-    <div class="field-grid-2">
+    <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">PWSID</div>
         <div class="field-value-mono">{{ system.pwsid }}</div>
@@ -100,7 +98,7 @@
     on one model.
     {% endcomment %}
     <h2 class="section-header mt-lg">Population and service connections {% source_label "EPA_SDWIS" %}</h2>
-    <div class="field-grid-2">
+    <div class="form-grid-2col">
       <div class="field-group">
         <div class="field-label">Population served</div>
         <div class="field-value-mono tabular-nums">{{ system.population_served_total|default_if_none:"—"|intcomma }}</div>
@@ -170,8 +168,6 @@
     </p>
     {% endif %}
 
-    </div>
-
     {% comment %}
     The front door. Three counts, each linking to the list that holds them —
     the facility inventory that used to be a 61-row table on this page now has
@@ -185,19 +181,12 @@
     the dashboard card was left alone as out of scope; on 2026-08-02 the same
     argument was accepted there too, so the two surfaces now agree.
 
-    143-08 Task 4 (R-062): the tile row moved into its own card beside the
-    identity card (the account-grid shape), headed "Records for this system"
-    so the three counts read as what THIS deployment holds rather than
-    floating under the population section above. `.stat-grid-3col` centres in
-    the balance card's height the way `.budget-panel` does on the account and
-    recharge pages (`.page-grid-account-balance > .budget-panel` in app.css);
-    the tiles below are otherwise byte-identical to before this task.
+    143-08 (R-062): the tile row is headed "Records for this system", the
+    same `section-header` the sections above it use, with the facts line
+    under it; the tiles below are otherwise byte-identical to before.
     {% endcomment %}
-    <div class="card-raised page-grid-account-balance">
-      <div class="page-grid-account-head mb-md">
-        <h2 class="section-header-flush">Records for this system</h2>
-        <div class="text-secondary text-base">Facilities are EPA's record; sampling points are composed here; sample results are the state's laboratory export.</div>
-      </div>
+    <h2 class="section-header mt-lg">Records for this system</h2>
+    <p class="text-secondary text-base mb-md">Facilities are EPA's record; sampling points are composed here; sample results are the state's laboratory export.</p>
       {% comment %}
       123-02: the whole tile is the anchor, not just the digits. The page has
       always advertised the affordance (`.card-raised:hover`, app.css:98-102
@@ -239,7 +228,6 @@
           <div class="stat-card-value-sm"><span class="data-table-link">{{ system.result_count|intcomma }}</span></div>
         </a>
       </div>
-    </div>
 
   </div>
 

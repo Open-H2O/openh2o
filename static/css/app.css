@@ -942,16 +942,6 @@ html { color-scheme: dark; }
     flex-direction: column;
     justify-content: center;
 }
-/* 143-08 Task 4: the drinking overview's balance slot holds a stat grid
-   instead of a budget panel (no figure to lead with here, three counts
-   routing to three lists). Same rule as the budget panel above -- the
-   identity card's fields set the row's height, and the tiles centre in
-   whatever the balance card has left over its head band. */
-.page-grid-account-balance > .stat-grid-3col {
-    flex: 1 1 auto;
-    align-content: center;
-    margin-bottom: 0;
-}
 .page-grid-account-full {
     grid-column: 1 / -1;
 }

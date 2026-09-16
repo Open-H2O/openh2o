@@ -296,7 +296,7 @@ class TestOverviewNamesItsRecordsCard:
     ):
         html = client_in.get(reverse("drinking:overview")).content.decode()
         assert (
-            '<h2 class="section-header-flush">Records for this system</h2>'
+            '<h2 class="section-header mt-lg">Records for this system</h2>'
         ) in html
         for url_name in (
             "drinking:facilities", "drinking:sampling_points", "drinking:results",
