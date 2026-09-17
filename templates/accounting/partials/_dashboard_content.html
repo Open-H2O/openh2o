@@ -10,7 +10,6 @@
 {% else %}
 
 {% url 'water_balances' as wb_help_url %}
-{% url 'budgets_allocations' as budgets_help_url %}
 {% comment %}
   Phase 142 (R-003, R-004, R-005, R-006; ISS-159 #2). The panel is named for
   the thing it summarises, the result is the only lead figure, the supply
@@ -186,108 +185,7 @@
     <h2 class="section-header-flush">Active water accounts</h2>
     <span class="text-tertiary text-xs">One row per active water account, {{ selected_period.name }}. All figures in acre-feet (AF).</span>
   </div>
-  {% if account_summaries %}
-  <div class="table-scroll">
-  <table class="data-table data-table--grouped">
-    <thead>
-      <tr class="th-group">
-        <th rowspan="2" style="min-width: 170px;">Account</th>
-        <th colspan="4" class="th-group-label">Supplies</th>
-        <th rowspan="2" class="th-right"><span class="th-stack">Consumptive use</span></th>
-        <th rowspan="2" class="th-right">Balance{% include "partials/_explainer_popout.html" with title="Balance" text="Total supplies minus consumptive use, for this account and period. Positive means the supplies on record exceeded the estimated use." link=wb_help_url link_label="How water balances work" %}</th>
-        {% if has_allocations %}
-        <th colspan="2" class="th-group-label col-sep">Groundwater budget</th>
-        {% endif %}
-      </tr>
-      <tr>
-        <th class="th-right">Surface</th>
-        <th class="th-right">Groundwater</th>
-        <th class="th-right">Rain</th>
-        <th class="th-right">Total</th>
-        {% if has_allocations %}
-        <th class="th-right col-sep">Allocation{% include "partials/_explainer_popout.html" with title="GW allocation" text="This account's share of the period's groundwater allocation, pro-rated by how many of its parcels fall in each groundwater zone. Surface-water allocation is a separate budget and is not counted here." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
-        <th class="th-right">Remaining{% include "partials/_explainer_popout.html" with title="GW remaining" text="Groundwater allocation minus groundwater use (metered or calculated pumping). A negative number means the account has pumped past its groundwater allocation for the period." link=budgets_help_url link_label="How budgets & allocations work" %}</th>
-        {% endif %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in account_summaries %}
-      <tr>
-        <td>
-          <a href="{% url 'accounting:account_detail' row.account.pk %}" class="data-table-link">
-            {{ row.account.account_number }}
-          </a>
-          {% if row.account.name %}
-          <span class="block text-secondary text-sm">{{ row.account.name }}</span>
-          {% endif %}
-        </td>
-        {% comment %}
-          ISS-099: three of these columns are demand-derived, and all three are
-          dashed together when this row has no calculation runs. Consumptive use
-          is the missing measurement itself; Balance is supplies minus it, so with
-          no measurement it silently equals the full supply and reads as surplus;
-          Remaining is allocation minus it, so it reads as a completely unused
-          budget. The supply columns keep their figures — those are ledger rows,
-          measured whether or not the engine has ever run.
-        {% endcomment %}
-        <td class="td-num text-supply">
-          {{ row.surface|floatformat:2|intcomma }}
-        </td>
-        <td class="td-num text-supply">
-          {{ row.groundwater|floatformat:2|intcomma }}
-        </td>
-        <td class="td-num text-supply">
-          {{ row.precip|floatformat:2|intcomma }}
-        </td>
-        <td class="td-num-bold text-supply">
-          {{ row.supply_total|floatformat:2|intcomma }}
-        </td>
-        <td class="td-num {% if row.has_calculations %}text-usage{% else %}text-tertiary{% endif %}">
-          {% if row.has_calculations %}{{ row.consumptive_use_gross|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-        </td>
-        <td class="td-num-bold {% if not row.has_calculations %}text-tertiary{% elif row.net_vs_supply >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {% if row.has_calculations %}{{ row.net_vs_supply|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-        </td>
-        {% if has_allocations %}
-        <td class="td-num col-sep">
-          {% if row.allocation is None %}&mdash;{% else %}{{ row.allocation|floatformat:2|intcomma }}{% endif %}
-        </td>
-        <td class="td-num-bold {% if not row.has_calculations or row.remaining is None %}text-tertiary{% elif row.remaining >= 0 %}text-surplus{% else %}text-deficit{% endif %}">
-          {% if row.has_calculations and row.remaining is not None %}{{ row.remaining|floatformat:2|intcomma }}{% else %}&mdash;{% endif %}
-        </td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-    {% comment %}
-      The footer IS the panel: the same grand_* context values, so the panel and
-      the table are visibly one thing. What makes these rows addable (DESIGN.md
-      rule 12): one quantity, one period, every active account, and the label
-      says so. Dashed for the two demand-derived cells when the engine has never
-      run, for the same reason the rows above are (ISS-099). Blank in the budget
-      cells: an allocation is not a total of anything on this table.
-    {% endcomment %}
-    <tfoot>
-      <tr>
-        <td class="tfoot-total">All {{ account_summaries|length }} active account{{ account_summaries|length|pluralize }}</td>
-        <td class="td-num text-supply">{{ grand_supply_surface|floatformat:2|intcomma }}</td>
-        <td class="td-num text-supply">{{ grand_supply_groundwater|floatformat:2|intcomma }}</td>
-        <td class="td-num text-supply">{{ grand_supply_precip|floatformat:2|intcomma }}</td>
-        <td class="td-num-bold text-supply">{{ grand_supply_total|floatformat:2|intcomma }}</td>
-        <td class="td-num {% if engine_has_never_run %}text-tertiary{% else %}text-usage{% endif %}">{% if engine_has_never_run %}&mdash;{% else %}{{ grand_consumptive_use|floatformat:2|intcomma }}{% endif %}</td>
-        <td class="td-num-bold {% if engine_has_never_run %}text-tertiary{% elif grand_net >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{% if engine_has_never_run %}&mdash;{% else %}{{ grand_net|floatformat:2|intcomma }}{% endif %}</td>
-        {% if has_allocations %}
-        <td class="col-sep"></td>
-        <td></td>
-        {% endif %}
-      </tr>
-    </tfoot>
-  </table>
-  </div>
-  {% else %}
-  <p class="text-tertiary text-sm mb-sm">No active accounts yet.</p>
-  <a href="{% url 'accounting:account_create' %}" class="link-accent text-sm">+ Create a water account</a>
-  {% endif %}
+  {% include "accounting/partials/_active_accounts_table.html" %}
 </div>
 
 <div class="card-raised">

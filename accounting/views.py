@@ -51,6 +51,7 @@ from accounting.precip_math import METHOD_LABELS
 from core.access import admin_required
 from core.models import SiteConfig
 from core.modules import is_enabled
+from core.workspace import redirect_to_selected
 from accounting.services import (
     account_consumptive_balance,
     current_period_id as compute_current_period_id,
@@ -69,6 +70,100 @@ from parcels.models import Parcel, ParcelLedger
 # @admin_required from core.access (ISS-021). It honors the two-tier model and
 # deliberately bounces an authenticated non-admin back into the app rather than
 # to Django's /admin/ login (which staff_member_required would do).
+
+
+def _account_summary_row(account, selected_period, has_allocations, groundwater_type):
+    """One water account's row in the Active water accounts table: its
+    consumptive balance, its supply breakdown, and (only when a groundwater
+    budget exists this period) its pro-rated allocation and what remains.
+
+    143-13: extracted from the dashboard's account_summaries loop so the
+    accounts list (Brent's "accounts-table" ruling: the list becomes this same
+    table, with a search) computes the identical figures rather than holding a
+    second copy of the allocation arithmetic. Both callers pass the SAME
+    ``has_allocations`` / ``groundwater_type`` (the period-wide facts, not
+    per-account) so a row never disagrees with its own page about whether a
+    budget exists at all.
+    """
+    cu = account_consumptive_balance(account, reporting_period=selected_period)
+
+    if has_allocations and groundwater_type is not None:
+        # Allocation: pro-rated by account's parcel count in each zone.
+        # Formula: for each zone, allocation * (account_parcels / total_parcels).
+        # Uses parcel count (not area) because area data may be incomplete.
+        # GROUNDWATER plans only (136-01): six of the eleven demonstration
+        # accounts also sit in a surface-water service area, and summing
+        # every plan gave MER-ACCT-001 2,901.42 AF of groundwater
+        # allocation plus 16,200.00 AF of surface entitlement as one
+        # number. Subtracting pumping from that would print a surface
+        # entitlement as spare groundwater.
+        parcel_ids = WaterAccountParcel.objects.filter(
+            water_account=account,
+            removed_date__isnull=True,
+        ).values_list("parcel_id", flat=True)
+        zone_ids = ParcelZone.objects.filter(
+            parcel_id__in=parcel_ids
+        ).values_list("zone_id", flat=True).distinct()
+        groundwater_plans = AllocationPlan.objects.filter(
+            zone_id__in=zone_ids,
+            reporting_period=selected_period,
+            water_type=groundwater_type,
+        )
+        allocation = Decimal("0")
+        for zone_id in zone_ids:
+            zone_alloc = groundwater_plans.filter(
+                zone_id=zone_id,
+            ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
+            total_parcels_in_zone = ParcelZone.objects.filter(zone_id=zone_id).count()
+            account_parcels_in_zone = ParcelZone.objects.filter(
+                zone_id=zone_id, parcel_id__in=parcel_ids
+            ).count()
+            if total_parcels_in_zone > 0:
+                allocation += (
+                    zone_alloc
+                    * Decimal(account_parcels_in_zone)
+                    / Decimal(total_parcels_in_zone)
+                )
+        # Budget basis, 136-01 (ISS-151; option A, Brent 2026-09-05): a
+        # groundwater budget is spent by GROUNDWATER USE, the metered or
+        # calculated pumping the Groundwater column already shows. This
+        # REVERSES 57-02, which deliberately subtracted gross ET on the
+        # reasoning that "a budget is consumed by measured consumptive
+        # use (gross ET), NOT by the old groundwater-only usage". Gross
+        # ET is what the crop transpires whatever the water's source,
+        # and it FALLS in a drought (every demonstration zone, 2026-09-05
+        # measurement), so no basin could ever cross its budget because
+        # of one. Pumping rises in a drought; that is what the column is
+        # for. An account whose zones carry no groundwater plan has no
+        # groundwater budget: absent, not zero, so the template dashes it
+        # rather than printing its pumping as an overdraft of nothing.
+        if groundwater_plans.exists():
+            remaining = allocation - cu["supplies"]["groundwater"]
+        else:
+            allocation = None
+            remaining = None
+    else:
+        allocation = None
+        remaining = None
+
+    return {
+        "account": account,
+        # ISS-099: a row with no runs behind it has no consumptive-use
+        # measurement, and 0.00 would read as one. The template shows a
+        # dash instead, for the derived Net and Remaining columns too,
+        # since both subtract a demand figure that does not exist.
+        "has_calculations": cu["calculation_runs"] > 0,
+        "consumptive_use_gross": cu["consumptive_use_gross"],
+        "consumptive_use_net": cu["consumptive_use_net"],
+        "surface": cu["supplies"]["surface"],
+        "groundwater": cu["supplies"]["groundwater"],
+        "precip": cu["supplies"]["precip"],
+        "supply_total": cu["supply_total"],
+        "net_vs_supply": cu["net_vs_supply"],
+        "allocation": allocation,
+        "remaining": remaining,
+        "calculation_runs": cu["calculation_runs"],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -157,93 +252,19 @@ def dashboard(request):
         # columns from being read as one (ISS-032 / F-math-03 stream-2).
         active_accounts = WaterAccount.objects.filter(status="active").order_by("account_number")
         for account in active_accounts:
-            cu = account_consumptive_balance(account, reporting_period=selected_period)
-
-            if has_allocations and groundwater_type is not None:
-                # Allocation: pro-rated by account's parcel count in each zone.
-                # Formula: for each zone, allocation * (account_parcels / total_parcels).
-                # Uses parcel count (not area) because area data may be incomplete.
-                # GROUNDWATER plans only (136-01): six of the eleven demonstration
-                # accounts also sit in a surface-water service area, and summing
-                # every plan gave MER-ACCT-001 2,901.42 AF of groundwater
-                # allocation plus 16,200.00 AF of surface entitlement as one
-                # number. Subtracting pumping from that would print a surface
-                # entitlement as spare groundwater.
-                parcel_ids = WaterAccountParcel.objects.filter(
-                    water_account=account,
-                    removed_date__isnull=True,
-                ).values_list("parcel_id", flat=True)
-                zone_ids = ParcelZone.objects.filter(
-                    parcel_id__in=parcel_ids
-                ).values_list("zone_id", flat=True).distinct()
-                groundwater_plans = AllocationPlan.objects.filter(
-                    zone_id__in=zone_ids,
-                    reporting_period=selected_period,
-                    water_type=groundwater_type,
-                )
-                allocation = Decimal("0")
-                for zone_id in zone_ids:
-                    zone_alloc = groundwater_plans.filter(
-                        zone_id=zone_id,
-                    ).aggregate(total=Sum("allocation_acre_feet"))["total"] or Decimal("0")
-                    total_parcels_in_zone = ParcelZone.objects.filter(zone_id=zone_id).count()
-                    account_parcels_in_zone = ParcelZone.objects.filter(
-                        zone_id=zone_id, parcel_id__in=parcel_ids
-                    ).count()
-                    if total_parcels_in_zone > 0:
-                        allocation += (
-                            zone_alloc
-                            * Decimal(account_parcels_in_zone)
-                            / Decimal(total_parcels_in_zone)
-                        )
-                # Budget basis, 136-01 (ISS-151; option A, Brent 2026-09-05): a
-                # groundwater budget is spent by GROUNDWATER USE, the metered or
-                # calculated pumping the Groundwater column already shows. This
-                # REVERSES 57-02, which deliberately subtracted gross ET on the
-                # reasoning that "a budget is consumed by measured consumptive
-                # use (gross ET), NOT by the old groundwater-only usage". Gross
-                # ET is what the crop transpires whatever the water's source,
-                # and it FALLS in a drought (every demonstration zone, 2026-09-05
-                # measurement), so no basin could ever cross its budget because
-                # of one. Pumping rises in a drought; that is what the column is
-                # for. An account whose zones carry no groundwater plan has no
-                # groundwater budget: absent, not zero, so the template dashes it
-                # rather than printing its pumping as an overdraft of nothing.
-                if groundwater_plans.exists():
-                    remaining = allocation - cu["supplies"]["groundwater"]
-                else:
-                    allocation = None
-                    remaining = None
-            else:
-                allocation = None
-                remaining = None
-
-            account_summaries.append({
-                "account": account,
-                # ISS-099: a row with no runs behind it has no consumptive-use
-                # measurement, and 0.00 would read as one. The template shows a
-                # dash instead — for the derived Net and Remaining columns too,
-                # since both subtract a demand figure that does not exist.
-                "has_calculations": cu["calculation_runs"] > 0,
-                "consumptive_use_gross": cu["consumptive_use_gross"],
-                "consumptive_use_net": cu["consumptive_use_net"],
-                "surface": cu["supplies"]["surface"],
-                "groundwater": cu["supplies"]["groundwater"],
-                "precip": cu["supplies"]["precip"],
-                "supply_total": cu["supply_total"],
-                "net_vs_supply": cu["net_vs_supply"],
-                "allocation": allocation,
-                "remaining": remaining,
-            })
-            grand_consumptive_use += cu["consumptive_use_gross"]
-            grand_supply_total += cu["supply_total"]
-            grand_supply_surface += cu["supplies"]["surface"]
-            grand_supply_groundwater += cu["supplies"]["groundwater"]
-            grand_supply_precip += cu["supplies"]["precip"]
-            grand_calculation_runs += cu["calculation_runs"]
-            if cu["calculation_runs"] > 0:
+            row = _account_summary_row(
+                account, selected_period, has_allocations, groundwater_type
+            )
+            account_summaries.append(row)
+            grand_consumptive_use += row["consumptive_use_gross"]
+            grand_supply_total += row["supply_total"]
+            grand_supply_surface += row["surface"]
+            grand_supply_groundwater += row["groundwater"]
+            grand_supply_precip += row["precip"]
+            grand_calculation_runs += row["calculation_runs"]
+            if row["calculation_runs"] > 0:
                 accounts_with_estimates += 1
-                if cu["net_vs_supply"] >= 0:
+                if row["net_vs_supply"] >= 0:
                     accounts_in_surplus += 1
                 else:
                     accounts_in_deficit += 1
@@ -742,53 +763,110 @@ def allocation_create(request):
 
 @login_required
 def accounts_list(request):
-    """Master-detail workspace for water accounts.
+    """Water accounts overview (143-13, checkpoint ruling "accounts-table"):
+    the dashboard's own Active water accounts table, with a search and the
+    period control that drives its figures. Replaces the earlier
+    master-detail workspace (`workspace.html`), the shell Use Areas and Wells
+    also left (candidate A, "the list is the page").
 
-    Left pane: the HTMX-searchable account list. Right pane: the selected
-    account's detail — its info, balance, and assigned use areas — swapped in
-    place when a row is clicked. A ``?selected=<pk>`` query param pre-renders that
-    account server-side so a reload or deep link lands on the same workspace view
-    (the row click pushes that URL). Bucket 1 (docs/2.0-UX-PATTERN-SPEC.md).
+    A ``?selected=<pk>`` query param (the old workspace's deep-link shape)
+    redirects to the account's own detail page so a bookmarked link still
+    lands somewhere real.
 
     Returns the ``_accounts_list_results`` partial for an HTMX list refresh
-    (search / filter / pagination, which target ``#results``), and the full
-    workspace page otherwise.
+    (search / period, which target ``#results``), and the full page
+    otherwise.
     """
-    q = request.GET.get("q", "").strip()
-    status = request.GET.get("status", "").strip()
-
-    queryset = (
-        WaterAccount.objects.annotate(parcel_count=Count("wateraccountparcel"))
-        .order_by("account_number")
-    )
-
-    if q:
-        queryset = queryset.filter(
-            Q(account_number__icontains=q) | Q(name__icontains=q)
-        )
-    if status:
-        queryset = queryset.filter(status=status)
-
-    paginator = Paginator(queryset, 25)
-    page_number = request.GET.get("page", 1)
-    page_obj = paginator.get_page(page_number)
-
-    # Pre-load the selected account (deep link / reload) into the detail pane.
-    selected_account = None
     selected_raw = request.GET.get("selected", "").strip()
     if selected_raw:
-        selected_account = WaterAccount.objects.filter(pk=selected_raw).first()
+        return redirect_to_selected(request, "accounting:account_detail", selected_raw)
+
+    q = request.GET.get("q", "").strip()
+    period_param = request.GET.get("period", "").strip()
+
+    periods = ReportingPeriod.objects.order_by("-start_date")
+    selected_period = None
+    if period_param:
+        selected_period = periods.filter(pk=period_param).first()
+    else:
+        # The same "current period" default the allocations and ledger
+        # screens land on (accounting.services.current_period_id), so this
+        # page never opens on a stale or empty year just because nobody
+        # passed ?period=.
+        default_period_id = compute_current_period_id()
+        if default_period_id:
+            selected_period = periods.filter(pk=default_period_id).first()
+
+    all_active = WaterAccount.objects.filter(status="active")
+    total_count = all_active.count()
+
+    queryset = all_active.order_by("account_number")
+    if q:
+        queryset = queryset.filter(
+            Q(account_number__icontains=q)
+            | Q(name__icontains=q)
+            | Q(contact_name__icontains=q)
+        )
+
+    has_allocations = False
+    groundwater_type = None
+    engine_has_never_run = False
+
+    if selected_period is not None:
+        has_allocations = AllocationPlan.objects.filter(
+            reporting_period=selected_period,
+        ).exists()
+        groundwater_type = WaterType.objects.filter(code__iexact="GW").first()
+        engine_has_never_run = (
+            Parcel.objects.exists()
+            and not runs_in_period(
+                CalculationRun.objects.all(), selected_period
+            ).exists()
+        )
+
+    # Built regardless of whether a period is selected: `selected_period=None`
+    # reaches `_account_summary_row` -> `account_consumptive_balance` the same
+    # way the account detail pane's own "All Time" choice does (reporting_period
+    # is an optional filter there, not a requirement), so an account still
+    # shows as a row, its identity, never invented figures, even on a
+    # deployment with no reporting period yet. `has_allocations` is False in
+    # that case, so every row's allocation/remaining stay the dash they always
+    # are with no budget to show.
+    account_summaries = []
+    grand_consumptive_use = Decimal("0")
+    grand_supply_total = Decimal("0")
+    grand_supply_surface = Decimal("0")
+    grand_supply_groundwater = Decimal("0")
+    grand_supply_precip = Decimal("0")
+    for account in queryset:
+        row = _account_summary_row(
+            account, selected_period, has_allocations, groundwater_type
+        )
+        account_summaries.append(row)
+        grand_consumptive_use += row["consumptive_use_gross"]
+        grand_supply_total += row["supply_total"]
+        grand_supply_surface += row["surface"]
+        grand_supply_groundwater += row["groundwater"]
+        grand_supply_precip += row["precip"]
+    grand_net = grand_supply_total - grand_consumptive_use
 
     context = {
-        "page_obj": page_obj,
-        "total_count": paginator.count,
+        "account_summaries": account_summaries,
+        "has_allocations": has_allocations,
+        "engine_has_never_run": engine_has_never_run,
+        "grand_consumptive_use": grand_consumptive_use,
+        "grand_supply_total": grand_supply_total,
+        "grand_supply_surface": grand_supply_surface,
+        "grand_supply_groundwater": grand_supply_groundwater,
+        "grand_supply_precip": grand_supply_precip,
+        "grand_net": grand_net,
+        "periods": periods,
+        "selected_period": selected_period,
         "q": q,
-        "status": status,
-        "status_choices": WaterAccount.STATUS_CHOICES,
-        "selected_account": selected_account,
+        "total_count": total_count,
+        "matched_count": len(account_summaries),
+        "hx_request": bool(request.headers.get("HX-Request")),
     }
-    if selected_account is not None:
-        context.update(_account_detail_context(selected_account))
 
     if request.headers.get("HX-Request"):
         return render(

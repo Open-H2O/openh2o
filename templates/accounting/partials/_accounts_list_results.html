@@ -1,79 +1,20 @@
-<!-- Count badge -->
-<div class="result-count-bar">
-  <span class="text-secondary text-sm">
-    <span class="count-pill">{{ total_count }}</span>
-    account{{ total_count|pluralize }} found
-  </span>
-</div>
-
-{% if page_obj.object_list %}
-<div class="card-raised master-list-card">
-  {% for account in page_obj %}
-  <div
-    data-row
-    class="master-row{% if selected_account and account.pk == selected_account.pk %} is-selected{% endif %}"
-    hx-get="{% url 'accounting:account_detail' account.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    {# a11y 2.1.1: div[role=link] needs an explicit Enter trigger; HTMX defaults to mouse click only. #}
-    hx-trigger="click, keyup[key=='Enter']"
-    hx-push-url="{% url 'accounting:accounts_list' %}?selected={{ account.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open account {{ account.account_number }}">
-    <div class="master-row-top">
-      <span class="master-row-id">{{ account.account_number }}</span>
-      {% if account.status == "active" %}
-        <span class="badge badge-pill badge-green">Active</span>
-      {% elif account.status == "inactive" %}
-        <span class="badge badge-pill badge-grey">Inactive</span>
-      {% elif account.status == "suspended" %}
-        <span class="badge badge-pill badge-red">Suspended</span>
-      {% else %}
-        <span class="badge badge-pill badge-grey">{{ account.get_status_display }}</span>
-      {% endif %}
+{% load humanize %}{% comment %}
+143-13 (Brent's "accounts-table" ruling): the accounts list is the dashboard's
+own Active water accounts table, with a search. The count lives ONCE, in this
+card's own ledger-card-head: there is no map card on this page to carry it
+instead (accounts have no geometry). Both the population line and the facts
+line re-render on every swap since the whole card (head included) sits inside
+#results, so a search never needs an out-of-band trick to keep the count
+current.
+{% endcomment %}
+<div class="card-raised" style="padding: 0;">
+  <div class="ledger-card-head">
+    <div class="text-secondary text-base">
+      {% if not q %}{{ total_count|intcomma }} active account{{ total_count|pluralize }}{% elif matched_count %}{{ matched_count|intcomma }} of {{ total_count|intcomma }} active accounts match{{ matched_count|pluralize:"es," }} &ldquo;{{ q }}&rdquo;{% else %}No active account matches &ldquo;{{ q }}&rdquo;{% endif %}
     </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">{{ account.name }}</span>
-      <span class="master-row-acres">{{ account.parcel_count }} use area{{ account.parcel_count|pluralize }}</span>
+    <div class="text-secondary text-base">
+      One row per active water account, {{ selected_period.name|default:"All periods" }}. All figures in acre-feet (AF).
     </div>
   </div>
-  {% endfor %}
+  {% include "accounting/partials/_active_accounts_table.html" %}
 </div>
-
-<!-- Pagination -->
-{% if page_obj.has_other_pages %}
-<div class="pagination-row">
-  {% if page_obj.has_previous %}
-    <button
-      hx-get="{% url 'accounting:accounts_list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
-      hx-target="#results"
-      class="btn-secondary btn-sm">
-      Previous
-    </button>
-  {% endif %}
-  <span class="pagination-label">
-    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-  </span>
-  {% if page_obj.has_next %}
-    <button
-      hx-get="{% url 'accounting:accounts_list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
-      hx-target="#results"
-      class="btn-secondary btn-sm">
-      Next
-    </button>
-  {% endif %}
-</div>
-{% endif %}
-
-{% else %}
-<div class="card-raised empty-state">
-  <div class="empty-state-icon">
-    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-    </svg>
-  </div>
-  <p class="empty-state-text">No accounts found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
-</div>
-{% endif %}

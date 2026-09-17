@@ -1,16 +1,7 @@
-{% extends "workspace.html" %}
+{% extends "base.html" %}
 
 {% block title %}Water accounts - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Water accounts{% endblock %}
-
-{% comment %}
-  Water accounts have no geometry of their own, so this workspace has no map.
-  Override the shell's map asset blocks to empty so MapLibre isn't loaded for a
-  screen that never shows a map; the shell's hidden #detail-map slot just stays
-  hidden.
-{% endcomment %}
-{% block map_styles %}{% endblock %}
-{% block map_scripts %}{% endblock %}
 
 {% block page_actions %}
 <a href="{% url 'accounting:account_create' %}" class="btn-primary btn-sm">+ New account</a>
@@ -23,51 +14,58 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Accounts</span>
   </nav>
-  <p class="page-description">Water accounts group use areas for tracking and reporting. Pick one to open its balance and assigned use areas alongside the list.</p>
+  <p class="page-description">Water accounts tracked in the system. Search or filter the list; a row opens the account's balance and use areas.</p>
 </div>
 {% endblock %}
 
-{% block master_toolbar %}
-  <div>
-    <label class="form-label" for="filter-search">Search</label>
-    <input
-      type="text"
-      id="filter-search" name="q"
-      value="{{ q }}"
-      placeholder="Account number or name..."
-      hx-get="{% url 'accounting:accounts_list' %}"
-      hx-target="#results"
-      hx-trigger="keyup changed delay:300ms"
-      hx-include="[name='status']"
-      class="form-input search-input-icon"
-    >
-  </div>
-  <div>
-    <label class="form-label" for="filter-status">Status</label>
-    <select
-      id="filter-status" name="status"
-      hx-get="{% url 'accounting:accounts_list' %}"
-      hx-target="#results"
-      hx-trigger="change"
-      hx-include="[name='q']"
-      class="form-select"
-    >
-      <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
-      {% for val, label in status_choices %}
-        <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-  </div>
-{% endblock %}
+{% block content %}
+<div class="page-stack page-wide">
 
-{% block master_results %}
-  {% include "accounting/partials/_accounts_list_results.html" %}
-{% endblock %}
+  {% comment %}
+    143-13 (Brent's "accounts-table" ruling, checkpoint 2026-09-16): no map
+    card here. Accounts have no geometry of their own (a per-account map is
+    ISS-175, filed for Phase 144): the toolbar is the page's first card,
+    Search beside the period control that drives every figure below it.
+  {% endcomment %}
+  <div class="card-raised toolbar-row">
+    <div style="width: 200px;">
+      <label class="form-label" for="filter-period">Period</label>
+      <select
+        id="filter-period" name="period"
+        hx-get="{% url 'accounting:accounts_list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q']"
+        hx-push-url="true"
+        class="form-select"
+      >
+        <option value="">All periods</option>
+        {% for p in periods %}
+          <option value="{{ p.pk }}" {% if selected_period.pk == p.pk %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex: 1; min-width: 200px;">
+      <label class="form-label" for="filter-search">Search</label>
+      <input
+        type="text"
+        id="filter-search" name="q"
+        value="{{ q }}"
+        placeholder="Account number, name or owner..."
+        hx-get="{% url 'accounting:accounts_list' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='period']"
+        autocomplete="off"
+        class="form-input search-input-icon"
+      >
+    </div>
+  </div>
 
-{% block detail_body %}
-  {% if selected_account %}
-    {% include "accounting/partials/_account_detail_pane.html" %}
-  {% else %}
-    {% include "accounting/partials/_account_detail_empty.html" %}
-  {% endif %}
+  <!-- Results (HTMX target) -->
+  <div id="results">
+    {% include "accounting/partials/_accounts_list_results.html" %}
+  </div>
+
+</div>
 {% endblock %}
