@@ -4718,7 +4718,6 @@ details[open] > summary .disclosure-mark {
     font-weight: 700;
 }
 
-
 /* Detail pane header (the workspace has no breadcrumb to name the parcel) */
 .pane-header {
     display: flex;
@@ -4756,7 +4755,6 @@ details[open] > summary .disclosure-mark {
     flex-direction: column;
     gap: var(--space-md);
 }
-
 
 /* -- "Needs attention" rows (dashboard) ---------------------------------- */
 /* A band of the period card (143-04, 2026-09-11; was a full-width strip of
