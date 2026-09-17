@@ -1297,6 +1297,17 @@ workspace shell (`templates/workspace.html`, its three `_detail_empty.html` part
 `.app-main:has(.workspace-split)` viewport pin) is deleted: no page on the platform extends it
 any more (grepped before the delete, per ISS-089/091's droppability gate).
 
+Closed on staging 2026-09-16: deployed `4aaf925` then `1220759`, served commit read off the
+host; the after-probe on staging matched local on every layout value (Use Areas 1 row at first
+paint and 21 with the table at the top, Wells 0 and 21, Accounts 8 of 11; toolbar 110px one
+row on all three; no old class in any body; "Brayfield" narrows Use Areas to 3 of 76 with 3
+features drawn). One checkpoint fix (`1220759`): the Wells search reached name and
+registration id only and now reaches the Owner column too, its placeholder saying so, the
+guard seen red first. Brent approved 21:14 PDT on staging `1220759`; production untouched at
+`241c22b`. Readers 5 of 5: mock-up A SHIP 4, mock-up B DO NOT SHIP 3, the three built-page
+reads DO NOT SHIP (3, 4, 3), each naming the 380px full-width map card that leaves the
+table's first row at the fold, the shape he chose from the composite; "keep 380" stands.
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**
