@@ -82,7 +82,9 @@ def wells_list(request):
 
     if q:
         queryset = queryset.filter(
-            Q(name__icontains=q) | Q(well_registration_id__icontains=q)
+            Q(name__icontains=q)
+            | Q(well_registration_id__icontains=q)
+            | Q(owner_name__icontains=q)
         )
     if status:
         queryset = queryset.filter(status=status)

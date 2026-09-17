@@ -198,6 +198,22 @@ class TestWellsFinder:
         assert "the map shows those 2" in body
         assert body.count("data-table-link") == 2
 
+    def test_wells_search_reaches_the_owner_column(self, auth_client):
+        """Brent, 143-13 checkpoint 2026-09-16 21:08 PDT: the Owner column is on
+        the list, so the search box has to find it, as Use Areas and Accounts do."""
+        for n in range(5):
+            WellFactory(name=f"Well {n:03d}", owner_name="Other Ranch")
+        WellFactory(name="Well 900", owner_name="Halvern Orchards")
+        WellFactory(name="Well 901", owner_name="Halvern Orchards")
+
+        response = auth_client.get(
+            reverse("wells:list"), {"q": "Halvern"}, HTTP_HX_REQUEST="true"
+        )
+        body = response.content.decode()
+        assert response.status_code == 200
+        assert "2 of 7 match" in body
+        assert body.count("data-table-link") == 2
+
     def test_selected_redirects_to_the_detail_page(self, auth_client):
         well = WellFactory()
 

@@ -58,7 +58,7 @@
         type="text"
         id="filter-search" name="q"
         value="{{ q }}"
-        placeholder="Well name or registration ID..."
+        placeholder="Well name, registration ID or owner..."
         hx-get="{% url 'wells:list' %}"
         hx-target="#results"
         hx-trigger="keyup changed delay:300ms"
