@@ -1,0 +1,133 @@
+{% comment %}
+Use Areas overview map: every use area the list is showing, on the parcels
+overview page (143-13, candidate A). Copies the 143-07 map card's pattern
+(surface/partials/_pods_overview_map.html) with the polygon paint
+_zones_overview_map.html uses, since a use area is a filled shape, not a dot.
+
+The overview map card (143-07). Three things beyond the fill:
+
+  * An always-on label per use area (OH2O.addDetailLabel: minzoom 0, collision
+    declutter, text-optional), reading the parcel number straight off the same
+    source (no separate label endpoint: parcels:geojson already carries one
+    Polygon per use area, unlike Zones' multi-part GSA boundaries).
+  * The map FOLLOWS THE LIST. The results partial emits the whole filtered
+    queryset's pks as json_script#results-map-pks, and OH2O.followResults
+    filters every layer here to those pks and re-frames on first paint and
+    after every htmx swap of #results. The geojson endpoint takes NO
+    parameter: one fetch per page load, one source, filtered client-side.
+  * The card's head (partials/_map_card_head.html) carries the count line and
+    the key; the map itself says nothing in words.
+
+The parent page must provide a <div> with the matching map_id, and must load
+MapLibre GL JS + map-core.js (the map_scripts block) before this include. It
+includes this partial only when something has a location (located_count):
+with nothing to draw the card is its head alone and no map is built.
+
+Variables:
+  map_id  - ID of the existing <div> container on the page (required)
+{% endcomment %}
+<script>
+(function() {
+  // MapLibre loads in the map_scripts block, which renders AFTER page content,
+  // so on first render this runs before the library exists. Defer until
+  // DOMContentLoaded; on an HTMX content swap the document is already loaded.
+  function init() {
+    if (!window.maplibregl) return;
+    var el = document.getElementById('{{ map_id }}');
+    if (!el || el._mapInit) return;
+    el._mapInit = true;
+
+    var COLOR = OH2O.entities.parcel.color;   // Pacific Blue, the parcel symbology on the big map
+    var SRC = '{{ map_id }}-source';
+
+    var map = new maplibregl.Map({
+      cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
+      container: '{{ map_id }}',
+      style: OH2O.basemapStyle('aerial'),
+      zoom: 7,
+      center: [-119.5, 37.3],
+      attributionControl: false
+    });
+    el._oh2oMap = map;   // a handle for probes; the map is otherwise closed over
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    OH2O.mountBasemapToggle(map, 'aerial');
+
+    // Resolve the detail URL through Django (a sentinel pk we swap out) so the
+    // link tracks the app's URL prefix instead of hardcoding it.
+    var detailUrl = '{% url "parcels:detail" 0 %}';
+
+    map.on('load', function() {
+      fetch('{% url "parcels:geojson" %}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.features || !data.features.length) return;
+
+          map.addSource(SRC, { type: 'geojson', data: data });
+
+          map.addLayer({
+            id: '{{ map_id }}-fill',
+            type: 'fill',
+            source: SRC,
+            paint: { 'fill-color': COLOR, 'fill-opacity': 0.35 }
+          });
+          map.addLayer({
+            id: '{{ map_id }}-outline',
+            type: 'line',
+            source: SRC,
+            paint: { 'line-color': COLOR, 'line-width': 1.5, 'line-opacity': 0.9 }
+          });
+
+          // The always-on label, after the fill so it draws above it. A label
+          // that would collide yields; the shape stays.
+          OH2O.addDetailLabel(map, SRC, 'parcel', {
+            id: '{{ map_id }}-label',
+            layout: {
+              'text-variable-anchor': ['center', 'top', 'bottom', 'left', 'right'],
+              'text-radial-offset': 0.6,
+              'text-justify': 'auto'
+            }
+          });
+
+          // Filter to the list's pks and frame them: now, and after every swap
+          // of #results.
+          OH2O.followResults(map, {
+            layers: ['{{ map_id }}-fill', '{{ map_id }}-outline', '{{ map_id }}-label'],
+            source: SRC,
+            data: data,
+            pksEl: 'results-map-pks',
+            resultsEl: 'results',
+            padding: { top: 64, bottom: 64, left: 40, right: 40 },
+            maxZoom: 13,
+            singleZoom: 11
+          });
+
+          map.on('click', '{{ map_id }}-fill', function(e) {
+            var p = e.features[0].properties;
+            var sub = [p.owner_name, p.status].filter(Boolean).join(' &middot; ');
+            new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
+              .setLngLat(e.lngLat)
+              .setHTML(
+                '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
+                '<div style="font-weight:600;font-size:13px;">' + (p.parcel_number || 'Use area') + '</div>' +
+                (sub ? '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
+                '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
+                  'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View use area &rarr;</a>' +
+                '</div>'
+              )
+              .addTo(map);
+          });
+
+          map.on('mouseenter', '{{ map_id }}-fill', function() { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', '{{ map_id }}-fill', function() { map.getCanvas().style.cursor = ''; });
+        })
+        .catch(function(err) { console.error('Parcels GeoJSON failed:', err); });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

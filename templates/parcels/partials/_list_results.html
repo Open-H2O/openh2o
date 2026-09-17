@@ -1,69 +1,78 @@
-{% load placeholders %}<!-- Count badge -->
-<div class="result-count-bar">
-  <span class="text-secondary text-sm">
-    <span class="count-pill">{{ total_count }}</span>
-    parcel{{ total_count|pluralize }} found
-  </span>
-</div>
+{% load placeholders humanize %}{% comment %}
+The count line is NOT here (143-07). It is the map card's head, above the map
+and outside #results, and on an htmx swap this partial re-renders that head
+out of band (hx-swap-oob on the same id) so the count follows the list
+without the map being torn down. On a full page render the page includes the
+head once itself, so it is included here only on an htmx request (hx_request,
+from the view). The pks below are the WHOLE filtered queryset's, before
+pagination: OH2O.followResults reads them after every swap and filters the
+map to them.
+{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="parcels-overview-map-head" title="Use areas" noun="use area" noun_plural="use areas" key_label="Use area" swatch="fill" swatch_token="blue" oob=True %}{% endif %}
+{{ result_pks|json_script:"results-map-pks" }}
 
 {% if page_obj.object_list %}
-<div class="card-raised master-list-card">
-  {% for parcel in page_obj %}
-  <div
-    data-row
-    class="master-row{% if selected_parcel and parcel.pk == selected_parcel.pk %} is-selected{% endif %}"
-    hx-get="{% url 'parcels:detail' parcel.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    {# a11y 2.1.1: div[role=link] needs an explicit Enter trigger; HTMX defaults to mouse click only. #}
-    hx-trigger="click, keyup[key=='Enter']"
-    hx-push-url="{% url 'parcels:list' %}?selected={{ parcel.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open use area {{ parcel.parcel_number }}">
-    <div class="master-row-top">
-      <span class="master-row-id">{{ parcel.parcel_number }}</span>
-      {% include "parcels/partials/_status_badge.html" with status=parcel.status %}
-    </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">{{ parcel.owner_name|blank }}</span>
-      {% if parcel.area_acres %}<span class="master-row-acres">{{ parcel.area_acres }} ac</span>{% endif %}
-    </div>
+<div class="card-raised" style="padding: 0;">
+  <div class="ledger-card-head">
+    <div class="text-secondary text-base">Acres are the area on record; the water balance is on the use area's page.</div>
   </div>
-  {% endfor %}
-</div>
+  <table class="data-table text-sm">
+    <thead>
+      <tr>
+        <th>Use area</th>
+        <th>Owner</th>
+        <th class="th-right">Acres</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for parcel in page_obj %}
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='{% url 'parcels:detail' parcel.pk %}';}">
+        <td>
+          <a href="{% url 'parcels:detail' parcel.pk %}" class="data-table-link">
+            {{ parcel.parcel_number }}
+          </a>
+        </td>
+        <td class="text-secondary">{{ parcel.owner_name|blank }}</td>
+        <td class="td-num">{% if parcel.area_acres %}{{ parcel.area_acres }}{% else %}<span class="value-empty">Not recorded</span>{% endif %}</td>
+        <td>{% include "parcels/partials/_status_badge.html" with status=parcel.status %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-<!-- Pagination -->
-{% if page_obj.has_other_pages %}
-<div class="pagination-row">
-  {% if page_obj.has_previous %}
-    <button
-      hx-get="{% url 'parcels:list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
-      hx-target="#results"
-      class="btn-secondary btn-sm">
-      Previous
-    </button>
-  {% endif %}
-  <span class="pagination-label">
-    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-  </span>
-  {% if page_obj.has_next %}
-    <button
-      hx-get="{% url 'parcels:list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
-      hx-target="#results"
-      class="btn-secondary btn-sm">
-      Next
-    </button>
+  <!-- Pagination (one control, under the table, inside the card) -->
+  {% if page_obj.has_other_pages %}
+  <div class="pagination-row">
+    {% if page_obj.has_previous %}
+      <button
+        hx-get="{% url 'parcels:list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
+        hx-target="#results"
+        class="btn-secondary btn-sm">
+        Previous
+      </button>
+    {% endif %}
+    <span class="pagination-label">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+      <button
+        hx-get="{% url 'parcels:list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
+        hx-target="#results"
+        class="btn-secondary btn-sm">
+        Next
+      </button>
+    {% endif %}
+  </div>
   {% endif %}
 </div>
-{% endif %}
 
 {% else %}
 {% comment %}
   119-01: text-align left overrides `.empty-state`'s centring (app.css:1808).
   Seven centred lines in a ~400px master column read as a wedge; called on the
-  rendered screen 2026-08-25. Applied to the whole panel so the glyph, both
-  branches and the button share one edge rather than half-centring.
+  rendered screen 2026-08-25. Kept left-aligned here even at full page width,
+  since the shape (glyph, text, one action) is the same regardless of column.
 {% endcomment %}
 <div class="card-raised empty-state" style="text-align: left;">
   <div class="empty-state-icon">
@@ -74,20 +83,17 @@
     </svg>
   </div>
   {% if q or status %}
-  <p class="empty-state-text">No parcels found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
+  <p class="empty-state-text">No use areas found{% if q %} matching "{{ q }}"{% endif %}{% if status %} with status "{{ status }}"{% endif %}.</p>
   {% else %}
   {% comment %}
     Deliberately NOT the shared actionable empty state in `templates/partials/`,
     which was included here until Phase 119. That partial's own contract is
     "this screen's own Add + Import actions (the same links its toolbar
-    offers)", and this screen now offers neither: `ADD_TYPE_ORDER` in
+    offers)", and this screen offers neither: `ADD_TYPE_ORDER` in
     `infrastructure/views.py` has no parcel type, so both of its links resolved
     through the blank-type fallback and opened another module's form. Shaped
-    after `drinking/partials/_empty_drinking.html`, which is this codebase's
-    shipped answer to the same problem.
-
-    The wrapper and the glyph stay in the caller above, so each screen keeps its
-    own icon — the same division the replaced partial used.
+    after `drinking/partials/_empty_drinking.html`, this codebase's shipped
+    answer to the same problem.
   {% endcomment %}
   <p class="empty-state-text" style="max-width: 460px;">Use Areas are the parcels you account for. Each one's water use is reconciled against the supplies that serve it.</p>
   {% if 'setup' in enabled_modules %}
