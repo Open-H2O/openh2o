@@ -64,7 +64,7 @@ class TestAgreement:
         ReportingPeriodFactory()
         result = check_et_meter_agreement()
         assert result["status"] == "green"
-        assert "nothing independent" in result["message"]
+        assert "to check satellite ET against" in result["message"]
         assert result["details"]["comparable_parcel_periods"] == 0
 
     def test_plausible_efficiency_is_green(self):

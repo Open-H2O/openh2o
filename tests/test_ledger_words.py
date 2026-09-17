@@ -92,13 +92,15 @@ class TestDeliveryShareWordsTail:
         sentence = delivery_share_words(record, _pod("Plain Canal Headgate"))
         assert sentence.endswith(DELIVERY_SHARE_BY_USE)
 
-    def test_fixed_share_form_prints_percentage_and_no_estimated_use_tail(self):
+    def test_fixed_share_form_prints_percentage_and_because_no_use_area_tail(self):
         record = _record("10", "0")
         sentence = delivery_share_words(
             record, _pod("Plain Canal Headgate"), fixed_share=Decimal("0.2000")
         )
-        assert f"{DELIVERY_SHARE_BY_FIXED} (20%)" in sentence
-        assert sentence.endswith("no estimated use on record for the month")
+        assert f": 20%, {DELIVERY_SHARE_BY_FIXED}" in sentence
+        assert sentence.endswith(
+            "because no use area it serves has an estimated use for the month"
+        )
 
 
 class TestDeliveryShareWordsPodName:

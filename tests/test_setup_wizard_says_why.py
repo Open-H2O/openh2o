@@ -60,14 +60,14 @@ class TestTheWizardSaysWhyItSentYouBack:
         assert resp.redirect_chain[0][1] == 302
         assert resp.request["PATH_INFO"] == reverse("setup:wizard")
         body = resp.content.decode()
-        assert "Setup starts here" in body
-        assert "this session had none" in body
+        assert "No boundary is confirmed for this session" in body
+        assert "Choose or upload one, then confirm it" in body
 
     def test_run_with_no_session_lands_on_wizard_with_the_message(self):
         client = _admin_client()
         resp = client.get(reverse("setup:run"), follow=True)
         assert resp.request["PATH_INFO"] == reverse("setup:wizard")
-        assert "Setup starts here" in resp.content.decode()
+        assert "No boundary is confirmed for this session" in resp.content.decode()
 
     def test_confirm_with_a_deleted_boundary_names_that_it_was_deleted(self):
         client = _admin_client()
@@ -76,7 +76,7 @@ class TestTheWizardSaysWhyItSentYouBack:
         boundary.delete()
         resp = client.get(reverse("setup:confirm"), follow=True)
         body = resp.content.decode()
-        assert "the boundary this session had chosen no longer exists" in body
+        assert "The boundary this session chose no longer exists" in body
 
 
 @pytest.mark.django_db

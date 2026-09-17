@@ -190,7 +190,7 @@ class TestRenderedPages:
         self, admin_client
     ):
         body = admin_client.get("/").content.decode()
-        assert "Work out your GEARS and CalWATRS figures" in body
+        assert "Your GEARS and CalWATRS figures for the state's layouts" in body
 
     def test_the_home_report_card_drops_calwatrs_when_surface_is_off(
         self, admin_client, settings
@@ -198,7 +198,7 @@ class TestRenderedPages:
         """The fourth site, found by measuring rather than from the plan's list."""
         settings.OPENH2O_MODULES = WITHOUT_SURFACE
         body = admin_client.get("/").content.decode()
-        assert "Work out your GEARS figures" in body
+        assert "Your GEARS figures for the state's layouts" in body
         assert "CalWATRS" not in body
 
     def test_getting_started_drops_surface_nouns_when_surface_is_off(

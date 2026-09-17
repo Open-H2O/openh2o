@@ -239,7 +239,7 @@ class TestLookupFailureModes:
         ).content.decode()
 
         assert "No system with that PWSID" in body
-        assert "not a sign that EPA is down" in body
+        assert "EPA answered; the ID was not found" in body
         assert WaterSystem.objects.count() == 0
 
     def test_a_timeout_never_reads_as_not_found(self, client_in, monkeypatch):
@@ -254,7 +254,7 @@ class TestLookupFailureModes:
         ).content.decode()
 
         assert "EPA did not answer in time" in body
-        assert "may be perfectly good" in body
+        assert "may be correct" in body
         assert "No system with that PWSID" not in body
         assert WaterSystem.objects.count() == 0
 
