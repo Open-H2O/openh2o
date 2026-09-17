@@ -273,7 +273,7 @@
     <div class="step-body">
       <span class="step-eyebrow">Step 2 &middot; {% if system.step_points_done %}done &mdash; {{ system.sampling_point_count|intcomma }} point{{ system.sampling_point_count|pluralize }}{% else %}not yet{% endif %}</span>
       <h2 class="section-header">Build its sampling points</h2>
-      <p class="text-secondary text-base">Envirofacts carries the facilities but not the points beneath them, so onboarding deliberately creates none &mdash; inventing them would let one federal record decide the structure a lab file is matched against. The builder composes each PS Code in the state&rsquo;s published format, one per facility you choose.</p>
+      <p class="text-secondary text-base">Envirofacts carries the facilities but not their sampling points, so onboarding creates none. The builder composes each PS Code in the state&rsquo;s published format, one per facility you choose.</p>
       <a href="{% url 'drinking:onboard_points' system.pwsid %}" class="text-sm text-accent">Go to the point builder &rarr;</a>
     </div>
   </div>

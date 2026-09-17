@@ -152,7 +152,7 @@ class DeliverySettingsForm(forms.Form):
     efficiency_percent = forms.IntegerField(
         min_value=1,
         max_value=100,
-        label="Share of delivered water the crop actually consumes",
+        label="Share of delivered water the crop consumes",
         # 90-02: said "soaks back into the aquifer as recharge", which named the
         # `recharge` module's noun on deployments that do not run it. The
         # sentence does not need the word — where the water goes is already

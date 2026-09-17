@@ -240,7 +240,7 @@ class WaterCredit(models.Model):
         max_length=7,
         null=True,
         blank=True,
-        help_text="Month at/after which the credit is dead, as YYYY-MM. Null = never expires.",
+        help_text="Month at or after which the credit expires, as YYYY-MM. Blank = never expires.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
