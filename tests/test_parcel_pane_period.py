@@ -176,14 +176,18 @@ def test_an_unknown_period_argument_falls_back_to_the_default(
     assert (pk, name) == (newer.pk, "WY 2025-2026")
 
 
-def test_the_page_and_the_workspace_preload_show_the_same_period_as_the_pane(
+def test_the_page_and_the_old_workspace_deep_link_show_the_same_period(
     curtailed_field, client_logged_in
 ):
-    """All three render paths resolve the period identically.
+    """The standalone page and the old workspace's ``?selected=`` deep link
+    resolve the period identically.
 
-    The HTMX fragment, the standalone page and the workspace's ``?selected=``
-    preload share ``_parcel_detail_context``; a period resolved in only one of
-    them is a pane that changes when you reload it.
+    143-13 (candidate A) removed the master-detail workspace: `parcels:list`
+    no longer pre-renders the pane inline, it redirects ``?selected=<pk>`` to
+    the parcel's own detail page (`core.workspace.redirect_to_selected`). Both
+    paths land on `_parcel_detail_context`, so a period resolved differently
+    in one of them would be a link that opens on a different year than the
+    page it points at.
     """
     parcel, older, newer = curtailed_field
 
@@ -191,21 +195,31 @@ def test_the_page_and_the_workspace_preload_show_the_same_period_as_the_pane(
     assert page.status_code == 200
     assert selected_period(page.content.decode()) == (newer.pk, "WY 2025-2026")
 
-    workspace = client_logged_in.get(
+    old_link = client_logged_in.get(
         reverse("parcels:list") + f"?selected={parcel.pk}"
     )
-    assert workspace.status_code == 200
-    assert selected_period(workspace.content.decode()) == (newer.pk, "WY 2025-2026")
+    assert old_link.status_code == 302
+    assert old_link.url == reverse("parcels:detail", args=[parcel.pk])
+
+    followed = client_logged_in.get(old_link.url)
+    assert selected_period(followed.content.decode()) == (newer.pk, "WY 2025-2026")
 
 
-def test_an_explicit_period_is_honoured_on_the_workspace_preload(
+def test_an_explicit_period_survives_the_old_workspace_deep_link(
     curtailed_field, client_logged_in
 ):
-    """A deep link into the workspace carries its period too."""
+    """A `?selected=&period=` deep link into the old workspace carries its
+    period forward onto the redirect, so a bookmarked link still opens the
+    year it was saved on."""
     parcel, older, newer = curtailed_field
 
-    workspace = client_logged_in.get(
+    old_link = client_logged_in.get(
         reverse("parcels:list") + f"?selected={parcel.pk}&period={older.pk}"
     )
-    assert workspace.status_code == 200
-    assert selected_period(workspace.content.decode()) == (older.pk, "WY 2024-2025")
+    assert old_link.status_code == 302
+    assert old_link.url == (
+        reverse("parcels:detail", args=[parcel.pk]) + f"?period={older.pk}"
+    )
+
+    followed = client_logged_in.get(old_link.url)
+    assert selected_period(followed.content.decode()) == (older.pk, "WY 2024-2025")

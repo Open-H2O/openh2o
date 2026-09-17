@@ -274,14 +274,19 @@ class TestAccessibility:
     """WCAG 2.1 AA / 508 remediation (2026-06-23, audit docs/2.0-ACCESSIBILITY-AUDIT.md):
     F1 keyboard-operable master rows, F3 a real per-page <h1>."""
 
-    def test_master_rows_are_keyboard_activatable(self, auth_client):
-        # F1 (2.1.1 Keyboard): the div[role=link] rows must carry an Enter-key
-        # trigger, not rely on HTMX's default mouse-only click.
+    def test_table_rows_are_keyboard_activatable(self, auth_client):
+        # F1 (2.1.1 Keyboard). 143-13 moved Wells off the master-detail
+        # workspace (a div[role=link] row with its own Enter-key trigger) onto
+        # the Bucket-3 table every other list uses: a real <a> inside the row,
+        # which the keyboard reaches and activates natively, with no ARIA role
+        # or JS keyup handler needed. The row's own onclick is a mouse-only
+        # convenience layered on top ("click anywhere in the row"); the link
+        # itself is what a keyboard user tabs to and presses Enter on.
         WellFactory(name="MER-WELL-001")
         response = auth_client.get(reverse("wells:list"))
         body = response.content.decode()
-        assert 'role="link"' in body
-        assert "keyup[key=='Enter']" in body
+        assert 'class="data-table-link"' in body
+        assert "MER-WELL-001" in body
 
     def test_page_has_one_real_h1_that_is_the_page_subject(self, auth_client):
         # F3 (1.3.1 / 2.4.6): exactly one <h1>, and it is the page subject,
@@ -642,36 +647,40 @@ class TestAccountingPages:
         response = auth_client.get(reverse("accounting:accounts_list"))
         assert response.status_code == 200
 
-    # Water Accounts — Bucket 1 master-detail workspace (v2.0 conversion).
-    def test_accounts_list_is_master_detail(self, auth_client):
-        """The list is the shared workspace shell: clickable rows (no flat table)
-        that swap each account's detail into #detail-body, plus a resting empty
-        pane until one is picked."""
+    # Water Accounts, Bucket-3 finder (143-13, "accounts-table" ruling): the
+    # list is the dashboard's own Active water accounts table, with a search.
+    # Retargeted from the old master-detail workspace assertions (workspace.html
+    # is gone; a row now opens the account's own detail page, not an in-page
+    # pane).
+    def test_accounts_list_is_bucket3_table(self, auth_client):
+        """The list is the shared Active water accounts table (data-table-link
+        rows, not master-detail rows), with the count once in the card's own
+        ledger-card-head."""
         WaterAccountFactory(account_number="ACC-DEEP", name="Deep Link Farms")
         response = auth_client.get(reverse("accounting:accounts_list"))
         assert response.status_code == 200
         body = response.content.decode()
-        # On the shared shell, with a clickable master row (not the old table).
-        assert "workspace-split" in body
-        assert "data-row" in body
+        # No workspace shell and no master-detail row on this page any more.
+        assert "workspace-split" not in body
+        assert "master-row" not in body
+        assert "data-table-link" in body
         assert "ACC-DEEP" in body
-        # Resting empty pane before a selection (the E6 orientation panel).
-        assert "Select an account" in body
-        assert "Choose one from the list" in body
+        # The count line lives in the table card's own head.
+        assert "ledger-card-head" in body
+        assert "active account" in body
 
-    def test_accounts_list_selected_preloads_detail_pane(self, auth_client):
-        """?selected=<pk> renders the chosen account's detail server-side so a
-        reload or deep link lands on the same workspace view."""
+    def test_accounts_list_selected_redirects_to_detail(self, auth_client):
+        """?selected=<pk> (the old workspace's deep-link shape) redirects to
+        the account's own detail page, so a bookmarked link still lands
+        somewhere real."""
         account = WaterAccountFactory(account_number="ACC-SEL", name="Selected Farms")
         response = auth_client.get(
             reverse("accounting:accounts_list"), {"selected": account.pk}
         )
-        assert response.status_code == 200
-        body = response.content.decode()
-        # The pane is pre-rendered: account header + its interactive workflows.
-        assert "Account balance" in body
-        assert 'id="parcel-assignments"' in body
-        assert "Open full page" in body
+        assert response.status_code == 302
+        assert response.url == reverse(
+            "accounting:account_detail", kwargs={"pk": account.pk}
+        )
 
     def test_account_detail_hx_request_returns_pane_fragment(self, auth_client):
         """An HTMX row click (no period param) gets just the detail-pane fragment
