@@ -1244,6 +1244,59 @@ hosts, the reader verdicts and the seven before/after pairs are Task 7, not this
 production untouched at `241c22b` (re-read from the host, `ssh` not needed locally since this
 task ran no deploy).
 
+Resolved by 143-13 (built 2026-09-16; local stack only, staging deploy and Brent's approval
+are Task 5, not this task), closing R-105 and R-106 on all three finders and the workspace
+FRAME ruling carried in RESUME.md and STATE.md as "Brent's, open since 143-02" (that line is
+the main session's to remove, not this task's). Checkpoint ruling (Brent, 2026-09-16, on the
+Task 2 composite): 18:29 PDT, "For the first question - I like A because it matches the rest
+of the system."; 18:34 PDT, "Let's go with accounts table." At 18:49 PDT he added a fourth
+item, filed as ISS-175 for Phase 144, not touched by this task: "The map of the features owned
+by the account seems very useful. If it's useful, lets plan it in somewhere." Mock-up verdicts
+(`page-verdict/VERDICTS-2026-09-16.md`, `## 143-13`, two readers, reserve unspent): candidate A
+SHIP, FINISH 4, worst fault the 380px map card reading as a shallow letterbox at the page's
+1,439px width (Brent's own "keep 380" ruling, 143-07, recorded and not fixed); candidate B DO
+NOT SHIP, FINISH 3, worst fault the two columns finishing at visibly different heights, a
+property of the rail's own two-card structure this ruling does not carry forward. Before
+values from `143-13-probe-before-local.json` / `-staging.json` (Task 1, captured
+2026-09-16T16:09 PDT; both hosts served `84139bd`); after values from `143-13-work/
+task3-after-measurements.json`, re-run directly against the rebuilt local stack rather than
+copied from a builder's own claim. Commits: `2302af9` (Use Areas), `20479d6` (Wells), `4f59ee3`
+(Water accounts), `5a06c18` (the workspace shell and its CSS retired), `cd6e915` (the guard
+retargets), plus this task's own guard and register commits. No other row in this register
+names `workspace.html`, the master-detail rail or the placeholder (grepped; only R-105's own
+two occurrences, the master table and this phase's sub-table, both above). Production
+`241c22b`, re-read from the host, unchanged.
+
+**R-105 / R-106 (Use Areas, Wells, Water accounts).** Before, on both hosts alike (the rail is
+identical CSS regardless of content): the rail was 361px wide; Use Areas held 8 rows wholly in
+view at 692px tall, Wells and Water accounts 7 at 676px (the register's own guess of "six" was
+already stale on all three); the last row straddled the fold on every page; the toolbar's own
+`card-raised.toolbar-stack` was 185px tall, Search stacked over Status, no shared row
+(`search_and_status_share_a_row: false`), 26.7% of the Use Areas rail and 27.4% of the other
+two; the detail pane was 1,061px wide with the empty state's block covering 34.2% of it empty
+below (Use Areas) or 32.7% (Wells, Accounts); the document did not scroll at 1,730×1,000
+(`doc_scroll_height` 1000 = `doc_client_height`). After (candidate A, "the list is the page"):
+Use Areas renders 1 row wholly in view at first paint and 17 once the reader scrolls past the
+458px map card (`map_card_head_text`: "Use areas 79 use areas, all on the map Use area");
+Wells renders 0 at first paint and 17 after the scroll (`"Wells 47 wells, all on the map
+Well"`); the FIRST-PAINT number fell on both pages (8→1, 7→0) because the map card now leads
+the page, the shape Brent chose at the checkpoint knowing that number from the Task 2
+composite, not a regression this plan missed. The one-row `card-raised.toolbar-row` is 110px,
+11% of the first 1,000px viewport on both pages (Search and Status share one row,
+`search_and_status_share_a_row: true`); the document now scrolls (Use Areas 2,159px, Wells
+2,175px tall, both at 79/47 total rows respectively). A search for "Brayfield" narrows Use
+Areas to "3 of 79 match "Brayfield"; the map shows those 3" with exactly 3 features drawn (pks
+6, 47, 62), proving the map still follows the list under the new shape (rule 19). Water
+accounts took the "accounts-table" ruling instead of the Bucket-3 map-card shape: no map
+card (accounts carry no geometry of their own; a per-account map is ISS-175), the dashboard's
+own Active water accounts table shared through `_active_accounts_table.html` with Search and
+the Period control on one `toolbar-row`; 8 of 11 rows wholly in view at first paint (accounts
+carry no paging: all rows render, as the dashboard does), the full page 1,243px tall. The
+workspace shell (`templates/workspace.html`, its three `_detail_empty.html` partials, and the
+`.workspace-split` / `.master-*` / `.pane-empty*` / `.toolbar-stack` CSS and the
+`.app-main:has(.workspace-split)` viewport pin) is deleted: no page on the platform extends it
+any more (grepped before the delete, per ISS-089/091's droppability gate).
+
 ## Phase 144: The words and the way in
 
 Prose, the wording of descriptions and names, and the sidebar. Independent of 141-143. **35 rows.**
