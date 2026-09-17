@@ -358,8 +358,8 @@ class AllocationCarryover(models.Model):
         max_length=7,
         null=True,
         blank=True,
-        help_text="Month at/after which the carried surplus is dead, as YYYY-MM. "
-        "Null = never expires.",
+        help_text="Month at or after which the carried surplus expires, as YYYY-MM. "
+        "Blank = never expires.",
     )
     origin = models.CharField(
         max_length=24,

@@ -27,7 +27,7 @@
   settles both. The predicate is the page's, read from the same place the view
   reads it.{% endcomment %}{% explainer_available "water_balances" as show_water_balances %}{% if show_water_balances %}<div class="card-raised">
     <h2 class="section-header">Start with the concept</h2>
-    <p class="text-secondary text-base">Before the steps below, it helps to know what the platform is actually computing. It measures the water your crops consumed &mdash; from satellites &mdash; and reconciles that against the water that supplied them: surface deliveries, groundwater, and rain. A few minutes on the concept makes every step that follows click into place.</p>
+    <p class="text-secondary text-base">The platform estimates the water your crops consumed, from satellite, and reconciles it against the supplies: surface deliveries, groundwater and rain.</p>
     <a href="{% url 'water_balances' %}" class="text-sm text-accent">Read: How Water Balances Work &rarr;</a>
   </div>{% endif %}
 
@@ -65,7 +65,7 @@
       `module_nouns` calls resolve to nothing, and the sentence would read "it
       populates your  for you — that's Steps ." A sentence left naming nothing
       is precisely what that tag was added for.
-    {% endcomment %}<p class="text-secondary text-base">{% any_module_enabled "parcels" "wells" "recharge" "datasync" as wizard_imports_something %}{% if wizard_imports_something %}You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your {% module_nouns "parcels:use areas" "wells:wells" "recharge:recharge basins" "datasync:nearby monitoring stations" %} for you &mdash; that&rsquo;s Steps {{ wizard_cited_steps }}. {% else %}{% comment %}ISS-093 (P3): on a drinking-only deployment the wizard imports nothing, so the enumerating sentence above gates off and the card would collapse to the "Read this page&hellip;" tail alone. Option (b) of the two ISS-093 named: keep the card and name the one thing the wizard still does here &mdash; draw the Boundary polygon the map and every geography query are built on &mdash; rather than hide it (option a). Gated on `setup` so it only claims something a linkable wizard actually does; confined to this `else` branch so a full deployment (where `wizard_imports_something` is True) renders byte-identically.{% endcomment %}{% if 'setup' in enabled_modules %}The Setup Wizard draws your district boundary &mdash; the map outline every other page is built on &mdash; so start there before working the steps below. {% endif %}{% endif %}{% if 'accounting' in enabled_modules %}What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps {{ accounting_step_range }}). So run the wizard first, then come back and work the accounting steps. {% endif %}Read this page as the manual route, or as a map of what the wizard already did and what&rsquo;s left.</p>
+    {% endcomment %}<p class="text-secondary text-base">{% any_module_enabled "parcels" "wells" "recharge" "datasync" as wizard_imports_something %}{% if wizard_imports_something %}You don&rsquo;t have to do the import steps below by hand. Give the Setup Wizard your district boundary and it populates your {% module_nouns "parcels:use areas" "wells:wells" "recharge:recharge basins" "datasync:nearby monitoring stations" %} for you &mdash; that&rsquo;s Steps {{ wizard_cited_steps }}. {% else %}{% comment %}ISS-093 (P3): on a drinking-only deployment the wizard imports nothing, so the enumerating sentence above gates off and the card would collapse to the "Read this page&hellip;" tail alone. Option (b) of the two ISS-093 named: keep the card and name the one thing the wizard still does here &mdash; draw the Boundary polygon the map and every geography query are built on &mdash; rather than hide it (option a). Gated on `setup` so it only claims something a linkable wizard actually does; confined to this `else` branch so a full deployment (where `wizard_imports_something` is True) renders byte-identically.{% endcomment %}{% if 'setup' in enabled_modules %}The Setup Wizard draws your district boundary, which every other page uses; start there.{% endif %}{% endif %}{% if 'accounting' in enabled_modules %}What it can&rsquo;t do is the accounting setup, because those are your agency&rsquo;s policy choices: water accounts, your water year, management zones, allocation ceilings, and your ledger data (Steps {{ accounting_step_range }}). So run the wizard first, then come back and work the accounting steps. {% endif %}This page is the manual route, and a list of what the wizard did and what is left.</p>
     {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="text-sm text-accent">Run the Setup Wizard &rarr;</a>{% endif %}
   </div>
 
@@ -83,7 +83,7 @@
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.pwsid }}</span>
       <h2 class="section-header">Onboard your water system</h2>
-      <p class="text-secondary text-base">Enter your PWSID &mdash; the identifier the regulator carries for a public water system &mdash; and OpenH2O looks it up in EPA&rsquo;s Envirofacts record: the regulatory details, the facilities, and the sampling points. Nothing is written until you review what came back and confirm.</p>
+      <p class="text-secondary text-base">Enter your PWSID &mdash; the identifier the regulator carries for a public water system &mdash; and OpenH2O looks it up in EPA&rsquo;s Envirofacts record: the regulatory details, the facilities, and the sampling points. Nothing is written until you review the results and confirm.</p>
       <a href="{% url 'drinking:onboard' %}" class="text-sm text-accent">Go to Onboard System &rarr;</a>
     </div>
   </div>{% endif %}
@@ -205,7 +205,7 @@
     <div class="step-body">
       <span class="step-eyebrow">Step {{ steps.ceilings }}</span>
       <h2 class="section-header">Set allocation ceilings</h2>
-      <p class="text-secondary text-base">An allocation ceiling is the total volume assigned to a zone for a reporting period &mdash; the policy ceiling for the whole area. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Set a ceiling for each zone, water type, and period. New to the difference between a ceiling and an account&rsquo;s allocation? See the short guide linked at the bottom of this page.</p>
+      <p class="text-secondary text-base">An allocation ceiling is the total volume assigned to a zone for a reporting period. The platform then divides it into per-account allocations, pro-rated by how many use areas each account holds in the zone. Set a ceiling for each zone, water type, and period. New to the difference between a ceiling and an account&rsquo;s allocation? See the short guide linked at the bottom of this page.</p>
       <a href="{% url 'accounting:allocations_list' %}" class="text-sm text-accent">Go to Allocations &rarr;</a>
     </div>
   </div>{% endif %}
@@ -336,7 +336,7 @@
   argument for the three-card grid below, applied to the two single-card
   pointers it did not reach.{% endcomment %}{% explainer_available "budgets_allocations" as show_budgets %}{% if 'accounting' in enabled_modules and show_budgets %}<div class="card-raised">
     <h2 class="section-header">New to allocations and ceilings?</h2>
-    <p class="text-secondary text-base">If the difference between a zone&rsquo;s allocation ceiling and an account&rsquo;s allocation is unclear, this short guide walks through how the platform turns one into the other, with a worked example.</p>
+    <p class="text-secondary text-base">How the platform turns a zone&rsquo;s allocation ceiling into an account&rsquo;s allocation, with a worked example.</p>
     <a href="{% url 'budgets_allocations' %}" class="text-sm text-accent">Read: Allocations &amp; Ceilings &rarr;</a>
   </div>{% endif %}
 

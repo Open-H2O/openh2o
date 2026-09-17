@@ -32,7 +32,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">A water balance answers a deceptively hard question: <em>who used what?</em> &mdash; in a place where almost nobody is metering. Out of everything a field involves, there is exactly one quantity we can estimate for every field, from space, whether its water came from a canal, a well, or rain: the water the crops actually drank. That estimated amount &mdash; evapotranspiration {% include "partials/_explainer_popout.html" with title="Evapotranspiration (ET)" text="Estimated from satellites for any field, which is why this platform can use it where meters don't exist." link=glossary_url link_label="See the glossary" %} &mdash; is the anchor. Everything else is a <strong>supply</strong> we line up against it to see whether the books add up.</p>
+    <p class="text-secondary text-base">A water balance answers one question: <em>who used what?</em> &mdash; in a place where almost nobody is metering. One quantity can be estimated for every field, from satellite, whatever its water source: the water the crops consumed. That estimated amount &mdash; evapotranspiration {% include "partials/_explainer_popout.html" with title="Evapotranspiration (ET)" text="Estimated from satellites for any field, which is why this platform can use it where meters don't exist." link=glossary_url link_label="See the glossary" %} is the reference figure. Everything else is a <strong>supply</strong>, compared against it.</p>
 
     <div class="budget-panel budget-panel--concept" style="margin: var(--space-lg) 0 var(--space-sm);">
       <div class="budget-panel-row">
@@ -55,7 +55,7 @@
         </div>
       </div>
     </div>
-    <p class="text-tertiary text-sm m-0">Read it left to right: line up the supplies, subtract the estimated use, and look at the leftover. In real life the books almost never net to zero &mdash; ET counts only the water truly consumed, while canals leak and some water drains back underground. A small, explainable gap is the goal; a perfect zero would be the surprise.</p>
+    <p class="text-tertiary text-sm m-0">Read it left to right: line up the supplies, subtract the estimated use, and look at the leftover. In real life the books almost never net to zero &mdash; ET counts only the water truly consumed, while canals leak and some water drains back underground. A small, explainable gap is the goal; an exact zero would be unusual.</p>
   </div>
 
   <div class="card-raised">
@@ -76,27 +76,27 @@
         </ul>
       </div>
     </div>
-    <p class="text-secondary text-base" style="margin-bottom: 0;">A balance lays the supplies alongside the use and asks whether they line up. Because ET is the floor, the supplies delivered usually run a little higher than the estimated ET &mdash; and that difference is itself information. Reading it honestly is the next section.</p>
+    <p class="text-secondary text-base" style="margin-bottom: 0;">A balance compares the supplies with the use. Because ET is the floor, supplies usually run a little above estimated ET; the difference is itself information. Reading that difference is the next section.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Reconciling to a closing balance</h2>
-    <p class="text-secondary text-base">Reconciling is just supplies minus use. Start with the estimated use, subtract the supplies we already know about &mdash; surface deliveries first, then rain &mdash; and look at what&rsquo;s left unexplained. What that leftover <em>means</em> depends on the field.</p>
+    <p class="text-secondary text-base">Reconciling is supplies minus use. Start with the estimated use, subtract the known supplies (surface deliveries first, then rain), and read what is left. What that leftover <em>means</em> depends on the field.</p>
 
     <div class="callout-rule">
-      <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">The rule that keeps it honest</div>
-      <p class="text-secondary text-base m-0">An unexplained leftover is booked as <strong>groundwater only where a well actually exists.</strong> On a field with no well, that same leftover is unmet demand &mdash; the crop wanted more than it got &mdash; or a surface number that&rsquo;s off. It is never phantom pumping. The platform refuses to invent groundwater out of a missing meter.</p>
+      <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">Where the leftover goes</div>
+      <p class="text-secondary text-base m-0">Only where a well exists is an unexplained leftover booked as <strong>groundwater.</strong> On a field with no well, the leftover is unmet demand, or a surface figure that is wrong. It is never written as pumping; a missing meter yields no groundwater figure.</p>
     </div>
 
-    <p class="text-secondary text-base">And expect a gap. ET is the floor, so the water delivered will usually exceed the water consumed &mdash; some seeps from canals on the way (conveyance loss), some runs off, some sinks past the roots back into the aquifer. None of that is a failure of the accounting; it&rsquo;s how irrigation actually behaves. The job isn&rsquo;t to force the balance to zero &mdash; it&rsquo;s to make the remaining gap small enough to explain.</p>
+    <p class="text-secondary text-base">And expect a gap. ET is the floor, so delivered water usually exceeds consumed water: conveyance loss, runoff and recharge take the rest. None of that is a failure of the accounting; that is normal. The aim is not a zero balance but a gap small enough to explain.</p>
 
     {% include "partials/_deep_dive.html" with label="How a value gets chosen, and why deliveries are never split evenly" body="<p>When the platform has to pick a number, it follows a strict priority ladder &mdash; measurement first, estimate last:</p><ol class='concept-list'><li><strong>A per-field direct measurement</strong> wins over everything. If someone metered this field, that is the truth.</li><li><strong>A district&rsquo;s hand-set value</strong> is next &mdash; an agency&rsquo;s own recorded figure beats any estimate.</li><li><strong>Satellite ET</strong> fills the gap only when nothing was measured or entered.</li><li><strong>An even split</strong> is the last resort, used only when there is no better signal at all.</li></ol><p>This ladder also governs the hardest part of the whole problem: a water district holds <em>one</em> water right but delivers unmetered canal water to many parcels &mdash; growing different crops with different thirsts. You cannot split that delivery equally, because a vineyard and an alfalfa field next door do not drink the same amount. The platform allocates the district&rsquo;s delivery to each parcel <em>in proportion to that parcel&rsquo;s estimated ET demand</em>, so the thirsty crop draws the larger share. Splitting evenly would credit water to fields that never used it and starve the ones that did.</p>" %}
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Why ET, why satellites</h2>
-    <p class="text-secondary text-base">All of this exists to solve one stubborn problem: most water diversions in California are not metered. Reporting is sparse, self-reported, and exempt below certain thresholds &mdash; so for the vast majority of fields, nobody knows how much water actually moved.</p>
-    <p class="text-secondary text-base">Evapotranspiration estimated from space is the answer to that missing-meter problem. <a class="prose-link" href="https://openetdata.org/" target="_blank" rel="noopener">OpenET</a> &mdash; a public-private effort led by <a class="prose-link" href="https://www.nasa.gov/" target="_blank" rel="noopener">NASA</a>, the <a class="prose-link" href="https://www.dri.edu/" target="_blank" rel="noopener">Desert Research Institute</a>, the <a class="prose-link" href="https://www.edf.org/" target="_blank" rel="noopener">Environmental Defense Fund</a>, and <a class="prose-link" href="https://earthengine.google.com/" target="_blank" rel="noopener">Google Earth Engine</a> &mdash; turns satellite imagery into a consumptive-use figure for any field, no meter required. That is what makes a credible balance possible where one was never possible before.</p>
+    <p class="text-secondary text-base">Most water diversions in California are not metered, and reporting is sparse, self-reported and exempt below thresholds; for most fields the volume moved is unknown.</p>
+    <p class="text-secondary text-base">Evapotranspiration estimated from satellite covers the fields no meter does. <a class="prose-link" href="https://openetdata.org/" target="_blank" rel="noopener">OpenET</a> &mdash; a public-private effort led by <a class="prose-link" href="https://www.nasa.gov/" target="_blank" rel="noopener">NASA</a>, the <a class="prose-link" href="https://www.dri.edu/" target="_blank" rel="noopener">Desert Research Institute</a>, the <a class="prose-link" href="https://www.edf.org/" target="_blank" rel="noopener">Environmental Defense Fund</a>, and <a class="prose-link" href="https://earthengine.google.com/" target="_blank" rel="noopener">Google Earth Engine</a> &mdash; turns satellite imagery into a consumptive-use figure for any field, no meter required.</p>
 
     <div class="concept-panel mt-md">
       <div class="concept-panel-title">Go deeper</div>
@@ -110,7 +110,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">See it in action</h2>
-    <p class="text-secondary text-base">Now that the idea is clear, here is where to watch it work and where to dig deeper.</p>
+    <p class="text-secondary text-base">Where to see it applied, and where to read more.</p>
     <div class="card-grid">
       {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:dashboard' %}" class="card-raised card-link">
         <div class="concept-panel-title" style="justify-content: space-between; margin-bottom: var(--space-xs);"><span>Dashboard</span><span class="text-accent">&rarr;</span></div>

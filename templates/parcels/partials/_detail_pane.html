@@ -189,21 +189,18 @@
           {% if mass_balance.band_status == "realistic" %}
           <p class="text-tertiary">
             {% if mass_balance.is_surplus %}
-            Supplies slightly exceed estimated consumptive use — the difference is on-farm
-            loss or return flow, not unaccounted water.
+            Supplies exceed estimated consumptive use by a small margin: on-farm loss or
+            return flow.
             {% else %}
-            Estimated consumptive use slightly exceeds recorded supplies — a minor
-            supplement (deficit irrigation, or shallow-groundwater / stream-adjacent
-            rootzone water the meters don't capture).
+            Estimated consumptive use exceeds recorded supplies by a small margin: deficit
+            irrigation, or water the meters do not capture.
             {% endif %}
           </p>
           {% elif mass_balance.band_status == "large" and mass_balance.is_surplus %}
           <p class="text-tertiary">
-            More water is recorded arriving here than this parcel's uses account for —
-            by more than a quarter of estimated consumptive use, so it is flagged rather
-            than treated as ordinary on-farm loss. A residual this size is a gap in the
-            books, not spare water: conveyance loss is not yet a term in this platform,
-            so ditch seepage and evaporation have nowhere to be recorded and land here.
+            Recorded supplies exceed estimated consumptive use by more than a quarter.
+            The platform has no conveyance-loss entry, so ditch seepage and evaporation
+            are counted in this residual.
           </p>
           {% elif mass_balance.band_status == "large" and not mass_balance.is_surplus %}
           {% comment %}

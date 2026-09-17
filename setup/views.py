@@ -127,8 +127,8 @@ def setup_confirm(request):
     if not boundary_id:
         messages.info(
             request,
-            "Setup starts here. Choose or upload a boundary, then confirm it; "
-            "this session had none.",
+            "No boundary is confirmed for this session. Choose or upload one, "
+            "then confirm it.",
         )
         return redirect("setup:wizard")
 
@@ -138,8 +138,8 @@ def setup_confirm(request):
         del request.session[SESSION_KEY_BOUNDARY]
         messages.info(
             request,
-            "Setup starts here. Choose or upload a boundary, then confirm it; "
-            "the boundary this session had chosen no longer exists.",
+            "The boundary this session chose no longer exists. Choose or "
+            "upload one, then confirm it.",
         )
         return redirect("setup:wizard")
 
@@ -162,8 +162,8 @@ def setup_run(request):
     if not boundary_id:
         messages.info(
             request,
-            "Setup starts here. Choose or upload a boundary, then confirm it; "
-            "this session had none.",
+            "No boundary is confirmed for this session. Choose or upload one, "
+            "then confirm it.",
         )
         return redirect("setup:wizard")
 
@@ -172,8 +172,8 @@ def setup_run(request):
     except Boundary.DoesNotExist:
         messages.info(
             request,
-            "Setup starts here. Choose or upload a boundary, then confirm it; "
-            "the boundary this session had chosen no longer exists.",
+            "The boundary this session chose no longer exists. Choose or "
+            "upload one, then confirm it.",
         )
         return redirect("setup:wizard")
 

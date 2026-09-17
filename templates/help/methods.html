@@ -38,7 +38,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">Turning a satellite measurement into a number you can stand behind is a <strong>chain of subtractions.</strong> Start from what the crops actually used &mdash; the one thing we can measure for every field, from space. Then take away what rain covered, and what the canals delivered. Whatever use is still left unexplained is, on a field with a well, the groundwater figure.</p>
+    <p class="text-secondary text-base">Turning a satellite measurement into a defensible number is a <strong>chain of subtractions.</strong> Start from what the crops used, the one figure available for every field. Then take away what rain covered, and what the canals delivered. Whatever use is still left unexplained is, on a field with a well, the groundwater figure.</p>
 
     <div class="budget-panel budget-panel--concept" style="margin: var(--space-lg) 0 var(--space-sm);">
       <div class="budget-panel-row">
@@ -73,12 +73,12 @@
         </div>
       </div>
     </div>
-    {% explainer_available "water_balances" as show_water_balances %}<p class="text-tertiary text-sm m-0">No single clever formula &mdash; just honest bookkeeping, one supply at a time.{% if show_water_balances %} If &ldquo;estimated use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page picks up where that one leaves off and walks the actual arithmetic.{% endif %}</p>
+    {% explainer_available "water_balances" as show_water_balances %}<p class="text-tertiary text-sm m-0">One subtraction per supply, in order.{% if show_water_balances %} If &ldquo;estimated use vs. supplies&rdquo; is new, start with <a class="prose-link" href="{{ water_balances_url }}">How Water Balances Work</a>; this page gives the arithmetic.{% endif %}</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Step by step</h2>
-    <p class="text-secondary text-base">Every field runs through the same ordered chain. Each step removes one supply we can account for &mdash; and the order matters: you subtract the free water (rain) and the delivered water (canals) before asking what groundwater had to make up the difference.</p>
+    <p class="text-secondary text-base">Every field runs through the same ordered chain. Each step removes one supply, in order: rain, then canal deliveries, then groundwater as the remainder.</p>
 
     <div style="margin: var(--space-md) 0;">
       <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
@@ -92,14 +92,14 @@
         <div class="step-number">2</div>
         <div class="step-body">
           <strong style="color: var(--color-text-primary);">Subtract effective precipitation</strong>
-          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Rain that actually soaked in and was available to the crop &mdash; not every drop that fell, just the share the plants could use. That much demand was met for free.</p>
+          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Rainfall available to the crop, not the total that fell. That much demand was met for free.</p>
         </div>
       </div>
       <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
         <div class="step-number">3</div>
         <div class="step-body">
           <strong style="color: var(--color-text-primary);">Subtract surface-water deliveries</strong>
-          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Canal water the district delivered to the field. What the crop drank from that delivery comes off the demand next.</p>
+          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">Canal water the district delivered to the field. The consumed share of that delivery comes off the demand next.</p>
         </div>
       </div>
       <div class="step-card" style="background: var(--color-inset); border-radius: var(--radius-md); padding: var(--space-md) var(--space-lg); margin-bottom: var(--space-sm);">
@@ -113,7 +113,7 @@
         <div class="step-number">5</div>
         <div class="step-body">
           <strong style="color: var(--color-text-primary);">What remains is billable groundwater</strong> <span class="badge badge-pill badge-gold">the result</span>
-          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">But only on a field that has a well. The platform writes that leftover as a groundwater figure where a well exists, and as <em>unmet demand</em> (the crop wanted more than it got) where one doesn&rsquo;t. It never invents pumping out of a missing meter.</p>
+          <p class="text-secondary text-base" style="margin: var(--space-xs) 0 0;">But only on a field that has a well. Where a well exists the leftover is written as groundwater; where none does, as <em>unmet demand</em>. A missing meter yields no pumping figure.</p>
         </div>
       </div>
     </div>
@@ -125,16 +125,16 @@
 
   <div class="card-raised">
     <h2 class="section-header">Sharing one delivery across many fields</h2>
-    <p class="text-secondary text-base">Here is the problem that makes this platform necessary. A water district holds <em>one</em> water right and delivers canal water to dozens of farms &mdash; but the canal isn&rsquo;t metered field by field. All the district knows is the total it sent down the ditch. So how much of that total belongs to each farm?</p>
+    <p class="text-secondary text-base">Here is the problem that makes this platform necessary. Districts hold one water right and deliver canal water to many farms; the canal is not metered per field, so only the total delivered is known. So how much of that total belongs to each farm?</p>
 
     <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
       <div class="concept-panel concept-panel-use">
         <div class="concept-panel-title">Split it evenly <span class="badge badge-pill badge-red">the wrong way</span></div>
-        <p class="text-secondary text-base m-0">Every field gets the same share, no matter what&rsquo;s growing. A fallow field is credited the same as a thirsty vineyard &mdash; so water lands on fields that never used it, and the fields that did go short.</p>
+        <p class="text-secondary text-base m-0">Every field gets the same share, no matter what&rsquo;s growing. A fallow field is credited the same as a vineyard: fields that used no water are credited, and fields that did are short.</p>
       </div>
       <div class="concept-panel concept-panel-supply">
         <div class="concept-panel-title">Split by ET demand <span class="badge badge-pill badge-green">how it works</span></div>
-        <p class="text-secondary text-base m-0">Each field&rsquo;s share tracks what its crop actually drank that month. The thirsty summer crop draws the larger share; the fallow field draws almost none. Each share is also capped, so no field is credited with using more than it physically could.</p>
+        <p class="text-secondary text-base m-0">Each field&rsquo;s share follows its crop&rsquo;s ET that month: the summer crop takes the larger share, the fallow field almost none. Each share is also capped, so no field is credited with using more than it physically could.</p>
       </div>
     </div>
 
@@ -151,11 +151,11 @@
 
   <div class="card-raised">
     <h2 class="section-header">Sharing a well or a headgate</h2>
-    <p class="text-secondary text-base">The same logic settles a smaller, thornier case: when two or more fields share a single well or a single headgate, and only the combined pumping or diversion is known. The old shortcut was to split it 50/50 (or evenly among however many fields). That&rsquo;s the same mistake as the canal &mdash; it ignores what was actually growing.</p>
+    <p class="text-secondary text-base">The same method covers the smaller case: two or more fields on one well or one headgate, with only the combined pumping or diversion known. The old shortcut was to split it 50/50 (or evenly among however many fields). That is the canal&rsquo;s mistake again: it ignores what was growing.</p>
 
     <div class="callout-rule">
       <div class="concept-panel-title" style="margin-bottom: var(--space-xs);">By demand, not by headcount</div>
-      <p class="text-secondary text-base m-0">A shared well serving a vineyard and an alfalfa field is apportioned by each field&rsquo;s estimated ET demand. If the vineyard consumed twice what the alfalfa did that month, it carries twice the share of the pumping. The total always reconciles back to what the well or headgate actually produced &mdash; the demand weights only decide how that known total is divided.</p>
+      <p class="text-secondary text-base m-0">A shared well serving a vineyard and an alfalfa field is apportioned by each field&rsquo;s estimated ET demand. If the vineyard consumed twice what the alfalfa did that month, it carries twice the share of the pumping. The total always reconciles to what the well or headgate produced; the demand weights only divide it.</p>
     </div>
   </div>
 

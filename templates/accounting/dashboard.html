@@ -10,7 +10,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Dashboard</span>
   </nav>
-  <p class="page-description">Summary of your district's water data for the selected period — recorded supplies and uses by account and zone, with satellite-estimated crop water use (evapotranspiration, or ET) shown as one estimated input.</p>
+  <p class="page-description">Recorded supplies and uses by account and zone for the period, with satellite-estimated crop water use (ET) as one estimated input.</p>
 </div>
 {% endblock %}
 
@@ -26,8 +26,7 @@
     <h2 class="section-header-flush mb-sm">Start here — set up your watershed</h2>
     <p class="empty-state-text" style="max-width: 540px; margin-left: auto; margin-right: auto;">
       This deployment has no watershed yet. Set one up to import parcels{% if 'wells' in enabled_modules %}, wells{% endif %},
-      groundwater basins{% if 'datasync' in enabled_modules %}, and the monitoring stations near your district{% endif %} —
-      everything the dashboard needs to start tracking water.
+      groundwater basins{% if 'datasync' in enabled_modules %}, and the monitoring stations near your district{% endif %}.
     </p>
     <div class="form-footer" style="justify-content: center; margin-top: var(--space-lg);">
       {% if 'setup' in enabled_modules %}<a href="{% url 'setup:wizard' %}" class="btn-primary">Set up your watershed →</a>{% endif %}
@@ -41,7 +40,7 @@
   <div class="card-raised empty-state">
     <h2 class="section-header-flush mb-sm">Welcome to OpenH2O</h2>
     <p class="text-secondary text-sm mb-lg" style="max-width: 500px; margin-left: auto; margin-right: auto;">
-      This is your water-data overview. It summarizes the water data you've recorded — deliveries, measurements, and usage — by account and zone. To get started:
+      Deliveries, measurements and usage by account and zone. To get started:
     </p>
     <div class="onboarding-steps">
       <div class="onboarding-step">
@@ -55,10 +54,6 @@
       <div class="onboarding-step">
         <span class="step-badge">3</span>
         <span class="text-secondary text-sm">Add ledger entries (deliveries, measurements, ET estimates) or upload CSV</span>
-      </div>
-      <div class="onboarding-step">
-        <span class="step-badge">4</span>
-        <span class="text-secondary text-sm">The overview summarizes your recorded water data — supplies, usage, and how they compare by account and zone</span>
       </div>
     </div>
   </div>

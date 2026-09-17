@@ -847,8 +847,7 @@ def check_et_meter_agreement():
             "category": "et_meter_agreement",
             "status": "green",
             "message": (
-                "No metered parcels with applied water — satellite ET has nothing "
-                "independent to check against here"
+                "No metered parcels with applied water to check satellite ET against"
             ),
             "details": details,
         }

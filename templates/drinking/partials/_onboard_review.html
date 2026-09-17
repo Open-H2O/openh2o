@@ -27,11 +27,10 @@
     {% if error_kind == "not_found" %}
       EPA's Envirofacts record has no water system with the identifier
       <span class="text-mono">{{ pwsid }}</span>. Check the ID against the
-      regulator's own listing and try again &mdash; this is an answer from a
-      working service, not a sign that EPA is down.
+      regulator's listing and try again. EPA answered; the ID was not found.
     {% elif error_kind == "unavailable" %}
       EPA's Envirofacts service was too slow or could not be reached. Your PWSID
-      may be perfectly good; this service is routinely slow, and a lookup taking
+      may be correct; this service is routinely slow, and a lookup taking
       15 to 30 seconds is normal for it. Try again in a few minutes.
     {% elif error_kind == "service_error" %}
       EPA's service answered, but not with a record we can read. Nothing about
@@ -196,7 +195,7 @@
     Shown, not written. This platform records population across three categories
     and connections across five; EPA sends one total for each. Dividing a total
     into shares would be inventing numbers, so those fields stay empty until a
-    source that genuinely breaks them down is imported.
+    source that breaks them down is imported.
   </p>
 
   {% comment %}

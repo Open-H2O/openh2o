@@ -1531,9 +1531,8 @@ def onboard_points(request, pwsid):
     if not facilities:
         messages.warning(
             request,
-            f"{pwsid} is carried here but has no facilities, so there is "
-            "nothing to hang a sampling point on. Re-run the lookup to refresh "
-            "its facilities from EPA.",
+            f"{pwsid} has no facilities, so no sampling point can be added. "
+            "Re-run the lookup to refresh its facilities from EPA.",
         )
         return redirect("drinking:onboard")
 

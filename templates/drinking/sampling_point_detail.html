@@ -41,7 +41,7 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">{{ point.ps_code }}</span>
   </nav>
-  <p class="page-description">Where this sample is physically drawn, and what has been measured there.</p>
+  <p class="page-description">The sampling point's location and the measurements taken there.</p>
 </div>
 {% endblock %}
 
@@ -94,11 +94,10 @@
   <div class="card-raised">
     <p class="text-secondary text-base" style="max-width: 70ch; margin: 0;">
       Facility {{ point.facility.facility_id }} has no published coordinate, so there is
-      no map to show. A sampling point is placed at its facility's position, and
-      positions come from the state's Groundwater Ambient Monitoring and Assessment
-      Program (GAMA), which publishes them for groundwater sources and not for
-      distribution-system or treatment-plant facilities — and not for every source
-      either.
+      no map to show. A sampling point takes its facility's position. Positions
+      come from the state's Groundwater Ambient Monitoring and Assessment
+      Program (GAMA), which publishes them for groundwater sources only, and not
+      for every one.
     </p>
   </div>
   {% endif %}

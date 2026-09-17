@@ -566,8 +566,8 @@ The five sentences (143-11, ISS-170), settled by Brent 2026-09-15 and kept in ON
 `accounting/ledger_words.py`, beside the Water column's words, so every word the ledger shows lives in one
 file: a share of a headgate's delivery split by estimated use ("Share of 214.58 AF delivered from Stevinson
 Diversion Canal Headgate, split among the use areas it serves by each one's estimated use for the month");
-the same split by the fixed share on file ("…, split by the fixed share on file (20%); no estimated use on
-record for the month"); the incidental credit ("Credit for canal water delivered beyond the use area's
+the same split by the fixed share on file ("…: 20%, the fixed share on file, because no use area it serves
+has an estimated use for the month" (reworded 2026-09-17, 143.1-01)); the incidental credit ("Credit for canal water delivered beyond the use area's
 estimated use for the month"); the pumping estimate ("Estimated pumping: the month's estimated use, less
 rainfall and canal water delivered"); and the month with none ("No groundwater extraction was derived for
 this month; rainfall and delivered surface water covered the estimated use."). The guards:

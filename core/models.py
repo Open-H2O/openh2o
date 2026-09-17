@@ -81,8 +81,7 @@ class SiteConfig(models.Model):
         max_digits=4,
         decimal_places=3,
         default=Decimal("0.750"),
-        help_text="Share of delivered water the crop actually consumes; the rest "
-        "returns to the aquifer as recharge.",
+        help_text="Share of delivered water the crop consumes.",
     )
     # The agency-wide default for what happens to an unused allocation at
     # year-end. A district may override it on its Zone; this default must always

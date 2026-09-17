@@ -281,8 +281,8 @@ class SystemFacility(models.Model):
     # CA1010001_14042_001 and match nothing in a real lab file.
     epa_facility_id = models.CharField(
         max_length=20, blank=True, db_index=True,
-        help_text="EPA's own facility ID. Provenance only — never a PS Code "
-        "segment. See .planning/phases/79-envirofacts-adapter/79-RESEARCH.md.",
+        help_text="EPA's own facility ID. Provenance only; never a PS Code "
+        "segment.",
     )
     name = models.CharField(max_length=200, blank=True)
     facility_type = models.CharField(
@@ -320,9 +320,9 @@ class SystemFacility(models.Model):
     # its position through the FK would be permanently unmapped.
     location = gis_models.PointField(
         srid=4326, null=True, blank=True,
-        help_text="Published location of the facility. From GAMA, which "
-                  "publishes coordinates for source wells only — most "
-                  "facilities have none, and NULL is the honest value.",
+        help_text="Published location of the facility, from GAMA, which "
+                  "publishes coordinates for source wells only; most "
+                  "facilities have none.",
     )
 
     class Meta:

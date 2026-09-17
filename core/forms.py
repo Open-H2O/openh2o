@@ -157,7 +157,7 @@ class DeliverySettingsForm(forms.Form):
         # `recharge` module's noun on deployments that do not run it. The
         # sentence does not need the word — where the water goes is already
         # said — so the copy changed rather than `_FORBIDDEN_VOCABULARY`.
-        help_text="The rest soaks back into the aquifer. Typical: 75%.",
+        help_text="Typical: 75%.",
         widget=forms.NumberInput(
             attrs={"class": "form-input", "style": "width: 6rem;", "step": "1"}
         ),

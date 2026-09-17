@@ -31,13 +31,13 @@
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">When a district delivers canal water to its farms, two questions decide how the platform books that water. First: of the water that reaches a field, how much does the crop actually drink, and how much soaks back down into the aquifer? Second: if a district doesn&rsquo;t use all the surface water it was entitled to in a year, does the leftover carry into next year or disappear? You answer both once, on the {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="prose-link">Delivery Settings page</a>{% else %}Delivery Settings page{% endif %}, and they apply to every district.</p>
+    <p class="text-secondary text-base">When a district delivers canal water to its farms, two questions decide how the platform books that water. First, what share of a delivery the crop consumes. Second, whether a district's unused surface water carries into the next year or expires. You answer both once, on the {% if 'accounting' in enabled_modules %}<a href="{% url 'accounting:delivery_settings' %}" class="prose-link">Delivery Settings page</a>{% else %}Delivery Settings page{% endif %}, and they apply to every district.</p>
   </div>
 
   <div class="card-raised">
     <h2 class="section-header">Setting 1 &mdash; how much of a delivery the crop uses</h2>
-    <p class="text-secondary text-base">Not every drop delivered to a field is &ldquo;used up.&rdquo; A crop drinks part of the water; the rest sinks past the roots and recharges the aquifer underneath. This setting is that share &mdash; the percentage of delivered water the crop actually consumes. A typical figure is <strong>75%</strong>, meaning three-quarters is taken up by the plants and the remaining quarter returns to the groundwater as recharge.</p>
-    <p class="text-secondary text-base">Why it matters: the platform splits a district&rsquo;s total monthly delivery across its farms by how thirsty each crop is that month. A field growing a thirsty summer crop pulls a larger share than a fallow or low-water field next door. This percentage caps how much any one field can be credited with using, so a delivery is shared sensibly instead of split evenly regardless of what&rsquo;s growing.</p>
+    <p class="text-secondary text-base">This setting is the share of a delivery the crop consumes; the rest is counted as recharge. A typical figure is <strong>75%</strong>, meaning three-quarters is taken up by the plants and the remaining quarter returns to the groundwater as recharge.</p>
+    <p class="text-secondary text-base">Why it matters: the platform splits a district's monthly delivery across its fields by each field's ET that month, so a summer crop takes a larger share than a fallow field. This percentage caps how much any one field can be credited with using, so a delivery is shared sensibly instead of split evenly regardless of what&rsquo;s growing.</p>
   </div>
 
   <div class="card-raised">
@@ -47,11 +47,11 @@
     <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
       <div class="concept-panel concept-panel-supply">
         <div class="concept-panel-title">Carry it forward <span class="badge badge-pill badge-green">default</span></div>
-        <p class="text-secondary text-base m-0">The unused amount opens next year as a credit the district can draw on &mdash; a surplus banks instead of vanishing.</p>
+        <p class="text-secondary text-base m-0">The unused amount carries into next year as a credit.</p>
       </div>
       <div class="concept-panel concept-panel-use">
         <div class="concept-panel-title">Let it expire <span class="badge badge-pill badge-grey">use-it-or-lose-it</span></div>
-        <p class="text-secondary text-base m-0">The leftover simply disappears at year-end; next year starts fresh with no bonus.</p>
+        <p class="text-secondary text-base m-0">The leftover expires at year-end; next year starts at zero.</p>
       </div>
     </div>
 
@@ -63,7 +63,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">Who sets these &mdash; and when</h2>
-    <p class="text-secondary text-base">These are agency policy, not farmer entry. An analyst or administrator sets them once during setup and revisits them rarely &mdash; for example, if the agency adopts a different efficiency assumption, or its board changes the year-end rule. A farmer never touches them. Because they steer every future delivery calculation, change them deliberately, the same way you would the methodology.</p>
+    <p class="text-secondary text-base">These are agency policy, not farmer entry. An analyst or administrator sets them once during setup and revisits them rarely &mdash; for example, if the agency adopts a different efficiency assumption, or its board changes the year-end rule. A farmer never touches them. They enter every future delivery calculation; change them the way you would the methodology.</p>
   </div>
 
   <div class="card-raised">

@@ -41,7 +41,7 @@
 
   <div class="card-raised">
     <h2 class="section-header">The short version</h2>
-    <p class="text-secondary text-base">A handful of settings shape how every number on this platform is calculated. They&rsquo;re <strong>agency policy, not daily data entry</strong> &mdash; set once during setup and revisited rarely. A farmer never touches them. This is the reference for each one; the deeper detail sits under its &ldquo;Advanced&rdquo; toggle.</p>
+    <p class="text-secondary text-base">A handful of settings shape how every number on this platform is calculated. They&rsquo;re <strong>agency policy, not daily data entry</strong> &mdash; set once during setup and revisited rarely. A farmer never touches them. This is the reference for each one; the detail is under its &ldquo;Advanced&rdquo; toggle.</p>
     <p class="text-secondary text-base" style="margin-bottom: var(--space-xs);">Each setting below is tagged with who owns it:</p>
     <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
       <span class="badge badge-pill badge-gold">Analyst</span>
@@ -68,7 +68,7 @@
         at. `{% templatetag openblock %} url ... as var {% templatetag closeblock %}`
         yields "" rather than raising, so ungated this renders href="" — a dead
         click, not a crash, which is exactly why it survived three phases of
-        green gates.{% endcomment %}{% explainer_available "methods" as show_methods %}<p class="text-secondary text-base m-0">Rarely, and deliberately &mdash; every calculation flows through this chain, so a change re-shapes past and future numbers alike.{% if show_methods %} See the walkthrough on <a class="prose-link" href="{{ methods_url }}">Methods Behind the Numbers</a>.{% endif %}</p>
+        green gates.{% endcomment %}{% explainer_available "methods" as show_methods %}<p class="text-secondary text-base m-0">Rarely: every calculation runs through this chain, so a change alters past and future numbers.{% if show_methods %} See the walkthrough on <a class="prose-link" href="{{ methods_url }}">Methods Behind the Numbers</a>.{% endif %}</p>
       </div>
     </div>
 
@@ -80,7 +80,7 @@
       <h2 class="section-header" style="margin-bottom: 0;">Surface delivery settings</h2>
       <span class="badge badge-pill badge-gold">Analyst</span>
     </div>
-    <p class="text-secondary text-base mt-sm">Two agency-wide settings govern how canal deliveries are counted: <strong>how much of a delivery the crop actually consumes</strong> (the rest sinks past the roots and recharges the aquifer &mdash; typically around 75%), and <strong>what happens to a district&rsquo;s unused water at year-end</strong> (carry it forward as a credit, or let it expire). Together they decide how a district&rsquo;s total monthly delivery is split across its farms and what a leftover allotment is worth.</p>
+    <p class="text-secondary text-base mt-sm">Two agency-wide settings govern how canal deliveries are counted: <strong>the share of a delivery the crop consumes</strong> (typically 75%; the rest is counted as recharge), and <strong>what happens to a district&rsquo;s unused water at year-end</strong> (carried forward as a credit, or expired). Together they decide how a district&rsquo;s total monthly delivery is split across its farms and what a leftover allotment is worth.</p>
 
     <div class="stat-grid-2col" style="margin: var(--space-md) 0;">
       <div class="concept-panel">
@@ -125,7 +125,7 @@
       <h2 class="section-header" style="margin-bottom: 0;">Access control</h2>
       <span class="badge badge-pill badge-grey">System &middot; off for the demo</span>
     </div>
-    <p class="text-secondary text-base mt-sm">One system-level switch decides whether the platform&rsquo;s front door is open or locked. For this demonstration it is deliberately <strong>off</strong> &mdash; the front door is open so anyone can look around. Flipping it on is the &ldquo;go-live&rdquo; step a real agency takes when it&rsquo;s ready to restrict the platform to its own staff, and it&rsquo;s intentionally deferred until the demo has been evaluated. Most readers never need to touch this; the detail is below if you do.</p>
+    <p class="text-secondary text-base mt-sm">One system-level switch decides whether the platform requires sign-in. On this demonstration it is <strong>off</strong>. Turning it on restricts the platform to the agency&rsquo;s own staff; it stays off until the demonstration has been evaluated. Most readers never need to touch this; the detail is below if you do.</p>
 
     {% include "partials/_deep_dive.html" with label="What flipping access control on actually does" body="<p>The switch is a single setting (<code>ACCESS_CONTROL_ENFORCED</code>). While it&rsquo;s <strong>off</strong>, public sign-up is open and the setup wizard is reachable &mdash; the right state for a demo anyone should be able to explore.</p><p>Turning it <strong>on</strong> closes public sign-up and limits the platform to provisioned users: new accounts must be created and verified by an administrator rather than self-registered, and the open setup paths close. This is the <strong>go-live cutover</strong> &mdash; the deliberate step from &ldquo;open demonstration&rdquo; to &ldquo;the agency&rsquo;s working system.&rdquo; It&rsquo;s held until the demonstration has survived real-world evaluation, because once it&rsquo;s on, the easy open-door access that makes the demo useful goes away by design.</p>" %}
   </div>

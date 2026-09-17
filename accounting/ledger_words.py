@@ -125,9 +125,10 @@ DELIVERY_SHARE_BY_USE = (
 
 #: The tail of a static-fraction delivery-share sentence: no served use area
 #: had an estimated use for the month, so the split fell back to the fixed
-#: share on file. The percentage and the "no estimated use on record" clause
-#: are composed by ``delivery_share_words`` below, not part of this constant.
-DELIVERY_SHARE_BY_FIXED = "split by the fixed share on file"
+#: share on file. The percentage and the "because no use area it serves has
+#: an estimated use for the month" clause are composed by
+#: ``delivery_share_words`` below, not part of this constant.
+DELIVERY_SHARE_BY_FIXED = "the fixed share on file"
 
 #: A recharge row credited to a use area (or the basin pool) for canal water
 #: delivered beyond what the month's estimated use called for.
@@ -176,8 +177,8 @@ def delivery_share_words(record, pod, *, fixed_share=None):
     ``apportion_shared_supply``) this parcel received on the static-fraction
     fallback path; pass it only from ``_fraction_rows``. When omitted, the
     sentence closes with ``DELIVERY_SHARE_BY_USE``; when given, it closes with
-    ``DELIVERY_SHARE_BY_FIXED``, the percentage, and the "no estimated use on
-    record for the month" tail.
+    a colon, the percentage, ``DELIVERY_SHARE_BY_FIXED``, and the "because no
+    use area it serves has an estimated use for the month" tail.
 
     The verb phrase is "delivered from" for a `direct_use` record and "taken
     to storage from" otherwise (a to-storage record reaching this path is
@@ -211,8 +212,8 @@ def delivery_share_words(record, pod, *, fixed_share=None):
 
     if fixed_share is not None:
         sentence += (
-            f", {DELIVERY_SHARE_BY_FIXED} ({fixed_share:.0%}); no estimated "
-            f"use on record for the month"
+            f": {fixed_share:.0%}, {DELIVERY_SHARE_BY_FIXED}, because no use "
+            f"area it serves has an estimated use for the month"
         )
     else:
         sentence += ", " + DELIVERY_SHARE_BY_USE

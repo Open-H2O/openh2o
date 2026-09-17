@@ -15,9 +15,9 @@
 <div class="card-raised">
   <h2 class="card-header-ruled">Start again</h2>
   <p class="text-base text-secondary mt-md">
-    This page no longer knows which system you were reviewing &mdash; the tab has
-    been open a while, or the sign-in session rolled over. Nothing was written.
-    Look the PWSID up again and the review will come back as it was.
+    The review has expired: the tab was open too long, or the sign-in session
+    ended. Nothing was written.
+    Look the PWSID up again to restore the review.
   </p>
   <div class="row-start mt-lg">
     <a href="{% url 'drinking:onboard' %}" class="btn-primary">Look up a system</a>
@@ -116,10 +116,10 @@
   {% endcomment %}
   <div class="card-inset mt-lg">
     <p class="text-base text-secondary m-0">
-      <strong>Next: sampling points.</strong> This system now has its facilities,
-      but no sampling points &mdash; and lab results cannot be imported until it
-      has them, because every result row is matched to a monitoring location by
-      its PS Code. Walk the facilities and add the points your lab file names.
+      <strong>Next: sampling points.</strong> This system has its facilities but
+      no sampling points. Lab results cannot be imported until it has them: every
+      result row is matched to a point by its PS Code. Add, under each facility,
+      the points your lab file names.
     </p>
   </div>
 
