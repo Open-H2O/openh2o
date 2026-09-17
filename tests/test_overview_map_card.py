@@ -4,8 +4,9 @@ map follows the list.
 
 Task 2 designed the card on Surface Diversions and Task 4 copied it, class for
 class, to Recharge Areas, Zones, Sampling Points, Facilities and Monitoring
-Stations. This file is the guard for the pattern itself, closing five of the
-plan's twelve register rows:
+Stations. 143-13 copied it again to Use Areas and Wells, when candidate A (the
+list is the page) closed the workspace FRAME ruling. This file is the guard
+for the pattern itself, closing five of the plan's twelve register rows:
 
   R-023  four overview maps used to ignore the list's own filter: typing a
          query swapped the list and left every mark on the map where it was.
@@ -39,10 +40,12 @@ from django.urls import reverse
 
 from tests.factories import (
     MonitoredStationFactory,
+    ParcelFactory,
     PointOfDiversionFactory,
     RechargeSiteFactory,
     SamplingPointFactory,
     SystemFacilityFactory,
+    WellFactory,
     ZoneFactory,
 )
 
@@ -129,6 +132,25 @@ def _build_stations():
     return alpha, [alpha.pk]
 
 
+def _build_parcels():
+    # ParcelFactory always sets geometry (tests/factories.py::_box), so
+    # located_count == all_count here: the full line takes the "all on the
+    # map" branch, never the "N of them on the map" one.
+    alpha = ParcelFactory(parcel_number="Alpha-Use-Area", owner_name="Alpha Farms")
+    ParcelFactory(parcel_number="Beta-Use-Area", owner_name="Beta Farms")
+    ParcelFactory(parcel_number="Gamma-Use-Area", owner_name="Gamma Farms")
+    return alpha, [alpha.pk]
+
+
+def _build_wells():
+    # Well.location is NOT nullable (wells/models.py), so every well is
+    # located and the full line always takes the "all on the map" branch.
+    alpha = WellFactory(name="Alpha Well")
+    WellFactory(name="Beta Well")
+    WellFactory(name="Gamma Well")
+    return alpha, [alpha.pk]
+
+
 def _pods_full_line():
     from surface.models import PointOfDiversion
 
@@ -174,6 +196,22 @@ def _stations_full_line():
     return f"{count:,} {noun}, syncing"
 
 
+def _parcels_full_line():
+    from parcels.models import Parcel
+
+    count = Parcel.objects.count()
+    noun = "use area" if count == 1 else "use areas"
+    return f"{count:,} {noun}, all on the map"
+
+
+def _wells_full_line():
+    from wells.models import Well
+
+    count = Well.objects.count()
+    noun = "well" if count == 1 else "wells"
+    return f"{count:,} {noun}, all on the map"
+
+
 #: One row per overview list: the url name, the fixture builder, the head's
 #: element id, the query param that filters by name, and a callable computing
 #: the full-page (unfiltered) head line from the LIVE database total AFTER
@@ -213,6 +251,16 @@ CASES = [
         _stations_full_line,
         id="stations",
     ),
+    pytest.param(
+        "parcels:list", _build_parcels, "parcels-overview-map-head", "q",
+        _parcels_full_line,
+        id="parcels",
+    ),
+    pytest.param(
+        "wells:list", _build_wells, "wells-overview-map-head", "q",
+        _wells_full_line,
+        id="wells",
+    ),
 ]
 
 
@@ -238,8 +286,15 @@ def test_the_map_follows_the_list(
     # 2. An htmx swap matching exactly one row: the results partial carries
     #    the whole filtered queryset's pks (never the page's), and re-renders
     #    the SAME head out of band rather than dropping it.
-    match_name = matched.name if hasattr(matched, "name") else matched.station_name
-    query_text = match_name.split()[0]  # "Alpha", unique to one fixture row
+    # Parcel carries neither `.name` nor `.station_name` (its identifier is
+    # `parcel_number`, matched by the same fixture convention: "Alpha-...").
+    if hasattr(matched, "name"):
+        match_name = matched.name
+    elif hasattr(matched, "station_name"):
+        match_name = matched.station_name
+    else:
+        match_name = matched.parcel_number
+    query_text = match_name.split("-")[0].split()[0]  # "Alpha", unique to one fixture row
     filtered_body = auth_client.get(
         url, {query_param: query_text}, HTTP_HX_REQUEST="true"
     ).content.decode()
@@ -326,3 +381,83 @@ class TestRechargeAreasCard:
         assert "'line-width': 2.5" in rendered, (
             "the recharge outline is still the pre-143-07 1.5px"
         )
+
+
+# ---------------------------------------------------------------------------
+# 143-13: Use Areas and Wells copy the card onto the finders the workspace
+# FRAME ruling moved off `workspace.html` (candidate A). R-105/R-106's list
+# behaviour is `tests/test_finder_pages.py`'s job; this file's job is the
+# card pattern itself, same as every other page above.
+# ---------------------------------------------------------------------------
+
+
+class TestUseAreasCard:
+    def test_the_head_reads_the_count_and_carries_the_fill_key(self, auth_client):
+        ParcelFactory(parcel_number="Card Use Area One")
+        ParcelFactory(parcel_number="Card Use Area Two")
+
+        body = auth_client.get(reverse("parcels:list")).content.decode()
+        assert "2 use areas, all on the map" in body
+        assert 'class="swatch-fill"' in body, (
+            "a use area is a polygon: the key must be a fill swatch, not a dot"
+        )
+        assert "Use area" in body
+
+    def test_the_map_partial_declares_an_always_on_label_layer(self, auth_client):
+        from django.template.loader import render_to_string
+
+        rendered = render_to_string(
+            "parcels/partials/_parcels_overview_map.html",
+            {"map_id": "parcels-overview-map"},
+        )
+        assert "-label'" in rendered or '-label"' in rendered, (
+            "the parcels overview map declares no label layer id"
+        )
+        assert "addDetailLabel" in rendered
+
+    def test_the_overview_map_renders_only_when_something_is_located(
+        self, auth_client
+    ):
+        """A use area with no geometry (Parcel.geometry is nullable) renders
+        the card's head alone: no map host, no map built (143-13's action)."""
+        ParcelFactory(parcel_number="No Geometry Yet", geometry=None)
+
+        body = auth_client.get(reverse("parcels:list")).content.decode()
+        assert "No use area has a location yet." in body
+        assert 'id="parcels-overview-map"' not in body, (
+            "a use area with no geometry still built a map host"
+        )
+        assert "maplibre-gl.js" in body, (
+            "the map SCRIPTS still load (map_scripts is a page block, not "
+            "conditional) even though no map is built this time"
+        )
+
+
+class TestWellsCard:
+    def test_the_head_reads_the_count_and_carries_the_dot_key(self, auth_client):
+        WellFactory(name="Card Well One")
+        WellFactory(name="Card Well Two")
+
+        # Computed from the live total, not hardcoded "2 wells": the Merced
+        # drinking-water demonstration seed (`tests/test_merced_drinking_seed.py`,
+        # module-scoped, committed outside any test's transaction) adds its own
+        # municipal-supply wells that outlive this test's own two when that
+        # module has already run earlier in the session: the same
+        # order-dependence `_wells_full_line` exists to absorb for the CASES
+        # table above.
+        body = auth_client.get(reverse("wells:list")).content.decode()
+        assert _wells_full_line() in body
+        assert 'class="swatch-dot"' in body
+        assert "Well" in body
+
+    def test_the_map_partial_declares_an_always_on_label_layer(self, auth_client):
+        from django.template.loader import render_to_string
+
+        rendered = render_to_string(
+            "wells/partials/_wells_overview_map.html",
+            {"map_id": "wells-overview-map"},
+        )
+        assert "-label'" in rendered or '-label"' in rendered, (
+            "the wells overview map declares no label layer id"
+        )
+        assert "addDetailLabel" in rendered
