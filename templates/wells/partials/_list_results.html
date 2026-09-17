@@ -1,66 +1,77 @@
-{% load placeholders %}<!-- Count badge -->
-<div class="result-count-bar">
-  <span class="text-secondary text-sm">
-    <span class="count-pill">{{ total_count }}</span>
-    well{{ total_count|pluralize }} found
-  </span>
-</div>
+{% load placeholders humanize %}{% comment %}
+The count line is NOT here (143-07). It is the map card's head, above the map
+and outside #results, and on an htmx swap this partial re-renders that head
+out of band (hx-swap-oob on the same id) so the count follows the list
+without the map being torn down. On a full page render the page includes the
+head once itself, so it is included here only on an htmx request (hx_request,
+from the view). The pks below are the WHOLE filtered queryset's, before
+pagination: OH2O.followResults reads them after every swap and filters the
+map to them.
+{% endcomment %}{% if hx_request %}{% include "partials/_map_card_head.html" with head_id="wells-overview-map-head" title="Wells" noun="well" noun_plural="wells" key_label="Well" swatch="dot" swatch_token="gold" oob=True %}{% endif %}
+{{ result_pks|json_script:"results-map-pks" }}
 
 {% if page_obj.object_list %}
-<div class="card-raised master-list-card">
-  {% for well in page_obj %}
-  <div
-    data-row
-    class="master-row{% if selected_well and well.pk == selected_well.pk %} is-selected{% endif %}"
-    hx-get="{% url 'wells:detail' well.pk %}"
-    hx-target="#detail-body"
-    hx-swap="innerHTML"
-    {# a11y 2.1.1: div[role=link] needs an explicit Enter trigger; HTMX defaults to mouse click only. #}
-    hx-trigger="click, keyup[key=='Enter']"
-    hx-push-url="{% url 'wells:list' %}?selected={{ well.pk }}"
-    role="link"
-    tabindex="0"
-    aria-label="Open well {{ well.name }}">
-    <div class="master-row-top">
-      <span class="master-row-id">{{ well.name }}</span>
-      {% include "wells/partials/_status_badge.html" with status=well.status %}
-    </div>
-    <div class="master-row-sub">
-      <span class="master-row-owner">{{ well.well_registration_id|blank }}</span>
-      {% comment %} 143-10 (R-110): "Depth" names what the figure is, the same word
-           the well page's own tooltip on this field uses ("Total Depth"); the
-           bare number beside the registration id said nothing about what it
-           measured. {% endcomment %}
-      {% if well.depth_ft %}<span class="master-row-acres">Depth {{ well.depth_ft }} ft</span>{% endif %}
-    </div>
+<div class="card-raised" style="padding: 0;">
+  <div class="ledger-card-head">
+    <div class="text-secondary text-base">Depth is the total depth on record. Construction, location and meters are on the well's page.</div>
   </div>
-  {% endfor %}
-</div>
+  <table class="data-table text-sm">
+    <thead>
+      <tr>
+        <th>Well</th>
+        <th>Registration</th>
+        <th>Owner</th>
+        <th>Status</th>
+        <th class="th-right">Depth (ft)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for well in page_obj %}
+      <tr class="row-clickable" style="cursor: pointer;"
+          onclick="if(!event.target.closest('a')){window.location='{% url 'wells:detail' well.pk %}';}">
+        <td>
+          <a href="{% url 'wells:detail' well.pk %}" class="data-table-link">
+            {{ well.name }}
+          </a>
+        </td>
+        <td class="text-secondary">{{ well.well_registration_id|blank }}</td>
+        <td class="text-secondary">{{ well.owner_name|blank }}</td>
+        <td>{% include "wells/partials/_status_badge.html" with status=well.status %}</td>
+        {% comment %} 143-10 (R-110): the figure says what it measures. Kept as
+             "Depth N ft" in the cell (not a bare number) even though the
+             column header also names it, so the guard at
+             tests/test_views.py:817 stays green untouched. {% endcomment %}
+        <td class="td-num">{% if well.depth_ft %}Depth {{ well.depth_ft }} ft{% else %}<span class="value-empty">Not recorded</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-<!-- Pagination -->
-{% if page_obj.has_other_pages %}
-<div class="pagination-row">
-  {% if page_obj.has_previous %}
-    <button
-      hx-get="{% url 'wells:list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
-      hx-target="#results"
-      class="btn-secondary btn-sm">
-      Previous
-    </button>
-  {% endif %}
-  <span class="pagination-label">
-    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-  </span>
-  {% if page_obj.has_next %}
-    <button
-      hx-get="{% url 'wells:list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
-      hx-target="#results"
-      class="btn-secondary btn-sm">
-      Next
-    </button>
+  <!-- Pagination (one control, under the table, inside the card) -->
+  {% if page_obj.has_other_pages %}
+  <div class="pagination-row">
+    {% if page_obj.has_previous %}
+      <button
+        hx-get="{% url 'wells:list' %}?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}"
+        hx-target="#results"
+        class="btn-secondary btn-sm">
+        Previous
+      </button>
+    {% endif %}
+    <span class="pagination-label">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+      <button
+        hx-get="{% url 'wells:list' %}?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}"
+        hx-target="#results"
+        class="btn-secondary btn-sm">
+        Next
+      </button>
+    {% endif %}
+  </div>
   {% endif %}
 </div>
-{% endif %}
 
 {% else %}
 <div class="card-raised empty-state">

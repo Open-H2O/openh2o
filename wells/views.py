@@ -21,7 +21,7 @@ from django.views.decorators.http import require_http_methods
 from core.access import public_in_open_demo
 
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
-from core.workspace import detail_response, list_response
+from core.workspace import detail_response, list_response, redirect_to_selected
 from wells import measurement_history
 from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES, Well
 
@@ -54,21 +54,31 @@ EDITABLE_FIELDS = {
 
 @login_required
 def wells_list(request):
-    """Master-detail workspace for wells.
+    """Wells overview (143-13, candidate A: the list is the page).
 
-    Left pane: the HTMX-searchable well list. Right pane: the selected well's
-    detail, swapped in place when a row is clicked. A ``?selected=<pk>`` query
-    param pre-renders that well server-side so a reload or a deep link lands on
-    the same workspace view (the row click pushes that URL).
+    A Bucket-3 finder, the shape every other list on the platform now uses:
+    the 143-07 overview map card (count line + key, following the list) above
+    a one-row toolbar above the table, a row opening the well's own detail
+    page. Replaces the earlier master-detail workspace (`workspace.html`),
+    whose narrow rail and empty resting pane were the worst-named fault on
+    this page since 143-02 (the "workspace FRAME" ruling, R-105 / R-106).
+
+    A `?selected=<pk>` query param (the old workspace's deep-link shape)
+    redirects to the well's own detail page so a bookmarked link still lands
+    somewhere real.
 
     Returns the ``_list_results`` partial for an HTMX list refresh (search /
-    filter / pagination, which target ``#results``), and the full workspace page
+    filter / pagination, which target ``#results``), and the full page
     otherwise.
     """
+    selected_raw = request.GET.get("selected", "").strip()
+    if selected_raw:
+        return redirect_to_selected(request, "wells:detail", selected_raw)
+
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
 
-    queryset = Well.objects.select_related("well_type").order_by("name")
+    queryset = Well.objects.order_by("name")
 
     if q:
         queryset = queryset.filter(
@@ -81,24 +91,25 @@ def wells_list(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # Pre-load the selected well (deep link / reload) into the detail pane.
-    selected_well = None
-    selected_raw = request.GET.get("selected", "").strip()
-    if selected_raw:
-        selected_well = (
-            Well.objects.select_related("well_type").filter(pk=selected_raw).first()
-        )
-
+    # The overview map card's counts (143-07 shape, `_map_card_head.html`):
+    # `located_count` is what the map can draw AT ALL (unfiltered), which is
+    # what decides whether the page builds a map host at all; `result_pks` /
+    # `result_located_count` are the CURRENT filter's, which is what the map
+    # follows on every swap (OH2O.followResults, rule 19).
+    status_label = dict(Well.STATUS_CHOICES).get(status, "")
     context = {
         "page_obj": page_obj,
         "total_count": paginator.count,
+        "all_count": Well.objects.count(),
+        "located_count": Well.objects.filter(location__isnull=False).count(),
+        "result_pks": list(queryset.values_list("pk", flat=True)),
+        "result_located_count": queryset.filter(location__isnull=False).count(),
+        "filter_words": f"with status “{status_label}”" if status_label else "",
+        "hx_request": bool(request.headers.get("HX-Request")),
         "q": q,
         "status": status,
         "status_choices": Well.STATUS_CHOICES,
-        "selected_well": selected_well,
     }
-    if selected_well is not None:
-        context.update(_well_detail_context(selected_well))
 
     return list_response(
         request,

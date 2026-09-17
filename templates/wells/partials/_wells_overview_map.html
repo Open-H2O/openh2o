@@ -1,0 +1,135 @@
+{% comment %}
+Wells overview map: the wells the list is showing, on the wells overview page
+(143-13, candidate A). Copies the 143-07 map card's point pattern, class for
+class, from surface/partials/_pods_overview_map.html: a well is a point, like
+a diversion point, painted GOLD (OH2O.entities.well.color) instead of teal.
+
+The overview map card (143-07). Three things beyond the dots:
+
+  * An always-on label per well (OH2O.addDetailLabel: minzoom 0, collision
+    declutter, text-optional), so every well reads as a named point at the
+    fitted zoom. A label that collides yields; the dot stays.
+  * The map FOLLOWS THE LIST. The results partial emits the whole filtered
+    queryset's pks as json_script#results-map-pks, and OH2O.followResults
+    filters every layer here to those pks and re-frames on first paint and
+    after every htmx swap of #results. The geojson endpoint takes NO
+    parameter: one fetch per page load, one source, filtered client-side.
+  * The card's head (partials/_map_card_head.html) carries the count line and
+    the key; the map itself says nothing in words.
+
+The parent page must provide a <div> with the matching map_id, and must load
+MapLibre GL JS + map-core.js (the map_scripts block) before this include. It
+includes this partial only when something has a location (located_count):
+with nothing to draw the card is its head alone and no map is built.
+
+Variables:
+  map_id  - ID of the existing <div> container on the page (required)
+{% endcomment %}
+<script>
+(function() {
+  // MapLibre loads in the map_scripts block, which renders AFTER page content,
+  // so on first render this runs before the library exists. Defer until
+  // DOMContentLoaded; on an HTMX content swap the document is already loaded.
+  function init() {
+    if (!window.maplibregl) return;
+    var el = document.getElementById('{{ map_id }}');
+    if (!el || el._mapInit) return;
+    el._mapInit = true;
+
+    var COLOR = OH2O.entities.well.color;   // Gold, the well symbology on the big map
+    var SRC = '{{ map_id }}-source';
+
+    var map = new maplibregl.Map({
+      cooperativeGestures: true,  // plain scroll passes to the page; Cmd/Ctrl+scroll zooms
+      container: '{{ map_id }}',
+      style: OH2O.basemapStyle('aerial'),
+      zoom: 7,
+      center: [-119.5, 37.3],
+      attributionControl: false
+    });
+    el._oh2oMap = map;   // a handle for probes; the map is otherwise closed over
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    OH2O.mountBasemapToggle(map, 'aerial');
+
+    // Resolve the detail URL through Django (a sentinel pk we swap out) so the
+    // link tracks the app's URL prefix instead of hardcoding it.
+    var detailUrl = '{% url "wells:detail" 0 %}';
+
+    map.on('load', function() {
+      fetch('{% url "wells:geojson" %}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.features || !data.features.length) return;
+
+          map.addSource(SRC, { type: 'geojson', data: data });
+
+          map.addLayer({
+            id: '{{ map_id }}-glow',
+            type: 'circle',
+            source: SRC,
+            paint: { 'circle-radius': 14, 'circle-color': COLOR, 'circle-opacity': 0.15, 'circle-blur': 1 }
+          });
+          map.addLayer({
+            id: '{{ map_id }}-dots',
+            type: 'circle',
+            source: SRC,
+            paint: {
+              'circle-radius': 6, 'circle-color': COLOR,
+              'circle-stroke-width': 1.5, 'circle-stroke-color': 'rgba(255,255,255,0.3)'
+            }
+          });
+          // The always-on label, after the dots so it draws above them. A
+          // label that would collide below finds room beside (variable
+          // anchors); a rare pair too close for either yields.
+          OH2O.addDetailLabel(map, SRC, 'well', {
+            id: '{{ map_id }}-label',
+            layout: {
+              'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+              'text-radial-offset': 0.9,
+              'text-justify': 'auto'
+            }
+          });
+
+          // Filter to the list's pks and frame them: now, and after every
+          // swap of #results.
+          OH2O.followResults(map, {
+            layers: ['{{ map_id }}-glow', '{{ map_id }}-dots', '{{ map_id }}-label'],
+            source: SRC,
+            data: data,
+            pksEl: 'results-map-pks',
+            resultsEl: 'results',
+            padding: { top: 64, bottom: 64, left: 40, right: 40 },
+            maxZoom: 13,
+            singleZoom: 11
+          });
+
+          map.on('click', '{{ map_id }}-dots', function(e) {
+            var p = e.features[0].properties;
+            var sub = [p.well_registration_id, p.status].filter(Boolean).join(' &middot; ');
+            new maplibregl.Popup({ closeButton: true, maxWidth: '260px' })
+              .setLngLat(e.features[0].geometry.coordinates)
+              .setHTML(
+                '<div style="font-family:var(--font-display,sans-serif);color:var(--color-text-primary,#E7EEF2);background:var(--color-elevated,#1A2633);padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;min-width:180px;">' +
+                '<div style="font-weight:600;font-size:13px;">' + (p.name || 'Well') + '</div>' +
+                (sub ? '<div style="color:var(--color-text-secondary,#8FA3AE);font-size:11px;margin-bottom:4px;">' + sub + '</div>' : '') +
+                '<a href="' + detailUrl.replace('/0/', '/' + p.pk + '/') + '" ' +
+                  'style="display:inline-block;margin-top:6px;color:var(--color-blue-bright,#3DB4E0);text-decoration:none;font-size:11px;">View well &rarr;</a>' +
+                '</div>'
+              )
+              .addTo(map);
+          });
+
+          map.on('mouseenter', '{{ map_id }}-dots', function() { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', '{{ map_id }}-dots', function() { map.getCanvas().style.cursor = ''; });
+        })
+        .catch(function(err) { console.error('Wells GeoJSON failed:', err); });
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

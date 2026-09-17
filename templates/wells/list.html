@@ -1,7 +1,18 @@
-{% extends "workspace.html" %}
+{% extends "base.html" %}
+{% load static %}
 
 {% block title %}Wells - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Wells{% endblock %}
+
+{% block map_styles %}
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/map-engine.css' %}">
+{% endblock %}
+
+{% block map_scripts %}
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="{% static 'js/map-core.js' %}"></script>
+{% endblock %}
 
 {% block page_actions %}
 {% if 'infrastructure' in enabled_modules %}
@@ -17,51 +28,71 @@
     <span class="breadcrumb-separator">/</span>
     <span class="breadcrumb-current">Wells</span>
   </nav>
-  <p class="page-description">Groundwater wells tracked in the system. Pick one to open its construction record, map, and linked meters alongside the list.</p>
+  <p class="page-description">Groundwater wells tracked in the system. Search or filter the list; a row opens the well's construction record, map and linked meters.</p>
 </div>
 {% endblock %}
 
-{% block master_toolbar %}
-  <div>
-    <label class="form-label" for="filter-search">Search</label>
-    <input
-      type="text"
-      id="filter-search" name="q"
-      value="{{ q }}"
-      placeholder="Well name or registration ID..."
-      hx-get="{% url 'wells:list' %}"
-      hx-target="#results"
-      hx-trigger="keyup changed delay:300ms"
-      hx-include="[name='status']"
-      class="form-input search-input-icon"
-    >
+{% block content %}
+<div class="page-stack page-wide">
+
+  {% comment %} The overview map card (143-07): the head (the count line and
+       the key on one row, partials/_map_card_head.html) above the map. A
+       well is a point: the key is a dot swatch in Gold
+       (--color-entity-gold), never teal or Pacific Blue. Clicking a well
+       opens its detail page; the list below is the type-to-find path to the
+       same, and the map follows it (OH2O.followResults, rule 19). With
+       nothing located the card is its head alone: no map host, no map
+       built. {% endcomment %}
+  <div class="card-raised" style="padding: 0; overflow: hidden;">
+    {% include "partials/_map_card_head.html" with head_id="wells-overview-map-head" title="Wells" noun="well" noun_plural="wells" key_label="Well" swatch="dot" swatch_token="gold" %}
+    {% if located_count %}
+    <div id="wells-overview-map" style="height: 380px; width: 100%;"></div>
+    {% endif %}
   </div>
-  <div>
-    <label class="form-label" for="filter-status">Status</label>
-    <select
-      id="filter-status" name="status"
-      hx-get="{% url 'wells:list' %}"
-      hx-target="#results"
-      hx-trigger="change"
-      hx-include="[name='q']"
-      class="form-select"
-    >
-      <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
-      {% for val, label in status_choices %}
-        <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
+
+  {% comment %} Toolbar: search + status filter, one row (143-05's shape). {% endcomment %}
+  <div class="card-raised toolbar-row">
+    <div style="flex: 1; min-width: 200px;">
+      <label class="form-label" for="filter-search">Search</label>
+      <input
+        type="text"
+        id="filter-search" name="q"
+        value="{{ q }}"
+        placeholder="Well name or registration ID..."
+        hx-get="{% url 'wells:list' %}"
+        hx-target="#results"
+        hx-trigger="keyup changed delay:300ms"
+        hx-include="[name='status']"
+        autocomplete="off"
+        class="form-input search-input-icon"
+      >
+    </div>
+    <div>
+      <label class="form-label" for="filter-status">Status</label>
+      <select
+        id="filter-status" name="status"
+        hx-get="{% url 'wells:list' %}"
+        hx-target="#results"
+        hx-trigger="change"
+        hx-include="[name='q']"
+        class="form-select"
+      >
+        <option value="" {% if not status %}selected{% endif %}>All Statuses</option>
+        {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
   </div>
+
+  <!-- Results (HTMX target) -->
+  <div id="results">
+    {% include "wells/partials/_list_results.html" %}
+  </div>
+
+</div>
 {% endblock %}
 
-{% block master_results %}
-  {% include "wells/partials/_list_results.html" %}
-{% endblock %}
-
-{% block detail_body %}
-  {% if selected_well %}
-    {% include "wells/partials/_detail_pane.html" %}
-  {% else %}
-    {% include "wells/partials/_detail_empty.html" %}
-  {% endif %}
+{% block extra_scripts %}
+{% if located_count %}{% include "wells/partials/_wells_overview_map.html" with map_id="wells-overview-map" %}{% endif %}
 {% endblock %}
