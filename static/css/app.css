@@ -2594,7 +2594,10 @@ html { color-scheme: dark; }
     .budget-panel-body .budget-seg--result .budget-seg-value {
         font-size: clamp(1.5rem, 3.35cqi, 2rem);
     }
-    .budget-seg > .budget-breakdown-group {
+    /* (0,3,0): the base `.budget-seg > .budget-breakdown-group` rule sits AFTER
+       this block and would otherwise win on order; the injected trial had
+       appended these rules last, which hid that. */
+    .budget-panel-body .budget-seg > .budget-breakdown-group {
         font-size: clamp(0.7rem, 1.4cqi, 0.84rem);
         column-gap: var(--space-sm);
     }
