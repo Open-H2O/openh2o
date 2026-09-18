@@ -2568,6 +2568,43 @@ html { color-scheme: dark; }
     font-size: 1.5rem;
     padding-top: 1.45rem;
 }
+/* Between the stack (700px) and the width where three cells fit at full size
+   (~1,000px: each cell's figure "16,209.28 AF" is 248px at 1.375rem and its
+   parts "Accounts with estimates 11 of 11" 233px, three cells plus two
+   operators plus the body's padding), the cells are narrower than their
+   content. The content is centred in the cell, so it overflowed BOTH ways: the
+   figure's first digit ran under the "−" on the divider and "11 of 11" ran
+   across the divider into Balance (Brent's production screenshot, 2026-09-18
+   07:55, his 1,730 window at 150% browser zoom = an 1,153px viewport, panel
+   851px; reproduced on staging at that viewport, and absent at 1,730 and
+   2,560). In that range the figures and their parts scale with the panel
+   (cqi is the container's inline size), and the operators' top padding
+   follows the figure's smaller line box. The query and cqi both see the
+   container's OWN inline size, which sits inside `.app-content`'s
+   zoom: 1.0625, so the 1,020px panel at the 1,730 viewport queries as 958
+   (its client width) and the 851px panel at 1,153 as 799. The range
+   therefore stops at 950: the 1,730 layout Brent approved is untouched, and
+   every clamp is within a pixel of its maximum at 950 so nothing visibly
+   steps at the boundary. Measured at 799: figure 18.4px, parts 11.2px,
+   nothing overflows any cell. */
+@container (min-width: 700px) and (max-width: 950px) {
+    .budget-panel-body .budget-seg-value {
+        font-size: clamp(1.05rem, 2.3cqi, 1.375rem);
+    }
+    .budget-panel-body .budget-seg--result .budget-seg-value {
+        font-size: clamp(1.5rem, 3.35cqi, 2rem);
+    }
+    .budget-seg > .budget-breakdown-group {
+        font-size: clamp(0.7rem, 1.4cqi, 0.84rem);
+        column-gap: var(--space-sm);
+    }
+    .budget-panel-body .budget-op {
+        padding-top: clamp(1.1rem, 2.6cqi, 1.55rem);
+    }
+    .budget-panel-body .budget-op:has(+ .budget-seg--result) {
+        padding-top: clamp(1rem, 2.45cqi, 1.45rem);
+    }
+}
 /* A figure's parts, tight under it: label column, number column, nothing
    stretched across the cell. `display: contents` lets the rows sit in the
    group's two-column grid while the markup keeps one element per row. */
