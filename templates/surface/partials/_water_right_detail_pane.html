@@ -22,6 +22,10 @@
 </div>
 {% endif %}
 
+<div class="row-start" style="gap: var(--space-sm); margin-bottom: var(--space-md);">
+  <a href="{% url 'surface:water_right_edit' water_right.pk %}" class="btn-secondary btn-sm">Edit right</a>
+</div>
+
 {% comment %}
   143-10 (R-121, R-122, R-055). Composed as a page at 1,730 CSS px, reusing
   the account page's grid UNCHANGED: Right information beside "Face value
@@ -44,12 +48,54 @@
 
         <div class="field-group">
           <div class="field-label">Right type</div>
-          <div class="field-value">{{ water_right.right_type|blank }}</div>
+          <div class="field-value">{% if water_right.right_type and water_right.state_status %}{{ water_right.right_type }}, {{ water_right.state_status }}{% else %}{{ water_right.right_type|blank }}{% endif %}</div>
         </div>
 
         <div class="field-group">
           <div class="field-label">Holder</div>
           <div class="field-value">{{ water_right.holder_name|blank }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label field-row">
+            Direct diversion season
+            {% include "partials/_help_tooltip.html" with label="Direct Diversion Season" text="DIRECT_SEASON_START_MONTH_1 / _DAY_1 and DIRECT_DIV_SEASON_END_MONTH_1 / _DAY_1 in the state's rights list." %}
+          </div>
+          <div class="field-value">{{ water_right.direct_season_display|blank }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label field-row">
+            Storage season
+            {% include "partials/_help_tooltip.html" with label="Storage Season" text="STORAGE_SEASON_START_MONTH_1 / _DAY_1 and STORAGE_SEASON_END_MONTH_1 / _DAY_1 in the state's rights list." %}
+          </div>
+          <div class="field-value">{{ water_right.storage_season_display|blank }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label field-row">
+            Max rate (cfs)
+            {% include "partials/_help_tooltip.html" with label="Max Rate" text="MAX_DD_APPL in the state's rights list, in cubic feet per second." %}
+          </div>
+          <div class="field-value">{% if water_right.max_rate_cfs %}{{ water_right.max_rate_cfs|floatformat:2 }} cfs{% else %}{{ ""|blank }}{% endif %}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Permit / license number</div>
+          <div class="field-value-mono">{{ water_right.permit_number|blank }} / {{ water_right.license_number|blank }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label">Purpose of use</div>
+          <div class="field-value">{{ water_right.purpose_of_use|blank }}</div>
+        </div>
+
+        <div class="field-group">
+          <div class="field-label field-row">
+            Net acreage
+            {% include "partials/_help_tooltip.html" with label="Net Acreage" text="USE_NET_ACREAGE in the state's rights list, in acres." %}
+          </div>
+          <div class="field-value">{% if water_right.net_acreage %}{{ water_right.net_acreage|floatformat:2|intcomma }}{% else %}{{ ""|blank }}{% endif %}</div>
         </div>
 
         <div class="field-group">

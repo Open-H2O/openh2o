@@ -9,6 +9,7 @@ and water_right_detail expose the underlying entitlements, diversion_record_crea
 records a diversion event, and pods_geojson feeds the diversion map.
 """
 import json
+import logging
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
@@ -17,7 +18,7 @@ from django.core.serializers import serialize
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from core.access import public_in_open_demo
 from core.map_labels import map_label
 
@@ -25,7 +26,8 @@ from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
 from core.modules import is_enabled
 from core.workspace import detail_response, list_response
-from surface.forms import DiversionRecordForm
+from surface import importer
+from surface.forms import DiversionRecordForm, WaterRightForm
 from surface.models import (
     CurtailmentOrder,
     DiversionRecord,
@@ -33,6 +35,8 @@ from surface.models import (
     PointOfDiversionParcel,
     WaterRight,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -414,6 +418,165 @@ def water_rights_list(request):
         page_template="surface/water_rights_list.html",
         results_template="surface/partials/_list_results.html",
         context=context,
+    )
+
+
+@login_required
+def water_right_create(request):
+    """Create a water right (146-02 door D1), the `period_create` full-page pattern."""
+    if request.method == "POST":
+        form = WaterRightForm(request.POST)
+        if form.is_valid():
+            water_right = form.save()
+            return redirect("surface:detail", pk=water_right.pk)
+    else:
+        form = WaterRightForm()
+
+    return render(request, "surface/right_form.html", {"form": form, "water_right": None})
+
+
+@login_required
+def water_right_edit(request, pk):
+    """Edit a water right (146-02 door D1)."""
+    water_right = get_object_or_404(WaterRight, pk=pk)
+    if request.method == "POST":
+        form = WaterRightForm(request.POST, instance=water_right)
+        if form.is_valid():
+            form.save()
+            return redirect("surface:detail", pk=water_right.pk)
+    else:
+        form = WaterRightForm(instance=water_right)
+
+    return render(
+        request, "surface/right_form.html", {"form": form, "water_right": water_right}
+    )
+
+
+# ---------------------------------------------------------------------------
+# Water rights bulk import: page -> preview/mapping -> commit (door D1)
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_GET
+def water_right_import(request):
+    """Bulk import landing page for the state's own rights LIST export."""
+    return render(request, "surface/right_import.html", {})
+
+
+def _rights_columns_from_rows(rows):
+    seen = []
+    for row in rows:
+        for key in row:
+            if key not in seen:
+                seen.append(key)
+    return seen
+
+
+def _rights_mapping_context(columns, rows, mapping, error=None):
+    field_rows = [
+        {"field": field, "label": label, "guess": mapping.get(field, "")}
+        for field, label in importer.import_fields()
+    ]
+    sample_table = [[row.get(col, "") for col in columns] for row in rows[:5]]
+    context = {
+        "columns": columns,
+        "field_rows": field_rows,
+        "sample_table": sample_table,
+        "sample_count": len(sample_table),
+        "row_count": len(rows),
+        "rows_json": json.dumps(rows),
+    }
+    if error:
+        context["error"] = error
+    return context
+
+
+@login_required
+@require_POST
+def water_right_import_preview(request):
+    """Parse the uploaded CSV, auto-map its columns, return the mapping UI."""
+    uploaded = request.FILES.get("file")
+    if not uploaded:
+        return render(
+            request,
+            "surface/partials/_right_import_result.html",
+            {"error": "No file provided. Choose the state's rights LIST CSV export."},
+        )
+
+    try:
+        parsed = importer.parse_upload(uploaded, uploaded.name)
+    except ImportError as exc:
+        return render(
+            request, "surface/partials/_right_import_result.html", {"error": str(exc)},
+        )
+
+    columns = parsed["columns"]
+    rows = parsed["rows"]
+    mapping = importer.auto_map_columns(columns)
+
+    return render(
+        request,
+        "surface/partials/_right_import_mapping.html",
+        _rights_mapping_context(columns, rows, mapping),
+    )
+
+
+@login_required
+@require_POST
+def water_right_import_commit(request):
+    """Validate the confirmed mapping against the parsed rows and bulk-create."""
+    try:
+        rows = json.loads(request.POST.get("rows_json", "") or "[]")
+    except json.JSONDecodeError:
+        rows = []
+
+    if not rows:
+        return render(
+            request,
+            "surface/partials/_right_import_result.html",
+            {"error": "No rows to import -- please re-upload your file and try again."},
+        )
+
+    if len(rows) > importer.MAX_ROWS:
+        return render(
+            request,
+            "surface/partials/_right_import_result.html",
+            {"error": (
+                f"Import is {len(rows)} rows, over the {importer.MAX_ROWS}-row "
+                "cap. Re-upload a smaller file."
+            )},
+        )
+
+    mapping = {
+        key[len("map:"):]: val
+        for key, val in request.POST.items()
+        if key.startswith("map:") and val
+    }
+
+    existing_right_ids = set(WaterRight.objects.values_list("right_id", flat=True))
+
+    try:
+        results = importer.validate_rows(rows, mapping, existing_right_ids)
+        created = importer.commit_rows(results)
+    except Exception as exc:
+        logger.exception("water right import commit failed")
+        columns = _rights_columns_from_rows(rows)
+        return render(
+            request,
+            "surface/partials/_right_import_mapping.html",
+            _rights_mapping_context(
+                columns, rows, mapping,
+                error=f"Nothing was created: {type(exc).__name__}: {exc}",
+            ),
+            status=200,
+        )
+    skipped = [r for r in results if r["errors"]]
+
+    return render(
+        request,
+        "surface/partials/_right_import_result.html",
+        {"created": created, "skipped": skipped, "total": len(results)},
     )
 
 

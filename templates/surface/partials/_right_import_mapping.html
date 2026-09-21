@@ -1,0 +1,80 @@
+{% comment %}
+Column-mapping step for the water rights importer (146-02 Task 1). Same shape
+as infrastructure/partials/_import_mapping.html: one row per model field with
+a <select> of the uploaded file's columns (pre-set to the auto-detected
+guess against the state's own LIST header names), a sample of the first
+rows, and a button that posts the confirmed mapping to import/commit/.
+
+`error`: set only when this is a re-render after Create raised.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md); margin-bottom: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% endif %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Match your columns: Water Rights</h2>
+  <p class="text-base text-secondary mt-md">
+    Found <strong>{{ row_count }}</strong> record{{ row_count|pluralize }} and
+    <strong>{{ columns|length }}</strong> column{{ columns|pluralize }}. Each field below is
+    set to our best guess against the state's own rights LIST headers. Change any
+    that look wrong, then create the rights.
+  </p>
+
+  <form class="mt-lg"
+    hx-post="{% url 'surface:water_right_import_commit' %}"
+    hx-target="#right-import-area"
+    hx-indicator="#right-commit-spinner">
+    {% csrf_token %}
+    <input type="hidden" name="rows_json" value="{{ rows_json }}">
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 45%;">Field</th>
+          <th>Your column</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fr in field_rows %}
+        <tr>
+          <td>{{ fr.label }}</td>
+          <td>
+            <select name="map:{{ fr.field }}" class="form-select">
+              <option value="">(not imported)</option>
+              {% for col in columns %}
+              <option value="{{ col }}"{% if fr.guess == col %} selected{% endif %}>{{ col }}</option>
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="row-start pt-sm mt-lg">
+      <button type="submit" class="btn-primary">Create {{ row_count }} record{{ row_count|pluralize }}</button>
+      <span id="right-commit-spinner" class="htmx-indicator text-tertiary text-sm">Creating&hellip;</span>
+    </div>
+  </form>
+</div>
+
+<div class="card-raised">
+  <h3 class="section-header-sm">Sample of your data (first {{ sample_count }} row{{ sample_count|pluralize }})</h3>
+  <div style="overflow-x: auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% for col in columns %}<th class="text-mono">{{ col }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for cells in sample_table %}
+        <tr>
+          {% for cell in cells %}<td>{{ cell|default:"" }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

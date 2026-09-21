@@ -4,6 +4,11 @@
 {% block title %}Water Rights - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Water Rights{% endblock %}
 
+{% block page_actions %}
+<a href="{% url 'surface:water_right_import' %}" class="btn-secondary btn-sm">Import</a>
+<a href="{% url 'surface:water_right_create' %}" class="btn-primary btn-sm">+ Add right</a>
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
   <nav class="breadcrumb" aria-label="Breadcrumb">

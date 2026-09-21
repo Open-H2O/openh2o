@@ -54,6 +54,24 @@ docker compose exec web python manage.py import_wells wells.csv --dry-run
 | Longitude | `LONGITUDE` | `--lon-field` |
 | Well registration ID | `WELL_REG_ID` | `--reg-id-field` |
 
+### Water rights: the rights LIST import screen
+
+Unlike the other file imports on this page, water rights import through the web UI, not a management command: **Water Rights → Import** (`/surface/rights/import/`). Accepts **CSV only** (the state's own rights LIST export).
+
+| Column | Required | Notes |
+|---|---|---|
+| `APPLICATION_NUMBER` | **yes** | becomes the right's ID; a repeat is skipped, never overwritten |
+| `WATER_RIGHT_TYPE` | **yes** | must match a seeded `WaterRightType` name (or a known state spelling, such as bare "Appropriative") |
+| `PRIMARY_OWNER_NAME` | **yes** | the holder |
+| `FACE_VALUE_AMOUNT` / `FACE_VALUE_UNITS` | no | `FACE_VALUE_UNITS` must read "Acre-feet per Year" (any other unit is a row error, never converted) |
+| `MAX_DD_APPL` / `MAX_DD_UNITS` | no | `MAX_DD_UNITS` must read "Cubic Feet per Second" (any other unit is a row error, never converted) |
+| `PRIORITY_DATE` | no | ISO (`YYYY-MM-DD`) or `M/D/YYYY`; blank stays blank |
+| `LICENSE_ID`, `PERMIT_ID`, `USE_CODE`, `USE_NET_ACREAGE`, `WATERSHED`, `SOURCE_NAME`, `WATER_RIGHT_STATUS` | no | copied through as the license number, permit number, purpose of use, net acreage, watershed, source and state status |
+| `DIRECT_SEASON_START_MONTH_1` / `DIRECT_DIV_SEASON_START_DAY_1` / `DIRECT_DIV_SEASON_END_MONTH_1` / `DIRECT_DIV_SEASON_END_DAY_1` | no | the direct-diversion season |
+| `STORAGE_SEASON_START_MONTH_1` / `STORAGE_SEASON_START_DAY_1` / `STORAGE_SEASON_END_MONTH_1` / `STORAGE_SEASON_END_DAY_1` | no | the storage season |
+
+The mapping step shows every column it matched (and lets you correct one), a preview of the first rows, then created and skipped counts, the same shape the file imports above use.
+
 ### Ledger entries: `import_ledger_csv`
 For migrating usage/supply history from a prior system. **CSV**, with these columns:
 
@@ -112,10 +130,10 @@ Run a subset with `--steps basins parcels`. The boundary must already exist (cre
 
 ## What still needs hand entry
 
-No public source provides these, so they're entered in the web UI under **Infrastructure**:
+No public source auto-populates these:
 
-- **Water rights**: eWRIMS is not auto-imported
-- **Water accounts**: the agency defines these
+- **Water rights**: eWRIMS is not queried live; import the state's rights LIST CSV yourself, above, or add one right at a time under Water Rights
+- **Water accounts**: the agency defines these, entered in the web UI under **Infrastructure**
 - **Allocations**: the agency's budget decisions
 
 ---

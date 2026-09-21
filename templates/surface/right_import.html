@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Import water rights - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Import water rights{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'surface:water_rights_list' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'surface:water_rights_list' %}">Water Rights</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Import</span>
+  </nav>
+  <p class="page-description">Upload the state's own rights LIST export (CSV), map its columns, preview, then create every valid right at once.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'surface:water_rights_list' %}" class="back-link">&larr; Back to Water Rights</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Water rights</h2>
+    <p class="text-base text-secondary mt-md">
+      Upload a <strong>CSV</strong> exported from the state's rights LIST (the same
+      columns eWRIMS publishes: Application Number, Water Right Type, Face Value,
+      Season, and the rest). We'll detect your columns and let you match them to
+      the right fields, show you a preview, then create every valid right. Rows
+      whose Application Number already exists are skipped, never overwritten.
+      This is different from <a href="{% url 'surface:water_right_create' %}">Add right</a>,
+      which creates one right at a time.
+    </p>
+
+    <form class="mt-lg"
+      id="right-import-upload-form"
+      method="post"
+      action="{% url 'surface:water_right_import_preview' %}"
+      enctype="multipart/form-data"
+      hx-post="{% url 'surface:water_right_import_preview' %}"
+      hx-target="#right-import-area"
+      hx-encoding="multipart/form-data"
+      hx-indicator="#right-import-spinner">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="right-import-file">Data file <span class="required-mark">*</span></label>
+        <div class="file-picker">
+          <label class="btn-secondary file-picker-button">
+            Choose file
+            <input type="file" id="right-import-file" name="file"
+                   accept=".csv"
+                   required class="file-picker-input">
+          </label>
+          <span class="file-picker-name text-tertiary text-sm" id="right-import-file-name">No file chosen</span>
+        </div>
+        <div class="form-help">Up to 500 records per file.</div>
+      </div>
+
+      <div class="row-start pt-sm">
+        <button type="submit" class="btn-primary">Upload &amp; preview</button>
+        <span id="right-import-spinner" class="htmx-indicator text-tertiary text-sm">Parsing&hellip;</span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Mapping UI and results are swapped in here by HTMX -->
+  <div id="right-import-area"></div>
+
+</div>
+
+<script>
+  // Show the chosen filename beside the styled "Choose file" button.
+  (function() {
+    var input = document.getElementById('right-import-file');
+    var name = document.getElementById('right-import-file-name');
+    if (!input || !name) return;
+    input.addEventListener('change', function() {
+      name.textContent = (input.files && input.files.length)
+        ? input.files[0].name
+        : 'No file chosen';
+    });
+  })();
+</script>
+{% endblock %}

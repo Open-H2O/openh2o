@@ -4,7 +4,18 @@ from decimal import Decimal
 
 from django import forms
 
-from surface.models import DiversionRecord, PointOfDiversion
+from surface.models import DiversionRecord, PointOfDiversion, WaterRight
+
+#: Choices for the four season month selects: (value, label) with a blank
+#: leading option so a right with no recorded season renders as "not set"
+#: rather than defaulting to January.
+MONTH_CHOICES = [("", "-- Month --")] + [
+    (i, name) for i, name in enumerate(
+        ["January", "February", "March", "April", "May", "June", "July",
+         "August", "September", "October", "November", "December"],
+        start=1,
+    )
+]
 
 
 class DiversionRecordForm(forms.ModelForm):
@@ -89,3 +100,104 @@ class PointOfDiversionForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
         }
+
+
+class WaterRightForm(forms.ModelForm):
+    """Create/edit a water right (146-02 Task 1, door D1).
+
+    The four season fields per season type (start month, start day, end
+    month, end day) are laid out in the template as "from <month> <day> to
+    <month> <day>"; ``clean()`` here enforces the one cross-field rule the
+    plan calls for: a day outside 1-31, and a start recorded with no end (or
+    an end with no start) for either season.
+    """
+
+    direct_season_start_month = forms.TypedChoiceField(
+        choices=MONTH_CHOICES, coerce=int, required=False, empty_value=None,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    direct_season_end_month = forms.TypedChoiceField(
+        choices=MONTH_CHOICES, coerce=int, required=False, empty_value=None,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    storage_season_start_month = forms.TypedChoiceField(
+        choices=MONTH_CHOICES, coerce=int, required=False, empty_value=None,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    storage_season_end_month = forms.TypedChoiceField(
+        choices=MONTH_CHOICES, coerce=int, required=False, empty_value=None,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    class Meta:
+        model = WaterRight
+        fields = [
+            "right_id", "right_type", "holder_name", "priority_date",
+            "face_value_acre_feet", "status", "state_status", "source_name",
+            "watershed", "permit_number", "license_number", "purpose_of_use",
+            "net_acreage", "max_rate_cfs",
+            "direct_season_start_month", "direct_season_start_day",
+            "direct_season_end_month", "direct_season_end_day",
+            "storage_season_start_month", "storage_season_start_day",
+            "storage_season_end_month", "storage_season_end_day",
+            "calwatrs_pin", "notes",
+        ]
+        widgets = {
+            "right_id": forms.TextInput(attrs={"class": "form-input"}),
+            "right_type": forms.Select(attrs={"class": "form-select"}),
+            "holder_name": forms.TextInput(attrs={"class": "form-input"}),
+            "priority_date": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
+            "face_value_acre_feet": forms.NumberInput(attrs={"class": "form-input", "step": "0.0001"}),
+            "status": forms.Select(attrs={"class": "form-select"}),
+            "state_status": forms.TextInput(attrs={"class": "form-input", "placeholder": "e.g. Licensed"}),
+            "source_name": forms.TextInput(attrs={"class": "form-input"}),
+            "watershed": forms.TextInput(attrs={"class": "form-input"}),
+            "permit_number": forms.TextInput(attrs={"class": "form-input"}),
+            "license_number": forms.TextInput(attrs={"class": "form-input"}),
+            "purpose_of_use": forms.TextInput(attrs={"class": "form-input", "placeholder": "e.g. Irrigation"}),
+            "net_acreage": forms.NumberInput(attrs={"class": "form-input", "step": "0.01"}),
+            "max_rate_cfs": forms.NumberInput(attrs={"class": "form-input", "step": "0.0001"}),
+            "direct_season_start_day": forms.NumberInput(attrs={"class": "form-input", "min": 1, "max": 31, "placeholder": "Day"}),
+            "direct_season_end_day": forms.NumberInput(attrs={"class": "form-input", "min": 1, "max": 31, "placeholder": "Day"}),
+            "storage_season_start_day": forms.NumberInput(attrs={"class": "form-input", "min": 1, "max": 31, "placeholder": "Day"}),
+            "storage_season_end_day": forms.NumberInput(attrs={"class": "form-input", "min": 1, "max": 31, "placeholder": "Day"}),
+            "calwatrs_pin": forms.TextInput(attrs={"class": "form-input"}),
+            "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
+        }
+        # Django's auto-derived label only capitalises the first word ("Right
+        # id"), and copy rule 2 requires "ID" capitalised wherever it appears
+        # in prose (tests/test_platform_readability.py::
+        # test_identifier_is_capitalised_on_every_rendered_page).
+        labels = {"right_id": "Right ID"}
+
+    def _clean_season(self, cleaned, prefix, label):
+        start_month = cleaned.get(f"{prefix}_start_month")
+        start_day = cleaned.get(f"{prefix}_start_day")
+        end_month = cleaned.get(f"{prefix}_end_month")
+        end_day = cleaned.get(f"{prefix}_end_day")
+
+        for field, value in (
+            (f"{prefix}_start_day", start_day),
+            (f"{prefix}_end_day", end_day),
+        ):
+            if value is not None and not (1 <= value <= 31):
+                self.add_error(field, "Day must be between 1 and 31.")
+
+        start_given = start_month is not None or start_day is not None
+        end_given = end_month is not None or end_day is not None
+        if start_given and not end_given:
+            self.add_error(
+                f"{prefix}_end_month",
+                f"The {label} season has a start but no end.",
+            )
+        elif end_given and not start_given:
+            self.add_error(
+                f"{prefix}_start_month",
+                f"The {label} season has an end but no start.",
+            )
+
+    def clean(self):
+        cleaned = super().clean()
+        self._clean_season(cleaned, "direct_season", "direct diversion")
+        self._clean_season(cleaned, "storage_season", "storage")
+        return cleaned

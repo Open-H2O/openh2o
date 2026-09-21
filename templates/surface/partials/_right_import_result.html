@@ -1,0 +1,54 @@
+{% comment %}
+Outcome of a water rights import (146-02 Task 1). Same two shapes as
+infrastructure/partials/_import_result.html:
+  - error: a file/parse problem before any rows were considered
+  - success: how many were created, and an honest list of any skipped rows + why
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Import complete</h2>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md);">
+    <span class="badge badge-green">Created {{ created }}</span>
+    {% if skipped %}<span class="badge badge-orange">Skipped {{ skipped|length }}</span>{% endif %}
+    <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
+  </div>
+
+  <p class="text-base text-secondary mt-md">
+    {{ created }} water right record{{ created|pluralize }} created.
+    {% if skipped %}{{ skipped|length }} row{{ skipped|length|pluralize }} were skipped because of the problems below. Fix them in your file and re-import just those.{% else %}Every row was valid.{% endif %}
+  </p>
+
+  {% if skipped %}
+  <table class="data-table mt-md">
+    <thead>
+      <tr>
+        <th style="width: 6rem;">Row</th>
+        <th>Why it was skipped</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in skipped %}
+      <tr>
+        <td class="text-mono">{{ row.index|add:1 }}</td>
+        <td>
+          {% for err in row.errors %}
+          <div class="text-furnace">{{ err }}</div>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    <a href="{% url 'surface:water_rights_list' %}" class="btn-primary">View Water Rights</a>
+    <a href="{% url 'surface:water_right_import' %}" class="btn-secondary">Import another file</a>
+  </div>
+</div>
+{% endif %}

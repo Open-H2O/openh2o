@@ -47,12 +47,124 @@ class WaterRight(models.Model):
         help_text="CalWATRS PIN mailed by SWRCB for this water right. The state "
         "issues one PIN per right; supplied by the agency, not fetched by OpenH2O.",
     )
+    state_status = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="WATER_RIGHT_STATUS in the state's rights list (Licensed, "
+        "Permitted, Claimed...). Separate from the Status field above, which "
+        "this platform tracks on its own.",
+    )
+    permit_number = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="PERMIT_ID in the state's rights list.",
+    )
+    license_number = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="LICENSE_ID in the state's rights list.",
+    )
+    purpose_of_use = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="USE_CODE in the state's rights list (Irrigation, Municipal...).",
+    )
+    net_acreage = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="USE_NET_ACREAGE in the state's rights list, in acres.",
+    )
+    max_rate_cfs = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="MAX_DD_APPL in the state's rights list, in cubic feet per second.",
+    )
+    direct_season_start_month = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="DIRECT_SEASON_START_MONTH_1 in the state's rights list.",
+    )
+    direct_season_start_day = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="DIRECT_DIV_SEASON_START_DAY_1 in the state's rights list.",
+    )
+    direct_season_end_month = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="DIRECT_DIV_SEASON_END_MONTH_1 in the state's rights list.",
+    )
+    direct_season_end_day = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="DIRECT_DIV_SEASON_END_DAY_1 in the state's rights list.",
+    )
+    storage_season_start_month = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="STORAGE_SEASON_START_MONTH_1 in the state's rights list.",
+    )
+    storage_season_start_day = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="STORAGE_SEASON_START_DAY_1 in the state's rights list.",
+    )
+    storage_season_end_month = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="STORAGE_SEASON_END_MONTH_1 in the state's rights list.",
+    )
+    storage_season_end_day = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="STORAGE_SEASON_END_DAY_1 in the state's rights list.",
+    )
+    watershed = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="WATERSHED in the state's rights list.",
+    )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.right_id
+
+    def direct_season_display(self):
+        """'Mar 1 to Oct 31 (direct diversion)', or '' with any part missing."""
+        return _season_display(
+            self.direct_season_start_month, self.direct_season_start_day,
+            self.direct_season_end_month, self.direct_season_end_day,
+            "direct diversion",
+        )
+
+    def storage_season_display(self):
+        """'Nov 1 to Feb 28 (storage)', or '' with any part missing."""
+        return _season_display(
+            self.storage_season_start_month, self.storage_season_start_day,
+            self.storage_season_end_month, self.storage_season_end_day,
+            "storage",
+        )
+
+
+_MONTH_ABBR = [
+    "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+]
+
+
+def _season_display(start_month, start_day, end_month, end_day, label):
+    if not (start_month and start_day and end_month and end_day):
+        return ""
+    return (
+        f"{_MONTH_ABBR[start_month]} {start_day} to "
+        f"{_MONTH_ABBR[end_month]} {end_day} ({label})"
+    )
 
 
 class WaterRightParcel(models.Model):

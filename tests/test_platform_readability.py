@@ -479,6 +479,8 @@ EXPECTED_UNREACHABLE = {
     "/infrastructure/parcels/create/": "HTTP 405",
     "/setup/activate-stations/": "HTTP 405",
     "/setup/progress/": "HTTP 405",
+    "/surface/rights/import/commit/": "HTTP 405",
+    "/surface/rights/import/preview/": "HTTP 405",
     # HTMX fragments: a GET returns a piece of a page rather than a document.
     # Their templates are swept at source.
     "/accounting/methodology/preview/": "HTMX fragment, not a document",
