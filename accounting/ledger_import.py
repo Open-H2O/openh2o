@@ -71,6 +71,7 @@ def _fatal(message):
         "preview": [],
         "skipped_duplicate": 0,
         "sign_normalized": 0,
+        "sign_normalized_rows": [],
     }
 
 
@@ -89,7 +90,7 @@ def import_ledger_rows(
 
     Returns a dict: created_count, error_count, errors (list of
     {"line", "messages"}), preview (first 5 rows), skipped_duplicate,
-    sign_normalized.
+    sign_normalized, sign_normalized_rows.
     """
     valid_source_types = {choice[0] for choice in ParcelLedger.SOURCE_TYPE_CHOICES}
     parcel_cache = {}
@@ -99,6 +100,12 @@ def import_ledger_rows(
     entries_to_create = []
     preview = []
     sign_normalized = 0
+    # ISS-196: the count alone never named which rows it touched. One entry
+    # per coerced row -- the line number, the source_type that decided the
+    # sign, and the value before and after -- printed by the CLI and listed
+    # by the web upload, so "10 row(s) had their sign normalized" is never
+    # the whole story on any door again.
+    sign_normalized_rows = []
 
     reader = csv.DictReader(text_file, delimiter=delimiter)
 
@@ -169,11 +176,29 @@ def import_ledger_rows(
         # problem instead of a confusing sign message.
         if amount is not None and source_type in valid_source_types:
             if source_type in NON_POSITIVE_SOURCE_TYPES and amount > 0:
+                before = amount
                 amount = -amount
                 sign_normalized += 1
+                sign_normalized_rows.append(
+                    {
+                        "row": line_num,
+                        "source_type": source_type,
+                        "before": before,
+                        "after": amount,
+                    }
+                )
             elif source_type in POSITIVE_SOURCE_TYPES and amount < 0:
+                before = amount
                 amount = -amount
                 sign_normalized += 1
+                sign_normalized_rows.append(
+                    {
+                        "row": line_num,
+                        "source_type": source_type,
+                        "before": before,
+                        "after": amount,
+                    }
+                )
 
         # Effective date
         effective_date = None
@@ -288,4 +313,5 @@ def import_ledger_rows(
         "preview": preview,
         "skipped_duplicate": skipped_duplicate,
         "sign_normalized": sign_normalized,
+        "sign_normalized_rows": sign_normalized_rows,
     }

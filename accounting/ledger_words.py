@@ -41,6 +41,59 @@ every branch below has a fallback to the source word alone.
 from decimal import Decimal
 
 from core.map_labels import map_label
+from parcels.models import (
+    NON_POSITIVE_SOURCE_TYPES,
+    POSITIVE_SOURCE_TYPES,
+    ParcelLedger,
+)
+
+
+def sign_rule_sentence(*, recharge_enabled=True, surface_enabled=True):
+    """The one sign rule, said the same way at every door (ISS-196).
+
+    Every screen that shows a ledger figure, the CLI importer, the web
+    upload preview and `docs/DATA-IMPORT.md` all quote this sentence
+    verbatim rather than composing their own version of it, so the rule
+    cannot drift between doors the way it did before 146-01: the document
+    said "positive = supply, negative = usage" while the screens said
+    "negative amounts are water delivered or pumped", and neither one named
+    a `source_type` code that actually exists.
+
+    With the defaults (both flags ``True``) this returns the sentence
+    exactly as written. Each flag drops its own module's example from the
+    sentence's own list the same module-neutral way the ledger page's page
+    description already handles "and recharge" one line above
+    (`templates/accounting/ledger_list.html`): a deployment with no
+    `recharge` module has no recharge credits to name, and one with no
+    `surface` module has no surface diversions
+    (`tests/droppability/checks.py::test_kept_pages_never_name_a_dropped_module`).
+    """
+    positive_examples = "allocations, recharge credits" if recharge_enabled else "allocations"
+    negative_examples = "meter readings, ET estimates"
+    if surface_enabled:
+        negative_examples += ", surface diversions"
+    negative_examples += ", calculated rows"
+    return (
+        f"Water taken against the allocation is a negative amount "
+        f"({negative_examples}); water added to it is positive "
+        f"({positive_examples}); manual entries, CSV-import rows and "
+        f"adjustments carry the sign you give them."
+    )
+
+
+#: Every `ParcelLedger.SOURCE_TYPE_CHOICES` code, mapped to the sign it
+#: carries. Built from the two sets the check constraints themselves enforce
+#: (`parcels/models.py:52-67`) rather than a second hand-typed list, so this
+#: table cannot drift from the constraint it describes. A code in neither set
+#: is unconstrained -- the operator's own entries, which may go either way.
+SOURCE_TYPE_SIGNS = {
+    code: (
+        "positive"
+        if code in POSITIVE_SOURCE_TYPES
+        else "negative" if code in NON_POSITIVE_SOURCE_TYPES else "either"
+    )
+    for code, _label in ParcelLedger.SOURCE_TYPE_CHOICES
+}
 
 #: Source types whose word pairs with the row's own water type name as
 #: "{Water type}, {word}". ``calculated`` and ``et_estimate`` are the same

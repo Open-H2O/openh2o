@@ -330,6 +330,8 @@ def parse_ledger_csv(csv_file, reporting_period=None, dry_run=False):
             skipped_duplicate (int),
             sign_normalized (int) — rows whose sign was corrected to the ledger
                 convention; the upload page shows this so it is never silent.
+            sign_normalized_rows (list of {"row", "source_type", "before",
+                "after"}): the row named, not just counted (ISS-196).
     """
     # Wrap binary upload files in a text reader; already-text files pass through
     if hasattr(csv_file, "read"):

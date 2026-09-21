@@ -12,6 +12,7 @@ pages cannot say the same row two different ways.
 from django import template
 
 from accounting.ledger_words import ledger_row_words as _ledger_row_words
+from accounting.ledger_words import sign_rule_sentence as _sign_rule_sentence
 
 register = template.Library()
 
@@ -20,3 +21,22 @@ register = template.Library()
 def ledger_row_words(entry):
     """``{{ entry|ledger_row_words }}`` -- the merged Water column's text."""
     return _ledger_row_words(entry)
+
+
+@register.simple_tag
+def sign_rule_sentence(recharge_enabled=True, surface_enabled=True):
+    """``{% sign_rule_sentence recharge_enabled surface_enabled %}`` -- the
+    one sign rule, quoted verbatim.
+
+    ISS-196: every door that shows a ledger figure says this sentence, not
+    its own version of it. The words themselves live in
+    ``accounting.ledger_words``, this is only the bridge into a template.
+    The two flags (pass the view's own ``is_enabled("recharge")`` /
+    ``is_enabled("surface")`` context values) drop "recharge credits" /
+    "surface diversions" from the sentence on a deployment without that
+    module, the same module-neutral move the page description one line
+    above already makes.
+    """
+    return _sign_rule_sentence(
+        recharge_enabled=recharge_enabled, surface_enabled=surface_enabled
+    )

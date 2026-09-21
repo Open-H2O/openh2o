@@ -4,7 +4,7 @@
 
 There are three ways to get data into OpenH2O. Most agencies use all three: demo data to learn the system, file imports for the data they already have, and auto-populate to fill in the rest from public sources.
 
-Run every importer with `--dry-run` first — it validates and reports what *would* happen without writing anything.
+Run every importer with `--dry-run` first: it validates and reports what *would* happen without writing anything.
 
 ---
 
@@ -14,15 +14,15 @@ Run every importer with `--dry-run` first — it validates and reports what *wou
 docker compose exec web python manage.py seed_merced   # the Merced Subbasin demonstration
 ```
 
-This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — so you have a fully populated example to click through while you gather your agency's real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed). Each sub-step is idempotent, so re-running is safe.
+This loads the Merced Subbasin demo (a real California basin, the same dataset running at openh2o.com), so you have a fully populated example to click through while you gather your agency's real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed). Each sub-step is idempotent, so re-running is safe.
 
 ---
 
 ## 2. File imports (the data you already have)
 
-> **Working with an AI agent?** You don't have to work out the column mapping yourself. Point the agent at your file — a county assessor export, a spreadsheet, an old system's dump — and ask it to import the data. The `--field` override flags below let it map your column names onto what OpenH2O expects, and the `--dry-run` plus staging-table flow lets it check the result before anything is written. Crosswalking messy real-world data into the importer is exactly the kind of work an agent handles well.
+> **Working with an AI agent?** You don't have to work out the column mapping yourself. Point the agent at your file (a county assessor export, a spreadsheet, an old system's dump) and ask it to import the data. The `--field` override flags below let it map your column names onto what OpenH2O expects, and the `--dry-run` plus staging-table flow lets it check the result before anything is written. Crosswalking messy real-world data into the importer is exactly the kind of work an agent handles well.
 
-### Parcels — `import_parcels`
+### Parcels: `import_parcels`
 The foundation: accounts, wells, and ledgers all hang off parcels. Accepts **GeoJSON or Shapefile**.
 
 ```bash
@@ -36,11 +36,11 @@ Expected attributes (override the field names if yours differ):
 |---|---|---|---|
 | Parcel number (APN) | `APN` | `--parcel-number-field` | yes |
 | Owner name | `OWNER` | `--owner-field` | no |
-| Geometry | (the feature geometry) | — | yes — polygons |
+| Geometry | (the feature geometry) | none | yes, polygons |
 
 Records land in a staging table first, then promote to `Parcel`, so a bad file never half-corrupts your data.
 
-### Wells — `import_wells`
+### Wells: `import_wells`
 Accepts **CSV or Shapefile**. For CSV, the geometry comes from latitude/longitude columns.
 
 ```bash
@@ -54,18 +54,34 @@ docker compose exec web python manage.py import_wells wells.csv --dry-run
 | Longitude | `LONGITUDE` | `--lon-field` |
 | Well registration ID | `WELL_REG_ID` | `--reg-id-field` |
 
-### Ledger entries — `import_ledger_csv`
+### Ledger entries: `import_ledger_csv`
 For migrating usage/supply history from a prior system. **CSV**, with these columns:
 
 | Column | Required | Notes |
 |---|---|---|
 | `parcel_number` | **yes** | must match an imported parcel's APN |
 | `effective_date` | **yes** | the date the entry applies to |
-| `amount_acre_feet` | **yes** | positive = supply, negative = usage |
-| `source_type` | **yes** | e.g. groundwater, surface water |
+| `amount_acre_feet` | **yes** | see the sign each `source_type` carries, below |
+| `source_type` | **yes** | one of the codes below |
 | `water_type_code` | no | must match a seeded WaterType code |
 | `transaction_date` | no | when it was recorded |
 | `description` | no | free text |
+
+Water taken against the allocation is a negative amount (meter readings, ET estimates, surface diversions, calculated rows); water added to it is positive (allocations, recharge credits); manual entries, CSV-import rows and adjustments carry the sign you give them.
+
+The importer corrects a mismatched sign for you and reports every row it changed; it never rejects the row.
+
+| `source_type` code | Sign |
+|---|---|
+| `meter_reading` | negative |
+| `et_estimate` | negative |
+| `manual_entry` | either |
+| `csv_import` | either |
+| `surface_diversion` | negative |
+| `recharge` | positive |
+| `allocation` | positive |
+| `adjustment` | either |
+| `calculated` | negative |
 
 ```bash
 docker compose exec web python manage.py import_ledger_csv ledger.csv \
@@ -98,16 +114,16 @@ Run a subset with `--steps basins parcels`. The boundary must already exist (cre
 
 No public source provides these, so they're entered in the web UI under **Infrastructure**:
 
-- **Water rights** — eWRIMS is not auto-imported
-- **Water accounts** — the agency defines these
-- **Allocations** — the agency's budget decisions
+- **Water rights**: eWRIMS is not auto-imported
+- **Water accounts**: the agency defines these
+- **Allocations**: the agency's budget decisions
 
 ---
 
 ## A sensible order
 
 1. `seed_data` (reference tables) → `seed_merced` (to explore the demo)
-2. `import_parcels` your real parcels — confirm the boundary on the map
+2. `import_parcels` your real parcels, then confirm the boundary on the map
 3. `import_wells` if you have a well list; `auto_populate --steps stations` for monitoring
 4. Create water accounts and allocations in the UI
 5. `import_ledger_csv` if migrating history; otherwise the ledger fills from sync + meter readings

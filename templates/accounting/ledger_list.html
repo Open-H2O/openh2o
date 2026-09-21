@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load accounting_extras %}
 
 {% block title %}Use ledger - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Use ledger{% endblock %}
@@ -27,6 +28,11 @@
        still reads as one clause either way (rule 11; ISS-082 module-vocabulary
        guard). {% endcomment %}
   <p class="page-description">Every entry the platform holds against a use area for the period: water delivered or pumped, and credits for allocations{% if recharge_enabled %} and recharge{% endif %}. Download CSV writes out the rows the filters select, Upload CSV adds entries from a file, and New entry records one by hand.</p>
+  {% comment %} ISS-196: one sign rule, said the same way at every door
+       (`accounting/ledger_words.py::sign_rule_sentence`). Sits under the page
+       description so a reader meets it before the table and the footer
+       below. {% endcomment %}
+  <p class="page-description">{% sign_rule_sentence recharge_enabled surface_enabled %}</p>
 </div>
 {% endblock %}
 

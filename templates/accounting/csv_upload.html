@@ -112,12 +112,12 @@
         <tr>
           <td class="text-mono">amount_acre_feet</td>
           <td><span class="badge badge-pill badge-green">Yes</span></td>
-          <td class="text-secondary">Positive = supply, negative = usage</td>
+          <td class="text-secondary">The importer corrects the sign to match source_type, and names every row it changed</td>
         </tr>
         <tr>
           <td class="text-mono">source_type</td>
           <td><span class="badge badge-pill badge-green">Yes</span></td>
-          <td class="text-secondary">Must match a valid source type choice</td>
+          <td class="text-secondary">Must match a valid source type choice; see docs/DATA-IMPORT.md for which sign each one carries</td>
         </tr>
         <tr>
           <td class="text-mono">water_type_code</td>

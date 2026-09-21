@@ -134,6 +134,13 @@ class Command(BaseCommand):
                     f"ledger convention (usage debits, supply credits)"
                 )
             )
+            # ISS-196: name every row the count above summarizes, one line
+            # each, so "10 row(s)" is never the whole story a clerk gets.
+            for row in result["sign_normalized_rows"]:
+                self.stdout.write(
+                    f"    Row {row['row']}: {row['source_type']} "
+                    f"{row['before']} -> {row['after']}"
+                )
 
     @staticmethod
     def _parse_date(date_str):

@@ -48,6 +48,30 @@
       corrected to the ledger convention: use is recorded as a debit, supply as a
       credit. Magnitudes are unchanged.
     </p>
+    {% if results.sign_normalized_rows %}
+    {% comment %} ISS-196: the count above names WHICH rows, never just how
+         many, so a clerk can check each one against their own file. {% endcomment %}
+    <table class="data-table" style="margin-top: var(--space-sm);">
+      <thead>
+        <tr>
+          <th style="width: 60px;">Row</th>
+          <th>Source</th>
+          <th class="th-right">As uploaded</th>
+          <th class="th-right">As recorded</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in results.sign_normalized_rows %}
+        <tr>
+          <td class="text-secondary text-mono">{{ row.row }}</td>
+          <td class="text-secondary">{{ row.source_type }}</td>
+          <td class="td-num">{{ row.before }}</td>
+          <td class="td-num">{{ row.after }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
     {% endif %}
     {% if results.skipped_duplicate %}
     <p class="text-base m-0">
