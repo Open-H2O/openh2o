@@ -24,6 +24,14 @@ urlpatterns = [
     ),
     # 146-02 D2: the point-to-right link.
     path("diversion/<int:pk>/link-right/", views.pod_link_right, name="pod_link_right"),
+    # 146-03 Task 1 (S3): the 934(b)(1) measuring device registry.
+    path("diversion/<int:pk>/device/add/", views.device_add, name="device_add"),
+    path("device/<int:pk>/edit/", views.device_edit, name="device_edit"),
+    path(
+        "diversion/<int:pk>/device/mark-removed/",
+        views.device_mark_removed,
+        name="device_mark_removed",
+    ),
     # 146-02 D3: the share editor on a POD's linked use area.
     path(
         "diversion/<int:pk>/parcel/<int:pp_pk>/share/",

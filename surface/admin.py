@@ -2,7 +2,16 @@
 """Django admin registrations for the surface water-right models."""
 from django.contrib import admin
 
-from .models import CurtailmentOrder, DiversionRecord, PointOfDiversion, PointOfDiversionParcel, WaterRight, WaterRightType
+from .models import (
+    CurtailmentOrder,
+    DiversionRecord,
+    MeasuringDevice,
+    PointOfDiversion,
+    PointOfDiversionDevice,
+    PointOfDiversionParcel,
+    WaterRight,
+    WaterRightType,
+)
 
 
 @admin.register(WaterRightType)
@@ -37,6 +46,21 @@ class DiversionRecordAdmin(admin.ModelAdmin):
     list_filter = ["diversion_type", "reporting_period"]
     raw_id_fields = ["point_of_diversion"]
     date_hierarchy = "month"
+
+
+@admin.register(MeasuringDevice)
+class MeasuringDeviceAdmin(admin.ModelAdmin):
+    list_display = ["__str__", "device_type", "accuracy_percent", "installed_on", "status"]
+    list_filter = ["device_type", "status"]
+    search_fields = ["nickname", "make", "model_number", "state_device_id"]
+    filter_horizontal = ["water_rights"]
+
+
+@admin.register(PointOfDiversionDevice)
+class PointOfDiversionDeviceAdmin(admin.ModelAdmin):
+    list_display = ["point_of_diversion", "device", "is_current", "installed_on", "removed_on"]
+    list_filter = ["is_current"]
+    raw_id_fields = ["point_of_diversion", "device"]
 
 
 @admin.register(CurtailmentOrder)

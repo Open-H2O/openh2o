@@ -3,8 +3,15 @@
 from decimal import Decimal
 
 from django import forms
+from django.db.models import Q
 
-from surface.models import CurtailmentOrder, DiversionRecord, PointOfDiversion, WaterRight
+from surface.models import (
+    CurtailmentOrder,
+    DiversionRecord,
+    MeasuringDevice,
+    PointOfDiversion,
+    WaterRight,
+)
 
 #: Choices for the four season month selects: (value, label) with a blank
 #: leading option so a right with no recorded season renders as "not set"
@@ -119,6 +126,57 @@ class PointOfDiversionForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
         }
+
+
+class MeasuringDeviceForm(forms.ModelForm):
+    """Create/edit a measuring device (146-03 Task 1, the 934(b)(1) registry).
+
+    ``water_rights`` is a multi-select limited to the point of diversion's own
+    right plus any other active right (the plan's own scoping) -- narrowed in
+    ``__init__`` rather than on the model field, since the model has no single
+    point to scope from.
+    """
+
+    class Meta:
+        model = MeasuringDevice
+        fields = [
+            "nickname", "device_type", "make", "model_number",
+            "recording_make", "recording_model", "recording_type",
+            "measured_parameter", "raw_units", "accuracy_percent",
+            "installed_on", "installer_contact", "last_evidence_on",
+            "state_device_id", "status", "water_rights", "notes",
+        ]
+        widgets = {
+            "nickname": forms.TextInput(attrs={"class": "form-input"}),
+            "device_type": forms.Select(attrs={"class": "form-select"}),
+            "make": forms.TextInput(attrs={"class": "form-input"}),
+            "model_number": forms.TextInput(attrs={"class": "form-input"}),
+            "recording_make": forms.TextInput(attrs={"class": "form-input"}),
+            "recording_model": forms.TextInput(attrs={"class": "form-input"}),
+            "recording_type": forms.TextInput(attrs={"class": "form-input"}),
+            "measured_parameter": forms.Select(attrs={"class": "form-select"}),
+            "raw_units": forms.TextInput(attrs={"class": "form-input", "placeholder": "e.g. cfs"}),
+            "accuracy_percent": forms.NumberInput(attrs={"class": "form-input", "step": "0.01"}),
+            "installed_on": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
+            "installer_contact": forms.TextInput(attrs={"class": "form-input"}),
+            "last_evidence_on": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
+            "state_device_id": forms.TextInput(attrs={"class": "form-input"}),
+            "status": forms.Select(attrs={"class": "form-select"}),
+            "water_rights": forms.SelectMultiple(attrs={"class": "form-select", "size": 6}),
+            "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
+        }
+
+    def __init__(self, *args, pod=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The rights-served field: this point's own right plus any other
+        # active right, ordered the way the water rights list already is.
+        query = Q(status="active")
+        if pod is not None and pod.water_right_id:
+            query |= Q(pk=pod.water_right_id)
+        self.fields["water_rights"].queryset = (
+            WaterRight.objects.filter(query).distinct().order_by("right_id")
+        )
+        self.fields["water_rights"].required = False
 
 
 class WaterRightForm(forms.ModelForm):

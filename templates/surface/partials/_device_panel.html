@@ -1,0 +1,61 @@
+{% load placeholders %}{% comment %}
+  The POD page's "Measuring device" panel (146-03 Task 1, S3): the point of
+  diversion's current 23 CCR 934(b)(1) device, if one is linked. Split out of
+  _detail_pane.html the same way _pod_water_right_panel.html is (146-02 D2),
+  so device_mark_removed can re-render just this card via HTMX without also
+  rebuilding the rest of the POD page.
+
+  Context: pod, device (the current PointOfDiversionDevice's device, or
+  None), current_device_link, needs_evidence (MeasuringDevice.needs_evidence()
+  read off that same device -- never re-derived here).
+{% endcomment %}
+<div class="card-raised page-grid-account-full" id="pod-device-panel">
+  <div class="page-grid-account-head mb-md">
+    <h2 class="section-header-flush">Measuring device</h2>
+    {% if not device %}
+    <a href="{% url 'surface:device_add' pod.pk %}" class="btn-secondary btn-sm">Add device</a>
+    {% endif %}
+  </div>
+
+  {% if device %}
+  <div class="field-grid-2">
+    <div class="field-group">
+      <div class="field-label">Device</div>
+      <div class="field-value">{{ device }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Type</div>
+      <div class="field-value">{{ device.get_device_type_display }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Accuracy</div>
+      <div class="field-value">{{ device.accuracy_display }}</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Installed</div>
+      <div class="field-value">{{ device.installed_on|date:"M d, Y"|blank }}</div>
+    </div>
+    <div class="field-group field-grid-2-span">
+      <div class="field-label">Last evidence of proper functioning</div>
+      <div class="field-value">{{ device.last_evidence_on|date:"M d, Y"|blank:"None on file" }}</div>
+    </div>
+  </div>
+
+  {% if needs_evidence %}
+  <p class="text-secondary text-sm mt-sm">evidence of proper functioning is due at least every five years (934(d)).</p>
+  {% endif %}
+
+  <div class="row-start mt-sm" style="gap: var(--space-sm); align-items: center;">
+    <a href="{% url 'surface:device_edit' device.pk %}" class="btn-secondary btn-sm">Edit</a>
+    <form
+      hx-post="{% url 'surface:device_mark_removed' pod.pk %}"
+      hx-target="#pod-device-panel"
+      hx-swap="outerHTML">
+      {% csrf_token %}
+      <button type="submit" class="btn-secondary btn-sm">Mark removed</button>
+    </form>
+  </div>
+  {% else %}
+  <p class="text-secondary text-sm">no current device</p>
+  {% endif %}
+</div>

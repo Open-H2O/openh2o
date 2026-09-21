@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{% if device %}Edit measuring device{% else %}New measuring device{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if device %}Edit measuring device{% else %}New measuring device{% endif %}{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'surface:pod_list' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    {% if pod %}
+    <a href="{% url 'surface:pod_detail' pod.pk %}">{{ pod.name }}</a>
+    <span class="breadcrumb-separator">/</span>
+    {% endif %}
+    <span class="breadcrumb-current">{% if device %}Edit device{% else %}New device{% endif %}</span>
+  </nav>
+  <p class="page-description">The device's own 23 CCR 934(b)(1) fields: make, model, type, accuracy, installation and the qualified individual who verified it, and the water rights it serves.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-narrow">
+
+  {% if pod %}
+  <a href="{% url 'surface:pod_detail' pod.pk %}" class="back-link">&larr; Back to {{ pod.name }}</a>
+  {% else %}
+  <a href="{% url 'surface:pod_list' %}" class="back-link">&larr; Back to Surface Diversions</a>
+  {% endif %}
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Details</h2>
+
+    {% if form.non_field_errors %}
+    <div class="form-error-box">
+      {% for error in form.non_field_errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.nickname.id_for_label }}">{{ form.nickname.label }}</label>
+        {{ form.nickname }}
+        <div class="form-help">{{ form.nickname.help_text }}</div>
+        {% for error in form.nickname.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.device_type.id_for_label }}">{{ form.device_type.label }}</label>
+        {{ form.device_type }}
+        <div class="form-help">{{ form.device_type.help_text }}</div>
+        {% for error in form.device_type.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.make.id_for_label }}">{{ form.make.label }}</label>
+          {{ form.make }}
+          <div class="form-help">{{ form.make.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.model_number.id_for_label }}">{{ form.model_number.label }}</label>
+          {{ form.model_number }}
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.measured_parameter.id_for_label }}">{{ form.measured_parameter.label }}</label>
+          {{ form.measured_parameter }}
+          <div class="form-help">{{ form.measured_parameter.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.raw_units.id_for_label }}">{{ form.raw_units.label }}</label>
+          {{ form.raw_units }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Recording device (if different)</label>
+        <div class="row-start" style="gap: var(--space-sm); align-items: flex-start; flex-wrap: wrap;">
+          {{ form.recording_make }}
+          {{ form.recording_model }}
+          {{ form.recording_type }}
+        </div>
+        <div class="form-help">{{ form.recording_make.help_text }}</div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.accuracy_percent.id_for_label }}">{{ form.accuracy_percent.label }} (%)</label>
+          {{ form.accuracy_percent }}
+          <div class="form-help">{{ form.accuracy_percent.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.installed_on.id_for_label }}">{{ form.installed_on.label }}</label>
+          {{ form.installed_on }}
+          <div class="form-help">{{ form.installed_on.help_text }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.installer_contact.id_for_label }}">{{ form.installer_contact.label }}</label>
+        {{ form.installer_contact }}
+        <div class="form-help">{{ form.installer_contact.help_text }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.last_evidence_on.id_for_label }}">{{ form.last_evidence_on.label }}</label>
+        {{ form.last_evidence_on }}
+        <div class="form-help">{{ form.last_evidence_on.help_text }}</div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.state_device_id.id_for_label }}">{{ form.state_device_id.label }}</label>
+          {{ form.state_device_id }}
+          <div class="form-help">{{ form.state_device_id.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+          {{ form.status }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.water_rights.id_for_label }}">{{ form.water_rights.label }}</label>
+        {{ form.water_rights }}
+        <div class="form-help">{{ form.water_rights.help_text }}</div>
+        {% for error in form.water_rights.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+        {{ form.notes }}
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">{% if device %}Save changes{% else %}Add device{% endif %}</button>
+        {% if pod %}
+        <a href="{% url 'surface:pod_detail' pod.pk %}" class="btn-secondary">Cancel</a>
+        {% else %}
+        <a href="{% url 'surface:pod_list' %}" class="btn-secondary">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

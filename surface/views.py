@@ -18,6 +18,7 @@ areas (the wells:edit_field GET/PATCH pattern, wells/views.py).
 """
 import json
 import logging
+from datetime import date
 from decimal import Decimal
 from urllib.parse import parse_qs
 
@@ -40,11 +41,18 @@ from core.workspace import detail_response, list_response
 from parcels.models import Parcel
 from surface import importer
 from surface.curtailments import orders_that_may_apply
-from surface.forms import CurtailmentOrderForm, DiversionRecordForm, WaterRightForm
+from surface.forms import (
+    CurtailmentOrderForm,
+    DiversionRecordForm,
+    MeasuringDeviceForm,
+    WaterRightForm,
+)
 from surface.models import (
     CurtailmentOrder,
     DiversionRecord,
+    MeasuringDevice,
     PointOfDiversion,
+    PointOfDiversionDevice,
     PointOfDiversionParcel,
     WaterRight,
     WaterRightParcel,
@@ -176,6 +184,31 @@ def pod_list(request):
     )
 
 
+def _device_panel_context(pod):
+    """Build the "Measuring device" panel's context for ``pod`` (146-03 T1).
+
+    Shared by ``_pod_detail_context`` (the full page) and
+    ``device_mark_removed`` (the HTMX re-render of just this panel), so the
+    two can never disagree about which link is current. ``needs_evidence``
+    reads ``MeasuringDevice.needs_evidence()`` -- the model, not a second
+    calculation here -- so the 934(d) five-year sentence is derived in one
+    place only.
+    """
+    current_link = (
+        PointOfDiversionDevice.objects
+        .filter(point_of_diversion=pod, is_current=True)
+        .select_related("device")
+        .first()
+    )
+    device = current_link.device if current_link else None
+    return {
+        "pod": pod,
+        "current_device_link": current_link,
+        "device": device,
+        "needs_evidence": device.needs_evidence() if device else False,
+    }
+
+
 def _pod_detail_context(pod):
     """Build the per-POD detail context.
 
@@ -288,6 +321,7 @@ def _pod_detail_context(pod):
         "all_water_rights": all_water_rights,
         "form": form,
         "geojson": geojson,
+        **_device_panel_context(pod),
     }
 
 
@@ -336,6 +370,105 @@ def pod_link_right(request, pk):
         "all_water_rights": WaterRight.objects.order_by("right_id"),
         "basin_links": pod.basin_links.exists() if is_enabled("recharge") else False,
     })
+
+
+# ---------------------------------------------------------------------------
+# Measuring device registry (146-03 Task 1, door S3): a point of diversion's
+# 23 CCR 934(b)(1) device, entered and edited through full-page forms on the
+# `period_create` pattern, and "Mark removed" as an HTMX POST that re-renders
+# just the panel (the pod_link_right shape above).
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def device_add(request, pk):
+    """Add a measuring device to a point of diversion and make it current.
+
+    Only reachable from the panel when the point has no current device (the
+    template hides "Add device" otherwise); the defensive close-out below
+    still guards the one-current-device-per-point invariant against a stale
+    tab or a direct POST.
+    """
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    if request.method == "POST":
+        form = MeasuringDeviceForm(request.POST, pod=pod)
+        if form.is_valid():
+            device = form.save()
+            PointOfDiversionDevice.objects.filter(
+                point_of_diversion=pod, is_current=True,
+            ).update(is_current=False, removed_on=date.today())
+            PointOfDiversionDevice.objects.create(
+                point_of_diversion=pod,
+                device=device,
+                installed_on=device.installed_on,
+                is_current=True,
+            )
+            return redirect("surface:pod_detail", pk=pod.pk)
+    else:
+        form = MeasuringDeviceForm(pod=pod)
+
+    return render(
+        request, "surface/device_form.html", {"form": form, "pod": pod, "device": None},
+    )
+
+
+@login_required
+def device_edit(request, pk):
+    """Edit a measuring device in place.
+
+    The device is not itself scoped to a point (a ``MeasuringDevice`` row has
+    no FK to one -- ``PointOfDiversionDevice`` is the link), so the point to
+    redirect back to, and to scope the rights-served field against, is read
+    off the most relevant link: the current one, or else the most recently
+    installed.
+    """
+    device = get_object_or_404(MeasuringDevice, pk=pk)
+    link = (
+        PointOfDiversionDevice.objects
+        .filter(device=device)
+        .select_related("point_of_diversion")
+        .order_by("-is_current", "-installed_on")
+        .first()
+    )
+    pod = link.point_of_diversion if link else None
+
+    if request.method == "POST":
+        form = MeasuringDeviceForm(request.POST, instance=device, pod=pod)
+        if form.is_valid():
+            form.save()
+            if pod:
+                return redirect("surface:pod_detail", pk=pod.pk)
+            return redirect("surface:pod_list")
+    else:
+        form = MeasuringDeviceForm(instance=device, pod=pod)
+
+    return render(
+        request, "surface/device_form.html", {"form": form, "pod": pod, "device": device},
+    )
+
+
+@login_required
+@require_POST
+def device_mark_removed(request, pk):
+    """HTMX POST: close out a point's current device link.
+
+    Sets ``removed_on`` to today and ``is_current`` to False on the current
+    link only -- the ``MeasuringDevice`` row itself is untouched, since the
+    same physical device could be re-installed, or moved to another point,
+    later. Re-renders the device panel, which then reads "no current device".
+    """
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    link = PointOfDiversionDevice.objects.filter(
+        point_of_diversion=pod, is_current=True,
+    ).first()
+    if link:
+        link.is_current = False
+        link.removed_on = date.today()
+        link.save(update_fields=["is_current", "removed_on"])
+
+    return render(
+        request, "surface/partials/_device_panel.html", _device_panel_context(pod),
+    )
 
 
 def _render_diversion_records_section(

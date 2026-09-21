@@ -202,6 +202,13 @@
       {% include "surface/partials/_diversion_records.html" %}
     </div>
 
+    {% comment %}
+      Measuring device, full width (146-03 Task 1, S3). Its own partial, same
+      reason _pod_water_right_panel.html is: device_mark_removed re-renders
+      just this card via HTMX.
+    {% endcomment %}
+    {% include "surface/partials/_device_panel.html" %}
+
     <!-- Linked use areas + Recharge areas filled, side by side -->
     <div class="page-grid-2col page-grid-account-full">
 
