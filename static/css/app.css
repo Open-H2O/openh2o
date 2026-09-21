@@ -134,6 +134,17 @@ html { color-scheme: dark; }
     outline-offset: 3px;
 }
 
+/* A disabled primary sinks (the same 0.45 the ledger paging uses), so a gold
+   button that cannot act never reads as one that can (146-01, the wizard's
+   "Use this boundary" with none on file). */
+.btn-primary:disabled,
+.btn-primary[disabled] {
+    opacity: 0.45;
+    cursor: default;
+    box-shadow: none;
+    pointer-events: none;
+}
+
 .btn-secondary {
     display: inline-flex;
     align-items: center;
