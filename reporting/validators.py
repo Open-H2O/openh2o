@@ -264,8 +264,9 @@ def validate_report(reporting_period, report_type):
                 "message": (
                     f"{orphans_in_range} diversion record(s) dated inside this period are "
                     "attached to NO reporting period — they would be silently missing from "
-                    "this CalWATRS filing. Re-save them (or edit and save) so they attach "
-                    "to the period."
+                    "this CalWATRS filing. Create or edit the water year that covers these "
+                    "months; records attach when the year is saved, or open each record "
+                    "and save it."
                 ),
             })
 

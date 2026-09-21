@@ -132,8 +132,10 @@ class TestPodRecordsGroupedByWaterYear:
 
     def test_prior_year_gets_its_own_group_and_subtotal(self):
         html = _pod_page(self._two_year_pod())
+        # colspan is 6, not 5, since 146-02 Task 3 (ISS-181) added an Actions
+        # column (Edit / Delete per row).
         assert re.search(
-            r'<tr class="row-group">\s*<td colspan="5">' + re.escape(PRIOR_NAME), html
+            r'<tr class="row-group">\s*<td colspan="6">' + re.escape(PRIOR_NAME), html
         )
         subtotals = _row_subtotal_blocks(html)
         (prior_row,) = [b for b in subtotals if PRIOR_NAME in b]

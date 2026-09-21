@@ -19,6 +19,8 @@
 {% block content %}
 <div class="page-stack">
 
+  {% include "partials/_messages.html" %}
+
   <!-- Back link -->
   <div>
     <a href="{% url 'accounting:periods_list' %}" class="back-link">

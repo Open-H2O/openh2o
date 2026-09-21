@@ -55,12 +55,31 @@ class DiversionRecordForm(forms.ModelForm):
                 "placeholder": "Optional notes...",
             }),
         }
+        # The widget is `type="date"` (a full calendar-day picker) but the
+        # model only ever keeps the month -- clean_month below normalizes
+        # whatever day is picked to the 1st. The walker read the un-labelled
+        # date input as "Month, no year" (146-02 context); this label says
+        # what the field actually wants.
+        labels = {"month": "Month (pick any day in it)"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Blank means "fully consumed" — default to 0 rather than a required field,
         # so existing entry flows are unchanged when the operator leaves it empty.
         self.fields["returned_af"].required = False
+
+    def clean_month(self):
+        """Normalize any picked day to the 1st -- a season is a month, not a date.
+
+        The unique constraint on (point_of_diversion, month, diversion_type)
+        is only meaningful per calendar month if every record for a given
+        month stores the SAME day; without this, "March 1" and "March 15"
+        collide with nothing and duplicate March records could both save.
+        """
+        month = self.cleaned_data.get("month")
+        if month is not None:
+            month = month.replace(day=1)
+        return month
 
     def clean_returned_af(self):
         """Surface the model guard as a readable field error, not a 500.

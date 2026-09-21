@@ -12,6 +12,12 @@
   "consumed" (DESIGN.md rule 12, ISS-153) -- the Type cell keeps the same
   return-flow badges the page has always carried, now beside the diversion
   type instead of wrapped inside the Retained figure.
+
+  146-02 Task 3 (ISS-181): an Actions column adds Edit and Delete per row.
+  Edit swaps this whole section in for a row's own "Edit diversion record"
+  form (edit_record / edit_form below); Delete confirms in the row via
+  hx-confirm, the same pattern the account and right pages use to remove a
+  place of use, and posts straight through.
 {% endcomment %}
 <div class="ledger-card-head">
   <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Diversion records</h2>
@@ -31,15 +37,16 @@
       <th class="th-right"><span class="th-stack">Return flow</span></th>
       <th class="th-right col-sep">Retained</th>
       <th>Type</th>
+      <th class="th-right">Actions</th>
     </tr>
   </thead>
   <tbody>
     {% for group in record_groups %}
     <tr class="row-group">
-      <td colspan="5">{{ group.period_name }} &middot; {{ group.count }} month{{ group.count|pluralize }}</td>
+      <td colspan="6">{{ group.period_name }} &middot; {{ group.count }} month{{ group.count|pluralize }}</td>
     </tr>
     {% for record in group.rows %}
-    <tr>
+    <tr {% if edit_record.pk == record.pk %}class="row-editing"{% endif %}>
       <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
       <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
       <td class="td-num text-secondary">{{ record.returned_af|floatformat:2|intcomma }}</td>
@@ -52,6 +59,24 @@
         <span class="badge badge-blue" title="Part of the diverted volume is returned to the stream; only the remainder is consumed.">Partial return</span>
         {% endif %}
       </td>
+      <td class="th-right text-sm">
+        {% if edit_record.pk == record.pk %}
+        <span class="text-tertiary">Editing below</span>
+        {% else %}
+        <button type="button"
+          hx-get="{% url 'surface:diversion_record_edit' pod.pk record.pk %}"
+          hx-target="#diversion-records-section"
+          hx-swap="innerHTML"
+          style="background: none; border: none; padding: 0; cursor: pointer; color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px;">Edit</button>
+        &middot;
+        <button type="button"
+          hx-post="{% url 'surface:diversion_record_delete' pod.pk record.pk %}"
+          hx-target="#diversion-records-section"
+          hx-swap="innerHTML"
+          hx-confirm="Delete the {{ record.month|date:"M Y" }} {{ record.get_diversion_type_display|lower }} record?"
+          style="background: none; border: none; padding: 0; cursor: pointer; color: var(--furnace-400); text-decoration: underline; text-underline-offset: 2px;">Delete</button>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
     <tr class="row-subtotal">
@@ -59,6 +84,7 @@
       <td class="td-num-bold td-total">{{ group.diverted|floatformat:2|intcomma }}</td>
       <td class="td-num-bold td-total">{{ group.returned|floatformat:2|intcomma }}</td>
       <td class="td-num-bold td-total col-sep">{{ group.retained|floatformat:2|intcomma }}</td>
+      <td></td>
       <td></td>
     </tr>
     {% endfor %}
@@ -70,5 +96,9 @@
 {% endif %}
 
 <div style="max-width: 640px; padding: 0 var(--space-lg) var(--space-lg);">
+{% if edit_record %}
+{% include "surface/partials/_diversion_record_edit_form.html" %}
+{% else %}
 {% include "surface/partials/_diversion_form.html" %}
+{% endif %}
 </div>

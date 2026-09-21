@@ -22,6 +22,7 @@ from decimal import Decimal
 from urllib.parse import parse_qs
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.db.models import Count, Q
@@ -336,40 +337,18 @@ def pod_link_right(request, pk):
     })
 
 
-@login_required
-@require_POST
-def diversion_record_create(request, pk):
-    """HTMX POST endpoint: create a DiversionRecord for a POD."""
-    pod = get_object_or_404(PointOfDiversion, pk=pk)
-    form = DiversionRecordForm(request.POST)
-    period_warning = None
+def _render_diversion_records_section(
+    request, pod, *, form=None, edit_record=None, edit_form=None, period_warning=None,
+):
+    """Render ``_diversion_records.html`` for ``pod`` (146-02 Task 3).
 
-    if form.is_valid():
-        record = form.save(commit=False)
-        record.point_of_diversion = pod
-
-        # Auto-assign reporting_period from the record's month
-        month = record.month
-        period = ReportingPeriod.objects.filter(
-            start_date__lte=month,
-            end_date__gte=month,
-        ).first()
-        record.reporting_period = period
-        record.save()
-        if period is None:
-            # The record saved, but with no reporting period it is invisible to
-            # every period-scoped filing — say so now, not at filing time.
-            period_warning = (
-                f"Saved, but no reporting period covers {month:%B %Y} — this record "
-                "will not appear in any CalWATRS filing until a period covering that "
-                "month exists (it will attach automatically on re-save)."
-            )
-        # Saved cleanly — hand back a blank form for the next entry.
-        form = DiversionRecordForm()
-
-    # On an invalid submit, `form` is still the BOUND form: re-rendering it
-    # preserves the user's typed values and surfaces the field errors, so a
-    # failed save reads as a visible error rather than a silent reset.
+    The one shared builder behind create, edit (GET and POST) and delete, so
+    the table's grouping, current-period figures and lead-panel totals are
+    computed identically for all four -- never re-derived per view. ``form``
+    is the "Add diversion record" form (bound, on an invalid create submit,
+    or fresh otherwise); ``edit_record``/``edit_form`` swap that form out for
+    an "Edit diversion record" one when a row's Edit action is in play.
+    """
     diversion_records = list(
         DiversionRecord.objects
         .filter(point_of_diversion=pod)
@@ -401,9 +380,124 @@ def diversion_record_create(request, pk):
         "record_groups": record_groups,
         "current_period": current_period,
         "current_totals": current_totals,
-        "form": form,
+        "form": form if form is not None else DiversionRecordForm(),
         "period_warning": period_warning,
+        "edit_record": edit_record,
+        "edit_form": edit_form,
     })
+
+
+#: The message a unique-constraint violation on (point_of_diversion, month,
+#: diversion_type) shows instead of the raw IntegrityError a bare .save()
+#: would otherwise raise as a 500 (146-02 Task 3, ISS-181).
+_DUPLICATE_RECORD_ERROR = "A record for that month and type exists; edit that one."
+
+
+@login_required
+@require_POST
+def diversion_record_create(request, pk):
+    """HTMX POST endpoint: create a DiversionRecord for a POD."""
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    form = DiversionRecordForm(request.POST)
+    period_warning = None
+
+    if form.is_valid():
+        record = form.save(commit=False)
+        record.point_of_diversion = pod
+
+        # Auto-assign reporting_period from the record's month
+        month = record.month
+        period = ReportingPeriod.objects.filter(
+            start_date__lte=month,
+            end_date__gte=month,
+        ).first()
+        record.reporting_period = period
+
+        # point_of_diversion is not a form field, so Django's own ModelForm
+        # unique_together check (which excludes fields absent from the form)
+        # never runs it -- without this, a duplicate (POD, month, type) hit
+        # the database's own constraint as a raw IntegrityError, a 500.
+        try:
+            record.validate_unique()
+        except ValidationError:
+            form.add_error(None, _DUPLICATE_RECORD_ERROR)
+        else:
+            record.save()
+            if period is None:
+                # The record saved, but with no reporting period it is invisible to
+                # every period-scoped filing — say so now, not at filing time.
+                period_warning = (
+                    f"Saved, but no reporting period covers {month:%B %Y} — this "
+                    "record will not appear in any CalWATRS filing until a period "
+                    "covering that month exists. It attaches automatically once "
+                    "such a period is created, or you can open and save it "
+                    "yourself after one exists."
+                )
+            # Saved cleanly — hand back a blank form for the next entry.
+            form = DiversionRecordForm()
+
+    # On an invalid submit, `form` is still the BOUND form: re-rendering it
+    # preserves the user's typed values and surfaces the field errors, so a
+    # failed save reads as a visible error rather than a silent reset.
+    return _render_diversion_records_section(
+        request, pod, form=form, period_warning=period_warning,
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def diversion_record_edit(request, pk, rpk):
+    """Edit one diversion record (146-02 Task 3, ISS-181, D... "edit or delete").
+
+    GET shows an "Edit diversion record" form in place of the "Add" one, at
+    the bottom of the section (never inline in the table row: the add and
+    edit forms share the same field ids, and this codebase renders exactly
+    one of the two at a time rather than giving the edit form a second
+    auto_id namespace for no reader-visible benefit). POST re-runs the
+    period lookup for the (possibly changed) month -- an edit can move a
+    record into a different water year, so this always re-renders the whole
+    section rather than just the one row, keeping the table's totals and the
+    lead panel's figures in agreement with the row that changed.
+    """
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    record = get_object_or_404(DiversionRecord, pk=rpk, point_of_diversion=pod)
+
+    if request.method == "GET":
+        return _render_diversion_records_section(
+            request, pod, edit_record=record, edit_form=DiversionRecordForm(instance=record),
+        )
+
+    form = DiversionRecordForm(request.POST, instance=record)
+    if form.is_valid():
+        updated = form.save(commit=False)
+        month = updated.month
+        updated.reporting_period = ReportingPeriod.objects.filter(
+            start_date__lte=month,
+            end_date__gte=month,
+        ).first()
+        try:
+            updated.validate_unique()
+        except ValidationError:
+            form.add_error(None, _DUPLICATE_RECORD_ERROR)
+        else:
+            updated.save()
+            return _render_diversion_records_section(request, pod)
+
+    # Invalid, or a duplicate caught above: keep the row in edit mode so the
+    # error and the user's typed values are visible, not silently discarded.
+    return _render_diversion_records_section(
+        request, pod, edit_record=record, edit_form=form,
+    )
+
+
+@login_required
+@require_POST
+def diversion_record_delete(request, pk, rpk):
+    """Delete one diversion record (146-02 Task 3, ISS-181)."""
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    record = get_object_or_404(DiversionRecord, pk=rpk, point_of_diversion=pod)
+    record.delete()
+    return _render_diversion_records_section(request, pod)
 
 
 @login_required

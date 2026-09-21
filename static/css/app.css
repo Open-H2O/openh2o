@@ -1268,6 +1268,13 @@ html { color-scheme: dark; }
     background-color: color-mix(in srgb, var(--color-warning) 14%, transparent);
 }
 
+/* The one row a diversion-records table has open for editing (146-02 Task 3,
+   ISS-181) — teal, the everyday-emphasis accent, not the warning amber above:
+   nothing is wrong with this row, it's just the one being worked on. */
+.data-table tbody tr.row-editing td {
+    background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
 .data-table-link {
     /* Phase F (F2): text-sized blue routed to the brighter Pacific blue
        (#3DB4E0, 8.26:1 on a card) so identifier links clear WCAG AA. The

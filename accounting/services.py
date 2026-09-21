@@ -38,6 +38,7 @@ from geography.models import ParcelZone
 from parcels.models import Parcel, ParcelLedger
 
 from core.constants import CARRY_FORWARD
+from core.modules import is_enabled
 
 from accounting.carryover_math import available_with_carryover, water_year_of
 from accounting.ledger_import import import_ledger_rows
@@ -471,6 +472,58 @@ def current_period_id():
             .first()
         )
     return period_id
+
+
+def attach_orphans_to_period(period):
+    """Attach every orphaned row inside ``period``'s dates to it (146-02, ISS-181).
+
+    A DiversionRecord, UnallocatedDelivery or ParcelLedger row saved before
+    any reporting period covered its date carries ``reporting_period=None``
+    and is invisible to every period-scoped filing (reporting/validators.py's
+    "attached to NO reporting period" warning) and to every period-scoped
+    screen (the POD page grouped such rows under "No water year assigned").
+    Call this once right after a period is created, and again after its
+    dates change if an edit path for a period is ever added -- as of this
+    writing (146-02 Task 3) there is none; only ``period_create`` calls this.
+
+    Idempotent: only rows with ``reporting_period IS NULL`` are matched, so
+    calling this twice on the same period, or on overlapping periods (the
+    model's own exclusion constraint already forbids overlap), never
+    reassigns a row that already has a period. Returns one count per model,
+    for the caller to report in a single sentence ("N diversion records, M
+    ledger rows attached").
+
+    ``surface`` is a truly-optional module (Phase 87): DiversionRecord and
+    UnallocatedDelivery live in ``surface.models``, so the import is local
+    and gated on ``is_enabled("surface")`` -- ``accounting`` is
+    schema-resident (stays installed with surface off) and must not import
+    an uninstalled app at module scope. See
+    ``accounting/views.py::account_detail``'s identical guard.
+    """
+    counts = {"diversion_records": 0, "unallocated_deliveries": 0, "ledger_rows": 0}
+
+    if is_enabled("surface"):
+        from surface.models import DiversionRecord, UnallocatedDelivery
+
+        counts["diversion_records"] = DiversionRecord.objects.filter(
+            reporting_period__isnull=True,
+            month__gte=period.start_date,
+            month__lte=period.end_date,
+        ).update(reporting_period=period)
+
+        counts["unallocated_deliveries"] = UnallocatedDelivery.objects.filter(
+            reporting_period__isnull=True,
+            month__gte=period.start_date,
+            month__lte=period.end_date,
+        ).update(reporting_period=period)
+
+    counts["ledger_rows"] = ParcelLedger.objects.filter(
+        reporting_period__isnull=True,
+        effective_date__gte=period.start_date,
+        effective_date__lte=period.end_date,
+    ).update(reporting_period=period)
+
+    return counts
 
 
 def parcel_balance(parcel, reporting_period=None):

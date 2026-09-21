@@ -155,19 +155,20 @@
             <div class="budget-seg">
               <div class="budget-seg-label">Diverted</div>
               <div class="budget-seg-value">{{ current_totals.diverted|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-              <div class="budget-seg-caption">recorded at this point, {{ current_period.name }}</div>
+              <div class="budget-seg-caption">recorded at this point{% if current_period %}, {{ current_period.name }}{% endif %}</div>
             </div>
             <div class="budget-op">&minus;</div>
             <div class="budget-seg">
               <div class="budget-seg-label">Return flow</div>
               <div class="budget-seg-value">{{ current_totals.returned|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-              <div class="budget-seg-caption">returned to the stream, {{ current_period.name }}</div>
+              <div class="budget-seg-caption">returned to the stream{% if current_period %}, {{ current_period.name }}{% endif %}</div>
             </div>
             <div class="budget-op">&equals;</div>
             <div class="budget-seg budget-seg--result">
               <div class="budget-seg-label">Retained</div>
               <div class="budget-seg-value {% if current_totals.retained >= 0 %}text-surplus{% else %}text-deficit{% endif %}">{{ current_totals.retained|floatformat:2|intcomma }}<span class="budget-seg-unit">AF</span></div>
-              <div class="budget-seg-notes"><p class="text-tertiary">Diverted less returned, {{ current_period.name }}.</p></div>
+              {% comment %}146-02 Task 3 (ISS-181): omit the clause with no current period, or this read "Diverted less returned, ." literally.{% endcomment %}
+              <div class="budget-seg-notes"><p class="text-tertiary">Diverted less returned{% if current_period %}, {{ current_period.name }}{% endif %}.</p></div>
             </div>
           </div>
         </div>

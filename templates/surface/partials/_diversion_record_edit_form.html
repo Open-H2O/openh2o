@@ -1,0 +1,62 @@
+{% comment %}
+  146-02 Task 3 (ISS-181): editing one diversion record. Rendered in place of
+  "Add diversion record" (see _diversion_records.html) while a row's Edit
+  action is active -- the two forms share field ids, so this codebase shows
+  exactly one of them at a time rather than giving this one a second auto_id
+  namespace to sit beside the other with no reader-visible benefit. Save
+  re-runs the period lookup for the (possibly changed) month and always
+  re-renders the whole records section (surface/views.py::
+  _render_diversion_records_section), since an edit can move the record into
+  a different water year. Cancel is a plain link back to the POD page: one
+  row's edit is not worth a second HTMX route just to back out of it.
+{% endcomment %}
+<form hx-post="{% url 'surface:diversion_record_edit' pod.pk edit_record.pk %}"
+      hx-target="#diversion-records-section"
+      hx-swap="innerHTML"
+      class="form-stack"
+      style="padding: var(--space-md) 0; border-top: 1px solid var(--color-border);">
+  {% csrf_token %}
+  <div class="row-between" style="align-items: flex-start;">
+    <h3 class="text-sm font-semibold text-secondary m-0">Edit diversion record: {{ edit_record.month|date:"M Y" }}</h3>
+  </div>
+  {% if edit_form.non_field_errors %}
+  <div class="text-xs" style="color: var(--furnace-400);">{{ edit_form.non_field_errors|join:", " }}</div>
+  {% endif %}
+  <div class="form-row-2col">
+    <div class="form-group">
+      <label class="field-label" for="{{ edit_form.month.id_for_label }}">Month (pick any day in it)</label>
+      {{ edit_form.month }}
+      {% if edit_form.month.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.month.errors|join:", " }}</span>{% endif %}
+    </div>
+    <div class="form-group">
+      <label class="field-label" for="{{ edit_form.volume_acre_feet.id_for_label }}">Volume (AF)</label>
+      {{ edit_form.volume_acre_feet }}
+      {% if edit_form.volume_acre_feet.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.volume_acre_feet.errors|join:", " }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ edit_form.returned_af.id_for_label }}">Returned to stream (AF)</label>
+    {{ edit_form.returned_af }}
+    {% if edit_form.returned_af.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.returned_af.errors|join:", " }}</span>{% endif %}
+  </div>
+  <div class="form-row-2col">
+    <div class="form-group">
+      <label class="field-label" for="{{ edit_form.max_flow_rate_cfs.id_for_label }}">Max flow rate (CFS)</label>
+      {{ edit_form.max_flow_rate_cfs }}
+      {% if edit_form.max_flow_rate_cfs.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.max_flow_rate_cfs.errors|join:", " }}</span>{% endif %}
+    </div>
+    <div class="form-group">
+      <label class="field-label" for="{{ edit_form.diversion_type.id_for_label }}">Diversion type</label>
+      {{ edit_form.diversion_type }}
+      {% if edit_form.diversion_type.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ edit_form.diversion_type.errors|join:", " }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="field-label" for="{{ edit_form.notes.id_for_label }}">Notes</label>
+    {{ edit_form.notes }}
+  </div>
+  <div class="row-end" style="gap: var(--space-sm);">
+    <a href="{% url 'surface:pod_detail' pod.pk %}" class="btn-secondary btn-sm">Cancel</a>
+    <button type="submit" class="btn-primary btn-sm">Save</button>
+  </div>
+</form>

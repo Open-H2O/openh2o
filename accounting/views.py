@@ -54,6 +54,7 @@ from core.modules import is_enabled
 from core.workspace import redirect_to_selected
 from accounting.services import (
     account_consumptive_balance,
+    attach_orphans_to_period,
     current_period_id as compute_current_period_id,
     parcel_consumptive_balance,
     parse_ledger_csv,
@@ -556,11 +557,23 @@ def period_detail(request, pk):
 
 @login_required
 def period_create(request):
-    """Create a new reporting period."""
+    """Create a new reporting period.
+
+    146-02 Task 3 (ISS-181): a record saved before this period existed can
+    now attach to it the moment it is saved, instead of waiting on an edit
+    that had no control to trigger it. The counts are shown once, in the
+    success message on the period page this redirects to.
+    """
     if request.method == "POST":
         form = ReportingPeriodForm(request.POST)
         if form.is_valid():
             period = form.save()
+            counts = attach_orphans_to_period(period)
+            messages.success(
+                request,
+                f"Reporting period created. {counts['diversion_records']} "
+                f"diversion records, {counts['ledger_rows']} ledger rows attached.",
+            )
             return redirect("accounting:period_detail", pk=period.pk)
     else:
         form = ReportingPeriodForm()

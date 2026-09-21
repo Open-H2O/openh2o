@@ -11,6 +11,17 @@ urlpatterns = [
     path("", views.pod_list, name="pod_list"),
     path("diversion/<int:pk>/", views.pod_detail, name="pod_detail"),
     path("diversion/<int:pk>/record/", views.diversion_record_create, name="diversion_record_create"),
+    # 146-02 Task 3 (ISS-181): edit and delete a diversion record.
+    path(
+        "diversion/<int:pk>/record/<int:rpk>/edit/",
+        views.diversion_record_edit,
+        name="diversion_record_edit",
+    ),
+    path(
+        "diversion/<int:pk>/record/<int:rpk>/delete/",
+        views.diversion_record_delete,
+        name="diversion_record_delete",
+    ),
     # 146-02 D2: the point-to-right link.
     path("diversion/<int:pk>/link-right/", views.pod_link_right, name="pod_link_right"),
     # 146-02 D3: the share editor on a POD's linked use area.
