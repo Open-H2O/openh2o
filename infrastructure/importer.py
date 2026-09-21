@@ -147,7 +147,7 @@ def _features_to_rows(features):
 # source-column spellings (matched case- and punctuation-insensitively).
 #: State OSWCR export column names (`wells-oswcr.csv`, header read 2026-09-20)
 #: mixed in below where a state column is the best available guess. OSWCR
-#: carries no well-name column at all — `WCRNUMBER` is the one column present
+#: carries no well-name column at all. `WCRNUMBER` is the one column present
 #: and non-blank on every row, so it is the best-guess source for BOTH `name`
 #: and `wcr_number`; the mapping step still lets the operator override either
 #: one (ISS-179, ISS-190).
@@ -511,7 +511,7 @@ def _point_from_geometry(raw):
 #: and `recharge_site`/`storage` each create a model from a truly-optional
 #: module's app (`wells` is schema-resident and always importable, but a
 #: deployment that switched it OFF must still get no NEW rows in its empty
-#: table — `surface` and `recharge` are truly removed and their model imports
+#: table: `surface` and `recharge` are truly removed and their model imports
 #: raise `RuntimeError` if reached with the app not installed). Checked BEFORE
 #: the model is imported, never after, so a disabled module is a row error, not
 #: a crash the per-row savepoint below has to catch.
@@ -533,7 +533,7 @@ def commit_rows(valid_results, infra_type):
     (ISS-179): `commit_rows` used to import `RechargeSite` unconditionally
     before the type branch, so a `diversion` or `well` commit on a deployment
     without `recharge` raised `RuntimeError` before a single row was even
-    looked at — a 500 that swallowed the whole import (shapes 1 and 4, three
+    looked at, a 500 that swallowed the whole import (shapes 1 and 4, three
     tries and two tries, zero records, no message). Now a row whose type's
     module is off is a reported row error, and every other row in the same
     batch still commits.

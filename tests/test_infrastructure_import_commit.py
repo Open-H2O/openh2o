@@ -6,7 +6,7 @@ Four faults, each proven RED against the unfixed code before this plan's fix
 (146-01 Task 2; the exact RED quotes live in this phase's EVIDENCE.md):
 
   (a) `commit_rows` ran `from recharge.models import RechargeSite` before the
-      type branch, unconditionally — so a `diversion` (or `well`) commit on any
+      type branch, unconditionally, so a `diversion` (or `well`) commit on any
       deployment that had switched `recharge` off (shapes 1-4) raised
       `RuntimeError` before a single row was looked at. Proven here with a real
       process booted WITHOUT `recharge` in `OPENH2O_MODULES`, because Django's
@@ -23,7 +23,7 @@ Four faults, each proven RED against the unfixed code before this plan's fix
       "unrecognised value" fallback and silently served the Well importer
       (shape 6's own correction). It must now be a 404 naming `import_parcels`.
   (d) The state's own OSWCR well export (`wells-oswcr.csv`, header read
-      2026-09-20) matches none of the pre-existing alias spellings — this pins
+      2026-09-20) matches none of the pre-existing alias spellings, which pins
       the crosswalk aliases added for it.
 """
 
@@ -74,12 +74,12 @@ def auth_client(db):
 def test_diversion_commit_child():
     """The child half of the without-recharge proof below.
 
-    Also collected (and passes trivially) by the normal full-module suite —
+    Also collected (and passes trivially) by the normal full-module suite:
     that run has `recharge` enabled, so it proves nothing about ISS-179 by
     itself. The only run that proves anything is
     `test_diversion_commit_works_without_recharge_module` below, which boots a
     real process with `recharge` OUT of `OPENH2O_MODULES` and points pytest at
-    this exact node by name — the same spawner/child split
+    this exact node by name, the same spawner/child split
     tests/test_droppability_acceptance.py uses, for the same reason: Django's
     app registry is fixed at process start, so only a process that never had
     `recharge` installed can prove commit_rows survives without it.
@@ -122,7 +122,7 @@ def _database_url(suffix):
 def test_diversion_commit_works_without_recharge_module():
     """ISS-179's actual fault: a `diversion` commit on a deployment that has
     switched `recharge` off, which is shapes 1 through 4 (every leading shape
-    but 5 and 6). `recharge` is the only module dropped — `surface`, which owns
+    but 5 and 6). `recharge` is the only module dropped; `surface`, which owns
     `PointOfDiversion`, stays, the same as every real shape that hit this bug.
 
     Run against the UNFIXED importer (`from recharge.models import
@@ -171,7 +171,7 @@ def test_diversion_commit_works_without_recharge_module():
 def test_commit_failure_renders_nothing_was_created(auth_client, monkeypatch):
     """`commit_rows` already isolates a single bad row with its own per-row
     savepoint (see its docstring); this proves the OUTER catch that guards
-    against anything else — a module Task 2.1's guard missed, a programming
+    against anything else: a module Task 2.1's guard missed, a programming
     error, anything genuinely unexpected. Monkeypatches `commit_rows` itself
     to raise, so this is independent of the recharge-specific fix in (a).
     """
@@ -215,7 +215,7 @@ def test_commit_failure_renders_nothing_was_created(auth_client, monkeypatch):
 def test_unsupported_type_is_404_not_the_well_importer(auth_client, bad_type):
     """Before this fix, `?type=parcel` (also `use_area`, `usearea`) fell
     through `_supported_type`'s unrecognised-value fallback and returned 200
-    showing the Well importer's mapping page, headed "Well" — shape 6's own
+    showing the Well importer's mapping page, headed "Well". Shape 6's own
     correction is what caught it. `_import_type` must not do that: an
     unsupported type is a 404 naming the real door for use areas.
     """
@@ -230,7 +230,7 @@ def test_unsupported_type_is_404_not_the_well_importer(auth_client, bad_type):
 
 @pytest.mark.django_db
 def test_unsupported_type_404_on_commit_too(auth_client):
-    """The same guard, exercised on the commit endpoint directly — a
+    """The same guard, exercised on the commit endpoint directly: a
     hand-edited POST naming a type outside `supported_add_types()` must not
     reach `commit_rows` at all."""
     resp = auth_client.post(
@@ -249,7 +249,7 @@ def test_unsupported_type_404_on_commit_too(auth_client):
 #: `~/Documents/Vadose/Products/openh2o/six-shapes-2026-09/datasets/
 #: shape-4-well-registry/wells-oswcr.csv` (`head -1`). Pasted rather than read
 #: from that path at test time: the path is outside this repository and the
-#: dev container has no bind mount to it (MAINTAINER.md/CLAUDE.md — the web
+#: dev container has no bind mount to it (MAINTAINER.md/CLAUDE.md: the web
 #: image bakes the source in).
 OSWCR_HEADER = [
     "WCRNUMBER",
@@ -281,7 +281,7 @@ def test_oswcr_header_maps_latitude_longitude_and_name():
     file: `OWNERASSIGNEDWELLNUMBER` is blank on 16 of its 20 rows, so it is
     not a usable name source either). `WCRNUMBER` is the one column present
     and non-blank on every row, so it is the best-guess source for BOTH `name`
-    and `wcr_number` — the mapping step still lets the operator override
+    and `wcr_number`, and the mapping step still lets the operator override
     either one.
     """
     mapping = importer.auto_map_columns(OSWCR_HEADER, "well")

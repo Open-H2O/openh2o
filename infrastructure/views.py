@@ -83,8 +83,8 @@ logger = logging.getLogger(__name__)
 
 #: Shown, verbatim, on a 404 from the bulk importer (ISS-179): `?type=parcel`
 #: (also `use_area`, `usearea`) used to fall through to `_supported_type`'s
-#: "unrecognised value" fallback and silently serve the Well importer instead
-#: — shape 6's own correction found it. `supported_add_types()` is the list of
+#: "unrecognised value" fallback and silently serve the Well importer instead.
+#: Shape 6's own correction found it. `supported_add_types()` is the list of
 #: truth for what this screen actually takes; use areas are a different door.
 UNSUPPORTED_IMPORT_TYPE_MESSAGE = (
     "use areas are imported with `import_parcels` (docs/DATA-IMPORT.md); the "
@@ -330,18 +330,18 @@ def infrastructure_add(request):
 def _import_type(raw):
     """Normalize a ?type / infra_type value to a supported import type.
 
-    **Only partly `_supported_type(raw)`** (ISS-179). A BLANK type — nobody
+    **Only partly `_supported_type(raw)`** (ISS-179). A BLANK type, nobody
     named one, e.g. the bare `/infrastructure/import/` the URLconf crawl and a
-    stray internal link both reach — still falls back to the first available
+    stray internal link both reach, still falls back to the first available
     type exactly as `_supported_type` does; that half of the fallback was never
     the bug and a page landing there with no type at all reasonably shows
     something rather than a 404. What must NOT fall back is a type that IS a
     real value and simply is not one this deployment serves: `?type=parcel`
     (also `use_area`, `usearea`) named an actual, wrong door and
     `_supported_type`'s "anything I don't recognise" fallback silently served
-    the Well importer instead — shape 6's own correction is what caught it.
+    the Well importer instead. Shape 6's own correction is what caught it.
     Returns the type unchanged when it is one this deployment actually serves,
-    `None` for an unrecognised NON-BLANK value — the three callers below turn
+    `None` for an unrecognised NON-BLANK value. The three callers below turn
     `None` into a 404 with `UNSUPPORTED_IMPORT_TYPE_MESSAGE`, never a fallback
     to a different importer than the one asked for. `supported_add_types()`
     stays the list of truth.
@@ -452,7 +452,7 @@ def _commit_failure_context(infra_type, rows, mapping, exc):
 
     The same shape `infrastructure_import_preview` renders the first time,
     from the `rows_json` and confirmed `mapping` the crashed POST already
-    carried — so the operator can fix a mapping and press Create again
+    carried, so the operator can fix a mapping and press Create again
     instead of re-uploading the file. `error` is the one thing added;
     `_import_mapping.html` prints it above the table.
     """
@@ -529,9 +529,9 @@ def infrastructure_import_commit(request):
         )
 
     # ISS-179: commit_rows' per-row savepoint already isolates a single bad row
-    # (see its own docstring), so anything that still reaches here — a module
+    # (see its own docstring), so anything that still reaches here (a module
     # this deployment does not have but that Task 2.1's guard missed, a
-    # programming error, anything — is genuinely unexpected. Before this catch
+    # programming error, anything) is genuinely unexpected. Before this catch
     # it was a 500: HTMX swaps nothing on a 500, so the operator saw the exact
     # same mapping table come back with no explanation (shape 1, three tries;
     # shape 4, two). Now they get that same table back with one line saying

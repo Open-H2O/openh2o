@@ -4,8 +4,8 @@ uploaded file's columns (pre-set to the auto-detected guess), plus a sample of
 the first rows, and a button that posts the confirmed mapping to import/commit/.
 The parsed rows ride along as a hidden JSON field so commit needs no re-upload.
 
-`error` (ISS-179): set only when this is a RE-render after Create crashed —
-commit posts back here, at 200, with one line saying nothing was created and
+`error` (ISS-179): set only when this is a RE-render after Create crashed.
+Commit posts back here, at 200, with one line saying nothing was created and
 why, instead of a 500 HTMX swaps nothing for (the ISS-179 silence: the operator
 pressed Create and got this same table back with no explanation at all).
 {% endcomment %}
