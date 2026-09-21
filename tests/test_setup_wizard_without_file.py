@@ -5,8 +5,8 @@ populate steps the operator chose.
 Three decisions this file locks (146-01 Task 5, all written into the plan, none
 re-decided here):
   (a) step 1 offers three ways in (upload, type an extent, start without one),
-      and the phrase "select an existing" appears only when a boundary already
-      exists to select;
+      and the "Select an existing boundary" control is disabled with a
+      "None yet" note until a boundary exists to select (Brent, 2026-09-21);
   (b) step 3 never runs a populate step nobody checked, and reports an unchosen
       step as "skipped: your choice", not an error;
   (c) "Start without one" writes nothing: no Boundary, no SiteConfig row.
@@ -72,22 +72,29 @@ def _boundary(name="ISS-178-Boundary"):
 
 
 # --------------------------------------------------------------------------
-# (a) Step 1: three ways in, no "select an existing" with nothing to select
+# (a) Step 1: three ways in, the select disabled with nothing to select
 # --------------------------------------------------------------------------
 
 @pytest.mark.django_db
 class TestStepOneThreeWaysIn:
 
-    def test_fresh_instance_has_no_select_an_existing_wording(self):
-        """No Boundary row exists yet, so the page must not offer a control
-        it does not have (the ISS-178 bug: the old subtitle always said
-        'or select an existing one')."""
+    def test_fresh_instance_select_is_disabled_with_a_none_yet_note(self):
+        """No Boundary row exists yet, so the select and its button are
+        disabled and the note says none is on file (the ISS-178 bug: the old
+        subtitle always said 'or select an existing one' and offered no
+        control at all). Brent's ruling 2026-09-21: shown disabled with a
+        "none yet" note, not hidden."""
         assert Boundary.objects.count() == 0
         client = _admin_client()
         resp = client.get(WIZARD_URL)
         assert resp.status_code == 200
-        body = resp.content.decode().lower()
-        assert "select an existing" not in body
+        body = resp.content.decode()
+        assert "Select an existing boundary" in body
+        assert 'id="boundary_id" class="form-select" disabled' in body
+        assert "None yet" in body
+        assert "None on file yet" in body
+        assert 'id="btn-select" disabled' in body
+        assert "or select an existing one" not in body
 
     def test_fresh_instance_shows_all_three_cards(self):
         client = _admin_client()
@@ -97,13 +104,17 @@ class TestStepOneThreeWaysIn:
         assert "Type an extent" in body
         assert "Start without one" in body
 
-    def test_an_existing_boundary_still_offers_select_an_existing(self):
-        """The wording is not deleted, it is scoped to when it is true."""
-        _boundary()
+    def test_an_existing_boundary_enables_the_select(self):
+        """With one boundary on file the control is live and lists it."""
+        b = _boundary()
         client = _admin_client()
         resp = client.get(WIZARD_URL)
-        body = resp.content.decode().lower()
-        assert "select an existing" in body
+        body = resp.content.decode()
+        assert "Select an existing boundary" in body
+        assert 'id="boundary_id" class="form-select" disabled' not in body
+        assert "None on file yet" not in body
+        assert f'<option value="{b.pk}">' in body
+        assert 'id="btn-select" disabled' not in body
 
     def test_start_without_one_is_a_link_to_the_front_page(self):
         client = _admin_client()

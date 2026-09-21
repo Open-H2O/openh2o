@@ -1335,7 +1335,7 @@
     "app": "setup",
     "kind": "figure",
     "template": "templates/setup/wizard.html",
-    "line": 62,
+    "line": 64,
     "column": 95,
     "expression": "{{ b.area_sq_miles|floatformat:1 }}",
     "enclosing_loop": "b in boundaries",

@@ -46,9 +46,10 @@
   </div>
   {% endif %}
 
-  {% comment %}ISS-178: this card, and its wording, render only when a boundary
-  is already on file to choose from.{% endcomment %}
-  {% if boundaries %}
+  {% comment %}ISS-178: this card always renders. With nothing on file the
+  control is disabled and says so (Brent, 2026-09-21: "disabled with a none
+  yet note"), so a new user sees where an existing boundary would be chosen
+  without being offered a choice that does not exist.{% endcomment %}
   <div class="card-raised">
     <h2 class="card-header-ruled">Select an existing boundary</h2>
     <form method="post" enctype="multipart/form-data">
@@ -56,6 +57,7 @@
       <input type="hidden" name="action" value="select">
       <div class="form-group">
         <label class="form-label" for="boundary_id">District boundary</label>
+        {% if boundaries %}
         <select name="boundary_id" id="boundary_id" class="form-select">
           <option value="">— Choose a boundary —</option>
           {% for b in boundaries %}
@@ -63,15 +65,20 @@
           {% endfor %}
         </select>
         <p class="form-help">Select the boundary that defines your district or agency service area.</p>
+        {% else %}
+        <select name="boundary_id" id="boundary_id" class="form-select" disabled aria-describedby="boundary-none-yet">
+          <option value="">None yet</option>
+        </select>
+        <p class="form-help" id="boundary-none-yet">None on file yet. The first boundary you upload or type below will be listed here.</p>
+        {% endif %}
       </div>
       <div class="form-footer">
-        <button type="submit" class="btn-primary" id="btn-select">
+        <button type="submit" class="btn-primary" id="btn-select"{% if not boundaries %} disabled{% endif %}>
           Use this boundary →
         </button>
       </div>
     </form>
   </div>
-  {% endif %}
 
   {% comment %}Three ways in (ISS-178): a fresh instance is never stopped by a
   missing GIS file. All three write the same Boundary model through the same
