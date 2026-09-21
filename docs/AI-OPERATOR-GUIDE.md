@@ -264,6 +264,8 @@ with progress on screen, and then **enable the monitoring stations inside that
 boundary** — the step that is otherwise easy to miss, because discovery creates
 every station switched off.
 
+**The wizard's first screen offers three ways in, and none of them blocks the rest of the product (ISS-178).** No GeoJSON file on hand: type the four corners of a rough bounding box (north, south, east and west, in decimal degrees) and the wizard builds a rectangle boundary from them the same way it would from an uploaded file. No boundary at all, yet: "Start without one" goes straight to the front page. Every other screen in the platform still works, and the operator can come back to `/setup/` any time.
+
 Find it in the left sidebar under **Administration → Setup Wizard** — that whole
 block is hidden until you switch the sidebar out of its everyday view, using the
 two-button toggle at the **bottom of the left sidebar** marked **Operations** and

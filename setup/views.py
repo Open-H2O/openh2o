@@ -21,7 +21,11 @@ from core.access import admin_required
 from core.modules import is_enabled
 from datasync.models import MonitoredStation
 from geography.models import Boundary
-from setup.boundaries import boundary_from_geojson_text
+from setup.boundaries import (
+    boundary_from_extent,
+    boundary_from_geojson_text,
+    parse_extent_bounds,
+)
 from setup.services import (
     STATION_PROVIDERS,
     build_station_review,
@@ -38,6 +42,11 @@ SESSION_KEY_BOUNDARY = "setup_wizard_boundary_id"
 SESSION_KEY_STEP_INDEX = "setup_wizard_step_index"
 SESSION_KEY_RESULTS = "setup_wizard_results"
 SESSION_KEY_PROVIDER_INDEX = "setup_wizard_provider_index"
+# ISS-178: which populate steps this run was told to execute. Absent (not merely
+# empty) means "step 3 has not asked yet"; that is how setup_run decides
+# whether to show the picker or the HTMX progress poll, and how a fresh
+# confirm() always re-asks rather than silently re-running the last choice.
+SESSION_KEY_SELECTED_STEPS = "setup_wizard_selected_steps"
 
 # The step list is resolved per request via `wizard_steps()`, not frozen into a
 # module constant: `datasync` is demotable from Phase 88, and a deployment that
@@ -111,6 +120,30 @@ def setup_wizard(request):
                     logger.exception("GeoJSON upload failed")
                     errors.append(f"Upload failed: {exc}")
 
+        elif action == "extent":
+            name = request.POST.get("name", "").strip()
+            try:
+                north, south, east, west = parse_extent_bounds(
+                    request.POST.get("north", ""),
+                    request.POST.get("south", ""),
+                    request.POST.get("east", ""),
+                    request.POST.get("west", ""),
+                )
+            except ValueError as exc:
+                errors.append(str(exc))
+            else:
+                geom_name, geom, attrs = boundary_from_extent(
+                    north=north, south=south, east=east, west=west, name=name,
+                )
+                boundary = Boundary.objects.create(
+                    name=geom_name,
+                    geometry=geom,
+                    description="Typed extent, entered on the Setup Wizard",
+                    **attrs,
+                )
+                request.session[SESSION_KEY_BOUNDARY] = boundary.pk
+                return redirect("setup:confirm")
+
     boundaries = Boundary.objects.all().order_by("name")
     context = {
         "boundaries": boundaries,
@@ -144,10 +177,13 @@ def setup_confirm(request):
         return redirect("setup:wizard")
 
     if request.method == "POST":
-        # Reset step tracking and go to run page
+        # Reset step tracking and go to run page. Also drop any earlier step
+        # choice (ISS-178): a fresh confirm always re-asks step 3's picker
+        # rather than silently re-running whatever an older session chose.
         request.session[SESSION_KEY_STEP_INDEX] = 0
         request.session[SESSION_KEY_RESULTS] = []
         request.session[SESSION_KEY_PROVIDER_INDEX] = 0
+        request.session.pop(SESSION_KEY_SELECTED_STEPS, None)
         return redirect("setup:run")
 
     preview = get_boundary_preview_data(boundary)
@@ -157,7 +193,15 @@ def setup_confirm(request):
 @admin_required
 @login_required
 def setup_run(request):
-    """Step 3: Progress page — HTMX polling drives step-by-step execution."""
+    """Step 3: choose which populate steps to run, then the HTMX polling page.
+
+    ISS-178: the run no longer starts itself. A GET with no step choice yet
+    recorded for this session renders the picker: a checkbox per step, all
+    checked by default, plus "I have my own data" (JS, unchecks every box).
+    Posting that form is what stores the chosen step names in the session
+    and turns on the HTMX progress poll. ``setup_progress`` reads the same
+    session key and only executes a step whose name was chosen.
+    """
     boundary_id = request.session.get(SESSION_KEY_BOUNDARY)
     if not boundary_id:
         messages.info(
@@ -177,9 +221,23 @@ def setup_run(request):
         )
         return redirect("setup:wizard")
 
+    if request.method == "POST":
+        chosen = request.POST.getlist("steps")
+        # Keep only real step names, in wizard_steps() order, so a tampered or
+        # stale form value can never make setup_progress index past the list.
+        valid_names = {s[0] for s in wizard_steps()}
+        request.session[SESSION_KEY_SELECTED_STEPS] = [
+            name for name in chosen if name in valid_names
+        ]
+        request.session[SESSION_KEY_STEP_INDEX] = 0
+        request.session[SESSION_KEY_RESULTS] = []
+        request.session[SESSION_KEY_PROVIDER_INDEX] = 0
+        return redirect("setup:run")
+
     context = {
         "boundary": boundary,
         "steps": wizard_steps(),
+        "picking": SESSION_KEY_SELECTED_STEPS not in request.session,
     }
     return render(request, "setup/run.html", context)
 
@@ -200,6 +258,13 @@ def setup_progress(request):
     except Boundary.DoesNotExist:
         return HttpResponse("Boundary not found.", status=400)
 
+    # ISS-178: which step names this run was told to execute. None means step 3
+    # was reached without going through the picker (a stale or replayed request),
+    # treated as "run everything" rather than "run nothing" (the wizard's old
+    # behaviour), so an already-in-flight run is never silently emptied out from
+    # under it.
+    selected_steps = request.session.get(SESSION_KEY_SELECTED_STEPS)
+
     step_index = request.session.get(SESSION_KEY_STEP_INDEX, 0)
     results = request.session.get(SESSION_KEY_RESULTS, [])
     provider_index = request.session.get(SESSION_KEY_PROVIDER_INDEX, 0)
@@ -211,7 +276,19 @@ def setup_progress(request):
 
     if not all_done:
         step_name = step_names[step_index]
-        if step_name == "stations":
+        if selected_steps is not None and step_name not in selected_steps:
+            # Not chosen on the picker: report it plainly as a choice, never as
+            # an error, and never call the populate code for it at all.
+            results.append({
+                "step": step_name,
+                "label": steps[step_index][1],
+                "count": 0,
+                "errors": [],
+                "success": True,
+                "note": "skipped: your choice",
+            })
+            step_index += 1
+        elif step_name == "stations":
             # Stations is split into one short request per provider (ISS-051): a
             # slow/failing provider becomes an isolated, labeled row instead of a
             # synchronous all-providers call that can outlast the worker timeout.

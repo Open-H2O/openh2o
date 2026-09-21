@@ -277,3 +277,50 @@ def boundary_from_geojson_text(raw_text, *, fallback_name):
         or fallback_name
     )
     return name or "Uploaded Boundary", geom, boundary_attrs_from_properties(properties)
+
+
+def parse_extent_bounds(north, south, east, west):
+    """Parse and range-check four typed extent corners (ISS-178).
+
+    Returns ``(north, south, east, west)`` as floats, or raises ``ValueError``
+    with a plain-language reason, the same contract ``parse_geojson_boundary``
+    gives the upload card, so the wizard's typed-extent form can render a form
+    error instead of a 500 on a bad or out-of-range value.
+    """
+    try:
+        north = float(north)
+        south = float(south)
+        east = float(east)
+        west = float(west)
+    except (TypeError, ValueError):
+        raise ValueError(
+            "North, south, east and west must all be numbers, in decimal degrees."
+        )
+
+    for label, value in (("North", north), ("South", south)):
+        if not math.isfinite(value) or not -90 <= value <= 90:
+            raise ValueError(f"{label} must be a latitude between -90 and 90 degrees.")
+    for label, value in (("East", east), ("West", west)):
+        if not math.isfinite(value) or not -180 <= value <= 180:
+            raise ValueError(f"{label} must be a longitude between -180 and 180 degrees.")
+    if north <= south:
+        raise ValueError("North must be greater than south.")
+    if east <= west:
+        raise ValueError("East must be greater than west.")
+
+    return north, south, east, west
+
+
+def boundary_from_extent(*, north, south, east, west, name):
+    """Build a rectangle ``Boundary`` geometry from four typed corners (ISS-178).
+
+    Goes through ``parse_geojson_boundary``, the same validity-repair and
+    SRID-4326 path ``boundary_from_geojson_text`` (the upload card) uses, so
+    a typed extent and an uploaded file give a ``Boundary.geometry`` with
+    identical guarantees. The caller is expected to have already validated
+    the four corners with ``parse_extent_bounds``; this function does not
+    re-check their ranges.
+    """
+    polygon = Polygon.from_bbox((west, south, east, north))
+    geom = parse_geojson_boundary(json.loads(polygon.geojson))
+    return name or "Typed extent", geom, {}

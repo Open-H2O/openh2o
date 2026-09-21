@@ -9,9 +9,13 @@
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="{% url 'setup:wizard' %}">Setup</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">Running</span>
+    <span class="breadcrumb-current">{% if picking %}Choose what to run{% else %}Running{% endif %}</span>
   </nav>
-  <p class="page-description">Auto-populating geographic data for <strong>{{ boundary.name }}</strong>. This may take a few minutes per step.</p>
+  {% if picking %}
+  <p class="page-description">Choose what to populate for <strong>{{ boundary.name }}</strong>. Nothing runs until you press Run setup below.</p>
+  {% else %}
+  <p class="page-description">Populating geographic data for <strong>{{ boundary.name }}</strong>. This may take a few minutes per step.</p>
+  {% endif %}
 </div>
 {% endblock %}
 
@@ -36,6 +40,51 @@
     </div>
   </div>
 
+  {% if picking %}
+  {% comment %}ISS-178: nothing runs until this form is submitted. Every box
+  starts checked; "I have my own data" (JS only, no server round trip) unchecks
+  them all so an operator who is bringing their own records in one press runs
+  zero populate steps.{% endcomment %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Choose what to populate</h2>
+    <form method="post" action="{% url 'setup:run' %}" id="step-picker-form">
+      {% csrf_token %}
+      <div class="wizard-step-list" style="margin-bottom: var(--space-md);">
+        {% for step_name, step_label, step_desc in steps %}
+        <label class="row-start" style="gap: var(--space-sm); align-items: flex-start; padding: var(--space-sm) 0;">
+          <input type="checkbox" name="steps" value="{{ step_name }}" checked id="step-check-{{ step_name }}">
+          <span>
+            <span class="text-base" style="font-weight: 600;">{{ step_label }}</span><br>
+            <span class="text-secondary text-sm">{{ step_desc }}</span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="form-footer row-between">
+        <button type="button" id="clear-all-steps" class="link-accent" style="background: none; border: none; padding: 0; cursor: pointer; font: inherit;">I have my own data</button>
+        <button type="submit" class="btn-primary">Run setup →</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-raised card-inset">
+    <p class="text-tertiary text-sm m-0">
+      Every box is checked by default. Uncheck the steps you don't want, or
+      press "I have my own data" to uncheck all of them. A step nobody chose
+      never runs, and the next screen names it "skipped: your choice", not an
+      error.
+    </p>
+  </div>
+
+  <script>
+  document.getElementById('clear-all-steps').addEventListener('click', function () {
+    document.querySelectorAll('#step-picker-form input[type="checkbox"]').forEach(function (box) {
+      box.checked = false;
+    });
+  });
+  </script>
+
+  {% else %}
   <!-- Progress area driven by HTMX -->
   <div class="card-raised">
     <h2 class="card-header-ruled">Population progress</h2>
@@ -60,6 +109,7 @@
       Re-running a step is safe: records already present are skipped.
     </p>
   </div>
+  {% endif %}
 
 </div>
 {% endblock %}
