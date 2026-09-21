@@ -39,11 +39,8 @@ from django.contrib.gis.geos import (
 )
 from django.db import transaction
 
-from wells.models import (
-    MEASUREMENT_METHOD_CHOICES,
-    PUMP_TYPE_CHOICES,
-    Well,
-)
+from core.modules import is_enabled
+from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES
 
 # Synthetic column name carrying a feature geometry as a GeoJSON string.
 GEOMETRY_COL = "__geometry__"
@@ -148,14 +145,20 @@ def _features_to_rows(features):
 
 # Per-type alias tables. Keys are model fields; values are sets of accepted
 # source-column spellings (matched case- and punctuation-insensitively).
+#: State OSWCR export column names (`wells-oswcr.csv`, header read 2026-09-20)
+#: mixed in below where a state column is the best available guess. OSWCR
+#: carries no well-name column at all — `WCRNUMBER` is the one column present
+#: and non-blank on every row, so it is the best-guess source for BOTH `name`
+#: and `wcr_number`; the mapping step still lets the operator override either
+#: one (ISS-179, ISS-190).
 _WELL_ALIASES = {
-    "name": {"name", "well_name", "well"},
+    "name": {"name", "well_name", "well", "wcrnumber"},
     "well_registration_id": {"reg_id", "registration_id", "well_id", "local_id"},
-    "wcr_number": {"wcr", "wcr_no", "wcr_number", "completion_report"},
+    "wcr_number": {"wcr", "wcr_no", "wcr_number", "completion_report", "wcrnumber"},
     "state_well_number": {"swn", "state_well_no", "state_well_number"},
     "capacity_gpm": {"capacity", "capacity_gpm", "gpm", "max_gpm", "pump_capacity"},
     "tested_yield_gpm": {"yield", "yield_gpm", "tested_yield", "well_yield"},
-    "depth_ft": {"depth", "total_depth", "depth_ft"},
+    "depth_ft": {"depth", "total_depth", "depth_ft", "totalcompleteddepth"},
     "casing_diameter_in": {"casing_dia", "casing_diameter", "casing_in"},
     "casing_material": {"casing_material", "casing_mat"},
     "screen_top_ft": {"screen_top", "perf_top", "screen_top_ft"},
@@ -164,8 +167,8 @@ _WELL_ALIASES = {
     "year_pumping_began": {"year_pumping_began", "year_pumping", "pumping_year"},
     "measurement_method": {"measurement_method", "meas_method", "method"},
     "owner_name": {"owner", "owner_name", "landowner"},
-    "latitude": {"lat", "latitude", "y"},
-    "longitude": {"lon", "lng", "long", "longitude", "x"},
+    "latitude": {"lat", "latitude", "y", "decimallatitude"},
+    "longitude": {"lon", "lng", "long", "longitude", "x", "decimallongitude"},
     "geometry": {GEOMETRY_COL, "geometry", "wkt", "geom"},
 }
 
@@ -503,31 +506,66 @@ def _point_from_geometry(raw):
 # ---------------------------------------------------------------------------
 
 
+#: infra_type -> the module that has to be enabled to create that row, and the
+#: sentence appended as a row error when it is not (ISS-179). `well`, `diversion`
+#: and `recharge_site`/`storage` each create a model from a truly-optional
+#: module's app (`wells` is schema-resident and always importable, but a
+#: deployment that switched it OFF must still get no NEW rows in its empty
+#: table — `surface` and `recharge` are truly removed and their model imports
+#: raise `RuntimeError` if reached with the app not installed). Checked BEFORE
+#: the model is imported, never after, so a disabled module is a row error, not
+#: a crash the per-row savepoint below has to catch.
+_COMMIT_TYPE_MODULE = {
+    "well": "wells",
+    "diversion": "surface",
+    "recharge_site": "recharge",
+    "storage": "recharge",
+}
+
+
 def commit_rows(valid_results, infra_type):
     """Create records from the coerced `data` of error-free rows. Returns count.
 
     Wrapped in a single transaction. Errored rows are skipped. Per-row create()
     is fine here — wells/diversions/recharge sites have no save-time signals.
-    """
-    from recharge.models import RechargeSite
-    from surface.models import PointOfDiversion
 
+    Every model import is LOCAL to its own branch, guarded by `is_enabled()`
+    (ISS-179): `commit_rows` used to import `RechargeSite` unconditionally
+    before the type branch, so a `diversion` or `well` commit on a deployment
+    without `recharge` raised `RuntimeError` before a single row was even
+    looked at — a 500 that swallowed the whole import (shapes 1 and 4, three
+    tries and two tries, zero records, no message). Now a row whose type's
+    module is off is a reported row error, and every other row in the same
+    batch still commits.
+    """
     clean = [r for r in valid_results if not r["errors"] and r["data"].get("location")]
     created = 0
 
     with transaction.atomic():
         for result in clean:
             data = result["data"]
+            module = _COMMIT_TYPE_MODULE.get(infra_type)
+            if module is not None and not is_enabled(module):
+                result["errors"].append(
+                    f"the {module} module is not enabled on this deployment."
+                )
+                continue
             try:
                 # Per-row savepoint: a single bad row (e.g. a geometry that
                 # slipped validation) is rolled back and reported, not allowed
                 # to poison the whole batch or surface as a 500.
                 with transaction.atomic():
                     if infra_type == "well":
+                        from wells.models import Well
+
                         Well.objects.create(**data)
                     elif infra_type == "diversion":
+                        from surface.models import PointOfDiversion
+
                         PointOfDiversion.objects.create(water_right=None, **data)
                     elif infra_type in ("recharge_site", "storage"):
+                        from recharge.models import RechargeSite
+
                         RechargeSite.objects.create(**data)
                     else:
                         continue

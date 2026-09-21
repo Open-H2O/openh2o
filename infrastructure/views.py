@@ -9,11 +9,12 @@ the admin-facing screens an operator uses to stand up an agency's features
 before any accounting runs.
 """
 import json
+import logging
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Point, Polygon
 from django.db.models import Q
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseNotFound, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -77,6 +78,18 @@ ADD_TYPE_MODULE = {
 #: because it was the hardcoded fallback before Phase 88 and is still the right
 #: default wherever it exists.
 ADD_TYPE_ORDER = ("well", "diversion", "storage", "recharge_site")
+
+logger = logging.getLogger(__name__)
+
+#: Shown, verbatim, on a 404 from the bulk importer (ISS-179): `?type=parcel`
+#: (also `use_area`, `usearea`) used to fall through to `_supported_type`'s
+#: "unrecognised value" fallback and silently serve the Well importer instead
+#: — shape 6's own correction found it. `supported_add_types()` is the list of
+#: truth for what this screen actually takes; use areas are a different door.
+UNSUPPORTED_IMPORT_TYPE_MESSAGE = (
+    "use areas are imported with `import_parcels` (docs/DATA-IMPORT.md); the "
+    "screen importer takes wells, points of diversion, storage and recharge sites"
+)
 
 
 def supported_add_types() -> tuple:
@@ -317,10 +330,26 @@ def infrastructure_add(request):
 def _import_type(raw):
     """Normalize a ?type / infra_type value to a supported import type.
 
-    Same module filtering as the add form — `infrastructure_import` below also
-    reverses the ADD_TYPE_BACK route (Phase 87).
+    **Only partly `_supported_type(raw)`** (ISS-179). A BLANK type — nobody
+    named one, e.g. the bare `/infrastructure/import/` the URLconf crawl and a
+    stray internal link both reach — still falls back to the first available
+    type exactly as `_supported_type` does; that half of the fallback was never
+    the bug and a page landing there with no type at all reasonably shows
+    something rather than a 404. What must NOT fall back is a type that IS a
+    real value and simply is not one this deployment serves: `?type=parcel`
+    (also `use_area`, `usearea`) named an actual, wrong door and
+    `_supported_type`'s "anything I don't recognise" fallback silently served
+    the Well importer instead — shape 6's own correction is what caught it.
+    Returns the type unchanged when it is one this deployment actually serves,
+    `None` for an unrecognised NON-BLANK value — the three callers below turn
+    `None` into a 404 with `UNSUPPORTED_IMPORT_TYPE_MESSAGE`, never a fallback
+    to a different importer than the one asked for. `supported_add_types()`
+    stays the list of truth.
     """
-    return _supported_type(raw)
+    raw = (raw or "").strip()
+    if not raw:
+        return _supported_type(raw)
+    return raw if raw in supported_add_types() else None
 
 
 @login_required
@@ -329,7 +358,9 @@ def infrastructure_import(request):
     """Bulk import landing page (the file dropzone)."""
     infra_type = _import_type(request.GET.get("type"))
     if infra_type is None:
-        raise Http404("No infrastructure type is available in this configuration.")
+        return HttpResponseNotFound(
+            UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
+        )
     back_name, back_label = ADD_TYPE_BACK[infra_type]
     return render(
         request,
@@ -357,7 +388,9 @@ def infrastructure_import_preview(request):
     """Parse the uploaded file, auto-map its columns, return the mapping UI."""
     infra_type = _import_type(request.POST.get("infra_type"))
     if infra_type is None:
-        raise Http404("No infrastructure type is available in this configuration.")
+        return HttpResponseNotFound(
+            UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
+        )
     uploaded = request.FILES.get("file")
     if not uploaded:
         return render(
@@ -404,13 +437,53 @@ def infrastructure_import_preview(request):
     )
 
 
+def _columns_from_rows(rows):
+    """Union of every row's keys, first-seen order (mirrors importer._features_to_rows)."""
+    seen = []
+    for row in rows:
+        for key in row:
+            if key not in seen:
+                seen.append(key)
+    return seen
+
+
+def _commit_failure_context(infra_type, rows, mapping, exc):
+    """Rebuild the mapping-step context after a commit-time crash (ISS-179).
+
+    The same shape `infrastructure_import_preview` renders the first time,
+    from the `rows_json` and confirmed `mapping` the crashed POST already
+    carried — so the operator can fix a mapping and press Create again
+    instead of re-uploading the file. `error` is the one thing added;
+    `_import_mapping.html` prints it above the table.
+    """
+    columns = _columns_from_rows(rows)
+    field_rows = [
+        {"field": field, "label": label, "guess": mapping.get(field, "")}
+        for field, label in importer.import_fields(infra_type)
+    ]
+    sample_table = [[row.get(col, "") for col in columns] for row in rows[:5]]
+    return {
+        "infra_type": infra_type,
+        "infra_label": ADD_TYPE_LABEL[infra_type],
+        "columns": columns,
+        "field_rows": field_rows,
+        "sample_table": sample_table,
+        "sample_count": len(sample_table),
+        "row_count": len(rows),
+        "rows_json": json.dumps(rows),
+        "error": f"Nothing was created: {type(exc).__name__}: {exc}",
+    }
+
+
 @login_required
 @require_POST
 def infrastructure_import_commit(request):
     """Validate the confirmed mapping against the parsed rows and bulk-create."""
     infra_type = _import_type(request.POST.get("infra_type"))
     if infra_type is None:
-        raise Http404("No infrastructure type is available in this configuration.")
+        return HttpResponseNotFound(
+            UNSUPPORTED_IMPORT_TYPE_MESSAGE, content_type="text/plain"
+        )
 
     try:
         rows = json.loads(request.POST.get("rows_json", "") or "[]")
@@ -455,8 +528,27 @@ def infrastructure_import_commit(request):
             .values_list("well_registration_id", flat=True)
         )
 
-    results = importer.validate_rows(rows, mapping, infra_type, existing_reg_ids)
-    created = importer.commit_rows(results, infra_type)
+    # ISS-179: commit_rows' per-row savepoint already isolates a single bad row
+    # (see its own docstring), so anything that still reaches here — a module
+    # this deployment does not have but that Task 2.1's guard missed, a
+    # programming error, anything — is genuinely unexpected. Before this catch
+    # it was a 500: HTMX swaps nothing on a 500, so the operator saw the exact
+    # same mapping table come back with no explanation (shape 1, three tries;
+    # shape 4, two). Now they get that same table back with one line saying
+    # nothing was created and why, at 200 so HTMX actually swaps it in.
+    try:
+        results = importer.validate_rows(rows, mapping, infra_type, existing_reg_ids)
+        created = importer.commit_rows(results, infra_type)
+    except Exception as exc:
+        logger.exception(
+            "infrastructure import commit failed (infra_type=%s)", infra_type
+        )
+        return render(
+            request,
+            "infrastructure/partials/_import_mapping.html",
+            _commit_failure_context(infra_type, rows, mapping, exc),
+            status=200,
+        )
     skipped = [r for r in results if r["errors"]]
 
     back_name, back_label = ADD_TYPE_BACK[infra_type]
