@@ -4,12 +4,12 @@ populate steps the operator chose.
 
 Three decisions this file locks (146-01 Task 5, all written into the plan, none
 re-decided here):
-  (a) step 1 offers three ways in — upload, type an extent, start without one —
+  (a) step 1 offers three ways in (upload, type an extent, start without one),
       and the phrase "select an existing" appears only when a boundary already
       exists to select;
   (b) step 3 never runs a populate step nobody checked, and reports an unchosen
       step as "skipped: your choice", not an error;
-  (c) "Start without one" writes nothing — no Boundary, no SiteConfig row.
+  (c) "Start without one" writes nothing: no Boundary, no SiteConfig row.
 
 ``_seed_session`` is the mechanism ``tests/test_setup_polish.py`` and
 ``tests/test_setup_wizard_says_why.py`` both use: sessions are signed-cookie
@@ -98,7 +98,7 @@ class TestStepOneThreeWaysIn:
         assert "Start without one" in body
 
     def test_an_existing_boundary_still_offers_select_an_existing(self):
-        """The wording is not deleted — it is scoped to when it is true."""
+        """The wording is not deleted, it is scoped to when it is true."""
         _boundary()
         client = _admin_client()
         resp = client.get(WIZARD_URL)
@@ -111,7 +111,7 @@ class TestStepOneThreeWaysIn:
         body = resp.content.decode()
         assert f'href="{reverse("index")}"' in body
         assert "Start without one" in body
-        # It must not be a form post action — nothing runs, nothing is created.
+        # It must not be a form post action: nothing runs, nothing is created.
         assert Boundary.objects.count() == 0
 
 
@@ -201,7 +201,7 @@ class TestStepThreePicker:
         # Every box defaults to checked.
         for step_name, _label, _desc in wizard_steps():
             assert f'value="{step_name}" checked' in body
-        # The HTMX auto-poll must not be armed yet — nothing runs unasked.
+        # The HTMX auto-poll must not be armed yet: nothing runs unasked.
         assert 'hx-trigger="load"' not in body
 
     def test_posting_no_steps_runs_zero_steps_and_skips_every_one(self):
