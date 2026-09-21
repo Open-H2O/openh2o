@@ -1,0 +1,44 @@
+{% comment %}
+  Places of use on a water right (146-02 D3): search by parcel number, assign,
+  remove by row -- writes WaterRightParcel. The account page's search-parcels
+  / assign fragment SHAPE (accounting/views.py::assign_parcel /
+  parcel_search_for_assignment, templates/accounting/partials/
+  _parcel_assignment.html), never its views: WaterRightParcel carries no
+  reporting_period and no soft-delete columns, so a remove here is a real
+  delete, not a tombstone.
+
+  Behind `parcels` as well as `surface`: WaterRightParcel.parcel is a
+  `parcels` model, and a place of use has no meaning without one. In
+  practice `surface.requires` names `parcels` (core/modules.py), so this
+  condition can never be False in a running deployment -- the guard is
+  written anyway, the same defensive style `_account_balances.html` and this
+  page's own `basin_links` gate use.
+{% endcomment %}
+{% if 'parcels' in enabled_modules %}
+<div class="card-raised page-grid-account-full">
+  <h2 class="section-header">Places of use</h2>
+  <p class="text-secondary text-sm mb-md">
+    The use areas this right serves. A use area can carry a fixed share from
+    more than one point of diversion; this list does not sum them.
+  </p>
+
+  <div class="assignment-flow">
+    <div id="places-of-use-list">
+      {% include "surface/partials/_places_of_use_list.html" %}
+    </div>
+    <input
+      type="text"
+      name="q"
+      placeholder="Add a place of use: parcel number or owner..."
+      aria-label="Add a place of use: search by parcel number or owner"
+      hx-get="{% url 'surface:water_right_search_parcels' water_right.pk %}"
+      hx-target="#places-of-use-search-results"
+      hx-trigger="keyup changed delay:300ms"
+      class="form-input assignment-search"
+    >
+  </div>
+
+  {# Empty until a search is typed; the placeholder in the box already says what to type. #}
+  <div id="places-of-use-search-results" class="assignment-search-results"></div>
+</div>
+{% endif %}

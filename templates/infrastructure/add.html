@@ -219,6 +219,15 @@
             <label class="field-label" for="max_rate_cfs">Max rate (cfs)</label>
             <input type="number" id="max_rate_cfs" name="max_rate_cfs" step="0.0001" class="form-input" placeholder="e.g. 2.5" value="{{ submitted.max_rate_cfs|default:'' }}">
           </div>
+          <div class="form-group">
+            <label class="field-label" for="water_right_id">Water right</label>
+            <select id="water_right_id" name="water_right_id" class="form-select">
+              <option value="">No right linked</option>
+              {% for wr in water_rights %}
+              <option value="{{ wr.pk }}" {% if submitted.water_right_id == wr.pk|stringformat:"s" %}selected{% endif %}>{{ wr.right_id }}</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
 

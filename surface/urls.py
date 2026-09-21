@@ -11,6 +11,14 @@ urlpatterns = [
     path("", views.pod_list, name="pod_list"),
     path("diversion/<int:pk>/", views.pod_detail, name="pod_detail"),
     path("diversion/<int:pk>/record/", views.diversion_record_create, name="diversion_record_create"),
+    # 146-02 D2: the point-to-right link.
+    path("diversion/<int:pk>/link-right/", views.pod_link_right, name="pod_link_right"),
+    # 146-02 D3: the share editor on a POD's linked use area.
+    path(
+        "diversion/<int:pk>/parcel/<int:pp_pk>/share/",
+        views.pod_parcel_edit_share,
+        name="pod_parcel_edit_share",
+    ),
 
     # Water rights views (compliance navigation)
     path("rights/", views.water_rights_list, name="water_rights_list"),
@@ -20,6 +28,22 @@ urlpatterns = [
     path("rights/import/commit/", views.water_right_import_commit, name="water_right_import_commit"),
     path("rights/<int:pk>/", views.water_right_detail, name="detail"),
     path("rights/<int:pk>/edit/", views.water_right_edit, name="water_right_edit"),
+    # 146-02 D3: a right's places of use.
+    path(
+        "rights/<int:pk>/assign-parcel/",
+        views.water_right_assign_parcel,
+        name="water_right_assign_parcel",
+    ),
+    path(
+        "rights/<int:pk>/remove-parcel/<int:wrp_pk>/",
+        views.water_right_remove_parcel,
+        name="water_right_remove_parcel",
+    ),
+    path(
+        "rights/<int:pk>/search-parcels/",
+        views.water_right_search_parcels,
+        name="water_right_search_parcels",
+    ),
 
     # GeoJSON
     path("pods/geojson/", views.pods_geojson, name="pods_geojson"),

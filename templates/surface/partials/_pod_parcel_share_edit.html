@@ -1,0 +1,24 @@
+{% comment %}
+Returned when the pencil icon is clicked on a POD's linked-use-area share
+(the wells:edit_field pattern). Replaces the content of
+#pod-parcel-share-<pp.pk>. value is 0 < f <= 1, four decimals.
+{% endcomment %}
+<form
+  hx-patch="{% url 'surface:pod_parcel_edit_share' pod.pk pp.pk %}"
+  hx-target="#pod-parcel-share-{{ pp.pk }}"
+  hx-swap="innerHTML"
+  class="row-start" style="gap: var(--space-xs); align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+
+  {% if error %}
+    <span class="text-xs" style="color: var(--furnace-400); flex-basis: 100%; text-align: right;">{{ error }}</span>
+  {% endif %}
+
+  <input type="number" name="value" value="{{ value|default:pp.fraction }}"
+    step="0.0001" min="0.0001" max="1"
+    class="form-input" style="width: 6rem; border-color: var(--color-accent);">
+  <button type="submit" class="btn-primary btn-sm">Save</button>
+  <button type="button" class="btn-secondary btn-sm"
+    hx-get="{% url 'surface:pod_parcel_edit_share' pod.pk pp.pk %}?cancel=1"
+    hx-target="#pod-parcel-share-{{ pp.pk }}"
+    hx-swap="innerHTML">Cancel</button>
+</form>

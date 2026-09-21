@@ -1002,6 +1002,7 @@ html { color-scheme: dark; }
     gap: var(--space-sm);
 }
 .assignment-flow > #parcel-assignments,
+.assignment-flow > #places-of-use-list,
 .assignment-chips {
     display: contents;
 }

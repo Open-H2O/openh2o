@@ -1,0 +1,28 @@
+{% comment %}
+  Mirrors templates/accounting/partials/_parcel_search_results.html.
+{% endcomment %}
+{% if results %}
+<div class="search-result-list">
+  {% for parcel in results %}
+  <div class="item-row">
+    <div>
+      <span class="text-base font-semibold">{{ parcel.parcel_number }}</span>
+      {% if parcel.owner_name %}
+        <span class="text-tertiary text-sm ml-sm">{{ parcel.owner_name }}</span>
+      {% endif %}
+    </div>
+    <button
+      hx-post="{% url 'surface:water_right_assign_parcel' water_right.pk %}"
+      hx-vals='{"parcel_id": "{{ parcel.pk }}"}'
+      hx-target="#places-of-use-list"
+      class="btn-primary btn-xs">
+      Add
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% elif q %}
+<p class="text-tertiary text-sm">No matching use areas found for "{{ q }}".</p>
+{% else %}
+<p class="text-tertiary text-sm">Type a parcel number or owner name to search.</p>
+{% endif %}

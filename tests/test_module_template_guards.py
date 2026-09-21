@@ -56,6 +56,12 @@ EXEMPT = {
     ("parcels", "reporting/shared_supply_check.html"),  # reporting.requires names parcels
     ("parcels", "surface/partials/_detail_pane.html"),  # surface.requires names parcels
     ("parcels", "wells/partials/_detail_pane.html"),  # wells.requires names parcels
+    # 146-02 D3. Only ever included from _places_of_use.html, which DOES carry
+    # the guard around the whole panel -- this chip-list fragment is the part
+    # that re-renders alone on assign/remove, so it has no wrapping `{% if %}`
+    # of its own. surface.requires already names parcels, the same exemption
+    # as the two entries just above.
+    ("parcels", "surface/partials/_places_of_use_list.html"),
     # ...and the one arrow back the other way, which only exists because Phase 89
     # made the pair mutual: parcels.requires now names accounting, so a template
     # under parcels/ can never render in a deployment without Accounting.

@@ -160,7 +160,10 @@
 
         <!-- Irrigated Parcels card -->
         <div class="card-raised">
-          <h2 class="section-header mb-md">Irrigated parcels</h2>
+          <h2 class="section-header mb-md field-row">
+            Irrigated parcels
+            {% include "partials/_help_tooltip.html" with label="Share" text="The share of this point's water this use area receives. Two use areas fed by two different points each carry their own fixed share -- this page does not sum them." %}
+          </h2>
           {% if irrigated_parcels %}
             {% for wip in irrigated_parcels %}
             <div class="item-row row-between">
@@ -168,12 +171,15 @@
                 {{ wip.parcel.parcel_number }}
               </a>
               <div style="text-align: right;">
-                {% comment %} 143-10 (R-114): the whole percent, worked out in the view
-                     (`round(fraction * 100)`, never `widthratio` here). Where a well's
-                     shares do not sum to 100 this says nothing more than each parcel's
-                     own share -- the seed's shares happen to sum to 100 per well; real
-                     data may not. {% endcomment %}
-                <span class="text-secondary text-sm">{{ wip.pumping_percent }}% of this well's pumping</span>
+                {% comment %} 146-02 D3: the raw fraction, four decimals, with an inline
+                     editor (the wells:edit_field GET/PATCH pattern) -- replaces the
+                     143-10 rounded whole percent. Where a well's shares do not sum to
+                     1.0 this says nothing more than each parcel's own share -- two use
+                     areas fed by two different points is Q8's allowed case, and this
+                     page does not sum them. {% endcomment %}
+                <span id="well-irrigated-share-{{ wip.pk }}" style="display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;">
+                  {% include "wells/partials/_irrigated_parcel_share_value.html" with well=well wip=wip %}
+                </span>
                 {% if wip.parcel.owner_name %}
                   <div class="text-tertiary text-xs">{{ wip.parcel.owner_name }}</div>
                 {% endif %}

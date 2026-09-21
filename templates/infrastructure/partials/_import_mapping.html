@@ -67,7 +67,7 @@ pressed Create and got this same table back with no explanation at all).
     <table class="data-table">
       <thead>
         <tr>
-          {% for col in columns %}<th class="text-mono">{{ col }}</th>{% endfor %}
+          {% for col in sample_columns|default:columns %}<th class="text-mono">{{ col }}</th>{% endfor %}
         </tr>
       </thead>
       <tbody>

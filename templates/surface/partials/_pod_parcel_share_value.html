@@ -1,0 +1,14 @@
+{% comment %}
+Returned after a successful PATCH or cancel. The wells:edit_field pattern
+(wells/partials/_field_value.html), scoped to one PointOfDiversionParcel row.
+Replaces the content of #pod-parcel-share-<pp.pk>.
+{% endcomment %}
+<span class="text-secondary text-sm">share {{ pp.fraction|floatformat:4 }}</span>
+<button
+  hx-get="{% url 'surface:pod_parcel_edit_share' pod.pk pp.pk %}"
+  hx-target="#pod-parcel-share-{{ pp.pk }}"
+  hx-swap="innerHTML"
+  style="background: none; border: none; cursor: pointer; color: var(--color-text-tertiary); padding: 2px 4px; border-radius: var(--radius-sm);"
+  title="Edit share">
+  &#9998;
+</button>

@@ -279,13 +279,15 @@ def test_the_water_year_subtotal_sums_the_deltas_and_names_the_unit_once():
         assert "(AF)" not in header
 
 
-def test_irrigated_parcel_shares_render_as_whole_percents():
-    """R-114: the fraction is worked out to a whole percent in the view,
-    never `{% widthratio %}` in the template."""
+def test_irrigated_parcel_shares_render_as_the_raw_fraction():
+    """146-02 D3 retargets R-114: an editable share replaced the rounded whole
+    percent (`the row shows "share 1.0000" and the edit control`, 146-02-PLAN.md
+    Task 2). The fraction is shown to four decimals, not rounded to a percent,
+    because the share is now something an operator can also set directly."""
     well = WellFactory(name="Shared well")
     WellIrrigatedParcelFactory(well=well, parcel=ParcelFactory(), fraction=Decimal("1.0000"))
     WellIrrigatedParcelFactory(well=well, parcel=ParcelFactory(), fraction=Decimal("0.2500"))
 
     html = _page(well)
-    assert "100% of this well's pumping" in html
-    assert "25% of this well's pumping" in html
+    assert "share 1.0000" in html
+    assert "share 0.2500" in html

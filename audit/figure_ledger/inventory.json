@@ -1389,17 +1389,6 @@
     "id": "FIG-surface-005",
     "app": "surface",
     "kind": "figure",
-    "template": "templates/surface/partials/_detail_pane.html",
-    "line": 307,
-    "column": 74,
-    "expression": "{{ water_right.face_value_acre_feet|floatformat:2|intcomma }}",
-    "enclosing_loop": null,
-    "nearest_label": "{{ water_right.face_value_acre_feet|"
-  },
-  {
-    "id": "FIG-surface-006",
-    "app": "surface",
-    "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
     "line": 44,
     "column": 53,
@@ -1408,7 +1397,7 @@
     "nearest_label": "{{ record.volume_acre_feet|"
   },
   {
-    "id": "FIG-surface-007",
+    "id": "FIG-surface-006",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1419,7 +1408,7 @@
     "nearest_label": "{{ record.returned_af|"
   },
   {
-    "id": "FIG-surface-008",
+    "id": "FIG-surface-007",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1430,7 +1419,7 @@
     "nearest_label": "{{ record.consumed_acre_feet|"
   },
   {
-    "id": "FIG-surface-009",
+    "id": "FIG-surface-008",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1441,7 +1430,7 @@
     "nearest_label": "{{ group.diverted|"
   },
   {
-    "id": "FIG-surface-010",
+    "id": "FIG-surface-009",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1452,7 +1441,7 @@
     "nearest_label": "{{ group.returned|"
   },
   {
-    "id": "FIG-surface-011",
+    "id": "FIG-surface-010",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_diversion_records.html",
@@ -1463,7 +1452,7 @@
     "nearest_label": "{{ group.retained|"
   },
   {
-    "id": "FIG-surface-012",
+    "id": "FIG-surface-011",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_list_results.html",
@@ -1474,7 +1463,29 @@
     "nearest_label": "{{ right.face_value_acre_feet|"
   },
   {
+    "id": "FIG-surface-012",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_pod_parcel_share_value.html",
+    "line": 6,
+    "column": 59,
+    "expression": "{{ pp.fraction|floatformat:4 }}",
+    "enclosing_loop": null,
+    "nearest_label": "share {{ pp.fraction|"
+  },
+  {
     "id": "FIG-surface-013",
+    "app": "surface",
+    "kind": "figure",
+    "template": "templates/surface/partials/_pod_water_right_panel.html",
+    "line": 43,
+    "column": 70,
+    "expression": "{{ water_right.face_value_acre_feet|floatformat:2|intcomma }}",
+    "enclosing_loop": null,
+    "nearest_label": "{{ water_right.face_value_acre_feet|"
+  },
+  {
+    "id": "FIG-surface-014",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1485,7 +1496,7 @@
     "nearest_label": "{{ water_right.max_rate_cfs|"
   },
   {
-    "id": "FIG-surface-014",
+    "id": "FIG-surface-015",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1496,7 +1507,7 @@
     "nearest_label": "{{ water_right.net_acreage|"
   },
   {
-    "id": "FIG-surface-015",
+    "id": "FIG-surface-016",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1507,7 +1518,7 @@
     "nearest_label": "{{ water_right.face_value_acre_feet|"
   },
   {
-    "id": "FIG-surface-016",
+    "id": "FIG-surface-017",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1518,7 +1529,7 @@
     "nearest_label": "{{ water_right.face_value_acre_feet|"
   },
   {
-    "id": "FIG-surface-017",
+    "id": "FIG-surface-018",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1529,7 +1540,7 @@
     "nearest_label": "{{ current_totals.diverted|"
   },
   {
-    "id": "FIG-surface-018",
+    "id": "FIG-surface-019",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1540,7 +1551,7 @@
     "nearest_label": "{{ remaining|"
   },
   {
-    "id": "FIG-surface-019",
+    "id": "FIG-surface-020",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1551,7 +1562,7 @@
     "nearest_label": "{{ row.total|"
   },
   {
-    "id": "FIG-surface-020",
+    "id": "FIG-surface-021",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1562,7 +1573,7 @@
     "nearest_label": "{{ water_right.face_value_acre_feet|"
   },
   {
-    "id": "FIG-surface-021",
+    "id": "FIG-surface-022",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1573,7 +1584,7 @@
     "nearest_label": "{{ current_totals.diverted|"
   },
   {
-    "id": "FIG-surface-022",
+    "id": "FIG-surface-023",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1584,7 +1595,7 @@
     "nearest_label": "{{ record.volume_acre_feet|"
   },
   {
-    "id": "FIG-surface-023",
+    "id": "FIG-surface-024",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1595,7 +1606,7 @@
     "nearest_label": "{{ group.diverted|"
   },
   {
-    "id": "FIG-surface-024",
+    "id": "FIG-surface-025",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1606,7 +1617,7 @@
     "nearest_label": "Max rate: {{ pod.max_rate_cfs|"
   },
   {
-    "id": "FIG-surface-025",
+    "id": "FIG-surface-026",
     "app": "surface",
     "kind": "figure",
     "template": "templates/surface/partials/_water_right_detail_pane.html",
@@ -1621,7 +1632,7 @@
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 210,
+    "line": 216,
     "column": 80,
     "expression": "{{ monitoring.reference_elevation_ft|floatformat:1 }}",
     "enclosing_loop": null,
@@ -1632,7 +1643,7 @@
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 268,
+    "line": 274,
     "column": 60,
     "expression": "{{ read.current_value|floatformat:2|intcomma }}",
     "enclosing_loop": "read in year.reads",
@@ -1643,7 +1654,7 @@
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 270,
+    "line": 276,
     "column": 47,
     "expression": "{{ read.calculated_volume|floatformat:2|intcomma }}",
     "enclosing_loop": "read in year.reads",
@@ -1654,7 +1665,7 @@
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 279,
+    "line": 285,
     "column": 72,
     "expression": "{{ year.delta_total|floatformat:2|intcomma }}",
     "enclosing_loop": "year in group.years",
@@ -1665,7 +1676,7 @@
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 312,
+    "line": 318,
     "column": 49,
     "expression": "{{ row.close|floatformat:2 }}",
     "enclosing_loop": "row in year.months",
@@ -1676,7 +1687,7 @@
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 313,
+    "line": 319,
     "column": 129,
     "expression": "{{ row.change|floatformat:2 }}",
     "enclosing_loop": "row in year.months",
@@ -1687,7 +1698,7 @@
     "app": "wells",
     "kind": "figure",
     "template": "templates/wells/partials/_detail_pane.html",
-    "line": 320,
+    "line": 326,
     "column": 109,
     "expression": "{{ year.net_change|floatformat:2 }}",
     "enclosing_loop": "year in water_levels.years",
@@ -1714,5 +1725,16 @@
     "expression": "{{ ef.value|floatformat:2 }}",
     "enclosing_loop": null,
     "nearest_label": "{{ ef.value|"
+  },
+  {
+    "id": "FIG-wells-010",
+    "app": "wells",
+    "kind": "figure",
+    "template": "templates/wells/partials/_irrigated_parcel_share_value.html",
+    "line": 6,
+    "column": 60,
+    "expression": "{{ wip.fraction|floatformat:4 }}",
+    "enclosing_loop": null,
+    "nearest_label": "share {{ wip.fraction|"
   }
 ]

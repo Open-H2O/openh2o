@@ -23,7 +23,12 @@ from core.access import public_in_open_demo
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from core.workspace import detail_response, list_response, redirect_to_selected
 from wells import measurement_history
-from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES, Well
+from wells.models import (
+    MEASUREMENT_METHOD_CHOICES,
+    PUMP_TYPE_CHOICES,
+    Well,
+    WellIrrigatedParcel,
+)
 
 
 EDITABLE_FIELDS = {
@@ -168,13 +173,10 @@ def _well_detail_context(well):
     workspace's pre-loaded ``?selected=`` pane so all three are identical.
     """
     current_meters = well.wellmeter_set.filter(is_current=True).select_related("meter")
+    # 146-02 D3: the raw fraction (four decimals, "share 1.0000") is now shown
+    # and edited directly -- see _irrigated_parcel_share_value.html -- rather
+    # than a rounded whole percent computed here.
     irrigated_parcels = list(well.wellirrigatedparcel_set.select_related("parcel").all())
-    # 143-10 (R-114): the whole percent a reader can act on, worked out here so
-    # the template does no arithmetic (never `widthratio`). The seed's shares
-    # sum to 100 per well; real data may not, and where they don't this says
-    # nothing more than each parcel's own share.
-    for wip in irrigated_parcels:
-        wip.pumping_percent = round(float(wip.fraction) * 100)
     monitoring = getattr(well, "monitoringwell", None)
     # ISS-145 (137-03). The page's own description promises "measurement
     # history"; these two are it. Both are built in wells/measurement_history.py,
@@ -334,6 +336,46 @@ def well_edit_field(request, pk):
         "value": getattr(well, field),
     }
     return render(request, "wells/partials/_field_value.html", context)
+
+
+@login_required
+@require_http_methods(["GET", "PATCH"])
+def well_irrigated_parcel_edit_share(request, pk, wip_pk):
+    """Inline fraction editor for a well's linked use area (146-02 D3).
+
+    Same GET/PATCH pattern as well_edit_field above, scoped to one
+    WellIrrigatedParcel row rather than a field on the well itself.
+    0 < fraction <= 1, four decimals -- the surface app's identical
+    pod_parcel_edit_share (surface/views.py) is the other half of this door.
+    """
+    well = get_object_or_404(Well, pk=pk)
+    wip = get_object_or_404(WellIrrigatedParcel, pk=wip_pk, well=well)
+
+    if request.method == "GET":
+        context = {"well": well, "wip": wip}
+        if request.GET.get("cancel"):
+            return render(request, "wells/partials/_irrigated_parcel_share_value.html", context)
+        return render(request, "wells/partials/_irrigated_parcel_share_edit.html", context)
+
+    body_params = parse_qs(request.body.decode("utf-8"))
+    raw_value = body_params.get("value", [""])[0].strip()
+    try:
+        fraction = coerce_decimal(
+            raw_value, "Share", min_value=0, min_exclusive=True, allow_blank=False
+        )
+    except FieldValidationError as exc:
+        return render(request, "wells/partials/_irrigated_parcel_share_edit.html", {
+            "well": well, "wip": wip, "value": raw_value, "error": str(exc),
+        })
+    if fraction > 1:
+        return render(request, "wells/partials/_irrigated_parcel_share_edit.html", {
+            "well": well, "wip": wip, "value": raw_value,
+            "error": "Share must be greater than 0 and no more than 1.",
+        })
+
+    wip.fraction = fraction
+    wip.save(update_fields=["fraction"])
+    return render(request, "wells/partials/_irrigated_parcel_share_value.html", {"well": well, "wip": wip})
 
 
 @public_in_open_demo

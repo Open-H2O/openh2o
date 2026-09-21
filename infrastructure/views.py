@@ -147,9 +147,24 @@ def _add_context(infra_type, **extra):
         "back_label": back_label,
         "measurement_method_choices": MEASUREMENT_METHOD_CHOICES,
         "pump_type_choices": PUMP_TYPE_CHOICES,
+        # 146-02 D2: the diversion card's "Water right" select. Local import,
+        # guarded, the same reason `infra_type == "diversion"` branches below
+        # import `surface.models` locally -- `surface` is truly optional
+        # (Phase 87) and this context is built for every add-page render, not
+        # only a diversion one.
+        "water_rights": _water_rights_for_select(),
     }
     context.update(extra)
     return context
+
+
+def _water_rights_for_select():
+    """Every WaterRight, right_id order, or an empty list without `surface`."""
+    if not is_enabled("surface"):
+        return []
+    from surface.models import WaterRight
+
+    return WaterRight.objects.order_by("right_id")
 
 
 @login_required
@@ -259,7 +274,7 @@ def infrastructure_add(request):
         # Local import: `surface` is an optional module (Phase 87), so this must
         # not run at module scope. This branch is only reachable when the add
         # form offered a diversion type, which it does not do without the module.
-        from surface.models import PointOfDiversion, PointOfDiversionParcel
+        from surface.models import PointOfDiversion, PointOfDiversionParcel, WaterRight
 
         location = _parse_point(geometry_json)
         if not location:
@@ -268,10 +283,20 @@ def infrastructure_add(request):
             max_rate_cfs = coerce_decimal(request.POST.get("max_rate_cfs"), "Max Rate (cfs)", min_value=0)
         except FieldValidationError as exc:
             return _error("diversion", str(exc))
+        # 146-02 D2: optional at creation, the same select the POD page's own
+        # "Water right" panel offers -- a blank, stale or tampered value falls
+        # back to unlinked rather than a 500, since this is a plain <select>
+        # value, not a get_object_or_404'd URL segment.
+        water_right_id = request.POST.get("water_right_id", "").strip()
+        water_right = (
+            WaterRight.objects.filter(pk=water_right_id).first()
+            if water_right_id
+            else None
+        )
         pod = PointOfDiversion.objects.create(
             name=name,
             location=location,
-            water_right=None,
+            water_right=water_right,
             stream_name=request.POST.get("stream_name", ""),
             max_rate_cfs=max_rate_cfs,
             status=status,
@@ -420,6 +445,13 @@ def infrastructure_import_preview(request):
         for field, label in importer.import_fields(infra_type)
     ]
     sample_table = [[row.get(col, "") for col in columns] for row in rows[:5]]
+    # 146-02 D2: the sample table's OWN header, separate from `columns` (which
+    # the field-mapping <select>s above also iterate as the file's real source
+    # columns -- appending a synthetic entry there would offer it as a
+    # selectable, non-existent column).
+    sample_columns = _diversion_water_right_preview_column(
+        infra_type, rows, mapping, columns, sample_table
+    )
 
     return render(
         request,
@@ -428,6 +460,7 @@ def infrastructure_import_preview(request):
             "infra_type": infra_type,
             "infra_label": ADD_TYPE_LABEL[infra_type],
             "columns": columns,
+            "sample_columns": sample_columns,
             "field_rows": field_rows,
             "sample_table": sample_table,
             "sample_count": len(sample_table),
@@ -435,6 +468,39 @@ def infrastructure_import_preview(request):
             "rows_json": json.dumps(rows),
         },
     )
+
+
+def _diversion_water_right_preview_column(infra_type, rows, mapping, columns, sample_table):
+    """Append "Water right (resolved)" to the sample preview, diversion only.
+
+    146-02 D2: the preview shows the resolved right per row, so an operator
+    sees a typo'd APPL_ID before committing rather than after. Mutates
+    `sample_table`'s rows in place (one cell each) and returns the header row
+    to show above them -- `columns` itself must stay untouched, since the
+    field-mapping step's <select>s also iterate it as the file's real source
+    columns.
+    """
+    if infra_type != "diversion" or not mapping.get("water_right"):
+        return columns
+
+    existing_rights = {}
+    if is_enabled("surface"):
+        from surface.models import WaterRight
+
+        existing_rights = dict(WaterRight.objects.values_list("right_id", "pk"))
+
+    right_col = mapping["water_right"]
+    for i, row in enumerate(rows[: len(sample_table)]):
+        raw = (row.get(right_col) or "").strip()
+        if not raw:
+            resolved = "(none)"
+        elif raw in existing_rights:
+            resolved = raw
+        else:
+            resolved = f"not found: {raw}"
+        sample_table[i].append(resolved)
+
+    return list(columns) + ["Water right (resolved)"]
 
 
 def _columns_from_rows(rows):

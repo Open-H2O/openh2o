@@ -40,6 +40,7 @@ from django.contrib.gis.geos import (
 from django.db import transaction
 
 from core.modules import is_enabled
+from parcels.models import Parcel
 from wells.models import MEASUREMENT_METHOD_CHOICES, PUMP_TYPE_CHOICES
 
 # Synthetic column name carrying a feature geometry as a GeoJSON string.
@@ -173,12 +174,27 @@ _WELL_ALIASES = {
 }
 
 _DIVERSION_ALIASES = {
-    "name": {"name", "pod_name", "diversion_name"},
+    # "appl_pod" replaces "pod_name" as the state alias (146-02 D2): the
+    # shape-1 POD file (points-of-diversion.csv, header read 2026-09-20)
+    # carries BOTH `APPL_POD` (the state's own natural POD id, populated on
+    # every row) and `POD_NAME` (blank on every row in the real export).
+    # auto_map_columns picks one column per field from a Python set with no
+    # tie-break when two columns both match, so the two could not safely
+    # coexist in this set -- keeping "pod_name" would risk silently mapping
+    # `name` to the always-blank column half the time. The mapping step still
+    # lets the operator override for a file where POD_NAME really is filled in.
+    "name": {"name", "diversion_name", "appl_pod"},
     "stream_name": {"stream", "stream_name", "source", "source_name"},
-    "max_rate_cfs": {"max_rate_cfs", "max_rate", "cfs", "rate_cfs"},
+    "max_rate_cfs": {"max_rate_cfs", "max_rate", "cfs", "rate_cfs", "direct_diversion_rate"},
     "latitude": {"lat", "latitude", "y"},
     "longitude": {"lon", "lng", "long", "longitude", "x"},
     "geometry": {GEOMETRY_COL, "geometry", "wkt", "geom"},
+    # 146-02 D2: the state's POD file names the right by `APPL_ID`; resolved
+    # against WaterRight.right_id in validate_rows, never taken as a raw FK pk.
+    "water_right": {"appl_id", "water_right", "right_id", "water_right_id"},
+    # 146-02 D3: when present and matching a Parcel, writes a
+    # PointOfDiversionParcel at fraction 1.0 (commit_rows).
+    "parcel_number": {"parcel_number", "parcel_no", "apn"},
 }
 
 _RECHARGE_ALIASES = {
@@ -224,6 +240,8 @@ FIELD_LABELS = {
     "site_type": "Site Type",
     "capacity_acre_feet": "Capacity (acre-feet)",
     "operator": "Operator",
+    "water_right": "Water Right (right ID)",
+    "parcel_number": "Parcel Number (use area)",
 }
 
 
@@ -321,6 +339,24 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids):
     decimal_fields = _DECIMAL_FIELDS.get(infra_type, [])
     choice_fields = _CHOICE_FIELDS.get(infra_type, {})
 
+    # 146-02 D2/D3: built once, not per row. `surface` is a truly-optional
+    # module (Phase 87), so its model is imported locally and only when a
+    # diversion row is actually being validated -- the same guard commit_rows
+    # already uses for this exact model. In practice this branch is only
+    # reached when the deployment has `surface` enabled at all (the view's
+    # `_import_type` already filtered to `supported_add_types()`), but the
+    # local import stays defensive rather than assuming that of a function
+    # other callers could reach directly.
+    existing_rights = {}
+    if infra_type == "diversion" and mapping.get("water_right") and is_enabled("surface"):
+        from surface.models import WaterRight
+
+        existing_rights = dict(WaterRight.objects.values_list("right_id", "pk"))
+
+    existing_parcels = {}
+    if infra_type == "diversion" and mapping.get("parcel_number"):
+        existing_parcels = dict(Parcel.objects.values_list("parcel_number", "pk"))
+
     for index, row in enumerate(rows):
         errors = []
         warnings = []
@@ -385,6 +421,42 @@ def validate_rows(rows, mapping, infra_type, existing_reg_ids):
             val = src(field)
             if val:
                 data[field] = val
+
+        # --- water right (diversion only, 146-02 D2) ---
+        # An unresolved value is a row error naming the value -- never
+        # silently None, which is how a diversion used to lose its right on
+        # a typo'd APPL_ID with nobody the wiser until CalWATRS filing.
+        if infra_type == "diversion":
+            right_val = src("water_right")
+            if right_val:
+                right_pk = existing_rights.get(right_val)
+                if right_pk is None:
+                    errors.append(
+                        f"no water right with id {right_val}; import the rights "
+                        "list first."
+                    )
+                else:
+                    data["water_right_id"] = right_pk
+
+        # --- parcel_number -> a PointOfDiversionParcel at fraction 1.0
+        #     (diversion only, 146-02 D3). Present-but-unmatched is not an
+        #     error (a operator's PARCEL_NUMBER may name a use area not yet
+        #     entered) -- only a MATCH links anything, and the preview says
+        #     so via the "warnings" list rather than staying silent either way.
+        if infra_type == "diversion":
+            parcel_val = src("parcel_number")
+            if parcel_val:
+                parcel_pk = existing_parcels.get(parcel_val)
+                if parcel_pk is not None:
+                    data["_pod_parcel_id"] = parcel_pk
+                    warnings.append(
+                        f"use area {parcel_val} will be linked at share 1.0000."
+                    )
+                else:
+                    warnings.append(
+                        f"parcel_number '{parcel_val}' matches no use area on "
+                        "record; not linked."
+                    )
 
         results.append(
             {"index": index, "data": data, "errors": errors, "warnings": warnings}
@@ -560,9 +632,22 @@ def commit_rows(valid_results, infra_type):
 
                         Well.objects.create(**data)
                     elif infra_type == "diversion":
-                        from surface.models import PointOfDiversion
+                        from surface.models import PointOfDiversion, PointOfDiversionParcel
 
-                        PointOfDiversion.objects.create(water_right=None, **data)
+                        row_data = dict(data)
+                        # `_pod_parcel_id` (146-02 D3) is a Parcel pk resolved
+                        # in validate_rows, not a PointOfDiversion field -- it
+                        # has to come out before create() and is used AFTER,
+                        # once the POD itself exists to link to.
+                        parcel_id = row_data.pop("_pod_parcel_id", None)
+                        row_data.setdefault("water_right_id", None)
+                        pod = PointOfDiversion.objects.create(**row_data)
+                        if parcel_id is not None:
+                            PointOfDiversionParcel.objects.create(
+                                point_of_diversion=pod,
+                                parcel_id=parcel_id,
+                                fraction=Decimal("1.0"),
+                            )
                     elif infra_type in ("recharge_site", "storage"):
                         from recharge.models import RechargeSite
 

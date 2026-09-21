@@ -7,10 +7,19 @@ primary entry point for surface diversions — pod_detail renders the one-hop wa
 journey from a point of diversion through the parcels it serves. water_rights_list
 and water_right_detail expose the underlying entitlements, diversion_record_create
 records a diversion event, and pods_geojson feeds the diversion map.
+
+146-02 Task 2 (D2, D3) adds the doors between the two: pod_link_right lets a
+point of diversion name its right, water_right_assign_parcel /
+water_right_remove_parcel / water_right_search_parcels are the right's places
+of use (the account page's search-parcels / assign fragment shape,
+accounting/views.py, reused as a shape rather than imported), and
+pod_parcel_edit_share is the inline fraction editor on a POD's linked use
+areas (the wells:edit_field GET/PATCH pattern, wells/views.py).
 """
 import json
 import logging
 from decimal import Decimal
+from urllib.parse import parse_qs
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -18,14 +27,16 @@ from django.core.serializers import serialize
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 from core.access import public_in_open_demo
 from core.map_labels import map_label
 
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
 from core.modules import is_enabled
+from core.validation import FieldValidationError, coerce_decimal
 from core.workspace import detail_response, list_response
+from parcels.models import Parcel
 from surface import importer
 from surface.forms import DiversionRecordForm, WaterRightForm
 from surface.models import (
@@ -34,6 +45,7 @@ from surface.models import (
     PointOfDiversion,
     PointOfDiversionParcel,
     WaterRight,
+    WaterRightParcel,
 )
 
 logger = logging.getLogger(__name__)
@@ -199,18 +211,15 @@ def _pod_detail_context(pod):
         None,
     )
 
-    # Linked use areas (parcel connections). share_percent is computed here,
-    # not with {% widthratio %} in the template (143-10, Task 4's same rule
-    # for the well's irrigated-parcel share): a whole percent of this POD's
-    # deliveries the parcel receives.
+    # Linked use areas (parcel connections). 146-02 D3: the share is now shown
+    # and edited as the raw fraction (four decimals, "share 1.0000"), not a
+    # rounded whole percent -- see _pod_parcel_share_value.html.
     pod_parcels = list(
         PointOfDiversionParcel.objects
         .filter(point_of_diversion=pod)
         .select_related("parcel")
         .order_by("parcel__parcel_number")
     )
-    for pp in pod_parcels:
-        pp.share_percent = round(float(pp.fraction) * 100)
 
     # Recharge areas this diversion fills (Phase 62). For a dual-purpose Merced
     # River diversion this lists the Flood-MAR areas it floods, right next to the
@@ -238,8 +247,12 @@ def _pod_detail_context(pod):
     rediverted_from = pod.rediverted_from
     rediversions = pod.rediversions.order_by("name")
 
-    # Water right info (may be None)
+    # Water right info (may be None). all_water_rights feeds the "Water right"
+    # panel's select (146-02 D2) -- ordered by right_id, same as the water
+    # rights list, so a district with a handful of rights reads them in the
+    # order it already knows them.
     water_right = pod.water_right
+    all_water_rights = WaterRight.objects.order_by("right_id")
 
     # Inline form for adding diversion records
     form = DiversionRecordForm()
@@ -270,6 +283,7 @@ def _pod_detail_context(pod):
         "rediverted_from": rediverted_from,
         "rediversions": rediversions,
         "water_right": water_right,
+        "all_water_rights": all_water_rights,
         "form": form,
         "geojson": geojson,
     }
@@ -293,6 +307,33 @@ def pod_detail(request, pk):
         page_template="surface/pod_detail.html",
         context=context,
     )
+
+
+@login_required
+@require_POST
+def pod_link_right(request, pk):
+    """HTMX POST: link or unlink a point of diversion's water right (146-02 D2).
+
+    The POD page's "Water right" panel is a select of every WaterRight,
+    ordered by right_id, with a blank "No right linked" option. A blank
+    submit clears the FK (an operator un-linking a mistaken match); any other
+    value must resolve to a real right -- ``get_object_or_404`` rather than a
+    silent no-op if the pk is stale.
+    """
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    raw = request.POST.get("water_right_id", "").strip()
+    if raw:
+        pod.water_right = get_object_or_404(WaterRight, pk=raw)
+    else:
+        pod.water_right = None
+    pod.save(update_fields=["water_right"])
+
+    return render(request, "surface/partials/_pod_water_right_panel.html", {
+        "pod": pod,
+        "water_right": pod.water_right,
+        "all_water_rights": WaterRight.objects.order_by("right_id"),
+        "basin_links": pod.basin_links.exists() if is_enabled("recharge") else False,
+    })
 
 
 @login_required
@@ -363,6 +404,48 @@ def diversion_record_create(request, pk):
         "form": form,
         "period_warning": period_warning,
     })
+
+
+@login_required
+@require_http_methods(["GET", "PATCH"])
+def pod_parcel_edit_share(request, pk, pp_pk):
+    """Inline fraction editor for a POD's linked use area (146-02 D3).
+
+    The wells:edit_field GET/PATCH pattern (wells/views.py), scoped to one
+    PointOfDiversionParcel row rather than a field on the parent model. GET
+    returns the edit form (or, with ``?cancel=1``, the plain value); PATCH
+    validates and saves. 0 < fraction <= 1 -- a share of exactly 0 means
+    nothing is served and belongs to removing the link, not a fraction, and a
+    share over 1 would claim more than the whole point delivers.
+    """
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    pp = get_object_or_404(PointOfDiversionParcel, pk=pp_pk, point_of_diversion=pod)
+
+    if request.method == "GET":
+        context = {"pod": pod, "pp": pp}
+        if request.GET.get("cancel"):
+            return render(request, "surface/partials/_pod_parcel_share_value.html", context)
+        return render(request, "surface/partials/_pod_parcel_share_edit.html", context)
+
+    body_params = parse_qs(request.body.decode("utf-8"))
+    raw_value = body_params.get("value", [""])[0].strip()
+    try:
+        fraction = coerce_decimal(
+            raw_value, "Share", min_value=0, min_exclusive=True, allow_blank=False
+        )
+    except FieldValidationError as exc:
+        return render(request, "surface/partials/_pod_parcel_share_edit.html", {
+            "pod": pod, "pp": pp, "value": raw_value, "error": str(exc),
+        })
+    if fraction > Decimal("1"):
+        return render(request, "surface/partials/_pod_parcel_share_edit.html", {
+            "pod": pod, "pp": pp, "value": raw_value,
+            "error": "Share must be greater than 0 and no more than 1.",
+        })
+
+    pp.fraction = fraction
+    pp.save(update_fields=["fraction"])
+    return render(request, "surface/partials/_pod_parcel_share_value.html", {"pod": pod, "pp": pp})
 
 
 # ---------------------------------------------------------------------------
@@ -680,7 +763,28 @@ def _water_right_detail_context(water_right):
         "pod_breakdown": pod_breakdown,
         "active_curtailments": active_curtailments,
         "pods_geojson": pods_geojson,
+        # 146-02 D3: this right's places of use. Gated on `parcels` for the
+        # same reason `basin_links` above is gated on `recharge` -- surface
+        # requires parcels (core/modules.py), so this is always True in a
+        # valid deployment; the guard is defensive documentation, not a
+        # reachable branch.
+        "places_of_use": _water_right_places_of_use(water_right) if is_enabled("parcels") else [],
     }
+
+
+def _water_right_places_of_use(water_right):
+    """This right's WaterRightParcel rows, parcel-number order.
+
+    Shared by the detail context and by assign/remove, which re-render just
+    the `_places_of_use_list.html` fragment (146-02 D3, the account page's
+    search-parcels / assign fragment shape -- accounting/views.py -- reused as
+    a shape, never its views).
+    """
+    return list(
+        WaterRightParcel.objects.filter(water_right=water_right)
+        .select_related("parcel")
+        .order_by("parcel__parcel_number")
+    )
 
 
 @login_required
@@ -701,6 +805,68 @@ def water_right_detail(request, pk):
         page_template="surface/water_right_detail.html",
         context=context,
     )
+
+
+# ---------------------------------------------------------------------------
+# Places of use (146-02 D3): the account page's search-parcels / assign
+# fragment shape (accounting/views.py::assign_parcel / remove_parcel /
+# parcel_search_for_assignment), reused as a shape only -- WaterRightParcel
+# has no soft-delete columns (no added_date/removed_date), so "remove" here
+# is a real delete, not a tombstone.
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_POST
+def water_right_assign_parcel(request, pk):
+    """Assign a parcel as a place of use for a water right."""
+    water_right = get_object_or_404(WaterRight, pk=pk)
+    parcel = get_object_or_404(Parcel, pk=request.POST.get("parcel_id"))
+    WaterRightParcel.objects.get_or_create(water_right=water_right, parcel=parcel)
+
+    return render(request, "surface/partials/_places_of_use_list.html", {
+        "water_right": water_right,
+        "places_of_use": _water_right_places_of_use(water_right),
+    })
+
+
+@login_required
+@require_POST
+def water_right_remove_parcel(request, pk, wrp_pk):
+    """Remove a place of use from a water right (a real delete: no soft-delete column)."""
+    water_right = get_object_or_404(WaterRight, pk=pk)
+    wrp = get_object_or_404(WaterRightParcel, pk=wrp_pk, water_right=water_right)
+    wrp.delete()
+
+    return render(request, "surface/partials/_places_of_use_list.html", {
+        "water_right": water_right,
+        "places_of_use": _water_right_places_of_use(water_right),
+    })
+
+
+@login_required
+@require_GET
+def water_right_search_parcels(request, pk):
+    """HTMX endpoint: search for parcels to add as a place of use."""
+    water_right = get_object_or_404(WaterRight, pk=pk)
+    q = request.GET.get("q", "").strip()
+
+    results = []
+    if q:
+        already = WaterRightParcel.objects.filter(
+            water_right=water_right
+        ).values_list("parcel_id", flat=True)
+        results = (
+            Parcel.objects.filter(
+                Q(parcel_number__icontains=q) | Q(owner_name__icontains=q)
+            )
+            .exclude(pk__in=already)
+            .order_by("parcel_number")[:10]
+        )
+
+    return render(request, "surface/partials/_places_of_use_search_results.html", {
+        "water_right": water_right, "results": results, "q": q,
+    })
 
 
 @public_in_open_demo
