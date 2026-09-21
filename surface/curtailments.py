@@ -9,8 +9,8 @@ the panel says so in its footer.
 The rule was written on an observation, not memory: `146-02-EVIDENCE.md` Task 4
 step 1 verified on a real shape-1 instance, before this module existed, that
 the previous filter (`priority_date_cutoff__gte=priority_date`) flagged the
-SENIOR right and ignored the order's watershed -- backwards from every
-curtailment order the State Water Board has issued. Task 4 step 2 then read
+SENIOR right and ignored the order's watershed -- the opposite direction from
+the one order read in step 2 (one order, not a survey). Task 4 step 2 read
 one such order (State Water Board, August 20, 2021, "INITIAL ORDER IMPOSING
 WATER RIGHT CURTAILMENT AND REPORTING REQUIREMENTS IN THE SACRAMENTO-SAN
 JOAQUIN DELTA WATERSHED", https://www.waterboards.ca.gov/drought/delta/docs/082021_order_sm.pdf)
