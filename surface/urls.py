@@ -56,6 +56,11 @@ urlpatterns = [
         name="water_right_search_parcels",
     ),
 
+    # Curtailment orders (146-02 D6, ISS-180)
+    path("curtailments/", views.curtailments_list, name="curtailments_list"),
+    path("curtailments/add/", views.curtailment_create, name="curtailment_create"),
+    path("curtailments/<int:pk>/edit/", views.curtailment_edit, name="curtailment_edit"),
+
     # GeoJSON
     path("pods/geojson/", views.pods_geojson, name="pods_geojson"),
 ]

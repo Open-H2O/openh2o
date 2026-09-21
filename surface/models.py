@@ -326,7 +326,11 @@ class CurtailmentOrder(models.Model):
     title = models.CharField(max_length=300)
     effective_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
-    watershed = models.CharField(max_length=200, blank=True)
+    watershed = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="As the order names it; matched against a right's watershed or source name.",
+    )
     priority_date_cutoff = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     notes = models.TextField(blank=True)

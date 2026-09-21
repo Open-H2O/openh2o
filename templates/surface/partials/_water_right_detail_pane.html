@@ -31,7 +31,7 @@
   the account page's grid UNCHANGED: Right information beside "Face value
   against records" at one height, the records table full width below
   (grouped by water year, every record now, not just the last 12), then
-  Points of diversion and Active curtailments side by side.
+  Points of diversion and Curtailment orders that may apply, side by side.
 {% endcomment %}
 <div class="pane-stack">
   <div class="page-grid-account">
@@ -304,11 +304,12 @@
     </div>
 
     {% comment %}
-      Points of diversion + Active curtailments, side by side when a
-      curtailment applies; otherwise Points of diversion spans full width
-      rather than sitting alone in a half-width column beside nothing.
+      Points of diversion + Active curtailments, side by side when an order
+      may apply or a right could not be matched for want of a date;
+      otherwise Points of diversion spans full width rather than sitting
+      alone in a half-width column beside nothing.
     {% endcomment %}
-    {% if active_curtailments %}
+    {% if active_curtailments or unmatched_curtailments %}
     <div class="page-grid-2col page-grid-account-full">
       <div class="card-raised">
         <h2 class="section-header mb-md">Points of diversion</h2>
@@ -334,7 +335,7 @@
 
       <div class="card-raised">
         <h2 class="section-header mb-md text-accent">
-          Active curtailments affecting this right
+          Curtailment orders that may apply
           {% include "partials/_demo_marker.html" %}
         </h2>
         {% if site_config.demonstration_mode %}
@@ -342,12 +343,15 @@
           Illustrative sample orders for this demonstration, not filed State Water Board curtailment orders.
         </p>
         {% endif %}
+        {% if not active_curtailments and not unmatched_curtailments %}
+          <p class="text-tertiary text-base">No curtailment order on record matches this right.</p>
+        {% endif %}
         {% for curtailment in active_curtailments %}
         <div class="item-row" style="padding: var(--space-sm) 0;">
           <div class="field-value-sm" style="font-weight: 600;">{{ curtailment.title }}</div>
           <div class="text-tertiary text-xs" style="margin-top: 2px;">
             Order {{ curtailment.order_id }} &middot; Effective {{ curtailment.effective_date|date:"M d, Y" }}
-            {% if curtailment.watershed %}&middot; {{ curtailment.watershed }}{% endif %}
+            &middot; {% if curtailment.watershed %}{{ curtailment.watershed }}{% else %}as stated on the order{% endif %}
           </div>
           {% if curtailment.priority_date_cutoff %}
             <div class="text-xs" style="color: var(--color-accent); margin-top: 2px;">
@@ -356,6 +360,20 @@
           {% endif %}
         </div>
         {% endfor %}
+        {% if unmatched_curtailments %}
+        <div class="item-row" style="padding: var(--space-sm) 0;">
+          <div class="field-value-sm" style="font-weight: 600;">Cannot be matched: no priority date on record</div>
+          <div class="text-tertiary text-xs" style="margin-top: 2px;">
+            {{ unmatched_curtailments|length }} order{{ unmatched_curtailments|length|pluralize }} could apply
+            ({% for curtailment in unmatched_curtailments %}{{ curtailment.order_id }}{% if not forloop.last %}, {% endif %}{% endfor %})
+            but this right carries no priority date to test against a cutoff.
+            <a href="{% url 'surface:water_right_edit' water_right.pk %}" class="data-table-link">Edit the right</a> to add one.
+          </div>
+        </div>
+        {% endif %}
+        <p class="text-tertiary text-xs" style="margin-top: var(--space-sm);">
+          The order's own text governs; this list is a lookup by date and watershed.
+        </p>
       </div>
     </div>
     {% else %}

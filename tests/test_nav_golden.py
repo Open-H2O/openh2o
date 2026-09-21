@@ -80,6 +80,10 @@ ACTIVE_PATHS = [
     "/wells/",
     "/surface/",
     "/surface/rights/",
+    # 146-02 Task 4: /surface/curtailments/ is the same trap as
+    # /surface/rights/ above -- a prefix of /surface/ that must not light up
+    # the Surface Diversions entry, and must light up its own.
+    "/surface/curtailments/",
     "/recharge/",
     # Phase 78's three, plus 100-01's Facilities. The overview's prefix is a
     # prefix of every sub-page, so all of them are listed for the same reason
@@ -348,19 +352,19 @@ def test_every_registry_icon_key_has_a_partial():
 
 
 def test_every_nav_entry_is_rendered():
-    """All 24 module-owned entries appear when every gate is open.
+    """All 25 module-owned entries appear when every gate is open.
 
     Guards the failure mode a byte-diff cannot: if the registry loop silently
     drops an entry AND the fixture were regenerated, this still fails.
 
     19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
     Results to the Water Data section, 80-02 adds Onboard System, and 100-01
-    adds Facilities.
+    adds Facilities. 146-02 Task 4 adds Curtailment Orders beside Water Rights.
     """
     html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
                           access_enforced=False)
     expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 24
+    assert len(expected) == 25
     for entry in expected:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"

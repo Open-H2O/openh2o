@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Curtailment Orders - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Curtailment Orders{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'surface:curtailment_create' %}" class="btn-primary btn-sm">+ Add order</a>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span>Water Data</span>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Curtailment Orders</span>
+  </nav>
+  <p class="page-description">Curtailment orders as the State Water Board issues them: an effective window, a watershed, and a priority date cutoff. A right's own page looks up which orders may apply to it; the order's own text always governs.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-wide">
+
+  {% if orders %}
+  <div class="card-raised table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Title</th>
+          <th>Effective</th>
+          <th>End</th>
+          <th>Watershed</th>
+          <th>Priority cutoff</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td>
+            <a href="{% url 'surface:curtailment_edit' order.pk %}" class="data-table-link">{{ order.order_id }}</a>
+          </td>
+          <td class="text-secondary">{{ order.title }}</td>
+          <td class="text-secondary">{{ order.effective_date|date:"M d, Y" }}</td>
+          <td class="text-secondary">{% if order.end_date %}{{ order.end_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}</td>
+          <td class="text-secondary">{% if order.watershed %}{{ order.watershed }}{% else %}as stated on the order{% endif %}</td>
+          <td class="text-secondary">{% if order.priority_date_cutoff %}{{ order.priority_date_cutoff|date:"M d, Y" }}{% else %}&mdash;{% endif %}</td>
+          <td>
+            {% if order.status == "active" %}
+              <span class="badge badge-pill badge-green">Active</span>
+            {% elif order.status == "expired" %}
+              <span class="badge badge-pill badge-grey">Expired</span>
+            {% else %}
+              <span class="badge badge-pill badge-red">Rescinded</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-raised empty-state">
+    <div class="empty-state-icon">
+      <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    </div>
+    <p class="empty-state-text">No curtailment orders on record. Add one.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

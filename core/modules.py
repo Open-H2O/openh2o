@@ -619,9 +619,10 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=40,
                 active_match="/surface/",
-                # Must not light up on the Water Rights page, which lives under
-                # the same prefix and owns its own entry.
-                active_excludes=("/surface/rights",),
+                # Must not light up on the Water Rights or Curtailment Orders
+                # pages, which live under the same prefix and own their own
+                # entries.
+                active_excludes=("/surface/rights", "/surface/curtailments"),
             ),
             NavEntry(
                 url_name="surface:water_rights_list",
@@ -630,6 +631,17 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_ADMINISTRATION,
                 order=10,
                 active_match="/surface/rights",
+                visibility=VISIBILITY_ADMIN_MODE,
+            ),
+            # 146-02 Task 4 (D6, ISS-180): beside Water Rights, same nav mode
+            # -- ISS-182 owns the mode question, this entry does not re-open it.
+            NavEntry(
+                url_name="surface:curtailments_list",
+                label="Curtailment Orders",
+                icon="curtailment",
+                section=SECTION_ADMINISTRATION,
+                order=11,
+                active_match="/surface/curtailments",
                 visibility=VISIBILITY_ADMIN_MODE,
             ),
         ),

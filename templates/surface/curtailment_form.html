@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{% if order %}Edit curtailment order{% else %}New curtailment order{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if order %}Edit curtailment order {{ order.order_id }}{% else %}New curtailment order{% endif %}{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'surface:curtailments_list' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'surface:curtailments_list' %}">Curtailment Orders</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{% if order %}Edit{% else %}New{% endif %}</span>
+  </nav>
+  <p class="page-description">The order's own ID, title, effective window, watershed and priority date cutoff, taken down as the order states them.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-narrow">
+
+  <a href="{% url 'surface:curtailments_list' %}" class="back-link">&larr; Back to Curtailment Orders</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Details</h2>
+
+    {% if form.non_field_errors %}
+    <div class="form-error-box">
+      {% for error in form.non_field_errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.order_id.id_for_label }}">{{ form.order_id.label }}</label>
+          {{ form.order_id }}
+          {% for error in form.order_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+          {{ form.status }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+        {{ form.title }}
+        {% for error in form.title.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.effective_date.id_for_label }}">{{ form.effective_date.label }}</label>
+          {{ form.effective_date }}
+          {% for error in form.effective_date.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}</label>
+          {{ form.end_date }}
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.watershed.id_for_label }}">{{ form.watershed.label }}</label>
+          {{ form.watershed }}
+          <div class="form-help">{{ form.watershed.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.priority_date_cutoff.id_for_label }}">{{ form.priority_date_cutoff.label }}</label>
+          {{ form.priority_date_cutoff }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+        {{ form.notes }}
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">{% if order %}Save changes{% else %}Create order{% endif %}</button>
+        <a href="{% url 'surface:curtailments_list' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

@@ -526,11 +526,12 @@ class TestNavResolution:
 
     def test_nav_entry_count_matches_todays_sidebar(self):
         entries = [e for s in mod.enabled_modules() for e in s.nav]
-        # 24 module-owned links: 19 through Phase 77, the three 78-02 adds to
-        # Water Data, 80-02's onboarding wizard, and 100-01's facility list.
+        # 25 module-owned links: 19 through Phase 77, the three 78-02 adds to
+        # Water Data, 80-02's onboarding wizard, 100-01's facility list, and
+        # 146-02 Task 4's Curtailment Orders beside Water Rights.
         # The sidebar also renders `index`, the nav-mode toggle and six static
         # help/about pages, none of which are module-owned.
-        assert len(entries) == 24
+        assert len(entries) == 25
 
     def test_icon_keys_are_unique(self):
         icons = [e.icon for s in mod.enabled_modules() for e in s.nav]
@@ -566,9 +567,10 @@ class TestNavResolution:
             if e.url_name == "surface:pod_list"
         )
         assert entry.active_match == "/surface/"
-        assert entry.active_excludes == ("/surface/rights",)
+        assert entry.active_excludes == ("/surface/rights", "/surface/curtailments")
         assert entry.is_active("/surface/") is True
         assert entry.is_active("/surface/rights/") is False
+        assert entry.is_active("/surface/curtailments/") is False
 
     def test_drinking_water_excludes_all_of_its_sub_pages(self):
         """The case that forced the tuple: one exclusion would not have done.
