@@ -197,7 +197,7 @@ def _recharge_site_detail_context(site):
     # groups are in the periods' own order, newest first, the "outside any
     # water year" group last and never a peer.
     previous_totals = None
-    if current_totals is not None:
+    if current_totals is not None and current_totals["period_key"] is not None:
         later = [g for g in event_groups if g["period_key"] is not None]
         index = later.index(current_totals)
         previous_totals = later[index + 1] if index + 1 < len(later) else None
