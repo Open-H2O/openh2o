@@ -18,12 +18,11 @@ import json
 import factory
 import pytest
 from django.contrib.auth.hashers import make_password
-from django.contrib.gis.geos import Point
 from django.test import Client
 from django.urls import reverse
 
 from infrastructure import importer
-from surface.models import PointOfDiversion, WaterRight
+from surface.models import PointOfDiversion
 from tests.factories import PointOfDiversionFactory, WaterRightFactory
 
 pytestmark = pytest.mark.django_db

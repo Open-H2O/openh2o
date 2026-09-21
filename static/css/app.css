@@ -1269,7 +1269,7 @@ html { color-scheme: dark; }
 }
 
 /* The one row a diversion-records table has open for editing (146-02 Task 3,
-   ISS-181) — teal, the everyday-emphasis accent, not the warning amber above:
+   ISS-181): teal, the everyday-emphasis accent, not the warning amber above:
    nothing is wrong with this row, it's just the one being worked on. */
 .data-table tbody tr.row-editing td {
     background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);

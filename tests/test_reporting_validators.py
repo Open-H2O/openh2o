@@ -2,7 +2,7 @@
 """
 146-02 Task 3, ISS-181: the CalWATRS validator's fix instruction for an
 orphaned diversion record ("attached to NO reporting period") used to say
-"Re-save them (or edit and save) so they attach to the period." — naming a
+"Re-save them (or edit and save) so they attach to the period.", naming a
 control (edit) the record page did not have.
 
 Ruling (146-02 Task 3): now that a period attaches its own orphans on save

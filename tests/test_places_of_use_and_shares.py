@@ -42,7 +42,6 @@ from tests.factories import (
     WellFactory,
     WellIrrigatedParcelFactory,
 )
-from wells.models import WellIrrigatedParcel
 
 pytestmark = pytest.mark.django_db
 
@@ -105,7 +104,7 @@ def test_remove_place_of_use_deletes_the_row(auth_client):
 def test_search_places_of_use_excludes_already_assigned(auth_client):
     right = WaterRightFactory(right_id="A006111")
     already = ParcelFactory(parcel_number="APN-200001")
-    findable = ParcelFactory(parcel_number="APN-200002")
+    ParcelFactory(parcel_number="APN-200002")
     WaterRightParcel.objects.create(water_right=right, parcel=already)
 
     resp = auth_client.get(
