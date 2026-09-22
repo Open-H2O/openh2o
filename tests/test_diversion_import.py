@@ -365,7 +365,7 @@ def test_combined_type_errors_naming_the_year(db):
 
 def test_water_year_mapping_puts_month_ten_in_prior_calendar_year(db):
     right = WaterRightFactory(right_id="A100003")
-    point = PointOfDiversionFactory(water_right=right, status="active")
+    PointOfDiversionFactory(water_right=right, status="active")
     SiteConfig.objects.create(agency_name="Test Agency", diversion_report_year_rule="water_year")
     text = "APPL_ID,YEAR,MONTH,DIVERSION_TYPE,AMOUNT\nA100003,2024,10,DIRECT,5\n"
     columns, rows = _parse(text)
@@ -384,7 +384,7 @@ def test_water_year_mapping_puts_month_ten_in_prior_calendar_year(db):
 
 def test_calendar_month_column_is_trusted_over_the_computed_rule(db):
     right = WaterRightFactory(right_id="A100004")
-    point = PointOfDiversionFactory(water_right=right, status="active")
+    PointOfDiversionFactory(water_right=right, status="active")
     SiteConfig.objects.create(agency_name="Test Agency", diversion_report_year_rule="water_year")
     # water_year would compute 2023-10 for MONTH 10 of report year 2024;
     # calendar_month says otherwise, and it must win.

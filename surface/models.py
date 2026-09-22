@@ -401,7 +401,7 @@ class MeasuringDevice(models.Model):
 
     Current section 934(b)(1) governs Water Year 2027 onward (October 1,
     2026); the 2016 analogue (23 CCR 937) is not modelled on this table. Never
-    a subclass of ``measurements.Meter`` — that table is the well's meter
+    a subclass of ``measurements.Meter``: that table is the well's meter
     registry, and a diversion device is a different regulatory object with
     different fields; merging them would put 934(b) columns on every well
     meter. Which point of diversion carries this device, and when, is
@@ -572,7 +572,7 @@ class PointOfDiversionDevice(models.Model):
 
     Mirrors ``wells.WellMeter``'s shape: the point-device relationship is its
     own table rather than a FK on ``PointOfDiversion`` because a device gets
-    replaced — the history stays, and ``is_current`` says which link the POD
+    replaced: the history stays, and ``is_current`` says which link the POD
     page's device panel reads.
     """
 

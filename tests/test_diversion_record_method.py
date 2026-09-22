@@ -170,7 +170,7 @@ def test_table_shows_not_stated_for_a_record_with_no_method(auth_client):
 
 def test_table_carries_rule_version_in_the_row_title_not_a_column(auth_client):
     pod = PointOfDiversionFactory()
-    record = DiversionRecordFactory(point_of_diversion=pod, month=date(2026, 10, 1))
+    DiversionRecordFactory(point_of_diversion=pod, month=date(2026, 10, 1))
 
     resp = auth_client.get(reverse("surface:pod_detail", args=[pod.pk]))
     body = resp.content.decode()
