@@ -148,13 +148,22 @@ class DeliverySettingsForm(forms.Form):
     ``rollover_allocations`` read it for any zone's unused allocation, surface or
     not.
 
-    **``diversion_use_type_rule`` and ``diversion_report_year_rule`` belong to
-    ``surface`` the same way (146-03 Task 3).** Both are the 145-01 memo's
-    crosswalk layer for a bulk diversion import a later plan adds; on a
-    deployment with no Surface module there is no diversion file to read, so
-    they are shown and saved under exactly the same ``shows_efficiency`` gate
-    -- kept as its own name (``shows_diversion_settings``) so the template
-    reads for what it shows, not why.
+    **``diversion_report_year_rule`` belongs to ``surface`` the same way
+    (146-03 Task 3).** It is the 145-01 memo's crosswalk layer for a bulk
+    diversion import a later plan adds; on a deployment with no Surface
+    module there is no diversion file to read, so it is shown and saved
+    under exactly the same ``shows_efficiency`` gate -- kept as its own name
+    (``shows_diversion_settings``) so the template reads for what it shows,
+    not why.
+
+    **The USE-row question that used to sit beside it moved to the import
+    screen (146-03 Task 6, Brent's 2026-09-22 checkpoint ruling).** It is a
+    question about one uploaded file, asked here months before any file
+    exists, of a reader with no reason yet to hold the vocabulary; it now
+    renders on the import mapping step, and only when the uploaded file
+    actually has USE rows in it. ``diversion_use_type_rule`` stays on
+    ``SiteConfig`` as the remembered answer, written from the import screen,
+    but this form no longer shows or saves it.
     """
 
     efficiency_percent = forms.IntegerField(
@@ -182,18 +191,14 @@ class DeliverySettingsForm(forms.Form):
         ),
         widget=forms.RadioSelect,
     )
-    # 146-03 Task 3: the 145-01 memo's crosswalk layer (J3, J6, M2). Choices
-    # come off SiteConfig itself so the two never drift out of step.
-    diversion_use_type_rule = forms.ChoiceField(
-        choices=SiteConfig.DIVERSION_USE_TYPE_RULE_CHOICES,
-        label="When the state's Water Use Reported file has a USE row, what should it mean here?",
-        help_text="What a USE row in the state's Water Use Reported file means here.",
-        widget=forms.RadioSelect,
-    )
+    # 146-03 Task 3: the 145-01 memo's crosswalk layer (J6, M2). Choices come
+    # off SiteConfig itself so the two never drift out of step. (J3, the
+    # USE-row rule, moved to the import screen in Task 6 -- see the class
+    # docstring.)
     diversion_report_year_rule = forms.ChoiceField(
         choices=SiteConfig.DIVERSION_REPORT_YEAR_RULE_CHOICES,
-        label="How does this deployment define a reporting year for diversion records?",
-        help_text="How a YEAR and MONTH in the state's Water Use Reported file become a calendar month.",
+        label="Which months does a reporting year cover?",
+        help_text="Used when a file gives a year and a month but no date.",
         widget=forms.RadioSelect,
     )
     season_start_month = forms.IntegerField(
@@ -223,7 +228,6 @@ class DeliverySettingsForm(forms.Form):
                     (instance.default_irrigation_efficiency * 100).to_integral_value()
                 )
             if self.shows_diversion_settings:
-                initial["diversion_use_type_rule"] = instance.diversion_use_type_rule
                 initial["diversion_report_year_rule"] = instance.diversion_report_year_rule
                 initial["season_start_month"] = instance.season_start_month
             kwargs["initial"] = initial
@@ -231,7 +235,6 @@ class DeliverySettingsForm(forms.Form):
         if not self.shows_efficiency:
             del self.fields["efficiency_percent"]
         if not self.shows_diversion_settings:
-            del self.fields["diversion_use_type_rule"]
             del self.fields["diversion_report_year_rule"]
             del self.fields["season_start_month"]
         # Plain-language radio labels — these are what the manager reads, NOT the
@@ -241,11 +244,6 @@ class DeliverySettingsForm(forms.Form):
             ("same_water_year", "Let it expire (use-it-or-lose-it)"),
         ]
         if self.shows_diversion_settings:
-            self.fields["diversion_use_type_rule"].choices = [
-                ("drop", "Ignore it"),
-                ("returned", "USE minus DIRECT is the returned volume"),
-                ("as_direct", "Treat it as direct use"),
-            ]
             self.fields["diversion_report_year_rule"].choices = [
                 ("water_year", "Water year: October to September"),
                 ("calendar_year", "Calendar year: January to December"),
@@ -265,8 +263,8 @@ class DeliverySettingsForm(forms.Form):
 
         ``update_fields`` is built from what the form actually rendered, so a
         deployment with no Surface module leaves ``default_irrigation_efficiency``
-        (and the two diversion-record settings) exactly as they were rather
-        than writing a value nobody was offered.
+        (and the reporting-year setting) exactly as they were rather than
+        writing a value nobody was offered.
         """
         config = self.instance
         updated = ["default_recovery_horizon"]
@@ -277,11 +275,10 @@ class DeliverySettingsForm(forms.Form):
             ]
             updated.append("default_irrigation_efficiency")
         if self.shows_diversion_settings:
-            config.diversion_use_type_rule = self.cleaned_data["diversion_use_type_rule"]
             config.diversion_report_year_rule = self.cleaned_data["diversion_report_year_rule"]
             config.season_start_month = self.cleaned_data.get("season_start_month")
             updated.extend([
-                "diversion_use_type_rule", "diversion_report_year_rule", "season_start_month",
+                "diversion_report_year_rule", "season_start_month",
             ])
         config.save(update_fields=updated)
         return config

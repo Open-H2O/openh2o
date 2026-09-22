@@ -342,6 +342,110 @@ def test_use_rule_as_direct_merges_into_direct(db):
 
 
 # ---------------------------------------------------------------------------
+# 7a-7d. 146-03 Task 6: the USE-row question moves to the import screen.
+# ---------------------------------------------------------------------------
+
+
+def test_explicit_use_rule_overrides_site_config_default(db):
+    """An explicit ``use_rule`` kwarg (the import screen's own question)
+
+    wins over the deployment's remembered SiteConfig default.
+    """
+    point, text = _use_rule_fixture()
+    SiteConfig.objects.create(agency_name="Test Agency", diversion_use_type_rule="drop")
+    columns, rows = _parse(text)
+
+    result = _import(columns, rows, dry_run=False, use_rule="as_direct")
+
+    assert result["created"] == 1
+    record = DiversionRecord.objects.get()
+    assert record.volume_acre_feet == Decimal("230.0000")
+    assert result["settings"]["diversion_use_type_rule"] == "as_direct"
+
+
+def test_use_rows_present_counts_use_rows_in_the_file(db):
+    point, text = _use_rule_fixture()
+    columns, rows = _parse(text)
+
+    result = _import(columns, rows, dry_run=True)
+
+    assert result["use_rows_present"] == 1
+
+
+def test_use_rows_present_is_zero_for_a_file_with_no_use_rows(db):
+    right = WaterRightFactory(right_id="A100005")
+    PointOfDiversionFactory(water_right=right, status="active")
+    text = "APPL_ID,YEAR,MONTH,DIVERSION_TYPE,AMOUNT\nA100005,2024,6,DIRECT,50\n"
+    columns, rows = _parse(text)
+
+    result = _import(columns, rows, dry_run=True)
+
+    assert result["use_rows_present"] == 0
+
+
+def test_preview_shows_use_question_when_file_has_use_rows(auth_client, db):
+    point, text = _use_rule_fixture()
+    upload = SimpleUploadedFile("use-rows.csv", text.encode(), content_type="text/csv")
+
+    resp = auth_client.post(reverse("surface:diversion_import_preview"), {"file": upload})
+
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert "Some rows in this file are typed USE" in body
+
+
+def test_preview_hides_use_question_for_the_direct_only_shape1_fixture(auth_client, shape1_points):
+    right, p1, p2, p3 = shape1_points
+    upload = SimpleUploadedFile(
+        "monthly-diversion-2024.csv", STATE_CSV_TEXT.encode(), content_type="text/csv",
+    )
+
+    resp = auth_client.post(reverse("surface:diversion_import_preview"), {"file": upload})
+
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert "Some rows in this file are typed USE" not in body
+
+
+def test_commit_with_a_different_use_rule_saves_it_back_to_site_config(auth_client, db):
+    point, text = _use_rule_fixture()
+    config = SiteConfig.objects.create(agency_name="Test Agency", diversion_use_type_rule="drop")
+    columns, rows = _parse(text)
+
+    resp = auth_client.post(reverse("surface:diversion_import_commit"), {
+        "rows_json": json.dumps(rows),
+        "method": "",
+        "data_state": "provisional",
+        "use_rule": "as_direct",
+    })
+
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert "Saved as this deployment's answer for next time." in body
+    config.refresh_from_db()
+    assert config.diversion_use_type_rule == "as_direct"
+
+
+def test_commit_with_the_same_use_rule_as_stored_does_not_say_it_saved(auth_client, db):
+    point, text = _use_rule_fixture()
+    config = SiteConfig.objects.create(agency_name="Test Agency", diversion_use_type_rule="as_direct")
+    columns, rows = _parse(text)
+
+    resp = auth_client.post(reverse("surface:diversion_import_commit"), {
+        "rows_json": json.dumps(rows),
+        "method": "",
+        "data_state": "provisional",
+        "use_rule": "as_direct",
+    })
+
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert "Saved as this deployment's answer for next time." not in body
+    config.refresh_from_db()
+    assert config.diversion_use_type_rule == "as_direct"
+
+
+# ---------------------------------------------------------------------------
 # 10. A COMBINED row errors, naming the year
 # ---------------------------------------------------------------------------
 

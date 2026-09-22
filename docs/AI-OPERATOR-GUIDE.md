@@ -308,7 +308,7 @@ Three import routes, in rough order of preference:
 
 What still has to be entered by hand (no public source exists): **water rights**, **water accounts**, and **allocations**. They are not all in one place. Accounts and allocations each have a create form on the accounting pages. **Water rights have no create form in the app at all** — they are added through the Django admin at `/admin/`, which is worth knowing before you promise an agency a screen that does not exist.
 
-Before importing diversion records for a surface-water agency, ask two questions and set them on the Delivery Settings page (**Diversion records**, `/accounting/delivery-settings/`, shown only when Surface is enabled): what should a USE row in the state's Water Use Reported file mean here, and how does this deployment define a reporting year (a water year, a calendar year, or a single irrigation season)? The full crosswalk from the state's file format is a later phase's work.
+Before importing diversion records for a surface-water agency, ask how this deployment defines a reporting year (a water year, a calendar year, or a single irrigation season) and set it on the Delivery Settings page (**Diversion records**, `/accounting/delivery-settings/`, shown only when Surface is enabled). The full crosswalk from the state's file format is a later phase's work.
 
 ✋ **Checkpoint:** confirm with the human which parcels are theirs and that the boundary looks right on the map before building accounts on top of it.
 

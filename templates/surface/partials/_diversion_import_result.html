@@ -26,6 +26,10 @@ and why.
     {% if not created and not skipped_duplicates and not errors and not unresolved_rows %}Nothing to import.{% endif %}
   </p>
 
+  {% if use_rule_saved %}
+  <p class="text-base text-secondary mt-sm">Saved as this deployment's answer for next time.</p>
+  {% endif %}
+
   {% if periods_attached %}
   <table class="data-table mt-md">
     <thead><tr><th>Reporting period</th><th>Records attached</th></tr></thead>

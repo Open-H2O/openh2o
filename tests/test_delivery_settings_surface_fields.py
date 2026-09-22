@@ -1,16 +1,23 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-146-03 Task 3: the two diversion-record settings on Delivery Settings.
+146-03 Task 3: the diversion-record setting on Delivery Settings.
 
-``diversion_use_type_rule`` and ``diversion_report_year_rule`` belong to
-``surface`` exactly as ``default_irrigation_efficiency`` does
-(``core/forms.py::DeliverySettingsForm``) -- shown and saved only when
-``surface`` is enabled. No existing test exercised the *content* of this
-page under a reduced module set (only the subprocess crawl in
-``tests/test_droppability_acceptance.py`` renders it at all, and only to
-confirm 200 with an empty database); this file is the first to assert on
-the fields themselves, in-process, the same ``is_enabled`` boolean the
-subprocess harness ultimately reads.
+``diversion_report_year_rule`` belongs to ``surface`` exactly as
+``default_irrigation_efficiency`` does (``core/forms.py::DeliverySettingsForm``)
+-- shown and saved only when ``surface`` is enabled. No existing test
+exercised the *content* of this page under a reduced module set (only the
+subprocess crawl in ``tests/test_droppability_acceptance.py`` renders it at
+all, and only to confirm 200 with an empty database); this file is the
+first to assert on the fields themselves, in-process, the same
+``is_enabled`` boolean the subprocess harness ultimately reads.
+
+**146-03 Task 6 (Brent's 2026-09-22 checkpoint ruling): the USE-row question
+came off this page entirely.** It was a question about one uploaded file,
+asked here months before any file exists, of a reader with no reason yet to
+hold California's DIVERSION_TYPE vocabulary. ``diversion_use_type_rule``
+stays on ``SiteConfig`` as the remembered answer, but the field is no
+longer part of ``DeliverySettingsForm`` and this page no longer renders or
+saves it (it moved to the import mapping step: ``tests/test_diversion_import.py``).
 
 ``OPENH2O_MODULES`` composes ``INSTALLED_APPS`` at settings-IMPORT time
 (``tests/test_droppability_acceptance.py``'s own docstring), so
@@ -66,7 +73,8 @@ def admin_client(db):
 
 
 # ---------------------------------------------------------------------------
-# 1. Surface enabled: the two fields render and save
+# 1. Surface enabled: the reporting-year field renders and saves; the
+#    USE-row question is gone.
 # ---------------------------------------------------------------------------
 
 
@@ -74,8 +82,21 @@ def test_diversion_settings_render_when_surface_is_enabled(admin_client):
     resp = admin_client.get(reverse("accounting:delivery_settings"))
     body = resp.content.decode()
     assert "Diversion records" in body
-    assert "USE row" in body
-    assert "reporting year" in body
+    assert "Which months does a reporting year cover?" in body
+    assert "Used when a file gives a year and a month but no date." in body
+    # 146-03 Task 6: the USE-row question moved to the import screen and no
+    # longer renders here.
+    assert "USE row" not in body
+
+
+def test_diversion_use_type_rule_is_not_a_form_field(admin_client):
+    from core.forms import DeliverySettingsForm
+
+    form = DeliverySettingsForm(instance=SiteConfig.objects.first() or SiteConfig())
+    assert "diversion_use_type_rule" not in form.fields
+    # And nothing in the rendered page names the field by its POST name.
+    resp = admin_client.get(reverse("accounting:delivery_settings"))
+    assert "diversion_use_type_rule" not in resp.content.decode()
 
 
 def test_diversion_settings_save_onto_site_config(admin_client):
@@ -85,20 +106,18 @@ def test_diversion_settings_save_onto_site_config(admin_client):
         {
             "efficiency_percent": "75",
             "recovery_horizon": "carry_forward",
-            "diversion_use_type_rule": "returned",
             "diversion_report_year_rule": "season",
             "season_start_month": "3",
         },
     )
     assert resp.status_code == 302
     config.refresh_from_db()
-    assert config.diversion_use_type_rule == "returned"
     assert config.diversion_report_year_rule == "season"
     assert config.season_start_month == 3
 
 
 # ---------------------------------------------------------------------------
-# 2. Surface (and recharge) dropped: neither field renders, the rest works
+# 2. Surface (and recharge) dropped: the field doesn't render, the rest works
 # ---------------------------------------------------------------------------
 
 
@@ -108,7 +127,7 @@ def test_diversion_settings_absent_on_a_drinking_only_configuration(admin_client
     assert resp.status_code == 200
     body = resp.content.decode()
     assert "Diversion records" not in body
-    assert "USE row" not in body
+    assert "Which months does a reporting year cover?" not in body
     # The page's other setting is unaffected by surface being gone.
     assert "unused water" in body.lower() or "allotment" in body.lower()
 
@@ -118,7 +137,7 @@ def test_saving_on_a_drinking_only_configuration_leaves_diversion_fields_untouch
     admin_client,
 ):
     config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
-    assert config.diversion_use_type_rule == "drop"  # the model default
+    assert config.diversion_report_year_rule == "water_year"  # the model default
 
     resp = admin_client.post(
         reverse("accounting:delivery_settings"),

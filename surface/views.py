@@ -35,6 +35,7 @@ from core.map_labels import map_label
 
 from accounting.models import ReportingPeriod
 from accounting.services import current_period_id as compute_current_period_id
+from core.models import SiteConfig
 from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal
 from core.workspace import detail_response, list_response
@@ -927,7 +928,18 @@ def _diversion_import_settings_context(points, *, selected_point=None, method=""
         "data_state": data_state,
         "method_choices": DiversionRecord.METHOD_CHOICES,
         "data_state_choices": DiversionRecord.DATA_STATE_CHOICES,
+        "use_rule_choices": diversion_import_service.USE_RULE_CHOICES,
     }
+
+
+def _posted_use_rule(request):
+    """The import screen's own USE-row question (146-03 Task 6), or ``None``
+
+    to fall back to the deployment's remembered default. A blank posted
+    value means "not chosen yet", exactly like an un-checked radio group.
+    """
+    value = request.POST.get("use_rule", "").strip()
+    return value or None
 
 
 @login_required
@@ -1003,16 +1015,21 @@ def diversion_import_preview(request):
     whole_file_point = PointOfDiversion.objects.filter(pk=point_pk).first() if point_pk else None
     method = request.POST.get("method", "")
     data_state = request.POST.get("data_state", "") or "provisional"
+    use_rule = _posted_use_rule(request)
 
     result = diversion_import_service.import_diversion_rows(
         columns, rows, layout=layout, whole_file_point=whole_file_point,
-        method=method, data_state=data_state, dry_run=True,
+        method=method, data_state=data_state, dry_run=True, use_rule=use_rule,
     )
 
     context = _diversion_import_settings_context(
         points, selected_point=whole_file_point, method=method, data_state=data_state,
     )
     context.update(result)
+    # The radio group reflects the rule actually applied (the posted choice,
+    # or the deployment's remembered default on first preview) -- never the
+    # raw POST, which is blank until the operator picks one (146-03 Task 6).
+    context["use_rule"] = result["settings"]["diversion_use_type_rule"]
     context["rows_json"] = json.dumps(rows)
     context["row_count"] = len(rows)
     return render(request, "surface/partials/_diversion_import_preview.html", context)
@@ -1021,7 +1038,13 @@ def diversion_import_preview(request):
 @login_required
 @require_POST
 def diversion_import_commit(request):
-    """Re-run the confirmed settings against the parsed rows and write them."""
+    """Re-run the confirmed settings against the parsed rows and write them.
+
+    146-03 Task 6: when the file had USE rows and the posted ``use_rule``
+    differs from the deployment's remembered default, the chosen rule is
+    written back onto ``SiteConfig`` here (commit only, never preview) so
+    the same file, imported again next year, defaults to the same answer.
+    """
     points = PointOfDiversion.objects.filter(status="active").order_by("name")
     try:
         rows = json.loads(request.POST.get("rows_json", "") or "[]")
@@ -1047,11 +1070,15 @@ def diversion_import_commit(request):
     whole_file_point = PointOfDiversion.objects.filter(pk=point_pk).first() if point_pk else None
     method = request.POST.get("method", "")
     data_state = request.POST.get("data_state", "") or "provisional"
+    use_rule = _posted_use_rule(request)
+
+    site_config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
 
     try:
         result = diversion_import_service.import_diversion_rows(
             columns, rows, layout=layout, whole_file_point=whole_file_point,
             method=method, data_state=data_state, dry_run=False,
+            site_config=site_config, use_rule=use_rule,
         )
     except Exception as exc:
         logger.exception("diversion import commit failed")
@@ -1060,8 +1087,19 @@ def diversion_import_commit(request):
         )
         context["rows_json"] = json.dumps(rows)
         context["row_count"] = len(rows)
+        context["use_rule"] = use_rule or site_config.diversion_use_type_rule
         context["error"] = f"Nothing was created: {type(exc).__name__}: {exc}"
         return render(request, "surface/partials/_diversion_import_preview.html", context)
+
+    use_rule_saved = bool(
+        result["use_rows_present"]
+        and use_rule is not None
+        and use_rule != site_config.diversion_use_type_rule
+    )
+    if use_rule_saved:
+        site_config.diversion_use_type_rule = use_rule
+        site_config.save(update_fields=["diversion_use_type_rule"])
+    result["use_rule_saved"] = use_rule_saved
 
     return render(request, "surface/partials/_diversion_import_result.html", result)
 

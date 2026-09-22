@@ -57,6 +57,23 @@ pressed.
       <div class="form-help">The state's published figure is what you filed, not a new measurement: pick non-provisional if that is what these are.</div>
     </div>
 
+    {% comment %} 146-03 Task 6: the USE-row question moved here from the
+         deployment settings page, and only renders when this file actually
+         has USE rows -- a reader who never uploads a file with one never
+         sees it. {% endcomment %}
+    {% if use_rows_present %}
+    <div class="form-group">
+      <p class="text-secondary text-base m-0" style="margin-bottom: var(--space-sm);">Some rows in this file are typed USE. What should they count as?</p>
+      <p class="text-secondary text-sm" style="margin-bottom: var(--space-sm);">This file has {{ use_rows_present }} of them. USE is California's total-use figure and usually repeats the direct figure for the same month, so ignoring them is the usual answer.</p>
+      {% for value, label in use_rule_choices %}
+      <label class="radio-option">
+        <input type="radio" name="use_rule" value="{{ value }}"{% if use_rule == value %} checked{% endif %}>
+        <span class="text-secondary text-base">{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="row-start pt-sm mt-lg" style="gap: var(--space-sm);">
       <button type="submit" class="btn-secondary"
         hx-post="{% url 'surface:diversion_import_preview' %}"

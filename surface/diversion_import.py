@@ -40,10 +40,14 @@ Rules enforced here, in order:
 1. Layout recognition, then per-row field validation.
 2. TYPE MAPPING. DIRECT -> direct_use, STORAGE -> to_storage, COMBINED is a
    row error naming the year (pre-2015 files never file it). USE has no
-   product type of its own -- ``SiteConfig.diversion_use_type_rule`` decides
-   whether it is dropped (counted, never written), added to the matching
-   DIRECT row's ``returned_af`` (USE minus DIRECT, floored at zero and
-   capped at the diverted volume), or treated as its own direct_use row.
+   product type of its own -- the USE rule decides whether it is dropped
+   (counted, never written), added to the matching DIRECT row's
+   ``returned_af`` (USE minus DIRECT, floored at zero and capped at the
+   diverted volume), or treated as its own direct_use row. The rule comes
+   from the ``use_rule`` keyword when the caller passes one (146-03 Task 6:
+   the import screen's own mapping-step question, shown only when the file
+   has USE rows); otherwise it falls back to the deployment's remembered
+   default, ``SiteConfig.diversion_use_type_rule``.
 3. WITHIN-FILE COMBINE. Two or more rows landing on the same (point, month,
    diversion type) -- a ditch tender's book often carries two or more
    deliveries a month at one headgate -- are summed into ONE record, never
@@ -79,6 +83,17 @@ from surface.models import DiversionRecord, PointOfDiversion, WaterRight
 
 MAX_ROWS = 2000
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the same ceiling every other importer uses
+
+#: The import screen's own USE-row question (146-03 Task 6, Brent's
+#: 2026-09-22 checkpoint ruling): same three values as
+#: ``SiteConfig.DIVERSION_USE_TYPE_RULE_CHOICES``, but the copy is aimed at
+#: someone looking at the rows in THIS file, not at a deployment-wide
+#: default -- so the wording differs and lives here, not on the model.
+USE_RULE_CHOICES = [
+    ("drop", "Ignore them"),
+    ("returned", "Count the difference as water returned to the stream"),
+    ("as_direct", "Count them as water taken directly"),
+]
 
 #: The state's own Water Use Reported header, upper-cased for comparison
 #: (recognise_layout). Presence of all five, in any column order, is what
@@ -553,12 +568,18 @@ def _process_book_row(line_num, row, *, whole_file_point, right_cache, right_poi
 
 
 def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
-                data_state="provisional", site_config=None):
+                data_state="provisional", site_config=None, use_rule=None):
     """Turn raw CSV rows into candidate DiversionRecord field-sets.
 
+    ``use_rule``, when given (146-03 Task 6: chosen on the import screen's
+    mapping step), overrides the deployment's remembered
+    ``SiteConfig.diversion_use_type_rule`` for this file only; ``None``
+    (the default) falls back to the stored value exactly as before.
+
     Returns a dict: candidates, combined_rows, unresolved_rows, errors,
-    conversions, notes, use_rows_dropped, rule_sentence, settings. Writes
-    nothing; ``commit_rows`` below does the dedup check and the save.
+    conversions, notes, use_rows_present, use_rows_dropped, rule_sentence,
+    settings. Writes nothing; ``commit_rows`` below does the dedup check and
+    the save.
     """
     site_config = site_config or _default_site_config()
     right_cache = {}
@@ -627,13 +648,17 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
                 else max(g["max_flow"], entry["max_flow_cfs"])
             )
 
-    # The USE rule (J3): drop, returned, or as_direct -- SiteConfig's own choice.
-    use_rule = site_config.diversion_use_type_rule
+    # The USE rule (J3): drop, returned, or as_direct. An explicit `use_rule`
+    # (146-03 Task 6: the import screen's own question) overrides the
+    # deployment's remembered default on SiteConfig; `use_rows_present`
+    # counts every USE row in the file regardless of which rule applied.
+    use_rows_present = sum(len(g["lines"]) for g in use_groups.values())
+    applied_use_rule = use_rule if use_rule is not None else site_config.diversion_use_type_rule
     for (pt_pk, month), use_group in use_groups.items():
-        if use_rule == "drop":
+        if applied_use_rule == "drop":
             use_rows_dropped += len(use_group["lines"])
             continue
-        if use_rule == "as_direct":
+        if applied_use_rule == "as_direct":
             g = groups.setdefault(
                 (pt_pk, month, "direct_use"),
                 {
@@ -696,12 +721,13 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
         "errors": errors,
         "conversions": conversions,
         "notes": notes,
+        "use_rows_present": use_rows_present,
         "use_rows_dropped": use_rows_dropped,
         "rule_sentence": rule_sentence(site_config),
         "settings": {
             "method": method,
             "data_state": data_state,
-            "diversion_use_type_rule": use_rule,
+            "diversion_use_type_rule": applied_use_rule,
             "diversion_report_year_rule": site_config.diversion_report_year_rule,
             "season_start_month": site_config.season_start_month,
         },
@@ -810,12 +836,18 @@ def _default_site_config():
 
 def import_diversion_rows(columns, rows, *, layout=None, whole_file_point=None,
                            method="", data_state="provisional", dry_run=False,
-                           site_config=None):
+                           site_config=None, use_rule=None):
     """Parse-to-commit in one call: what both the view and the command use.
+
+    ``use_rule``, when given, overrides the deployment's remembered
+    ``SiteConfig.diversion_use_type_rule`` for this file only (146-03
+    Task 6); ``None`` (the default) uses the stored value, exactly as
+    before.
 
     Returns the full report dict: layout, created, skipped_duplicates,
     combined_rows, unresolved_rows, errors, conversions, notes,
-    use_rows_dropped, rule_sentence, settings, periods_attached, dry_run.
+    use_rows_present, use_rows_dropped, rule_sentence, settings,
+    periods_attached, dry_run.
     """
     if layout is None:
         layout = recognise_layout(columns)
@@ -824,6 +856,7 @@ def import_diversion_rows(columns, rows, *, layout=None, whole_file_point=None,
     built = build_rows(
         columns, rows, layout, whole_file_point=whole_file_point,
         method=method, data_state=data_state, site_config=site_config,
+        use_rule=use_rule,
     )
     committed = commit_rows(built, method=method, data_state=data_state, dry_run=dry_run)
 
@@ -836,6 +869,7 @@ def import_diversion_rows(columns, rows, *, layout=None, whole_file_point=None,
         "errors": committed["errors"],
         "conversions": built["conversions"],
         "notes": built["notes"],
+        "use_rows_present": built["use_rows_present"],
         "use_rows_dropped": built["use_rows_dropped"],
         "rule_sentence": built["rule_sentence"],
         "settings": built["settings"],

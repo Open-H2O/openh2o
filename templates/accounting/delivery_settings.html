@@ -77,26 +77,17 @@
       {% if form.recovery_horizon.errors %}<p class="text-sm text-furnace">{{ form.recovery_horizon.errors|striptags }}</p>{% endif %}
     </div>
 
-    {% comment %} Setting: diversion records. `surface` owns both fields, same gate as
-         efficiency (146-03 Task 3, the 145-01 memo's crosswalk layer). {% endcomment %}
+    {% comment %} Setting: diversion records. `surface` owns this field, same gate as
+         efficiency (146-03 Task 3, the 145-01 memo's crosswalk layer). The
+         USE-row question that used to sit here moved to the import screen,
+         shown only when an uploaded file actually has USE rows (146-03
+         Task 6, Brent's 2026-09-22 checkpoint ruling). {% endcomment %}
     {% if form.shows_diversion_settings %}
     <div class="card-raised">
       <span class="step-eyebrow">Setting {{ diversion_number }} of {{ settings_total }}</span>
       <h2 class="section-header">Diversion records</h2>
 
       <div class="field-group mt-sm">
-        <p class="text-secondary text-base m-0" style="margin-bottom: var(--space-sm);">{{ form.diversion_use_type_rule.label }}</p>
-        <p class="text-secondary text-sm" style="margin-bottom: var(--space-sm);">{{ form.diversion_use_type_rule.help_text }}</p>
-        {% for radio in form.diversion_use_type_rule %}
-        <label class="radio-option">
-          {{ radio.tag }}
-          <span class="text-secondary text-base">{{ radio.choice_label }}</span>
-        </label>
-        {% endfor %}
-        {% if form.diversion_use_type_rule.errors %}<p class="text-sm text-furnace">{{ form.diversion_use_type_rule.errors|striptags }}</p>{% endif %}
-      </div>
-
-      <div class="field-group mt-lg">
         <p class="text-secondary text-base m-0" style="margin-bottom: var(--space-sm);">{{ form.diversion_report_year_rule.label }}</p>
         <p class="text-secondary text-sm" style="margin-bottom: var(--space-sm);">{{ form.diversion_report_year_rule.help_text }}</p>
         {% for radio in form.diversion_report_year_rule %}

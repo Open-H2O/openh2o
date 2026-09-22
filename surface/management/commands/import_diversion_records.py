@@ -38,12 +38,18 @@ class Command(BaseCommand):
             "--data-state", type=str, default="provisional",
             help="Data state for every created record (default: provisional).",
         )
+        parser.add_argument(
+            "--use-rule", type=str, default=None, choices=["drop", "returned", "as_direct"],
+            help="What a USE row in this file means (drop, returned, or as_direct); "
+                 "defaults to the deployment's remembered SiteConfig setting.",
+        )
 
     def handle(self, *args, **options):
         file_path = options["file_path"]
         dry_run = options["dry_run"]
         method = options["method"]
         data_state = options["data_state"]
+        use_rule = options["use_rule"]
 
         if not os.path.exists(file_path):
             # ISS-190: a bare path only ever resolves inside the container --
@@ -80,6 +86,7 @@ class Command(BaseCommand):
                 method=method,
                 data_state=data_state,
                 dry_run=dry_run,
+                use_rule=use_rule,
             )
         except ImportError as exc:
             raise CommandError(str(exc))
@@ -95,6 +102,11 @@ class Command(BaseCommand):
                 f"{len(result['unresolved_rows'])} row(s) unresolved"
             )
         )
+        if result["use_rows_present"]:
+            self.stdout.write(
+                f"  {result['use_rows_present']} USE row(s) in this file; "
+                f"rule applied: {result['settings']['diversion_use_type_rule']}"
+            )
         if result["use_rows_dropped"]:
             self.stdout.write(
                 f"  {result['use_rows_dropped']} USE row(s) dropped "
