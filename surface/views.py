@@ -290,7 +290,7 @@ def _pod_detail_context(pod):
     all_water_rights = WaterRight.objects.order_by("right_id")
 
     # Inline form for adding diversion records
-    form = DiversionRecordForm()
+    form = DiversionRecordForm(pod=pod)
 
     # GeoJSON for the persistent detail map. A FeatureCollection (not a bare
     # Feature) because OH2O.detailPaneMap frames the map off geojson.features.
@@ -514,7 +514,7 @@ def _render_diversion_records_section(
         "record_groups": record_groups,
         "current_period": current_period,
         "current_totals": current_totals,
-        "form": form if form is not None else DiversionRecordForm(),
+        "form": form if form is not None else DiversionRecordForm(pod=pod),
         "period_warning": period_warning,
         "edit_record": edit_record,
         "edit_form": edit_form,
@@ -532,7 +532,7 @@ _DUPLICATE_RECORD_ERROR = "A record for that month and type exists; edit that on
 def diversion_record_create(request, pk):
     """HTMX POST endpoint: create a DiversionRecord for a POD."""
     pod = get_object_or_404(PointOfDiversion, pk=pk)
-    form = DiversionRecordForm(request.POST)
+    form = DiversionRecordForm(request.POST, pod=pod)
     period_warning = None
 
     if form.is_valid():
@@ -568,7 +568,7 @@ def diversion_record_create(request, pk):
                     "yourself after one exists."
                 )
             # Saved cleanly — hand back a blank form for the next entry.
-            form = DiversionRecordForm()
+            form = DiversionRecordForm(pod=pod)
 
     # On an invalid submit, `form` is still the BOUND form: re-rendering it
     # preserves the user's typed values and surfaces the field errors, so a
@@ -598,10 +598,11 @@ def diversion_record_edit(request, pk, rpk):
 
     if request.method == "GET":
         return _render_diversion_records_section(
-            request, pod, edit_record=record, edit_form=DiversionRecordForm(instance=record),
+            request, pod, edit_record=record,
+            edit_form=DiversionRecordForm(instance=record, pod=pod),
         )
 
-    form = DiversionRecordForm(request.POST, instance=record)
+    form = DiversionRecordForm(request.POST, instance=record, pod=pod)
     if form.is_valid():
         updated = form.save(commit=False)
         month = updated.month

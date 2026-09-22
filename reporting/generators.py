@@ -62,8 +62,34 @@ def gears_method(source_type):
     An unknown code passes through unchanged so a newly-added source_type is
     visible in the file (and catchable by validate_report) rather than being
     silently relabeled to a wrong state value.
+
+    GEARS is a groundwater filing built only from ``ParcelLedger`` rows (see
+    ``generate_gears_csv`` below, lines 363-483) -- it never reads a
+    ``surface.DiversionRecord``, so this inference is unchanged by 146-03.
     """
     return GEARS_METHOD.get(source_type, source_type)
+
+
+def calwatrs_method_label(record):
+    """The state's own words for how a ``DiversionRecord``'s number is known
+    (146-03 Task 2).
+
+    Prefers the record's own ``method`` -- and the device's type when the
+    method is ``device`` -- over any other inference: this platform asked
+    the operator directly, so a guess never overrides what was stated.
+    A record with no method recorded reports "Not stated" rather than
+    inventing one. No CalWATRS row was ever built from a DiversionRecord's
+    method before this (there was no Measurement Method column on this
+    worksheet); there is nothing here to "fall back" to. The value below is
+    what WOULD populate the CalWATRS worksheet's own field if a filing path
+    existed -- it does not ("prepared, never filed", docs/DATA-STANDARDS.md).
+    """
+    if not record.method:
+        return "Not stated"
+    label = record.get_method_display()
+    if record.method == "device" and record.device_id:
+        label = f"{label}: {record.device.get_device_type_display()}"
+    return label
 
 
 def _normalize_fractions(raw_by_group):
@@ -509,6 +535,7 @@ def _calwatrs_data_row(entry, fraction, combined_use):
         f"{entry['volume'] * fraction:.8f}",
         entry["max_flow"], entry["type"], combined_use,
         f"{entry['return_flow'] * fraction:.8f}",
+        entry["method_label"],
     ]
 
 
@@ -528,7 +555,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
         "Water Right ID", "Holder Name", "POD Name", "Source Fraction",
         "Latitude", "Longitude", "Month", "Volume (AF)",
         "Max Flow Rate (CFS)", "Diversion Type", "Combined Use",
-        "Return Flow (AF)",
+        "Return Flow (AF)", "Measurement Method",
     ])
 
     diversion_type = "direct_use" if template_type == "a1" else "to_storage"
@@ -538,7 +565,7 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
             reporting_period=reporting_period,
             diversion_type=diversion_type,
         )
-        .select_related("point_of_diversion__water_right")
+        .select_related("point_of_diversion__water_right", "device")
         .order_by("point_of_diversion__water_right__right_id", "month")
     )
 
@@ -587,6 +614,13 @@ def generate_calwatrs_csv(reporting_period, template_type="a1"):
                 # max_flow_rate_cfs: reported as CFS. 1 CFS × 1 day = 1.9835 AF.
                 "max_flow": rec.max_flow_rate_cfs or Decimal("0"),
                 "type": rec.get_diversion_type_display(),
+                # 146-03 Task 2: the record-first method label. Each
+                # (pod, month) key maps to exactly one DiversionRecord here --
+                # the model's own unique_together on (point_of_diversion,
+                # month, diversion_type) and this loop's own diversion_type
+                # filter guarantee it -- so capturing the label at key
+                # creation is safe and never overwritten by a second record.
+                "method_label": calwatrs_method_label(rec),
             }
         raw[key]["volume"] += rec.volume_acre_feet
         raw[key]["return_flow"] += rec.returned_af

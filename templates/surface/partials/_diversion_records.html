@@ -18,6 +18,13 @@
   form (edit_record / edit_form below); Delete confirms in the row via
   hx-confirm, the same pattern the account and right pages use to remove a
   place of use, and posts straight through.
+
+  146-03 Task 2: a "How known" column carries the method label, the device
+  nickname when one is set, and the data state as a small word -- the
+  state's own vocabulary (23 CCR 934(b), 931(s)/(j)(3)) rather than this
+  platform inventing one. The rule version that governs the record's month
+  (2016 rule vs the 2026 rewrite) is derived and rarely needed, so it rides
+  the row's own `title` attribute instead of taking a column of its own.
 {% endcomment %}
 <div class="ledger-card-head">
   <h2 class="section-header-flush" style="margin-bottom: var(--space-xs);">Diversion records</h2>
@@ -37,16 +44,17 @@
       <th class="th-right"><span class="th-stack">Return flow</span></th>
       <th class="th-right col-sep">Retained</th>
       <th>Type</th>
+      <th>How known</th>
       <th class="th-right">Actions</th>
     </tr>
   </thead>
   <tbody>
     {% for group in record_groups %}
     <tr class="row-group">
-      <td colspan="6">{{ group.period_name }} &middot; {{ group.count }} month{{ group.count|pluralize }}</td>
+      <td colspan="7">{{ group.period_name }} &middot; {{ group.count }} month{{ group.count|pluralize }}</td>
     </tr>
     {% for record in group.rows %}
-    <tr {% if edit_record.pk == record.pk %}class="row-editing"{% endif %}>
+    <tr {% if edit_record.pk == record.pk %}class="row-editing"{% endif %} title="{{ record.rule_version }}">
       <td class="text-secondary">{{ record.month|date:"M Y" }}</td>
       <td class="td-num">{{ record.volume_acre_feet|floatformat:2|intcomma }}</td>
       <td class="td-num text-secondary">{{ record.returned_af|floatformat:2|intcomma }}</td>
@@ -58,6 +66,9 @@
         {% elif record.is_partial_return %}
         <span class="badge badge-blue" title="Part of the diverted volume is returned to the stream; only the remainder is consumed.">Partial return</span>
         {% endif %}
+      </td>
+      <td class="text-tertiary text-xs">
+        {{ record.method_display }}{% if record.device %} &middot; {{ record.device }}{% endif %} &middot; {{ record.get_data_state_display }}
       </td>
       <td class="th-right text-sm">
         {% if edit_record.pk == record.pk %}
@@ -84,6 +95,7 @@
       <td class="td-num-bold td-total">{{ group.diverted|floatformat:2|intcomma }}</td>
       <td class="td-num-bold td-total">{{ group.returned|floatformat:2|intcomma }}</td>
       <td class="td-num-bold td-total col-sep">{{ group.retained|floatformat:2|intcomma }}</td>
+      <td></td>
       <td></td>
       <td></td>
     </tr>

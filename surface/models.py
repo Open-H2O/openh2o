@@ -440,6 +440,27 @@ class DiversionRecord(models.Model):
         ("direct_use", "Direct Use"),
         ("to_storage", "To Storage"),
     ]
+    #: How this record's number is known, in the state's own vocabulary
+    #: (146-03 Task 2). Blank means "not stated" -- most existing rows, and
+    #: any newly-entered one where the operator hasn't said, land here rather
+    #: than guessing a method the operator never named.
+    METHOD_CHOICES = [
+        ("device", "A measuring device"),
+        ("methodology", "A measurement methodology on file"),
+        ("alternative_compliance", "An alternative compliance plan (for example remote sensing)"),
+        ("apportioned", "Apportioned from a shared aggregate, 934(a)(8)"),
+        ("below_threshold", "Under 10 acre-feet a year: no standard applies"),
+        ("outage_estimate", "Estimated during a device outage, 937(b)(4)"),
+        ("estimated_from_use", "Estimated forward from use (Phase 149's estimator)"),
+    ]
+    #: 931(s) and 931(j)(3): raw device output, provisional (not yet quality
+    #: assured or apportioned), and non-provisional. Only non-provisional data
+    #: may go in an annual report.
+    DATA_STATE_CHOICES = [
+        ("raw", "Raw"),
+        ("provisional", "Provisional"),
+        ("non_provisional", "Non-provisional"),
+    ]
 
     point_of_diversion = models.ForeignKey(PointOfDiversion, on_delete=models.CASCADE)
     reporting_period = models.ForeignKey(
@@ -461,12 +482,57 @@ class DiversionRecord(models.Model):
     diversion_type = models.CharField(
         max_length=50, choices=DIVERSION_TYPE_CHOICES, default="direct_use"
     )
+    method = models.CharField(
+        max_length=30,
+        choices=METHOD_CHOICES,
+        blank=True,
+        help_text="How this number is known, in the state's own words (Water "
+        "Code 5002(b): 'the method of measurement used'). Blank means not "
+        "stated.",
+    )
+    device = models.ForeignKey(
+        MeasuringDevice,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The measuring device behind this record's number, when "
+        "method is 'a measuring device'.",
+    )
+    data_state = models.CharField(
+        max_length=20,
+        choices=DATA_STATE_CHOICES,
+        default="provisional",
+        help_text="931(s) and 931(j)(3): raw, provisional or non-provisional. "
+        "Only non-provisional data goes in an annual report.",
+    )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-month"]
         unique_together = [("point_of_diversion", "month", "diversion_type")]
+
+    #: The first month the 2026 rewrite (23 CCR 934) governs -- Water Year
+    #: 2027 opens October 1, 2026. Every earlier month is still Water Year
+    #: 2026 or before, governed by the preserved 2016 text (23 CCR 937).
+    _REWRITE_STARTS = date(2026, 10, 1)
+
+    @property
+    def rule_version(self):
+        """Which measurement rule governs this record's month.
+
+        Derived from ``month`` on every read, never stored: a platform
+        carrying multi-year history needs the rule version attached to the
+        record so an old compliance state is never re-evaluated under the
+        wrong test (research file 05, section on accuracy semantics). The
+        2016 rule (23 CCR 937) governs Water Year 2026 and earlier; the 2026
+        rewrite (23 CCR 934) governs from Water Year 2027, October 1, 2026.
+        """
+        if self.month is None:
+            return ""
+        if self.month >= self._REWRITE_STARTS:
+            return "2026 rewrite (23 CCR 934)"
+        return "2016 rule (23 CCR 937)"
 
     def consumed_acre_feet(self):
         """The consumed magnitude of this diversion: abs(volume) − returned.
@@ -507,6 +573,16 @@ class DiversionRecord(models.Model):
             raise ValidationError(
                 {"returned_af": "Return flow cannot exceed the diverted volume."}
             )
+
+    def method_display(self):
+        """The "How known" column's method label, "Not stated" when blank.
+
+        ``get_method_display()`` returns "" for a blank CharField (the seven
+        choices are the state's own vocabulary, not an "operator didn't say"
+        entry) -- this is the one place that turns that blank into the word
+        a reader sees.
+        """
+        return self.get_method_display() if self.method else "Not stated"
 
     def __str__(self):
         return f"{self.point_of_diversion} {self.month}: {self.volume_acre_feet} AF"

@@ -40,6 +40,25 @@
       {% if form.diversion_type.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.diversion_type.errors|join:", " }}</span>{% endif %}
     </div>
   </div>
+  <div class="form-row-2col">
+    <div class="form-group">
+      <label class="field-label" for="id_method">How known</label>
+      {{ form.method }}
+      {% if form.method.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.method.errors|join:", " }}</span>{% endif %}
+      <span class="text-xs text-tertiary">Leave blank if not stated.</span>
+    </div>
+    <div class="form-group">
+      <label class="field-label" for="id_device">Device</label>
+      {{ form.device }}
+      {% if form.device.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.device.errors|join:", " }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="field-label" for="id_data_state">Data state</label>
+    {{ form.data_state }}
+    {% if form.data_state.errors %}<span class="text-xs" style="color: var(--furnace-400);">{{ form.data_state.errors|join:", " }}</span>{% endif %}
+    <span class="text-xs text-tertiary">Only non-provisional data goes in an annual report.</span>
+  </div>
   <div class="form-group">
     <label class="field-label" for="id_notes">Notes</label>
     {{ form.notes }}

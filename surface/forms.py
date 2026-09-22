@@ -10,6 +10,7 @@ from surface.models import (
     DiversionRecord,
     MeasuringDevice,
     PointOfDiversion,
+    PointOfDiversionDevice,
     WaterRight,
 )
 
@@ -36,7 +37,8 @@ class DiversionRecordForm(forms.ModelForm):
         model = DiversionRecord
         fields = [
             "month", "volume_acre_feet", "returned_af",
-            "max_flow_rate_cfs", "diversion_type", "notes",
+            "max_flow_rate_cfs", "diversion_type",
+            "method", "device", "data_state", "notes",
         ]
         widgets = {
             "month": forms.DateInput(attrs={"type": "date", "class": "form-input"}),
@@ -56,6 +58,9 @@ class DiversionRecordForm(forms.ModelForm):
                 "placeholder": "Optional",
             }),
             "diversion_type": forms.Select(attrs={"class": "form-select"}),
+            "method": forms.Select(attrs={"class": "form-select"}),
+            "device": forms.Select(attrs={"class": "form-select"}),
+            "data_state": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={
                 "class": "form-textarea",
                 "rows": 2,
@@ -69,11 +74,64 @@ class DiversionRecordForm(forms.ModelForm):
         # what the field actually wants.
         labels = {"month": "Month (pick any day in it)"}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, pod=None, **kwargs):
         super().__init__(*args, **kwargs)
         # Blank means "fully consumed" — default to 0 rather than a required field,
         # so existing entry flows are unchanged when the operator leaves it empty.
         self.fields["returned_af"].required = False
+        self.fields["method"].required = False
+        self.fields["device"].required = False
+        # data_state has no blank choice (unlike method) since every record
+        # DOES have a data state -- but the model's own default is
+        # 'provisional', and a caller that posts without this key (every
+        # pre-146-03 test, and any future programmatic caller) should get
+        # that default rather than a spurious "this field is required".
+        self.fields["data_state"].required = False
+
+        # 146-03 Task 2: the device choices are this point's own devices,
+        # current link first -- an operator entering a record for POD A
+        # should never be offered POD B's meter. `pod=None` (an unbound
+        # form used outside a POD's own page, if one ever exists) leaves the
+        # queryset empty rather than showing every device in the district.
+        if pod is not None:
+            self.fields["device"].queryset = (
+                MeasuringDevice.objects
+                .filter(pointofdiversiondevice__point_of_diversion=pod)
+                .order_by("-pointofdiversiondevice__is_current", "nickname")
+            )
+        else:
+            self.fields["device"].queryset = MeasuringDevice.objects.none()
+
+        # Defaults on create only (an existing instance keeps its own saved
+        # values): if the point has a current device, default to it and to
+        # method='device' -- the common case is that today's entry came off
+        # the device already on the headgate. With no current device, method
+        # starts blank rather than guessing one the operator hasn't stated.
+        if pod is not None and self.instance.pk is None:
+            current_link = (
+                PointOfDiversionDevice.objects
+                .filter(point_of_diversion=pod, is_current=True)
+                .select_related("device")
+                .first()
+            )
+            if current_link is not None:
+                # Direct assignment, not setdefault: model_to_dict already
+                # populated self.initial["device"]/["method"] with the blank
+                # values off a fresh unsaved instance, so setdefault would
+                # see those keys as already present and never override them.
+                self.initial["device"] = current_link.device_id
+                self.initial["method"] = "device"
+
+    def clean_data_state(self):
+        """A blank submission falls back to the model's own default.
+
+        ``data_state`` has no blank choice in the state's vocabulary -- every
+        record IS in some data state -- so an omitted or empty post (a
+        pre-146-03 caller, or an HTML form whose select was never touched)
+        should read as "the default", never as an empty string saved to a
+        CharField with no blank choice.
+        """
+        return self.cleaned_data.get("data_state") or "provisional"
 
     def clean_month(self):
         """Normalize any picked day to the 1st -- a season is a month, not a date.

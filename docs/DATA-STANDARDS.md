@@ -102,7 +102,7 @@ CalWATRS can currently accept a file produced here — each would need work on t
 state's own side first, and that work has not been done.
 
 - **GEARS** — two modes: *by-well* (monthly metered extraction) and *by-ET* (monthly consumptive use from OpenET). Unit: acre-feet.
-- **CalWATRS** — *Direct Use* and *To Storage* templates, by point of diversion. Units: acre-feet and CFS. Flags parcels with both groundwater and surface-water sources as combined-use, and marks missing water rights as `[INCOMPLETE]`.
+- **CalWATRS** — *Direct Use* and *To Storage* templates, by point of diversion. Units: acre-feet and CFS. Flags parcels with both groundwater and surface-water sources as combined-use, and marks missing water rights as `[INCOMPLETE]`. Its Measurement Method column carries the state's own 23 CCR 934(b) device vocabulary (a diversion record's `method`, and its device's type when the method is "a measuring device"): prepared, never filed, like the rest of this worksheet.
 
 **Source of truth:** `reporting/generators.py`, `reporting/models.py`.
 

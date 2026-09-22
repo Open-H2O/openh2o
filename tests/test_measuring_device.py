@@ -171,8 +171,16 @@ def test_mark_removed_closes_link_and_panel_says_no_current_device(auth_client):
     assert link.removed_on == date.today()
 
     detail = auth_client.get(reverse("surface:pod_detail", args=[pod.pk]))
-    assert "no current device" in detail.content.decode()
-    assert "Retiring meter" not in detail.content.decode()
+    body = detail.content.decode()
+    assert "no current device" in body
+    # Scoped to the device panel itself (id="pod-device-panel", ending where
+    # the next section, "Linked use areas", begins), not the whole page:
+    # 146-03 Task 2 adds a diversion record form ABOVE this panel on the same
+    # page whose device select legitimately still offers a removed device
+    # (current first) so a past record can be attributed to the device that
+    # was on the point when it was entered.
+    panel = body.split('id="pod-device-panel"')[1].split("Linked use areas")[0]
+    assert "Retiring meter" not in panel
 
 
 def test_mark_removed_a_bare_get_is_405(auth_client):
