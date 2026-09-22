@@ -185,6 +185,10 @@ _DIVERSION_ALIASES = {
     # lets the operator override for a file where POD_NAME really is filled in.
     "name": {"name", "diversion_name", "appl_pod"},
     "stream_name": {"stream", "stream_name", "source", "source_name"},
+    # 146-03 Task 3: the ditch tender's own alias for the headgate (the
+    # 145-01 memo's crosswalk layer), never the state's own column -- the
+    # state's export carries no such name.
+    "local_name": {"local_name", "known_as", "ditch_name", "headgate_name"},
     "max_rate_cfs": {"max_rate_cfs", "max_rate", "cfs", "rate_cfs", "direct_diversion_rate"},
     "latitude": {"lat", "latitude", "y"},
     "longitude": {"lon", "lng", "long", "longitude", "x"},
@@ -236,6 +240,7 @@ FIELD_LABELS = {
     "longitude": "Longitude",
     "geometry": "Geometry (GeoJSON / WKT)",
     "stream_name": "Stream Name",
+    "local_name": "Known Locally As",
     "max_rate_cfs": "Max Rate (cfs)",
     "site_type": "Site Type",
     "capacity_acre_feet": "Capacity (acre-feet)",
@@ -317,7 +322,7 @@ _CHOICE_FIELDS = {
 # Free-text fields copied straight through when mapped + present.
 _STRING_FIELDS = {
     "well": ["wcr_number", "state_well_number", "casing_material", "owner_name"],
-    "diversion": ["stream_name"],
+    "diversion": ["stream_name", "local_name"],
     "recharge_site": ["site_type", "operator"],
     "storage": ["site_type", "operator"],
 }

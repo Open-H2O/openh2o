@@ -221,6 +221,160 @@ class PointOfDiversion(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     notes = models.TextField(blank=True)
 
+    # --- Canal losses (146-03 Task 3): three shares of the water diverted
+    # that never reach a field, each with the band the district states.
+    # Defaults are the design-implications document's own (2026-09-18,
+    # convention 4): 0.01 for evaporation (about 1 percent, near-universal),
+    # 0 for seepage and spill (not stated, rather than guessing a district's
+    # figure). Phase 148 rules on who owns each share and what value is
+    # right for a given canal; Phase 149's engine is the first thing that
+    # computes with them. Nothing here does.
+    LOSS_BASIS_CHOICES = [
+        ("measured", "Measured"),
+        ("district_estimate", "District estimate"),
+        ("default", "Default (not district-specific)"),
+    ]
+    CONTRACT_UNIT_CHOICES = [
+        ("cfs", "Cubic feet per second (cfs)"),
+        ("miners_inch", "Miner's inch"),
+        ("gpm", "Gallons per minute (gpm)"),
+        ("acre_feet_per_day", "Acre-feet per day"),
+    ]
+
+    evaporation_fraction = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0.0100"),
+        help_text="Share of the diverted volume lost to evaporation off the "
+        "canal, about 1 percent by convention. An agency's own measured or "
+        "district figure replaces this default.",
+    )
+    seepage_fraction = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Share of the diverted volume lost to canal seepage. "
+        "Defaults to 0 (not stated) rather than guessing a district's figure.",
+    )
+    spill_fraction = models.DecimalField(
+        max_digits=5,
+        decimal_places=4,
+        default=Decimal("0"),
+        help_text="Share of the diverted volume that spills downstream, "
+        "re-diverted at the point spill_device or rediverted_from names. "
+        "Defaults to 0 (not stated).",
+    )
+    evaporation_band_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="The district's stated uncertainty; blank when none is "
+        "stated; never a model spread.",
+    )
+    seepage_band_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="The district's stated uncertainty; blank when none is "
+        "stated; never a model spread. Turlock publishes seepage at ±35%.",
+    )
+    spill_band_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="The district's stated uncertainty; blank when none is "
+        "stated; never a model spread.",
+    )
+    loss_basis = models.CharField(
+        max_length=20,
+        choices=LOSS_BASIS_CHOICES,
+        default="default",
+        help_text="How the three shares above were set: measured on this "
+        "canal, a district estimate, or this platform's own default.",
+    )
+    spill_device = models.ForeignKey(
+        "MeasuringDevice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="spill_points",
+        help_text="Spill measured at the terminus where a device exists.",
+    )
+
+    # --- The 145-01 memo's crosswalk layer (146-03 Task 3): a local alias
+    # and the contract unit a ditch company's own book uses, so a bulk
+    # import (a later task) can resolve a headgate by the name the ditch
+    # tender actually uses rather than only this platform's own name.
+    local_name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="The ditch tender's own name for this point, such as a "
+        "headgate, a run or a turnout. Shown as \"known locally as\" beside "
+        "the point's own name when set.",
+    )
+    contract_unit = models.CharField(
+        max_length=20,
+        choices=CONTRACT_UNIT_CHOICES,
+        blank=True,
+        help_text="The unit the operator's own delivery record is kept in, "
+        "when it is not cfs.",
+    )
+    miners_inch_gpm = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("11.22"),
+        help_text="The statute's 11.22 gallons a minute, unless the "
+        "district's own contract says 10 or 9.",
+    )
+
+    def clean(self):
+        """Reject canal losses that claim more than the whole diverted.
+
+        Model.save() never calls this (the form is the entry boundary and
+        carries the same check as a readable field error), but a guard
+        belongs on the model too -- any future caller that builds a POD
+        outside the form gets the same protection.
+        """
+        super().clean()
+        fractions = [
+            f
+            for f in (
+                self.evaporation_fraction,
+                self.seepage_fraction,
+                self.spill_fraction,
+            )
+            if f is not None
+        ]
+        if fractions and sum(fractions) > 1:
+            raise ValidationError(
+                "Evaporation, seepage and spill together cannot exceed the "
+                "whole of what was diverted."
+            )
+
+    def _loss_display(self, fraction, band_percent):
+        """'12.00%' or '12.00% ±35%' -- convention 11: the band is the
+
+        district's stated uncertainty, never a model spread, and is shown
+        beside the figure only when one was actually given.
+        """
+        percent = (fraction or Decimal("0")) * 100
+        text = f"{percent:.2f}%"
+        if band_percent is not None:
+            text += f" ±{band_percent:.2f}%"
+        return text
+
+    def evaporation_display(self):
+        return self._loss_display(self.evaporation_fraction, self.evaporation_band_percent)
+
+    def seepage_display(self):
+        return self._loss_display(self.seepage_fraction, self.seepage_band_percent)
+
+    def spill_display(self):
+        return self._loss_display(self.spill_fraction, self.spill_band_percent)
+
     def __str__(self):
         return self.name
 

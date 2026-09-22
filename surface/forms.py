@@ -166,14 +166,31 @@ class DiversionRecordForm(forms.ModelForm):
 
 
 class PointOfDiversionForm(forms.ModelForm):
-    """Form for editing POD metadata.
+    """Form for editing POD metadata (146-03 Task 3 adds the door: this form
 
-    water_right and location are excluded (set via separate UI).
+    was defined but never wired to a view or a route before this task --
+    ``surface:pod_edit`` is the door).
+
+    water_right and location are excluded (set via separate UI: the POD
+    page's own "Water right" panel and the map click that placed the point).
+    The canal-loss fractions sit under the template's own "Canal losses"
+    heading; ``clean()`` here is the operator's entry boundary rejecting a
+    fraction sum over 1 with a plain sentence, the same shape
+    ``DiversionRecordForm.clean_returned_af`` uses for its own model guard --
+    kept at the form layer only (not duplicated on the model) so the error
+    is never shown twice.
     """
 
     class Meta:
         model = PointOfDiversion
-        fields = ["name", "stream_name", "max_rate_cfs", "status", "notes"]
+        fields = [
+            "name", "stream_name", "max_rate_cfs", "status",
+            "local_name", "contract_unit", "miners_inch_gpm",
+            "evaporation_fraction", "evaporation_band_percent",
+            "seepage_fraction", "seepage_band_percent",
+            "spill_fraction", "spill_band_percent", "spill_device",
+            "loss_basis", "notes",
+        ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input"}),
             "stream_name": forms.TextInput(attrs={"class": "form-input"}),
@@ -182,8 +199,80 @@ class PointOfDiversionForm(forms.ModelForm):
                 "step": "0.0001",
             }),
             "status": forms.Select(attrs={"class": "form-select"}),
+            "local_name": forms.TextInput(attrs={
+                "class": "form-input",
+                "placeholder": "e.g. Turnout 14",
+            }),
+            "contract_unit": forms.Select(attrs={"class": "form-select"}),
+            "miners_inch_gpm": forms.NumberInput(attrs={
+                "class": "form-input", "step": "0.01",
+            }),
+            "evaporation_fraction": forms.NumberInput(attrs={
+                "class": "form-input", "step": "0.0001", "min": "0", "max": "1",
+            }),
+            "seepage_fraction": forms.NumberInput(attrs={
+                "class": "form-input", "step": "0.0001", "min": "0", "max": "1",
+            }),
+            "spill_fraction": forms.NumberInput(attrs={
+                "class": "form-input", "step": "0.0001", "min": "0", "max": "1",
+            }),
+            "evaporation_band_percent": forms.NumberInput(attrs={
+                "class": "form-input", "step": "0.01", "placeholder": "blank if not stated",
+            }),
+            "seepage_band_percent": forms.NumberInput(attrs={
+                "class": "form-input", "step": "0.01", "placeholder": "blank if not stated",
+            }),
+            "spill_band_percent": forms.NumberInput(attrs={
+                "class": "form-input", "step": "0.01", "placeholder": "blank if not stated",
+            }),
+            "spill_device": forms.Select(attrs={"class": "form-select"}),
+            "loss_basis": forms.Select(attrs={"class": "form-select"}),
             "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
         }
+        labels = {
+            "local_name": "Known locally as",
+            "contract_unit": "Contract unit",
+            "miners_inch_gpm": "Miner's inch (gallons per minute)",
+            "evaporation_fraction": "Evaporation share (0 to 1)",
+            "evaporation_band_percent": "Evaporation band (%)",
+            "seepage_fraction": "Seepage share (0 to 1)",
+            "seepage_band_percent": "Seepage band (%)",
+            "spill_fraction": "Spill share (0 to 1)",
+            "spill_band_percent": "Spill band (%)",
+            "spill_device": "Spill measured at",
+            "loss_basis": "How these shares were set",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The spill device select is this point's own devices only -- an
+        # unsaved POD (this form is edit-only, reached from an existing
+        # point's own page) has none yet.
+        if self.instance is not None and self.instance.pk:
+            self.fields["spill_device"].queryset = MeasuringDevice.objects.filter(
+                pointofdiversiondevice__point_of_diversion=self.instance
+            ).distinct()
+        else:
+            self.fields["spill_device"].queryset = MeasuringDevice.objects.none()
+        self.fields["spill_device"].required = False
+        self.fields["contract_unit"].required = False
+        self.fields["evaporation_band_percent"].required = False
+        self.fields["seepage_band_percent"].required = False
+        self.fields["spill_band_percent"].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        fractions = [
+            cleaned.get(field)
+            for field in ("evaporation_fraction", "seepage_fraction", "spill_fraction")
+        ]
+        fractions = [f for f in fractions if f is not None]
+        if fractions and sum(fractions) > 1:
+            raise forms.ValidationError(
+                "Evaporation, seepage and spill together cannot exceed the "
+                "whole of what was diverted."
+            )
+        return cleaned
 
 
 class MeasuringDeviceForm(forms.ModelForm):

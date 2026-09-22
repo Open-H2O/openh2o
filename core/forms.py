@@ -147,6 +147,14 @@ class DeliverySettingsForm(forms.Form):
     opposite case and stays: ``accounting.services.resolve_recovery_horizon`` and
     ``rollover_allocations`` read it for any zone's unused allocation, surface or
     not.
+
+    **``diversion_use_type_rule`` and ``diversion_report_year_rule`` belong to
+    ``surface`` the same way (146-03 Task 3).** Both are the 145-01 memo's
+    crosswalk layer for a bulk diversion import a later plan adds; on a
+    deployment with no Surface module there is no diversion file to read, so
+    they are shown and saved under exactly the same ``shows_efficiency`` gate
+    -- kept as its own name (``shows_diversion_settings``) so the template
+    reads for what it shows, not why.
     """
 
     efficiency_percent = forms.IntegerField(
@@ -174,12 +182,39 @@ class DeliverySettingsForm(forms.Form):
         ),
         widget=forms.RadioSelect,
     )
+    # 146-03 Task 3: the 145-01 memo's crosswalk layer (J3, J6, M2). Choices
+    # come off SiteConfig itself so the two never drift out of step.
+    diversion_use_type_rule = forms.ChoiceField(
+        choices=SiteConfig.DIVERSION_USE_TYPE_RULE_CHOICES,
+        label="When the state's Water Use Reported file has a USE row, what should it mean here?",
+        help_text="What a USE row in the state's Water Use Reported file means here.",
+        widget=forms.RadioSelect,
+    )
+    diversion_report_year_rule = forms.ChoiceField(
+        choices=SiteConfig.DIVERSION_REPORT_YEAR_RULE_CHOICES,
+        label="How does this deployment define a reporting year for diversion records?",
+        help_text="How a YEAR and MONTH in the state's Water Use Reported file become a calendar month.",
+        widget=forms.RadioSelect,
+    )
+    season_start_month = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=12,
+        label="If the report year above is a season, which month does it start?",
+        help_text="1-12. Used only when the report year rule above is a season.",
+        widget=forms.NumberInput(
+            attrs={"class": "form-input", "style": "width: 6rem;", "step": "1", "min": "1", "max": "12"}
+        ),
+    )
 
     def __init__(self, *args, instance=None, **kwargs):
         from core.modules import is_enabled
 
         self.instance = instance
         self.shows_efficiency = is_enabled("surface")
+        # Same gate as efficiency (see the class docstring), named for what
+        # it shows rather than for the reason both happen to share.
+        self.shows_diversion_settings = self.shows_efficiency
         if instance is not None and "initial" not in kwargs:
             initial = {"recovery_horizon": instance.default_recovery_horizon}
             if self.shows_efficiency:
@@ -187,16 +222,35 @@ class DeliverySettingsForm(forms.Form):
                 initial["efficiency_percent"] = int(
                     (instance.default_irrigation_efficiency * 100).to_integral_value()
                 )
+            if self.shows_diversion_settings:
+                initial["diversion_use_type_rule"] = instance.diversion_use_type_rule
+                initial["diversion_report_year_rule"] = instance.diversion_report_year_rule
+                initial["season_start_month"] = instance.season_start_month
             kwargs["initial"] = initial
         super().__init__(*args, **kwargs)
         if not self.shows_efficiency:
             del self.fields["efficiency_percent"]
+        if not self.shows_diversion_settings:
+            del self.fields["diversion_use_type_rule"]
+            del self.fields["diversion_report_year_rule"]
+            del self.fields["season_start_month"]
         # Plain-language radio labels — these are what the manager reads, NOT the
         # model's choice labels. Option order matches RECOVERY_HORIZON_CHOICES.
         self.fields["recovery_horizon"].choices = [
             ("carry_forward", "Carry it forward as a credit toward next year"),
             ("same_water_year", "Let it expire (use-it-or-lose-it)"),
         ]
+        if self.shows_diversion_settings:
+            self.fields["diversion_use_type_rule"].choices = [
+                ("drop", "Ignore it"),
+                ("returned", "USE minus DIRECT is the returned volume"),
+                ("as_direct", "Treat it as direct use"),
+            ]
+            self.fields["diversion_report_year_rule"].choices = [
+                ("water_year", "Water year: October to September"),
+                ("calendar_year", "Calendar year: January to December"),
+                ("season", "A single irrigation season each year"),
+            ]
 
     def clean_efficiency_percent(self):
         percent = self.cleaned_data["efficiency_percent"]
@@ -211,7 +265,8 @@ class DeliverySettingsForm(forms.Form):
 
         ``update_fields`` is built from what the form actually rendered, so a
         deployment with no Surface module leaves ``default_irrigation_efficiency``
-        exactly as it was rather than writing a value nobody was offered.
+        (and the two diversion-record settings) exactly as they were rather
+        than writing a value nobody was offered.
         """
         config = self.instance
         updated = ["default_recovery_horizon"]
@@ -221,5 +276,12 @@ class DeliverySettingsForm(forms.Form):
                 "efficiency_percent"
             ]
             updated.append("default_irrigation_efficiency")
+        if self.shows_diversion_settings:
+            config.diversion_use_type_rule = self.cleaned_data["diversion_use_type_rule"]
+            config.diversion_report_year_rule = self.cleaned_data["diversion_report_year_rule"]
+            config.season_start_month = self.cleaned_data.get("season_start_month")
+            updated.extend([
+                "diversion_use_type_rule", "diversion_report_year_rule", "season_start_month",
+            ])
         config.save(update_fields=updated)
         return config

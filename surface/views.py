@@ -45,6 +45,7 @@ from surface.forms import (
     CurtailmentOrderForm,
     DiversionRecordForm,
     MeasuringDeviceForm,
+    PointOfDiversionForm,
     WaterRightForm,
 )
 from surface.models import (
@@ -343,6 +344,25 @@ def pod_detail(request, pk):
         page_template="surface/pod_detail.html",
         context=context,
     )
+
+
+@login_required
+def pod_edit(request, pk):
+    """Edit a point of diversion's own fields (146-03 Task 3): its identity,
+
+    the canal-loss fractions and bands, and the crosswalk layer's local
+    name / contract unit. Mirrors ``water_right_edit``'s shape.
+    """
+    pod = get_object_or_404(PointOfDiversion, pk=pk)
+    if request.method == "POST":
+        form = PointOfDiversionForm(request.POST, instance=pod)
+        if form.is_valid():
+            form.save()
+            return redirect("surface:pod_detail", pk=pod.pk)
+    else:
+        form = PointOfDiversionForm(instance=pod)
+
+    return render(request, "surface/pod_form.html", {"form": form, "pod": pod})
 
 
 @login_required

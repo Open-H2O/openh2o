@@ -216,8 +216,27 @@
             <input type="text" id="stream_name" name="stream_name" class="form-input" placeholder="e.g. Cottonwood Creek" value="{{ submitted.stream_name|default:'' }}">
           </div>
           <div class="form-group">
+            <label class="field-label" for="local_name">Known locally as</label>
+            <input type="text" id="local_name" name="local_name" class="form-input" placeholder="e.g. Turnout 14" value="{{ submitted.local_name|default:'' }}">
+          </div>
+          <div class="form-group">
             <label class="field-label" for="max_rate_cfs">Max rate (cfs)</label>
             <input type="number" id="max_rate_cfs" name="max_rate_cfs" step="0.0001" class="form-input" placeholder="e.g. 2.5" value="{{ submitted.max_rate_cfs|default:'' }}">
+          </div>
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="contract_unit">Contract unit</label>
+              <select id="contract_unit" name="contract_unit" class="form-select">
+                <option value="">Not specified</option>
+                {% for val, label in contract_unit_choices %}
+                <option value="{{ val }}" {% if submitted.contract_unit == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="miners_inch_gpm">Miner's inch (gpm)</label>
+              <input type="number" id="miners_inch_gpm" name="miners_inch_gpm" step="0.01" class="form-input" placeholder="11.22 (default)" value="{{ submitted.miners_inch_gpm|default:'' }}">
+            </div>
           </div>
           <div class="form-group">
             <label class="field-label" for="water_right_id">Water right</label>

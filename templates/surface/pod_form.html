@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ pod.name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Edit {{ pod.name }}{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'surface:pod_list' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'surface:pod_detail' pod.pk %}">{{ pod.name }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Edit</span>
+  </nav>
+  <p class="page-description">This point's own identity, its local alias and contract unit, and the three canal losses between the headgate and the fields it serves.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-narrow">
+
+  <a href="{% url 'surface:pod_detail' pod.pk %}" class="back-link">&larr; Back to {{ pod.name }}</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Details</h2>
+
+    {% if form.non_field_errors %}
+    <div class="form-error-box">
+      {% for error in form.non_field_errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+          {{ form.name }}
+          {% for error in form.name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.stream_name.id_for_label }}">{{ form.stream_name.label }}</label>
+          {{ form.stream_name }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.local_name.id_for_label }}">{{ form.local_name.label }}</label>
+        {{ form.local_name }}
+        <div class="form-help">{{ form.local_name.help_text }}</div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.max_rate_cfs.id_for_label }}">{{ form.max_rate_cfs.label }} (cfs)</label>
+          {{ form.max_rate_cfs }}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+          {{ form.status }}
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.contract_unit.id_for_label }}">{{ form.contract_unit.label }}</label>
+          {{ form.contract_unit }}
+          <div class="form-help">{{ form.contract_unit.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.miners_inch_gpm.id_for_label }}">{{ form.miners_inch_gpm.label }}</label>
+          {{ form.miners_inch_gpm }}
+          <div class="form-help">{{ form.miners_inch_gpm.help_text }}</div>
+        </div>
+      </div>
+
+      <h2 class="card-header-ruled mt-lg">Canal losses</h2>
+      <p class="text-secondary text-sm mb-md">Three shares of the water diverted that never reach a field: evaporation, seepage and spill; each with the band the district states; nothing here is computed until the engine reads it.</p>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.evaporation_fraction.id_for_label }}">{{ form.evaporation_fraction.label }}</label>
+          {{ form.evaporation_fraction }}
+          <div class="form-help">{{ form.evaporation_fraction.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.evaporation_band_percent.id_for_label }}">{{ form.evaporation_band_percent.label }}</label>
+          {{ form.evaporation_band_percent }}
+          <div class="form-help">{{ form.evaporation_band_percent.help_text }}</div>
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.seepage_fraction.id_for_label }}">{{ form.seepage_fraction.label }}</label>
+          {{ form.seepage_fraction }}
+          <div class="form-help">{{ form.seepage_fraction.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.seepage_band_percent.id_for_label }}">{{ form.seepage_band_percent.label }}</label>
+          {{ form.seepage_band_percent }}
+          <div class="form-help">{{ form.seepage_band_percent.help_text }}</div>
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.spill_fraction.id_for_label }}">{{ form.spill_fraction.label }}</label>
+          {{ form.spill_fraction }}
+          <div class="form-help">{{ form.spill_fraction.help_text }}</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.spill_band_percent.id_for_label }}">{{ form.spill_band_percent.label }}</label>
+          {{ form.spill_band_percent }}
+          <div class="form-help">{{ form.spill_band_percent.help_text }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.spill_device.id_for_label }}">{{ form.spill_device.label }}</label>
+        {{ form.spill_device }}
+        <div class="form-help">{{ form.spill_device.help_text }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.loss_basis.id_for_label }}">{{ form.loss_basis.label }}</label>
+        {{ form.loss_basis }}
+        <div class="form-help">{{ form.loss_basis.help_text }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+        {{ form.notes }}
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">Save changes</button>
+        <a href="{% url 'surface:pod_detail' pod.pk %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

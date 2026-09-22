@@ -12,6 +12,7 @@ from decimal import Decimal
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from core.constants import RECOVERY_HORIZON_CHOICES
@@ -93,6 +94,45 @@ class SiteConfig(models.Model):
         default="carry_forward",
         help_text="What happens to a district's unused allocation at year-end "
         "(agency-wide default; a district may override it).",
+    )
+
+    # --- Diversion records: the 145-01 memo's crosswalk layer (146-03 Task
+    # 3). Both fields belong to `surface` exactly as
+    # default_irrigation_efficiency does: DeliverySettingsForm shows them
+    # only when `surface` is enabled, and a later plan's bulk importer is
+    # the only reader -- nothing here reaches the accounting engine.
+    DIVERSION_USE_TYPE_RULE_CHOICES = [
+        ("drop", "Ignore USE rows"),
+        ("returned", "USE minus DIRECT is the returned volume"),
+        ("as_direct", "Treat USE as direct use"),
+    ]
+    DIVERSION_REPORT_YEAR_RULE_CHOICES = [
+        ("water_year", "Water year (October to September)"),
+        ("calendar_year", "Calendar year (January to December)"),
+        ("season", "A single irrigation season each year"),
+    ]
+
+    diversion_use_type_rule = models.CharField(
+        max_length=20,
+        choices=DIVERSION_USE_TYPE_RULE_CHOICES,
+        default="drop",
+        help_text="What a USE row in the state's Water Use Reported file "
+        "means here (the memo's J3).",
+    )
+    diversion_report_year_rule = models.CharField(
+        max_length=20,
+        choices=DIVERSION_REPORT_YEAR_RULE_CHOICES,
+        default="water_year",
+        help_text="How a YEAR and MONTH in the state's Water Use Reported "
+        "file become a calendar month (the memo's J6 and M2).",
+    )
+    season_start_month = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(12)],
+        help_text="The month (1-12) this deployment's irrigation season "
+        "starts. Used only when the report year rule above is a season "
+        "(the memo's J6).",
     )
 
     def save(self, *args, **kwargs):

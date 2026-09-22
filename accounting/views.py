@@ -1802,10 +1802,33 @@ def delivery_settings(request):
     # The eyebrows count what is rendered, not what the form class declares:
     # `efficiency_percent` belongs to `surface` and is gone when that module is
     # (see DeliverySettingsForm). A hardcoded "of 2" is the 88-03 defect.
+    #
+    # 146-03 Task 3 adds a third possible card ("Diversion records", the same
+    # `surface` gate) after "efficiency" and "recovery horizon" -- each
+    # card's own position is computed here, in DISPLAY order, rather than
+    # assumed in the template (recovery horizon is no longer always last).
+    position = 0
+    if form.shows_efficiency:
+        position += 1
+    efficiency_number = position or None
+    position += 1
+    recovery_number = position
+    diversion_number = None
+    if form.shows_diversion_settings:
+        position += 1
+        diversion_number = position
+    settings_total = position
+
     return render(
         request,
         "accounting/delivery_settings.html",
-        {"form": form, "settings_total": 2 if form.shows_efficiency else 1},
+        {
+            "form": form,
+            "settings_total": settings_total,
+            "efficiency_number": efficiency_number,
+            "recovery_number": recovery_number,
+            "diversion_number": diversion_number,
+        },
     )
 
 

@@ -10,6 +10,8 @@ urlpatterns = [
     # POD-centric views (primary entry point)
     path("", views.pod_list, name="pod_list"),
     path("diversion/<int:pk>/", views.pod_detail, name="pod_detail"),
+    # 146-03 Task 3: the POD's own edit door (identity, canal losses, alias).
+    path("diversion/<int:pk>/edit/", views.pod_edit, name="pod_edit"),
     path("diversion/<int:pk>/record/", views.diversion_record_create, name="diversion_record_create"),
     # 146-02 Task 3 (ISS-181): edit and delete a diversion record.
     path(

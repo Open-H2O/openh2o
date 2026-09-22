@@ -153,6 +153,8 @@ def _add_context(infra_type, **extra):
         # (Phase 87) and this context is built for every add-page render, not
         # only a diversion one.
         "water_rights": _water_rights_for_select(),
+        # 146-03 Task 3: the diversion card's "Contract unit" select.
+        "contract_unit_choices": _contract_unit_choices(),
     }
     context.update(extra)
     return context
@@ -165,6 +167,15 @@ def _water_rights_for_select():
     from surface.models import WaterRight
 
     return WaterRight.objects.order_by("right_id")
+
+
+def _contract_unit_choices():
+    """PointOfDiversion's own contract-unit choices, or none without `surface`."""
+    if not is_enabled("surface"):
+        return []
+    from surface.models import PointOfDiversion
+
+    return PointOfDiversion.CONTRACT_UNIT_CHOICES
 
 
 @login_required
@@ -281,6 +292,13 @@ def infrastructure_add(request):
             return _error("diversion", "A point location is required for diversions.")
         try:
             max_rate_cfs = coerce_decimal(request.POST.get("max_rate_cfs"), "Max Rate (cfs)", min_value=0)
+            # 146-03 Task 3: left blank, the model's own default (11.22, the
+            # statute's gallons a minute) applies -- so a blank submission
+            # must NOT pass `None` to create(), which would overwrite that
+            # default with a NOT NULL column's illegal value.
+            miners_inch_gpm = coerce_decimal(
+                request.POST.get("miners_inch_gpm"), "Miner's Inch (gpm)", min_value=0
+            )
         except FieldValidationError as exc:
             return _error("diversion", str(exc))
         # 146-02 D2: optional at creation, the same select the POD page's own
@@ -293,7 +311,7 @@ def infrastructure_add(request):
             if water_right_id
             else None
         )
-        pod = PointOfDiversion.objects.create(
+        pod_kwargs = dict(
             name=name,
             location=location,
             water_right=water_right,
@@ -301,7 +319,14 @@ def infrastructure_add(request):
             max_rate_cfs=max_rate_cfs,
             status=status,
             notes=notes,
+            # 146-03 Task 3: the 145-01 memo's crosswalk layer -- the ditch
+            # tender's own alias and contract unit for this headgate.
+            local_name=request.POST.get("local_name", "").strip(),
+            contract_unit=request.POST.get("contract_unit", "").strip(),
         )
+        if miners_inch_gpm is not None:
+            pod_kwargs["miners_inch_gpm"] = miners_inch_gpm
+        pod = PointOfDiversion.objects.create(**pod_kwargs)
         if parcel:
             PointOfDiversionParcel.objects.create(point_of_diversion=pod, parcel=parcel)
         return redirect("surface:pod_list")

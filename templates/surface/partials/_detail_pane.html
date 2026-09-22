@@ -41,6 +41,10 @@
   tall left column beside a right column that ended a third of the way down
   (R-112) -- no worked shape here to copy from; the account grid is.
 {% endcomment %}
+<div class="row-start" style="gap: var(--space-sm); margin-bottom: var(--space-md);">
+  <a href="{% url 'surface:pod_edit' pod.pk %}" class="btn-secondary btn-sm">Edit point</a>
+</div>
+
 <div class="pane-stack">
   <div class="page-grid-account">
 
@@ -55,6 +59,13 @@
           <div class="field-label">Name</div>
           <div class="field-value">{{ pod.name }}</div>
         </div>
+
+        {% if pod.local_name %}
+        <div class="field-group">
+          <div class="field-label">Known locally as</div>
+          <div class="field-value">{{ pod.local_name }}</div>
+        </div>
+        {% endif %}
 
         <div class="field-group">
           <div class="field-label">Stream</div>
@@ -208,6 +219,43 @@
       just this card via HTMX.
     {% endcomment %}
     {% include "surface/partials/_device_panel.html" %}
+
+    {% comment %}
+      Canal losses, full width (146-03 Task 3; convention 4 and convention 11
+      of the design-implications document, 2026-09-18). Read-only here --
+      the fractions and bands are edited on the POD's own edit page
+      (surface:pod_edit), not inline, the same shape the identity card above
+      uses.
+    {% endcomment %}
+    <div class="card-raised page-grid-account-full">
+      <h2 class="section-header mb-md">Canal losses</h2>
+      <p class="text-secondary text-sm mb-md">
+        Three shares of the water diverted that never reach a field:
+        evaporation, seepage and spill; each with the band the district
+        states; nothing here is computed until the engine reads it.
+      </p>
+      <div class="field-grid-2">
+        <div class="field-group">
+          <div class="field-label">Evaporation</div>
+          <div class="field-value">{{ pod.evaporation_display }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Seepage</div>
+          <div class="field-value">{{ pod.seepage_display }}</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Spill</div>
+          <div class="field-value">{{ pod.spill_display }}</div>
+          {% if pod.spill_device %}
+          <div class="text-tertiary text-xs mt-xs">Measured at {{ pod.spill_device }}</div>
+          {% endif %}
+        </div>
+        <div class="field-group">
+          <div class="field-label">Basis</div>
+          <div class="field-value">{{ pod.get_loss_basis_display }}</div>
+        </div>
+      </div>
+    </div>
 
     <!-- Linked use areas + Recharge areas filled, side by side -->
     <div class="page-grid-2col page-grid-account-full">
