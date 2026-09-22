@@ -1,0 +1,58 @@
+{% comment %}
+Outcome of a production import commit (146-04 Task 2, D7). Same two shapes
+as the other importers' result partials: an error before any rows were
+considered, or a success summary with an honest count of what was skipped
+and why.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Import complete</h2>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+    <span class="badge badge-green">Created {{ created }}</span>
+    {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
+    {% if duplicate_rows_in_file %}<span class="badge badge-orange">Repeated in file {{ duplicate_rows_in_file }}</span>{% endif %}
+    {% if skipped_rows %}<span class="badge badge-grey">Not a month {{ skipped_rows|length }}</span>{% endif %}
+    {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
+  </div>
+
+  <p class="text-base text-secondary mt-md">
+    {{ created }} production record{{ created|pluralize }} created.
+    {% if skipped_duplicates %}{{ skipped_duplicates }} row{{ skipped_duplicates|pluralize }} matched a month and source already on file and were skipped, never overwritten.{% endif %}
+    {% if not created and not skipped_duplicates and not errors %}Nothing to import.{% endif %}
+  </p>
+
+  {% if skipped_rows %}
+  <h3 class="section-header-sm mt-lg">Rows that are not a month</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Value</th></tr></thead>
+    <tbody>
+      {% for row in skipped_rows %}
+      <tr><td class="text-mono">{{ row.line }}</td><td>{{ row.label }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if errors %}
+  <h3 class="section-header-sm mt-lg">Row errors</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
+    <tbody>
+      {% for err in errors %}
+      <tr><td class="text-mono">{{ err.line }}</td><td class="text-furnace">{{ err.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    <a href="{% url 'drinking:production' %}" class="btn-primary">View Production</a>
+    <a href="{% url 'drinking:production_import' %}" class="btn-secondary">Import another file</a>
+  </div>
+</div>
+{% endif %}

@@ -5,6 +5,11 @@
     "note": "SECTION D PIN for FIG-geography-001..004 (137-02 renumbering: the 001..003 range above named this pin before the Carried forward column added a fourth site). Halvern Irrigation-Urban GSA (zone id 2), the same zone the accounting dashboard's zone table is pinned to in section 1, so the two screens' figures for one zone can be laid side by side. The page takes no period parameter: its Allocation vs. use table lists every period at once, newest first, so the pinned row is the FIRST row, WY 2025-2026 (reporting period id 2, the dry year), water type GW. FIG-geography-005, the parcel-area column (renumbered from FIG-geography-004 the same way), is read from this same page: _zone_parcels.html is included here at line 77, and the only two other routes that render it (zone_parcel_assign, zone_parcel_remove) are POST-only and both mutate, so this is the figure's one read-only rendering path. Pinned parcel row: MER-APN-026, the first by parcel number among this zone's 23 parcels."
   },
   {
+    "slug": "d-drinking-production-2022",
+    "url": "/drinking/production/?year=2022",
+    "note": "SECTION D PIN for FIG-drinking-002..003. 146-04 Task 2 (D7, ISS-184). The standing deployment carries no production rows, so this pin was captured by a temporary, fully-reverted probe: Le Grand CSD's real 2022 eAR export (PWSID CA2410011, the fixture tests/test_production_import.py::EAR_CSV_TEXT carries verbatim) imported against the deployment's one WaterSystem (its pwsid swapped to CA2410011 for the length of the import only, since drinking/production_import.py:160-166 checks the row PWSID against system.pwsid and stores nothing PWSID-shaped on the row), the page read over real HTTP as an authenticated user, then the imported rows deleted and the system's real pwsid restored. Twelve GW months, 91,371,800 gallons, 280.41 acre-feet; SW all zero. Recomputed independently in audit/figure_ledger/sql/drinking_production.sql."
+  },
+  {
     "slug": "d-datasync-station-list",
     "url": "/datasync/stations/",
     "note": "SECTION D EVIDENCE, not a figure site. The station detail pane cannot be reached on this data: datasync_monitoredstation holds ZERO rows. This capture records what the station list actually says, so the four UNVERIFIED datasync rows rest on the served page and not only on a row count."

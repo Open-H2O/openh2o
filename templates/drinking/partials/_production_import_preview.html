@@ -1,0 +1,105 @@
+{% comment %}
+Mapping/preview step for the production import (146-04 Task 2, D7). Same
+two-button idiom as the diversion and water-rights importers: one form,
+whose hidden rows_json and mapping-step settings are shared by two submit
+buttons -- "Update preview" re-runs the same dry-run against changed
+settings, "Import" commits. Nothing is written until the second button is
+pressed.
+
+`error`: set only when a re-render after Import raised.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md); margin-bottom: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% endif %}
+
+<div class="card-raised">
+  <h2 class="card-header-ruled">Match your settings: {{ row_count }} row{{ row_count|pluralize }}, {{ layout }} layout</h2>
+
+  <form id="production-import-mapping-form" class="mt-lg">
+    {% csrf_token %}
+    <input type="hidden" name="rows_json" value="{{ rows_json }}">
+
+    {% if layout == "ear" %}
+    <div class="form-group">
+      <label class="form-label" for="production-unit-for-blank">Unit for rows with a blank unit</label>
+      <select id="production-unit-for-blank" name="unit_for_blank" class="form-select">
+        <option value=""{% if not unit_for_blank %} selected{% endif %}>(none chosen &mdash; a blank-unit row is an error)</option>
+        {% for value, label in unit_choices %}
+        <option value="{{ value }}"{% if unit_for_blank == value %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <div class="form-help">Applied only to a row whose own "Units of Measure As Reported" cell is empty.</div>
+    </div>
+    {% else %}
+    <div class="form-row-2col">
+      <div class="form-group">
+        <label class="form-label" for="production-operator-year">Report year</label>
+        <input type="number" id="production-operator-year" name="operator_year" class="form-input" value="{{ operator_year }}" placeholder="e.g. 2022">
+        <div class="form-help">The operator's log carries no year of its own.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="production-operator-unit">Unit</label>
+        <select id="production-operator-unit" name="operator_unit" class="form-select">
+          {% for value, label in unit_choices %}
+          <option value="{{ value }}"{% if operator_unit == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-help">Applied to every row &mdash; the log carries no per-row unit.</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="row-start pt-sm mt-lg" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-secondary"
+        hx-post="{% url 'drinking:production_import_preview' %}"
+        hx-target="#production-import-area"
+        hx-include="closest form">Update preview</button>
+      <button type="submit" class="btn-primary"
+        hx-post="{% url 'drinking:production_import_commit' %}"
+        hx-target="#production-import-area"
+        hx-include="closest form">Import {{ created }} record{{ created|pluralize }}</button>
+    </div>
+  </form>
+</div>
+
+<div class="card-raised">
+  <h3 class="section-header-sm">What this would do</h3>
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+    <span class="badge badge-green">Create {{ created }}</span>
+    {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
+    {% if duplicate_rows_in_file %}<span class="badge badge-orange">Repeated in file {{ duplicate_rows_in_file }}</span>{% endif %}
+    {% if skipped_rows %}<span class="badge badge-grey">Not a month {{ skipped_rows|length }}</span>{% endif %}
+    {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
+  </div>
+</div>
+
+{% if skipped_rows %}
+<div class="card-raised">
+  <h3 class="section-header-sm">Rows that are not a month</h3>
+  <p class="text-base text-secondary mt-md">These are skipped, never guessed at as a thirteenth month.</p>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Value</th></tr></thead>
+    <tbody>
+      {% for row in skipped_rows %}
+      <tr><td class="text-mono">{{ row.line }}</td><td>{{ row.label }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if errors %}
+<div class="card-raised">
+  <h3 class="section-header-sm">Row errors</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
+    <tbody>
+      {% for err in errors %}
+      <tr><td class="text-mono">{{ err.line }}</td><td class="text-furnace">{{ err.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}

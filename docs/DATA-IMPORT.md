@@ -140,6 +140,32 @@ docker compose exec web python manage.py import_ledger_csv ledger.csv \
   --reporting-period "2024 Water Year" --dry-run
 ```
 
+### Water system production: the production import screen and `import_production`
+
+A year of a drinking-water system's own production or delivery, by month and by source, through **Drinking Water &rarr; Production &rarr; Import** (`/drinking/production/import/`) or the management command. **CSV only.** Two layouts are recognized by header, never by filename:
+
+| Layout | Recognized by | Columns |
+|---|---|---|
+| The state's eAR production export | `PWSID`, `Year`, `Month`, `TypeCode`, `Quantity as in Units Reported` all present | One row per (PWSID, Year, Month, TypeCode). `TypeCode` is one of `GW`, `SW`, `Purchased`, `Sold`, `Recycled`, `NonPotable` (mapped to this product's own six codes) or `NonPotableSold`, which the state's own file carries but this product does not track -- a row typed that way is a row error naming it. `Units of Measure As Reported` is `G`, `MG`, `AF`, `CCF`, or blank; a blank cell is a row error until you choose the mapping step's "unit for blank rows." Repeated keys within the file are exact duplicates (the state's own export can carry a key up to five times) and are collapsed, counted, never doubled. `PWSID` must match this deployment's own water system -- a row for another system is a row error naming it. |
+| The operator's own monthly log | a `Date/Month` column, plus at least one of the six source columns | The Small Water System eAR template's own Section 5 layout: `Date/Month` (the twelve month names; `Maximum Day`, `Annual Total` and `Percent Treated` are not months and are skipped, named in the preview, never misread as a thirteenth month) and one column per source ("Water Produced from Groundwater (Wells)", "...Surface Water", "Finished Water Purchased...", "Water Sold to Another PWS", "Non-potable...", "Recycled"). "Total Amount of Potable Water" is a computed total on the printed form and is never read as a source. The file carries no PWSID and no unit -- both are the mapping step's own questions (the report year is required; the unit defaults to gallons). |
+
+**Conversions**, matching every other importer's own figures: 325,851 gallons per acre-foot, 1,000,000 gallons per MG, 748.05 gallons per CCF.
+
+**A month and source already on file is skipped and counted, never overwritten** -- re-importing the same file writes nothing the second time. A single month can also be typed in by hand at **Drinking Water &rarr; Production &rarr; + Add month**.
+
+```bash
+docker compose exec web python manage.py import_production ear-2024-production.csv \
+  --pwsid CA2410011 --dry-run
+docker compose exec web python manage.py import_production ear-2024-production.csv --pwsid CA2410011
+```
+
+The `web` container has no bind mount to your host filesystem -- a bare path only resolves inside the container. Copy the file in first:
+
+```bash
+docker compose cp ear-2024-production.csv web:/tmp/
+docker compose exec web python manage.py import_production /tmp/ear-2024-production.csv --pwsid CA2410011
+```
+
 ---
 
 ## 3. Auto-populate (fill in from public sources)

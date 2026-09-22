@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Production - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Production{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span>Water Data</span>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Production</span>
+  </nav>
+  <p class="page-description">What the system produced or delivered, by month and by source &mdash; the state's own annual electronic report (eAR), read back in one table.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-wide">
+
+  {% if not system %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">No water system yet</h2>
+    <p class="text-base text-secondary mt-md">
+      Production is recorded against a water system, and none is onboarded on
+      this deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
+      first.
+    </p>
+  </div>
+  {% elif not has_any %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">No production recorded yet</h2>
+    <p class="text-base text-secondary mt-md">
+      Two files bring this in: the state's own annual electronic report (eAR)
+      production export, or the operator's own monthly log &mdash; either one,
+      through <strong>Import</strong> below. A single month can also be typed
+      in by hand.
+    </p>
+    <div class="row-start mt-lg" style="gap: var(--space-sm);">
+      <a href="{% url 'drinking:production_import' %}" class="btn-primary">Import a file</a>
+      <a href="{% url 'drinking:production_add' %}" class="btn-secondary">+ Add month</a>
+    </div>
+  </div>
+  {% else %}
+
+  <div class="card-raised toolbar-row">
+    <div>
+      <label class="form-label" for="production-year">Year</label>
+      <select id="production-year" class="form-select" onchange="window.location.search='?year=' + this.value">
+        {% for y in years %}
+        <option value="{{ y }}"{% if y == year %} selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="row-start" style="gap: var(--space-sm); margin-left: auto;">
+      <a href="{% url 'drinking:production_add' %}" class="btn-secondary">+ Add month</a>
+      <a href="{% url 'drinking:production_import' %}" class="btn-primary">Import</a>
+    </div>
+  </div>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">{{ year }}</h2>
+    <table class="data-table mt-md">
+      <thead>
+        <tr>
+          <th>Month</th>
+          {% for code, label in type_columns %}<th>{{ label }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.label }}</td>
+          {% for cell in row.cells %}
+          <td class="text-mono">
+            {% if cell %}{{ cell.volume_as_reported }} {{ cell.unit_as_reported }}{% else %}&mdash;{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td><strong>Total</strong></td>
+          {% for t in totals %}
+          <td class="text-mono"><strong>{{ t.gallons_whole }} gal</strong></td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <td>Acre-feet</td>
+          {% for t in totals %}
+          <td class="text-mono">{{ t.acre_feet|floatformat:2 }} AF</td>
+          {% endfor %}
+        </tr>
+      </tfoot>
+    </table>
+    <p class="text-base text-secondary mt-lg">
+      <strong>{{ grand_total_gallons_whole }} gallons</strong>
+      ({{ grand_total_af|floatformat:2 }} acre-feet) across every source this year.
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

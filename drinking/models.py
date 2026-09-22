@@ -26,6 +26,8 @@ well is ONE physical feature: the extraction ledger lives on the wells side, the
 samples live here.
 """
 
+from decimal import Decimal
+
 from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -634,3 +636,158 @@ class EnvirofactsCache(models.Model):
             django_settings, "ENVIROFACTS_CACHE_DAYS", 30
         )
         return (timezone.now() - self.queried_at).days > max_days
+
+
+# -- 1.3 Production by month and source (146-04 Task 2, D7, ISS-184) --------
+#
+# The record shape 2's operator never had: what the system produced or
+# delivered, by month and by source. Two real-world layouts land here --
+# the state's eAR export and the operator's own monthly log
+# (``drinking/production_import.py``) -- so the type codes below are the
+# eAR's own six, and the units are the eAR's own four.
+
+# Source: the eAR's own TypeCode column. NonPotableSold is the file's
+# seventh code and carries no entry here -- an eAR row typed NonPotableSold
+# is a row error naming it, not silently dropped or folded into NonPotable.
+PRODUCTION_TYPE_GW = "GW"
+PRODUCTION_TYPE_SW = "SW"
+PRODUCTION_TYPE_PU = "PU"
+PRODUCTION_TYPE_SO = "SO"
+PRODUCTION_TYPE_NP = "NP"
+PRODUCTION_TYPE_RC = "RC"
+PRODUCTION_TYPE_CHOICES = [
+    (PRODUCTION_TYPE_GW, "Groundwater"),
+    (PRODUCTION_TYPE_SW, "Surface water"),
+    (PRODUCTION_TYPE_PU, "Purchased"),
+    (PRODUCTION_TYPE_SO, "Sold"),
+    (PRODUCTION_TYPE_NP, "Non-potable"),
+    (PRODUCTION_TYPE_RC, "Recycled"),
+]
+
+# Source: the eAR's own "Units of Measure As Reported" column.
+PRODUCTION_UNIT_GALLONS = "G"
+PRODUCTION_UNIT_MG = "MG"
+PRODUCTION_UNIT_AF = "AF"
+PRODUCTION_UNIT_CCF = "CCF"
+PRODUCTION_UNIT_CHOICES = [
+    (PRODUCTION_UNIT_GALLONS, "Gallons"),
+    (PRODUCTION_UNIT_MG, "Million gallons"),
+    (PRODUCTION_UNIT_AF, "Acre-feet"),
+    (PRODUCTION_UNIT_CCF, "Hundred cubic feet (CCF)"),
+]
+
+PRODUCTION_PROVENANCE_EAR = "ear_export"
+PRODUCTION_PROVENANCE_OPERATOR_LOG = "operator_log"
+PRODUCTION_PROVENANCE_TYPED = "typed"
+PRODUCTION_PROVENANCE_CHOICES = [
+    (PRODUCTION_PROVENANCE_EAR, "State eAR export"),
+    (PRODUCTION_PROVENANCE_OPERATOR_LOG, "Operator's monthly log"),
+    (PRODUCTION_PROVENANCE_TYPED, "Typed in"),
+]
+
+# Conversions to gallons, matching ``surface/diversion_import.py``'s own
+# figures exactly. Repeated here rather than imported: ``drinking`` and
+# ``surface`` are each independently droppable (core/modules.py's module
+# composition rule), so neither module may import from the other, and a
+# constant true in both places is worth restating rather than coupling two
+# domains over three numbers.
+PRODUCTION_GALLONS_PER_ACRE_FOOT = Decimal("325851")
+PRODUCTION_GALLONS_PER_MG = Decimal("1000000")
+PRODUCTION_GALLONS_PER_CCF = Decimal("748.05")
+
+_TWO_PLACES = Decimal("0.01")
+
+
+class SystemProduction(models.Model):
+    """One month's production or delivery, by source type, for a water system.
+
+    D7: shape 2's own gap. The state's eAR export gives one row per
+    (PWSID, Year, Month, TypeCode); the operator's own monthly log gives one
+    column per source and no PWSID or unit at all. Both land on this one
+    table (see ``drinking/production_import.py`` for how each is read).
+
+    ``volume_gallons`` and ``volume_acre_feet`` are computed at save from
+    ``volume_as_reported`` and ``unit_as_reported`` -- stored rather than
+    derived on read so the year table (``/drinking/production/``) can sum
+    and sort without recomputing a conversion per row on every page load.
+    """
+
+    system = models.ForeignKey(
+        WaterSystem, on_delete=models.CASCADE, related_name="production_records"
+    )
+    year = models.PositiveSmallIntegerField()
+    month = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="1 to 12. Null means the year was reported as one figure -- "
+        "the eAR puts that in the January row, so the importer keeps it as "
+        "month 1 and sets annual_in_january rather than leaving this blank.",
+    )
+    type_code = models.CharField(max_length=2, choices=PRODUCTION_TYPE_CHOICES)
+    facility = models.ForeignKey(
+        SystemFacility,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="production_records",
+        help_text="The source, when the operator's log names one.",
+    )
+    volume_as_reported = models.DecimalField(max_digits=14, decimal_places=2)
+    unit_as_reported = models.CharField(
+        max_length=3, choices=PRODUCTION_UNIT_CHOICES
+    )
+    volume_gallons = models.DecimalField(
+        max_digits=18, decimal_places=2, editable=False
+    )
+    volume_acre_feet = models.DecimalField(
+        max_digits=14, decimal_places=2, editable=False
+    )
+    provenance = models.CharField(
+        max_length=20, choices=PRODUCTION_PROVENANCE_CHOICES
+    )
+    annual_in_january = models.BooleanField(
+        default=False,
+        help_text="This January row stands for the whole year; no other "
+        "month of this year and type appears in the file it came from.",
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["system", "-year", "month", "type_code"]
+        # Postgres treats NULL as distinct from NULL in a unique constraint,
+        # so this enforces nothing for the common case (facility blank --
+        # neither import layout names one). It still stops a genuine
+        # double-entry once a facility IS attached, and it documents the
+        # key the importer's own dedup query uses
+        # (``drinking/production_import.py::commit_rows``), which is the
+        # real guard against a duplicate row with no facility.
+        unique_together = [("system", "year", "month", "type_code", "facility")]
+        verbose_name = "System Production"
+        verbose_name_plural = "System Production"
+
+    def __str__(self):
+        month_label = f"{self.month:02d}" if self.month else "year"
+        return (
+            f"{self.system.pwsid} {self.year}-{month_label} {self.type_code}: "
+            f"{self.volume_as_reported} {self.unit_as_reported}"
+        )
+
+    def _gallons(self):
+        if self.unit_as_reported == PRODUCTION_UNIT_GALLONS:
+            return self.volume_as_reported
+        if self.unit_as_reported == PRODUCTION_UNIT_MG:
+            return self.volume_as_reported * PRODUCTION_GALLONS_PER_MG
+        if self.unit_as_reported == PRODUCTION_UNIT_CCF:
+            return self.volume_as_reported * PRODUCTION_GALLONS_PER_CCF
+        if self.unit_as_reported == PRODUCTION_UNIT_AF:
+            return self.volume_as_reported * PRODUCTION_GALLONS_PER_ACRE_FOOT
+        raise ValueError(f"Unknown unit_as_reported: {self.unit_as_reported!r}")
+
+    def save(self, *args, **kwargs):
+        self.volume_gallons = self._gallons().quantize(_TWO_PLACES)
+        self.volume_acre_feet = (
+            self.volume_gallons / PRODUCTION_GALLONS_PER_ACRE_FOOT
+        ).quantize(_TWO_PLACES)
+        super().save(*args, **kwargs)

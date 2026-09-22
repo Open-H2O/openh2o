@@ -15,6 +15,8 @@ surface. The write path is the lab-file import at the bottom of this module,
 plus Django admin for one-off corrections.
 """
 import json
+import logging
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -22,6 +24,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Max, Min, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_GET, require_POST
@@ -30,6 +33,8 @@ from core.map_labels import map_label
 
 from core.workspace import list_response
 from drinking import envirofacts, envirofacts_mapping, glossary, importer
+from drinking import production_import as production_import_service
+from drinking.forms import SystemProductionForm
 from drinking.ps_codes import compose_ps_code
 from drinking.models import (
     ACTIVITY_STATUS_CHOICES,
@@ -37,14 +42,20 @@ from drinking.models import (
     OWNER_TYPE_CHOICES,
     POINT_TYPE_CHOICES,
     PRIMARY_SOURCE_CHOICES,
+    PRODUCTION_TYPE_CHOICES,
+    PRODUCTION_UNIT_CHOICES,
     PWS_TYPE_CHOICES,
     WATER_TYPE_CHOICES,
     Analyte,
     SampleResult,
     SamplingPoint,
     SystemFacility,
+    SystemProduction,
     WaterSystem,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 _POPULATION_SPLIT_FIELDS = (
@@ -1633,4 +1644,333 @@ def onboard_points_add(request, pwsid):
     return _listed(
         added=point if created else None,
         duplicate=None if created else point,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Production by month and source (146-04 Task 2, D7, ISS-184)
+# ---------------------------------------------------------------------------
+#
+# The record shape 2's operator never had: what the system produced, by
+# month and by source. Same three-step shape as the lab import above (page,
+# preview, commit) for the bulk door; a plain ModelForm for the by-hand door.
+# The importer's own rules -- two layouts, unit conversions, dedup -- live in
+# ``drinking/production_import.py``.
+
+PRODUCTION_MONTH_NAMES = {
+    1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June",
+    7: "July", 8: "August", 9: "September", 10: "October", 11: "November",
+    12: "December",
+}
+
+
+@login_required
+def production(request):
+    """The year table: production and delivery by month and source.
+
+    Months down, type codes across, in the unit each type was reported in
+    plus acre-feet -- the shape a small system's operator wants: the same
+    figures the state's own eAR already has from them, read back in one
+    table instead of scattered across a year of import rows.
+
+    No system onboarded yet: the empty state names the two files this door
+    takes (the eAR export, the operator's own log) rather than an empty
+    table with nothing to explain it.
+    """
+    system = WaterSystem.objects.first()
+    if system is None:
+        return render(request, "drinking/production.html", {"system": None})
+
+    years = list(
+        SystemProduction.objects.filter(system=system)
+        .order_by("-year")
+        .values_list("year", flat=True)
+        .distinct()
+    )
+
+    year_param = request.GET.get("year", "").strip()
+    if year_param.isdigit():
+        year = int(year_param)
+    else:
+        year = years[0] if years else None
+
+    type_codes = [code for code, _label in PRODUCTION_TYPE_CHOICES]
+    records = (
+        SystemProduction.objects.filter(system=system, year=year)
+        if year is not None
+        else SystemProduction.objects.none()
+    )
+    by_key = {(r.month, r.type_code): r for r in records}
+
+    # A record with month=None (the whole year reported as one figure) is
+    # its own row at the foot of the table, never folded into a numbered
+    # month it was never attached to.
+    has_annual_row = any(month is None for month, _type_code in by_key)
+
+    rows = []
+    for month_num in range(1, 13):
+        rows.append(
+            {
+                "month": month_num,
+                "label": PRODUCTION_MONTH_NAMES[month_num],
+                "cells": [by_key.get((month_num, code)) for code in type_codes],
+            }
+        )
+    if has_annual_row:
+        rows.append(
+            {
+                "month": None,
+                "label": "Whole year (one figure)",
+                "cells": [by_key.get((None, code)) for code in type_codes],
+            }
+        )
+
+    totals = []
+    for code in type_codes:
+        column = [record for (_month, t), record in by_key.items() if t == code]
+        gallons = sum((r.volume_gallons for r in column), Decimal("0"))
+        totals.append(
+            {
+                "type_code": code,
+                # Gallons are the state's own reported unit and arrive as
+                # whole numbers (`Water Produced or Delivered` carries no
+                # fractional gallon in either layout), so this is rounded in
+                # the view rather than through `floatformat`; there is
+                # nothing a formatter would do here that `int()` does not.
+                # Acre-feet is different: it is a conversion this platform
+                # performs (325,851 gallons per acre-foot), so it goes
+                # through `floatformat:2` in the template and carries its own
+                # figure-ledger row -- `FIG-drinking-002` (this total) and
+                # `FIG-drinking-003` (the grand total below), both in
+                # `docs/figure-ledger-2026-09.md`.
+                "gallons": gallons,
+                "gallons_whole": int(gallons.to_integral_value()),
+                "acre_feet": sum((r.volume_acre_feet for r in column), Decimal("0")),
+            }
+        )
+    grand_total_gallons = sum((t["gallons"] for t in totals), Decimal("0"))
+    grand_total_af = sum((t["acre_feet"] for t in totals), Decimal("0"))
+
+    return render(
+        request,
+        "drinking/production.html",
+        {
+            "system": system,
+            "years": years,
+            "year": year,
+            "type_codes": type_codes,
+            "type_columns": PRODUCTION_TYPE_CHOICES,
+            "rows": rows,
+            "totals": totals,
+            "grand_total_gallons": grand_total_gallons,
+            "grand_total_gallons_whole": int(grand_total_gallons.to_integral_value()),
+            "grand_total_af": grand_total_af,
+            "has_any": SystemProduction.objects.filter(system=system).exists(),
+        },
+    )
+
+
+@login_required
+def production_add(request):
+    """Add one month's production or delivery by hand.
+
+    No system onboarded yet: the page itself says so and links to Onboard,
+    the same way the year table's own empty state does, rather than bouncing
+    the visitor away from the page they asked for -- a redirect is a page
+    nobody can read, and `/drinking/onboard/` is not what "Add month"
+    promised (`tests/test_platform_readability.py`).
+    """
+    system = WaterSystem.objects.first()
+    if system is None:
+        return render(request, "drinking/production_form.html", {"system": None})
+
+    if request.method == "POST":
+        form = SystemProductionForm(request.POST, system=system)
+        if form.is_valid():
+            record = form.save()
+            return redirect(f"{reverse('drinking:production')}?year={record.year}")
+    else:
+        form = SystemProductionForm(system=system)
+
+    return render(
+        request, "drinking/production_form.html", {"form": form, "system": system}
+    )
+
+
+@login_required
+@require_GET
+def production_import_page(request):
+    """The production-import landing page: the eAR export, or the operator's own log."""
+    return render(
+        request,
+        "drinking/production_import.html",
+        {"max_rows": production_import_service.MAX_ROWS},
+    )
+
+
+def _production_import_settings_context(*, unit_for_blank="", operator_year="",
+                                          operator_unit="G"):
+    return {
+        "unit_choices": PRODUCTION_UNIT_CHOICES,
+        "unit_for_blank": unit_for_blank,
+        "operator_year": operator_year,
+        "operator_unit": operator_unit,
+    }
+
+
+@login_required
+@require_POST
+def production_import_preview(request):
+    """Parse the upload (or re-run with changed mapping-step settings) and
+
+    show what a commit would do -- every skipped row and every error -- with
+    nothing written yet (dry_run=True throughout).
+    """
+    system = WaterSystem.objects.first()
+    if system is None:
+        return render(
+            request,
+            "drinking/partials/_production_import_result.html",
+            {"error": "Onboard a water system first."},
+        )
+
+    uploaded = request.FILES.get("file")
+    rows_json_raw = request.POST.get("rows_json", "")
+
+    if uploaded:
+        try:
+            columns, rows = production_import_service.parse_csv(uploaded, uploaded.name)
+        except ImportError as exc:
+            return render(
+                request,
+                "drinking/partials/_production_import_result.html",
+                {"error": str(exc)},
+            )
+    elif rows_json_raw:
+        try:
+            rows = json.loads(rows_json_raw)
+        except json.JSONDecodeError:
+            rows = []
+        if not rows:
+            return render(
+                request,
+                "drinking/partials/_production_import_result.html",
+                {"error": "No rows to preview -- please re-upload your file and try again."},
+            )
+        columns = list(rows[0].keys())
+    else:
+        return render(
+            request,
+            "drinking/partials/_production_import_result.html",
+            {"error": "No file provided. Choose a production CSV."},
+        )
+
+    if len(rows) > production_import_service.MAX_ROWS:
+        return render(
+            request,
+            "drinking/partials/_production_import_result.html",
+            {
+                "error": (
+                    f"Import is {len(rows)} rows, over the "
+                    f"{production_import_service.MAX_ROWS}-row cap. Re-upload a "
+                    "smaller file."
+                )
+            },
+        )
+
+    try:
+        layout = production_import_service.recognise_layout(columns)
+    except ImportError as exc:
+        return render(
+            request,
+            "drinking/partials/_production_import_result.html",
+            {"error": str(exc)},
+        )
+
+    unit_for_blank = request.POST.get("unit_for_blank", "").strip()
+    operator_year_raw = request.POST.get("operator_year", "").strip()
+    operator_year = int(operator_year_raw) if operator_year_raw.isdigit() else None
+    operator_unit = request.POST.get("operator_unit", "").strip() or "G"
+
+    result = production_import_service.import_production_rows(
+        columns, rows, system=system, layout=layout,
+        unit_for_blank=unit_for_blank or None,
+        operator_year=operator_year, operator_unit=operator_unit,
+        dry_run=True,
+    )
+
+    context = _production_import_settings_context(
+        unit_for_blank=unit_for_blank, operator_year=operator_year_raw,
+        operator_unit=operator_unit,
+    )
+    context.update(result)
+    context["rows_json"] = json.dumps(rows)
+    context["row_count"] = len(rows)
+    return render(
+        request, "drinking/partials/_production_import_preview.html", context
+    )
+
+
+@login_required
+@require_POST
+def production_import_commit(request):
+    """Re-run the confirmed mapping-step settings against the parsed rows and write them."""
+    system = WaterSystem.objects.first()
+    if system is None:
+        return render(
+            request,
+            "drinking/partials/_production_import_result.html",
+            {"error": "Onboard a water system first."},
+        )
+
+    try:
+        rows = json.loads(request.POST.get("rows_json", "") or "[]")
+    except json.JSONDecodeError:
+        rows = []
+
+    if not rows:
+        return render(
+            request,
+            "drinking/partials/_production_import_result.html",
+            {"error": "No rows to import -- please re-upload your file and try again."},
+        )
+
+    columns = list(rows[0].keys())
+    try:
+        layout = production_import_service.recognise_layout(columns)
+    except ImportError as exc:
+        return render(
+            request,
+            "drinking/partials/_production_import_result.html",
+            {"error": str(exc)},
+        )
+
+    unit_for_blank = request.POST.get("unit_for_blank", "").strip()
+    operator_year_raw = request.POST.get("operator_year", "").strip()
+    operator_year = int(operator_year_raw) if operator_year_raw.isdigit() else None
+    operator_unit = request.POST.get("operator_unit", "").strip() or "G"
+
+    try:
+        result = production_import_service.import_production_rows(
+            columns, rows, system=system, layout=layout,
+            unit_for_blank=unit_for_blank or None,
+            operator_year=operator_year, operator_unit=operator_unit,
+            dry_run=False,
+        )
+    except Exception as exc:
+        logger.exception("production import commit failed")
+        context = _production_import_settings_context(
+            unit_for_blank=unit_for_blank, operator_year=operator_year_raw,
+            operator_unit=operator_unit,
+        )
+        context["rows_json"] = json.dumps(rows)
+        context["row_count"] = len(rows)
+        context["error"] = f"Nothing was created: {type(exc).__name__}: {exc}"
+        return render(
+            request, "drinking/partials/_production_import_preview.html", context,
+            status=200,
+        )
+
+    return render(
+        request, "drinking/partials/_production_import_result.html", result
     )

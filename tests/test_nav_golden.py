@@ -96,6 +96,9 @@ ACTIVE_PATHS = [
     # 80-02's wizard. Same reason as the two above: `/drinking/` is a prefix of
     # it too, so it needs its own exclusion on the Overview entry.
     "/drinking/onboard/",
+    # 146-04 Task 2's production door. Same trap again: `/drinking/` is a
+    # prefix of it too.
+    "/drinking/production/",
     "/datasync/stations/",
     "/accounting/accounts/",
     "/accounting/reporting-periods/",
@@ -352,7 +355,7 @@ def test_every_registry_icon_key_has_a_partial():
 
 
 def test_every_nav_entry_is_rendered():
-    """All 25 module-owned entries appear when every gate is open.
+    """All 26 module-owned entries appear when every gate is open.
 
     Guards the failure mode a byte-diff cannot: if the registry loop silently
     drops an entry AND the fixture were regenerated, this still fails.
@@ -360,11 +363,12 @@ def test_every_nav_entry_is_rendered():
     19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
     Results to the Water Data section, 80-02 adds Onboard System, and 100-01
     adds Facilities. 146-02 Task 4 adds Curtailment Orders beside Water Rights.
+    146-04 Task 2 adds Production beside the other drinking-water sub-pages.
     """
     html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
                           access_enforced=False)
     expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 25
+    assert len(expected) == 26
     for entry in expected:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"

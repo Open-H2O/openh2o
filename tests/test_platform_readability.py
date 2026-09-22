@@ -473,6 +473,8 @@ EXPECTED_UNREACHABLE = {
     "/drinking/import/preview/": "HTTP 405",
     "/drinking/onboard/commit/": "HTTP 405",
     "/drinking/onboard/lookup/": "HTTP 405",
+    "/drinking/production/import/commit/": "HTTP 405",
+    "/drinking/production/import/preview/": "HTTP 405",
     "/feedback/submit/": "HTTP 405",
     "/infrastructure/import/commit/": "HTTP 405",
     "/infrastructure/import/preview/": "HTTP 405",

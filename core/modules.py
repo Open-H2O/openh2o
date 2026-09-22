@@ -816,17 +816,21 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=70,
                 active_match="/drinking/",
-                # Four excludes, not three: `/drinking/` is a prefix of every
+                # Five excludes, not four: `/drinking/` is a prefix of every
                 # sub-page, each of which owns its own entry below. Adding a
                 # sub-route without adding its exclusion leaves Overview lit
                 # while the operator is somewhere else. The facilities exclusion
                 # also correctly moves the facility DETAIL page's highlight from
-                # Overview to Facilities.
+                # Overview to Facilities. `/drinking/production` joined
+                # 146-04 Task 2 (D7); missing it would have left Overview lit
+                # on every production page, the same fault this comment
+                # already warns about for the other four.
                 active_excludes=(
                     "/drinking/facilities",
                     "/drinking/sampling-points",
                     "/drinking/results",
                     "/drinking/onboard",
+                    "/drinking/production",
                 ),
                 # Water Data runs to eleven links on a full deployment, and the
                 # last five of them are all drinking water. The rule splits them
@@ -863,6 +867,20 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=90,
                 active_match="/drinking/results",
+            ),
+            NavEntry(
+                url_name="drinking:production",
+                label="Production",
+                # Its own glyph, not a reuse -- `test_icon_keys_are_unique`
+                # holds one to one. A simple axis-and-line chart: a month-by-
+                # month figure is the whole point of the page it opens.
+                icon="production",
+                section=SECTION_WATER_DATA,
+                # 95: between Sample Results (90) and Onboard System (100) --
+                # 146-04 Task 2 (D7) added this after the module's original
+                # four sub-pages.
+                order=95,
+                active_match="/drinking/production",
             ),
             NavEntry(
                 url_name="drinking:onboard",
@@ -1076,7 +1094,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="SystemFacility",
         field="well",
         target="wells",
-        where="drinking/models.py:303",
+        where="drinking/models.py:305",
         why=(
             "A drinking-water facility very often IS a well — the same physical "
             "hole in the ground that the extraction ledger meters — so "

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Import production - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Import production{% endblock %}
+{% block page_head_class %}page-head--medium{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:production' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:production' %}">Production</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Import production</span>
+  </nav>
+  <p class="page-description">Upload a year of the state's own annual electronic report (eAR) production export, or the operator's own monthly log. We'll recognize the layout and show what would be created before anything is written.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-medium">
+
+  <a href="{% url 'drinking:production' %}" class="back-link">&larr; Back to Production</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Production by month and source</h2>
+    <p class="text-base text-secondary mt-md">
+      Two layouts are recognized by their column headers: the state's own eAR
+      production export (<code>PWSID</code>, <code>Year</code>, <code>Month</code>,
+      <code>TypeCode</code>, <code>Quantity as in Units Reported</code>) and the
+      operator's own monthly log (a <code>Date/Month</code> column naming each
+      month, plus one column per source). A month and source already on file
+      is skipped, never overwritten.
+    </p>
+
+    <form class="mt-lg"
+      id="production-import-upload-form"
+      method="post"
+      action="{% url 'drinking:production_import_preview' %}"
+      enctype="multipart/form-data"
+      hx-post="{% url 'drinking:production_import_preview' %}"
+      hx-target="#production-import-area"
+      hx-encoding="multipart/form-data"
+      hx-indicator="#production-import-spinner">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="production-import-file">Data file <span class="required-mark">*</span></label>
+        <div class="file-picker">
+          <label class="btn-secondary file-picker-button">
+            Choose file
+            <input type="file" id="production-import-file" name="file"
+                   accept=".csv"
+                   required class="file-picker-input">
+          </label>
+          <span class="file-picker-name text-tertiary text-sm" id="production-import-file-name">No file chosen</span>
+        </div>
+        <div class="form-help">Up to {{ max_rows|default:"2,000" }} rows per file. CSV only.</div>
+      </div>
+
+      <div class="row-start pt-sm">
+        <button type="submit" class="btn-primary">Upload &amp; preview</button>
+        <span id="production-import-spinner" class="htmx-indicator text-tertiary text-sm">Parsing&hellip;</span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Mapping/settings, preview and results are swapped in here by HTMX -->
+  <div id="production-import-area"></div>
+
+</div>
+
+<script>
+  (function() {
+    var input = document.getElementById('production-import-file');
+    var name = document.getElementById('production-import-file-name');
+    if (!input || !name) return;
+    input.addEventListener('change', function() {
+      name.textContent = (input.files && input.files.length)
+        ? input.files[0].name
+        : 'No file chosen';
+    });
+  })();
+</script>
+{% endblock %}

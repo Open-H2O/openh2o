@@ -143,6 +143,11 @@
       "tolerance": 0,
       "reason": "The sampling points those events belong to. Published record."
     },
+    "drinking.SystemProduction": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "146-04 Task 2 (D7, ISS-184): production by month and source. Zero because the demonstration's real water system, Le Grand CSD, has no seed step that loads its eAR production history -- the door is proven by import tests against the real 2022 figures (tests/test_production_import.py), never by seeding the demo database."
+    },
     "drinking.SystemFacility": {
       "expected": 61,
       "tolerance": 0,

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Add production - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Add production{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'drinking:production' %}">Water Data</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:production' %}">Production</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Add month</span>
+  </nav>
+  <p class="page-description">One month, one source, typed in by hand. For a whole year at once, use <a href="{% url 'drinking:production_import' %}">Import</a> instead.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-narrow">
+
+  <a href="{% url 'drinking:production' %}" class="back-link">&larr; Back to Production</a>
+
+  {% if not system %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">No water system yet</h2>
+    <p class="text-base text-secondary mt-md">
+      Production is recorded against a water system, and none is onboarded on
+      this deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
+      first.
+    </p>
+  </div>
+  {% else %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Details</h2>
+
+    {% if form.non_field_errors %}
+    <div class="form-error-box">
+      {% for error in form.non_field_errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.year.id_for_label }}">{{ form.year.label }}</label>
+          {{ form.year }}
+          {% for error in form.year.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.month.id_for_label }}">{{ form.month.label }}</label>
+          {{ form.month }}
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.type_code.id_for_label }}">{{ form.type_code.label }}</label>
+          {{ form.type_code }}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.facility.id_for_label }}">{{ form.facility.label }}</label>
+          {{ form.facility }}
+          <div class="form-help">Optional &mdash; leave blank when the source is not a single named facility.</div>
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.volume_as_reported.id_for_label }}">{{ form.volume_as_reported.label }}</label>
+          {{ form.volume_as_reported }}
+          {% for error in form.volume_as_reported.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.unit_as_reported.id_for_label }}">{{ form.unit_as_reported.label }}</label>
+          {{ form.unit_as_reported }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.notes.id_for_label }}">Notes</label>
+        {{ form.notes }}
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">Save month</button>
+        <a href="{% url 'drinking:production' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

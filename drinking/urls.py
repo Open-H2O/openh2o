@@ -38,6 +38,28 @@ urlpatterns = [
     path("import/", views.import_page, name="import"),
     path("import/preview/", views.import_preview, name="import_preview"),
     path("import/commit/", views.import_commit, name="import_commit"),
+    # Production by month and source (146-04 Task 2, D7). Exact-match prefix
+    # before <int:pk>-shaped routes: "add" and "import" are not ints, so no
+    # ordering hazard, but "production/" is a prefix of every path below it,
+    # the same shape the app-level "/drinking/" prefix already carries in
+    # core/modules.py, so it is listed first among its own siblings too.
+    path("production/", views.production, name="production"),
+    path("production/add/", views.production_add, name="production_add"),
+    path(
+        "production/import/",
+        views.production_import_page,
+        name="production_import",
+    ),
+    path(
+        "production/import/preview/",
+        views.production_import_preview,
+        name="production_import_preview",
+    ),
+    path(
+        "production/import/commit/",
+        views.production_import_commit,
+        name="production_import_commit",
+    ),
     # Named to read as a sibling of the import flow above: page -> lookup -> commit
     # is the same shape as page -> preview -> commit, and an operator who has used
     # one already knows the other.
