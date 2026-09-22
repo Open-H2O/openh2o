@@ -13,6 +13,10 @@ urlpatterns = [
     # 146-03 Task 3: the POD's own edit door (identity, canal losses, alias).
     path("diversion/<int:pk>/edit/", views.pod_edit, name="pod_edit"),
     path("diversion/<int:pk>/record/", views.diversion_record_create, name="diversion_record_create"),
+    # 146-03 Task 4 (D4): diversion volumes in bulk against a point of diversion.
+    path("diversion/import/", views.diversion_import, name="diversion_import"),
+    path("diversion/import/preview/", views.diversion_import_preview, name="diversion_import_preview"),
+    path("diversion/import/commit/", views.diversion_import_commit, name="diversion_import_commit"),
     # 146-02 Task 3 (ISS-181): edit and delete a diversion record.
     path(
         "diversion/<int:pk>/record/<int:rpk>/edit/",

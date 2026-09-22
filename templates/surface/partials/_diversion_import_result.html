@@ -1,0 +1,86 @@
+{% comment %}
+Outcome of a diversion import commit (146-03 Task 4, D4). Same two shapes as
+the other importers' result partials: an error before any rows were
+considered, or a success summary with an honest count of what was skipped
+and why.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% else %}
+<div class="card-raised">
+  <h2 class="card-header-ruled">Import complete</h2>
+
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md);">
+    <span class="badge badge-green">Created {{ created }}</span>
+    <span class="badge badge-grey">{{ total_af }} AF</span>
+    {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
+    {% if unresolved_rows %}<span class="badge badge-orange">Unresolved {{ unresolved_rows|length }}</span>{% endif %}
+    {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
+  </div>
+
+  <p class="text-base text-secondary mt-md">
+    {{ created }} diversion record{{ created|pluralize }} created.
+    {% if skipped_duplicates %}{{ skipped_duplicates }} row{{ skipped_duplicates|pluralize }} matched a record already on file and were skipped, never overwritten.{% endif %}
+    {% if not created and not skipped_duplicates and not errors and not unresolved_rows %}Nothing to import.{% endif %}
+  </p>
+
+  {% if periods_attached %}
+  <table class="data-table mt-md">
+    <thead><tr><th>Reporting period</th><th>Records attached</th></tr></thead>
+    <tbody>
+      {% for name, count in periods_attached.items %}
+      <tr><td>{{ name }}</td><td class="text-mono">{{ count }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if combined_rows %}
+  <h3 class="section-header-sm mt-lg">Rows combined into one month</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th>Point</th><th>Month</th><th>Type</th><th>Source rows</th></tr></thead>
+    <tbody>
+      {% for c in combined_rows %}
+      <tr>
+        <td>{{ c.point }}</td>
+        <td class="text-mono">{{ c.month }}</td>
+        <td>{{ c.diversion_type }}</td>
+        <td class="text-mono">{{ c.row_count }} rows combined into one month ({{ c.rows|join:", " }})</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if unresolved_rows %}
+  <h3 class="section-header-sm mt-lg">Unresolved rows (nothing written)</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Why</th></tr></thead>
+    <tbody>
+      {% for row in unresolved_rows %}
+      <tr><td class="text-mono">{{ row.line }}</td><td>{{ row.reason }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if errors %}
+  <h3 class="section-header-sm mt-lg">Row errors</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
+    <tbody>
+      {% for err in errors %}
+      <tr><td class="text-mono">{{ err.line }}</td><td class="text-furnace">{{ err.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <div class="row-start pt-sm" style="margin-top: var(--space-lg); gap: var(--space-sm);">
+    <a href="{% url 'surface:pod_list' %}" class="btn-primary">View Surface Diversions</a>
+    <a href="{% url 'surface:diversion_import' %}" class="btn-secondary">Import another file</a>
+  </div>
+</div>
+{% endif %}

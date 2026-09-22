@@ -1,0 +1,151 @@
+{% comment %}
+Mapping/preview step for the diversion import (146-03 Task 4, D4). Same two-
+button idiom as the infrastructure and water-rights importers: one form,
+whose hidden rows_json and settings selects are shared by two submit
+buttons -- "Update preview" re-runs the same dry-run against changed
+settings, "Import" commits. Nothing is written until the second button is
+pressed.
+
+`error`: set only when a re-render after Import raised.
+{% endcomment %}
+{% if error %}
+<div class="card-raised" style="border-left: 3px solid var(--color-error); padding: var(--space-md); margin-bottom: var(--space-md);">
+  <p class="text-base" style="margin: 0; color: var(--color-error);">{{ error }}</p>
+</div>
+{% endif %}
+
+<div class="card-raised">
+  <h2 class="card-header-ruled">Match your settings: {{ row_count }} row{{ row_count|pluralize }}, {{ layout }} layout</h2>
+  <p class="text-base text-secondary mt-md">{{ rule_sentence }}</p>
+
+  <form id="diversion-import-mapping-form" class="mt-lg">
+    {% csrf_token %}
+    <input type="hidden" name="rows_json" value="{{ rows_json }}">
+
+    <div class="form-row-2col">
+      <div class="form-group">
+        <label class="form-label" for="diversion-import-point">Whole-file point of diversion</label>
+        <select id="diversion-import-point" name="point" class="form-select">
+          <option value="">(use each row's own point column)</option>
+          {% for point in points %}
+          <option value="{{ point.pk }}"{% if selected_point.pk == point.pk %} selected{% endif %}>
+            {{ point.name }}{% if point.local_name %} (known locally as {{ point.local_name }}){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        <div class="form-help">Used only for a row that names no point of its own.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="diversion-import-method">Method</label>
+        <select id="diversion-import-method" name="method" class="form-select">
+          <option value=""{% if method == "" %} selected{% endif %}>Not stated</option>
+          {% for value, label in method_choices %}
+          <option value="{{ value }}"{% if method == value %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-help">Applied to every record this file creates.</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="diversion-import-data-state">Data state</label>
+      <select id="diversion-import-data-state" name="data_state" class="form-select">
+        {% for value, label in data_state_choices %}
+        <option value="{{ value }}"{% if data_state == value %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <div class="form-help">The state's published figure is what you filed, not a new measurement: pick non-provisional if that is what these are.</div>
+    </div>
+
+    <div class="row-start pt-sm mt-lg" style="gap: var(--space-sm);">
+      <button type="submit" class="btn-secondary"
+        hx-post="{% url 'surface:diversion_import_preview' %}"
+        hx-target="#diversion-import-area"
+        hx-include="closest form">Update preview</button>
+      <button type="submit" class="btn-primary"
+        hx-post="{% url 'surface:diversion_import_commit' %}"
+        hx-target="#diversion-import-area"
+        hx-include="closest form">Import {{ created }} record{{ created|pluralize }}</button>
+    </div>
+  </form>
+</div>
+
+<div class="card-raised">
+  <h3 class="section-header-sm">What this would do</h3>
+  <div class="row-start" style="gap: var(--space-sm); margin-top: var(--space-md);">
+    <span class="badge badge-green">Create {{ created }}</span>
+    <span class="badge badge-grey">{{ total_af }} AF</span>
+    {% if skipped_duplicates %}<span class="badge badge-orange">Already on file {{ skipped_duplicates }}</span>{% endif %}
+    {% if unresolved_rows %}<span class="badge badge-orange">Unresolved {{ unresolved_rows|length }}</span>{% endif %}
+    {% if errors %}<span class="badge badge-orange">Errors {{ errors|length }}</span>{% endif %}
+    {% if use_rows_dropped %}<span class="badge badge-grey">USE rows dropped {{ use_rows_dropped }}</span>{% endif %}
+  </div>
+</div>
+
+{% if combined_rows %}
+<div class="card-raised">
+  <h3 class="section-header-sm">Rows combined into one month</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th>Point</th><th>Month</th><th>Type</th><th>Source rows</th></tr></thead>
+    <tbody>
+      {% for c in combined_rows %}
+      <tr>
+        <td>{{ c.point }}</td>
+        <td class="text-mono">{{ c.month }}</td>
+        <td>{{ c.diversion_type }}</td>
+        <td class="text-mono">{{ c.row_count }} rows combined into one month ({{ c.rows|join:", " }})</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if conversions %}
+<div class="card-raised">
+  <h3 class="section-header-sm">Conversions applied</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>From</th><th>To</th><th>Factor</th><th>Result</th></tr></thead>
+    <tbody>
+      {% for conv in conversions %}
+      <tr>
+        <td class="text-mono">{{ conv.line }}</td>
+        <td>{{ conv.from }}</td>
+        <td>{{ conv.to }}</td>
+        <td>{{ conv.factor }}</td>
+        <td class="text-mono">{{ conv.value }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if unresolved_rows %}
+<div class="card-raised">
+  <h3 class="section-header-sm">Unresolved rows</h3>
+  <p class="text-base text-secondary mt-md">Nothing is written for these until a point is chosen for them, either by adding a column to the file or by picking a whole-file point above.</p>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Why</th></tr></thead>
+    <tbody>
+      {% for row in unresolved_rows %}
+      <tr><td class="text-mono">{{ row.line }}</td><td>{{ row.reason }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if errors %}
+<div class="card-raised">
+  <h3 class="section-header-sm">Row errors</h3>
+  <table class="data-table mt-md">
+    <thead><tr><th style="width: 6rem;">Row</th><th>Problem</th></tr></thead>
+    <tbody>
+      {% for err in errors %}
+      <tr><td class="text-mono">{{ err.line }}</td><td class="text-furnace">{{ err.message }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}

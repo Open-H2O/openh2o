@@ -40,6 +40,7 @@ from core.validation import FieldValidationError, coerce_decimal
 from core.workspace import detail_response, list_response
 from parcels.models import Parcel
 from surface import importer
+from surface import diversion_import as diversion_import_service
 from surface.curtailments import orders_that_may_apply
 from surface.forms import (
     CurtailmentOrderForm,
@@ -910,6 +911,159 @@ def water_right_import_commit(request):
         "surface/partials/_right_import_result.html",
         {"created": created, "skipped": skipped, "total": len(results)},
     )
+
+
+# ---------------------------------------------------------------------------
+# 146-03 Task 4 (D4): diversion volumes in bulk against a point of diversion.
+# ---------------------------------------------------------------------------
+
+
+def _diversion_import_settings_context(points, *, selected_point=None, method="",
+                                        data_state="provisional"):
+    return {
+        "points": points,
+        "selected_point": selected_point,
+        "method": method,
+        "data_state": data_state,
+        "method_choices": DiversionRecord.METHOD_CHOICES,
+        "data_state_choices": DiversionRecord.DATA_STATE_CHOICES,
+    }
+
+
+@login_required
+@require_GET
+def diversion_import(request):
+    """Bulk import landing page for diversion volumes (D4): the state's
+
+    Water Use Reported layout, or a ditch tender's own book.
+    """
+    points = PointOfDiversion.objects.filter(status="active").order_by("name")
+    return render(
+        request, "surface/diversion_import.html",
+        _diversion_import_settings_context(points),
+    )
+
+
+@login_required
+@require_POST
+def diversion_import_preview(request):
+    """Parse the upload (or re-run with changed settings) and show the
+
+    mapping step: the whole-file point, method and data state, every
+    conversion, every combined month, every unresolved row and every error
+    -- before anything is written (dry_run=True throughout).
+    """
+    points = PointOfDiversion.objects.filter(status="active").order_by("name")
+    uploaded = request.FILES.get("file")
+    rows_json_raw = request.POST.get("rows_json", "")
+
+    if uploaded:
+        try:
+            columns, rows = diversion_import_service.parse_csv(uploaded, uploaded.name)
+        except ImportError as exc:
+            return render(
+                request, "surface/partials/_diversion_import_result.html",
+                {"error": str(exc)},
+            )
+    elif rows_json_raw:
+        try:
+            rows = json.loads(rows_json_raw)
+        except json.JSONDecodeError:
+            rows = []
+        if not rows:
+            return render(
+                request, "surface/partials/_diversion_import_result.html",
+                {"error": "No rows to preview -- please re-upload your file and try again."},
+            )
+        columns = list(rows[0].keys())
+    else:
+        return render(
+            request, "surface/partials/_diversion_import_result.html",
+            {"error": "No file provided. Choose a diversion volume CSV."},
+        )
+
+    if len(rows) > diversion_import_service.MAX_ROWS:
+        return render(
+            request, "surface/partials/_diversion_import_result.html",
+            {"error": (
+                f"Import is {len(rows)} rows, over the "
+                f"{diversion_import_service.MAX_ROWS}-row cap. Re-upload a smaller file."
+            )},
+        )
+
+    try:
+        layout = diversion_import_service.recognise_layout(columns)
+    except ImportError as exc:
+        return render(
+            request, "surface/partials/_diversion_import_result.html",
+            {"error": str(exc)},
+        )
+
+    point_pk = request.POST.get("point", "")
+    whole_file_point = PointOfDiversion.objects.filter(pk=point_pk).first() if point_pk else None
+    method = request.POST.get("method", "")
+    data_state = request.POST.get("data_state", "") or "provisional"
+
+    result = diversion_import_service.import_diversion_rows(
+        columns, rows, layout=layout, whole_file_point=whole_file_point,
+        method=method, data_state=data_state, dry_run=True,
+    )
+
+    context = _diversion_import_settings_context(
+        points, selected_point=whole_file_point, method=method, data_state=data_state,
+    )
+    context.update(result)
+    context["rows_json"] = json.dumps(rows)
+    context["row_count"] = len(rows)
+    return render(request, "surface/partials/_diversion_import_preview.html", context)
+
+
+@login_required
+@require_POST
+def diversion_import_commit(request):
+    """Re-run the confirmed settings against the parsed rows and write them."""
+    points = PointOfDiversion.objects.filter(status="active").order_by("name")
+    try:
+        rows = json.loads(request.POST.get("rows_json", "") or "[]")
+    except json.JSONDecodeError:
+        rows = []
+
+    if not rows:
+        return render(
+            request, "surface/partials/_diversion_import_result.html",
+            {"error": "No rows to import -- please re-upload your file and try again."},
+        )
+
+    columns = list(rows[0].keys())
+    try:
+        layout = diversion_import_service.recognise_layout(columns)
+    except ImportError as exc:
+        return render(
+            request, "surface/partials/_diversion_import_result.html",
+            {"error": str(exc)},
+        )
+
+    point_pk = request.POST.get("point", "")
+    whole_file_point = PointOfDiversion.objects.filter(pk=point_pk).first() if point_pk else None
+    method = request.POST.get("method", "")
+    data_state = request.POST.get("data_state", "") or "provisional"
+
+    try:
+        result = diversion_import_service.import_diversion_rows(
+            columns, rows, layout=layout, whole_file_point=whole_file_point,
+            method=method, data_state=data_state, dry_run=False,
+        )
+    except Exception as exc:
+        logger.exception("diversion import commit failed")
+        context = _diversion_import_settings_context(
+            points, selected_point=whole_file_point, method=method, data_state=data_state,
+        )
+        context["rows_json"] = json.dumps(rows)
+        context["row_count"] = len(rows)
+        context["error"] = f"Nothing was created: {type(exc).__name__}: {exc}"
+        return render(request, "surface/partials/_diversion_import_preview.html", context)
+
+    return render(request, "surface/partials/_diversion_import_result.html", result)
 
 
 def _water_right_detail_context(water_right):

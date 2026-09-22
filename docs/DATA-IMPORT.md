@@ -72,6 +72,38 @@ Unlike the other file imports on this page, water rights import through the web 
 
 The mapping step shows every column it matched (and lets you correct one), a preview of the first rows, then created and skipped counts, the same shape the file imports above use.
 
+### Diversion records: the diversion import screen and `import_diversion_records`
+
+A year of monthly diversion volumes against a point of diversion, through **Surface Diversions → Import diversion records** (`/surface/diversion/import/`) or the management command. **CSV only.** Two layouts are recognized by header, never by filename:
+
+| Layout | Recognized by | Columns |
+|---|---|---|
+| The state's Water Use Reported export | `APPL_ID`, `YEAR`, `MONTH`, `DIVERSION_TYPE`, `AMOUNT` all present | `AMOUNT` is already acre-feet. `MONTH` is the calendar month number (1 = January, 10 = October). An optional `calendar_month` column (`YYYY-MM`) is trusted outright when present; otherwise the calendar month is computed from the deployment's own report-year rule (below). An optional `APPL_POD` column names the point directly. |
+| An operator's book | a point-ish column (`point`, `local_name`, `headgate`, `name`) and either a volume-ish column (`volume`, `acre_feet`, `af`) or `flow_cfs` and `hours` together | `date` (first of its month) or `month` gives the reporting month. `acre_feet`/`af` are already acre-feet; a bare `volume` column needs a paired `unit` column (`af`, `gallons`, `ccf`, `mg`, `cfs_hours`). Absent a volume column, `flow_cfs` and `hours` together convert at 1.9835 acre-feet per cfs-day. Optional `type` (direct/storage/use) and `returned`. |
+
+**Point resolution**, in order: the state's own `APPL_POD` column; then the right (`APPL_ID`) when it has exactly one point on file; then a point-ish column; then the whole-file point you choose in the mapping step. A row that resolves to none of these is unresolved and nothing is written for it, named in the preview so you can add a column or pick a whole-file point and re-run.
+
+**Conversions**, named on every row that needed one: 325,851 gallons per acre-foot, 748.05 gallons per CCF, 1,000,000 gallons per MG, 1.9835 acre-feet per cfs-day.
+
+**Two deployment settings** (Delivery Settings → Diversion records) decide two things every file needs: `diversion_report_year_rule` turns a `YEAR` and `MONTH` into a calendar month (water year, calendar year, or a season starting a chosen month), and `diversion_use_type_rule` decides what a `USE` row means here (the state publishes no product type for it): dropped, added to the matching `DIRECT` row as `returned_af` (USE minus DIRECT, floored at zero), or treated as its own direct-use row. A `COMBINED` row (pre-2015 files) is a row error naming the year; it is never guessed at.
+
+**Rows landing on the same point, month and type within one file are summed into one record** (a ditch tender's book often carries two or more deliveries a month at one headgate), reported as "N rows combined into one month." A record whose (point, month, type) already exists in the database is skipped and counted, never overwritten -- re-importing the same file writes nothing the second time.
+
+The mapping step lets you choose the whole-file point, the method and the data state applied to every record the file creates (default: method not stated, data state provisional; pick non-provisional when the file is the state's own already-published figure rather than a new measurement). The preview shows every conversion, every combined month, every unresolved row and every error before anything is written; the commit reports the same counts and attaches each record's reporting period by month.
+
+```bash
+docker compose exec web python manage.py import_diversion_records diversions.csv \
+  --point 42 --dry-run
+docker compose exec web python manage.py import_diversion_records diversions.csv --point 42
+```
+
+The `web` container has no bind mount to your host filesystem -- a bare path only resolves inside the container. Copy the file in first:
+
+```bash
+docker compose cp diversions.csv web:/tmp/
+docker compose exec web python manage.py import_diversion_records /tmp/diversions.csv --point 42
+```
+
 ### Ledger entries: `import_ledger_csv`
 For migrating usage/supply history from a prior system. **CSV**, with these columns:
 
