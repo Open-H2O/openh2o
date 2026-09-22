@@ -585,6 +585,18 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
     right_cache = {}
     right_points_cache = {}
 
+    # Every row the FILE types USE, counted off the raw rows before any of
+    # them is resolved to a point. The import screen's own USE question is
+    # shown on this count, and a row whose point is not yet chosen still
+    # means the file has USE rows in it (146-03 Task 6; the first version
+    # counted only rows that had already reached a point, so the question
+    # stayed hidden on the first render of exactly the file it is about).
+    use_rows_present = 0
+    if layout == "state":
+        for raw_row in rows:
+            if _lower_row(raw_row).get("diversion_type", "").strip().upper() == "USE":
+                use_rows_present += 1
+
     errors = []
     unresolved = []
     conversions = []
@@ -650,9 +662,7 @@ def build_rows(columns, rows, layout, *, whole_file_point=None, method="",
 
     # The USE rule (J3): drop, returned, or as_direct. An explicit `use_rule`
     # (146-03 Task 6: the import screen's own question) overrides the
-    # deployment's remembered default on SiteConfig; `use_rows_present`
-    # counts every USE row in the file regardless of which rule applied.
-    use_rows_present = sum(len(g["lines"]) for g in use_groups.values())
+    # deployment's remembered default on SiteConfig.
     applied_use_rule = use_rule if use_rule is not None else site_config.diversion_use_type_rule
     for (pt_pk, month), use_group in use_groups.items():
         if applied_use_rule == "drop":

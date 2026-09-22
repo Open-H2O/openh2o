@@ -615,3 +615,26 @@ def test_management_command_file_not_found_names_the_container_path(db):
         call_command("import_diversion_records", "/no/such/file.csv")
     message = str(exc_info.value)
     assert "web:/tmp/" in message
+
+
+def test_use_rows_present_counts_unresolved_use_rows_too(db):
+    """The question is about the FILE, so it is counted before resolution.
+
+    146-03 Task 6, found on the dev stack: the first version counted only USE
+    rows that had already reached a point, so a file whose rows have no point
+    yet (the ordinary first render: a right with several points, before the
+    clerk picks one) hid the question about exactly the file it was asked for.
+    """
+    text = (
+        "APPL_ID,YEAR,MONTH,DIVERSION_TYPE,AMOUNT\n"
+        "A900001,2024,3,DIRECT,10\n"
+        "A900001,2024,3,USE,10\n"
+    )
+    columns, rows = diversion_import.parse_csv(
+        SimpleUploadedFile("u.csv", text.encode()), "u.csv"
+    )
+    built = diversion_import.build_rows(
+        columns, rows, layout="state", whole_file_point=None,
+    )
+    assert built["unresolved_rows"], "the right does not exist, so nothing resolves"
+    assert built["use_rows_present"] == 1
