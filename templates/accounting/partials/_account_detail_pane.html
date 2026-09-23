@@ -73,12 +73,27 @@
   <div class="page-grid-account">
 
     <div class="card-raised page-grid-account-info">
-      <h2 class="section-header">
-        {% comment %} The DEMO pill that sat here was a second notice under the site-wide one (R-002,
-             Phase 143-02): every water account is invented, there is no published-record case for
-             it to distinguish, unlike the well pane's pill that flips to a source label. {% endcomment %}
-        Account information
-      </h2>
+      <div class="row-between">
+        <h2 class="section-header">
+          {% comment %} The DEMO pill that sat here was a second notice under the site-wide one (R-002,
+               Phase 143-02): every water account is invented, there is no published-record case for
+               it to distinguish, unlike the well pane's pill that flips to a source label. {% endcomment %}
+          Account information
+        </h2>
+        <a href="{% url 'accounting:account_edit' account.pk %}" class="text-tertiary text-xs">Edit</a>
+      </div>
+
+      {% comment %}
+        Q8 (146-05 Task 3): the identity sentence -- which real thing this
+        account stands for, plus how it is delivered when that is set.
+        Computed once in the view (`accounting/views.py::_account_delivery_sentence`),
+        never re-derived here, the same discipline the well page's DWR
+        identity line uses.
+      {% endcomment %}
+      <div class="field-group">
+        <div class="field-label">Account is</div>
+        <div class="field-value">{{ delivery_sentence }}</div>
+      </div>
 
       {% comment %}
         Six short fields in two columns, so the card is the height of the

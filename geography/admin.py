@@ -13,8 +13,8 @@ class BoundaryAdmin(admin.ModelAdmin):
 
 @admin.register(Zone)
 class ZoneAdmin(admin.ModelAdmin):
-    list_display = ["name", "boundary", "zone_type", "created_at"]
-    list_filter = ["zone_type", "boundary"]
+    list_display = ["name", "boundary", "zone_type", "subsurface_supply_is_diversion", "created_at"]
+    list_filter = ["zone_type", "boundary", "subsurface_supply_is_diversion"]
     search_fields = ["name"]
 
 

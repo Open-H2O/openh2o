@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}New water account - Open Water Accounting Platform{% endblock %}
-{% block page_title %}New water account{% endblock %}
+{% block title %}Edit {{ account.name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Edit {{ account.name }}{% endblock %}
 {% block page_head_class %}page-head--narrow{% endblock %}
 
 {% block breadcrumbs %}
@@ -11,9 +11,10 @@
     <span class="breadcrumb-separator">/</span>
     <a href="{% url 'accounting:accounts_list' %}">Accounts</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">New Account</span>
+    <a href="{% url 'accounting:account_detail' account.pk %}">{{ account.account_number }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Edit</span>
   </nav>
-  <p class="page-description">An account groups the use areas one holder is reported on together. The account number follows your own scheme, such as MER-ACCT-001; the name is the holder's. Use areas are assigned from the account's page once it exists.</p>
 </div>
 {% endblock %}
 
@@ -21,10 +22,9 @@
 <div class="page-stack page-narrow">
 
   <!-- Back link -->
-  <a href="{% url 'accounting:accounts_list' %}" class="back-link">&larr; Back to Water Accounts</a>
+  <a href="{% url 'accounting:account_detail' account.pk %}" class="back-link">&larr; Back to {{ account.account_number }}</a>
 
   <div class="card-raised">
-    {% comment %} Was "Create water account", the page title said again in other words (Phase 143-02, copy rule 13: a label under a heading says the remainder). {% endcomment %}
     <h2 class="card-header-ruled">Details</h2>
 
     {% if form.errors %}
@@ -47,8 +47,8 @@
       </div>
       {% endfor %}
       <div class="form-footer">
-        <button type="submit" class="btn-primary">Create account</button>
-        <a href="{% url 'accounting:accounts_list' %}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary">Save changes</button>
+        <a href="{% url 'accounting:account_detail' account.pk %}" class="btn-secondary">Cancel</a>
       </div>
     </form>
   </div>

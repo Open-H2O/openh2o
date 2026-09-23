@@ -353,6 +353,11 @@
       "tolerance": 0,
       "reason": "Deliveries not explained by crop demand, which allocate_district_delivery records against the POD rather than dropping. MOVED 14 -> 18 by Plan 133-02, OBSERVED on the candidate and not predicted: 14 in WY 2024-2025 (unchanged) and 4 new ones in WY 2025-2026. The mechanism is the one 131-01 recorded when this moved 13 -> 14: seed_merced_ledgers sizes each served parcel's delivery as its measured demand divided by its OWN crop's irrigation-method efficiency (alfalfa 0.62 border-check flood through almonds 0.87 micro/drip), while the kernel caps every parcel at demand / the AGENCY-WIDE efficiency (SiteConfig, 0.750) because it takes one efficiency per call and changing that would be an engine change. A POD-month whose crop mix is flood-heavy enough records more than those caps explain, and the surplus is written here. A drier year raises every parcel's demand, so four more POD-months cross that threshold. check_unallocated_delivery reads YELLOW at 364.8532 AF across 18 POD-months and is reported as it reads, not tuned."
     },
+    "surface.WaterAccountDeliveryPoint": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "Which point of diversion delivers to an account (146-05 Task 3, Q8). A `surface` row rather than a `delivery_pod` column on `accounting.WaterAccount` -- `accounting` is schema-resident and `surface` is truly removable, so a column there pointing into `surface` would dangle on every deployment without it (rule 1, core/modules.py), the same fault Task 1 hit with Parcel.irrigation_method. Zero because the demonstration sets no account's delivery through a point of diversion; the checkpoint's shape-1 example is proven by a test fixture, not by seeded demonstration data."
+    },
     "surface.WaterRight": {
       "expected": 7,
       "tolerance": 0,

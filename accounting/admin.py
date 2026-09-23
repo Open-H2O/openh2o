@@ -32,8 +32,8 @@ class ReportingPeriodAdmin(admin.ModelAdmin):
 
 @admin.register(WaterAccount)
 class WaterAccountAdmin(admin.ModelAdmin):
-    list_display = ["account_number", "name", "status", "contact_name"]
-    list_filter = ["status"]
+    list_display = ["account_number", "name", "status", "unit_kind", "delivery_well", "contact_name"]
+    list_filter = ["status", "unit_kind"]
     search_fields = ["account_number", "name", "contact_name"]
 
 

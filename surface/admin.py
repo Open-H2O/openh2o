@@ -11,6 +11,7 @@ from .models import (
     PointOfDiversion,
     PointOfDiversionDevice,
     PointOfDiversionParcel,
+    WaterAccountDeliveryPoint,
     WaterRight,
     WaterRightType,
 )
@@ -75,6 +76,12 @@ class IrrigationMethodAdmin(admin.ModelAdmin):
 class ParcelIrrigationMethodAdmin(admin.ModelAdmin):
     list_display = ["parcel", "method"]
     raw_id_fields = ["parcel"]
+
+
+@admin.register(WaterAccountDeliveryPoint)
+class WaterAccountDeliveryPointAdmin(admin.ModelAdmin):
+    list_display = ["account", "point_of_diversion"]
+    raw_id_fields = ["account", "point_of_diversion"]
 
 
 @admin.register(CurtailmentOrder)

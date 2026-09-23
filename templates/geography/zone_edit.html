@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% comment %}
+  Plain edit form, no map: a zone's geometry is drawn once at creation
+  (zone_create.html) and is not reopened here (146-05 Task 3, Q5). The plan
+  asked for "a zone edit route if none exists, the create view's pattern" --
+  the only existing per-zone edit was `zone_recovery_horizon`, a single-field
+  HTMX control, not a general form, so this is new.
+{% endcomment %}
+
+{% block title %}Edit {{ zone.name }} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Edit {{ zone.name }}{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'geography:zone_list' %}">Administration</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'geography:zone_list' %}">Zones</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'geography:zone_detail' zone.pk %}">{{ zone.name }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Edit</span>
+  </nav>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-narrow">
+
+  <a href="{% url 'geography:zone_detail' zone.pk %}" class="back-link">&larr; Back to {{ zone.name }}</a>
+
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Details</h2>
+
+    {% if form.errors %}
+    <div class="form-error-box">
+      {% for field, errors in form.errors.items %}
+        {% for error in errors %}
+          <p class="form-error-text">{{ field|capfirst }}: {{ error }}</p>
+        {% endfor %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+        {{ form.name }}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.zone_type.id_for_label }}">{{ form.zone_type.label }}</label>
+        {{ form.zone_type }}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+        {{ form.description }}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.subsurface_supply_is_diversion.id_for_label }}">
+          {{ form.subsurface_supply_is_diversion }}
+          In this zone, water reaching a crop from below is a diversion under
+          a stated legal basis (the Delta case)
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.legal_basis.id_for_label }}">Legal basis</label>
+        {{ form.legal_basis }}
+      </div>
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">Save changes</button>
+        <a href="{% url 'geography:zone_detail' zone.pk %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

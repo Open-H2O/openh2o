@@ -912,6 +912,39 @@ def _account_assignments(account):
     )
 
 
+def _account_delivery_sentence(account):
+    """"A farm unit" or "A farm unit · delivered through <point or well>"
+    (Q8, 146-05 Task 3): the identity card's leading clause, plus its
+    delivery system when one is set. Computed once here rather than in the
+    template -- the same discipline `wells/views.py::_dwr_extraction_line`
+    uses for the well page's identity line.
+
+    `delivery_well` is a real field on `WaterAccount` (`wells` is
+    schema-resident, so reading it needs no guard); the point-of-diversion
+    side lives on `surface.WaterAccountDeliveryPoint` instead and is read
+    through a guarded, function-scope import -- `surface` is optional and
+    truly removable (Phase 87), the same reason `is_enabled("surface")`
+    gates the curtailment lookup above.
+    """
+    parts = [account.unit_kind_sentence()]
+    delivery = None
+    if account.delivery_well_id:
+        delivery = account.delivery_well.name
+    elif is_enabled("surface"):
+        from surface.models import WaterAccountDeliveryPoint
+
+        link = (
+            WaterAccountDeliveryPoint.objects.filter(account=account)
+            .select_related("point_of_diversion")
+            .first()
+        )
+        if link:
+            delivery = link.point_of_diversion.name
+    if delivery:
+        parts.append(f"delivered through {delivery}")
+    return " · ".join(parts)
+
+
 def _account_detail_context(account, period_param=None):
     """Build the per-account detail context.
 
@@ -1039,6 +1072,7 @@ def _account_detail_context(account, period_param=None):
         "selected_period": selected_period,
         "is_curtailed": is_curtailed,
         "curtailment_orders": curtailment_orders,
+        "delivery_sentence": _account_delivery_sentence(account),
     }
 
 
@@ -1084,6 +1118,28 @@ def account_create(request):
         form = WaterAccountForm()
 
     return render(request, "accounting/account_create.html", {"form": form})
+
+
+@login_required
+def account_edit(request, pk):
+    """Edit a water account, including Q8's unit kind and delivery system.
+
+    146-05 Task 3's door: "the account create and edit forms" -- no account
+    edit route existed before this (only the create form and the assign/
+    remove-parcel actions), so this is new.
+    """
+    account = get_object_or_404(WaterAccount, pk=pk)
+    if request.method == "POST":
+        form = WaterAccountForm(request.POST, instance=account)
+        if form.is_valid():
+            form.save()
+            return redirect("accounting:account_detail", pk=account.pk)
+    else:
+        form = WaterAccountForm(instance=account)
+
+    return render(
+        request, "accounting/account_edit.html", {"form": form, "account": account}
+    )
 
 
 @login_required

@@ -22,6 +22,7 @@ urlpatterns = [
     path("accounts/", views.accounts_list, name="accounts_list"),
     path("accounts/create/", views.account_create, name="account_create"),
     path("accounts/<int:pk>/", views.account_detail, name="account_detail"),
+    path("accounts/<int:pk>/edit/", views.account_edit, name="account_edit"),
     path(
         "accounts/<int:pk>/assign-parcel/",
         views.assign_parcel,

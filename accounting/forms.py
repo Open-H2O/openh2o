@@ -3,6 +3,7 @@
 from django import forms
 
 from accounting.models import AllocationPlan, ReportingPeriod, WaterAccount, WaterType
+from core.modules import is_enabled
 from parcels.models import ParcelLedger
 
 
@@ -63,12 +64,28 @@ class AllocationPlanForm(forms.ModelForm):
 
 
 class WaterAccountForm(forms.ModelForm):
+    """Create or edit a water account, including Q8's unit kind and delivery.
+
+    `unit_kind` is nullable at the model (accounts predating the field) but
+    required here (146-05 Task 3). `delivery_well` is a real field on
+    `WaterAccount` (`wells` is schema-resident, so the arrow is safe -- see
+    `core.modules.SCHEMA_EXCEPTIONS`); it is dropped from the form entirely
+    when `wells` is disabled, rather than shown and refused, the same
+    "gated by is_enabled" the plan asks for. `delivery_pod` is NOT a model
+    field -- `surface` is truly removable, so that link lives on
+    `surface.WaterAccountDeliveryPoint` instead (one row per account) and this
+    form adds it as a plain `ModelChoiceField` only when `surface` is enabled,
+    reading and writing it itself in `__init__` / `save()`.
+    """
+
     class Meta:
         model = WaterAccount
         fields = [
             "account_number",
             "name",
             "status",
+            "unit_kind",
+            "delivery_well",
             "contact_name",
             "contact_email",
             "notes",
@@ -77,12 +94,81 @@ class WaterAccountForm(forms.ModelForm):
             "account_number": forms.TextInput(attrs={"class": "form-input"}),
             "name": forms.TextInput(attrs={"class": "form-input"}),
             "status": forms.Select(attrs={"class": "form-select"}),
+            "unit_kind": forms.Select(attrs={"class": "form-select"}),
+            "delivery_well": forms.Select(attrs={"class": "form-select"}),
             "contact_name": forms.TextInput(attrs={"class": "form-input"}),
             "contact_email": forms.EmailInput(attrs={"class": "form-input"}),
             "notes": forms.Textarea(
                 attrs={"rows": 3, "class": "form-textarea"}
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Required on the form though nullable on the model (accounts made
+        # before this field existed, and the data migration's own farm_unit
+        # default, both need to stay valid rows without a form re-save).
+        self.fields["unit_kind"].required = True
+
+        if is_enabled("wells"):
+            from wells.models import Well
+
+            self.fields["delivery_well"].queryset = Well.objects.order_by("name")
+            self.fields["delivery_well"].empty_label = "None"
+        else:
+            del self.fields["delivery_well"]
+
+        # Local import: `surface` is optional and truly removable (Phase 87),
+        # so this must not run at module scope -- the same guard
+        # `accounting/views.py` already uses for the same module.
+        self.surface_enabled = is_enabled("surface")
+        if self.surface_enabled:
+            from surface.models import PointOfDiversion
+
+            initial_pod = None
+            if self.instance.pk:
+                link = getattr(self.instance, "surface_delivery_point", None)
+                initial_pod = link.point_of_diversion_id if link else None
+            self.fields["delivery_pod"] = forms.ModelChoiceField(
+                queryset=PointOfDiversion.objects.order_by("name"),
+                required=False,
+                empty_label="None",
+                widget=forms.Select(attrs={"class": "form-select"}),
+                label="Delivery point of diversion",
+                help_text="This account's delivery point of diversion, if "
+                "it has one. An account is delivered through a point of "
+                "diversion or a well, never both.",
+                initial=initial_pod,
+            )
+
+    def clean(self):
+        cleaned = super().clean()
+        delivery_well = cleaned.get("delivery_well") if "delivery_well" in self.fields else None
+        delivery_pod = cleaned.get("delivery_pod") if "delivery_pod" in self.fields else None
+        if delivery_well and delivery_pod:
+            self.add_error(
+                "delivery_pod",
+                "An account can be delivered through a point of diversion or "
+                "a well, not both.",
+            )
+        return cleaned
+
+    def save(self, commit=True):
+        account = super().save(commit=commit)
+        if commit and self.surface_enabled:
+            self._save_delivery_pod(account)
+        return account
+
+    def _save_delivery_pod(self, account):
+        from surface.models import WaterAccountDeliveryPoint
+
+        pod = self.cleaned_data.get("delivery_pod")
+        if pod:
+            WaterAccountDeliveryPoint.objects.update_or_create(
+                account=account, defaults={"point_of_diversion": pod}
+            )
+        else:
+            WaterAccountDeliveryPoint.objects.filter(account=account).delete()
 
 
 class CsvUploadForm(forms.Form):

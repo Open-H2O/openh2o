@@ -467,6 +467,43 @@ class ParcelIrrigationMethod(models.Model):
         return f"{self.parcel} → {self.method}"
 
 
+class WaterAccountDeliveryPoint(models.Model):
+    """Which point of diversion delivers to an account (146-05 Task 3, Q8).
+
+    A ``surface`` row rather than a ``delivery_pod`` column on
+    ``accounting.WaterAccount``, for the same reason ``ParcelIrrigationMethod``
+    is a `surface` row rather than a `Parcel` column (146-05 Task 1):
+    ``accounting`` is schema-resident and ``surface`` is truly removable, so a
+    column on ``WaterAccount`` pointing into ``surface`` would dangle on every
+    deployment without `surface` (rule 1, `core/modules.py`) and
+    `SCHEMA_EXCEPTIONS` cannot excuse it -- `test_record_target_keeps_its_schema`
+    requires an excepted target to keep its schema, and `surface`'s tables
+    actually go. Pointing this way, the row leaves with `surface`, and the
+    arrow (`surface` -> `accounting`) is one `surface.requires` already
+    declares.
+
+    One row per account (``OneToOneField``); no row means the account is not
+    delivered through a point of diversion. It may still carry
+    ``WaterAccount.delivery_well`` -- ``wells`` is schema-resident, so that
+    arrow is safe and lives as a ``SCHEMA_EXCEPTIONS`` record instead, the same
+    shape as ``drinking.SystemFacility.well``. ``WaterAccountForm`` refuses
+    setting both; ``WaterAccount.clean()`` carries the same check for callers
+    outside the form.
+    """
+
+    account = models.OneToOneField(
+        "accounting.WaterAccount",
+        on_delete=models.CASCADE,
+        related_name="surface_delivery_point",
+    )
+    point_of_diversion = models.ForeignKey(
+        PointOfDiversion, on_delete=models.PROTECT, related_name="delivery_accounts"
+    )
+
+    def __str__(self):
+        return f"{self.account} → {self.point_of_diversion}"
+
+
 class MeasuringDevice(models.Model):
     """A measuring or recording device under 23 CCR 934(b)(1) (146-03 Task 1).
 

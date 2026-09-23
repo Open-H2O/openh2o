@@ -9,6 +9,7 @@ Flowline (canals and natural hydrography). ZoneGroup and ParcelZone are the
 membership links other apps reference to tie parcels into management areas.
 """
 from django.contrib.gis.db import models as gis_models
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from core.constants import RECOVERY_HORIZON_CHOICES
@@ -92,8 +93,40 @@ class Zone(models.Model):
         help_text="Override the agency default for this district. "
         "Blank = use the agency default.",
     )
+    # Q5 (146-05 Task 3): a zone-level jurisdictional attribute -- the Delta
+    # case is the stated example, but the field names no case itself, only the
+    # rule a zone can carry. Both fields are plain columns on Zone; neither
+    # crosses into another module, so the composition rule does not apply.
+    subsurface_supply_is_diversion = models.BooleanField(
+        default=False,
+        help_text="In this zone, water reaching a crop from below is a "
+        "diversion under a stated legal basis (the Delta case).",
+    )
+    legal_basis = models.TextField(
+        blank=True,
+        help_text="The stated legal basis for the rule above. Required when "
+        "the flag is set.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        """Refuse the flag with no stated basis (Q5, 146-05 Task 3).
+
+        A DB check constraint can't require "a TextField is non-empty when a
+        sibling BooleanField is true" in a way that also reads well as a form
+        error, so the rule lives here -- `ModelForm.is_valid()` calls
+        `full_clean()`, which calls this, the same route `PointOfDiversion.clean()`
+        and `DiversionRecord.clean()` already use in `surface/models.py`.
+        """
+        super().clean()
+        if self.subsurface_supply_is_diversion and not (self.legal_basis or "").strip():
+            raise ValidationError(
+                {
+                    "legal_basis": "A legal basis is required when subsurface "
+                    "supply counts as a diversion in this zone."
+                }
+            )
 
     def __str__(self):
         return self.name

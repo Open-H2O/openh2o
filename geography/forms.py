@@ -6,15 +6,21 @@ from geography.models import Zone
 
 
 class ZoneForm(forms.ModelForm):
-    """Form for creating a zone.
+    """Form for creating or editing a zone.
 
-    geometry is excluded (set via map JS hidden input).
+    geometry is excluded (set via map JS hidden input, create only).
     boundary is excluded (auto-assigned to the site's primary boundary).
     """
 
     class Meta:
         model = Zone
-        fields = ["name", "zone_type", "description"]
+        fields = [
+            "name",
+            "zone_type",
+            "description",
+            "subsurface_supply_is_diversion",
+            "legal_basis",
+        ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-input", "placeholder": "e.g. North Basin Zone A"}),
             "zone_type": forms.Select(attrs={"class": "form-select"}),
@@ -22,5 +28,11 @@ class ZoneForm(forms.ModelForm):
                 "class": "form-textarea",
                 "rows": 3,
                 "placeholder": "Optional description of this zone...",
+            }),
+            "subsurface_supply_is_diversion": forms.CheckboxInput(),
+            "legal_basis": forms.Textarea(attrs={
+                "class": "form-textarea",
+                "rows": 3,
+                "placeholder": "The stated legal basis, e.g. the case name and citation...",
             }),
         }

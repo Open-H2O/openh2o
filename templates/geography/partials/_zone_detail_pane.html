@@ -43,7 +43,10 @@
 
     <!-- Zone information card -->
     <div class="card-raised page-grid-account-info">
-      <h2 class="section-header">Zone information</h2>
+      <div class="row-between">
+        <h2 class="section-header">Zone information</h2>
+        <a href="{% url 'geography:zone_edit' zone.pk %}" class="text-tertiary text-xs">Edit</a>
+      </div>
 
       <div class="field-group">
         <div class="field-label">Name</div>
@@ -59,6 +62,20 @@
       <div class="field-group">
         <div class="field-label">Description</div>
         <div class="text-secondary text-base">{{ zone.description }}</div>
+      </div>
+      {% endif %}
+
+      {% comment %}
+        Q5 (146-05 Task 3): shown only when set, nothing when not -- the plan's
+        own words. A zone that does not carry the Delta rule states nothing
+        about it, rather than printing "Not recorded" for a rule almost no
+        zone will ever set.
+      {% endcomment %}
+      {% if zone.subsurface_supply_is_diversion %}
+      <div class="field-group">
+        <div class="field-label">Subsurface supply</div>
+        <div class="field-value">Counts as a diversion here, under a stated legal basis.</div>
+        <div class="text-secondary text-base">{{ zone.legal_basis }}</div>
       </div>
       {% endif %}
 

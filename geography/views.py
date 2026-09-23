@@ -585,6 +585,27 @@ def zone_recovery_horizon(request, pk):
 
 
 @login_required
+def zone_edit(request, pk):
+    """Edit a zone's name, type, description and the Delta jurisdiction rule.
+
+    Unlike ``zone_create``, no map: geometry is drawn once at creation and is
+    not reopened here (146-05 Task 3, Q5 -- the plan's "a zone edit route if
+    none exists" door, since only ``zone_recovery_horizon`` existed and that
+    endpoint is a single-field HTMX control, not a general edit form).
+    """
+    zone = get_object_or_404(Zone, pk=pk)
+    if request.method == "POST":
+        form = ZoneForm(request.POST, instance=zone)
+        if form.is_valid():
+            form.save()
+            return redirect("geography:zone_detail", pk=zone.pk)
+    else:
+        form = ZoneForm(instance=zone)
+
+    return render(request, "geography/zone_edit.html", {"form": form, "zone": zone})
+
+
+@login_required
 def zone_create(request):
     """Create a new zone with map polygon drawing."""
     if request.method == "POST":

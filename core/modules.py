@@ -1071,7 +1071,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelZone",
         field="parcel",
         target="parcels",
-        where="geography/models.py:126",
+        where="geography/models.py:159",
         why=(
             "ParcelZone is the use-area-to-zone join, and zoning is geography's "
             "job. geography is standard, so this arrow is what pins parcels "
@@ -1142,6 +1142,30 @@ SCHEMA_EXCEPTIONS: tuple = (
         reversing_it=(
             "Same entanglement as ParcelLedger.water_type above — the two are "
             "one job, and that job is a paired model move, not an FK edit."
+        ),
+    ),
+    SchemaException(
+        holder="accounting",
+        model="WaterAccount",
+        field="delivery_well",
+        target="wells",
+        where="accounting/models.py:143",
+        why=(
+            "An account delivered by groundwater names the well it draws "
+            "from, and accounting is schema-resident so this arrow is safe: "
+            "wells keeps its tables in every configuration. Declaring wells "
+            "in accounting.requires instead would force every accounting "
+            "deployment to carry the Wells module (shape 1 runs accounting "
+            "and surface with no wells at all), which is exactly the "
+            "single-agency-type assumption v2.4 exists to remove; the same "
+            "reasoning drinking.SystemFacility.well already stands on."
+        ),
+        reversing_it=(
+            "A wells.WellDeliveryAccount link table plus a data migration "
+            "over the existing WaterAccount.delivery_well values, and every "
+            "reader of the field (the identity-card sentence, the account "
+            "form) would join through it rather than follow one column. Same "
+            "shape as drinking.SystemFacility.well, on far fewer rows."
         ),
     ),
 )

@@ -55,6 +55,24 @@
         </div>
       </div>
 
+      <div class="card-raised">
+        <h2 class="card-header-ruled">Jurisdiction</h2>
+        <div class="form-stack">
+          <div class="form-group">
+            <label class="field-label" for="id_subsurface_supply_is_diversion">
+              {{ form.subsurface_supply_is_diversion }}
+              In this zone, water reaching a crop from below is a diversion
+              under a stated legal basis (the Delta case)
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="id_legal_basis">Legal basis</label>
+            {{ form.legal_basis }}
+            {% for error in form.legal_basis.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+      </div>
+
       <!-- Submit -->
       <div class="form-footer-ruled">
         <a href="{% url 'geography:zone_list' %}" class="btn-secondary">Cancel</a>

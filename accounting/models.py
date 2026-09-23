@@ -17,6 +17,7 @@ from django.contrib.gis.db import models
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import DateRangeField
 from django.contrib.postgres.fields.ranges import RangeOperators
+from django.core.exceptions import ValidationError
 from django.db.models import Func
 
 
@@ -77,6 +78,26 @@ class ReportingPeriod(models.Model):
         return self.name
 
 
+#: Q8 (146-05 Task 3): which real thing an account stands for. Plain labels for
+#: the form's select; UNIT_KIND_SENTENCES below builds the identity-card's
+#: full sentence ("A farm unit"), which is a different, article-carrying
+#: reading of the same value and is not derivable from the option label alone
+#: ("Other" takes no article, "water right" needs "A" not "An").
+UNIT_KIND_CHOICES = [
+    ("farm_unit", "Farm unit"),
+    ("place_of_use", "Place of use"),
+    ("water_right", "Water right"),
+    ("other", "Other"),
+]
+
+UNIT_KIND_SENTENCES = {
+    "farm_unit": "A farm unit",
+    "place_of_use": "A place of use",
+    "water_right": "A water right",
+    "other": "Other",
+}
+
+
 class WaterAccount(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -90,9 +111,81 @@ class WaterAccount(models.Model):
     contact_name = models.CharField(max_length=200, blank=True)
     contact_email = models.EmailField(blank=True)
     verification_key = models.CharField(max_length=100, blank=True)
+    # Q8 (146-05 Task 3): which real thing this account stands for, and how it
+    # is delivered. `unit_kind` is nullable at the model (accounts predating
+    # this field, and any future bulk-import path that does not set it) but
+    # REQUIRED on the create/edit forms (WaterAccountForm.__init__).
+    unit_kind = models.CharField(
+        max_length=20,
+        choices=UNIT_KIND_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Which real thing this account stands for: a farm unit "
+        "that holds fields, a place of use under a right, or a right itself.",
+    )
+    # `delivery_pod` (a point of diversion) is NOT a field here. `accounting`
+    # is schema-resident and `surface` is truly removable, so a column here
+    # pointing into `surface` would dangle on every deployment without it and
+    # `migrate` would die building the graph (rule 1, `core/modules.py`) --
+    # the same fault Task 1 hit with `Parcel.irrigation_method`, and
+    # `SCHEMA_EXCEPTIONS` cannot excuse it because `surface`'s tables actually
+    # go. The link lives instead on `surface.WaterAccountDeliveryPoint`, one
+    # row per account, pointing `surface` -> `accounting`, a direction
+    # `surface.requires` already declares.
+    #
+    # `delivery_well` CAN live here: `wells` is schema-resident, so its tables
+    # exist in every configuration and the reference cannot dangle. Declaring
+    # `wells` in `accounting.requires` would force every accounting deployment
+    # to carry the Wells module (shape 1 has `accounting` and `surface` with
+    # no `wells` at all), which is exactly the assumption this milestone
+    # exists to remove -- so this arrow is a SCHEMA_EXCEPTIONS record instead,
+    # the same shape as `drinking.SystemFacility.well`.
+    delivery_well = models.ForeignKey(
+        "wells.Well",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="delivery_accounts",
+        help_text="This account's delivery well, if it has one. An account "
+        "is delivered through a point of diversion or a well, never both.",
+    )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        """Extra guard against both delivery paths at once (Q8).
+
+        The form is the entry boundary and carries this same check against
+        the submitted data (`WaterAccountForm.clean`) -- a DB check
+        constraint can't span the two tables `delivery_well` (here) and
+        `WaterAccountDeliveryPoint` (`surface`) live in, so this is the
+        model-level half for any caller that saves outside the form (the
+        admin site, among others). Guarded, function-scope import: `surface`
+        is optional and truly removable (Phase 87), so this must not run at
+        module scope.
+        """
+        super().clean()
+        if self.delivery_well_id and self.pk:
+            from core.modules import is_enabled
+
+            if is_enabled("surface"):
+                from surface.models import WaterAccountDeliveryPoint
+
+                if WaterAccountDeliveryPoint.objects.filter(account_id=self.pk).exists():
+                    raise ValidationError(
+                        {
+                            "delivery_well": "An account can be delivered "
+                            "through a point of diversion or a well, not both."
+                        }
+                    )
+
+    def unit_kind_sentence(self):
+        """'A farm unit', 'A place of use', 'A water right', 'Other', or
+        'Not stated' -- the identity card's leading clause (Q8)."""
+        if not self.unit_kind:
+            return "Not stated"
+        return UNIT_KIND_SENTENCES.get(self.unit_kind, self.get_unit_kind_display())
 
     def __str__(self):
         return f"{self.account_number} - {self.name}"

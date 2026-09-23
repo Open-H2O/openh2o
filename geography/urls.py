@@ -14,6 +14,7 @@ urlpatterns = [
     path("zones/", views.zone_list, name="zone_list"),
     path("zones/create/", views.zone_create, name="zone_create"),
     path("zones/<int:pk>/", views.zone_detail, name="zone_detail"),
+    path("zones/<int:pk>/edit/", views.zone_edit, name="zone_edit"),
     path("zones/<int:pk>/assign/", views.zone_parcel_assign, name="zone_parcel_assign"),
     path("zones/<int:pk>/remove/<int:pz_pk>/", views.zone_parcel_remove, name="zone_parcel_remove"),
     path("zones/<int:pk>/parcels/", views.zone_parcel_search, name="zone_parcel_search"),
