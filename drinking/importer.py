@@ -660,6 +660,12 @@ def validate_rows(rows, mapping):
 
     # Existing results, keyed the way the duplicate guard keys them — through the
     # SAME helper the row side uses, so the two can never drift apart (ISS-102).
+    #
+    # Mapped to (pk, whether the stored row predates the limits): a result
+    # imported before ISS-140's "beside" ruling has no `limits_file_date`, and
+    # re-importing its file is how it gets the limits the file carried
+    # (Brent at the 146-04 checkpoint, 2026-09-23: "We need to have values
+    # here"). The measurement itself is never touched.
     existing_keys = {
         _result_identity(
             event_id,
@@ -667,9 +673,9 @@ def validate_rows(rows, mapping):
             dict(
                 zip(_IDENTITY_FIELDS, stored),
             ),
-        )
-        for event_id, analyte_id, *stored in SampleResult.objects.values_list(
-            "event_id", "analyte_id", *_IDENTITY_FIELDS
+        ): (pk, limits_date is None)
+        for pk, limits_date, event_id, analyte_id, *stored in SampleResult.objects.values_list(
+            "pk", "limits_file_date", "event_id", "analyte_id", *_IDENTITY_FIELDS
         )
     }
     existing_events = {
@@ -820,11 +826,22 @@ def validate_rows(rows, mapping):
                 )
             )
             if event_pk is not None:
-                if _result_identity(event_pk, data["analyte_id"], data) in existing_keys:
+                match = existing_keys.get(
+                    _result_identity(event_pk, data["analyte_id"], data)
+                )
+                if match is not None:
                     data["is_duplicate"] = True
-                    warnings.append(
-                        "This result is already recorded; it will be skipped."
-                    )
+                    stored_pk, predates_limits = match
+                    if predates_limits:
+                        data["fill_limits_pk"] = stored_pk
+                        warnings.append(
+                            "This result is already recorded; the limits this "
+                            "file carries for it will be added."
+                        )
+                    else:
+                        warnings.append(
+                            "This result is already recorded; it will be skipped."
+                        )
 
         if not errors:
             # The event has no pk yet for a collection this file is introducing,
@@ -862,7 +879,10 @@ def validate_rows(rows, mapping):
 def commit_rows(valid_results, source_file="", imported_on=None):
     """Create events + results from the coerced `data` of error-free rows.
 
-    Returns {"events", "results", "analytes", "duplicates", "skipped"}.
+    Returns {"events", "results", "analytes", "duplicates", "skipped",
+    "limits_filled"}. A duplicate recorded before the limits were kept (no
+    ``limits_file_date``) is still skipped as a result but gains the file's
+    limits; ``limits_filled`` counts those.
 
     ``source_file`` and ``imported_on`` (default: today) are written to every
     result created, as the file its limits (or its lack of them) came from.
@@ -884,6 +904,7 @@ def commit_rows(valid_results, source_file="", imported_on=None):
             1 for r in valid_results if r["data"].get("is_duplicate")
         ),
         "skipped": sum(1 for r in valid_results if r["errors"]),
+        "limits_filled": 0,
     }
 
     if imported_on is None:
@@ -974,6 +995,27 @@ def commit_rows(valid_results, source_file="", imported_on=None):
             except Exception:
                 result["errors"].append("could not be saved (invalid result data).")
                 counts["skipped"] += 1
+
+        # --- limits for results recorded before they were kept ---------------
+        # A duplicate is still never re-created; only its four
+        # `_NOT_IDENTITY_FIELDS` are written, and only on a row that has
+        # never had them (`limits_file_date` null), so a second re-import
+        # changes nothing.
+        fills = [
+            SampleResult(
+                pk=r["data"]["fill_limits_pk"],
+                **_limits_as_reported(r["data"], source_file, imported_on),
+            )
+            for r in valid_results
+            if not r["errors"] and r["data"].get("fill_limits_pk") is not None
+        ]
+        if fills:
+            counts["limits_filled"] = SampleResult.objects.filter(
+                pk__in=[f.pk for f in fills], limits_file_date__isnull=True
+            ).count()
+            SampleResult.objects.bulk_update(
+                fills, list(_NOT_IDENTITY_FIELDS), batch_size=1000
+            )
 
     return counts
 

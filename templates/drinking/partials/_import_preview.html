@@ -24,6 +24,7 @@
     <span class="badge badge-grey">{{ row_count }} row{{ row_count|pluralize }} read</span>
     <span class="badge badge-green">{{ committable }} to create</span>
     {% if duplicate_count %}<span class="badge badge-orange">{{ duplicate_count }} already recorded</span>{% endif %}
+    {% if limits_fill_count %}<span class="badge badge-blue">{{ limits_fill_count }} to gain the file&rsquo;s limits</span>{% endif %}
     {% if error_count %}<span class="badge badge-orange">{{ error_count }} with errors</span>{% endif %}
     {% if new_analytes %}<span class="badge badge-blue">{{ new_analytes|length }} new analyte{{ new_analytes|length|pluralize }}</span>{% endif %}
   </div>
@@ -36,6 +37,9 @@
     {% endif %}
     {% if duplicate_count %}
       {{ duplicate_count }} row{{ duplicate_count|pluralize }} {{ duplicate_count|pluralize:"is,are" }} already recorded and will be skipped.
+    {% endif %}
+    {% if limits_fill_count %}
+      {{ limits_fill_count }} of {{ limits_fill_count|pluralize:"it was,them were" }} recorded before this platform kept the limits a laboratory file carries; committing adds this file&rsquo;s MCL and DLR to {{ limits_fill_count|pluralize:"it,them" }} and changes nothing else.
     {% endif %}
     {% if error_count %}
       {{ error_count }} row{{ error_count|pluralize }} cannot be imported &mdash; fix {{ error_count|pluralize:"it,them" }} in your file and re-import.
@@ -209,8 +213,8 @@
     <input type="hidden" name="rows_json" value="{{ rows_json }}">
     <input type="hidden" name="source_file" value="{{ source_file }}">
     <div class="row-start" style="gap: var(--space-sm);">
-      <button type="submit" class="btn-primary" {% if not committable %}disabled{% endif %}>
-        Commit {{ committable }} result{{ committable|pluralize }}
+      <button type="submit" class="btn-primary" {% if not committable and not limits_fill_count %}disabled{% endif %}>
+        {% if committable or not limits_fill_count %}Commit {{ committable }} result{{ committable|pluralize }}{% else %}Add limits to {{ limits_fill_count }} result{{ limits_fill_count|pluralize }}{% endif %}
       </button>
       <a href="{% url 'drinking:import' %}" class="btn-secondary">Choose a different file</a>
       <span id="commit-spinner" class="htmx-indicator text-tertiary text-sm">Saving&hellip;</span>

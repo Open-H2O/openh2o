@@ -869,28 +869,6 @@
     "nearest_label": "is reported present or absent; showing it as 0 would be a claim the lab did not make. \u2022 numeric, non-detect (`less_than_"
   },
   {
-    "id": "FIG-drinking-002",
-    "app": "drinking",
-    "kind": "figure",
-    "template": "templates/drinking/production.html",
-    "line": 93,
-    "column": 51,
-    "expression": "{{ t.acre_feet|floatformat:\"2g\" }}",
-    "enclosing_loop": "t in totals",
-    "nearest_label": "{{ t.acre_feet|"
-  },
-  {
-    "id": "FIG-drinking-003",
-    "app": "drinking",
-    "kind": "figure",
-    "template": "templates/drinking/production.html",
-    "line": 100,
-    "column": 26,
-    "expression": "{{ grand_total_af|floatformat:\"2g\" }}",
-    "enclosing_loop": null,
-    "nearest_label": "({{ grand_total_af|"
-  },
-  {
     "id": "FIG-geography-001",
     "app": "geography",
     "kind": "figure",

@@ -1176,6 +1176,14 @@ def import_preview(request):
         for item in validated
         if not item["errors"] and not item["data"].get("is_duplicate")
     )
+    # Results already on file that predate the limits and will gain them from
+    # this file (146-04 checkpoint). A file that creates nothing but fills
+    # these still has something to commit.
+    limits_fill_count = sum(
+        1
+        for item in validated
+        if not item["errors"] and item["data"].get("fill_limits_pk") is not None
+    )
 
     return render(
         request,
@@ -1194,6 +1202,7 @@ def import_preview(request):
             "duplicate_count": duplicate_count,
             "new_analytes": new_analytes,
             "committable": committable,
+            "limits_fill_count": limits_fill_count,
             "unknown_ps_codes": _unknown_ps_code_routes(validated),
             "rows_json": json.dumps(rows),
             # Carried to the commit so each result can say which file the
@@ -1856,7 +1865,7 @@ def production(request):
     grand_total_af = sum((t["acre_feet"] for t in totals), Decimal("0"))
 
     # 146-04 Task 6 (page verdict at 1,730): a source reported as zero, or not
-    # at all, in every month of the year is one sentence under the table, not
+    # at all, in every month of the year is one sentence above the table, not
     # a column of twelve zeros. Le Grand's real eAR carries five such columns
     # beside its one groundwater column, and the reader's worst fault was that
     # "most of the page's largest region is dead space". The grand total
@@ -1867,11 +1876,14 @@ def production(request):
             r.volume_as_reported for (_m, t), r in by_key.items() if t == code
         )
     ]
+    # Named in lower case because they are read mid-sentence in the head line.
+    shown_labels = [PRODUCTION_TYPE_CHOICES[i][1].lower() for i in shown]
     if not shown:
         shown = list(range(len(type_codes)))
-    labels = dict(PRODUCTION_TYPE_CHOICES)
     zero_labels = [
-        labels[code] for i, code in enumerate(type_codes) if i not in shown
+        label.lower()
+        for i, (_code, label) in enumerate(PRODUCTION_TYPE_CHOICES)
+        if i not in shown
     ]
     type_columns = [PRODUCTION_TYPE_CHOICES[i] for i in shown]
     for row in rows:
@@ -1888,6 +1900,7 @@ def production(request):
             "type_codes": type_codes,
             "type_columns": type_columns,
             "zero_labels": zero_labels,
+            "shown_labels": shown_labels,
             "rows": rows,
             "totals": totals,
             "grand_total_gallons": grand_total_gallons,

@@ -455,8 +455,46 @@ def test_production_year_table_shows_twelve_months_and_the_total(auth_client, le
 
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "91,371,800" in body or "91371800" in body
-    assert "280.41" in body
+    assert "91,371,800" in body
+    assert "4,007,800 gal" in body  # January, in the unit Le Grand reported
+    # Gallons only (Brent, 146-04 checkpoint, 2026-09-23): acre-feet is the
+    # unit of surface diversions and SGMA extraction, not of a drinking
+    # water system's production. The model still stores it; the page does
+    # not show it.
+    assert "280.41" not in body
+    assert "acre-feet" not in body.lower()
+    # Le Grand's five other sources were zero every month: named once in the
+    # head line, not drawn as columns of zeros.
+    assert "from groundwater." in body
+    assert "Reported as zero every month: surface water, purchased, sold" in body
+
+
+def test_a_surface_water_system_gets_its_surface_water_column(auth_client, le_grand):
+    """Brent at the checkpoint: "What if a drinking water system is using
+    surface water as its source?" Every source that carried water gets its
+    column; groundwater is not special."""
+    from drinking.models import SystemProduction
+
+    for month in range(1, 13):
+        SystemProduction.objects.create(
+            system=le_grand, year=2023, month=month, type_code="SW",
+            volume_as_reported=Decimal("2.5"), unit_as_reported="MG",
+            provenance="typed",
+        )
+        SystemProduction.objects.create(
+            system=le_grand, year=2023, month=month, type_code="PU",
+            volume_as_reported=Decimal("100000"), unit_as_reported="G",
+            provenance="typed",
+        )
+    body = auth_client.get(
+        reverse("drinking:production") + "?year=2023"
+    ).content.decode()
+    assert "<th>Surface water</th>" in body
+    assert "<th>Purchased</th>" in body
+    assert "<th>Groundwater</th>" not in body
+    assert "2.5 MG" in body
+    # 12 x 2.5 MG + 12 x 100,000 gal = 30,000,000 + 1,200,000
+    assert "31,200,000 gallons produced or delivered, from surface water, purchased." in body
 
 
 # ---------------------------------------------------------------------------

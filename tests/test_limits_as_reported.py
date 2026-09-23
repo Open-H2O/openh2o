@@ -178,6 +178,62 @@ class TestTheImporterReadsTheLimitsAsReported:
         assert second["duplicates"] == LE_GRAND_ROWS
         assert SampleResult.objects.count() == LE_GRAND_ROWS
 
+    def test_re_importing_fills_results_recorded_before_the_limits_were_kept(
+        self, le_grand
+    ):
+        """Brent at the 146-04 checkpoint (2026-09-23): "We need to have values
+        here." A result imported before the ruling has no limits; importing
+        the same file again adds them and changes nothing else."""
+        _import()
+        SampleResult.objects.update(
+            mcl_as_reported=None, dlr_as_reported=None,
+            limits_source_file="", limits_file_date=None,
+        )
+        before = list(SampleResult.objects.order_by("pk").values_list(
+            "pk", "result_value", "reporting_level", "less_than_rl", "unit"
+        ))
+
+        counts = _import(source_file="again.tab")
+        assert counts["results"] == 0
+        assert counts["duplicates"] == LE_GRAND_ROWS
+        assert counts["limits_filled"] == LE_GRAND_ROWS
+        assert SampleResult.objects.count() == LE_GRAND_ROWS
+        assert SampleResult.objects.filter(
+            mcl_as_reported__isnull=False
+        ).count() == LE_GRAND_MCL_ROWS
+        assert not SampleResult.objects.filter(limits_file_date__isnull=True).exists()
+        after = list(SampleResult.objects.order_by("pk").values_list(
+            "pk", "result_value", "reporting_level", "less_than_rl", "unit"
+        ))
+        assert after == before
+
+        third = _import(source_file="third.tab")
+        assert third["limits_filled"] == 0
+        assert SampleResult.objects.filter(
+            limits_source_file="again.tab"
+        ).count() == LE_GRAND_ROWS
+
+    def test_a_fill_only_file_can_be_committed_from_the_preview(
+        self, client_in, le_grand
+    ):
+        _import()
+        SampleResult.objects.update(limits_file_date=None, mcl_as_reported=None)
+        with LE_GRAND.open("rb") as handle:
+            preview = client_in.post(reverse("drinking:import_preview"), {"file": handle})
+        assert preview.context["committable"] == 0
+        assert preview.context["limits_fill_count"] == LE_GRAND_ROWS
+        body = preview.content.decode()
+        assert f"Add limits to {LE_GRAND_ROWS} results" in body
+        assert "disabled" not in body.split("Add limits to")[0].rsplit("<button", 1)[1]
+        commit = client_in.post(reverse("drinking:import_commit"), {
+            "rows_json": preview.context["rows_json"],
+            "source_file": preview.context["source_file"],
+        })
+        assert commit.context["counts"]["limits_filled"] == LE_GRAND_ROWS
+        assert SampleResult.objects.filter(
+            mcl_as_reported__isnull=False
+        ).count() == LE_GRAND_MCL_ROWS
+
     def test_the_commit_view_carries_the_file_name_through(
         self, client_in, le_grand
     ):

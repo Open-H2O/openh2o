@@ -187,7 +187,7 @@
               {% if result.limits_file_date %}
               <div class="budget-seg-caption">no limit in the file{% if result.dlr_as_reported is not None %}; <abbr title="detection limit for purposes of reporting">DLR</abbr> {{ result.dlr_as_reported|plain_decimal }}{% endif %}</div>
               {% else %}
-              <div class="budget-seg-caption">not recorded: imported before the file's limits were kept</div>
+              <div class="budget-seg-caption">not recorded: imported before the file's limits were kept; importing the same file again adds them</div>
               {% endif %}
               {% endif %}
             </div>

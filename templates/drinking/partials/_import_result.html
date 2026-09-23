@@ -23,6 +23,7 @@
     <span class="badge badge-green">{{ counts.events }} sample event{{ counts.events|pluralize }}</span>
     {% if counts.analytes %}<span class="badge badge-blue">{{ counts.analytes }} new analyte{{ counts.analytes|pluralize }}</span>{% endif %}
     {% if counts.duplicates %}<span class="badge badge-orange">{{ counts.duplicates }} already recorded</span>{% endif %}
+    {% if counts.limits_filled %}<span class="badge badge-blue">{{ counts.limits_filled }} gained the file&rsquo;s limits</span>{% endif %}
     {% if counts.skipped %}<span class="badge badge-orange">{{ counts.skipped }} skipped</span>{% endif %}
     <span class="badge badge-grey">{{ total }} row{{ total|pluralize }} total</span>
   </div>
@@ -36,6 +37,9 @@
     {% endif %}
     {% if counts.duplicates %}
       {{ counts.duplicates }} row{{ counts.duplicates|pluralize }} {{ counts.duplicates|pluralize:"was,were" }} already on file and {{ counts.duplicates|pluralize:"was,were" }} skipped.
+    {% endif %}
+    {% if counts.limits_filled %}
+      {{ counts.limits_filled }} result{{ counts.limits_filled|pluralize }} already on file gained the MCL and DLR this file carries.
     {% endif %}
     {% if counts.analytes %}
       {{ counts.analytes }} analyte{{ counts.analytes|pluralize }} {{ counts.analytes|pluralize:"was,were" }} added to the vocabulary from this file.

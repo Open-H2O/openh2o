@@ -60,7 +60,21 @@
     </div>
   </div>
 
-  <div class="card-raised table-scroll">
+  {% comment %}
+    Gallons only (Brent at the 146-04 checkpoint, 2026-09-23): a drinking
+    water system is measured in gallons; acre-feet is the unit of surface
+    diversions and SGMA extraction, so it is not on this page. Each month
+    reads in the unit the system reported it in; the totals are gallons.
+
+    Every source the system reported water from gets a column, surface water
+    and purchased water as much as groundwater; the head line says which
+    sources carried water this year and which were zero every month, so a
+    groundwater-only year never reads as a groundwater-only page.
+  {% endcomment %}
+  <div class="card-raised table-scroll" style="padding: 0;">
+    <div class="ledger-card-head">
+      <div class="text-secondary text-base">{{ year }}: {{ grand_total_gallons_whole|intcomma }} gallons produced or delivered{% if shown_labels %}, from {{ shown_labels|join:", " }}{% endif %}.{% if zero_labels %} Reported as zero every month: {{ zero_labels|join:", " }}.{% endif %}</div>
+    </div>
     <table class="data-table">
       <thead>
         <tr>
@@ -87,19 +101,8 @@
           <td class="tabular-nums"><strong>{{ t.gallons_whole|intcomma }} gal</strong></td>
           {% endfor %}
         </tr>
-        <tr>
-          <td>Acre-feet</td>
-          {% for t in totals %}
-          <td class="tabular-nums">{{ t.acre_feet|floatformat:"2g" }} AF</td>
-          {% endfor %}
-        </tr>
       </tfoot>
     </table>
-    <p class="text-base text-secondary mt-lg" style="padding: 0 var(--space-lg) var(--space-lg);">
-      <strong>{{ grand_total_gallons_whole|intcomma }} gallons</strong>
-      ({{ grand_total_af|floatformat:"2g" }} acre-feet) across every source in {{ year }}.{% if zero_labels %}
-      Reported as zero, or not at all, in every month: {{ zero_labels|join:", " }}.{% endif %}
-    </p>
   </div>
   {% endif %}
 

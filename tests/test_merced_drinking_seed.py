@@ -25,6 +25,7 @@ import os
 
 import pytest
 from django.core.management import call_command
+from django.db import connection
 
 from drinking.models import (
     EnvirofactsCache,
@@ -62,6 +63,18 @@ def _seeded_once(django_db_setup, django_db_blocker):
         call_command("seed_well_types")
         call_command("seed_drinking")
         call_command("seed_merced_drinking")
+        # 22k rows land in tables the fresh test database's statistics still
+        # call empty, and those rows outlive this module. Until autoanalyze
+        # catches up, any later DELETE of this system's results (a flush
+        # test, or a fixture clearing other systems) is planned as a nested
+        # loop: measured 2026-09-23, one such DELETE ran 12+ minutes and took
+        # the suite from 7 minutes to 14 or more. Analysing here makes the
+        # plan a hash join whatever the timing.
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "ANALYZE drinking_sampleresult, drinking_sampleevent, "
+                "drinking_samplingpoint, drinking_systemfacility"
+            )
 
 
 @pytest.fixture
