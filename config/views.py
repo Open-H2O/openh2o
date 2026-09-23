@@ -505,8 +505,8 @@ def glossary(request):
     did not author, and this platform's own coined concepts (Allocation Ceiling,
     Use Area, Ledger Entry).
 
-    **Membership never changes, only wording (ISS-085, decided).** 36 entries in
-    and 36 entries out; a reduced deployment narrows the *pointers*, not the
+    **Membership never changes, only wording (ISS-085, decided).** 37 entries in
+    and 37 entries out (36 until 146-04 Task 4 added Sampling Schedule); a reduced deployment narrows the *pointers*, not the
     dictionary. And the ``See Help > X.`` sentences are matched byte-for-byte by
     ``_without_unavailable_help_pointers`` above — reword one and it stops being
     stripped, which sends a reduced-deployment reader at a 404 (the defect Plan
@@ -540,6 +540,7 @@ def glossary(request):
         "OpenET": "Satellite-based evapotranspiration estimates, used to calculate crop water use.",
         "Use Area": "A plot of land identified by an Assessor Parcel Number (APN), the basic unit of water accounting.",
         "Point of Diversion (POD)": "One record per POD: its location, the right it draws under, its stream or flowline, its maximum rate in CFS, and the parcels it serves, with its monthly diversion records.",
+        "Sampling Schedule": "The operator's own checklist on a drinking-water deployment: one row per thing sampled on a cycle, with its frequency, the date it was last done and the date it is next due. Both dates are typed in; the platform never works a due date out from the frequency.",
         "Recovery Horizon": "A per-district setting for what happens to a district's unused surface water at year-end: carry it forward to next year, or let it expire. A debt (an overdraw) always carries regardless. Set on the Delivery Settings page. See Help > Configs & Settings, explained.",
         "Water Year": "A time window (usually October 1 through September 30) for water accounting and reporting.",
         "SGMA": "Sustainable Groundwater Management Act (2014), the California law requiring groundwater management.",

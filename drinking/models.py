@@ -809,3 +809,80 @@ class SystemProduction(models.Model):
             self.volume_gallons / PRODUCTION_GALLONS_PER_ACRE_FOOT
         ).quantize(_TWO_PLACES)
         super().save(*args, **kwargs)
+
+
+# -- 1.4 The operator's sampling schedule (146-04 Task 4, D8) ----------------
+
+SCHEDULE_FREQUENCY_CHOICES = [
+    ("daily", "Daily"),
+    ("weekly", "Weekly"),
+    ("monthly", "Monthly"),
+    ("quarterly", "Quarterly"),
+    ("annual", "Annual"),
+    ("every_3_years", "Every 3 years"),
+    ("every_9_years", "Every 9 years"),
+    ("every_10_years", "Every 10 years"),
+    ("other", "Other"),
+]
+
+
+class SamplingSchedule(models.Model):
+    """One row of the operator's own sampling checklist.
+
+    **Held, never computed.** ``next_due`` is the date the operator typed. The
+    frequency is a label for the row, not an input to arithmetic: nothing here
+    adds a month to ``last_done``, because the schedule is the one the state
+    set for the system and the operator keeps, and a software-computed date
+    that disagreed with it would be a second, wrong schedule. Brent's "the plan
+    holds" (2026-09-20 19:06 PDT) answered the memo's J11: the product holds a
+    schedule.
+
+    A row names what is sampled either by ``analyte`` (the platform's own
+    vocabulary) or by ``group_label`` (coliform, a siting plan, anything the
+    operator's checklist groups), and the form requires one of the two.
+    """
+
+    system = models.ForeignKey(
+        WaterSystem, on_delete=models.CASCADE, related_name="sampling_schedule"
+    )
+    sampling_point = models.ForeignKey(
+        SamplingPoint, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="schedule_rows",
+    )
+    analyte = models.ForeignKey(
+        Analyte, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="schedule_rows",
+    )
+    group_label = models.CharField(
+        max_length=100, blank=True,
+        help_text="What the row covers when it is not one analyte: coliform, "
+        "nitrate, chlorine residual, siting plan.",
+    )
+    frequency = models.CharField(max_length=20, choices=SCHEDULE_FREQUENCY_CHOICES)
+    last_done = models.DateField(null=True, blank=True)
+    next_due = models.DateField(
+        null=True, blank=True,
+        help_text="Typed by the operator; never computed from the frequency.",
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        # Earliest date first, rows with no date last; the list page reads in
+        # this order and the overview's one line takes the first dated row.
+        ordering = [models.F("next_due").asc(nulls_last=True), "pk"]
+        verbose_name = "Sampling Schedule Row"
+        verbose_name_plural = "Sampling Schedule"
+
+    @property
+    def label(self):
+        """What the row covers, in the operator's words first."""
+        if self.group_label:
+            return self.group_label
+        if self.analyte_id:
+            return self.analyte.name
+        return "Sampling"
+
+    def __str__(self):
+        return f"{self.system.pwsid} {self.label} ({self.get_frequency_display()})"

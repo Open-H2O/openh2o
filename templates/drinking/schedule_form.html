@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% comment %}
+  146-04 Task 4 (D8): add or edit one row of the sampling schedule. Both dates
+  are typed; the form fills neither from the frequency.
+{% endcomment %}
+
+{% block title %}{% if row %}Edit schedule row{% else %}Add to schedule{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if row %}Edit schedule row{% else %}Add to schedule{% endif %}{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span>Water Data</span>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:schedule' %}">Schedule</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">{% if row %}Edit{% else %}Add row{% endif %}</span>
+  </nav>
+  <p class="page-description">One thing you sample on a cycle. Name it in your own words or choose an analyte; the dates are the ones on your checklist.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-narrow">
+
+  <a href="{% url 'drinking:schedule' %}" class="back-link">&larr; Back to Schedule</a>
+
+  {% if not system %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">No water system yet</h2>
+    <p class="text-base text-secondary mt-md">
+      A schedule belongs to a water system, and none is onboarded on this
+      deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
+      first.
+    </p>
+  </div>
+  {% else %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Details</h2>
+
+    {% if form.non_field_errors %}
+    <div class="form-error-box">
+      {% for error in form.non_field_errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.group_label.id_for_label }}">{{ form.group_label.label }}</label>
+          {{ form.group_label }}
+          <div class="form-help">Coliform, nitrate, a siting plan: whatever your checklist calls it.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.analyte.id_for_label }}">{{ form.analyte.label }}</label>
+          {{ form.analyte }}
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.frequency.id_for_label }}">{{ form.frequency.label }}</label>
+          {{ form.frequency }}
+          {% for error in form.frequency.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.sampling_point.id_for_label }}">{{ form.sampling_point.label }}</label>
+          {{ form.sampling_point }}
+          <div class="form-help">Optional.</div>
+        </div>
+      </div>
+
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.last_done.id_for_label }}">{{ form.last_done.label }}</label>
+          {{ form.last_done }}
+          {% for error in form.last_done.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.next_due.id_for_label }}">{{ form.next_due.label }}</label>
+          {{ form.next_due }}
+          <div class="form-help">The date on your checklist. Nothing is worked out from the frequency.</div>
+          {% for error in form.next_due.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.notes.id_for_label }}">Notes</label>
+        {{ form.notes }}
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">{% if row %}Save changes{% else %}Add row{% endif %}</button>
+        <a href="{% url 'drinking:schedule' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

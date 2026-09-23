@@ -99,6 +99,8 @@ ACTIVE_PATHS = [
     # 146-04 Task 2's production door. Same trap again: `/drinking/` is a
     # prefix of it too.
     "/drinking/production/",
+    # 146-04 Task 4's schedule door, and the same trap once more.
+    "/drinking/schedule/",
     "/datasync/stations/",
     "/accounting/accounts/",
     "/accounting/reporting-periods/",
@@ -355,7 +357,7 @@ def test_every_registry_icon_key_has_a_partial():
 
 
 def test_every_nav_entry_is_rendered():
-    """All 26 module-owned entries appear when every gate is open.
+    """All 27 module-owned entries appear when every gate is open.
 
     Guards the failure mode a byte-diff cannot: if the registry loop silently
     drops an entry AND the fixture were regenerated, this still fails.
@@ -363,12 +365,13 @@ def test_every_nav_entry_is_rendered():
     19 through Phase 77; 78-02 adds Drinking Water, Sampling Points and Sample
     Results to the Water Data section, 80-02 adds Onboard System, and 100-01
     adds Facilities. 146-02 Task 4 adds Curtailment Orders beside Water Rights.
-    146-04 Task 2 adds Production beside the other drinking-water sub-pages.
+    146-04 Task 2 adds Production beside the other drinking-water sub-pages,
+    and 146-04 Task 4 adds Schedule after it.
     """
     html = render_sidebar(path="/", nav_mode="admin", user_is_admin=True,
                           access_enforced=False)
     expected = [e for spec in enabled_modules() for e in spec.nav]
-    assert len(expected) == 26
+    assert len(expected) == 27
     for entry in expected:
         assert f">{entry.label}</span>" in html, (
             f"Nav entry {entry.url_name!r} ({entry.label}) is missing from the sidebar"

@@ -13,7 +13,8 @@ does not make. See ``drinking/models.py``.
 The three read surfaces are deliberately read-only — no inline ``edit_field``
 surface. The write paths are the lab-file import, onboarding, the production
 year's add and import (146-04 Task 2) and the facility add and edit forms
-(146-04 Task 3), each a full page of its own, plus Django admin for one-off
+(146-04 Task 3) and the sampling schedule's (146-04 Task 4), each a full page
+of its own, plus Django admin for one-off
 corrections.
 """
 import json
@@ -38,6 +39,7 @@ from drinking import envirofacts, envirofacts_mapping, glossary, importer
 from drinking import production_import as production_import_service
 from drinking.forms import (
     FacilityLocalNameForm,
+    SamplingScheduleForm,
     SystemFacilityForm,
     SystemProductionForm,
 )
@@ -55,6 +57,7 @@ from drinking.models import (
     Analyte,
     SampleResult,
     SamplingPoint,
+    SamplingSchedule,
     SystemFacility,
     SystemProduction,
     WaterSystem,
@@ -116,7 +119,19 @@ def overview(request):
         .annotate(n=Count("id"))
     }
 
+    # 146-04 Task 4 (D8): the one "next due" line. One query for every
+    # system's dated rows, earliest first, and the first per system kept in
+    # Python -- the same no-per-system-query rule as the two aggregates above.
+    next_due = {}
+    for row in (
+        SamplingSchedule.objects.filter(next_due__isnull=False)
+        .select_related("analyte")
+        .order_by("next_due", "pk")
+    ):
+        next_due.setdefault(row.system_id, row)
+
     for system in systems:
+        system.next_due_row = next_due.get(system.pk)
         system.sampling_point_count = point_counts.get(system.pk, 0)
         system.result_count = result_counts.get(system.pk, 0)
         # One boolean each, computed here rather than as eight chained {% if %}s
@@ -2050,4 +2065,71 @@ def production_import_commit(request):
 
     return render(
         request, "drinking/partials/_production_import_result.html", result
+    )
+
+
+# ---------------------------------------------------------------------------
+# The sampling schedule (146-04 Task 4, D8)
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def schedule(request):
+    """The operator's sampling checklist, by the date they set.
+
+    Earliest date first (the model's ordering), so a date that has passed
+    leads the list; rows with no date last. A passed date is worded as the
+    operator's own ("past the date you set") and never as a verdict: the
+    platform holds the schedule and does not judge it.
+    """
+    system = WaterSystem.objects.order_by("pwsid").first()
+    rows = (
+        SamplingSchedule.objects.filter(system=system)
+        .select_related("analyte", "sampling_point")
+        if system is not None
+        else SamplingSchedule.objects.none()
+    )
+    return render(
+        request,
+        "drinking/schedule.html",
+        {"system": system, "rows": rows, "today": timezone.localdate()},
+    )
+
+
+@login_required
+def schedule_add(request):
+    """Add one row to the schedule; no system yet says Onboard first."""
+    system = WaterSystem.objects.order_by("pwsid").first()
+    if system is None:
+        return render(request, "drinking/schedule_form.html", {"system": None})
+
+    if request.method == "POST":
+        form = SamplingScheduleForm(request.POST, system=system)
+        if form.is_valid():
+            form.save()
+            return redirect("drinking:schedule")
+    else:
+        form = SamplingScheduleForm(system=system)
+    return render(
+        request,
+        "drinking/schedule_form.html",
+        {"form": form, "system": system, "row": None},
+    )
+
+
+@login_required
+def schedule_edit(request, pk):
+    """Edit one schedule row: typically the two dates, after a sample is taken."""
+    row = get_object_or_404(SamplingSchedule.objects.select_related("system"), pk=pk)
+    if request.method == "POST":
+        form = SamplingScheduleForm(request.POST, instance=row, system=row.system)
+        if form.is_valid():
+            form.save()
+            return redirect("drinking:schedule")
+    else:
+        form = SamplingScheduleForm(instance=row, system=row.system)
+    return render(
+        request,
+        "drinking/schedule_form.html",
+        {"form": form, "system": row.system, "row": row},
     )

@@ -29,7 +29,7 @@ from django.urls import reverse
 
 from core import modules as mod
 from drinking import provenance
-from drinking.models import SystemFacility
+from drinking.models import SystemFacility, WaterSystem
 from tests.factories import (
     SystemFacilityFactory,
     WaterSystemFactory,
@@ -63,6 +63,14 @@ def client_in(db):
 
 @pytest.fixture
 def system(db):
+    """Le Grand, and only Le Grand.
+
+    The views read the deployment's one system (lowest PWSID), and
+    ``tests/test_merced_drinking_seed.py`` seeds City of Merced (CA2410009)
+    outside any test transaction, where it outlives its module. Cleared here
+    the way ``tests/test_production_import.py`` clears it.
+    """
+    WaterSystem.objects.all().delete()
     return WaterSystemFactory(pwsid="CA2410011", name="LE GRAND CSD")
 
 
@@ -194,6 +202,7 @@ class TestRefusals:
         assert "already" in response.content.decode()
 
     def test_no_system_yet_says_onboard_first(self, client_in, db):
+        WaterSystem.objects.all().delete()  # see the `system` fixture
         response = client_in.get(reverse("drinking:facility_add"))
         assert response.status_code == 200
         html = response.content.decode()

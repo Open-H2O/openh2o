@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% comment %}
+  146-04 Task 4 (D8): the operator's sampling checklist.
+
+  HELD, NEVER COMPUTED. Every date on this page is one the operator typed.
+  A row whose date has passed says "past the date you set" and nothing more:
+  the words overdue, late and missed are verdicts, and the schedule is the
+  operator's, not this platform's to grade (tests/test_sampling_schedule.py).
+{% endcomment %}
+
+{% block title %}Schedule - Open Water Accounting Platform{% endblock %}
+{% block page_title %}Schedule{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span>Water Data</span>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Schedule</span>
+  </nav>
+  <p class="page-description">Your sampling checklist: what is sampled, how often, when it was last done and when it is next due. Both dates are the ones you type; nothing here works a date out for you.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-wide">
+
+  {% if not system %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">No water system yet</h2>
+    <p class="text-base text-secondary mt-md">
+      A schedule belongs to a water system, and none is onboarded on this
+      deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
+      first.
+    </p>
+  </div>
+  {% elif not rows %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Nothing on the schedule yet</h2>
+    <p class="text-base text-secondary mt-md">
+      Add one row per item on your sampling checklist, with its frequency
+      and the dates you work to.
+    </p>
+    <div class="row-start mt-lg">
+      <a href="{% url 'drinking:schedule_add' %}" class="btn-primary">+ Add row</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="card-raised table-scroll" style="padding: 0;">
+    <div class="ledger-card-head row-start" style="justify-content: space-between; gap: var(--space-md);">
+      <div class="text-secondary text-base">{{ rows|length }} row{{ rows|length|pluralize }}, earliest date first</div>
+      <a href="{% url 'drinking:schedule_add' %}" class="btn-secondary btn-sm">+ Add row</a>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>What is sampled</th>
+          <th>Sampling point</th>
+          <th>Frequency</th>
+          <th>Last done</th>
+          <th>Next due</th>
+          <th><span class="sr-only">Edit</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>
+            {{ row.label }}
+            {% if row.group_label and row.analyte %}<div class="text-secondary text-sm">{{ row.analyte.name }}</div>{% endif %}
+            {% if row.notes %}<div class="text-secondary text-sm">{{ row.notes }}</div>{% endif %}
+          </td>
+          <td class="text-sm">
+            {% if row.sampling_point %}<a href="{% url 'drinking:sampling_point_detail' row.sampling_point.pk %}" class="data-table-link text-mono">{{ row.sampling_point.ps_code }}</a>{% else %}<span class="value-empty">Not set</span>{% endif %}
+          </td>
+          <td class="text-secondary text-sm">{{ row.get_frequency_display }}</td>
+          <td class="text-sm tabular-nums">{% if row.last_done %}{{ row.last_done|date:"M j, Y" }}{% else %}<span class="value-empty">Not recorded</span>{% endif %}</td>
+          <td class="text-sm tabular-nums">
+            {% if row.next_due %}
+              {{ row.next_due|date:"M j, Y" }}
+              {% if row.next_due < today %}<div class="text-secondary text-sm">past the date you set</div>{% endif %}
+            {% else %}
+              <span class="value-empty">No date set</span>
+            {% endif %}
+          </td>
+          <td class="text-sm"><a href="{% url 'drinking:schedule_edit' row.pk %}" class="data-table-link">Edit</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

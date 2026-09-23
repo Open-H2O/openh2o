@@ -230,6 +230,15 @@
         </a>
       </div>
 
+      {% comment %}
+        146-04 Task 4 (D8): one line, the earliest date on the operator's
+        schedule, and nothing at all when no row carries a date. The date is
+        theirs, so the line states it and passes no judgement on it.
+      {% endcomment %}
+      {% if system.next_due_row %}
+      <p class="text-secondary text-base mt-md" style="margin-bottom: 0;">Next due: {{ system.next_due_row.label }} on {{ system.next_due_row.next_due|date:"F j, Y" }}. <a href="{% url 'drinking:schedule' %}" class="text-accent">Schedule &rarr;</a></p>
+      {% endif %}
+
   </div>
 
   {% comment %}

@@ -816,7 +816,7 @@ MODULE_REGISTRY: dict = {
                 section=SECTION_WATER_DATA,
                 order=70,
                 active_match="/drinking/",
-                # Five excludes, not four: `/drinking/` is a prefix of every
+                # Six excludes, not four: `/drinking/` is a prefix of every
                 # sub-page, each of which owns its own entry below. Adding a
                 # sub-route without adding its exclusion leaves Overview lit
                 # while the operator is somewhere else. The facilities exclusion
@@ -824,13 +824,15 @@ MODULE_REGISTRY: dict = {
                 # Overview to Facilities. `/drinking/production` joined
                 # 146-04 Task 2 (D7); missing it would have left Overview lit
                 # on every production page, the same fault this comment
-                # already warns about for the other four.
+                # already warns about for the other four. `/drinking/schedule`
+                # joined 146-04 Task 4 (D8) for the same reason.
                 active_excludes=(
                     "/drinking/facilities",
                     "/drinking/sampling-points",
                     "/drinking/results",
                     "/drinking/onboard",
                     "/drinking/production",
+                    "/drinking/schedule",
                 ),
                 # Water Data runs to eleven links on a full deployment, and the
                 # last five of them are all drinking water. The rule splits them
@@ -881,6 +883,18 @@ MODULE_REGISTRY: dict = {
                 # four sub-pages.
                 order=95,
                 active_match="/drinking/production",
+            ),
+            NavEntry(
+                url_name="drinking:schedule",
+                label="Schedule",
+                # Its own glyph (`test_icon_keys_are_unique`): a clipboard
+                # with one ticked line, the operator's checklist.
+                icon="schedule",
+                section=SECTION_WATER_DATA,
+                # 97: after Production (95), before Onboard System (100);
+                # 146-04 Task 4 (D8).
+                order=97,
+                active_match="/drinking/schedule",
             ),
             NavEntry(
                 url_name="drinking:onboard",

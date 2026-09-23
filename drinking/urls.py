@@ -68,6 +68,10 @@ urlpatterns = [
         views.production_import_commit,
         name="production_import_commit",
     ),
+    # The sampling schedule (146-04 Task 4, D8).
+    path("schedule/", views.schedule, name="schedule"),
+    path("schedule/add/", views.schedule_add, name="schedule_add"),
+    path("schedule/<int:pk>/edit/", views.schedule_edit, name="schedule_edit"),
     # Named to read as a sibling of the import flow above: page -> lookup -> commit
     # is the same shape as page -> preview -> commit, and an operator who has used
     # one already knows the other.

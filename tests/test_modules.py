@@ -526,13 +526,14 @@ class TestNavResolution:
 
     def test_nav_entry_count_matches_todays_sidebar(self):
         entries = [e for s in mod.enabled_modules() for e in s.nav]
-        # 26 module-owned links: 19 through Phase 77, the three 78-02 adds to
+        # 27 module-owned links: 19 through Phase 77, the three 78-02 adds to
         # Water Data, 80-02's onboarding wizard, 100-01's facility list,
         # 146-02 Task 4's Curtailment Orders beside Water Rights, and
-        # 146-04 Task 2's Production under Drinking Water.
+        # 146-04 Task 2's Production under Drinking Water, and 146-04 Task 4's
+        # Schedule after it.
         # The sidebar also renders `index`, the nav-mode toggle and six static
         # help/about pages, none of which are module-owned.
-        assert len(entries) == 26
+        assert len(entries) == 27
 
     def test_icon_keys_are_unique(self):
         icons = [e.icon for s in mod.enabled_modules() for e in s.nav]
@@ -578,7 +579,8 @@ class TestNavResolution:
 
         `/drinking/` is a prefix of EVERY sub-page, so a partial set of excludes
         fixes some and leaves the rest permanently lit. 80-02 adds the third,
-        100-01 the fourth, 146-04 Task 2 the fifth (production).
+        100-01 the fourth, 146-04 Task 2 the fifth (production), 146-04 Task 4
+        the sixth (schedule).
         """
         entry = next(
             e
@@ -586,7 +588,7 @@ class TestNavResolution:
             if e.url_name == "drinking:overview"
         )
         assert entry.active_match == "/drinking/"
-        assert len(entry.active_excludes) == 5
+        assert len(entry.active_excludes) == 6
         assert entry.is_active("/drinking/") is True
         assert entry.is_active("/drinking/facilities/") is False
         # The facility DETAIL page owns no nav entry, so it inherits this
@@ -596,6 +598,7 @@ class TestNavResolution:
         assert entry.is_active("/drinking/results/") is False
         assert entry.is_active("/drinking/onboard/") is False
         assert entry.is_active("/drinking/production/") is False
+        assert entry.is_active("/drinking/schedule/") is False
 
 
 class TestContextProcessor:

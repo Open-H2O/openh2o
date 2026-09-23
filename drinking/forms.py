@@ -9,7 +9,14 @@ than each starting its own file.
 from django import forms
 
 from core.modules import is_enabled
-from drinking.models import PRODUCTION_PROVENANCE_TYPED, SystemFacility, SystemProduction
+from drinking.models import (
+    PRODUCTION_PROVENANCE_TYPED,
+    Analyte,
+    SamplingPoint,
+    SamplingSchedule,
+    SystemFacility,
+    SystemProduction,
+)
 
 MONTH_CHOICES = [("", "-- Year total, not one month --")] + [
     (i, name) for i, name in enumerate(
@@ -193,3 +200,70 @@ class FacilityLocalNameForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         _offer_the_well_link(self)
+
+
+# ---------------------------------------------------------------------------
+# The sampling schedule (146-04 Task 4, D8)
+# ---------------------------------------------------------------------------
+
+
+class SamplingScheduleForm(forms.ModelForm):
+    """One row of the operator's sampling checklist.
+
+    Both dates are typed. The form never fills ``next_due`` from ``frequency``
+    and ``last_done``; see ``SamplingSchedule``'s docstring for why.
+    """
+
+    class Meta:
+        model = SamplingSchedule
+        fields = [
+            "group_label", "analyte", "sampling_point", "frequency",
+            "last_done", "next_due", "notes",
+        ]
+        widgets = {
+            "group_label": forms.TextInput(attrs={
+                "class": "form-input", "placeholder": "e.g. Coliform",
+            }),
+            "analyte": forms.Select(attrs={"class": "form-select"}),
+            "sampling_point": forms.Select(attrs={"class": "form-select"}),
+            "frequency": forms.Select(attrs={"class": "form-select"}),
+            "last_done": forms.DateInput(
+                attrs={"class": "form-input", "type": "date"}, format="%Y-%m-%d"
+            ),
+            "next_due": forms.DateInput(
+                attrs={"class": "form-input", "type": "date"}, format="%Y-%m-%d"
+            ),
+            "notes": forms.Textarea(attrs={"class": "form-textarea", "rows": 2}),
+        }
+        labels = {
+            "group_label": "What is sampled",
+            "analyte": "Or one analyte",
+            "sampling_point": "Sampling point",
+            "last_done": "Last done",
+            "next_due": "Next due",
+        }
+
+    def __init__(self, *args, system=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._system = system
+        self.fields["analyte"].queryset = Analyte.objects.order_by("name")
+        points = SamplingPoint.objects.order_by("ps_code")
+        if system is not None:
+            points = points.filter(facility__system=system)
+        self.fields["sampling_point"].queryset = points
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get("group_label") and not cleaned.get("analyte"):
+            raise forms.ValidationError(
+                "Say what is sampled: type it, or choose one analyte."
+            )
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self._system is not None and instance.system_id is None:
+            instance.system = self._system
+        if commit:
+            instance.save()
+        return instance

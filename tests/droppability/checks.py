@@ -195,6 +195,9 @@ _PAGES = (
     # vanish with `wells`, and on the empty fixture it renders the "no water
     # system yet" state, whose prose is what the vocabulary gate reads.
     ("/drinking/facilities/add/", "drinking"),
+    # 146-04 Task 4: the sampling schedule and its add form.
+    ("/drinking/schedule/", "drinking"),
+    ("/drinking/schedule/add/", "drinking"),
 )
 
 

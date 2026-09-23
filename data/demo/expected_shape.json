@@ -143,6 +143,11 @@
       "tolerance": 0,
       "reason": "The sampling points those events belong to. Published record."
     },
+    "drinking.SamplingSchedule": {
+      "expected": 0,
+      "tolerance": 0,
+      "reason": "146-04 Task 4 (D8): the operator's own sampling checklist. Zero because a schedule is the operator's to type, and the demonstration seeds none; the door is proven by tests/test_sampling_schedule.py, never by seeding the demo database."
+    },
     "drinking.SystemProduction": {
       "expected": 0,
       "tolerance": 0,
