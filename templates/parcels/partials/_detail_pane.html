@@ -270,6 +270,8 @@
               {% include "partials/_help_tooltip.html" with label="Status" text="Active use areas are included in your water data and reports. Inactive use areas are excluded." %}
             {% elif ef.name == "area_acres" %}
               {% include "partials/_help_tooltip.html" with label="Area (acres)" text="Calculated from the parcel geometry. Used for per-acre allocation calculations." %}
+            {% elif ef.name == "irrigation_method" %}
+              {% include "partials/_help_tooltip.html" with label="Irrigation method" text="The methods and their percentages are East Turlock Subbasin GSA's published table. Recorded only, for now: every use area's calculation still uses the one agency-wide percentage on Delivery Settings." %}
             {% endif %}
           </div>
           <div id="field-{{ ef.name }}" class="field-row">
@@ -278,6 +280,8 @@
                 {% include "parcels/partials/_status_badge.html" with status=ef.value %}
               {% elif ef.type == "number" %}
                 {% if ef.value is not None %}{{ ef.value|floatformat:2 }}{% else %}—{% endif %}
+              {% elif ef.name == "irrigation_method" %}
+                {{ ef.display|blank }}
               {% else %}
                 {{ ef.value|blank }}
               {% endif %}

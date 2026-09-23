@@ -5,6 +5,8 @@ Replaces the content of #field-<fieldname>.
 <span style="color: var(--color-text-primary); font-size: 0.9375rem; flex: 1;">
   {% if field == "status" %}
     {% include "parcels/partials/_status_badge.html" with status=value %}
+  {% elif field == "irrigation_method" %}
+    {{ display|blank }}
   {% else %}
     {{ value|blank }}
   {% endif %}

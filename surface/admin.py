@@ -5,7 +5,9 @@ from django.contrib import admin
 from .models import (
     CurtailmentOrder,
     DiversionRecord,
+    IrrigationMethod,
     MeasuringDevice,
+    ParcelIrrigationMethod,
     PointOfDiversion,
     PointOfDiversionDevice,
     PointOfDiversionParcel,
@@ -61,6 +63,18 @@ class PointOfDiversionDeviceAdmin(admin.ModelAdmin):
     list_display = ["point_of_diversion", "device", "is_current", "installed_on", "removed_on"]
     list_filter = ["is_current"]
     raw_id_fields = ["point_of_diversion", "device"]
+
+
+@admin.register(IrrigationMethod)
+class IrrigationMethodAdmin(admin.ModelAdmin):
+    list_display = ["name", "assigned_efficiency", "range_low", "range_high", "sort_order"]
+    search_fields = ["name"]
+
+
+@admin.register(ParcelIrrigationMethod)
+class ParcelIrrigationMethodAdmin(admin.ModelAdmin):
+    list_display = ["parcel", "method"]
+    raw_id_fields = ["parcel"]
 
 
 @admin.register(CurtailmentOrder)

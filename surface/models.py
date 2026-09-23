@@ -10,7 +10,9 @@ returned_af that distinguishes diverted from actually consumed water.
 CurtailmentOrder records when a right is curtailed. MeasuringDevice is the
 23 CCR 934(b)(1) device registry (146-03 Task 1), linked to a point of
 diversion through PointOfDiversionDevice the way wells.WellMeter links a meter
-to a well.
+to a well. IrrigationMethod is East Turlock Subbasin GSA's published
+efficiency table, seeded by migration, and ParcelIrrigationMethod records which
+method a use area uses (146-05 Task 1); nothing in the engine reads either yet.
 """
 from datetime import date
 from decimal import Decimal
@@ -394,6 +396,75 @@ class PointOfDiversionParcel(models.Model):
 
     def __str__(self):
         return f"{self.point_of_diversion} → {self.parcel} ({self.fraction})"
+
+
+class IrrigationMethod(models.Model):
+    """One row of a published irrigation-efficiency table (146-05 Task 1, S1).
+
+    Seeded by a data migration (``0016_seed_irrigation_methods``), not a seed
+    command, so every deployment carries the same rows after ``migrate``: East
+    Turlock Subbasin GSA's Section 4.05 table, 18 rows counted off the PDF on
+    2026-09-23. It lives in ``surface`` for the reason the agency-wide
+    efficiency does: nothing reads an efficiency where there is no canal.
+    Nothing reads this one yet either; Phase 148 decides what the engine does
+    with it.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    assigned_efficiency = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        help_text="The share of applied water the table assigns this method, "
+        "as a fraction (0.600 is 60%).",
+    )
+    range_low = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        help_text="Low end of the table's published range, as a fraction.",
+    )
+    range_high = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        help_text="High end of the table's published range, as a fraction.",
+    )
+    source = models.CharField(
+        max_length=300,
+        help_text="The published table this row is copied from.",
+    )
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def percent(self):
+        """The assigned efficiency as a whole percent: 0.600 -> 60."""
+        return int((self.assigned_efficiency * 100).to_integral_value())
+
+    def __str__(self):
+        return f"{self.name}, {self.percent()}%"
+
+
+class ParcelIrrigationMethod(models.Model):
+    """How one use area is irrigated (146-05 Task 1, S1); no row means not set.
+
+    A ``surface`` row rather than a ``Parcel.irrigation_method`` column, which
+    is what the plan named: ``parcels`` stays installed when ``surface`` is
+    dropped, and a column there pointing into ``surface`` would leave a
+    dangling reference that stops ``migrate`` on every deployment without it
+    (rule 1 of the composition rule, ``core/modules.py``). Pointing this way,
+    the row leaves with ``surface``, like ``WaterRightParcel`` above.
+    ``surface/services.py`` does not read it this phase.
+    """
+
+    parcel = models.OneToOneField(
+        "parcels.Parcel", on_delete=models.CASCADE, related_name="irrigation"
+    )
+    method = models.ForeignKey(
+        IrrigationMethod, on_delete=models.PROTECT, related_name="use_areas"
+    )
+
+    def __str__(self):
+        return f"{self.parcel} → {self.method}"
 
 
 class MeasuringDevice(models.Model):

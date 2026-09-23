@@ -28,6 +28,7 @@ from accounting.services import (
     parcel_run_periods,
     parcel_unmet_demand,
 )
+from core.modules import is_enabled
 from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from parcels.models import Parcel, ParcelLedger
 
@@ -42,6 +43,69 @@ EDITABLE_FIELDS = {
     "address": {"label": "Address", "type": "textarea"},
     "notes": {"label": "Notes", "type": "textarea"},
 }
+
+#: 146-05 Task 1 (S1). Not a Parcel column, so not in EDITABLE_FIELDS: the
+#: method is a `surface` row (surface.ParcelIrrigationMethod), because
+#: `parcels` stays installed when `surface` is dropped and may not point into
+#: it (the composition rule, core/modules.py). Offered only while `surface`
+#: is enabled; `_editable_fields` adds it.
+IRRIGATION_METHOD = "irrigation_method"
+
+
+def _editable_fields():
+    """EDITABLE_FIELDS, plus the irrigation method while `surface` is enabled.
+
+    The select's choices are read per call: the table is data, seeded by
+    migration, and an agency may edit it.
+    """
+    fields = dict(EDITABLE_FIELDS)
+    if is_enabled("surface"):
+        # Local import: `surface` is truly optional (Phase 87); importing its
+        # models with the app uninstalled raises RuntimeError.
+        from surface.models import IrrigationMethod
+
+        fields[IRRIGATION_METHOD] = {
+            "label": "Irrigation method",
+            "type": "select",
+            "choices": [("", "Not set")]
+            + [(str(m.pk), str(m)) for m in IrrigationMethod.objects.all()],
+        }
+    return fields
+
+
+def _field_value(parcel, field):
+    """``(value, display)`` for one editable field.
+
+    ``value`` is what the edit form's input holds; ``display`` is what the
+    page shows. They differ only for the irrigation method, whose value is the
+    method's pk and whose display is "<name>, <n>%" (blank when not set).
+    """
+    if field == IRRIGATION_METHOD:
+        from surface.models import ParcelIrrigationMethod
+
+        link = (
+            ParcelIrrigationMethod.objects.filter(parcel=parcel)
+            .select_related("method")
+            .first()
+        )
+        if link is None:
+            return "", ""
+        return str(link.method_id), str(link.method)
+    value = getattr(parcel, field)
+    return value, value
+
+
+def _save_irrigation_method(parcel, method_pk):
+    """Set the use area's method, or clear it when ``method_pk`` is blank."""
+    from surface.models import ParcelIrrigationMethod
+
+    if method_pk:
+        ParcelIrrigationMethod.objects.update_or_create(
+            parcel=parcel, defaults={"method_id": int(method_pk)}
+        )
+    else:
+        ParcelIrrigationMethod.objects.filter(parcel=parcel).delete()
+    parcel.save(update_fields=["updated_at"])
 
 
 @login_required
@@ -223,16 +287,18 @@ def _parcel_detail_context(parcel, period_id=None):
         )
 
     # Build editable field list with current values for the template
-    editable_fields_with_values = [
-        {
+    editable_fields = _editable_fields()
+    editable_fields_with_values = []
+    for fname, fmeta in editable_fields.items():
+        value, display = _field_value(parcel, fname)
+        editable_fields_with_values.append({
             "name": fname,
             "label": fmeta["label"],
             "type": fmeta["type"],
             "choices": fmeta.get("choices", []),
-            "value": getattr(parcel, fname),
-        }
-        for fname, fmeta in EDITABLE_FIELDS.items()
-    ]
+            "value": value,
+            "display": display,
+        })
 
     context = {
         "parcel": parcel,
@@ -246,7 +312,7 @@ def _parcel_detail_context(parcel, period_id=None):
         "mass_balance": mass_balance,
         "run_periods": run_periods,
         "unmet_demand_af": unmet_demand_af,
-        "editable_fields": EDITABLE_FIELDS,
+        "editable_fields": editable_fields,
         "editable_fields_with_values": editable_fields_with_values,
         # Pass the Python object (or None); the template escapes it via
         # json_script so operator free-text can't break out of <script>.
@@ -277,17 +343,20 @@ def parcel_detail(request, pk):
 def parcel_edit_field(request, pk):
     """Inline field editor: GET returns form, PATCH saves and returns updated value."""
     parcel = get_object_or_404(Parcel, pk=pk)
+    editable_fields = _editable_fields()
 
     if request.method == "GET":
         field = request.GET.get("field", "")
-        if field not in EDITABLE_FIELDS:
+        if field not in editable_fields:
             return HttpResponseBadRequest("Invalid field.")
 
+        value, display = _field_value(parcel, field)
         context = {
             "parcel": parcel,
             "field": field,
-            "field_meta": EDITABLE_FIELDS[field],
-            "value": getattr(parcel, field),
+            "field_meta": editable_fields[field],
+            "value": value,
+            "display": display,
         }
         # Cancel action: return the value display instead of the edit form
         if request.GET.get("cancel"):
@@ -300,14 +369,26 @@ def parcel_edit_field(request, pk):
     field = body_params.get("field", [""])[0]
     new_value = body_params.get("value", [""])[0].strip()
 
-    if field not in EDITABLE_FIELDS:
+    if field not in editable_fields:
         return HttpResponseBadRequest("Invalid field.")
 
-    field_meta = EDITABLE_FIELDS[field]
+    field_meta = editable_fields[field]
     if field_meta["type"] == "select":
         valid_choices = [c[0] for c in field_meta["choices"]]
         if new_value not in valid_choices:
             return HttpResponseBadRequest("Invalid choice.")
+
+    if field == IRRIGATION_METHOD:
+        _save_irrigation_method(parcel, new_value)
+        value, display = _field_value(parcel, field)
+        context = {
+            "parcel": parcel,
+            "field": field,
+            "field_meta": field_meta,
+            "value": value,
+            "display": display,
+        }
+        return render(request, "parcels/partials/_field_value.html", context)
 
     if field_meta["type"] == "number":
         try:
@@ -342,7 +423,7 @@ def parcel_edit_field(request, pk):
     context = {
         "parcel": parcel,
         "field": field,
-        "field_meta": EDITABLE_FIELDS[field],
+        "field_meta": field_meta,
         "value": getattr(parcel, field),
     }
     return render(request, "parcels/partials/_field_value.html", context)
