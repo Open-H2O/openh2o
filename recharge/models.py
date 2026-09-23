@@ -10,6 +10,7 @@ groundwater: it routes to the GSA basin pool for the site's zone, or to a single
 has-well parcel on the conjunctive path.
 """
 from django.contrib.gis.db import models
+from django.urls import reverse
 
 
 class RechargeSite(models.Model):
@@ -48,6 +49,10 @@ class RechargeSite(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("recharge:detail", args=[self.pk])
 
 
 class RechargeSitePOD(models.Model):

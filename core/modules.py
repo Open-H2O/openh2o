@@ -1071,7 +1071,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelZone",
         field="parcel",
         target="parcels",
-        where="geography/models.py:159",
+        where="geography/models.py:171",
         why=(
             "ParcelZone is the use-area-to-zone join, and zoning is geography's "
             "job. geography is standard, so this arrow is what pins parcels "
@@ -1090,7 +1090,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelLedger",
         field="water_type",
         target="accounting",
-        where="parcels/models.py:89",
+        where="parcels/models.py:94",
         why=(
             "A ledger row has to say which kind of water it moved, and that "
             "vocabulary belongs to accounting."
@@ -1108,7 +1108,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="SystemFacility",
         field="well",
         target="wells",
-        where="drinking/models.py:325",
+        where="drinking/models.py:333",
         why=(
             "A drinking-water facility very often IS a well — the same physical "
             "hole in the ground that the extraction ledger meters — so "
@@ -1134,7 +1134,7 @@ SCHEMA_EXCEPTIONS: tuple = (
         model="ParcelLedger",
         field="reporting_period",
         target="accounting",
-        where="parcels/models.py:94",
+        where="parcels/models.py:99",
         why=(
             "A ledger row falls in a water year, and the water-year calendar "
             "belongs to accounting."

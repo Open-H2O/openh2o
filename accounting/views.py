@@ -1873,6 +1873,10 @@ def delivery_settings(request):
     if form.shows_diversion_settings:
         position += 1
         diversion_number = position
+    # 146-06 Task 1: record addresses belong to `core`, so this card is always
+    # shown and always last.
+    position += 1
+    identifier_number = position
     settings_total = position
 
     return render(
@@ -1884,6 +1888,7 @@ def delivery_settings(request):
             "efficiency_number": efficiency_number,
             "recovery_number": recovery_number,
             "diversion_number": diversion_number,
+            "identifier_number": identifier_number,
         },
     )
 

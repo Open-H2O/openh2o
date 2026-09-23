@@ -90,6 +90,8 @@
           <div class="text-secondary text-base">{{ pod.notes }}</div>
         </div>
         {% endif %}
+
+        {% include "partials/_identifier_line.html" with record=pod %}
       </div>
 
       {% comment %}

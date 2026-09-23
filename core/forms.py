@@ -212,6 +212,22 @@ class DeliverySettingsForm(forms.Form):
         ),
     )
 
+    # 146-06 Task 1 (ISS-019): the one stored piece of the persistent
+    # identifier scheme. Owned by `core`, so it is shown whatever modules run.
+    identifier_host = forms.CharField(
+        required=False,
+        max_length=200,
+        label="Where your record addresses are published",
+        help_text="Each record here has a permanent address ending in "
+        "/id/<kind>/<number>/, shown on its page. Leave this "
+        "blank to use this site's own address. Set it before registering "
+        "with Geoconnex (the Internet of Water's public index of water "
+        "records) so the addresses never change.",
+        widget=forms.TextInput(
+            attrs={"class": "form-input", "placeholder": "water.example.org"}
+        ),
+    )
+
     def __init__(self, *args, instance=None, **kwargs):
         from core.modules import is_enabled
 
@@ -221,7 +237,10 @@ class DeliverySettingsForm(forms.Form):
         # it shows rather than for the reason both happen to share.
         self.shows_diversion_settings = self.shows_efficiency
         if instance is not None and "initial" not in kwargs:
-            initial = {"recovery_horizon": instance.default_recovery_horizon}
+            initial = {
+                "recovery_horizon": instance.default_recovery_horizon,
+                "identifier_host": instance.identifier_host,
+            }
             if self.shows_efficiency:
                 # 0.750 (fraction) -> 75 (percent), rounded to a whole number.
                 initial["efficiency_percent"] = int(
@@ -250,6 +269,16 @@ class DeliverySettingsForm(forms.Form):
                 ("season", "A single irrigation season each year"),
             ]
 
+    def clean_identifier_host(self):
+        from core.identifiers import normalize_host
+
+        value = normalize_host(self.cleaned_data.get("identifier_host"))
+        if any(ch.isspace() for ch in value):
+            raise forms.ValidationError(
+                "Enter a host name such as water.example.org, with no spaces."
+            )
+        return value
+
     def clean_efficiency_percent(self):
         percent = self.cleaned_data["efficiency_percent"]
         # Percent (75) -> Decimal fraction (0.750), the stored convention.
@@ -267,8 +296,9 @@ class DeliverySettingsForm(forms.Form):
         writing a value nobody was offered.
         """
         config = self.instance
-        updated = ["default_recovery_horizon"]
+        updated = ["default_recovery_horizon", "identifier_host"]
         config.default_recovery_horizon = self.cleaned_data["recovery_horizon"]
+        config.identifier_host = self.cleaned_data.get("identifier_host", "")
         if self.shows_efficiency:
             config.default_irrigation_efficiency = self.cleaned_data[
                 "efficiency_percent"

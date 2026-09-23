@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from core.modules import enabled_modules, url_specs_for
+from core.views import persistent_identifier
 from core.oauth import (
     google_callback_guard,
     google_login_by_token_guard,
@@ -64,6 +65,17 @@ urlpatterns = [
     path("profile/", profile, name="profile"),
     path("nav-mode/", set_nav_mode, name="set_nav_mode"),
     path("search/", global_search, name="global_search"),
+    # Persistent identifiers (146-06, ISS-019). Top-level rather than under
+    # core's own `users/` prefix, and hand-written rather than module-owned:
+    # `core` is the one module every deployment runs, so the address always
+    # exists and answers for itself when a kind's module is switched off
+    # ("this deployment does not run the wells module"), instead of the
+    # generic 404 a never-registered route gives.
+    path(
+        "id/<slug:kind>/<int:pk>/",
+        persistent_identifier,
+        name="persistent_identifier",
+    ),
     path("", index, name="index"),
 ]
 

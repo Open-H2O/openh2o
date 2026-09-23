@@ -58,6 +58,8 @@
         <div class="field-value">{{ zone.get_zone_type_display|blank }}</div>
       </div>
 
+      {% include "partials/_identifier_line.html" with record=zone %}
+
       {% if zone.description %}
       <div class="field-group">
         <div class="field-label">Description</div>

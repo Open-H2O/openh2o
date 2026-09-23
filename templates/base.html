@@ -255,6 +255,29 @@
         var detail = e.detail || {};
         window.showToast(detail.message || 'Done', detail.type || 'success', detail.duration || 3000);
     });
+
+    // Copy controls (146-06): any button carrying data-copy-text copies it,
+    // including one HTMX swaps in later, which is why this is delegated from
+    // the document rather than bound per button. The textarea fallback is for
+    // a plain-HTTP deployment, where the Clipboard API is not offered.
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest && e.target.closest('[data-copy-text]');
+        if (!btn) return;
+        var text = btn.getAttribute('data-copy-text');
+        var announce = function() { window.showToast('Copied ' + text); };
+        var fallback = function() {
+            var ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+            announce();
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(announce, fallback);
+        } else {
+            fallback();
+        }
+    });
     </script>
 
     <script>

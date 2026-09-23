@@ -262,6 +262,8 @@
           <div class="field-value">{{ parcel.parcel_number }}</div>
         </div>
 
+        {% include "partials/_identifier_line.html" with record=parcel %}
+
         {% for ef in editable_fields_with_values %}
         <div class="field-group">
           <div class="field-label field-row">

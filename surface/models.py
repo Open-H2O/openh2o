@@ -19,6 +19,7 @@ from decimal import Decimal
 
 from django.contrib.gis.db import models
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 
 
 class WaterRightType(models.Model):
@@ -140,6 +141,10 @@ class WaterRight(models.Model):
 
     def __str__(self):
         return self.right_id
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("surface:detail", args=[self.pk])
 
     def direct_season_display(self):
         """'Mar 1 to Oct 31 (direct diversion)', or '' with any part missing."""
@@ -379,6 +384,10 @@ class PointOfDiversion(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("surface:pod_detail", args=[self.pk])
 
 
 class PointOfDiversionParcel(models.Model):

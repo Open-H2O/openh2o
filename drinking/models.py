@@ -33,6 +33,7 @@ from decimal import Decimal
 from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.urls import reverse
 
 # -- Published code lists ----------------------------------------------------
 # Source: DDW "Data Dictionary for SDWIS.CSV Files", rev 12/2021 (System Status).
@@ -266,6 +267,13 @@ class WaterSystem(models.Model):
     def __str__(self):
         return f"{self.name} ({self.pwsid})"
 
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here).
+
+        The overview is the system's page; it lists every system row.
+        """
+        return reverse("drinking:overview")
+
 
 class SystemFacility(models.Model):
     """Mirrors SDWIS WATER_SYSTEM_FACILITY."""
@@ -356,6 +364,10 @@ class SystemFacility(models.Model):
     def __str__(self):
         return f"{self.facility_id} — {self.name or self.get_facility_type_display()}"
 
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("drinking:facility_detail", args=[self.pk])
+
 
 # -- 1.2 Sampling & results --------------------------------------------------
 
@@ -387,6 +399,10 @@ class SamplingPoint(models.Model):
 
     def __str__(self):
         return f"{self.ps_code}{f' — {self.name}' if self.name else ''}"
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("drinking:sampling_point_detail", args=[self.pk])
 
 
 class Analyte(models.Model):

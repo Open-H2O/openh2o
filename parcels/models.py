@@ -11,6 +11,7 @@ ParcelStaging holds raw rows awaiting import.
 """
 from django.conf import settings
 from django.contrib.gis.db import models
+from django.urls import reverse
 
 
 class CropType(models.Model):
@@ -47,6 +48,10 @@ class Parcel(models.Model):
 
     def __str__(self):
         return self.parcel_number
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("parcels:detail", args=[self.pk])
 
 
 # Sign is semantic, not cosmetic: the ledger nets to a balance, so a sign-flipped

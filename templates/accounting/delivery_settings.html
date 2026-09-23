@@ -108,6 +108,21 @@
     </div>
     {% endif %}
 
+    {% comment %} Setting: record addresses (146-06 Task 1, ISS-019). `core` owns
+         SiteConfig.identifier_host, so this card is shown on every deployment.
+         The addresses themselves are derived (core/identifiers.py); this is the
+         one stored piece. {% endcomment %}
+    <div class="card-raised">
+      <span class="step-eyebrow">Setting {{ identifier_number }} of {{ settings_total }}</span>
+      <h2 class="section-header">Record addresses</h2>
+      <div class="field-group mt-sm mb-0">
+        <label class="form-label" for="{{ form.identifier_host.id_for_label }}">{{ form.identifier_host.label }}</label>
+        {{ form.identifier_host }}
+        <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ form.identifier_host.help_text }}</p>
+        {% if form.identifier_host.errors %}<p class="text-sm text-furnace mt-sm">{{ form.identifier_host.errors|striptags }}</p>{% endif %}
+      </div>
+    </div>
+
     <div class="row-start">
       <button type="submit" class="btn-primary">Save settings</button>
     </div>

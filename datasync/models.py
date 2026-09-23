@@ -10,6 +10,7 @@ pipeline that lands raw readings (DataRecordStaging), records each pull
 OpenET evapotranspiration is the consumptive-use spine, not a supply.
 """
 from django.contrib.gis.db import models
+from django.urls import reverse
 
 
 class DataSource(models.Model):
@@ -67,6 +68,10 @@ class MonitoredStation(models.Model):
 
     def __str__(self):
         return f"{self.data_source.code}:{self.external_station_id} - {self.station_name}"
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("datasync:station_detail", args=[self.pk])
 
 
 class DataSyncLog(models.Model):

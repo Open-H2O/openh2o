@@ -10,6 +10,7 @@ that distributes pumping onto the parcels a well serves. MonitoringWell flags
 wells used for water-level monitoring rather than extraction.
 """
 from django.contrib.gis.db import models
+from django.urls import reverse
 
 
 MEASUREMENT_METHOD_CHOICES = [
@@ -183,6 +184,10 @@ class Well(models.Model):
 
     def __str__(self):
         return self.name or self.well_registration_id or f"Well {self.pk}"
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("wells:detail", args=[self.pk])
 
 
 class WellMeter(models.Model):

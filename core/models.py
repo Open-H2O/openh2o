@@ -135,6 +135,21 @@ class SiteConfig(models.Model):
         "(the memo's J6).",
     )
 
+    # --- Persistent identifiers (146-06 Task 1, ISS-019) ---
+    # The ONE stored piece of the identifier scheme; the identifiers themselves
+    # are derived on read (core/identifiers.py), so they cannot drift from the
+    # records they name. Blank means "this site's own address". A value may
+    # carry a path as well as a host ("geoconnex.us/<namespace>"), so a
+    # deployment that registers with Geoconnex can publish the geoconnex.us
+    # address itself as every record's @id.
+    identifier_host = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="The host your persistent identifiers are published under. "
+        "Leave blank to use this site's own address. Set it before "
+        "registering with Geoconnex so the addresses never change.",
+    )
+
     def save(self, *args, **kwargs):
         if self.pk is None and SiteConfig.objects.exists():
             raise ValidationError("Only one SiteConfig instance is allowed.")

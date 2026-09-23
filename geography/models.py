@@ -11,6 +11,7 @@ membership links other apps reference to tie parcels into management areas.
 from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.urls import reverse
 
 from core.constants import RECOVERY_HORIZON_CHOICES
 
@@ -58,6 +59,13 @@ class Boundary(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here).
+
+        A boundary has no page of its own; the map is where it is drawn.
+        """
+        return reverse("geography:map")
 
     def natural_key(self):
         return (self.name,)
@@ -130,6 +138,10 @@ class Zone(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        """The record's own page (the /id/ address 303s here)."""
+        return reverse("geography:zone_detail", args=[self.pk])
 
 
 class Flowline(models.Model):
