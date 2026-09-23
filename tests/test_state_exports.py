@@ -594,7 +594,7 @@ class TestDemonstrationFramingScreens:
         # The box says there is no filing path (CLAUDE.md, Brent 2026-08-05). This line
         # used to assert "OpenH2O prepares your filing." was present, which is why that
         # overclaim survived every earlier removal (ISS-209, 2026-09-23).
-        assert "OpenH2O does not file this." in body
+        assert "OpenH2O does not submit reports to the state." in body
         assert "prepares your filing" not in body
 
     def test_detail_screen_hides_banner_when_demo_mode_off(self):
@@ -605,7 +605,7 @@ class TestDemonstrationFramingScreens:
         assert resp.status_code == 200
         body = resp.content.decode()
         assert DEMO_BANNER not in body
-        assert "OpenH2O does not file this." in body
+        assert "OpenH2O does not submit reports to the state." in body
         assert "prepares your filing" not in body
 
 
