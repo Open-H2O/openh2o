@@ -75,8 +75,8 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="mark_exported">
     <p class="text-tertiary text-xs m-0">
-      Once you've downloaded the GEARS file (or opened the CalWATRS worksheet) to take
-      to the state portal, mark it exported.
+      Once you've downloaded the GEARS file (or opened the CalWATRS worksheet), mark it
+      exported.
     </p>
     <div>
       <button type="submit" class="btn-secondary btn-sm">Mark as exported</button>
@@ -93,8 +93,8 @@
     <div class="form-group mb-0">
       <label class="form-label" for="id_state_confirmation_number">State confirmation number</label>
       <p class="text-tertiary text-xs" style="margin: 0 0 var(--space-xs);">
-        After you upload/enter this in the state portal and certify under penalty of
-        perjury, paste the confirmation number here for your records.
+        If you file these figures with the state yourself and certify them under penalty
+        of perjury, paste the confirmation number the state gave you here for your records.
       </p>
       <input id="id_state_confirmation_number" name="state_confirmation_number" type="text" class="form-input"
              required placeholder="Confirmation the portal gave you after filing">
