@@ -201,6 +201,13 @@ class TestTheOverviewLine:
         assert "Coliform on October 7, 2026" in html
         assert "Nitrate on" not in html
 
+    def test_a_passed_date_on_the_overview_is_worded_as_the_operators(
+        self, client_in, system
+    ):
+        _row(system, group_label="Nitrate", next_due=date.today() - timedelta(days=13))
+        html = client_in.get(reverse("drinking:overview")).content.decode()
+        assert ", past the date you set." in html
+
     def test_no_row_puts_nothing_on_the_overview(self, client_in, system):
         html = client_in.get(reverse("drinking:overview")).content.decode()
         assert "Next due" not in html

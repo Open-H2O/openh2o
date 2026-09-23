@@ -130,8 +130,14 @@ def overview(request):
     ):
         next_due.setdefault(row.system_id, row)
 
+    today = timezone.localdate()
     for system in systems:
         system.next_due_row = next_due.get(system.pk)
+        # Worded the way the schedule page words it: the operator's date,
+        # passed, and never a verdict on it.
+        system.next_due_passed = bool(
+            system.next_due_row and system.next_due_row.next_due < today
+        )
         system.sampling_point_count = point_counts.get(system.pk, 0)
         system.result_count = result_counts.get(system.pk, 0)
         # One boolean each, computed here rather than as eight chained {% if %}s
@@ -1849,6 +1855,29 @@ def production(request):
     grand_total_gallons = sum((t["gallons"] for t in totals), Decimal("0"))
     grand_total_af = sum((t["acre_feet"] for t in totals), Decimal("0"))
 
+    # 146-04 Task 6 (page verdict at 1,730): a source reported as zero, or not
+    # at all, in every month of the year is one sentence under the table, not
+    # a column of twelve zeros. Le Grand's real eAR carries five such columns
+    # beside its one groundwater column, and the reader's worst fault was that
+    # "most of the page's largest region is dead space". The grand total
+    # still sums every source, so nothing drops out of the arithmetic.
+    shown = [
+        i for i, code in enumerate(type_codes)
+        if any(
+            r.volume_as_reported for (_m, t), r in by_key.items() if t == code
+        )
+    ]
+    if not shown:
+        shown = list(range(len(type_codes)))
+    labels = dict(PRODUCTION_TYPE_CHOICES)
+    zero_labels = [
+        labels[code] for i, code in enumerate(type_codes) if i not in shown
+    ]
+    type_columns = [PRODUCTION_TYPE_CHOICES[i] for i in shown]
+    for row in rows:
+        row["cells"] = [row["cells"][i] for i in shown]
+    totals = [totals[i] for i in shown]
+
     return render(
         request,
         "drinking/production.html",
@@ -1857,7 +1886,8 @@ def production(request):
             "years": years,
             "year": year,
             "type_codes": type_codes,
-            "type_columns": PRODUCTION_TYPE_CHOICES,
+            "type_columns": type_columns,
+            "zero_labels": zero_labels,
             "rows": rows,
             "totals": totals,
             "grand_total_gallons": grand_total_gallons,

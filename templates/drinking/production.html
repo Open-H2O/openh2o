@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize drinking_display %}
 
 {% block title %}Production - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Production{% endblock %}
@@ -59,9 +60,8 @@
     </div>
   </div>
 
-  <div class="card-raised">
-    <h2 class="card-header-ruled">{{ year }}</h2>
-    <table class="data-table mt-md">
+  <div class="card-raised table-scroll">
+    <table class="data-table">
       <thead>
         <tr>
           <th>Month</th>
@@ -73,8 +73,8 @@
         <tr>
           <td>{{ row.label }}</td>
           {% for cell in row.cells %}
-          <td class="text-mono">
-            {% if cell %}{{ cell.volume_as_reported }} {{ cell.unit_as_reported }}{% else %}&mdash;{% endif %}
+          <td class="tabular-nums">
+            {% if cell %}{{ cell.volume_as_reported|plain_decimal|intcomma }} {% if cell.unit_as_reported == "G" %}gal{% else %}{{ cell.unit_as_reported }}{% endif %}{% else %}<span class="value-empty">Not reported</span>{% endif %}
           </td>
           {% endfor %}
         </tr>
@@ -84,20 +84,21 @@
         <tr>
           <td><strong>Total</strong></td>
           {% for t in totals %}
-          <td class="text-mono"><strong>{{ t.gallons_whole }} gal</strong></td>
+          <td class="tabular-nums"><strong>{{ t.gallons_whole|intcomma }} gal</strong></td>
           {% endfor %}
         </tr>
         <tr>
           <td>Acre-feet</td>
           {% for t in totals %}
-          <td class="text-mono">{{ t.acre_feet|floatformat:2 }} AF</td>
+          <td class="tabular-nums">{{ t.acre_feet|floatformat:"2g" }} AF</td>
           {% endfor %}
         </tr>
       </tfoot>
     </table>
-    <p class="text-base text-secondary mt-lg">
-      <strong>{{ grand_total_gallons_whole }} gallons</strong>
-      ({{ grand_total_af|floatformat:2 }} acre-feet) across every source this year.
+    <p class="text-base text-secondary mt-lg" style="padding: 0 var(--space-lg) var(--space-lg);">
+      <strong>{{ grand_total_gallons_whole|intcomma }} gallons</strong>
+      ({{ grand_total_af|floatformat:"2g" }} acre-feet) across every source in {{ year }}.{% if zero_labels %}
+      Reported as zero, or not at all, in every month: {{ zero_labels|join:", " }}.{% endif %}
     </p>
   </div>
   {% endif %}

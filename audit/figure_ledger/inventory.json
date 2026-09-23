@@ -874,8 +874,8 @@
     "kind": "figure",
     "template": "templates/drinking/production.html",
     "line": 93,
-    "column": 48,
-    "expression": "{{ t.acre_feet|floatformat:2 }}",
+    "column": 51,
+    "expression": "{{ t.acre_feet|floatformat:\"2g\" }}",
     "enclosing_loop": "t in totals",
     "nearest_label": "{{ t.acre_feet|"
   },
@@ -886,7 +886,7 @@
     "template": "templates/drinking/production.html",
     "line": 100,
     "column": 26,
-    "expression": "{{ grand_total_af|floatformat:2 }}",
+    "expression": "{{ grand_total_af|floatformat:\"2g\" }}",
     "enclosing_loop": null,
     "nearest_label": "({{ grand_total_af|"
   },

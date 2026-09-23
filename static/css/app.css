@@ -2570,6 +2570,15 @@ html { color-scheme: dark; }
     align-items: start;
     padding: 0;
 }
+/* Four cells, not three: the lab result's panel since 146-04 Task 5 (Result,
+   Reporting level, the limit the laboratory's file carried, Previous
+   finding). The three-cell template above wrapped the fourth onto a second
+   row at 1,730 (page verdict, 2026-09-23). `:where()` keeps this at the base
+   rule's specificity, so the stacked layout in the 700px container query
+   below still wins on order. */
+.budget-panel-body .budget-panel-row:where(.budget-panel-row--four) {
+    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+}
 .budget-panel-body .budget-seg {
     min-width: 0;
     padding-right: var(--space-xl);

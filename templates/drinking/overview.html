@@ -79,7 +79,13 @@
         <div class="field-value">{{ system.get_primary_source_code_display|blank }}</div>
       </div>
       <div class="field-group">
-        <div class="field-label">Regulating agency</div>
+        {% comment %}
+          146-04 Task 3: onboarding never writes this field (EPA's record
+          carries a state code, not a DDW district); the lab import fills it
+          from the file's Regulating Agency column, so when it holds a value
+          the card's EPA label above does not describe it.
+        {% endcomment %}
+        <div class="field-label">Regulating agency{% if system.regulating_agency %} {% source_label "DDW_LAB" detail="read off the lab file" %}{% endif %}</div>
         <div class="field-value">{{ system.regulating_agency|blank }}</div>
       </div>
       {% if system.seller_pwsid %}
@@ -236,7 +242,7 @@
         theirs, so the line states it and passes no judgement on it.
       {% endcomment %}
       {% if system.next_due_row %}
-      <p class="text-secondary text-base mt-md" style="margin-bottom: 0;">Next due: {{ system.next_due_row.label }} on {{ system.next_due_row.next_due|date:"F j, Y" }}. <a href="{% url 'drinking:schedule' %}" class="text-accent">Schedule &rarr;</a></p>
+      <p class="text-secondary text-base mt-md" style="margin-bottom: 0;">Next due: {{ system.next_due_row.label }} on {{ system.next_due_row.next_due|date:"F j, Y" }}{% if system.next_due_passed %}, past the date you set{% endif %}. <a href="{% url 'drinking:schedule' %}" class="text-accent">Schedule &rarr;</a></p>
       {% endif %}
 
   </div>

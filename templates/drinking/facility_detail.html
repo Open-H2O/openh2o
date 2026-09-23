@@ -22,8 +22,13 @@
   the page as visible text.
 {% endcomment %}
 
-{% block title %}{% if facility.name %}{{ facility.name }}{% else %}Facility {{ facility.facility_id }}{% endif %} - Open Water Accounting Platform{% endblock %}
-{% block page_title %}{% if facility.name %}{{ facility.name }}{% else %}Facility {{ facility.facility_id }}{% endif %}{% endblock %}
+{% comment %}
+  The heading leads with the operator's own name when there is one, the way
+  the Facilities list's name cell does (146-04 Task 3); the state's name stays
+  on the card below as "Name on record".
+{% endcomment %}
+{% block title %}{% if facility.local_name %}{{ facility.local_name }}{% elif facility.name %}{{ facility.name }}{% else %}Facility {{ facility.facility_id }}{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if facility.local_name %}{{ facility.local_name }}{% elif facility.name %}{{ facility.name }}{% else %}Facility {{ facility.facility_id }}{% endif %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumb-bar">
