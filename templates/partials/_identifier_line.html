@@ -7,9 +7,11 @@
   The copy control is a plain button carrying `data-copy-text`; base.html
   holds the one delegated click handler, so a pane HTMX swaps in later copies
   too. `field-grid-2-span` lets the long address take the full width of a
-  two-column field grid and does nothing outside one.
+  two-column field grid and does nothing outside one; pass `half=True`
+  where the line should pair with the field beside it instead (the water
+  system card, where a full row left the regulating agency alone).
 {% endcomment %}{% persistent_identifier record as identifier_uri %}
-<div class="field-group field-grid-2-span">
+<div class="field-group{% if not half %} field-grid-2-span{% endif %}">
   <div class="field-label field-row">
     Identifier
     {% include "partials/_help_tooltip.html" with label="Identifier" text="This record's permanent address. It opens this page in a browser, and gives a machine-readable description to software that asks for one." %}
