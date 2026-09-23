@@ -20,7 +20,6 @@ ever populate (every row's `owner_name` cell is empty).
 """
 import io
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 from django.core.management import call_command
