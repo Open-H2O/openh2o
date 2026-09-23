@@ -1244,3 +1244,85 @@ class TestARepeatIsNotAlwaysARepeat:
             f"  written but not compared: {sorted(written - set(importer._IDENTITY_FIELDS))}\n"
             f"  compared but not written: {sorted(set(importer._IDENTITY_FIELDS) - written)}"
         )
+
+
+# ---------------------------------------------------------------------------
+# The regulating agency, read off the lab file (146-04 Task 3)
+# ---------------------------------------------------------------------------
+#
+# The state's lab layout carries `Regulating Agency` on every row (Le Grand's
+# 160 rows all say `DISTRICT 11 - MERCED`), while the system onboarded from
+# EPA's record showed "Regulating agency: Not recorded". The import fills the
+# blank once, from a file that agrees with itself, and says which of the three
+# things happened. The fixture's 30 rows all carry `District 99`.
+
+
+def _commit_through_the_view(client, rows):
+    import json
+
+    return client.post(
+        reverse("drinking:import_commit"), {"rows_json": json.dumps(rows)}
+    )
+
+
+class TestRegulatingAgency:
+    def test_the_column_is_recognised(self, parsed):
+        mapping = importer.auto_map_columns(parsed["columns"])
+        assert mapping["regulating_agency"] == "Regulating Agency"
+
+    def test_a_blank_system_takes_the_files_one_value(
+        self, auth_client, system, parsed
+    ):
+        response = _commit_through_the_view(auth_client, parsed["rows"])
+        system["system"].refresh_from_db()
+        assert system["system"].regulating_agency == "District 99"
+        assert (
+            "Regulating agency recorded from the file: District 99"
+            in response.content.decode()
+        )
+
+    def test_a_system_that_already_has_one_keeps_it(
+        self, auth_client, system, parsed
+    ):
+        ws = system["system"]
+        ws.regulating_agency = "DISTRICT 11 - MERCED"
+        ws.save()
+        response = _commit_through_the_view(auth_client, parsed["rows"])
+        ws.refresh_from_db()
+        assert ws.regulating_agency == "DISTRICT 11 - MERCED"
+        body = response.content.decode()
+        assert "Regulating agency not recorded: the system already has one" in body
+        assert "DISTRICT 11 - MERCED" in body
+
+    def test_a_file_that_disagrees_with_itself_writes_nothing(
+        self, auth_client, system, parsed
+    ):
+        rows = [dict(r) for r in parsed["rows"]]
+        rows[3]["Regulating Agency"] = "District 98"
+        response = _commit_through_the_view(auth_client, rows)
+        system["system"].refresh_from_db()
+        assert system["system"].regulating_agency == ""
+        body = response.content.decode()
+        assert "Regulating agency not recorded: the file names two" in body
+        assert "District 98" in body and "District 99" in body
+
+    def test_a_file_without_the_column_says_nothing_about_it(
+        self, auth_client, system, parsed
+    ):
+        rows = [
+            {k: v for k, v in r.items() if k != "Regulating Agency"}
+            for r in parsed["rows"]
+        ]
+        response = _commit_through_the_view(auth_client, rows)
+        system["system"].refresh_from_db()
+        assert system["system"].regulating_agency == ""
+        assert "Regulating agency" not in response.content.decode()
+
+    def test_a_file_whose_rows_reach_no_system_writes_nothing(
+        self, auth_client, db, parsed
+    ):
+        """Every row an unknown PS Code: there is no system to write to."""
+        other = WaterSystemFactory(pwsid="CA0000001", name="Unrelated")
+        _commit_through_the_view(auth_client, parsed["rows"])
+        other.refresh_from_db()
+        assert other.regulating_agency == ""

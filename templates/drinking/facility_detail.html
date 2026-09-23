@@ -119,8 +119,16 @@
       publisher for three.
     {% endcomment %}
     <h2 class="section-header" style="margin-top: 0;">
-      {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %} {% source_label "EPA_SDWIS" %}
+      {% if facility.facility_type %}{{ facility.get_facility_type_display }}{% else %}Facility{% endif %}{% if facility.name and not facility.name_adds_nothing %} &mdash; <span class="text-secondary">{{ facility.name }}</span>{% endif %} {% if facility.added_by_hand %}{% source_label "OPERATOR_ENTERED" %}{% else %}{% source_label "EPA_SDWIS" %}{% endif %}
     </h2>
+    {% comment %}
+      146-04 Task 3 (D9). A facility typed in on this deployment's form is the
+      operator's, not EPA's, so the label above names the operator for it; the
+      pill would otherwise claim a publisher that never saw the row. The edit
+      link is the one write door on this page: the form decides how much of
+      the facility is the operator's to change (drinking/views.py::facility_edit).
+    {% endcomment %}
+    <p class="mt-sm" style="margin-bottom: 0;"><a href="{% url 'drinking:facility_edit' facility.pk %}" class="btn-secondary btn-sm">{% if facility.added_by_hand %}Edit facility{% else %}Edit local name{% endif %}</a></p>
 
     <div class="form-grid-2col mt-md">
       <div class="field-group">
@@ -130,6 +138,10 @@
       <div class="field-group">
         <div class="field-label">Name on record</div>
         <div class="field-value">{{ facility.name|blank }}</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Local name{% if facility.local_name and not facility.added_by_hand %} {% source_label "OPERATOR_ENTERED" %}{% endif %}</div>
+        <div class="field-value">{{ facility.local_name|blank }}</div>
       </div>
       <div class="field-group">
         <div class="field-label">Type</div>

@@ -22,6 +22,14 @@ urlpatterns = [
         views.facility_detail,
         name="facility_detail",
     ),
+    # The facility door (146-04 Task 3, D9). "add" is not an int, so it cannot
+    # be shadowed by the detail route above or shadow it.
+    path("facilities/add/", views.facility_add, name="facility_add"),
+    path(
+        "facilities/<int:pk>/edit/",
+        views.facility_edit,
+        name="facility_edit",
+    ),
     # The overview map's data source. Beside the facility route it draws, and
     # ahead of no <int:pk> it could shadow — "geojson" is not an int.
     path(

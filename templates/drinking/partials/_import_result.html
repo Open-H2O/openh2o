@@ -1,4 +1,4 @@
-{% comment %}
+{% load humanize %}{% comment %}
   Outcome of a lab-file import. Two shapes:
     - error: a file/parse problem, before any row was considered
     - success: what was created, what was skipped and why
@@ -41,6 +41,27 @@
       {{ counts.analytes }} analyte{{ counts.analytes|pluralize }} {{ counts.analytes|pluralize:"was,were" }} added to the vocabulary from this file.
     {% endif %}
   </p>
+
+  {% comment %}
+    146-04 Task 3: the regulating agency, read once off the file. Three
+    outcomes, from drinking/importer.py::record_regulating_agency; nothing
+    renders when the file carries no Regulating Agency column.
+  {% endcomment %}
+  {% for a in agency %}
+  <p class="text-base text-secondary mt-sm">
+    {% if a.outcome == "recorded" %}
+      Regulating agency recorded from the file: {{ a.value }}.
+    {% elif a.outcome == "already_set" %}
+      {% if a.existing == a.value %}
+        Regulating agency: the file's {{ a.value }} matches the one already recorded.
+      {% else %}
+        Regulating agency not recorded: the system already has one, {{ a.existing }}. The file says {{ a.value }}.
+      {% endif %}
+    {% else %}
+      Regulating agency not recorded: the file names {{ a.values|length|apnumber }} ({{ a.values|join:", " }}), so it does not say which.
+    {% endif %}
+  </p>
+  {% endfor %}
 
   {% if skipped %}
   <h3 class="text-base mt-lg">Rows that were skipped</h3>

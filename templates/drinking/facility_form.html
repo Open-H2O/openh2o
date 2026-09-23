@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% comment %}
+  146-04 Task 3 (D9): the facility door, add and edit on one template.
+
+  Which fields render is the form's decision, not this template's:
+  `SystemFacilityForm` (a new facility, or one added by hand) carries every
+  field; `FacilityLocalNameForm` (a facility the federal record wrote) carries
+  only the local name and the well link. Each block below is guarded on the
+  field being in the form, and `well` is absent from both forms when the
+  deployment has no wells module (drinking/forms.py::_offer_the_well_link).
+{% endcomment %}
+
+{% block title %}{% if facility %}Edit facility {{ facility.facility_id }}{% else %}Add facility{% endif %} - Open Water Accounting Platform{% endblock %}
+{% block page_title %}{% if facility %}Edit facility {{ facility.facility_id }}{% else %}Add facility{% endif %}{% endblock %}
+{% block page_head_class %}page-head--narrow{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumb-bar">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <span>Water Data</span>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:overview' %}">Drinking Water</a>
+    <span class="breadcrumb-separator">/</span>
+    <a href="{% url 'drinking:facilities' %}">Facilities</a>
+    <span class="breadcrumb-separator">/</span>
+    {% if facility %}
+    <a href="{% url 'drinking:facility_detail' facility.pk %}">{{ facility.facility_id }}</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Edit</span>
+    {% else %}
+    <span class="breadcrumb-current">Add facility</span>
+    {% endif %}
+  </nav>
+  {% if facility and not facility.added_by_hand %}
+  <p class="page-description">This facility came from EPA's record when the system was onboarded, so its ID, name, type and status stay as published. What you call it, and the well it draws from, are yours to set.</p>
+  {% else %}
+  <p class="page-description">A source, treatment plant or other part of the system, typed in by hand. Use the facility ID the state gave the system for it; the local name is what you call it.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-stack page-narrow">
+
+  {% if facility %}
+  <a href="{% url 'drinking:facility_detail' facility.pk %}" class="back-link">&larr; Back to facility {{ facility.facility_id }}</a>
+  {% else %}
+  <a href="{% url 'drinking:facilities' %}" class="back-link">&larr; Back to Facilities</a>
+  {% endif %}
+
+  {% if not system %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">No water system yet</h2>
+    <p class="text-base text-secondary mt-md">
+      A facility belongs to a water system, and none is onboarded on this
+      deployment yet. <a href="{% url 'drinking:onboard' %}">Onboard a system</a>
+      first.
+    </p>
+  </div>
+  {% else %}
+  <div class="card-raised">
+    <h2 class="card-header-ruled">Details</h2>
+
+    {% if form.non_field_errors %}
+    <div class="form-error-box">
+      {% for error in form.non_field_errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.facility_id %}
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.facility_id.id_for_label }}">{{ form.facility_id.label }}</label>
+          {{ form.facility_id }}
+          <div class="form-help">The ID the state scopes to {{ system.name }}, as the district engineer gave it to you. A lab file names the facility by it.</div>
+          {% for error in form.facility_id.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.facility_type.id_for_label }}">{{ form.facility_type.label }}</label>
+          {{ form.facility_type }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+        {{ form.name }}
+        <div class="form-help">As the state writes it, when you have it. Leave it blank if the state has not named it yet.</div>
+        {% for error in form.name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.local_name.id_for_label }}">{{ form.local_name.label }}</label>
+        {{ form.local_name }}
+        <div class="form-help">What you call it. Shown beside the state's name, never in place of it.</div>
+        {% for error in form.local_name.errors %}<p class="form-error-text">{{ error }}</p>{% endfor %}
+      </div>
+
+      {% if form.activity_status %}
+      <div class="form-row-2col">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.activity_status.id_for_label }}">{{ form.activity_status.label }}</label>
+          {{ form.activity_status }}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.water_type.id_for_label }}">{{ form.water_type.label }}</label>
+          {{ form.water_type }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="row-start text-base" style="gap: var(--space-sm);">
+          {{ form.is_source }} <span>{{ form.is_source.label }}</span>
+        </label>
+      </div>
+      {% endif %}
+
+      {% if form.well %}
+      <div class="form-group">
+        <label class="form-label" for="{{ form.well.id_for_label }}">{{ form.well.label }}</label>
+        {{ form.well }}
+        <div class="form-help">Optional. Links this facility to its record in Wells.</div>
+      </div>
+      {% endif %}
+
+      <div class="form-footer">
+        <button type="submit" class="btn-primary">{% if facility %}Save changes{% else %}Add facility{% endif %}</button>
+        <a href="{% if facility %}{% url 'drinking:facility_detail' facility.pk %}{% else %}{% url 'drinking:facilities' %}{% endif %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

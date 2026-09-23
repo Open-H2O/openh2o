@@ -123,6 +123,13 @@ CCR_SYSTEM = "the water system's own annual report"
 #: must not carry a blanket "sample data" pill.
 PUBLISHED_SUPPLY_SOURCE = "EPA and State Water Board published record"
 
+#: A value the operator typed into this deployment's own form.
+#:
+#: 146-04 Task 3 (D9): a facility added by hand. Nothing federal wrote it, so
+#: the facility page's identity card names the operator rather than inheriting
+#: ``EPA_SDWIS``, which every onboarded facility on the same list carries.
+OPERATOR_ENTERED = "entered by the operator on this deployment"
+
 #: Every constant above, keyed by its own name.
 #:
 #: The ``{% source_label %}`` tag looks a publisher up here, so a template names a
@@ -138,6 +145,7 @@ PUBLISHERS = {
     "LOCAL_REGISTRY": LOCAL_REGISTRY,
     "CCR_SYSTEM": CCR_SYSTEM,
     "PUBLISHED_SUPPLY_SOURCE": PUBLISHED_SUPPLY_SOURCE,
+    "OPERATOR_ENTERED": OPERATOR_ENTERED,
 }
 
 

@@ -11,8 +11,10 @@ are both facts; rendering a verdict is a regulatory determination this platform
 does not make. See ``drinking/models.py``.
 
 The three read surfaces are deliberately read-only — no inline ``edit_field``
-surface. The write path is the lab-file import at the bottom of this module,
-plus Django admin for one-off corrections.
+surface. The write paths are the lab-file import, onboarding, the production
+year's add and import (146-04 Task 2) and the facility add and edit forms
+(146-04 Task 3), each a full page of its own, plus Django admin for one-off
+corrections.
 """
 import json
 import logging
@@ -34,7 +36,11 @@ from core.map_labels import map_label
 from core.workspace import list_response
 from drinking import envirofacts, envirofacts_mapping, glossary, importer
 from drinking import production_import as production_import_service
-from drinking.forms import SystemProductionForm
+from drinking.forms import (
+    FacilityLocalNameForm,
+    SystemFacilityForm,
+    SystemProductionForm,
+)
 from drinking.ps_codes import compose_ps_code
 from drinking.models import (
     ACTIVITY_STATUS_CHOICES,
@@ -236,7 +242,9 @@ def facilities(request):
     # already-annotated queryset re-joins sampling_points and inflates the count.
     if q:
         base_queryset = base_queryset.filter(
-            Q(facility_id__icontains=q) | Q(name__icontains=q)
+            Q(facility_id__icontains=q)
+            | Q(name__icontains=q)
+            | Q(local_name__icontains=q)
         )
     if facility_type:
         base_queryset = base_queryset.filter(facility_type=facility_type)
@@ -639,6 +647,71 @@ def facility_detail(request, pk):
             "points": _points_with_activity(facility.sampling_points),
             "geojson": _facility_geojson(facility),
         },
+    )
+
+
+@login_required
+def facility_add(request):
+    """Add a facility by hand (146-04 Task 3, D9).
+
+    A source does not exist for the state's reporting until the district
+    engineer assigns it an id, and it does not reach EPA's record, which
+    onboarding reads, until later still. This is the door for that gap: the
+    operator types the id they were given, the state's name if they have it,
+    and their own name for it.
+
+    No system onboarded yet: the page says so and links to Onboard, the same
+    shape as ``production_add``, rather than redirecting away from the page
+    that was asked for.
+    """
+    system = WaterSystem.objects.order_by("pwsid").first()
+    if system is None:
+        return render(request, "drinking/facility_form.html", {"system": None})
+
+    if request.method == "POST":
+        form = SystemFacilityForm(request.POST, system=system)
+        if form.is_valid():
+            facility = form.save()
+            return redirect("drinking:facility_detail", pk=facility.pk)
+    else:
+        form = SystemFacilityForm(system=system)
+
+    return render(
+        request,
+        "drinking/facility_form.html",
+        {"form": form, "system": system, "facility": None},
+    )
+
+
+@login_required
+def facility_edit(request, pk):
+    """Edit one facility; how much depends on who wrote it.
+
+    A hand-added facility is the operator's throughout, so every field is
+    offered. One the federal record wrote offers only the local name and the
+    well link: the rest is EPA's as published, and a re-onboarding would
+    write it back.
+    """
+    facility = get_object_or_404(
+        SystemFacility.objects.select_related("system"), pk=pk
+    )
+    if facility.added_by_hand:
+        form_class, kwargs = SystemFacilityForm, {"system": facility.system}
+    else:
+        form_class, kwargs = FacilityLocalNameForm, {}
+
+    if request.method == "POST":
+        form = form_class(request.POST, instance=facility, **kwargs)
+        if form.is_valid():
+            form.save()
+            return redirect("drinking:facility_detail", pk=facility.pk)
+    else:
+        form = form_class(instance=facility, **kwargs)
+
+    return render(
+        request,
+        "drinking/facility_form.html",
+        {"form": form, "system": facility.system, "facility": facility},
     )
 
 
@@ -1153,6 +1226,9 @@ def import_commit(request):
     mapping = importer.auto_map_columns(columns)
     validated = importer.validate_rows(rows, mapping)
     counts = importer.commit_rows(validated)
+    # After the commit, so a file that lands nothing still records the agency
+    # it names for the system its rows resolved to (146-04 Task 3).
+    agency = importer.record_regulating_agency(rows, mapping, validated)
 
     skipped = [
         {"index": item["index"] + 1, "errors": item["errors"]}
@@ -1167,6 +1243,7 @@ def import_commit(request):
             "counts": counts,
             "skipped": skipped,
             "total": len(validated),
+            "agency": agency,
         },
     )
 

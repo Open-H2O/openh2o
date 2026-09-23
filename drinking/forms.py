@@ -2,13 +2,14 @@
 """
 Forms for the drinking-water domain.
 
-Created in 146-04 Task 2 for the production add-month door (D7); Tasks 3 and
-4 of the same plan extend this file with the facility form and the sampling
-schedule form rather than starting their own.
+Created in 146-04 Task 2 for the production add-month door (D7); Task 3 added
+the facility forms (D9) here and Task 4 adds the sampling schedule form, rather
+than each starting its own file.
 """
 from django import forms
 
-from drinking.models import PRODUCTION_PROVENANCE_TYPED, SystemProduction
+from core.modules import is_enabled
+from drinking.models import PRODUCTION_PROVENANCE_TYPED, SystemFacility, SystemProduction
 
 MONTH_CHOICES = [("", "-- Year total, not one month --")] + [
     (i, name) for i, name in enumerate(
@@ -73,3 +74,122 @@ class SystemProductionForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+# ---------------------------------------------------------------------------
+# The facility door (146-04 Task 3, D9)
+# ---------------------------------------------------------------------------
+
+
+def _offer_the_well_link(form):
+    """Keep the ``well`` field only on a deployment that has the wells module.
+
+    ``wells`` is schema-resident, so on shape 2 (no wells, no parcels, no
+    accounting) its table exists and is empty by design; a select over it
+    would offer nothing and name a module the deployment does not run. The
+    facility page gates its "Metered well" row on ``enabled_modules`` for the
+    same reason, and this mirrors it.
+    """
+    if "well" not in form.fields:
+        return
+    if is_enabled("wells"):
+        form.fields["well"].required = False
+        form.fields["well"].queryset = form.fields["well"].queryset.order_by("name")
+    else:
+        del form.fields["well"]
+
+
+class SystemFacilityForm(forms.ModelForm):
+    """A facility the operator adds by hand, or later edits.
+
+    ``system`` is set in the view (the deployment's own WaterSystem), so the
+    model's ``unique_together`` on (system, facility_id) is not one Django's
+    ModelForm can check on its own; ``clean_facility_id`` does it and names the
+    id in the refusal.
+    """
+
+    class Meta:
+        model = SystemFacility
+        fields = [
+            "facility_id", "name", "local_name", "facility_type",
+            "activity_status", "is_source", "water_type", "well",
+        ]
+        widgets = {
+            "facility_id": forms.TextInput(attrs={
+                "class": "form-input", "placeholder": "e.g. 007",
+            }),
+            "name": forms.TextInput(attrs={
+                "class": "form-input", "placeholder": "e.g. WL 007 CEDAR WELL 02",
+            }),
+            "local_name": forms.TextInput(attrs={
+                "class": "form-input", "placeholder": "e.g. Cedar Well 02",
+            }),
+            "facility_type": forms.Select(attrs={"class": "form-select"}),
+            "activity_status": forms.Select(attrs={"class": "form-select"}),
+            "water_type": forms.Select(attrs={"class": "form-select"}),
+            "well": forms.Select(attrs={"class": "form-select"}),
+        }
+        labels = {
+            "facility_id": "Facility ID",
+            "name": "The state's name",
+            "local_name": "Local name",
+            "facility_type": "Type",
+            "activity_status": "Status",
+            "is_source": "Water enters the system here",
+            "water_type": "Water type",
+            "well": "Metered well",
+        }
+
+    def __init__(self, *args, system=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._system = system
+        self.fields["facility_id"].required = True
+        _offer_the_well_link(self)
+
+    def clean_facility_id(self):
+        facility_id = self.cleaned_data["facility_id"].strip()
+        if self._system is not None:
+            clash = self._system.facilities.filter(facility_id=facility_id)
+            if self.instance.pk:
+                clash = clash.exclude(pk=self.instance.pk)
+            if clash.exists():
+                raise forms.ValidationError(
+                    f"{self._system.name} already has a facility {facility_id}. "
+                    "Open that one to change it."
+                )
+        return facility_id
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self._system is not None and instance.system_id is None:
+            instance.system = self._system
+        if instance.pk is None:
+            instance.added_by_hand = True
+        if commit:
+            instance.save()
+        return instance
+
+
+class FacilityLocalNameForm(forms.ModelForm):
+    """Edit a facility the federal record wrote: only what the operator owns.
+
+    The id, the state's name, the type, status and water type came from EPA's
+    record and stay as it published them (a re-onboarding would write them
+    again). The operator's own name for it, and the link to its metered well
+    where the deployment has wells, are this deployment's to set.
+    """
+
+    class Meta:
+        model = SystemFacility
+        fields = ["local_name", "well"]
+        widgets = {
+            "local_name": forms.TextInput(attrs={
+                "class": "form-input", "placeholder": "e.g. Cedar Well 02",
+            }),
+            "well": forms.Select(attrs={"class": "form-select"}),
+        }
+        labels = {"local_name": "Local name", "well": "Metered well"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _offer_the_well_link(self)

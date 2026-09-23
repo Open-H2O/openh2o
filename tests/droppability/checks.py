@@ -191,6 +191,10 @@ _PAGES = (
     # not one.
     ("/drinking/facilities/", "drinking"),
     ("/drinking/import/", "drinking"),
+    # 146-04 Task 3: the facility door. Its form carries a well link that must
+    # vanish with `wells`, and on the empty fixture it renders the "no water
+    # system yet" state, whose prose is what the vocabulary gate reads.
+    ("/drinking/facilities/add/", "drinking"),
 )
 
 

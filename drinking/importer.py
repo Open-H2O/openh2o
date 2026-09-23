@@ -85,6 +85,7 @@ from drinking.models import (
     SampleEvent,
     SampleResult,
     SamplingPoint,
+    WaterSystem,
 )
 
 # Hard cap on a single import. Higher than infrastructure's 500 for the same
@@ -286,6 +287,9 @@ ALIASES = {
     "reporting_level": {"reporting level", "rl", "reporting limit"},
     "method": {"method", "analytical method", "method code"},
     "collector": {"collector", "sampled by", "collected by"},
+    # Not a result field: read once per FILE by `record_regulating_agency`
+    # after the commit, never per row (146-04 Task 3).
+    "regulating_agency": {"regulating agency"},
 }
 
 # Human-readable labels for the preview's "columns we recognised" summary.
@@ -307,6 +311,7 @@ FIELD_LABELS = {
     "reporting_level": "Reporting level",
     "method": "Method",
     "collector": "Collector",
+    "regulating_agency": "Regulating agency",
 }
 
 # Without these four a row cannot become a result at all.
@@ -919,3 +924,77 @@ def commit_rows(valid_results):
                 counts["skipped"] += 1
 
     return counts
+
+
+# ---------------------------------------------------------------------------
+# record_regulating_agency (146-04 Task 3)
+# ---------------------------------------------------------------------------
+
+#: The three things the commit report can say, plus silence.
+AGENCY_RECORDED = "recorded"
+AGENCY_ALREADY_SET = "already_set"
+AGENCY_FILE_DISAGREES = "file_disagrees"
+
+
+def record_regulating_agency(rows, mapping, validated):
+    """Fill a blank ``WaterSystem.regulating_agency`` from the lab file, once.
+
+    The state's lab layout carries ``Regulating Agency`` on every row (Le
+    Grand's 160 rows all say ``DISTRICT 11 - MERCED``), while a system
+    onboarded from EPA's record shows it as "Not recorded". The file is the
+    better source for this one field, so the import writes it, under three
+    rules:
+
+    * the system is the one the file's rows resolved to (through their PS
+      Codes); rows that reached no known sampling point say nothing about a
+      system, so a file that reaches none writes nothing;
+    * the system's field is blank. A value already there, whoever wrote it,
+      is never overwritten;
+    * the file agrees with itself: every non-blank ``Regulating Agency`` cell
+      carries the same value. Two values means the file does not say which,
+      and neither is written.
+
+    Returns ``None`` when the file carries no such column or no value in it
+    (the report then says nothing about the agency), else a dict:
+    ``{"outcome", "value", "values", "existing"}``, one per system the rows
+    reached, as a list.
+    """
+    column = mapping.get("regulating_agency")
+    if not column:
+        return None
+    values = sorted({
+        (row.get(column) or "").strip()
+        for row in rows
+        if (row.get(column) or "").strip()
+    })
+    if not values:
+        return None
+
+    point_ids = {
+        item["data"]["sampling_point_id"]
+        for item in validated
+        if item["data"].get("sampling_point_id") is not None
+    }
+    systems = WaterSystem.objects.filter(
+        facilities__sampling_points__id__in=point_ids
+    ).distinct().order_by("pwsid")
+
+    outcomes = []
+    for system in systems:
+        existing = (system.regulating_agency or "").strip()
+        if len(values) > 1:
+            outcome = AGENCY_FILE_DISAGREES
+        elif existing:
+            outcome = AGENCY_ALREADY_SET
+        else:
+            system.regulating_agency = values[0]
+            system.save(update_fields=["regulating_agency"])
+            outcome = AGENCY_RECORDED
+        outcomes.append({
+            "system": system,
+            "outcome": outcome,
+            "value": values[0] if len(values) == 1 else "",
+            "values": values,
+            "existing": existing,
+        })
+    return outcomes or None

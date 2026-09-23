@@ -83,7 +83,19 @@ filtered" clause, which was true before this plan and is not true after it.
       {% for facility in page_obj %}
       <tr>
         <td class="text-mono"><a href="{% url 'drinking:facility_detail' facility.pk %}" class="data-table-link">{{ facility.facility_id }}</a></td>
-        <td>{{ facility.name|blank }}</td>
+        {% comment %}
+          146-04 Task 3 (D9): the operator's own name leads when there is one,
+          with the state's name under it, because the state's is the one a lab
+          file and a state report carry and it must stay findable.
+        {% endcomment %}
+        <td>
+          {% if facility.local_name %}
+            {{ facility.local_name }}
+            <div class="text-secondary text-sm">{% if facility.name %}the state's {{ facility.name }}{% else %}no state name yet{% endif %}</div>
+          {% else %}
+            {{ facility.name|blank }}
+          {% endif %}
+        </td>
         <td class="text-secondary text-sm">{{ facility.get_facility_type_display|blank }}</td>
         <td class="text-secondary text-sm">{{ facility.get_activity_status_display|blank }}</td>
         {% comment %}

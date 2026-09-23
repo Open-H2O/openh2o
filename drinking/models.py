@@ -287,6 +287,24 @@ class SystemFacility(models.Model):
         "segment.",
     )
     name = models.CharField(max_length=200, blank=True)
+    # 146-04 Task 3 (D9, the memo's J8). The operator's own word for the
+    # facility, shown BESIDE the state's padded name and never in place of it:
+    # the state's name is what the lab file and the state's reports carry, so
+    # it stays the one the record is matched on.
+    local_name = models.CharField(
+        max_length=200, blank=True,
+        help_text="What the operator calls it: Cedar Well 02.",
+    )
+    # False for every row the federal record wrote (Envirofacts onboarding,
+    # the demonstration's seed); True for a row typed in on this deployment's
+    # facility form. It decides which publisher the facility page names, and
+    # which fields the edit form offers: the state's fields on a federal row
+    # stay the state's.
+    added_by_hand = models.BooleanField(
+        default=False,
+        help_text="Entered on this deployment's facility form rather than "
+        "written from the federal record.",
+    )
     facility_type = models.CharField(
         max_length=2, choices=FACILITY_TYPE_CHOICES, blank=True
     )
