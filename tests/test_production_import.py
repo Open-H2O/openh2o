@@ -248,12 +248,14 @@ def test_ear_import_lands_twelve_gw_months_summing_to_the_real_total(le_grand):
     )
 
     assert result["layout"] == "ear"
-    # 72 valid rows: 12 months x 6 tracked type codes. The 12 NonPotableSold
-    # rows are errors (the state's seventh code; this product tracks six).
-    assert result["created"] == 72
-    assert len(result["errors"]) == 12
-    for err in result["errors"]:
-        assert "NonPotableSold" in err["message"]
+    # 84 rows: 12 months x the eAR's seven TypeCodes, NonPotableSold among
+    # them (ISS-206). The state's unmodified file imports with no row errors.
+    assert result["created"] == 84
+    assert result["errors"] == []
+
+    ns_records = SystemProduction.objects.filter(system=le_grand, type_code="NS")
+    assert ns_records.count() == 12
+    assert all(r.volume_as_reported == 0 for r in ns_records)
 
     gw_records = SystemProduction.objects.filter(system=le_grand, type_code="GW")
     assert gw_records.count() == 12
@@ -277,8 +279,22 @@ def test_ear_reimport_creates_nothing(le_grand):
     result = production_import.import_production_rows(columns, rows, system=le_grand, dry_run=False)
 
     assert result["created"] == 0
-    assert result["skipped_duplicates"] == 72
+    assert result["skipped_duplicates"] == 84
     assert SystemProduction.objects.count() == first_count
+
+
+def test_ear_type_code_outside_the_states_seven_is_a_row_error(le_grand):
+    text = EAR_CSV_TEXT.replace(
+        "CA2410011,2022,January,1/1/2022,NonPotableSold,G,0",
+        "CA2410011,2022,January,1/1/2022,Desalinated,G,0",
+    )
+    columns, rows = _parse(text)
+
+    result = production_import.import_production_rows(columns, rows, system=le_grand, dry_run=False)
+
+    assert len(result["errors"]) == 1
+    assert "Desalinated" in result["errors"][0]["message"]
+    assert result["created"] == 83
 
 
 def test_ear_row_for_another_pwsid_is_a_row_error(le_grand):
@@ -381,7 +397,13 @@ def test_operator_log_agrees_with_the_ear_file_row_for_row(le_grand):
         for r in SystemProduction.objects.filter(system=le_grand_2)
     }
 
-    assert ear_by_key == operator_by_key
+    # The operator's log (the template's Section 5) has no NonPotableSold
+    # column, so the eAR's NS rows have nothing to agree with; they are all
+    # zero in Le Grand's file.
+    ear_ns = {k: v for k, v in ear_by_key.items() if k[2] == "NS"}
+    assert len(ear_ns) == 12 and all(v == 0 for v in ear_ns.values())
+    ear_six = {k: v for k, v in ear_by_key.items() if k[2] != "NS"}
+    assert ear_six == operator_by_key
 
 
 # ---------------------------------------------------------------------------
@@ -511,7 +533,7 @@ def test_management_command_dry_run_writes_nothing(tmp_path, le_grand):
         "import_production", str(path), "--pwsid", le_grand.pwsid, "--dry-run", stdout=out,
     )
 
-    assert "72" in out.getvalue()
+    assert "84" in out.getvalue()
     assert SystemProduction.objects.count() == 0
 
 
@@ -522,4 +544,4 @@ def test_management_command_writes_records(tmp_path, le_grand):
 
     call_command("import_production", str(path), "--pwsid", le_grand.pwsid, stdout=out)
 
-    assert SystemProduction.objects.filter(system=le_grand).count() == 72
+    assert SystemProduction.objects.filter(system=le_grand).count() == 84

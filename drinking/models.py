@@ -689,17 +689,18 @@ class EnvirofactsCache(models.Model):
 # delivered, by month and by source. Two real-world layouts land here --
 # the state's eAR export and the operator's own monthly log
 # (``drinking/production_import.py``) -- so the type codes below are the
-# eAR's own six, and the units are the eAR's own four.
+# eAR's own seven, and the units are the eAR's own four.
 
-# Source: the eAR's own TypeCode column. NonPotableSold is the file's
-# seventh code and carries no entry here -- an eAR row typed NonPotableSold
-# is a row error naming it, not silently dropped or folded into NonPotable.
+# Source: the eAR's own TypeCode column, all seven of its codes (ISS-206).
+# NonPotableSold ("Non-potable water sold to another PWS") is its own type,
+# never folded into NonPotable; any other code is a row error naming it.
 PRODUCTION_TYPE_GW = "GW"
 PRODUCTION_TYPE_SW = "SW"
 PRODUCTION_TYPE_PU = "PU"
 PRODUCTION_TYPE_SO = "SO"
 PRODUCTION_TYPE_NP = "NP"
 PRODUCTION_TYPE_RC = "RC"
+PRODUCTION_TYPE_NS = "NS"
 PRODUCTION_TYPE_CHOICES = [
     (PRODUCTION_TYPE_GW, "Groundwater"),
     (PRODUCTION_TYPE_SW, "Surface water"),
@@ -707,6 +708,7 @@ PRODUCTION_TYPE_CHOICES = [
     (PRODUCTION_TYPE_SO, "Sold"),
     (PRODUCTION_TYPE_NP, "Non-potable"),
     (PRODUCTION_TYPE_RC, "Recycled"),
+    (PRODUCTION_TYPE_NS, "Non-potable sold"),
 ]
 
 # Source: the eAR's own "Units of Measure As Reported" column.

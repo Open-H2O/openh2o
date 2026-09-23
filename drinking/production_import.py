@@ -10,11 +10,10 @@ layouts, recognised by header:
 * **The state's eAR export** -- one row per PWSID, Year, Month, TypeCode
   (``GW``, ``SW``, ``Purchased``, ``Sold``, ``Recycled``, ``NonPotable``,
   ``NonPotableSold``), Units of Measure As Reported (``G``, ``MG``, ``AF``,
-  ``CCF``, or blank), Quantity as in Units Reported. ``NonPotableSold`` has
-  no column on this product's model -- it is the state's seventh code and
-  this product tracks six -- so a row typed that way is a row error naming
-  it, never silently dropped or folded into ``NonPotable``. A blank unit is
-  a row error until the mapping step's "unit for blank rows" is set.
+  ``CCF``, or blank), Quantity as in Units Reported. All seven codes land,
+  ``NonPotableSold`` as its own type, never folded into ``NonPotable``
+  (ISS-206); any other code is a row error naming it. A blank unit is a row
+  error until the mapping step's "unit for blank rows" is set.
 * **The operator's monthly log** -- the Small Water System eAR template's own
   Section 5 layout: a ``Date/Month`` column carrying the twelve month names,
   plus ``Maximum Day``, ``Annual Total`` and ``Percent Treated`` rows, none of
@@ -53,9 +52,8 @@ MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB, the ceiling every importer here us
 
 _UNIT_CODES = {code for code, _label in PRODUCTION_UNIT_CHOICES}
 
-#: The eAR's own TypeCode -> this product's type_code. NonPotableSold is
-#: deliberately absent: it is the state's seventh code and this product
-#: tracks six, so a row typed that way is a row error, not a silent drop.
+#: The eAR's own TypeCode -> this product's type_code, all seven (ISS-206).
+#: A code not listed here is a row error naming it, never a silent drop.
 _EAR_TYPE_MAP = {
     "GW": "GW",
     "SW": "SW",
@@ -63,6 +61,7 @@ _EAR_TYPE_MAP = {
     "Sold": "SO",
     "Recycled": "RC",
     "NonPotable": "NP",
+    "NonPotableSold": "NS",
 }
 
 #: The operator log's own column headers -> this product's type_code.
@@ -198,8 +197,8 @@ def _process_ear_row(line_num, row, *, system, unit_for_blank):
     type_code = _EAR_TYPE_MAP.get(type_raw)
     if type_code is None:
         errors.append(
-            f"TypeCode {type_raw!r} is not one of the six this product "
-            "tracks (GW, SW, Purchased, Sold, Recycled, NonPotable)"
+            f"TypeCode {type_raw!r} is not one of the state's seven "
+            "(GW, SW, Purchased, Sold, Recycled, NonPotable, NonPotableSold)"
         )
 
     unit_raw = (row.get("Units of Measure As Reported") or "").strip().upper()
