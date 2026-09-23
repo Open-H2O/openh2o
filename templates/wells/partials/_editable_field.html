@@ -13,8 +13,6 @@ second wrapping div breaking the grid's direct-child selectors).
       {% include "partials/_help_tooltip.html" with label="Status" text="Active wells are included in extraction reporting. Inactive wells are excluded." %}
     {% elif ef.name == "depth_ft" %}
       {% include "partials/_help_tooltip.html" with label="Total Depth" text="Depth of the well bore in feet below ground surface." %}
-    {% elif ef.name == "measurement_method" %}
-      {% include "partials/_help_tooltip.html" with label="Measurement Method" text="How extraction volume is determined. Feeds the GEARS filing; certified-meter readings carry a calibration date." %}
     {% elif ef.name == "dwr_extraction_method" %}
       {% include "partials/_help_tooltip.html" with label="Extraction Method (DWR)" text="Which of DWR's five annual-report method rows this well's extraction is measured under: Meters, Electrical Records, Land Use, Groundwater Model, or Other." %}
     {% elif ef.name == "dwr_direct_or_estimate" %}

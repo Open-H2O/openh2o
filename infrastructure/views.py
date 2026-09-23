@@ -28,7 +28,6 @@ from wells.models import (
     ACCURACY_BAND_CHOICES,
     DWR_DIRECT_OR_ESTIMATE_CHOICES,
     DWR_EXTRACTION_METHOD_CHOICES,
-    MEASUREMENT_METHOD_CHOICES,
     PUMP_TYPE_CHOICES,
     Well,
     WellIrrigatedParcel,
@@ -148,7 +147,12 @@ def _add_context(infra_type, **extra):
         ],
         "back_url": reverse(back_name),
         "back_label": back_label,
-        "measurement_method_choices": MEASUREMENT_METHOD_CHOICES,
+        # `measurement_method` is deliberately not offered here (146-05
+        # checkpoint ruling 2, 2026-09-23): a new well created with it AND
+        # the three DWR fields below could start life with the two already
+        # disagreeing. The model field stays for the seeds and the Merced
+        # audit trail; a well made through this form simply starts blank on
+        # it, same as any field this form does not ask for.
         "pump_type_choices": PUMP_TYPE_CHOICES,
         # 146-05 S2: DWR's own extraction-method row, offered blank by default.
         "dwr_extraction_method_choices": DWR_EXTRACTION_METHOD_CHOICES,
@@ -273,7 +277,6 @@ def infrastructure_add(request):
             status=status,
             owner_name=request.POST.get("owner_name", ""),
             year_pumping_began=year_pumping_began,
-            measurement_method=request.POST.get("measurement_method", ""),
             dwr_extraction_method=request.POST.get("dwr_extraction_method", ""),
             dwr_direct_or_estimate=request.POST.get("dwr_direct_or_estimate", ""),
             accuracy_band=request.POST.get("accuracy_band", ""),

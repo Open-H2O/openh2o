@@ -25,36 +25,44 @@ Order matters:
                               Brent's QGIS field selection (incl. the 2 Merced
                               River dual-purpose parcels). Needs PODs (4), GSAs
                               (3), and data/merced/selected_parcels.geojson.
-  6. seed_merced_basins_from_selection — recharge AREAS from Brent's QGIS pick:
+  6. seed_merced_pivot_irrigation — 146-05 checkpoint, Brent's ruling 1: sets
+                              surface.ParcelIrrigationMethod to "Center Pivot"
+                              on every use area whose outline fills at least
+                              90% of its minimum bounding circle (MER-APN-001
+                              through 009, visibly round on the aerial map).
+                              Purely geometric on the parcels seeded at step 5;
+                              no other dependency. Never overwrites a method
+                              already set. No-op when `surface` is off.
+  7. seed_merced_basins_from_selection — recharge AREAS from Brent's QGIS pick:
                               El Nido Canal spreading basins (new canal intakes)
                               + Merced River Flood-MAR cropland (linked to the
                               existing MER-POD-009). Needs the PODs (4) + parcels
                               (5). Replaces the old hardcoded seed_merced_recharge.
-  7. seed_merced_cropland   — a crop-type UsageLocation per irrigated parcel, so
+  8. seed_merced_cropland   — a crop-type UsageLocation per irrigated parcel, so
                               the calc engine's facility_only_zero step does not
                               zero every parcel. Land use is a prerequisite for
                               the accounting layer, so it runs BEFORE the ledgers.
-  8. seed_merced_ledgers    — the synthetic accounting layer (reporting periods,
+  9. seed_merced_ledgers    — the synthetic accounting layer (reporting periods,
                               two-authority Allocations, accounts, and the full
                               keyed ParcelLedger). Depends on parcels, wells,
                               rights, PODs, and the GSA zones all existing, so it
                               runs after them.
-  9. seed_merced_recharge_events — wet-season managed-recharge events on the two
+ 10. seed_merced_recharge_events — wet-season managed-recharge events on the two
                               basins, distributed as GROUNDWATER credits across the
                               overlying GSA's parcels. Sits ON TOP of the accounting
                               layer (needs the WY 2024-2025 ReportingPeriod + parcels
-                              from step 8).
- 10. seed_merced_details   — descriptive detail fields (well construction, parcel
+                              from step 9).
+ 11. seed_merced_details   — descriptive detail fields (well construction, parcel
                               addresses, CalWATRS PINs, account contacts) so every
                               detail page reads complete. Invented mock data, which
-                              is why step 11's real wells are excluded from it.
- 11. seed_merced_measurements — the instrument record: on-site monitoring at the
+                              is why step 12's real wells are excluded from it.
+ 12. seed_merced_measurements — the instrument record: on-site monitoring at the
                               seven recharge basins (the one measurement screen an
                               operator can open), the three monitoring wells, monthly
                               totalizer reads reconciled to the ledger, and one daily
-                              logger with its manual checks. Runs after steps 8-10
+                              logger with its manual checks. Runs after steps 9-11
                               because it reads the ledger, the events and the meters.
- 12. seed_merced_drinking  — the drinking-water domain for the same subbasin: the
+ 13. seed_merced_drinking  — the drinking-water domain for the same subbasin: the
                               City of Merced (CA2410009), its facilities, its
                               municipal supply wells and three years of its real
                               published lab results. Runs LAST: it needs the well
@@ -63,10 +71,10 @@ Order matters:
                               registry numbers must never land on a real utility's
                               wells.
 
-Note: demand-aware surface sizing in step 8 reads the OpenETCache, so in a deployment
+Note: demand-aware surface sizing in step 9 reads the OpenETCache, so in a deployment
 run ``sync_openet_parcels``/``sync_precip_parcels`` (and ``run_calculations`` for
 the groundwater + incidental-recharge rows) around this sequence; without an ET
-cache, step 8 falls back to face-value sizing and the demo is still coherent.
+cache, step 9 falls back to face-value sizing and the demo is still coherent.
 
 Each sub-command is idempotent, so re-running is safe. Step 2 is a live
 network fetch (a few minutes); everything else is local.
@@ -119,6 +127,14 @@ SEQUENCE = [
     # real parcels/wells right after, so the flush is safe.
     ("seed_merced_operations", {"flush": True}),
     ("seed_merced_parcels_from_selection", {}),
+    # 146-05 checkpoint, Brent's ruling 1 (2026-09-23): the nine round use
+    # areas (MER-APN-001 through 009) are visibly center-pivot fields on the
+    # aerial map, and the platform now has a place to say so
+    # (surface.ParcelIrrigationMethod, 146-05 Task 1). Runs right after
+    # parcels exist and before anything else touches them, is purely
+    # geometric (no dependency on any later step), and never overwrites a
+    # method a use area already carries.
+    ("seed_merced_pivot_irrigation", {}),
     # Recharge AREAS from the QGIS pick (El Nido pure-recharge basins + Merced
     # River Flood-MAR cropland). Replaces the hardcoded two-square seed; runs
     # after parcels (needs MER-POD-009) and before the recharge events.

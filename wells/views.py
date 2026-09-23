@@ -46,14 +46,21 @@ EDITABLE_FIELDS = {
         "label": "Year Pumping Began", "type": "number", "step": "1", "integer": True,
         "min_value": 1850, "max_is_current_year": True,
     },
-    "measurement_method": {
-        "label": "Measurement Method", "type": "select",
-        "choices": MEASUREMENT_METHOD_CHOICES,
-    },
+    # `measurement_method` is deliberately NOT here (146-05 checkpoint,
+    # Brent's ruling 2, 2026-09-23): the well page used to carry it with its
+    # own pencil beside the three DWR fields below, derived from it once by
+    # migration 0005 and independent of it ever since, so the two could
+    # disagree on the same card. It is now read-only -- rendered directly in
+    # `_detail_pane.html` from `measurement_method_display` below, with no
+    # editor -- and the PATCH/GET handlers refuse it exactly as they refuse
+    # any other unknown field, since it is absent from this dict. The model
+    # field itself stays: the seeds, seven test files and the Merced audit
+    # trail still read it.
+    #
     # 146-05 S2: DWR's own annual-report row (23 CCR 356.2(b)(2)), derived
     # once from measurement_method above and editable independently after
     # that. Each carries a blank option so the row can be cleared, unlike
-    # measurement_method's editor, which was never given one.
+    # measurement_method's old editor, which was never given one.
     "dwr_extraction_method": {
         "label": "Extraction Method (DWR)", "type": "select",
         "choices": [("", "Not stated")] + DWR_EXTRACTION_METHOD_CHOICES,
@@ -106,6 +113,18 @@ def _field_value(well, field):
     if field == "well_type":
         return well.well_type_id
     return getattr(well, field)
+
+
+def _measurement_method_display(well):
+    """`measurement_method`'s own label, read-only (146-05 checkpoint ruling 2).
+
+    Kept for provenance -- the seeds, seven test files and the Merced audit
+    trail still read the raw field -- but no longer independently editable,
+    so it cannot say something the three DWR fields it was derived from (once,
+    by migration 0005) now disagree with. "Not stated" matches the phrasing
+    `_dwr_extraction_line` already uses for a blank part of that row.
+    """
+    return dict(MEASUREMENT_METHOD_CHOICES).get(well.measurement_method, "Not stated")
 
 
 def _dwr_extraction_line(well):
@@ -291,6 +310,9 @@ def _well_detail_context(well):
         # 146-05 S2: DWR's three-part identity line, computed once here so
         # the template states it rather than re-deriving it (rule 12).
         "dwr_extraction_line": _dwr_extraction_line(well),
+        # 146-05 checkpoint ruling 2: the legacy field's own label, read-only,
+        # computed once here for the same reason.
+        "measurement_method_display": _measurement_method_display(well),
         # Pass the Python object (or None); the template escapes it via
         # json_script so a malicious place-name can't break out of <script>.
         "geojson": geojson,

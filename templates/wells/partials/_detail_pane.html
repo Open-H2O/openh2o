@@ -128,7 +128,25 @@
         {% include "wells/partials/_editable_field.html" with ef=ef.status %}
         {% include "wells/partials/_editable_field.html" with ef=ef.capacity_gpm %}
         {% include "wells/partials/_editable_field.html" with ef=ef.year_pumping_began %}
-        {% include "wells/partials/_editable_field.html" with ef=ef.measurement_method %}
+
+        {% comment %}
+          146-05 checkpoint ruling 2 (2026-09-23): STATIC, not editable. This
+          field used to carry its own pencil beside the three DWR fields
+          below, derived from it once by migration 0005 and independent of
+          it ever since, so the two could disagree on the same card. It is
+          no longer in EDITABLE_FIELDS (wells/views.py), so the PATCH/GET
+          endpoint refuses it like any unknown field; this renders its value
+          with no editor, the same pattern as the static Registration ID
+          field above.
+        {% endcomment %}
+        <div class="field-group">
+          <div class="field-label field-row">
+            Measurement method
+            {% include "partials/_help_tooltip.html" with label="Measurement Method" text="This is the value as it was first recorded. The three DWR fields below now say how this well's pumping is measured, and this one is read-only so the two records cannot disagree." %}
+          </div>
+          <div class="field-value">{{ measurement_method_display }}</div>
+        </div>
+
         {% include "wells/partials/_editable_field.html" with ef=ef.dwr_extraction_method %}
         {% include "wells/partials/_editable_field.html" with ef=ef.dwr_direct_or_estimate %}
         {% include "wells/partials/_editable_field.html" with ef=ef.accuracy_band %}

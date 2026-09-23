@@ -140,25 +140,16 @@
           </div>
 
           <!-- State reporting (SGMA / GEARS) -->
-          <div class="form-row-2col">
-            <div class="form-group">
-              <label class="field-label" for="year_pumping_began">Year pumping began</label>
-              <input type="number" id="year_pumping_began" name="year_pumping_began" step="1" min="1850" max="2100" class="form-input" placeholder="e.g. 1998" value="{{ submitted.year_pumping_began|default:'' }}">
-            </div>
-            <div class="form-group">
-              <label class="field-label" for="measurement_method">Measurement method</label>
-              <select id="measurement_method" name="measurement_method" class="form-select">
-                <option value="">Not specified</option>
-                {% for val, label in measurement_method_choices %}
-                <option value="{{ val }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-            </div>
+          <div class="form-group">
+            <label class="field-label" for="year_pumping_began">Year pumping began</label>
+            <input type="number" id="year_pumping_began" name="year_pumping_began" step="1" min="1850" max="2100" class="form-input" placeholder="e.g. 1998" value="{{ submitted.year_pumping_began|default:'' }}">
           </div>
 
-          {% comment %}146-05 S2: DWR's own annual-report row (23 CCR 356.2(b)(2)),
-               offered blank by default -- derived from Measurement method
-               above for existing wells, editable independently after that.{% endcomment %}
+          {% comment %}146-05 S2: DWR's own annual-report row (23 CCR 356.2(b)(2)).
+               Measurement method is NOT offered here (146-05 checkpoint ruling 2,
+               2026-09-23): a new well could otherwise start life with the legacy
+               field and these three already disagreeing. These are the well's
+               only editor for how its pumping is measured, blank by default.{% endcomment %}
           <div class="form-row-2col">
             <div class="form-group">
               <label class="field-label" for="dwr_extraction_method">Extraction method (DWR)</label>
