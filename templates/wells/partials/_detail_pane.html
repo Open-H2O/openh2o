@@ -92,11 +92,15 @@
         {% include "wells/partials/_editable_field.html" with ef=ef.wcr_number %}
         {% include "wells/partials/_editable_field.html" with ef=ef.state_well_number %}
 
-        <!-- Static field: well_type -->
-        <div class="field-group">
-          <div class="field-label">Well type</div>
-          <div class="field-value">{{ well.well_type|blank }}</div>
-        </div>
+        {% comment %}
+          ISS-189: "Well type" printed here with no editor -- `well_type` was
+          not in `EDITABLE_FIELDS`, so the pencil icon that every other field
+          on this page carries was simply missing from this one. Closed
+          146-05 Task 2: the select reads WellType.objects each render (data
+          an agency can add to), same reasoning as the irrigation-method
+          select on the use-area page.
+        {% endcomment %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.well_type %}
 
         {% include "wells/partials/_editable_field.html" with ef=ef.owner_name %}
       </div>
@@ -107,11 +111,27 @@
         These fields feed a GEARS extraction filing.
       </p>
 
+      {% comment %}
+        146-05 S2: DWR's own three-part identity for how this well's pumping
+        is known (23 CCR 356.2(b)(2)) -- Extraction Method, Direct or
+        Estimate, Accuracy Band, each editable below. This line states the
+        three together so a reader does not have to assemble them; each part
+        says "not stated" on its own rather than the whole line disappearing.
+        Computed once in the view (`wells/views.py::_dwr_extraction_line`),
+        never re-derived here (rule 12).
+      {% endcomment %}
+      <p class="text-secondary text-sm" style="margin: 0 0 var(--space-sm) 0;">
+        Extraction: {{ dwr_extraction_line }}
+      </p>
+
       <div class="field-grid-2">
         {% include "wells/partials/_editable_field.html" with ef=ef.status %}
         {% include "wells/partials/_editable_field.html" with ef=ef.capacity_gpm %}
         {% include "wells/partials/_editable_field.html" with ef=ef.year_pumping_began %}
         {% include "wells/partials/_editable_field.html" with ef=ef.measurement_method %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.dwr_extraction_method %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.dwr_direct_or_estimate %}
+        {% include "wells/partials/_editable_field.html" with ef=ef.accuracy_band %}
       </div>
 
       <!-- ── Construction (DWR Well Completion Report) ── -->

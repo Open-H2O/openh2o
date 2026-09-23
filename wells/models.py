@@ -19,6 +19,40 @@ MEASUREMENT_METHOD_CHOICES = [
     ("et_method", "ET Method"),
 ]
 
+# DWR's SGMA Portal implements 23 CCR 356.2(b)(2) as a fixed five-row table on
+# every GSP annual report (research file 05, lines 301-309: Meters, Electrical
+# Records, Land Use, Groundwater Model, Other). `measurement_method` above is
+# this platform's own four-value vocabulary and stays (the seeds, seven test
+# files and the Merced audit trail read it); this is DWR's own row, derived
+# from it once by a data migration and editable independently after that.
+DWR_EXTRACTION_METHOD_CHOICES = [
+    ("meters", "Meters"),
+    ("electrical_records", "Electrical Records"),
+    ("land_use", "Land Use"),
+    ("groundwater_model", "Groundwater Model"),
+    ("other", "Other"),
+]
+
+# 23 CCR 356.2(b)(2): "identifies the method of measurement (direct or
+# estimate)". Paired with DWR_EXTRACTION_METHOD_CHOICES above, never alone.
+DWR_DIRECT_OR_ESTIMATE_CHOICES = [
+    ("direct", "Direct"),
+    ("estimate", "Estimate"),
+]
+
+# The band DWR's annual report table takes for "accuracy of measurements"
+# (research file 05, line 309: "0-5 %", "5-10 %", "20-30 %" observed on 20
+# records). Blank means no band is stated -- never a model-spread substitute
+# for one (the platform already withdrew OpenET member-model spread from a
+# billable figure for exactly this reason, ISS-158).
+ACCURACY_BAND_CHOICES = [
+    ("0-5", "0-5%"),
+    ("5-10", "5-10%"),
+    ("10-20", "10-20%"),
+    ("20-30", "20-30%"),
+    ("over_30", "Over 30%"),
+]
+
 PUMP_TYPE_CHOICES = [
     ("submersible", "Submersible"),
     ("turbine", "Turbine"),
@@ -73,6 +107,26 @@ class Well(models.Model):
     year_pumping_began = models.IntegerField(null=True, blank=True)
     measurement_method = models.CharField(
         max_length=30, blank=True, choices=MEASUREMENT_METHOD_CHOICES
+    )
+
+    # DWR's own annual-report row (146-05 S2): the method, whether it is
+    # direct or an estimate, and the accuracy band -- 23 CCR 356.2(b)(2).
+    # `default=""` so the schema migration can add these to a table that
+    # already carries rows (staging, production) without a prompt.
+    dwr_extraction_method = models.CharField(
+        max_length=30, blank=True, default="", choices=DWR_EXTRACTION_METHOD_CHOICES,
+        help_text="Which of DWR's five annual-report method rows this well's "
+        "extraction is measured under (23 CCR 356.2(b)(2)).",
+    )
+    dwr_direct_or_estimate = models.CharField(
+        max_length=10, blank=True, default="", choices=DWR_DIRECT_OR_ESTIMATE_CHOICES,
+        help_text="Whether the extraction method above is a direct "
+        "measurement or an estimate.",
+    )
+    accuracy_band = models.CharField(
+        max_length=10, blank=True, default="", choices=ACCURACY_BAND_CHOICES,
+        help_text="The accuracy band DWR's annual report table takes for "
+        "this method; blank when none is stated.",
     )
 
     # Registry identifiers

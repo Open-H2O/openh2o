@@ -24,10 +24,14 @@ from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from core.workspace import detail_response, list_response, redirect_to_selected
 from wells import measurement_history
 from wells.models import (
+    ACCURACY_BAND_CHOICES,
+    DWR_DIRECT_OR_ESTIMATE_CHOICES,
+    DWR_EXTRACTION_METHOD_CHOICES,
     MEASUREMENT_METHOD_CHOICES,
     PUMP_TYPE_CHOICES,
     Well,
     WellIrrigatedParcel,
+    WellType,
 )
 
 
@@ -46,6 +50,22 @@ EDITABLE_FIELDS = {
         "label": "Measurement Method", "type": "select",
         "choices": MEASUREMENT_METHOD_CHOICES,
     },
+    # 146-05 S2: DWR's own annual-report row (23 CCR 356.2(b)(2)), derived
+    # once from measurement_method above and editable independently after
+    # that. Each carries a blank option so the row can be cleared, unlike
+    # measurement_method's editor, which was never given one.
+    "dwr_extraction_method": {
+        "label": "Extraction Method (DWR)", "type": "select",
+        "choices": [("", "Not stated")] + DWR_EXTRACTION_METHOD_CHOICES,
+    },
+    "dwr_direct_or_estimate": {
+        "label": "Direct or Estimate", "type": "select",
+        "choices": [("", "Not stated")] + DWR_DIRECT_OR_ESTIMATE_CHOICES,
+    },
+    "accuracy_band": {
+        "label": "Accuracy Band", "type": "select",
+        "choices": [("", "Not stated")] + ACCURACY_BAND_CHOICES,
+    },
     "depth_ft": {"label": "Depth (ft)", "type": "number", "step": "0.01", "min_value": 0},
     "casing_diameter_in": {"label": "Casing Diameter (in)", "type": "number", "step": "0.01", "min_value": 0},
     "casing_material": {"label": "Casing Material", "type": "text", "max_length": 50},
@@ -55,6 +75,57 @@ EDITABLE_FIELDS = {
     "pump_type": {"label": "Pump Type", "type": "select", "choices": PUMP_TYPE_CHOICES},
     "notes": {"label": "Notes", "type": "textarea"},
 }
+
+
+def _editable_fields():
+    """EDITABLE_FIELDS, plus `well_type` (ISS-189: "Well type" printed with
+    no editor, because `well_type` was not in EDITABLE_FIELDS).
+
+    Its choices are read per call, the same reason `parcels._editable_fields`
+    reads `IrrigationMethod` per call: `WellType` is seeded reference data an
+    agency can add rows to. Marked `fk` so the PATCH handler assigns the id
+    rather than treating the submitted string as the field's own value.
+    """
+    fields = dict(EDITABLE_FIELDS)
+    fields["well_type"] = {
+        "label": "Well Type", "type": "select", "fk": True,
+        "choices": [("", "Not set")]
+        + [(str(wt.pk), wt.name) for wt in WellType.objects.order_by("name")],
+    }
+    return fields
+
+
+def _field_value(well, field):
+    """The raw value an editable field's template comparisons need.
+
+    Every field but `well_type` is a plain attribute. `well_type` is a
+    ForeignKey, and the select's option-matching (`_editable_field.html`,
+    `_field_edit.html`) compares against a stringified id, not the WellType
+    instance itself.
+    """
+    if field == "well_type":
+        return well.well_type_id
+    return getattr(well, field)
+
+
+def _dwr_extraction_line(well):
+    """"Extraction: <method>, <direct/estimate>, ±<band>" -- DWR's three-part
+    identity for how a well's pumping is known (23 CCR 356.2(b)(2)).
+
+    Each part reads "not stated" on its own when blank, so a well missing one
+    part is never read as though the whole line were unset.
+    """
+    method = dict(DWR_EXTRACTION_METHOD_CHOICES).get(well.dwr_extraction_method)
+    direct_or_estimate = dict(DWR_DIRECT_OR_ESTIMATE_CHOICES).get(well.dwr_direct_or_estimate)
+    if well.accuracy_band:
+        band = f"±{well.accuracy_band.replace('_', ' ')}%"
+    else:
+        band = "not stated"
+    return ", ".join([
+        method if method else "not stated",
+        direct_or_estimate.lower() if direct_or_estimate else "not stated",
+        band,
+    ])
 
 
 @login_required
@@ -204,9 +275,9 @@ def _well_detail_context(well):
             "type": fmeta["type"],
             "choices": fmeta.get("choices", []),
             "integer": fmeta.get("integer", False),
-            "value": getattr(well, fname),
+            "value": _field_value(well, fname),
         }
-        for fname, fmeta in EDITABLE_FIELDS.items()
+        for fname, fmeta in _editable_fields().items()
     }
 
     return {
@@ -217,6 +288,9 @@ def _well_detail_context(well):
         "meter_history": meter_history,
         "water_levels": water_levels,
         "ef": editable_fields_map,
+        # 146-05 S2: DWR's three-part identity line, computed once here so
+        # the template states it rather than re-deriving it (rule 12).
+        "dwr_extraction_line": _dwr_extraction_line(well),
         # Pass the Python object (or None); the template escapes it via
         # json_script so a malicious place-name can't break out of <script>.
         "geojson": geojson,
@@ -265,17 +339,18 @@ def well_detail(request, pk):
 def well_edit_field(request, pk):
     """Inline field editor: GET returns form, PATCH saves and returns updated value."""
     well = get_object_or_404(Well, pk=pk)
+    editable_fields = _editable_fields()
 
     if request.method == "GET":
         field = request.GET.get("field", "")
-        if field not in EDITABLE_FIELDS:
+        if field not in editable_fields:
             return HttpResponseBadRequest("Invalid field.")
 
         context = {
             "well": well,
             "field": field,
-            "field_meta": EDITABLE_FIELDS[field],
-            "value": getattr(well, field),
+            "field_meta": editable_fields[field],
+            "value": _field_value(well, field),
         }
         # Cancel action: return the value display
         if request.GET.get("cancel"):
@@ -287,10 +362,10 @@ def well_edit_field(request, pk):
     field = body_params.get("field", [""])[0]
     new_value = body_params.get("value", [""])[0].strip()
 
-    if field not in EDITABLE_FIELDS:
+    if field not in editable_fields:
         return HttpResponseBadRequest("Invalid field.")
 
-    field_meta = EDITABLE_FIELDS[field]
+    field_meta = editable_fields[field]
     if field_meta["type"] == "select":
         valid_choices = [c[0] for c in field_meta["choices"]]
         if new_value not in valid_choices:
@@ -326,14 +401,23 @@ def well_edit_field(request, pk):
             return render(request, "wells/partials/_field_edit.html", context)
     else:
         save_value = new_value
-    setattr(well, field, save_value)
-    well.save(update_fields=[field, "updated_at"])
+
+    if field_meta.get("fk"):
+        # well_type (ISS-189): the submitted value is a WellType id, not the
+        # field's own value -- assign the `_id` attribute so Django does not
+        # try to interpret a raw string as a model instance.
+        setattr(well, f"{field}_id", int(save_value) if save_value else None)
+        update_field_name = f"{field}_id"
+    else:
+        setattr(well, field, save_value)
+        update_field_name = field
+    well.save(update_fields=[update_field_name, "updated_at"])
 
     context = {
         "well": well,
         "field": field,
-        "field_meta": EDITABLE_FIELDS[field],
-        "value": getattr(well, field),
+        "field_meta": field_meta,
+        "value": _field_value(well, field),
     }
     return render(request, "wells/partials/_field_value.html", context)
 

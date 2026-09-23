@@ -25,6 +25,9 @@ from core.validation import FieldValidationError, coerce_decimal, coerce_int
 from infrastructure import importer
 from parcels.models import Parcel
 from wells.models import (
+    ACCURACY_BAND_CHOICES,
+    DWR_DIRECT_OR_ESTIMATE_CHOICES,
+    DWR_EXTRACTION_METHOD_CHOICES,
     MEASUREMENT_METHOD_CHOICES,
     PUMP_TYPE_CHOICES,
     Well,
@@ -147,6 +150,10 @@ def _add_context(infra_type, **extra):
         "back_label": back_label,
         "measurement_method_choices": MEASUREMENT_METHOD_CHOICES,
         "pump_type_choices": PUMP_TYPE_CHOICES,
+        # 146-05 S2: DWR's own extraction-method row, offered blank by default.
+        "dwr_extraction_method_choices": DWR_EXTRACTION_METHOD_CHOICES,
+        "dwr_direct_or_estimate_choices": DWR_DIRECT_OR_ESTIMATE_CHOICES,
+        "accuracy_band_choices": ACCURACY_BAND_CHOICES,
         # 146-02 D2: the diversion card's "Water right" select. Local import,
         # guarded, the same reason `infra_type == "diversion"` branches below
         # import `surface.models` locally -- `surface` is truly optional
@@ -267,6 +274,9 @@ def infrastructure_add(request):
             owner_name=request.POST.get("owner_name", ""),
             year_pumping_began=year_pumping_began,
             measurement_method=request.POST.get("measurement_method", ""),
+            dwr_extraction_method=request.POST.get("dwr_extraction_method", ""),
+            dwr_direct_or_estimate=request.POST.get("dwr_direct_or_estimate", ""),
+            accuracy_band=request.POST.get("accuracy_band", ""),
             wcr_number=request.POST.get("wcr_number", ""),
             state_well_number=request.POST.get("state_well_number", ""),
             casing_diameter_in=casing_diameter_in,

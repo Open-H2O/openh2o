@@ -156,6 +156,39 @@
             </div>
           </div>
 
+          {% comment %}146-05 S2: DWR's own annual-report row (23 CCR 356.2(b)(2)),
+               offered blank by default -- derived from Measurement method
+               above for existing wells, editable independently after that.{% endcomment %}
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label class="field-label" for="dwr_extraction_method">Extraction method (DWR)</label>
+              <select id="dwr_extraction_method" name="dwr_extraction_method" class="form-select">
+                <option value="">Not stated</option>
+                {% for val, label in dwr_extraction_method_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="field-label" for="dwr_direct_or_estimate">Direct or estimate</label>
+              <select id="dwr_direct_or_estimate" name="dwr_direct_or_estimate" class="form-select">
+                <option value="">Not stated</option>
+                {% for val, label in dwr_direct_or_estimate_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="field-label" for="accuracy_band">Accuracy band</label>
+            <select id="accuracy_band" name="accuracy_band" class="form-select">
+              <option value="">Not stated</option>
+              {% for val, label in accuracy_band_choices %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
           <!-- Registry identifiers -->
           <div class="form-row-2col">
             <div class="form-group">

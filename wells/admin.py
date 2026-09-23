@@ -16,8 +16,12 @@ class WellAdmin(admin.ModelAdmin):
     list_display = [
         "name", "well_registration_id", "well_type", "status",
         "depth_ft", "capacity_gpm", "measurement_method", "wcr_number",
+        "dwr_extraction_method", "dwr_direct_or_estimate", "accuracy_band",
     ]
-    list_filter = ["well_type", "status", "pump_type", "measurement_method"]
+    list_filter = [
+        "well_type", "status", "pump_type", "measurement_method",
+        "dwr_extraction_method", "dwr_direct_or_estimate", "accuracy_band",
+    ]
     search_fields = ["name", "well_registration_id"]
     fieldsets = (
         ("Identification", {
@@ -26,7 +30,8 @@ class WellAdmin(admin.ModelAdmin):
         }),
         ("State Reporting", {
             "fields": ("status", "capacity_gpm", "year_pumping_began",
-                       "measurement_method"),
+                       "measurement_method", "dwr_extraction_method",
+                       "dwr_direct_or_estimate", "accuracy_band"),
         }),
         ("Construction", {
             "fields": ("depth_ft", "casing_diameter_in", "casing_material",
