@@ -296,16 +296,20 @@ class TestAutoMapColumns:
         assert mapping["sample_date"] == "SAMPLE DATE"
         assert mapping["analyte_name"] == "analyte name"
 
-    def test_the_regulatory_limit_columns_are_deliberately_not_mapped(self, parsed):
-        """MCL and DLR are limits, not findings.
+    def test_the_limit_columns_map_only_to_their_as_reported_fields(self, parsed):
+        """MCL and DLR are limits the file carried, never findings.
 
-        Storing a limit on the result row beside the value is one template
-        change away from a compliance verdict, and RegulatoryLimit is the
-        versioned home for what a limit was on a given date.
+        Until 2026-09-22 neither column was mapped at all. ISS-140 was ruled
+        "beside" by Brent at 07:31 PDT that day (146-04 Task 1): both are now
+        stored as reported, beside the finding, and still never compared with
+        it. What this pins is that they land in their own two fields and in
+        no field that describes the measurement.
         """
         mapping = importer.auto_map_columns(parsed["columns"])
-        assert "MCL" not in mapping.values()
-        assert "DLR" not in mapping.values()
+        assert mapping["mcl_as_reported"] == "MCL"
+        assert mapping["dlr_as_reported"] == "DLR"
+        for finding_field in ("result", "reporting_level", "counting_error"):
+            assert mapping.get(finding_field) not in ("MCL", "DLR")
 
     def test_missing_required_columns_are_named(self):
         mapping = importer.auto_map_columns(["Analyte Name", "Result"])
@@ -644,15 +648,18 @@ class TestEntryPoints:
 
 
 class TestNoComplianceVerdict:
-    """The importer reads MCL and DLR columns from the file and stores neither.
+    """The importer stores the file's MCL and DLR as reported, beside the
+    finding and apart from it (ISS-140, ruled "beside" 2026-09-22 07:31 PDT).
     Nothing it writes can be read as a compliance determination."""
 
-    def test_no_limit_value_is_stored_on_a_result(self, validated):
+    def test_the_limit_is_stored_only_as_what_the_file_carried(self, validated):
         importer.commit_rows(validated)
         nitrate = SampleResult.objects.get(
             analyte__name="Nitrate (as N)", event__sample_date="2026-03-10"
         )
-        # The file's MCL cell for this row was 10; nothing on the result carries it.
+        # The file's MCL cell for this row was 10: it lands in the as-reported
+        # field and in no field that describes the measurement.
+        assert nitrate.mcl_as_reported == Decimal("10")
         stored = [nitrate.result_value, nitrate.reporting_level, nitrate.counting_error]
         assert Decimal("10") not in [v for v in stored if v is not None]
 
@@ -1237,12 +1244,20 @@ class TestARepeatIsNotAlwaysARepeat:
             and getattr(node.func, "attr", None) == "create"
         )
         written = {kw.arg for kw in call.keywords} - {"event_id", "analyte_id"}
+        # 146-04 Task 5 (ISS-140, "beside"): the limits the file carried and
+        # where they came from are written but deliberately NOT compared, and
+        # say so by name in `_NOT_IDENTITY_FIELDS`. Every written field must
+        # be in exactly one of the two tuples, so a new field still has to
+        # choose, out loud.
+        identity = set(importer._IDENTITY_FIELDS)
+        exempt = set(importer._NOT_IDENTITY_FIELDS)
+        assert not identity & exempt, f"in both tuples: {sorted(identity & exempt)}"
 
-        assert written == set(importer._IDENTITY_FIELDS), (
+        assert written == identity | exempt, (
             "drinking/importer.py: SampleResult.objects.create() and "
-            "_IDENTITY_FIELDS disagree.\n"
-            f"  written but not compared: {sorted(written - set(importer._IDENTITY_FIELDS))}\n"
-            f"  compared but not written: {sorted(set(importer._IDENTITY_FIELDS) - written)}"
+            "_IDENTITY_FIELDS + _NOT_IDENTITY_FIELDS disagree.\n"
+            f"  written but in neither: {sorted(written - identity - exempt)}\n"
+            f"  named but not written: {sorted((identity | exempt) - written)}"
         )
 
 

@@ -1190,6 +1190,9 @@ def import_preview(request):
             "committable": committable,
             "unknown_ps_codes": _unknown_ps_code_routes(validated),
             "rows_json": json.dumps(rows),
+            # Carried to the commit so each result can say which file the
+            # limits it carries arrived in (ISS-140, "beside").
+            "source_file": uploaded.name,
         },
     )
 
@@ -1240,7 +1243,10 @@ def import_commit(request):
     columns = list(rows[0].keys())
     mapping = importer.auto_map_columns(columns)
     validated = importer.validate_rows(rows, mapping)
-    counts = importer.commit_rows(validated)
+    counts = importer.commit_rows(
+        validated,
+        source_file=(request.POST.get("source_file", "") or "").strip()[:255],
+    )
     # After the commit, so a file that lands nothing still records the agency
     # it names for the system its rows resolved to (146-04 Task 3).
     agency = importer.record_regulating_agency(rows, mapping, validated)

@@ -22,6 +22,7 @@
       <tr>
         <th>Analyte</th>
         <th>Result</th>
+        <th>Limit (file)</th>
         <th>Method</th>
         <th>Laboratory</th>
       </tr>
@@ -30,7 +31,7 @@
       {% for group in result_groups %}
       {% with point=group.event.sampling_point %}
       <tr class="row-group">
-        <td colspan="4">
+        <td colspan="5">
           Sampled {{ group.event.sample_date|date:"Y-m-d" }} at
           <a class="data-table-link" href="{% url 'drinking:sampling_point_detail' point.pk %}">{{ point.ps_code }}</a>{% if point.name %} — {{ point.name }}{% endif %}
           &middot; {{ group.total }} result{{ group.total|pluralize }}{% if group.shown != group.total %}, {{ group.shown }} on this page{% endif %}
@@ -45,6 +46,7 @@
           concentrations (total coliform is "% positive samples").
         {% endcomment %}
         <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
+        <td class="text-secondary text-sm tabular-nums">{% include "drinking/partials/_limit_as_reported.html" with result=result %}</td>
         <td class="text-secondary text-sm">{{ result.method|blank }}</td>
         <td class="text-secondary text-sm">{{ result.lab_name|blank }}</td>
       </tr>

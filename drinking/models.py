@@ -19,7 +19,9 @@ regulator publishes them so imports and exports need no translation table.
 
 **Prepare, never determine.** Nothing in this module calculates compliance.
 ``RegulatoryLimit`` records what the limit *is* and when it applied; comparing a
-result against it is a later, rule-by-rule job.
+result against it is a later, rule-by-rule job. ``SampleResult`` also keeps the
+MCL and DLR the laboratory's file carried on its row (ISS-140, ruled "beside"
+2026-09-22), stored as reported and never compared with the finding.
 
 The quality↔quantity join is ``SystemFacility.well`` → ``wells.Well``. A supply
 well is ONE physical feature: the extraction ledger lives on the wells side, the
@@ -555,6 +557,31 @@ class SampleResult(models.Model):
     lab_name = models.CharField(max_length=200, blank=True)
     lab_cert_no = models.CharField(
         max_length=20, blank=True, help_text="ELAP certification number."
+    )
+    # ISS-140, ruled "beside" by Brent 2026-09-22 07:31 PDT (146-04 Task 1):
+    # the limits the laboratory's file carried on this row, stored exactly as
+    # reported and shown BESIDE the finding. Never compared with it, never
+    # coloured by it, never a verdict. They are provenance, not part of what
+    # the lab measured, so they are not in the importer's duplicate identity
+    # (`drinking/importer.py::_NOT_IDENTITY_FIELDS`). `RegulatoryLimit` is a
+    # different thing (the versioned federal table) and is still shown nowhere.
+    mcl_as_reported = models.DecimalField(
+        max_digits=16, decimal_places=6, null=True, blank=True,
+        help_text="The MCL column of the laboratory's file for this row, as "
+        "reported, in the row's own units.",
+    )
+    dlr_as_reported = models.DecimalField(
+        max_digits=16, decimal_places=6, null=True, blank=True,
+        help_text="The DLR column of the laboratory's file for this row, as "
+        "reported, in the row's own units.",
+    )
+    limits_source_file = models.CharField(
+        max_length=255, blank=True,
+        help_text="The file the two limits above arrived in.",
+    )
+    limits_file_date = models.DateField(
+        null=True, blank=True,
+        help_text="The date that file was imported.",
     )
 
     class Meta:

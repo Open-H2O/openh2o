@@ -76,6 +76,8 @@ Two fields make the data trustworthy enough to certify and to publish:
 
 **Source of truth:** `measurements/models.py` (`QUALITY_CHOICES`), `wells/models.py` (vertical datum).
 
+**Drinking-water lab limits, as reported.** A lab result imported in the state's SDWIS layout keeps the `MCL` and `DLR` its row carried (`SampleResult.mcl_as_reported`, `dlr_as_reported`, in the row's own units), with the file's name and the import date; the screens show the MCL beside the finding as what "the laboratory's file carried" and never compare the two (ISS-140, decided 2026-09-22).
+
 ---
 
 ## 4. The conformance gate

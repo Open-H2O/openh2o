@@ -193,6 +193,7 @@
           <tr>
             <th>Analyte</th>
             <th>Result</th>
+        <th>Limit (file)</th>
             <th>Method</th>
             <th>Laboratory</th>
           </tr>
@@ -200,7 +201,7 @@
         <tbody>
           {% for group in result_groups %}
           <tr class="row-group">
-            <td colspan="4">
+            <td colspan="5">
               Sampled {{ group.event.sample_date|date:"Y-m-d" }}
               &middot; {{ group.total }} result{{ group.total|pluralize }}{% if group.shown != group.total %}, {{ group.shown }} shown{% endif %}
             </td>
@@ -209,6 +210,7 @@
           <tr>
             <td><a href="{% url 'drinking:result_detail' result.pk %}" class="data-table-link">{{ result.analyte.name }}</a></td>
             <td class="tabular-nums">{% include "drinking/partials/_result_value.html" with result=result %}</td>
+        <td class="text-secondary text-sm tabular-nums">{% include "drinking/partials/_limit_as_reported.html" with result=result %}</td>
             <td class="text-secondary text-sm">{{ result.method|blank }}</td>
             <td class="text-secondary text-sm">{{ result.lab_name|blank }}</td>
           </tr>

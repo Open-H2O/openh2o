@@ -1,0 +1,7 @@
+{% load drinking_display %}{% comment %}
+  One cell: the MCL the laboratory's file carried on this row, as reported
+  (ISS-140, ruled "beside" 2026-09-22 07:31 PDT). The same markup whichever
+  side of it the finding falls; nothing here compares the two. A row with no
+  limits_file_date was imported before the file's limits were kept, so its
+  blank is "Not recorded", never a claim that the file carried none.
+{% endcomment %}{% if result.mcl_as_reported is not None %}{{ result.mcl_as_reported|plain_decimal }} {{ result.unit }}{% elif result.limits_file_date %}<span class="value-empty">None in the file</span>{% else %}<span class="value-empty">Not recorded</span>{% endif %}

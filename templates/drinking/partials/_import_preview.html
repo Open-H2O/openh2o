@@ -207,6 +207,7 @@
     hx-indicator="#commit-spinner">
     {% csrf_token %}
     <input type="hidden" name="rows_json" value="{{ rows_json }}">
+    <input type="hidden" name="source_file" value="{{ source_file }}">
     <div class="row-start" style="gap: var(--space-sm);">
       <button type="submit" class="btn-primary" {% if not committable %}disabled{% endif %}>
         Commit {{ committable }} result{{ committable|pluralize }}

@@ -10,10 +10,14 @@
   found, how it was analysed, and which sample it came from.
 
   **No RegulatoryLimit appears on this page.** The platform prepares
-  submissions; it does not determine compliance. On a one-record page a limit
-  printed beside a value is a verdict in everything but the wording, and
-  tests/test_drinking_detail_views.py asserts its absence with a limit present in
-  the database so the assertion is real rather than vacuous.
+  submissions; it does not determine compliance. tests/test_drinking_detail_views.py
+  asserts the federal table's value is absent with a limit present in the
+  database, so the assertion is real rather than vacuous.
+
+  **The limit the laboratory's FILE carried does appear, beside the finding**
+  (ISS-140, ruled "beside" by Brent 2026-09-22 07:31 PDT). It is the state
+  export's own MCL cell for this row, stored as reported. Nothing on the page
+  compares it with the finding, colours by it or names a verdict.
 
   {% comment %}, never {# #}: the hash form comments only to the end of its
   LINE, so a multi-line note written that way leaks into the page.
@@ -162,6 +166,29 @@
               {% else %}
               <div class="budget-seg-value text-tertiary">&mdash;</div>
               <div class="budget-seg-caption">not given in the lab file</div>
+              {% endif %}
+            </div>
+            <div class="budget-op"></div>
+            {% comment %}
+              ISS-140, ruled "beside" by Brent 2026-09-22 07:31 PDT (146-04
+              Task 1): the MCL the laboratory's file carried on this row, as
+              reported, beside the finding. Deliberately the SAME markup
+              whichever side of it the finding falls: no class, colour or word
+              changes with the comparison, because this page makes none
+              (tests/test_limits_as_reported.py compares the two DOMs).
+            {% endcomment %}
+            <div class="budget-seg">
+              <div class="budget-seg-label">Limit (file)</div>
+              {% if result.mcl_as_reported is not None %}
+              <div class="budget-seg-value">{{ result.mcl_as_reported|plain_decimal }}<span class="budget-seg-unit">{{ result.unit }}</span></div>
+              <div class="budget-seg-caption">the <abbr title="maximum contaminant level">MCL</abbr> the laboratory's file carried{% if result.dlr_as_reported is not None %}; <abbr title="detection limit for purposes of reporting">DLR</abbr> {{ result.dlr_as_reported|plain_decimal }}{% endif %}</div>
+              {% else %}
+              <div class="budget-seg-value text-tertiary">&mdash;</div>
+              {% if result.limits_file_date %}
+              <div class="budget-seg-caption">no limit in the file{% if result.dlr_as_reported is not None %}; <abbr title="detection limit for purposes of reporting">DLR</abbr> {{ result.dlr_as_reported|plain_decimal }}{% endif %}</div>
+              {% else %}
+              <div class="budget-seg-caption">not recorded: imported before the file's limits were kept</div>
+              {% endif %}
               {% endif %}
             </div>
             <div class="budget-op"></div>

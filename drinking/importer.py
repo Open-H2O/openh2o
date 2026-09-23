@@ -64,9 +64,17 @@ Name``, which is DDW's vocabulary rather than ours — and the preview says so.
 name is the workhorse match and a code arriving in a file is *learned*.
 
 **Prepare, never determine.** The DDW layout carries ``MCL`` and ``DLR``
-columns. This importer deliberately reads neither: a limit stored on the result
-row beside the value is one template change away from a compliance verdict, and
-``RegulatoryLimit`` is the versioned home for what a limit was on a given date.
+columns. Until 2026-09-22 this importer read neither, on the argument that a
+limit stored beside the value is one template change away from a compliance
+verdict. Brent ruled ISS-140 **beside** at 07:31 PDT that day (146-04 Task 1):
+the two columns are now stored on the result exactly as the file carried them
+(``mcl_as_reported``, ``dlr_as_reported``), with the file's name and the import
+date, and shown beside the finding as what "the laboratory's file carried".
+What is still NOT done, and must not be: nothing compares a finding with
+either number, nothing colours a row by it, no screen says a verdict word, and
+``RegulatoryLimit`` (the versioned federal table) is still rendered nowhere.
+The two limits are provenance rather than measurement, so they sit outside the
+duplicate identity (``_NOT_IDENTITY_FIELDS``).
 """
 
 import csv
@@ -75,6 +83,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
+from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_time
 
 from drinking.models import (
@@ -290,6 +299,9 @@ ALIASES = {
     # Not a result field: read once per FILE by `record_regulating_agency`
     # after the commit, never per row (146-04 Task 3).
     "regulating_agency": {"regulating agency"},
+    # ISS-140, ruled "beside" 2026-09-22: stored as reported, never compared.
+    "mcl_as_reported": {"mcl"},
+    "dlr_as_reported": {"dlr"},
 }
 
 # Human-readable labels for the preview's "columns we recognised" summary.
@@ -312,6 +324,8 @@ FIELD_LABELS = {
     "method": "Method",
     "collector": "Collector",
     "regulating_agency": "Regulating agency",
+    "mcl_as_reported": "MCL (stored as reported)",
+    "dlr_as_reported": "DLR (stored as reported)",
 }
 
 # Without these four a row cannot become a result at all.
@@ -566,6 +580,20 @@ _IDENTITY_FIELDS = (
     "lab_cert_no",
 )
 
+#: Fields ``commit_rows`` writes that are deliberately NOT part of a result's
+#: identity. The limits the laboratory's file carried (ISS-140, ruled "beside"
+#: 2026-09-22) and where and when they arrived describe the file, not the
+#: measurement: a re-import of the same results on another day, under another
+#: file name, is the same measurement and must be skipped, not doubled.
+#: ``tests/test_drinking_import.py`` pins that every written field is in
+#: exactly one of the two tuples.
+_NOT_IDENTITY_FIELDS = (
+    "mcl_as_reported",
+    "dlr_as_reported",
+    "limits_source_file",
+    "limits_file_date",
+)
+
 #: The identity fields that are free text, and so need normalizing before
 #: comparison. A trailing space is not a second analysis.
 _IDENTITY_TEXT_FIELDS = frozenset({"unit", "method", "lab_name", "lab_cert_no"})
@@ -755,6 +783,19 @@ def validate_rows(rows, mapping):
         data["lab_cert_no"] = src("lab_cert_no")
         data["counting_error"] = _decimal_or_none(src("counting_error"))
 
+        # --- the limits the file carried (ISS-140, "beside") -----------------
+        # Stored as reported and nothing more. An unreadable cell is a
+        # warning, never an error: the finding is still the finding, and a
+        # limit this importer cannot read is simply not stored.
+        for field, label in (("mcl_as_reported", "MCL"), ("dlr_as_reported", "DLR")):
+            raw_limit = src(field)
+            value = _decimal_or_none(raw_limit)
+            if raw_limit and value is None:
+                warnings.append(
+                    f"{label} '{raw_limit}' was not readable; not stored."
+                )
+            data[field] = value
+
         raw_analysis = src("analysis_date")
         analysis_date = _parse_lab_date(raw_analysis) if raw_analysis else None
         if raw_analysis and analysis_date is None:
@@ -818,10 +859,13 @@ def validate_rows(rows, mapping):
 # ---------------------------------------------------------------------------
 
 
-def commit_rows(valid_results):
+def commit_rows(valid_results, source_file="", imported_on=None):
     """Create events + results from the coerced `data` of error-free rows.
 
     Returns {"events", "results", "analytes", "duplicates", "skipped"}.
+
+    ``source_file`` and ``imported_on`` (default: today) are written to every
+    result created, as the file its limits (or its lack of them) came from.
 
     Wrapped in a single transaction: a lab file lands whole or not at all. Rows
     carrying errors, and rows flagged as duplicates, are skipped.
@@ -841,6 +885,9 @@ def commit_rows(valid_results):
         ),
         "skipped": sum(1 for r in valid_results if r["errors"]),
     }
+
+    if imported_on is None:
+        imported_on = timezone.localdate()
 
     # Caches so a 5000-row file does not re-query per row.
     analyte_cache = {}
@@ -901,6 +948,7 @@ def commit_rows(valid_results):
             # --- the result --------------------------------------------------
             # Per-row savepoint: one row that trips a CheckConstraint is rolled
             # back and reported, not allowed to poison the whole file.
+            limits = _limits_as_reported(data, source_file, imported_on)
             try:
                 with transaction.atomic():
                     SampleResult.objects.create(
@@ -917,6 +965,10 @@ def commit_rows(valid_results):
                         method=data["method"],
                         lab_name=data["lab_name"],
                         lab_cert_no=data["lab_cert_no"],
+                        mcl_as_reported=limits["mcl_as_reported"],
+                        dlr_as_reported=limits["dlr_as_reported"],
+                        limits_source_file=limits["limits_source_file"],
+                        limits_file_date=limits["limits_file_date"],
                     )
                 counts["results"] += 1
             except Exception:
@@ -924,6 +976,23 @@ def commit_rows(valid_results):
                 counts["skipped"] += 1
 
     return counts
+
+
+def _limits_as_reported(data, source_file, imported_on):
+    """The four ``_NOT_IDENTITY_FIELDS`` for one row, as ``create()`` kwargs.
+
+    The file and date are written on EVERY row this importer creates, limit
+    or none, because they are what tell two blank limits apart: a row with a
+    date and no MCL is one whose file carried none; a row with no date was
+    imported before the file's limits were kept at all, and the screens say
+    "not recorded" for it rather than claiming the file was silent.
+    """
+    return {
+        "mcl_as_reported": data.get("mcl_as_reported"),
+        "dlr_as_reported": data.get("dlr_as_reported"),
+        "limits_source_file": (source_file or "")[:255],
+        "limits_file_date": imported_on,
+    }
 
 
 # ---------------------------------------------------------------------------

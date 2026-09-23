@@ -12,10 +12,14 @@ and ``tests/test_drinking_views.py`` pinned it at the list templates; this file
 re-pins the same rule at the result detail page and at the sampling point's
 embedded table. "Absent" must read as *Absent*, not 0 and not "< RL".
 
-**No verdicts.** No page here may compare a result against a ``RegulatoryLimit``
-or render one beside a value. The fixture creates a limit that would be exceeded
-precisely so the assertion is real rather than vacuous — a one-record page is
-where a limit beside a value looks most natural and is most wrong.
+**No verdicts.** No page here may compare a result against a limit, or render a
+``RegulatoryLimit`` beside a value. The fixture creates a federal limit that
+would be exceeded precisely so the assertion is real rather than vacuous. Since
+ISS-140 was ruled "beside" (Brent, 2026-09-22 07:31 PDT, 146-04 Task 1) the
+limit the laboratory's FILE carried on a row IS shown beside the finding, as
+reported and uncompared; ``tests/test_limits_as_reported.py`` holds that side,
+including the proof that a finding above the file's limit renders with the
+same markup as one below it.
 
 **The well link is module-guarded.** ``drinking.requires`` is ``("standards",)``,
 so every one of these pages must render on a deployment carrying no ``wells``
@@ -326,12 +330,29 @@ class TestNoComplianceVerdict:
             assert verdict not in html, f"{page} detail renders a verdict: {verdict!r}"
 
     @pytest.mark.parametrize("page", ["result", "point"])
-    def test_no_detail_page_renders_the_limit_itself(
+    def test_the_files_limit_is_shown_and_the_federal_tables_is_not(
         self, client_in, sampled_system, page
     ):
-        """Showing the limit beside the value is the verdict, whatever the wording."""
-        url = _urls(sampled_system)[page]
-        html = client_in.get(url).content.decode()
+        """Rewritten for the ISS-140 ruling, "beside" (2026-09-22 07:31 PDT).
+
+        Before the ruling this test asserted that no limit rendered at all.
+        Now the limit the laboratory's file carried is shown beside the
+        finding, named as the file's, while the federal ``RegulatoryLimit``
+        (1 mg/L here, below the 3.2 finding) still renders nowhere.
+        """
+        numeric = sampled_system["numeric"]
+        numeric.mcl_as_reported = Decimal("10")
+        numeric.limits_source_file = "lab.tab"
+        numeric.limits_file_date = date(2024, 6, 10)
+        numeric.save()
+
+        html = client_in.get(_urls(sampled_system)[page]).content.decode()
+        assert "Limit (file)" in html
+        if page == "result":
+            assert "the laboratory&#x27;s file carried" in html or (
+                "the laboratory's file carried" in html
+            )
+        assert "10 mg/L" in html or ">10<" in html
         assert "Maximum Contaminant Level" not in html
         assert "1.000000" not in html
         assert "Regulatory limit" not in html
