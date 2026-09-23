@@ -591,8 +591,11 @@ class TestDemonstrationFramingScreens:
         # sat under it on this screen is gone. Exports keep DEMO_BANNER.
         assert 'class="card-raised demo-notice"' in body
         assert DEMO_BANNER not in body
-        # The existing "who files" gold-box disclaimer must remain intact.
-        assert "OpenH2O prepares your filing." in body
+        # The box says there is no filing path (CLAUDE.md, Brent 2026-08-05). This line
+        # used to assert "OpenH2O prepares your filing." was present, which is why that
+        # overclaim survived every earlier removal (ISS-209, 2026-09-23).
+        assert "OpenH2O does not file this." in body
+        assert "prepares your filing" not in body
 
     def test_detail_screen_hides_banner_when_demo_mode_off(self):
         SiteConfig.objects.create(agency_name="Real GSA", demonstration_mode=False)
@@ -602,7 +605,8 @@ class TestDemonstrationFramingScreens:
         assert resp.status_code == 200
         body = resp.content.decode()
         assert DEMO_BANNER not in body
-        assert "OpenH2O prepares your filing." in body
+        assert "OpenH2O does not file this." in body
+        assert "prepares your filing" not in body
 
 
 # ---------------------------------------------------------------------------
