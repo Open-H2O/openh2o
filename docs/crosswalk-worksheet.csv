@@ -1,0 +1,13 @@
+operator_file,record_kind,key,unit,period_convention,product_door,mechanical_crosswalks_that_apply
+EXAMPLE: the district's ditch tender's book,diversion volume,headgate name and date,cfs or miner's inches times hours,daily,/surface/diversion/import/ (the book layout),"M1, M2, M7"
+,water right,,,,,
+,point of diversion,,,,,
+,diversion volume,,,,,
+,place of use / parcel,,,,,
+,measuring device,,,,,
+,water system,,,,,
+,source facility,,,,,
+,production by month and source,,,,,
+,laboratory result,,,,,
+,sampling point,,,,,
+,sampling schedule,,,,,

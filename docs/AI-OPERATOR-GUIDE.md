@@ -4,7 +4,7 @@
 
 **Read this if you are an AI agent (or the person driving one) tasked with standing up OpenH2O for a water agency.**
 
-OpenH2O is designed so that a capable coding agent — Claude Code, or similar — can take a bare Linux server and a domain name and deliver a running, secured, data-populated water-data management platform, then help the agency's staff see and manage their own data. [DEPLOY.md](../DEPLOY.md) is the exact command reference; **this guide is the decision-making layer on top of it** — what to ask, what to choose, and what order to do it in.
+OpenH2O is designed so that a capable coding agent (Claude Code, or similar) can take a bare Linux server and a domain name and deliver a running, secured, data-populated water-data management platform, then help the agency's staff see and manage their own data. [DEPLOY.md](../DEPLOY.md) is the exact command reference; **this guide is the decision-making layer on top of it**: what to ask, what to choose, and what order to do it in.
 
 Work through the five phases in order. Stop at each ✋ checkpoint and confirm with the human before proceeding.
 
@@ -16,7 +16,7 @@ Work through the five phases in order. Stop at each ✋ checkpoint and confirm w
 meant to run the same way on an office computer, on a $15/month rented server,
 and on a government data centre. None of those is a lesser deployment, and this
 guide must never refuse one of them. What changes between them is **who can
-reach the instance**, and that — not the price of the hardware — is what
+reach the instance**, and that, not the price of the hardware, is what
 decides the security settings in Phase 2.
 
 Ask the agency staffer for these.
@@ -32,33 +32,33 @@ Ask the agency staffer for these.
    a rented virtual server, or agency-managed infrastructure. 2–4 GB of memory
    is plenty. **Check Docker works before anything else: `docker run
    hello-world`.** If that fails mentioning "cgroup" or "bpf", the machine's own
-   host is blocking those boxes and no setting inside it will fix that — ask
+   host is blocking those boxes and no setting inside it will fix that: ask
    whoever provisioned it, or take the documented path that needs no Docker at
    all, [INSTALL-WITHOUT-DOCKER.md](INSTALL-WITHOUT-DOCKER.md). That path is
    equally the right answer when the agency would simply rather not install
    Docker on their machine.
 2. **How the agency needs to reach it.** Ask directly, and write the answer
    down; every later choice follows from it:
-   - *Only from this one computer* <!-- defines: localhost --> — no domain needed. Bind the service to
-     loopback — `127.0.0.1`, which along with the word `localhost` means "this
-     same computer" and nothing anyone else could type — so nothing else on
+   - *Only from this one computer* <!-- defines: localhost -->: no domain needed. Bind the service to
+     loopback, `127.0.0.1`, which along with the word `localhost` means "this
+     same computer" and nothing anyone else could type, so nothing else on
      their network can reach it.
-   - *From other computers in their office* — no domain needed, but the
+   - *From other computers in their office*: no domain needed, but the
      instance is now exposed to their local network. Say so out loud.
-   - *From outside — a board member, a consultant, the public* <!-- defines: tls_https --><!-- defines: dns --> — **this is the
+   - *From outside (a board member, a consultant, the public)* <!-- defines: tls_https --><!-- defines: dns -->: **this is the
      only case that needs a domain name and HTTPS.** *HTTPS* is the
      padlock-icon, encrypted version of a web address; the padlock rests on a
      *certificate*, a file proving the address really is itself. They will need
-     a domain or subdomain they control, pointed at this machine through *DNS* —
+     a domain or subdomain they control, pointed at this machine through *DNS*,
      the internet's phone book, which turns a web address into the numeric
      address of one specific computer. Pointing a domain at a machine means
      editing one entry in that phone book, called an *A record*, wherever the
      domain was bought.
-3. *(Optional, can be added later)* <!-- defines: api_key --><!-- defines: smtp --> API keys for OpenET, CIMIS, and NOAA, and SMTP credentials for password-reset email. An *API key* is a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers — treat it as a secret, exactly like a password. *SMTP* is the agreed method for handing an outgoing email to a mail provider, so the site can send "you forgot your password" messages instead of pretending to be its own mail server; the credentials are the login for that provider. The platform runs fine without any of them; those features simply stay dark until provided.
+3. *(Optional, can be added later)* <!-- defines: api_key --><!-- defines: smtp --> API keys for OpenET, CIMIS, and NOAA, and SMTP credentials for password-reset email. An *API key* is a long password-like string that lets this program, rather than a person, fetch data automatically from another organisation's computers; treat it as a secret, exactly like a password. *SMTP* is the agreed method for handing an outgoing email to a mail provider, so the site can send "you forgot your password" messages instead of pretending to be its own mail server; the credentials are the login for that provider. The platform runs fine without any of them; those features simply stay dark until provided.
 
 If the agency wants public reach and has no server or domain yet, help them get
 a virtual server from any provider and register a domain. **If they do not want
-public reach, do not talk them into it** — a single-computer or office-network
+public reach, do not talk them into it**: a single-computer or office-network
 deployment is a supported way to run this platform, not a trial version of a
 real one.
 
@@ -85,7 +85,7 @@ about an hour**, and the one that also priced out a large parcel import put its
 whole session at about an hour and three quarters. Read that as a range and
 nothing more: they ran on different hardware, took different routes (one
 installed without Docker at all), and one spent most of its clock waiting on a
-slow government data service. Do not average them or subtract one from another —
+slow government data service. Do not average them or subtract one from another:
 they did not measure the same job.
 
 Loading the agency's *own* records afterwards is a separate, open-ended task.
@@ -93,7 +93,7 @@ How long that takes depends entirely on what shape the agency's existing files
 are in, and no honest estimate exists in advance.
 
 Several steps take minutes and print a great deal of unfamiliar-looking output
-while they work. **That is the step working, not failing** — as long as it
+while they work. **That is the step working, not failing**, as long as it
 finishes and says so. The ones that legitimately run long:
 
 - **The first build of the program.** A few minutes, once.
@@ -113,7 +113,7 @@ finishes and says so. The ones that legitimately run long:
 
 ---
 
-## Phase 1 — Stand up the platform
+## Phase 1: Stand up the platform
 
 Follow [DEPLOY.md](../DEPLOY.md) sections 1–6. In short:
 
@@ -121,7 +121,7 @@ Follow [DEPLOY.md](../DEPLOY.md) sections 1–6. In short:
 git clone https://github.com/Open-H2O/openh2o.git
 cd openh2o
 cp .env.example .env
-# edit .env — at minimum set SECRET_KEY and DJANGO_SETTINGS_MODULE=config.settings.production
+# edit .env: at minimum set SECRET_KEY and DJANGO_SETTINGS_MODULE=config.settings.production
 docker compose up -d --build
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py seed_data   # reference tables (idempotent)
@@ -137,8 +137,8 @@ stops and rebuilds all three boxes together from a single instruction file
 compose …` line in this guide is that tool.
 
 <!-- defines: reverse_proxy -->
-**Caddy** is a *reverse proxy* — a middleman program that receives the traffic
-arriving from outside and relays it inward to the real program — and it is also
+**Caddy** is a *reverse proxy* (a middleman program that receives the traffic
+arriving from outside and relays it inward to the real program), and it is also
 what obtains the encryption certificate, by itself, with almost no
 configuration. An agency that already runs a proxy of their own ends up with two
 in a row: theirs, outside your control, in front of this machine, and Caddy
@@ -150,25 +150,25 @@ tables inside its database to match what this version of the software expects.
 Routine and expected after every install and every update; skip it and you are
 left with an empty, unusable database.
 
-✋ **Checkpoint:** `docker compose ps` shows `db` and `web` as `Up (healthy)`, `caddy` as `Up`, and the site responds. Don't move on until it does. Caddy's image defines no health check of its own, so a plain `Up` is the right and only reading for that row — do not wait for it to say healthy.
+✋ **Checkpoint:** `docker compose ps` shows `db` and `web` as `Up (healthy)`, `caddy` as `Up`, and the site responds. Don't move on until it does. Caddy's image defines no health check of its own, so a plain `Up` is the right and only reading for that row: do not wait for it to say healthy.
 
 ---
 
-## Phase 2 — Secure it (do this before anyone logs in)
+## Phase 2: Secure it (do this before anyone logs in)
 
 <!-- defines: allowed_hosts -->
-This is the phase an AI must not skip. The platform's production settings **refuse to boot** on an empty database password, or on any of four well-known defaults including the development one, or with an empty `ALLOWED_HOSTS` — that guard is your friend; let it enforce the basics. (It checks that short list of known-bad passwords, not password strength, so it is a floor and not a substitute for choosing a real one.) `ALLOWED_HOSTS` and its companion `CSRF_TRUSTED_ORIGINS` are two safety lists in the program's settings: the program refuses to answer unless the web address in the request matches one of them, which stops a stranger tricking it into behaving as a different website. They have to carry the agency's real address exactly, or the site turns every visitor away.
+This is the phase an AI must not skip. The platform's production settings **refuse to boot** on an empty database password, or on any of four well-known defaults including the development one, or with an empty `ALLOWED_HOSTS`: that guard is your friend; let it enforce the basics. (It checks that short list of known-bad passwords, not password strength, so it is a floor and not a substitute for choosing a real one.) `ALLOWED_HOSTS` and its companion `CSRF_TRUSTED_ORIGINS` are two safety lists in the program's settings: the program refuses to answer unless the web address in the request matches one of them, which stops a stranger tricking it into behaving as a different website. They have to carry the agency's real address exactly, or the site turns every visitor away.
 
 **Always use `config.settings.production`, wherever this is running.** The
 development settings module (`config.settings.local`) turns `DEBUG` on, which
-prints the site's internals — stack traces, settings, SQL — to whoever is looking
+prints the site's internals (stack traces, settings, SQL) to whoever is looking
 at a broken page, and it falls back to an `ALLOWED_HOSTS` of `*` if you have set
 none. It is for working on the code, not for an agency's data. Django's
 own `manage.py check --deploy` will tell you so; do not wave that away.
 
 <!-- defines: env_file -->
 1. **Strong database password.** Set `POSTGRES_PASSWORD` in `.env` to a long random value. The dev default (`openh2o`) is rejected in production by design. (The `.env` file is a plain text file of NAME=value lines holding this deployment's settings and passwords. It is the one file that makes this installation *this agency's* rather than a generic copy, and it is deliberately kept out of the published copy of the program precisely because it holds secrets.)
-2. **`ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`** — set from the answer you wrote down in "What you need before you start":
+2. **`ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`**: set from the answer you wrote down in "What you need before you start":
 
    | How they reach it | `ALLOWED_HOSTS` | `CSRF_TRUSTED_ORIGINS` |
    |---|---|---|
@@ -176,21 +176,21 @@ own `manage.py check --deploy` will tell you so; do not wave that away.
    | Their office network | the machine's LAN address, e.g. `192.168.1.40` | leave empty |
    | From outside | the agency's domain | `https://theirdomain` |
 
-3. **Encryption in transit — and the setting that bites if you skip this.**
+3. **Encryption in transit, and the setting that bites if you skip this.**
    Production settings assume HTTPS: `SECURE_SSL_REDIRECT`,
    `SESSION_COOKIE_SECURE` and `CSRF_COOKIE_SECURE` all default **on**. A
    browser never sends a `Secure` cookie over plain `http://`, so on a
    deployment without HTTPS **every login returns 403 while unauthenticated
-   pages render perfectly** — which makes it look like the site works right up
+   pages render perfectly**, which makes it look like the site works right up
    until someone tries to log in.
 
    | How they reach it | What to do |
    |---|---|
-   | **From outside (public internet)** | Point DNS at the machine, then pick one of two shapes: either this server obtains its own certificate, which means editing the `Caddyfile` to name the domain, or something in front of it — a tunnel, the agency's proxy, a load balancer — already handles the encryption and the `Caddyfile` stays as shipped. **DEPLOY.md §4 has both, and you must read it: pointing DNS alone does not produce a certificate, because the shipped file names no domain.** Never turn the three settings below off on a publicly reachable instance. |
-   | **Only this computer, or their office network** | There is no certificate to get and no HTTPS to redirect to. Set all three `False` in `.env` — this is a supported, documented posture, not a workaround: <br>`SECURE_SSL_REDIRECT=False`<br>`SESSION_COOKIE_SECURE=False`<br>`CSRF_COOKIE_SECURE=False` |
+   | **From outside (public internet)** | Point DNS at the machine, then pick one of two shapes: either this server obtains its own certificate, which means editing the `Caddyfile` to name the domain, or something in front of it (a tunnel, the agency's proxy, a load balancer) already handles the encryption and the `Caddyfile` stays as shipped. **DEPLOY.md §4 has both, and you must read it: pointing DNS alone does not produce a certificate, because the shipped file names no domain.** Never turn the three settings below off on a publicly reachable instance. |
+   | **Only this computer, or their office network** | There is no certificate to get and no HTTPS to redirect to. Set all three `False` in `.env`: this is a supported, documented posture, not a workaround: <br>`SECURE_SSL_REDIRECT=False`<br>`SESSION_COOKIE_SECURE=False`<br>`CSRF_COOKIE_SECURE=False` |
 
    Either way you keep `DEBUG=False`, a real `ALLOWED_HOSTS`, a strong database
-   password and the closed-signup default — which is the whole point: the
+   password and the closed-signup default, which is the whole point: the
    security posture follows from **who can reach the instance**, not from where
    it happens to be running.
 
@@ -199,18 +199,18 @@ own `manage.py check --deploy` will tell you so; do not wave that away.
    plain, unencrypted web door, the one a browser uses when nobody types a
    number at all, and port 443 is the encrypted one. If the answer was *"only
    this computer,"* bind the published port to loopback so nothing else on their
-   network can connect — in `docker-compose.yml`, publish `127.0.0.1:80:80`
+   network can connect: in `docker-compose.yml`, publish `127.0.0.1:80:80`
    rather than `80:80`. Confirm it: from another machine, the address should
    refuse the connection.
-5. **Create the admin user** <!-- defines: superuser --> — in this software a *superuser*, the one account
+5. **Create the admin user** <!-- defines: superuser -->: in this software a *superuser*, the one account
    that can do anything: add other staff accounts, change settings, see
    everything. It is separate from and unrelated to any login for the computer
    itself, and it has to be created by hand before anyone can sign in at all;
    there is no "first visitor becomes the administrator" magic. Either `docker compose exec web python manage.py createsuperuser`, or set `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` in `.env` and let `ensure_superuser` create it on startup.
 
-✋ **Checkpoint:** the site loads at the address the agency will actually use —
+✋ **Checkpoint:** the site loads at the address the agency will actually use,
 `https://theirdomain` for a public deployment, `http://localhost` for a
-single-computer one — and you can log in as the admin. Run
+single-computer one, and you can log in as the admin. Run
 `docker compose exec web python manage.py check --deploy` and read what it says:
 on a non-public deployment the HTTPS warnings are expected and the reason is
 above, but **any warning about `DEBUG` means you are on the wrong settings
@@ -218,12 +218,12 @@ module.** Confirm the human has the admin password stored somewhere safe (a
 password manager).
 
 **Verify login works (no browser).** Don't test login with plain-HTTP `curl`
-wherever `CSRF_COOKIE_SECURE` is left on — which is its default and the right
+wherever `CSRF_COOKIE_SECURE` is left on, which is its default and the right
 setting for any instance reached over HTTPS. There the POST returns 403 whatever
 you send, and that is correct behaviour, not a bug: a cookie marked `Secure` is
 never sent back over `http://`, so the browser-safety check cannot pass. (On a
 single-computer instance, where step 3 above turns that setting off on purpose,
-a plain-HTTP login can succeed — so a passing `curl` there proves less than it
+a plain-HTTP login can succeed, so a passing `curl` there proves less than it
 looks.) Verify from inside the container instead, which works on every shape:
 
 ```bash
@@ -240,12 +240,12 @@ print(r.status_code)   # 302 = login works; 200 = form re-rendered (wrong creden
 
 ---
 
-## Phase 3 — Load data
+## Phase 3: Load data
 
 **Decide first: does the agency have their own data ready, or do they want to explore the demonstration first?**
 
 <!-- defines: seed_data -->
-Either way the first thing that happens is *seeding* — loading a starting set of
+Either way the first thing that happens is *seeding*: loading a starting set of
 data into an empty database. That covers two different things here: the small
 reference lists such as units and categories that every deployment needs, and a
 whole demonstration dataset, which exists so there is something to look at
@@ -256,17 +256,17 @@ before the agency's own records arrive.
 <!-- defines: geojson -->
 For a **real basin**, prefer the wizard over the command line. It is a guided
 first-run flow that does the whole load in one pass: pick or upload the agency's
-boundary as a *GeoJSON* file — a plain-text format for describing a shape drawn
+boundary as a *GeoJSON* file (a plain-text format for describing a shape drawn
 on a map, along with a few labelled facts about it such as a name and an area,
 and non-proprietary enough that a GIS contractor can hand over one file and
-expect any capable program to read it — confirm it on a map, run `auto_populate` step by step
+expect any capable program to read it), confirm it on a map, run `auto_populate` step by step
 with progress on screen, and then **enable the monitoring stations inside that
-boundary** — the step that is otherwise easy to miss, because discovery creates
+boundary**, the step that is otherwise easy to miss, because discovery creates
 every station switched off.
 
 **The wizard's first screen offers three ways in, and none of them blocks the rest of the product (ISS-178).** No GeoJSON file on hand: type the four corners of a rough bounding box (north, south, east and west, in decimal degrees) and the wizard builds a rectangle boundary from them the same way it would from an uploaded file. No boundary at all, yet: "Start without one" goes straight to the front page. Every other screen in the platform still works, and the operator can come back to `/setup/` any time.
 
-Find it in the left sidebar under **Administration → Setup Wizard** — that whole
+Find it in the left sidebar under **Administration → Setup Wizard**: that whole
 block is hidden until you switch the sidebar out of its everyday view, using the
 two-button toggle at the **bottom of the left sidebar** marked **Operations** and
 **Admin**; click **Admin**. Not having clicked it is the usual reason someone
@@ -274,57 +274,107 @@ cannot find the wizard. Or go straight to `https://theirdomain/setup/`. You have
 in either way: an anonymous visitor is sent to the login page whatever else is
 configured. So log in as the admin user from Phase 2 first.
 
-The command-line path below is the alternative for a **headless deployment** —
+The command-line path below is the alternative for a **headless deployment**:
 no browser, SSH only. It reaches the same end state; it just asks you to run each
-step yourself — `import_boundary` (Option B below) is the headless equivalent of
+step yourself. `import_boundary` (Option B below) is the headless equivalent of
 the wizard's own boundary upload, turning the agency's GeoJSON file into the
 same starting boundary the wizard would have made from it.
 
-### Option A — Demo data (always do this first)
+### Option A: Demo data (always do this first)
 ```bash
 docker compose exec web python manage.py seed_merced   # the Merced Subbasin demonstration
 ```
-This loads the Merced Subbasin demo — a real California basin, the same dataset running at openh2o.com — a fully populated example the agency can click through while you gather their real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed); for real satellite-ET numbers, add an OpenET key and run the ET sync (Phase 4). Each sub-step is *idempotent* <!-- defines: idempotent --> — running it five times ends up the same as running it once, because it notices what is already done and skips it rather than duplicating or breaking anything — which is why re-running one after an interruption is safe.
+This loads the Merced Subbasin demo, a real California basin, the same dataset running at openh2o.com: a fully populated example the agency can click through while you gather their real data. One step fetches hydrography and monitoring stations live from public APIs (a few minutes, no key needed); for real satellite-ET numbers, add an OpenET key and run the ET sync (Phase 4). Each sub-step is *idempotent* <!-- defines: idempotent -->: running it five times ends up the same as running it once, because it notices what is already done and skips it rather than duplicating or breaking anything, which is why re-running one after an interruption is safe.
 
-**Then load the bundled station catalog.** The seed finds the basin's monitoring stations by calling the agencies that publish them, and creates every one of them switched **off** — so a freshly seeded demonstration reports "0 of 0 stations reporting" until somebody turns them on. The demonstration's own list of stations ships with the platform — 335 of them, 42 switched on, and 50 of the 335 (all 42 of the active ones, plus 8 others) carrying the real date they last published a reading — and one command loads it:
+**Then load the bundled station catalog.** The seed finds the basin's monitoring stations by calling the agencies that publish them, and creates every one of them switched **off**, so a freshly seeded demonstration reports "0 of 0 stations reporting" until somebody turns them on. The demonstration's own list of stations ships with the platform (335 of them, 42 switched on, and 50 of the 335, all 42 of the active ones, plus 8 others, carrying the real date they last published a reading), and one command loads it:
 
 ```bash
 docker compose exec web python manage.py load_station_fixture   # the stations openh2o.com shows
 ```
 
-It calls nobody, so it works on a machine with no way out to the internet, and running it twice changes nothing. `seed_merced` deliberately leaves it to you: a real agency standing this up against its own basin wants its **own** stations found, not Merced's — which is what the curation step in Phase 4 is for.
+It calls nobody, so it works on a machine with no way out to the internet, and running it twice changes nothing. `seed_merced` deliberately leaves it to you: a real agency standing this up against its own basin wants its **own** stations found, not Merced's, which is what the curation step in Phase 4 is for.
 
-If you need to **rebuild** the demo later on this same server, add `--allow-prod-clobber`. The operations step regenerates parcel and well geometry, so on a production instance (`DEBUG=False`, which is what Phase 2 sets) it refuses a second run over demo rows that already exist unless you say so explicitly. ⚠ Under development settings that guard does not fire at all — a second run there rebuilds the geometry silently, hand-adjusted boundaries and all. The first run above needs no flag either way.
+If you need to **rebuild** the demo later on this same server, add `--allow-prod-clobber`. The operations step regenerates parcel and well geometry, so on a production instance (`DEBUG=False`, which is what Phase 2 sets) it refuses a second run over demo rows that already exist unless you say so explicitly. ⚠ Under development settings that guard does not fire at all: a second run there rebuilds the geometry silently, hand-adjusted boundaries and all. The first run above needs no flag either way.
 
-### Option B — Their real data
-Three import routes, in rough order of preference:
+### Look at the data first
+
+Read the agency's existing water data and practices before building anything. Do not assume a data architecture and hope the agency's files fit it: the platform is built from the user's own data. Two measurements stand behind that rule. One compared what a ditch company and a small water system actually keep against what this platform's doors accepted; the other stood up six fresh deployments and walked each one start to end through the screens to find where it broke. What follows is what those two measurements found, turned into a worksheet you fill before you touch a screen.
+
+**Fill the crosswalk worksheet first.** `docs/crosswalk-worksheet.csv` is a blank template, one row per file the agency hands you: its own name for the file, the record kind it holds, the column that is its natural key, the unit its numbers are in, the period convention it reports on (a water year, a calendar year, a season), the door this platform has for that record kind, and which of the mechanical crosswalks below apply to it. An example row is filled in at the top. Working through the worksheet before the first import turns "does this file just work" into a checklist instead of a surprise on commit.
+
+**The mechanical crosswalks, M1 to M13.** A rename, a conversion, a de-duplication or a date rule that the operator's file and the platform's field both fix in advance. Four are already built into an importer or the Setup Wizard; the rest are one line on the worksheet.
+
+| # | Crosswalk | Kind | Shape |
+|---|---|---|---|
+| M1 | Gallons to acre-feet (the state's own report screen carries the converter) | unit | 1 |
+| M2 | Report year to calendar month (water year since 2022; October to December belong to the prior calendar year) | period | 1 |
+| M3 | DIRECT and STORAGE to direct use and to storage | naming | 1 |
+| M4 | Application number to the right id; `APPL_POD` to a point of diversion name | identifier | 1 |
+| M5 | ISO dates in the LIST, m/d/yyyy in the other two files | period | 1 |
+| M6 | NAD83 latitude and longitude kept; State Plane feet and PLSS dropped, because the platform stores a point | identifier | 1 |
+| M7 | G, MG and CCF to acre-feet (748.05 gallons per CCF, 325,851 per acre-foot) | unit | 2 |
+| M8 | `PWSS_ID` to a PWSID (prefix CA, pad to seven digits); populated on 3 of 84,833 rows | identifier | 2 |
+| M9 | Duplicate eAR keys removed before any sum | period | 2 |
+| M10 | SDWIS facility type codes to the platform's facility type. Built, in the onboarding mapping. | naming | 2 |
+| M11 | Sample type codes RT, RP, SP, TG to routine, repeat, special, triggered, by the importer's own map of EPA's codes (only RT occurs in the shape 2 file). Built, in the importer. | naming | 2 |
+| M12 | PS Code composition for a California system. Built, in the wizard. | identifier | 2 |
+| M13 | The export's column names to the importer's 17 fields (MCL and DLR are read by nothing, on purpose). Built, in the importer's alias table. | naming | 2 |
+
+**The judgment crosswalks, J1 to J11.** These have no mechanical answer: the answer sits in the operator's contract, the operator's head, or nowhere, and a human has to be asked. Ask the question in the middle column; the field or setting on the right is where the answer lands, with the screen that holds it.
+
+| # | Ask the human | Field or setting | Door |
+|---|---|---|---|
+| J1 | Which miner's inch this district's contract means (the statute's 11.22 gallons a minute, or a contract's 10 or 9), what a head is here, whether a shutoff is imputed to the next pass | `contract_unit` and `miners_inch_gpm` on the point of diversion (the district's own value only; a head and an imputed shutoff have no field yet) | the point's own edit page, `/surface/diversion/<pk>/edit/` |
+| J2 | Which headgate is which point of diversion; the state keeps one point of diversion per right, the platform keeps many | `local_name` on the point of diversion | the same edit page, shown on the point's own page as "known locally as" |
+| J3 | Whether USE minus DIRECT is the returned volume, or is dropped | `diversion_use_type_rule` on the deployment | the diversion import screen's mapping step, shown only when the uploaded file carries USE rows, and remembered after the first import |
+| J4 | Which parcels, and the share when two rights serve one field | `fraction` on the point-to-parcel link | the point's own page, its linked-use-area share editor |
+| J5 | The device, its nickname, its calibration date and its accuracy band | the measuring device record, linked to the point | "Add device" on the point's own page |
+| J6 | Which year a season belongs to, set once per deployment | `diversion_report_year_rule` (with `season_start_month`) | Delivery Settings, "Diversion records" |
+| J7 | The unit, from the operator's memory, when the file's own unit column is blank | the production import screen's "unit for blank rows" choice | the production import screen's mapping step |
+| J8 | Which padded free-text name is which facility id | `local_name` on the water system facility | "Add facility" on the drinking module's facilities page |
+| J9 | Transcription, and the lab's own plus-and-minus convention | no field: type the paper result into the lab import's own rows by hand, keeping the lab's plus-and-minus reading | the lab import screen, `/drinking/import/` |
+| J10 | Which meter feeds which source; whether the year was reported in the January row | the production import file's own source column, one of six on the operator's monthly layout, or the type code on the state's eAR layout | the production import screen |
+| J11 | Whether the platform should hold a schedule at all | the sampling schedule | "Add" on the system's Sampling Schedule page |
+
+**The crosswalk layer, named as such, is five fields and settings, not a phase of its own**: the point of diversion's `local_name` and `contract_unit` (with `miners_inch_gpm`) on its own edit page; the water system facility's `local_name` on its own add-and-edit page; and the deployment's `diversion_use_type_rule` (on the diversion import screen) and `diversion_report_year_rule` (on Delivery Settings). Everything else on the worksheet is either already built, arithmetic the worksheet already names the factor for, or a question with no field yet, named as such in the table above.
+
+### Option B: Their real data
+
+The wizard's own three ways in, above, cover the boundary. Everything else the agency brings has a door of its own, a screen or a command:
 
 | If they have… | Use | Notes |
 |---|---|---|
-| Parcel boundaries as GeoJSON/Shapefile | `import_parcels` | Required foundation — everything hangs off parcels |
-| A well list as CSV | `import_wells` | Optional but valuable |
+| Parcel boundaries as GeoJSON/Shapefile | `import_parcels` | Required foundation, everything hangs off parcels |
+| A well list as CSV | the screen importer at `/infrastructure/import/?type=well`, or `import_wells` | Either door creates the same records; the screen walks a column-mapping step first |
+| Points of diversion as CSV, GeoJSON, KML or Shapefile | the same screen importer at `/infrastructure/import/?type=diversion` | Name, stream, rate and location |
+| A storage pond or tank, or a recharge site | the same screen importer, `?type=storage` or `?type=recharge_site` | An unrecognised or dropped type answers 404 naming the door that does exist, never a silent wrong importer |
+| A water rights list | `/surface/rights/import/` | |
+| A year of diversion volumes, the state's Water Use Reported file or a ditch tender's own book | `/surface/diversion/import/`, or `import_diversion_records` | Two layouts recognised by header; every conversion is named in the preview |
 | Historical ledger entries as CSV | `import_ledger_csv` | For bringing records over from a prior system |
-| Only a basin boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads the agency's own GeoJSON boundary file first — `auto_populate` only fills an *existing* boundary in, it cannot create one from a file — then `auto_populate` queries DWR and USGS to pull parcels, hydrography, and flowlines automatically |
+| A laboratory result file | `/drinking/import/` | The state's own export layout maps with no clicks |
+| A year of production by month and source | `/drinking/production/import/`, or `import_production` | Reads either the state's eAR export or the operator's own monthly log |
+| A small public water system, by its PWSID | `/drinking/onboard/` | Pulls the system from EPA Envirofacts; add its sampling points on the screen that follows |
+| Only a basin boundary | `import_boundary`, then `auto_populate` | `import_boundary` loads the agency's own GeoJSON boundary file first, `auto_populate` only fills an *existing* boundary in, it cannot create one from a file, then `auto_populate` queries DWR and USGS to pull parcels, hydrography and flowlines automatically |
 
-What still has to be entered by hand (no public source exists): **water rights**, **water accounts**, and **allocations**. They are not all in one place. Accounts and allocations each have a create form on the accounting pages. **Water rights have no create form in the app at all** — they are added through the Django admin at `/admin/`, which is worth knowing before you promise an agency a screen that does not exist.
+What still has to be entered by hand, because no public source or bulk file exists for it: **water accounts** and **allocations**, each with a create form on the accounting pages, and **a reading taken directly on a well or a monitoring station**, which has no screen of its own yet (ISS-188, a later milestone). Water rights, curtailment orders, measuring devices, facilities and sampling schedules used to sit on this same hand-entry list; each now has its own screen, named in the table above or in the crosswalk worksheet section before it.
 
-Before importing diversion records for a surface-water agency, ask how this deployment defines a reporting year (a water year, a calendar year, or a single irrigation season) and set it on the Delivery Settings page (**Diversion records**, `/accounting/delivery-settings/`, shown only when Surface is enabled). The full crosswalk from the state's file format is a later phase's work.
+Before importing diversion records for a surface-water agency, ask how this deployment defines a reporting year (a water year, a calendar year, or a single irrigation season) and set it on the Delivery Settings page (**Diversion records**, `/accounting/delivery-settings/`, shown only when Surface is enabled). The USE-type question, if the uploaded file needs it, is asked on the diversion import screen itself, not here.
 
 ✋ **Checkpoint:** confirm with the human which parcels are theirs and that the boundary looks right on the map before building accounts on top of it.
 
 ---
 
-## Phase 4 — Connect live data sources
+## Phase 4: Connect live data sources
 
-### Before you spend the agency's satellite-data allowance — stop and ask
+### Before you spend the agency's satellite-data allowance: stop and ask
 
 **The OpenET key an agency hands you does not buy unlimited data.** It carries a
 fixed number of requests per month, the count resets on the first, and the
 number is smaller than most people assume. The allowance belongs to the
 *account*, not to this deployment, so it is shared: anything spent here is gone
 from anything else using the same key, which may be a colleague's work or
-another instance entirely. It is not a spending limit in money — going over
-costs nothing and simply stops working until the month turns over — but it is
+another instance entirely. It is not a spending limit in money: going over
+costs nothing and simply stops working until the month turns over, but it is
 hard-capped, and there is no buying your way past it mid-month.
 
 That makes the first satellite-ET run a judgment call, and **it is a judgment
@@ -334,7 +384,7 @@ manage, and spends part of the month's allowance to do it. Running it against
 the agency's own basin produces the numbers they actually need. Three of the
 four independent agents who deployed this platform reached that fork on their
 own and all three left the satellite feed switched off until real data was
-loaded — and not one of them was prompted to think about it by these documents,
+loaded, and not one of them was prompted to think about it by these documents,
 which is why the prompt is here now.
 
 **So: load the agency's own parcels first, then turn on satellite ET.** If
@@ -343,7 +393,7 @@ say out loud what it will take from the month's allowance before you run it, and
 let the agency decide. You do not have to guess at the figure: OpenH2O asks
 OpenET for the account's own numbers rather than assuming them, and the
 monitoring dashboard shows how many requests have gone this month out of the
-allowance — with a line on the card saying whether that count came from OpenET
+allowance, with a line on the card saying whether that count came from OpenET
 itself or is this platform's own estimate because OpenET did not answer.
 
 ### Keys, then the schedule
@@ -364,7 +414,7 @@ docker compose exec web python manage.py check_conformance   # registry is publi
 
 ### Curate the monitoring stations (do this for every new basin)
 
-Station discovery (`auto_populate`'s station step) casts a **wide net** — it pulls
+Station discovery (`auto_populate`'s station step) casts a **wide net**: it pulls
 every gauge and well the public APIs report anywhere near the basin's bounding box,
 created inactive. Many will never return data: a stream gauge that's been
 decommissioned, a CDEC sensor that only posts event-duration readings, a
@@ -374,7 +424,7 @@ and looks broken. So **analyse what actually reports, then prune the rest** befo
 handover.
 
 1. **Activate the stations you intend to keep.** Discovery creates every station
-   **inactive**, and `sync_source` only pulls data for active ones — with none
+   **inactive**, and `sync_source` only pulls data for active ones, with none
    on it stops and prints *"No active stations for CDEC. Run discover_stations
    first."*, which is misleading advice: discovery is what created those
    inactive rows. Activation, not more discovery, is what it needs. So nothing
@@ -396,7 +446,7 @@ handover.
 
 2. **Sync every active source with the right window.** Daily gauges (cdec, usgs)
    are fine on the default 7-day window, but periodic groundwater (`dwr_wdl`,
-   `dwr_sgma`) and lagging climate (`noaa`) report only every few months — sync
+   `dwr_sgma`) and lagging climate (`noaa`) report only every few months: sync
    them with a multi-year `--start` so each station lands a real history, not a
    single dot:
    ```bash
@@ -406,24 +456,24 @@ handover.
    docker compose exec web python manage.py sync_source dwr_wdl  --start 2020-06-01
    docker compose exec web python manage.py sync_source noaa     --start 2020-06-01
    ```
-   Note any gauge whose source returns nothing — that station is dead at the
+   Note any gauge whose source returns nothing: that station is dead at the
    source, not misconfigured.
 
 3. **Eliminate the stations that carry no usable data.** This deletes (not just
-   hides) any active station without enough readings to chart, plus — with
-   `--purge-inactive` — **every station that is still switched off**:
+   hides) any active station without enough readings to chart, plus (with
+   `--purge-inactive`) **every station that is still switched off**:
    ```bash
    docker compose exec web python manage.py prune_dataless_stations --delete --purge-inactive --dry-run
    docker compose exec web python manage.py prune_dataless_stations --delete --purge-inactive
    ```
    ⚠️ **`--purge-inactive` deletes the whole inactive discovery net, and it cannot
    tell a dead gauge from one you simply have not activated yet.** It is only
-   correct *after* step 1 — once the stations you want to keep are active. Run it
+   correct *after* step 1, once the stations you want to keep are active. Run it
    on a freshly discovered basin and you delete everything discovery just found.
 
    `--dry-run` first to see what goes. The default keeps any station with ≥2
    published readings; raise `--min-records` if you want a leaner map. Re-run this
-   any time after a from-scratch re-seed — discovery re-creates the wide net, so
+   any time after a from-scratch re-seed: discovery re-creates the wide net, so
    activate the keepers again first, then clear the rest.
 
 ✋ **Checkpoint:** the monitoring map is mostly green/amber (stations with recent
@@ -431,14 +481,14 @@ data), not a field of red, and every visible marker has a real reading behind it
 
 ---
 
-## Phase 5 — Onboard the humans
+## Phase 5: Onboard the humans
 
 **What the platform actually enforces is two tiers, not three.** A user is
 either an administrator or is not. Administrators reach the admin-only screens;
 everyone else is turned away from those and works normally everywhere else. That
 is the whole of it, and it is what the closed-signup default rests on.
 
-The reference data does create three named roles — admin, manager, viewer — and
+The reference data does create three named roles (admin, manager, viewer), and
 they are visible in the admin. **Assigning one changes nothing about what a
 person can do.** They are left over from an earlier design, kept only so that
 removing them would not require a destructive database change. Do not build a
@@ -448,17 +498,17 @@ because it is not.
 Set expectations on the two tiers instead: who needs to administer this, and who
 just uses it.
 
-Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. If the agency files with the state, show the optional reporting step too: open the reporting page → generate a draft GEARS or CalWATRS CSV. **Be blunt about what that is and is not.** It is the agency's own figures, laid out the way those state systems lay theirs out, useful for checking the numbers and keeping their own copy. It is **not** a filing. OpenH2O cannot submit to either system, and neither system can currently accept a file it produces — both would need work on the state's side first, and that work has not been done. An agency that hears "it does the state reports" and plans around it will be caught out, so say the limit out loud at handover rather than letting them find it at a deadline.
+Then walk them through the first loop: log in → confirm their boundary → review their accounts, allocations, and recorded data. If the agency files with the state, show the optional reporting step too: open the reporting page → generate a draft GEARS or CalWATRS CSV. **Be blunt about what that is and is not.** It is the agency's own figures, laid out the way those state systems lay theirs out, useful for checking the numbers and keeping their own copy. It is **not** a filing. OpenH2O cannot submit to either system, and neither system can currently accept a file it produces: both would need work on the state's side first, and that work has not been done. An agency that hears "it does the state reports" and plans around it will be caught out, so say the limit out loud at handover rather than letting them find it at a deadline.
 
-**Before the first password reset, check what name the mail goes out under.** Every email the platform sends carries this deployment's own name at the front of the subject line — the first thing the recipient reads. The platform works that name out for itself, from the agency name typed into the Setup Wizard and the web address already in `ALLOWED_HOSTS`, and writes it down when the migration step runs. Confirm it landed:
+**Before the first password reset, check what name the mail goes out under.** Every email the platform sends carries this deployment's own name at the front of the subject line, the first thing the recipient reads. The platform works that name out for itself, from the agency name typed into the Setup Wizard and the web address already in `ALLOWED_HOSTS`, and writes it down when the migration step runs. Confirm it landed:
 
 ```bash
 docker compose exec web python manage.py shell -c "from django.contrib.sites.models import Site; s = Site.objects.get_current(); print(s.name, '|', s.domain)"
 ```
 
-Expect the agency's name and their web address. If either still reads `example.com`, fill in whichever is blank — the agency name in the Setup Wizard, the address in `.env` — then run `docker compose exec web python manage.py migrate` and look again. `manage.py check` will also say so, as `openh2o.W002`.
+Expect the agency's name and their web address. If either still reads `example.com`, fill in whichever is blank (the agency name in the Setup Wizard, the address in `.env`), then run `docker compose exec web python manage.py migrate` and look again. `manage.py check` will also say so, as `openh2o.W002`.
 
-✋ **Done when:** an agency staffer can log in and see and manage their own basin data without you — and, if they report to the state, produce a draft report.
+✋ **Done when:** an agency staffer can log in and see and manage their own basin data without you, and, if they report to the state, produce a draft report.
 
 ---
 
@@ -466,7 +516,7 @@ Expect the agency's name and their web address. If either still reads `example.c
 
 <!-- defines: geospatial_libraries -->
 One row below names **GDAL, GEOS and PROJ**: widely-used open-source code
-libraries that do the actual geometry and map arithmetic — parcel boundaries,
+libraries that do the actual geometry and map arithmetic: parcel boundaries,
 well locations, distances on a curved earth. Nobody ever interacts with them
 directly; the software simply will not start without them, and inside Docker
 they install themselves as part of the build, which is why a failure there is a
@@ -474,7 +524,7 @@ build problem rather than something to configure.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `web` container won't start, mentions `ImproperlyConfigured` | Weak DB password or empty `ALLOWED_HOSTS` in production | Set a strong `POSTGRES_PASSWORD` and a real `ALLOWED_HOSTS` in `.env` — the guard is intentional |
+| `web` container won't start, mentions `ImproperlyConfigured` | Weak DB password or empty `ALLOWED_HOSTS` in production | Set a strong `POSTGRES_PASSWORD` and a real `ALLOWED_HOSTS` in `.env`; the guard is intentional |
 | Docker build fails on GDAL/GEOS | Base image or platform mismatch | Confirm you're on a supported Linux/arch; see DEPLOY.md troubleshooting |
 | Site loads but no HTTPS | DNS not pointing at the server yet | Fix the DNS A record, wait for propagation, then restart Caddy |
 | A data source shows red/stale | Missing API key, or the source only publishes periodically | Check `check_conformance` and the source's freshness window; groundwater is quarterly, ET is monthly |
@@ -483,10 +533,10 @@ build problem rather than something to configure.
 
 ---
 
-## Guardrails — what NOT to do
+## Guardrails: what NOT to do
 
 - **Never** commit the agency's `.env`, API keys, or `secrets/` directory. They are gitignored for a reason.
-- **Never** run `make fresh` on a populated instance — it destroys the database volume. Use `docker compose up -d --build` for routine rebuilds. `make up` is not the answer here: on a checkout that has created the `.production-lock` marker (which DEPLOY.md §11 tells a live deployment to do), `make up`, `make down`, `make build` and `make fresh` all refuse to run. That refusal is the guard working.
-- **Don't** set `ACCOUNT_EMAIL_VERIFICATION=mandatory` on an instance with no mail server. Nothing crashes — signup still succeeds — but the confirmation link is written to the container log instead of an inbox, so nobody except whoever can read that log is able to finish signing up. Leave it unset and it follows `EMAIL_HOST` on its own: confirmation required where SMTP is configured, off where it isn't.
-- **Don't** weaken the production security guard to "make it boot." If it's complaining, fix the password or hosts — that's the bug it's catching.
+- **Never** run `make fresh` on a populated instance: it destroys the database volume. Use `docker compose up -d --build` for routine rebuilds. `make up` is not the answer here: on a checkout that has created the `.production-lock` marker (which DEPLOY.md §11 tells a live deployment to do), `make up`, `make down`, `make build` and `make fresh` all refuse to run. That refusal is the guard working.
+- **Don't** set `ACCOUNT_EMAIL_VERIFICATION=mandatory` on an instance with no mail server. Nothing crashes, signup still succeeds, but the confirmation link is written to the container log instead of an inbox, so nobody except whoever can read that log is able to finish signing up. Leave it unset and it follows `EMAIL_HOST` on its own: confirmation required where SMTP is configured, off where it isn't.
+- **Don't** weaken the production security guard to "make it boot." If it's complaining, fix the password or hosts: that's the bug it's catching.
 - **Do** keep the in-app "Source code" link pointing at wherever you publish your modified source. The AGPL (Section 13) requires it once the agency runs the platform for users. See [NOTICE](../NOTICE).
