@@ -23,19 +23,19 @@ nothing. Reuses the gross→net waterfall shape from calculation_run_detail.html
           Preview &middot; {{ parcel.parcel_number }} &middot; {{ period }}
         </h2>
         <div class="text-tertiary text-sm">
-          Uses the currently-saved methodology. Nothing is billed or banked — this writes no data.
+          Uses the currently-saved methodology. This writes no data.
         </div>
       </div>
       <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
         {{ final_af|floatformat:4 }} AF
-        <div class="field-label" style="text-align: right;">Billable groundwater</div>
+        <div class="field-label" style="text-align: right;">Estimated groundwater consumed</div>
       </div>
     </div>
 
     <!-- Honesty label -->
     <div class="card-raised card-inset honesty-note" style="margin-bottom: var(--space-md);">
       <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
-        <strong>Derived extraction estimate — not measured pumping.</strong>
+        <strong>Estimated, not measured.</strong>
         Computed from satellite evapotranspiration via the saved chain below.
       </p>
     </div>

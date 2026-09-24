@@ -68,14 +68,14 @@
       </div>
       <div class="td-num-bold" style="font-size: 1.5rem; color: var(--color-text-primary); text-align: right;">
         {{ run.final_af|floatformat:4 }} AF
-        <div class="field-label" style="text-align: right;">Billable groundwater</div>
+        <div class="field-label" style="text-align: right;">Estimated groundwater consumed</div>
       </div>
     </div>
 
     <!-- Honesty label (prominent, gold inset) -->
     <div class="card-raised card-inset honesty-note mt-md">
       <p class="text-sm" style="margin: 0; color: var(--color-text-secondary);">
-        <strong>Derived extraction estimate — not measured pumping.</strong>
+        <strong>Estimated, not measured.</strong>
         This figure is computed from satellite evapotranspiration, not read from a meter. The steps below show every adjustment so the number can be checked.
       </p>
     </div>
@@ -147,7 +147,7 @@
   <!-- Result: the final number the waterfall produces, tied back to the ledger -->
   <div class="result-card">
     <div>
-      <div class="field-label">Final billable groundwater</div>
+      <div class="field-label">Estimated groundwater consumed</div>
       <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
         Equals the magnitude of the <span class="text-secondary">calculated</span> ledger entry for {{ period }}.
       </p>
@@ -156,6 +156,25 @@
       {{ run.final_af|floatformat:4 }} <span class="stat-card-unit" style="font-size: 1rem;">AF</span>
     </div>
   </div>
+
+  {% comment %} 148-02 (Q2): what the allocation is charged. The run stamps the
+     extracted figure when it is computed, so a later change to the setting
+     does not move it; the divisor shown is read back off the run's own two
+     figures. Absent on a metered or no-well run (the meter is the number, or
+     nothing was pumped). {% endcomment %}
+  {% if run.gw_extracted_af is not None %}
+  <div class="result-card">
+    <div>
+      <div class="field-label">Estimated groundwater extracted</div>
+      <p class="text-tertiary text-sm" style="margin: var(--space-xs) 0 0 0;">
+        The consumed figure above{% if gw_efficiency_applied %} divided by {{ gw_efficiency_applied|floatformat:2 }}, the share of pumped groundwater the crop consumes{% endif %}. The allocation is charged this figure.
+      </p>
+    </div>
+    <div class="result-card-value">
+      {{ run.gw_extracted_af|floatformat:4 }} <span class="stat-card-unit" style="font-size: 1rem;">AF</span>
+    </div>
+  </div>
+  {% endif %}
 
 </div>
 {% endblock %}

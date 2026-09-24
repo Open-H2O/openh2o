@@ -433,3 +433,44 @@ def test_estimated_field_month_closes_with_deep_percolation_gw_af():
     assert result["outputs"]["deep_percolation_gw_af"] == Decimal("0.2200")
     assert abs(result["residual_af"]) <= Decimal("0.01")
     assert result["closes"] is True
+
+
+def test_the_calculation_page_names_consumed_and_charges_extracted(admin_client):
+    """148-02: the page calls the chain's result what it is (groundwater
+    consumed) and shows the extracted figure the allocation is charged, with
+    the divisor read back off the run itself. Before this, the page called
+    0.88 "billable" while the budget charged 1.10."""
+    period = "2025-05"
+    parcel = _et_only_parcel("GWX-PAGE", period, et_mm="26.8224")
+    call_command("seed_calculation_plan")
+    call_command("run_calculations", "--period", period)
+
+    html = admin_client.get(
+        reverse("accounting:calculation_run_detail", args=[parcel.id, period])
+    ).content.decode()
+
+    assert "Billable groundwater" not in html
+    assert "Estimated groundwater consumed" in html
+    assert "Estimated groundwater extracted" in html
+    assert "divided by 0.80" in html
+    assert "1.1000" in html
+
+
+def test_a_metered_calculation_page_shows_no_extracted_figure(admin_client):
+    period = "2025-05"
+    parcel = _et_only_parcel("GWX-PAGE-METERED", period, et_mm="26.8224")
+    ParcelLedger.objects.create(
+        parcel=parcel,
+        transaction_date=dt.date(2025, 5, 1),
+        effective_date=dt.date(2025, 5, 15),
+        amount_acre_feet=Decimal("-0.5000"),
+        source_type="meter_reading",
+    )
+    call_command("seed_calculation_plan")
+    call_command("run_calculations", "--period", period)
+
+    html = admin_client.get(
+        reverse("accounting:calculation_run_detail", args=[parcel.id, period])
+    ).content.decode()
+
+    assert "Estimated groundwater extracted" not in html

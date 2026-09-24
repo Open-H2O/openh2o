@@ -1909,6 +1909,15 @@ def calculation_run_detail(request, parcel_id, period):
         "steps": steps,
         "draws": draws,
         "has_banking": run.banked_af > 0 or run.drawn_af > 0,
+        # 148-02: the groundwater efficiency this run applied, read back off
+        # its own two stamped figures rather than the live setting, so the
+        # page states what the charge was computed with. None on a metered,
+        # no-well or pre-148-02 run, and on a zero month (nothing to divide).
+        "gw_efficiency_applied": (
+            run.final_af / run.gw_extracted_af
+            if run.gw_extracted_af
+            else None
+        ),
         # 42-01: the methodology fingerprint behind this number. Blank on a
         # pre-42 run, which the template renders as dashes (honest: "ran before
         # provenance was recorded").
