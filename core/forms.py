@@ -272,7 +272,9 @@ class DeliverySettingsForm(forms.Form):
     )
 
     # Phase 147: why the settings changed, saved with the change in the change
-    # history (core/history.py). Optional here; not a SiteConfig field.
+    # history (core/history.py). Optional here; not a SiteConfig field. 147-02
+    # (Brent's checkpoint ruling) removed this field's box from the page; the
+    # recording stays, so a caller (or a future one) can still supply a note.
     note = forms.CharField(
         required=False,
         max_length=NOTE_MAX_LENGTH,

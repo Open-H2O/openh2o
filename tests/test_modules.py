@@ -526,14 +526,16 @@ class TestNavResolution:
 
     def test_nav_entry_count_matches_todays_sidebar(self):
         entries = [e for s in mod.enabled_modules() for e in s.nav]
-        # 28 module-owned links: 19 through Phase 77, the three 78-02 adds to
+        # 27 module-owned links: 19 through Phase 77, the three 78-02 adds to
         # Water Data, 80-02's onboarding wizard, 100-01's facility list,
         # 146-02 Task 4's Curtailment Orders beside Water Rights, and
         # 146-04 Task 2's Production under Drinking Water, and 146-04 Task 4's
-        # Schedule after it, and 147-01's Change History under Overview.
+        # Schedule after it. 147-01 added a Change History entry under
+        # Overview; 147-02 (Brent's checkpoint ruling) removed it from the
+        # sidebar, so the count is back to 27.
         # The sidebar also renders `index`, the nav-mode toggle and six static
         # help/about pages, none of which are module-owned.
-        assert len(entries) == 28
+        assert len(entries) == 27
 
     def test_icon_keys_are_unique(self):
         icons = [e.icon for s in mod.enabled_modules() for e in s.nav]

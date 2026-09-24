@@ -1,4 +1,4 @@
-{% load placeholders humanize change_history %}{% comment %}
+{% load placeholders humanize %}{% comment %}
   Per-POD detail BODY for the standalone pod_detail.html page, which includes it.
   pod_detail() also hands it to detail_response() as the pane_template, so an
   HTMX request for a POD would get this fragment on its own — but no page makes
@@ -347,17 +347,6 @@
       can re-render just this card on save.
     {% endcomment %}
     {% include "surface/partials/_pod_water_right_panel.html" %}
-
-    {% comment %} 147-01: the last ten recorded changes to this diversion
-         point, on the full page only (the workspace pane stays one
-         query-light swap). Full width -- this grid holds the page's whole
-         content, so its end is the end of the page's main stack, the same
-         reasoning the parcel pane used for its shorter column. {% endcomment %}
-    {% if on_full_page %}
-    <div class="page-grid-account-full">
-      {% change_history_panel pod %}
-    </div>
-    {% endif %}
 
   </div>
 </div>

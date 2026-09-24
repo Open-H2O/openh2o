@@ -343,16 +343,9 @@ MODULE_REGISTRY: dict = {
         url_module="core.urls",
         url_order=120,
         nav=(
-            # 147-01: every signed-in role reads the change history, so it sits
-            # in Overview (shown in both view modes) with no visibility gate.
-            NavEntry(
-                url_name="change_history",
-                label="Change History",
-                icon="history",
-                section=SECTION_OVERVIEW,
-                order=40,
-                active_match="/changes/",
-            ),
+            # 147-02 (Brent, 2026-09-24 checkpoint): the sidebar entry is gone;
+            # /changes/ stays reachable from the Users page only. See
+            # templates/core/users_list.html.
             NavEntry(
                 url_name="core:users_list",
                 label="Users",

@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Reading change history back: the rows ``/changes/`` and the History panel show.
+"""Reading change history back: the rows ``/changes/`` shows.
 
 The recording side is ``core/history.py``. This module turns the recorded events
 into rows a person can read: when, who, which record, what changed (field,
 before, after) and the note.
+
+``changes_for`` also fed the History panel on record pages until 147-02
+(Brent's 2026-09-24 checkpoint ruling removed the panel; keep the recording,
+strip the display). It stays here, tested directly, because it is the same
+one-record reading path ``/changes/``'s own ``?type=&record=`` filter uses.
 
 **One row per record per action.** A single request or command can write the
 same row more than once (a step reorder lifts every moved step out of the way,
@@ -666,43 +671,6 @@ def changes_for(obj, limit=PANEL_SIZE, fields=None):
     if fields:
         filters["fields"] = set(fields)
     return _ChangeIndex(filters)[0:limit]
-
-
-def last_changed(objs):
-    """{pk: ChangeRow} for the latest change to each of several same-type records.
-
-    Used by the methodology page ("Last changed <date> by <name>" per step):
-    one grouped query for the whole list, not one per record.
-    """
-    objs = list(objs)
-    if not objs:
-        return {}
-    label = objs[0]._meta.label
-    by_label = event_models()
-    if label not in by_label:
-        return {}
-    table = connection.ops.quote_name(by_label[label]._meta.db_table)
-    ids = [o.pk for o in objs]
-    sql = (
-        "SELECT DISTINCT ON (pgh_obj_id) %s, pgh_obj_id, pgh_id, pgh_id,"
-        " pgh_created_at, pgh_context_id::text"
-        f" FROM {table} WHERE pgh_obj_id = ANY(%s) AND pgh_label <> %s"
-        " ORDER BY pgh_obj_id, pgh_id DESC"
-    )
-    with connection.cursor() as cursor:
-        cursor.execute(sql, [label, ids, LABEL_BEFORE])
-        groups = cursor.fetchall()
-    from pghistory.models import Context
-
-    contexts = {
-        str(c.pk): c.metadata or {}
-        for c in Context.objects.filter(pk__in={g[5] for g in groups if g[5]})
-    }
-    people = _people_for(contexts.values())
-    return {
-        obj_id: {"when": timezone.localtime(at), "who": who_for(contexts.get(ctx or "", {}), people)}
-        for _label, obj_id, _a, _b, at, ctx in groups
-    }
 
 
 def people_choices():

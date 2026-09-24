@@ -59,7 +59,10 @@ ALWAYS_EXCLUDED = ("updated_at",)
 # The longest note the forms accept.
 NOTE_MAX_LENGTH = 500
 
-# The help line under every "Note (why)" box, one wording everywhere.
+# The help line an optional note box shows. 147-02 (Brent's checkpoint ruling)
+# removed the methodology page's box; the delivery settings and finalize-period
+# forms still carry this field (the recording stays even where its box is now
+# hidden), so this wording is still referenced.
 CHANGE_NOTE_HELP = (
     "Optional. Saved with this change in the change history, which everyone "
     "signed in can read."

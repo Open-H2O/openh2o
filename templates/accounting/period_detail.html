@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load humanize change_history %}
+{% load humanize %}
 
 {% block title %}{{ period.name }} - Open Water Accounting Platform{% endblock %}
 {% block page_title %}{{ period.name }}{% endblock %}
@@ -157,13 +157,16 @@
         </div>
         <form method="post" action="{% url 'accounting:period_finalize' period.pk %}" class="period-close-form">
           {% csrf_token %}
+          {% comment %} 147-02 (Brent's checkpoint ruling): finalizing carries
+               no optional note box. Reopening still requires a reason, kept
+               in the change history, so its box stays. {% endcomment %}
+          {% if period.is_finalized %}
           <div>
             <label class="form-label" for="{{ finalize_form.note.id_for_label }}">{{ finalize_form.note.label }}</label>
             {{ finalize_form.note }}
             <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ finalize_form.note.help_text }}</p>
             {% if finalize_form.note.errors %}<p class="form-error-text">{{ finalize_form.note.errors|striptags }}</p>{% endif %}
           </div>
-          {% if period.is_finalized %}
           <button type="submit" class="btn-secondary">Reopen period</button>
           {% else %}
           <button type="submit" class="btn-primary">Finalize period</button>
@@ -221,13 +224,6 @@
         <p class="text-tertiary text-base">No allocations for this period.</p>
       </div>
       {% endif %}
-    </div>
-
-    {% comment %} 147-01: the last ten recorded changes to this period, full
-         width under the Allocations table -- this grid holds the page's
-         whole content, so its end is the end of the page's main stack. {% endcomment %}
-    <div class="page-grid-account-full">
-      {% change_history_panel period %}
     </div>
 
   </div>

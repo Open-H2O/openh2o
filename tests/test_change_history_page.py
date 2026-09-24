@@ -1,5 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Reading the change history back: /changes/ and the History panel (147-01 Task 4).
+"""Reading the change history back: /changes/ (147-01 Task 4).
+
+The History panel this module also covered on record pages was removed in
+147-02 (Brent's 2026-09-24 checkpoint ruling: keep the recording, strip the
+display); the reading functions it called (``changes_for``, field filtering)
+stay and are still exercised directly here, since /changes/ reads through the
+same code.
 
 Every assertion is an exact value: the text a reader sees, the stored figure
 formatted, the person's name. None re-derives a formula, and none asserts a
@@ -210,26 +216,6 @@ def test_filters_narrow_by_record_type_and_person(operator, administrator):
     assert "1 change, newest first" in html
 
 
-def test_the_parcel_page_carries_the_panel(operator):
-    parcel = ParcelFactory(area_acres="12.50")
-    _patch(_client(operator), reverse("parcels:edit_field", args=[parcel.pk]), field="area_acres", value="16.25")
-
-    html = _client(operator).get(reverse("parcels:detail", args=[parcel.pk])).content.decode()
-    assert ">History</h2>" in html
-    assert '<span class="change-value">12.50</span> &rarr; <span class="change-value">16.25</span>' in html
-    assert f'href="/changes/?type=parcels.Parcel&amp;record={parcel.pk}"' in html
-
-
-def test_methodology_steps_say_when_and_by_whom_they_last_changed(administrator):
-    call_command("seed_calculation_plan")
-    step = CalculationStep.objects.get(step_type="clamp_floor")
-    _client(administrator).post(reverse("accounting:methodology_step_toggle", args=[step.pk]))
-
-    html = _client(administrator).get(reverse("accounting:methodology_settings")).content.decode()
-    assert html.count(" by Lee Ortiz</span>") == 1
-    assert "Last changed " in html
-
-
 def test_the_page_query_count_does_not_grow_with_the_history(operator, django_assert_max_num_queries):
     parcels = [ParcelFactory(area_acres="10.00") for _ in range(3)]
     client = _client(operator)
@@ -247,7 +233,15 @@ def test_the_page_query_count_does_not_grow_with_the_history(operator, django_as
         client.get(url)
 
 
-def test_the_delivery_settings_panel_shows_only_the_settings_on_that_page(administrator):
+def test_changes_for_can_be_limited_to_the_settings_one_page_shows(administrator):
+    """``fields=`` still limits a settings row's changes to the named columns.
+
+    147-01 used this to keep the delivery settings page's (now-removed)
+    History panel from showing a surface-only setting on a deployment with no
+    Surface module. The panel is gone (147-02), but ``changes_for``'s field
+    filtering is the same reading code ``/changes/`` uses, so it stays tested
+    directly.
+    """
     from core.models import SiteConfig
 
     config, _ = SiteConfig.objects.get_or_create(defaults={"agency_name": "Agency"})
@@ -259,9 +253,6 @@ def test_the_delivery_settings_panel_shows_only_the_settings_on_that_page(admini
     assert [(c.name, c.after) for r in rows for c in r.changes] == [
         ("Identifier host", "water.example.org")
     ]
-    html = _client(administrator).get(reverse("accounting:delivery_settings")).content.decode()
-    assert "water.example.org</span>" in html
-    assert "USE row" not in html
 
 
 def test_a_well_share_edit_shows_in_the_well_panel_and_its_see_all_page(operator):

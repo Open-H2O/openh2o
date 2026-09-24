@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load change_history %}
 
 {% block title %}Methodology - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Methodology{% endblock %}
@@ -56,26 +55,8 @@
       <span class="text-tertiary text-sm">{{ steps|length }} step{{ steps|length|pluralize }}{% if user_can_write %}: reorder, enable or disable, and set each step's parameters{% endif %}</span>
     </div>
 
-    {% comment %} 147-01: one shared, optional reason for the move and
-         enable/disable buttons below (each Save step form has its own). It
-         sits outside the swapped list so it survives the re-render, and is
-         cleared once a change has used it. {% endcomment %}
-    {% if user_can_write %}
-    <div class="field-group" style="margin-bottom: var(--space-md);">
-      <label class="form-label" for="methodology-note">Note for the next move or enable/disable (why)</label>
-      <input type="text" name="note" id="methodology-note" maxlength="{{ note_max_length }}" class="form-input" style="width: 100%;">
-      <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ change_note_help }}</p>
-    </div>
-    {% endif %}
-
     {% include "accounting/partials/_methodology_steps.html" %}
   </div>
-
-  {% comment %} 147-01: the last ten recorded changes to any step in this
-       plan, after the steps editor so a reader sees what changed right below
-       where they would go to change it next. record_type, not one record: a
-       plan is a set of steps, not a single row. {% endcomment %}
-  {% change_history_panel record_type="accounting.CalculationStep" heading="History of these steps" %}
 
   {% if user_can_write %}
   <!-- Live preview picker -->
@@ -111,21 +92,4 @@
   {% endif %}
 
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-{% comment %} Clears the shared note once a move or enable/disable has sent it,
-     so it is not attached to the next change by accident. A delegated listener
-     rather than hx-on: the site's Content-Security-Policy has no
-     'unsafe-eval', which hx-on needs. {% endcomment %}
-<script>
-(function () {
-  document.body.addEventListener('htmx:afterRequest', function (e) {
-    var source = e.detail && e.detail.elt;
-    if (!source || !source.hasAttribute('data-uses-methodology-note')) return;
-    var box = document.getElementById('methodology-note');
-    if (box && e.detail.successful) box.value = '';
-  });
-})();
-</script>
 {% endblock %}

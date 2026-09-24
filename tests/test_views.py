@@ -1081,10 +1081,11 @@ class TestAccountGridOnWellsAndAddPage:
         heading_pos = body.index("Measurement history")
         assert "page-grid-account-full" in body[heading_pos - 300:heading_pos]
 
-        # Bounded by the History panel (147-01), which now follows this card,
-        # or else by the next <script> tag (the persistent-map script is the
+        # Bounded by the next <script> tag (the persistent-map script is the
         # last thing in the pane): everything between the heading and that
-        # bound is this card's own two tables.
+        # bound is this card's own two tables. The History panel that used to
+        # sit between them (147-01) was removed in 147-02 (Brent's checkpoint
+        # ruling); the fallback stays in case a panel-like block ever returns.
         end = body.index("<script>", heading_pos)
         if "change-history-panel" in body[heading_pos:end]:
             end = body.index("change-history-panel", heading_pos)

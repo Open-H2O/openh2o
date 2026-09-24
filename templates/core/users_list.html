@@ -108,5 +108,10 @@
   </div>
   {% endif %}
 
+  {% comment %} 147-02 (Brent's checkpoint ruling): the only way into /changes/
+       now that the sidebar entry and the record-page panels are gone. Plain
+       text, no card, no icon, no explanation. {% endcomment %}
+  <p class="text-tertiary text-sm"><a href="{% url 'change_history' %}" class="text-tertiary text-sm">Change history</a></p>
+
 </div>
 {% endblock %}

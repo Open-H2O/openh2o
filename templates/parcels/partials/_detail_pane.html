@@ -1,4 +1,4 @@
-{% load placeholders humanize accounting_extras change_history %}{% comment %}
+{% load placeholders humanize accounting_extras %}{% comment %}
   Per-parcel detail BODY, swapped into #detail-body on row click (and reused by
   the standalone detail.html page). The map itself is NOT here — it lives as a
   persistent element (#detail-map) in the pane shell so it is built ONCE and
@@ -422,12 +422,6 @@
           <p class="text-tertiary text-base">No ledger entries{% if balance_period %} for {{ balance_period.name }}{% endif %}.</p>
         {% endif %}
       </div>
-
-      {% comment %} 147-01: the last ten recorded changes to this use area, on
-           the full page only (the workspace pane stays one query-light swap).
-           In this column because it is shorter than the attributes column
-           beside it. {% endcomment %}
-      {% if on_full_page %}{% change_history_panel parcel %}{% endif %}
 
     </div>
   </div>

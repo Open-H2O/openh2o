@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load nav change_history %}
+{% load nav %}
 
 {% block title %}Delivery settings - Open Water Accounting Platform{% endblock %}
 {% block page_title %}Delivery settings{% endblock %}
@@ -124,17 +124,6 @@
       </div>
     </div>
 
-    {% comment %} 147-01: an optional reason, saved with this change in the
-         change history (core/history.py). Not a setting, so no eyebrow. {% endcomment %}
-    <div class="card-raised">
-      <div class="field-group mb-0">
-        <label class="form-label" for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>
-        {{ form.note }}
-        <p class="text-secondary text-sm" style="margin-top: var(--space-xs);">{{ form.note.help_text }}</p>
-        {% if form.note.errors %}<p class="text-sm text-furnace mt-sm">{{ form.note.errors|striptags }}</p>{% endif %}
-      </div>
-    </div>
-
     <div class="row-start">
       <button type="submit" class="btn-primary">Save settings</button>
     </div>
@@ -142,11 +131,6 @@
   {% else %}
   <p class="text-tertiary text-sm">You can read these settings but not change them. An administrator can change your role on the Users page.</p>
   {% endif %}
-
-  {% comment %} 147-01: the last ten recorded changes to these settings,
-       after the form, in the page stack. site_config is the one SiteConfig
-       row this whole page edits. {% endcomment %}
-  {% change_history_panel site_config heading="History of these settings" fields=history_fields %}
 
 </div>
 {% endblock %}

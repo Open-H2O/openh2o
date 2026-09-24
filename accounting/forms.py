@@ -45,16 +45,17 @@ class PeriodFinalizeForm(forms.Form):
 
     Reopening a finalized period requires a reason, 10-500 characters, kept
     with the reopening save via ``core.history.change_note`` so it lands on
-    the period's change-history event. Finalizing takes the same box,
-    optional. ``reopening`` is passed explicitly by the view rather than read
-    from the posted data, so a form cannot choose for itself which rule to
-    enforce.
+    the period's change-history event. The field still accepts an optional
+    note when finalizing (not reopening) -- the backend recording keeps
+    working -- but 147-02 (Brent's checkpoint ruling) removed that box from
+    the period page; only the required reopening reason still renders.
+    ``reopening`` is passed explicitly by the view rather than read from the
+    posted data, so a form cannot choose for itself which rule to enforce.
     """
 
     note = forms.CharField(
         required=False,
-        # One line, the house note box (the methodology and delivery settings
-        # pages' "Note (why)" is the same single form-input).
+        # One line, the house note box.
         widget=forms.TextInput(
             attrs={
                 "class": "form-input",
